@@ -23,15 +23,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
@@ -52,6 +51,8 @@ public class MultiMapMapReduceTest
 
     @Test(timeout = 60000)
     public void testMapReduceWithMultiMap() throws Exception {
+        int keyCount = 50;
+        int perKeyValueCount = 100;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -63,14 +64,14 @@ public class MultiMapMapReduceTest
         assertClusterSizeEventually(3, h3);
 
         MultiMap<Integer, Integer> multiMap = h1.getMultiMap("default");
-        for (int i = 0; i < 1000; i++) {
-            for (int o = 0; o < 100; o++) {
+        for (int i = 0; i < keyCount; i++) {
+            for (int o = 0; o < perKeyValueCount; o++) {
                 multiMap.put(i, o);
             }
         }
 
         int expectedResult = 0;
-        for (int o = 0; o < 100; o++) {
+        for (int o = 0; o < perKeyValueCount; o++) {
             expectedResult += o;
         }
 
@@ -82,7 +83,7 @@ public class MultiMapMapReduceTest
 
         Map<String, Integer> result = ICompletableFuture.get();
 
-        assertEquals(1000, result.size());
+        assertEquals(keyCount, result.size());
 
         List<Map.Entry<String, Integer>> entrySet = new ArrayList(result.entrySet());
         Collections.sort(entrySet, ENTRYSET_COMPARATOR);

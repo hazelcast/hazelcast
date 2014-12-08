@@ -104,12 +104,12 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
-        out.writeObject(value);
+        out.writeData(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         itemId = in.readLong();
-        value = in.readObject();
+        value = in.readData();
     }
 }

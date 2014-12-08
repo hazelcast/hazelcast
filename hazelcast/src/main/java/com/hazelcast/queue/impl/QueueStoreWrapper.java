@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.QuickMath;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,93 +36,111 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
+
 /**
  * Wrapper for the Queue Store.
  */
 @SuppressWarnings("unchecked")
-public class QueueStoreWrapper implements QueueStore<Data> {
+public final class QueueStoreWrapper implements QueueStore<Data> {
 
     private static final int DEFAULT_MEMORY_LIMIT = 1000;
-
     private static final int DEFAULT_BULK_LOAD = 250;
-
     private static final int OUTPUT_SIZE = 1024;
+    private static final int BUFFER_SIZE_FACTOR = 8;
 
-    private QueueStore store;
+    private static final String STORE_BINARY = "binary";
 
-    private QueueStoreConfig storeConfig;
+    private static final String STORE_MEMORY_LIMIT = "memory-limit";
 
-    private boolean enabled;
+    private static final String STORE_BULK_LOAD = "bulk-load";
 
     private int memoryLimit = DEFAULT_MEMORY_LIMIT;
 
     private int bulkLoad = DEFAULT_BULK_LOAD;
 
+    private boolean enabled;
+
     private boolean binary;
 
-    private final SerializationService serializationService;
+    private QueueStore store;
 
-    public QueueStoreWrapper(SerializationService serializationService) {
-        this.serializationService = serializationService;
+    private SerializationService serializationService;
+
+    private QueueStoreWrapper() {
     }
 
-    public void setConfig(QueueStoreConfig storeConfig, String name) {
-        if (storeConfig == null) {
-            return;
+    /**
+     * Factory method that creates a {@link QueueStoreWrapper}
+     *
+     * @param name                 queue name
+     * @param storeConfig          store config of queue
+     * @param serializationService serialization service.
+     * @return returns a new instance of {@link QueueStoreWrapper}
+     */
+    public static QueueStoreWrapper create(String name, QueueStoreConfig storeConfig, SerializationService serializationService) {
+        checkNotNull(name, "name should not be null");
+        checkNotNull(serializationService, "serializationService should not be null");
+
+        final QueueStoreWrapper storeWrapper = new QueueStoreWrapper();
+        storeWrapper.setSerializationService(serializationService);
+        if (storeConfig == null || !storeConfig.isEnabled()) {
+            return storeWrapper;
         }
-        store = storeConfig.getStoreImplementation();
+        // create queue store.
+        final ClassLoader classLoader = serializationService.getClassLoader();
+        final QueueStore queueStore = createQueueStore(name, storeConfig, classLoader);
+        if (queueStore != null) {
+            storeWrapper.setEnabled(storeConfig.isEnabled());
+            storeWrapper.setBinary(Boolean.parseBoolean(storeConfig.getProperty(STORE_BINARY)));
+            storeWrapper.setMemoryLimit(parseInt(STORE_MEMORY_LIMIT, DEFAULT_MEMORY_LIMIT, storeConfig));
+            storeWrapper.setBulkLoad(parseInt(STORE_BULK_LOAD, DEFAULT_BULK_LOAD, storeConfig));
+            storeWrapper.setStore(queueStore);
+        }
+        return storeWrapper;
+    }
+
+    private static QueueStore createQueueStore(String name, QueueStoreConfig storeConfig, ClassLoader classLoader) {
+        // 1. Try to create store from `store impl.` class.
+        QueueStore store = getQueueStore(storeConfig, classLoader);
+        // 2. Try to create store from `store factory impl.` class.
         if (store == null) {
+            store = getQueueStoreFactory(name, storeConfig, classLoader);
+        }
+        return store;
+    }
+
+    private static QueueStore getQueueStore(QueueStoreConfig storeConfig, ClassLoader classLoader) {
+        if (storeConfig == null) {
+            return null;
+        }
+        QueueStore store = storeConfig.getStoreImplementation();
+        if (store != null) {
+            return store;
+        }
+        try {
+            store = ClassLoaderUtil.newInstance(classLoader, storeConfig.getClassName());
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+        return store;
+
+    }
+
+    private static QueueStore getQueueStoreFactory(String name, QueueStoreConfig storeConfig, ClassLoader classLoader) {
+        if (storeConfig == null) {
+            return null;
+        }
+        QueueStoreFactory factory = storeConfig.getFactoryImplementation();
+        if (factory == null) {
             try {
-                store = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getClassName());
+                factory = ClassLoaderUtil.newInstance(classLoader,
+                        storeConfig.getFactoryClassName());
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
             }
         }
-
-        factoryImpl(name);
-
-        this.storeConfig = storeConfig;
-        enabled = storeConfig.isEnabled();
-        binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
-        memoryLimit = parseInt("memory-limit", DEFAULT_MEMORY_LIMIT);
-        bulkLoad = parseInt("bulk-load", DEFAULT_BULK_LOAD);
-        if (bulkLoad < 1) {
-            bulkLoad = 1;
-        }
-    }
-
-    public void factoryImpl(String name) {
-        if (store == null) {
-            QueueStoreFactory factory = storeConfig.getFactoryImplementation();
-            if (factory == null) {
-                try {
-                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(),
-                            storeConfig.getFactoryClassName());
-                } catch (Exception ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
-            }
-            if (factory == null) {
-                return;
-            }
-            store = factory.newQueueStore(name, storeConfig.getProperties());
-        }
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public boolean isBinary() {
-        return binary;
-    }
-
-    public int getMemoryLimit() {
-        return memoryLimit;
-    }
-
-    public int getBulkLoad() {
-        return bulkLoad;
+        return factory == null ? null : factory.newQueueStore(name, storeConfig.getProperties());
     }
 
     @Override
@@ -132,11 +151,11 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         final Object actualValue;
         if (binary) {
             // WARNING: we can't pass original Data to the user
-            BufferObjectDataOutput out = serializationService.createObjectDataOutput(value.totalSize());
+            int size = QuickMath.normalize(value.dataSize(), BUFFER_SIZE_FACTOR);
+            BufferObjectDataOutput out = serializationService.createObjectDataOutput(size);
             try {
-                value.writeData(out);
-                // buffer size is exactly equal to binary size, no need to copy array.
-                actualValue = out.getBuffer();
+                out.writeData(value);
+                actualValue = out.toByteArray();
             } catch (IOException e) {
                 throw new HazelcastException(e);
             } finally {
@@ -162,7 +181,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             BufferObjectDataOutput out = serializationService.createObjectDataOutput(OUTPUT_SIZE);
             try {
                 for (Map.Entry<Long, Data> entry : map.entrySet()) {
-                    entry.getValue().writeData(out);
+                    out.writeData(entry.getValue());
                     objectMap.put(entry.getKey(), out.toByteArray());
                     out.clear();
                 }
@@ -203,9 +222,9 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         if (binary) {
             byte[] dataBuffer = (byte[]) val;
             ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-            Data data = new Data();
+            Data data;
             try {
-                data.readData(in);
+                data = in.readData();
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
@@ -216,33 +235,34 @@ public class QueueStoreWrapper implements QueueStore<Data> {
 
     @Override
     public Map<Long, Data> loadAll(Collection<Long> keys) {
-        if (enabled) {
-            final Map<Long, ?> map = store.loadAll(keys);
-            if (map == null) {
-                return Collections.emptyMap();
-            }
-            final Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
-            if (binary) {
-                for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                    byte[] dataBuffer = (byte[]) entry.getValue();
-                    ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
-                    Data data = new Data();
-                    try {
-                        data.readData(in);
-                    } catch (IOException e) {
-                        throw new HazelcastException(e);
-                    }
-                    dataMap.put(entry.getKey(), data);
-                }
-                return (Map<Long, Data>) map;
-            } else {
-                for (Map.Entry<Long, ?> entry : map.entrySet()) {
-                    dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
-                }
-            }
-            return dataMap;
+        if (!enabled) {
+            return null;
         }
-        return null;
+
+        final Map<Long, ?> map = store.loadAll(keys);
+        if (map == null) {
+            return Collections.emptyMap();
+        }
+        final Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
+        if (binary) {
+            for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                byte[] dataBuffer = (byte[]) entry.getValue();
+                ObjectDataInput in = serializationService.createObjectDataInput(dataBuffer);
+                Data data;
+                try {
+                    data = in.readData();
+                } catch (IOException e) {
+                    throw new HazelcastException(e);
+                }
+                dataMap.put(entry.getKey(), data);
+            }
+            return (Map<Long, Data>) map;
+        } else {
+            for (Map.Entry<Long, ?> entry : map.entrySet()) {
+                dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
+            }
+        }
+        return dataMap;
     }
 
     @Override
@@ -253,8 +273,8 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         return null;
     }
 
-    private int parseInt(String name, int defaultValue) {
-        String val = storeConfig.getProperty(name);
+    private static int parseInt(String name, int defaultValue, QueueStoreConfig storeConfig) {
+        final String val = storeConfig.getProperty(name);
         if (val == null || val.trim().isEmpty()) {
             return defaultValue;
         }
@@ -263,5 +283,48 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         } catch (NumberFormatException e) {
             return defaultValue;
         }
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public boolean isBinary() {
+        return binary;
+    }
+
+    public int getMemoryLimit() {
+        return memoryLimit;
+    }
+
+    public int getBulkLoad() {
+        return bulkLoad;
+    }
+
+    void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
+
+    void setStore(QueueStore store) {
+        this.store = store;
+    }
+
+    void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    void setMemoryLimit(int memoryLimit) {
+        this.memoryLimit = memoryLimit;
+    }
+
+    void setBulkLoad(int bulkLoad) {
+        if (bulkLoad < 1) {
+            bulkLoad = 1;
+        }
+        this.bulkLoad = bulkLoad;
+    }
+
+    void setBinary(boolean binary) {
+        this.binary = binary;
     }
 }

@@ -38,6 +38,8 @@ public final class FactoryIdHelper {
     public static final String AGGREGATIONS_DS_FACTORY = "hazelcast.serialization.ds.aggregations";
     public static final String MAP_REDUCE_DS_FACTORY = "hazelcast.serialization.ds.map_reduce";
     public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
+    public static final String CACHE_DS_FACTORY = "hazelcast.serialization.ds.cache";
+    public static final String ENTERPRISE_CACHE_DS_FACTORY = "hazelcast.serialization.ds.enterprise.cache";
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
     public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";
@@ -58,6 +60,7 @@ public final class FactoryIdHelper {
     public static final String AGGREGATIONS_PORTABLE_FACTORY = "hazelcast.serialization.portable.aggregations";
     public static final String MAP_REDUCE_PORTABLE_FACTORY = "hazelcast.serialization.portable.map_reduce";
     public static final String WEB_PORTABLE_FACTORY = "hazelcast.serialization.portable.web";
+    public static final String CACHE_PORTABLE_FACTORY = "hazelcast.serialization.portable.cache";
 
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 

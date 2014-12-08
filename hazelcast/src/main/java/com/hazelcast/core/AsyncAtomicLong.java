@@ -19,8 +19,9 @@ package com.hazelcast.core;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * A {@link IAtomicLong} that exposes its operations using a {@link ICompletableFuture}
- * so it can be used in the reactive programming model approach.
+ * This interface is an {@link IAtomicLong} interface that exposes its operations using an
+ * {@link ICompletableFuture} interface so it can be used in the reactive programming model
+ * approach.
  *
  * @since 3.2
  */

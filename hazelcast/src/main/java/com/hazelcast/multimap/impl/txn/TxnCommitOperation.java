@@ -17,7 +17,6 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,25 +32,17 @@ import java.util.List;
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
     List<Operation> opList;
-    long version;
     boolean notify = true;
 
     public TxnCommitOperation() {
     }
 
-    public TxnCommitOperation(String name, Data dataKey, long threadId, long version, List<Operation> opList) {
+    public TxnCommitOperation(String name, Data dataKey, long threadId, List<Operation> opList) {
         super(name, dataKey, threadId);
-        this.version = version;
         this.opList = opList;
     }
 
     public void run() throws Exception {
-        MultiMapWrapper wrapper = getCollectionWrapper();
-        if (wrapper == null || wrapper.getVersion() != version) {
-            notify = false;
-            return;
-        }
-        wrapper.incrementAndGetVersion();
         for (Operation op : opList) {
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();
@@ -88,7 +79,6 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(version);
         out.writeInt(opList.size());
         for (Operation op : opList) {
             out.writeObject(op);
@@ -97,7 +87,6 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        version = in.readLong();
         int size = in.readInt();
         opList = new ArrayList<Operation>(size);
         for (int i = 0; i < size; i++) {

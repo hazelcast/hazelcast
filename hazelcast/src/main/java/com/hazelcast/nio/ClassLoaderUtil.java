@@ -155,6 +155,7 @@ public final class ClassLoaderUtil {
         }
 
         public <T> Constructor<T> get(ClassLoader classLoader, String className) {
+            ValidationUtil.isNotNull(className, "className");
             ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(classLoader);
             if (innerCache == null) {
                 return null;

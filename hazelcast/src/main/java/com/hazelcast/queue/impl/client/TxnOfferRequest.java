@@ -70,7 +70,6 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         return QueuePortableHook.F_ID;
     }
 
-    @Override
     public int getClassId() {
         return QueuePortableHook.TXN_OFFER;
     }
@@ -80,7 +79,7 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         super.write(writer);
         writer.writeUTF("n", name);
         writer.writeLong("t", timeout);
-        data.writeData(writer.getRawDataOutput());
+        writer.getRawDataOutput().writeData(data);
     }
 
     @Override
@@ -88,8 +87,7 @@ public class TxnOfferRequest extends BaseTransactionRequest implements Portable,
         super.read(reader);
         name = reader.readUTF("n");
         timeout = reader.readLong("t");
-        data = new Data();
-        data.readData(reader.getRawDataInput());
+        data = reader.getRawDataInput().readData();
     }
 
     @Override

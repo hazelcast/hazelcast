@@ -5,6 +5,7 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 
 public class JettyServer implements ServletContainer {
+
     Server server;
 
     public JettyServer(int port, String sourceDir, String serverXml) throws Exception {
@@ -43,6 +44,14 @@ public class JettyServer implements ServletContainer {
         server.setHandler(context);
 
         server.start();
+    }
 
+    @Override
+    public boolean isRunning() {
+        if (server == null) {
+            return false;
+        } else {
+            return server.isRunning();
+        }
     }
 }

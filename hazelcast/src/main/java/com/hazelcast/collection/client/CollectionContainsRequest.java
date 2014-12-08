@@ -63,7 +63,7 @@ public class CollectionContainsRequest extends CollectionRequest {
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeInt(valueSet.size());
         for (Data value : valueSet) {
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -73,8 +73,7 @@ public class CollectionContainsRequest extends CollectionRequest {
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            final Data value = new Data();
-            value.readData(in);
+            Data value = in.readData();
             valueSet.add(value);
         }
     }
@@ -97,6 +96,6 @@ public class CollectionContainsRequest extends CollectionRequest {
         if (valueSet.size() == 1) {
             return valueSet.toArray();
         }
-        return new Object[]{valueSet};
+        return new Object[] {valueSet};
     }
 }

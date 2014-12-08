@@ -86,6 +86,7 @@ public class StartProcessingJobOperation<K>
             return;
         }
 
+        // Create actual mapping operation
         MappingPhase mappingPhase = new KeyValueSourceMappingPhase(keys, predicate);
         supervisor.startTasks(mappingPhase);
     }

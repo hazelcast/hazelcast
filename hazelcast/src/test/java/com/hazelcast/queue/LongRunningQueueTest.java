@@ -29,9 +29,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * @author ali 4/29/13
- */
 @Ignore("not a JUnit test")
 public class LongRunningQueueTest {
 

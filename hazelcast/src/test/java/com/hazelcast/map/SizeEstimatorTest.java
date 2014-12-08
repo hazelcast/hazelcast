@@ -25,20 +25,23 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class SizeEstimatorTest extends HazelcastTestSupport {
 
+    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
     @Test
     public void smoke() throws InterruptedException {
-        final SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>();
+        final SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>(factory);
         testMapBuilder.withNodeCount(1).withBackupCount(0).build();
         assertEquals(0, testMapBuilder.totalHeapCost());
     }
@@ -46,29 +49,25 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     @Test
     public void testSinglePut() throws InterruptedException {
         final long expectedPerEntryHeapCost = 172L;
-        final SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>();
+        final SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
         final IMap<Integer, Long> map = testMapBuilder.withNodeCount(1).withBackupCount(0).build();
         map.put(0, 10L);
         assertEquals(expectedPerEntryHeapCost, testMapBuilder.totalHeapCost());
     }
 
-
     @Test
     public void testExactHeapCostAfterUpdateWithMultipleBackupNodes() throws InterruptedException {
-        final long expectedPerEntryHeapCost = 176L;
-        final long putCount = 1000L;
-        final int nodeCount = 3, expectedReplicaCount = nodeCount;
-        final SizeEstimatorTestMapBuilder<Long, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Long, Long>();
-        final IMap<Long, Long> map = testMapBuilder.withNodeCount(nodeCount).withBackupCount(nodeCount - 1).build();
-        for (long i = 0; i < putCount; i++) {
-            map.put(i, i);
-        }
-        for (long i = 0; i < putCount; i++) {
-            map.put(i, i);
+        final long expectedPerEntryHeapCost = 172L;
+        final int putCount = 1;
+        final int nodeCount = 1;
+        final SizeEstimatorTestMapBuilder<Integer, Long> testMapBuilder = new SizeEstimatorTestMapBuilder<Integer, Long>(factory);
+        final IMap<Integer, Long> map = testMapBuilder.withNodeCount(nodeCount).withBackupCount(nodeCount - 1).build();
+        for (int i = 0; i < putCount; i++) {
+            map.put(i, System.currentTimeMillis());
         }
         final long heapCost = testMapBuilder.totalHeapCost();
         assertEquals("Heap cost calculation is wrong!",
-                expectedPerEntryHeapCost * putCount * expectedReplicaCount, heapCost);
+                expectedPerEntryHeapCost * putCount * nodeCount, heapCost);
     }
 
 
@@ -77,7 +76,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final String mapName = "default";
         final Config config = new Config();
         config.getMapConfig(mapName).setBackupCount(1).setInMemoryFormat(InMemoryFormat.BINARY);
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        //final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
         //create map
@@ -131,8 +130,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         config.getMapConfig(NEAR_CACHED_MAP).setNearCacheConfig(nearCacheConfig).setBackupCount(0);
         config.getMapConfig(NO_NEAR_CACHED_MAP).setBackupCount(0);
 
-        final int n = 2;
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
 
@@ -164,7 +161,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
                 setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
 
         final int n = 2;
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+
         final HazelcastInstance[] h = factory.newInstances(config);
         warmUpPartitions(h);
 
@@ -206,7 +203,10 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
 
-        public SizeEstimatorTestMapBuilder() {
+        private TestHazelcastInstanceFactory instanceFactory;
+
+        public SizeEstimatorTestMapBuilder(TestHazelcastInstanceFactory factory) {
+            this.instanceFactory = factory;
         }
 
         public SizeEstimatorTestMapBuilder<K, V> mapName(String mapName) {
@@ -222,6 +222,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
                 throw new IllegalArgumentException("nodeCount < 1");
             }
             this.nodeCount = nodeCount;
+            this.nodes = new HazelcastInstance[nodeCount];
             return this;
         }
 
@@ -245,8 +246,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             final Config config = new Config();
             config.getMapConfig(mapName).setBackupCount(backupCount).setInMemoryFormat(inMemoryFormat);
             // nodes.
-            final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(nodeCount);
-            nodes = instanceFactory.newInstances(config);
+            nodes = instanceFactory.newInstances(config, nodeCount);
             return nodes[0].getMap(mapName);
         }
 

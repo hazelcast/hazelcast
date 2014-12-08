@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.transaction.TransactionTimedOutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,19 +46,16 @@ public final class FutureUtil {
     public static final ExceptionHandler RETHROW_EVERYTHING = new ExceptionHandler() {
         @Override
         public void handleException(Throwable throwable) {
-            ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable);
         }
     };
 
     /**
-     * Ignores <b>all</b> exceptions but logs {@link com.hazelcast.core.MemberLeftException} using Level.FINEST
+     * Ignores <b>all</b> exceptions
      */
     public static final ExceptionHandler IGNORE_ALL_EXCEPTIONS = new ExceptionHandler() {
         @Override
         public void handleException(Throwable throwable) {
-            if (throwable instanceof MemberLeftException) {
-                LOGGER.finest("Member left while waiting for futures...", throwable);
-            }
         }
     };
 
@@ -65,7 +63,7 @@ public final class FutureUtil {
      * Ignores all exceptions but still logs {@link com.hazelcast.core.MemberLeftException} per future and just tries
      * to finish all of the given ones. This is the default behavior if nothing else is given.
      */
-    public static final ExceptionHandler MEMBER_LEFT_ONLY = new ExceptionHandler() {
+    public static final ExceptionHandler IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT = new ExceptionHandler() {
         @Override
         public void handleException(Throwable throwable) {
             if (throwable instanceof MemberLeftException) {
@@ -93,6 +91,20 @@ public final class FutureUtil {
         }
     };
 
+
+    /**
+     * Handler for transaction specific rethrown of exceptions.
+     */
+    public static final ExceptionHandler RETHROW_TRANSACTION_EXCEPTION = new ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable instanceof TimeoutException) {
+                throw new TransactionTimedOutException(throwable);
+            }
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    };
+
     private static final ILogger LOGGER = Logger.getLogger(FutureUtil.class);
 
     private FutureUtil() {
@@ -102,9 +114,9 @@ public final class FutureUtil {
      * This ExceptionHandler rethrows {@link java.util.concurrent.ExecutionException}s and logs
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
-     * @param logger the ILogger instance to be used for logging
+     * @param logger  the ILogger instance to be used for logging
      * @param message the log message to appear in the logs before the stacktrace
-     * @param level the log level to be used for logging
+     * @param level   the log level to be used for logging
      */
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final ILogger logger, final String message, final Level level) {
@@ -124,7 +136,7 @@ public final class FutureUtil {
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
      * @param message the log message to appear in the logs before the stacktrace
-     * @param level the log level to be used for logging
+     * @param level   the log level to be used for logging
      */
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final String message, final Level level) {
@@ -144,7 +156,7 @@ public final class FutureUtil {
      * {@link com.hazelcast.core.MemberLeftException}s to the log.
      *
      * @param logger the ILogger instance to be used for logging
-     * @param level the log level to be used for logging
+     * @param level  the log level to be used for logging
      */
     @PrivateApi
     public static ExceptionHandler logAllExceptions(final ILogger logger, final Level level) {
@@ -179,34 +191,31 @@ public final class FutureUtil {
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit)
-            throws TimeoutException {
-
-        return returnWithDeadline(futures, timeout, timeUnit, MEMBER_LEFT_ONLY);
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures, long timeout, TimeUnit timeUnit) {
+        return returnWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit,
-                                                       ExceptionHandler exceptionHandler)
-            throws TimeoutException {
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures, long timeout, TimeUnit timeUnit,
+                                                       ExceptionHandler exceptionHandler) {
 
         return returnWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
-                                                       long perFutureTimeout, TimeUnit perFutureTimeUnit)
-            throws TimeoutException {
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures,
+                                                       long overallTimeout, TimeUnit overallTimeUnit,
+                                                       long perFutureTimeout, TimeUnit perFutureTimeUnit) {
 
         return returnWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit,
-                MEMBER_LEFT_ONLY);
+                IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
-    public static <V> Collection<V> returnWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
+    public static <V> Collection<V> returnWithDeadline(Collection<Future<V>> futures,
+                                                       long overallTimeout, TimeUnit overallTimeUnit,
                                                        long perFutureTimeout, TimeUnit perFutureTimeUnit,
-                                                       ExceptionHandler exceptionHandler)
-            throws TimeoutException {
+                                                       ExceptionHandler exceptionHandler) {
 
         // Calculate timeouts for whole operation and per future. If corresponding TimeUnits not set assume
         // the default of TimeUnit.SECONDS
@@ -220,52 +229,40 @@ public final class FutureUtil {
         for (Future<V> future : futures) {
             try {
                 long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, deadline);
-                V value = executeWithDeadline(future, timeoutNanos, exceptionHandler);
+                V value = executeWithDeadline(future, timeoutNanos);
                 if (value != null) {
                     results.add(value);
                 }
-            } catch (TimeoutException e) {
-                cancelAllFutures(futures);
-                throw (TimeoutException) e;
-            } catch (RuntimeException e) {
-                cancelAllFutures(futures);
-                throw (RuntimeException) e;
-
             } catch (Exception e) {
-                cancelAllFutures(futures);
-                throw new RuntimeException(e);
+                exceptionHandler.handleException(e);
             }
         }
         return results;
     }
 
     @PrivateApi
-    public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit)
-            throws TimeoutException {
-
-        waitWithDeadline(futures, timeout, timeUnit, MEMBER_LEFT_ONLY);
+    public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit) {
+        waitWithDeadline(futures, timeout, timeUnit, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
     public static void waitWithDeadline(Collection<Future> futures, long timeout, TimeUnit timeUnit,
-                                        ExceptionHandler exceptionHandler)
-            throws TimeoutException {
+                                        ExceptionHandler exceptionHandler) {
 
         waitWithDeadline(futures, timeout, timeUnit, timeout, timeUnit, exceptionHandler);
     }
 
     @PrivateApi
     public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
-                                        long perFutureTimeout, TimeUnit perFutureTimeUnit)
-            throws TimeoutException {
+                                        long perFutureTimeout, TimeUnit perFutureTimeUnit) {
 
-        waitWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit, MEMBER_LEFT_ONLY);
+        waitWithDeadline(futures, overallTimeout, overallTimeUnit, perFutureTimeout, perFutureTimeUnit,
+                IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi
     public static void waitWithDeadline(Collection<Future> futures, long overallTimeout, TimeUnit overallTimeUnit,
-                                        long perFutureTimeout, TimeUnit perFutureTimeUnit, ExceptionHandler exceptionHandler)
-            throws TimeoutException {
+                                        long perFutureTimeout, TimeUnit perFutureTimeUnit, ExceptionHandler exceptionHandler) {
 
         // Calculate timeouts for whole operation and per future. If corresponding TimeUnits not set assume
         // the default of TimeUnit.SECONDS
@@ -278,47 +275,23 @@ public final class FutureUtil {
         for (Future future : futures) {
             try {
                 long timeoutNanos = calculateFutureTimeout(perFutureTimeoutNanos, deadline);
-                executeWithDeadline(future, timeoutNanos, exceptionHandler);
-            } catch (TimeoutException e) {
-                cancelAllFutures(futures);
-                throw (TimeoutException) e;
-            } catch (RuntimeException e) {
-                cancelAllFutures(futures);
-                throw (RuntimeException) e;
-
-            } catch (Exception e) {
-                cancelAllFutures(futures);
-                throw new RuntimeException(e);
+                executeWithDeadline(future, timeoutNanos);
+            } catch (Throwable e) {
+                exceptionHandler.handleException(e);
             }
         }
     }
 
-    private static <V> void cancelAllFutures(Collection<Future> futures) {
-        for (Future<V> future : futures) {
-            future.cancel(true);
-        }
-    }
-
-    private static <V> V executeWithDeadline(Future<V> future, long timeoutNanos, ExceptionHandler exceptionHandler)
-            throws Exception {
-
-        try {
-            if (timeoutNanos <= 0) {
-                // Maybe we just finished in time
-                if (future.isDone() || future.isCancelled()) {
-                    return retrieveValue(future);
-                } else {
-                    throw new TimeoutException();
-                }
+    private static <V> V executeWithDeadline(Future<V> future, long timeoutNanos) throws Exception {
+        if (timeoutNanos <= 0) {
+            // Maybe we just finished in time
+            if (future.isDone() || future.isCancelled()) {
+                return retrieveValue(future);
+            } else {
+                throw new TimeoutException();
             }
-            return future.get(timeoutNanos, TimeUnit.NANOSECONDS);
-
-        } catch (MemberLeftException e) {
-            exceptionHandler.handleException(e);
-        } catch (ExecutionException e) {
-            exceptionHandler.handleException(e);
         }
-        return null;
+        return future.get(timeoutNanos, TimeUnit.NANOSECONDS);
     }
 
     private static <V> V retrieveValue(Future<V> future)

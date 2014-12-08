@@ -110,7 +110,7 @@ public class MapReduceService
                 if (!member.getAddress().equals(jobOwner)) {
                     try {
                         ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
-                        processRequest(member.getAddress(), operation, name);
+                        processRequest(member.getAddress(), operation);
                     } catch (Exception ignore) {
                         LOGGER.finest("Member might be already unavailable", ignore);
                     }
@@ -213,14 +213,13 @@ public class MapReduceService
         return true;
     }
 
-    public <R> R processRequest(Address address, ProcessingOperation processingOperation, String name)
+    public <R> R processRequest(Address address, ProcessingOperation processingOperation)
             throws ExecutionException, InterruptedException {
 
-        String executorName = MapReduceUtil.buildExecutorName(name);
         InvocationBuilder invocation = nodeEngine.getOperationService()
                                                  .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
 
-        Future<R> future = invocation.setExecutorName(executorName).invoke();
+        Future<R> future = invocation.invoke();
         return future.get();
     }
 
@@ -228,7 +227,7 @@ public class MapReduceService
         try {
             String name = MapReduceUtil.buildExecutorName(notification.getName());
             ProcessingOperation operation = new FireNotificationOperation(notification);
-            processRequest(address, operation, name);
+            processRequest(address, operation);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

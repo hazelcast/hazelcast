@@ -3,14 +3,13 @@ package com.hazelcast.map.mapstore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,7 +34,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     public void test1770() throws InterruptedException {
         Config config = new Config();
         config.getManagementCenterConfig().setEnabled(true);
-        config.getManagementCenterConfig().setUrl("http://www.google.com");
+        config.getManagementCenterConfig().setUrl("http://127.0.0.1:8090/mancenter");
 
         MapConfig mapConfig = new MapConfig("foo");
 
@@ -63,7 +62,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
 
         config.addMapConfig(mapConfig);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         Map map = hz.getMap(mapConfig.getName());
 
         assertTrueAllTheTime(new AssertTask() {

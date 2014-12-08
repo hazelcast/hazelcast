@@ -21,10 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -39,11 +39,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-/**
- * @author ali 3/11/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class TransactionQueueTest extends HazelcastTestSupport {
@@ -188,17 +188,16 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testIssue859And863() throws Exception {
         final int numberOfMessages = 2000;
         final AtomicInteger count = new AtomicInteger();
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance instance1 = factory.newHazelcastInstance();
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        final HazelcastInstance instance1 = factory.newHazelcastInstance();
+        final HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        String inQueueName = "in";
-        String outQueueName = "out";
+        final String inQueueName = "in";
+        final String outQueueName = "out";
 
         for (int i = 0; i < numberOfMessages; i++) {
             if (!instance1.getQueue(inQueueName).offer(i)) {
@@ -264,8 +263,15 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         moveMessage1.join(10000);
 
         try {
-            assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
-            assertTrue(instance1.getQueue(inQueueName).isEmpty());
+            // When a node goes down, backup of the transaction commits all prepared stated transactions
+            // Since it relies on 'memberRemoved' event, it is async. That's why we should assert eventually
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
+                    assertTrue(instance1.getQueue(inQueueName).isEmpty());
+                }
+            }, 20);
         } finally {
             moveMessage1.active = false;
         }

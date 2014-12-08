@@ -136,8 +136,8 @@ public class LongAvgAggregation<Key, Value>
     private static final class LongAvgReducer
             extends Reducer<AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
 
-        private volatile long count;
-        private volatile long amount;
+        private long count;
+        private long amount;
 
         @Override
         public void reduce(AvgTuple<Long, Long> value) {

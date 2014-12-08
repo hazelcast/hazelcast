@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.replicatedmap.impl.CleanerRegistrator;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -30,9 +29,9 @@ import com.hazelcast.spi.NodeEngine;
 public class ObjectReplicatedRecordStorage<K, V>
         extends AbstractReplicatedRecordStore<K, V> {
 
-    public ObjectReplicatedRecordStorage(String name, NodeEngine nodeEngine, CleanerRegistrator cleanerRegistrator,
+    public ObjectReplicatedRecordStorage(String name, NodeEngine nodeEngine,
                                          ReplicatedMapService replicatedMapService) {
-        super(name, nodeEngine, cleanerRegistrator, replicatedMapService);
+        super(name, nodeEngine, replicatedMapService);
     }
 
     @Override

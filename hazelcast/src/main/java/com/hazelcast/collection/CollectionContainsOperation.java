@@ -58,7 +58,7 @@ public class CollectionContainsOperation extends CollectionOperation {
         super.writeInternal(out);
         out.writeInt(valueSet.size());
         for (Data value : valueSet) {
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -68,8 +68,7 @@ public class CollectionContainsOperation extends CollectionOperation {
         final int size = in.readInt();
         valueSet = new HashSet<Data>(size);
         for (int i = 0; i < size; i++) {
-            final Data value = new Data();
-            value.readData(in);
+            Data value = in.readData();
             valueSet.add(value);
         }
     }

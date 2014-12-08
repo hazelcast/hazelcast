@@ -63,6 +63,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         this.principal = principal;
     }
 
+    @Override
     public Object call() throws Exception {
         boolean authenticated = authenticate();
 
@@ -125,8 +126,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
     }
 
     private Object handleUnauthenticated() {
-        ClientEngineImpl clientEngine = getService();
-        clientEngine.getEndpointManager().removeEndpoint(endpoint);
         return new AuthenticationException("Invalid credentials!");
     }
 
@@ -148,6 +147,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         }
 
         endpoint.authenticated(principal, credentials, ownerConnection);
+        clientEngine.getEndpointManager().registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
         return new SerializableCollection(serializationService.toData(clientEngine.getThisAddress())
                 , serializationService.toData(principal));
@@ -168,6 +168,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         }
     }
 
+    @Override
     public String getServiceName() {
         return ClientEngineImpl.SERVICE_NAME;
     }
@@ -180,10 +181,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
     @Override
     public int getClassId() {
         return ClientPortableHook.AUTH;
-    }
-
-    public boolean isOwnerConnection() {
-        return ownerConnection;
     }
 
     public void setOwnerConnection(boolean ownerConnection) {

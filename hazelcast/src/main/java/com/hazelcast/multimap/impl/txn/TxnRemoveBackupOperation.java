@@ -44,7 +44,7 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getMultiMapWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
         response = true;
         if (wrapper == null || !wrapper.containsRecordId(recordId)) {
             response = false;
@@ -66,14 +66,13 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     public int getId() {

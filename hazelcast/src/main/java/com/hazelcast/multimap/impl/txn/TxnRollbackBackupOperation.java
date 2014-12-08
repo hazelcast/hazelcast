@@ -29,7 +29,6 @@ import java.io.IOException;
 public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     String caller;
-    long threadId;
 
     public TxnRollbackBackupOperation() {
     }
@@ -52,13 +51,11 @@ public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implem
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(caller);
-        out.writeLong(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         caller = in.readUTF();
-        threadId = in.readLong();
     }
 
     public int getId() {

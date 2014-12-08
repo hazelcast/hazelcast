@@ -19,7 +19,13 @@ package com.hazelcast.multimap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapEvent;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.aggregation.Aggregations;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.test.AssertTask;
@@ -31,13 +37,21 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 1/17/13
@@ -120,6 +134,92 @@ public class MultiMapTest extends HazelcastTestSupport {
         o = iter.next();
         assertEquals(o, "key2_value1");
 
+    }
+
+
+    @Test
+    public void testContainsKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+        System.out.println("test = " + multiMap.containsKey("test"));
+        multiMap.put("test","test");
+        System.out.println("test = " + multiMap.containsKey("test"));
+        multiMap.remove("test");
+        System.out.println("test = " + multiMap.containsKey("test"));
+
+
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGet_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.get(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testPut_whenNullValue() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.put("someVal", null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testLock_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.lock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testUnlock_whenNullKey() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.unlock(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsKey_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsKey(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsValue_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsValue(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntry_whenNullKey() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry(null, "someVal");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testContainsEntry_whenNullValue() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
+
+        multiMap.containsEntry("someVal", null);
     }
 
     @Test

@@ -31,6 +31,10 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
 
+    private int backupDelaySeconds = 10;
+
+    private TestHazelcastInstanceFactory instanceFactory;
+
     private TestMapUsingMapStoreBuilder() {
     }
 
@@ -52,6 +56,19 @@ public class TestMapUsingMapStoreBuilder<K, V> {
             throw new IllegalArgumentException("nodeCount < 1");
         }
         this.nodeCount = nodeCount;
+        return this;
+    }
+
+    public TestMapUsingMapStoreBuilder<K, V> withNodeFactory(TestHazelcastInstanceFactory factory) {
+        this.instanceFactory = factory;
+        return this;
+    }
+
+    public TestMapUsingMapStoreBuilder<K, V> withBackupProcessingDelay(int backupDelaySeconds) {
+        if (backupDelaySeconds < 0) {
+            throw new IllegalArgumentException("delaySeconds < 0");
+        }
+        this.backupDelaySeconds = backupDelaySeconds;
         return this;
     }
 
@@ -113,9 +130,15 @@ public class TestMapUsingMapStoreBuilder<K, V> {
                 .setMapStoreConfig(mapStoreConfig).setInMemoryFormat(inMemoryFormat);
 
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
+        if (backupDelaySeconds > 0) {
+            config.setProperty(GroupProperties.PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS,
+                    String.valueOf(backupCount));
+        }
         // nodes.
-        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(nodeCount);
-        nodes = instanceFactory.newInstances(config);
+        nodes = new HazelcastInstance[nodeCount];
+        for(int i = 0; i < nodeCount; i++) {
+            nodes[i] = instanceFactory.newHazelcastInstance(config);
+        }
         return nodes[0].getMap(mapName);
     }
 

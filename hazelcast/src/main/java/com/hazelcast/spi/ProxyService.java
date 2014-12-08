@@ -38,6 +38,8 @@ public interface ProxyService extends CoreService {
 
     Collection<DistributedObject> getDistributedObjects(String serviceName);
 
+    Collection<String> getDistributedObjectNames(String serviceName);
+
     Collection<DistributedObject> getAllDistributedObjects();
 
     String addProxyListener(DistributedObjectListener distributedObjectListener);

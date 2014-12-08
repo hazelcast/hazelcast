@@ -301,7 +301,7 @@ public class DistributedMapperMapReduceTest
     public static class TestReducer
             extends Reducer<Integer, Integer> {
 
-        private transient int sum;
+        private int sum;
 
         @Override
         public void reduce(Integer value) {
@@ -372,7 +372,7 @@ public class DistributedMapperMapReduceTest
     public static class TestIntermediateReducer
             extends Reducer<Long, Long> {
 
-        private transient long sum;
+        private long sum;
 
         @Override
         public void reduce(Long value) {

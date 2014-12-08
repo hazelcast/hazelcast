@@ -35,6 +35,8 @@ public interface ConnectionManager {
 
     Connection getOrConnect(Address address, boolean silent);
 
+    boolean registerConnection(Address address, Connection connection);
+
     void destroyConnection(Connection conn);
 
     void shutdown();
@@ -45,4 +47,8 @@ public interface ConnectionManager {
 
     void addConnectionListener(ConnectionListener connectionListener);
 
+    /**
+     * Dumps all kinds of performance metrics. It is up to the implementation to add anything.
+     */
+    void dumpPerformanceMetrics(StringBuffer sb);
 }

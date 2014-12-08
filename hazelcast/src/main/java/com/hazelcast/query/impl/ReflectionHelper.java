@@ -27,6 +27,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -73,6 +74,8 @@ public final class ReflectionHelper {
             return AttributeType.DATE;
         } else if (klass.isEnum()) {
             return AttributeType.ENUM;
+        } else if (klass == UUID.class) {
+            return AttributeType.UUID;
         }
         return null;
     }

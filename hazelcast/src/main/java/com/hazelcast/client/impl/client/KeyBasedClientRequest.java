@@ -24,6 +24,7 @@ public abstract class KeyBasedClientRequest extends PartitionClientRequest {
 
     protected abstract Object getKey();
 
+    @Override
     protected final int getPartition() {
         Object key = getKey();
         InternalPartitionService partitionService = clientEngine.getPartitionService();
@@ -32,5 +33,4 @@ public abstract class KeyBasedClientRequest extends PartitionClientRequest {
         }
         return partitionService.getPartitionId(key);
     }
-
 }

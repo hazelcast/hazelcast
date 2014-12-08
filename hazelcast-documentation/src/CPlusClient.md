@@ -7,9 +7,9 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-You can use Native C++ Client to connect to Hazelcast nodes and perform almost all operations that a node can perform. Different from nodes, clients do not hold data. It is by default a smart client, i.e. it knows where the data is and asks directly to the correct node. This feature can be disabled (using `ClientConfig::setSmart` method) if you do not want the clients to connect every node.
+You can use Native C++ Client to connect to Hazelcast nodes and perform almost all operations that a node can perform. Clients differ from nodes in that clients do not hold data. The C++ Client is by default a smart client, i.e. it knows where the data is and asks directly for the correct node. You can disable this feature (using the `ClientConfig::setSmart` method) if you do not want the clients to connect to every node.
 
-Features of C++ Clients are:
+The features of C++ Clients are:
 
 - Access to distributed data structures (IMap, IQueue, MultiMap, ITopic, etc.).
 - Access to transactional distributed data structures (TransactionalMap, TransactionalQueue, etc.).
@@ -22,7 +22,7 @@ Features of C++ Clients are:
 Hazelcast C++ Client is shipped with 32/64 bit, shared and static libraries. Compiled static libraries of dependencies are also available in the release. Dependencies are **zlib** and **shared_ptr** from the boost libraries. 
 
 
-Downloaded release folder consists of:
+The downloaded release folder consists of:
 
 - Mac_64/
 - Windows_32/
@@ -32,7 +32,7 @@ Downloaded release folder consists of:
 - docs/ *(HTML Doxygen documents are here)*
 
 
-And each of the folders above contains the following:
+Each of the folders above contains the following:
 
 - examples/
 	- testApp.exe => example command line client tool to connect hazelcast servers.
@@ -40,47 +40,47 @@ And each of the folders above contains the following:
 
 - hazelcast/
 	- lib/ => Contains both shared and static library of hazelcast.
-	- include/ => Contains headers of client
+	- include/ => Contains headers of client.
 
 -	external/
 	- lib/ => Contains compiled static libraries of zlib.
-	- include/ => Contains headers of dependencies.(zlib and boost::shared_ptr)
+	- include/ => Contains headers of dependencies. (zlib and boost::shared_ptr)
 
 
 
 ### Platform Specific Installation Guides
-C++ Client is tested on Linux 32/64, Mac 64 and Windows 32/64 bit machines. For each of the headers above, it is assumed that you are in the correct folder for your platform. Folders are Mac_64, Windows_32, Windows_64, Linux_32 or Linux_64.
+The C++ Client is tested on Linux 32/64, Mac 64 and Windows 32/64 bit machines. For each of the headers above, it is assumed that you are in the correct folder for your platform. Folders are Mac_64, Windows_32, Windows_64, Linux_32 or Linux_64.
 
 #### Linux
 
-For Linux, there are two distributions; 32 bit and 64 bit.
+For Linux, there are two distributions: 32 bit and 64 bit.
 
-Sample script to build with static library:
+Here is an example script to build with static library:
 
 `g++ main.cpp -pthread -I./external/include -I./hazelcast/include 
      ./hazelcast/lib/libHazelcastClientStatic_64.a 
      ./external/lib/libz.a`
 
-Sample script to build with shared library:
+Here is an example script to build with shared library:
 
 `g++ main.cpp -lpthread -Wl,–no-as-needed -lrt -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/libz.a`
 
 #### Mac
-For Mac, there is only one distribution which is 64 bit.
+For Mac, there is one distribution: 64 bit.
 
-Sample script to build with static library:
+Here is an example script to build with static library:
 
 `g++ main.cpp -I./external/include -I./hazelcast/include ./hazelcast/lib/libHazelcastClientStatic_64.a ./external/lib/darwin/libz.a`
 
-Sample script to build with shared library:
+Here is an example script to build with shared library:
 
 `g++ main.cpp -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/darwin/libz.a`
 
 #### Windows
-For Windows, there are two distributions; 32 bit and 64 bit. Current release have only Visual Studio 2010 compatible libraries. For others, please contact with [support@hazelcast.com](support@hazelcast.com).
+For Windows, there are two distributions; 32 bit and 64 bit. The current release has only Visual Studio 2010 compatible libraries. For others, please contact [support@hazelcast.com](support@hazelcast.com).
 
 ### Code Examples
-A Hazelcast node should be running to make below sample codes work.
+A Hazelcast node should be running to make the example code below work.
 
 #### Map Example
 
@@ -202,7 +202,7 @@ int main( int argc, char **argv ) {
 ```
 
 #### Serialization Example
-Assume that you have the following two classes in Java and you want to use it with C++ client. 
+Assume that you have the following two classes in Java and you want to use them with a C++ client. 
 
 ```java
 class Foo implements Serializable {
@@ -270,7 +270,7 @@ class Bar implements IdentifiedDataSerializable {
 }
 ```
 
-**Then**, implement the corresponding classes in C++ with same factory and class ID as shown below:
+**Then**, implement the corresponding classes in C++ with same factory and class ID as shown below.
 
 ```cpp
 class Foo : public Portable {
@@ -324,6 +324,6 @@ class Bar : public IdentifiedDataSerializable {
 };
 ```
 
-Now, you can use class `Foo` and `Bar` in distributed structures. For example as Key or Value of `IMap` or as an Item in `IQueue`.
+Now, you can use the classes `Foo` and `Bar` in distributed structures. For example, use as Key or Value of `IMap` or as an Item in `IQueue`.
 	
 

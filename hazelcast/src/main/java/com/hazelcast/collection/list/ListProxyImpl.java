@@ -42,6 +42,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     @Override
     public void add(int index, E e) {
         throwExceptionIfNull(e);
+        throwExceptionIfNegative(index);
         final Data value = getNodeEngine().toData(e);
         final ListAddOperation operation = new ListAddOperation(name, index, value);
         invoke(operation);
@@ -49,6 +50,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
 
     @Override
     public E get(int index) {
+        throwExceptionIfNegative(index);
         final ListGetOperation operation = new ListGetOperation(name, index);
         return invoke(operation);
     }
@@ -56,6 +58,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     @Override
     public E set(int index, E element) {
         throwExceptionIfNull(element);
+        throwExceptionIfNegative(index);
         final Data value = getNodeEngine().toData(element);
         final ListSetOperation operation = new ListSetOperation(name, index, value);
         return invoke(operation);
@@ -63,6 +66,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
 
     @Override
     public E remove(int index) {
+        throwExceptionIfNegative(index);
         final ListRemoveOperation operation = new ListRemoveOperation(name, index);
         return invoke(operation);
     }
@@ -88,6 +92,7 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     @Override
     public boolean addAll(int index, Collection<? extends E> c) {
         throwExceptionIfNull(c);
+        throwExceptionIfNegative(index);
         List<Data> valueList = new ArrayList<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {

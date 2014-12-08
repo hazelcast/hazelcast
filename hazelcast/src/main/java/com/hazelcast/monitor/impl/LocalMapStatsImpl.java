@@ -16,19 +16,16 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.monitor.IndexStats;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -38,8 +35,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
 /**
  * Default implementation of {@link LocalMapStats}
  */
-public class LocalMapStatsImpl
-        implements LocalMapStats, IdentifiedDataSerializable {
+public class LocalMapStatsImpl implements LocalMapStats {
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalMapStatsImpl.class, "lastAccessTime");
@@ -101,7 +97,7 @@ public class LocalMapStatsImpl
     private int backupCount;
 
     private NearCacheStatsImpl nearCacheStats;
-    private IndexStats[] indexStats;
+    private List<IndexStats> indexStats;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -109,12 +105,12 @@ public class LocalMapStatsImpl
 
 
     /**
-     * Only init these fields for every {@link com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats}
+     * Only init these fields for every {@link com.hazelcast.map.impl.LocalMapStatsProvider#createLocalMapStats}
      * call since they represent current map state.
      * However other fields hold historical data from the creation of a map like {@link #putCount#getCount}
      * and they should not be touched here.
      *
-     * @see com.hazelcast.map.LocalMapStatsProvider#createLocalMapStats
+     * @see com.hazelcast.map.impl.LocalMapStatsProvider#createLocalMapStats
      */
     public void init() {
         ownedEntryCount = 0;
@@ -126,89 +122,6 @@ public class LocalMapStatsImpl
         dirtyEntryCount = 0;
         backupCount = 0;
         hits = 0;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeLong(getCount);
-        out.writeLong(putCount);
-        out.writeLong(removeCount);
-        out.writeLong(numberOfOtherOperations);
-        out.writeLong(numberOfEvents);
-        out.writeLong(lastAccessTime);
-        out.writeLong(lastUpdateTime);
-        out.writeLong(hits);
-        out.writeLong(ownedEntryCount);
-        out.writeLong(backupEntryCount);
-        out.writeInt(backupCount);
-        out.writeLong(ownedEntryMemoryCost);
-        out.writeLong(backupEntryMemoryCost);
-        out.writeLong(creationTime);
-        out.writeLong(lockedEntryCount);
-        out.writeLong(dirtyEntryCount);
-        out.writeLong(totalGetLatencies);
-        out.writeLong(totalPutLatencies);
-        out.writeLong(totalRemoveLatencies);
-        out.writeLong(maxGetLatency);
-        out.writeLong(maxPutLatency);
-        out.writeLong(maxRemoveLatency);
-        out.writeLong(heapCost);
-        boolean hasNearCache = nearCacheStats != null;
-        out.writeBoolean(hasNearCache);
-        if (hasNearCache) {
-            nearCacheStats.writeData(out);
-        }
-        boolean hasIndex = indexStats != null;
-        out.writeBoolean(hasIndex);
-        if (hasIndex) {
-            out.writeInt(indexStats.length);
-            for (IndexStats indexStat : indexStats) {
-                indexStat.writeData(out);
-            }
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        GET_COUNT_UPDATER.set(this, in.readLong());
-        PUT_COUNT_UPDATER.set(this, in.readLong());
-        REMOVE_COUNT_UPDATER.set(this, in.readLong());
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, in.readLong());
-        NUMBER_OF_EVENTS_UPDATER.set(this, in.readLong());
-        LAST_ACCESS_TIME_UPDATER.set(this, in.readLong());
-        LAST_UPDATE_TIME_UPDATER.set(this, in.readLong());
-        HITS_UPDATER.set(this, in.readLong());
-        ownedEntryCount = in.readLong();
-        backupEntryCount = in.readLong();
-        backupCount = in.readInt();
-        ownedEntryMemoryCost = in.readLong();
-        backupEntryMemoryCost = in.readLong();
-        creationTime = in.readLong();
-        lockedEntryCount = in.readLong();
-        dirtyEntryCount = in.readLong();
-        TOTAL_GET_LATENCIES_UPDATER.set(this, in.readLong());
-        TOTAL_PUT_LATENCIES_UPDATER.set(this, in.readLong());
-        TOTAL_REMOVE_LATENCIES_UPDATER.set(this, in.readLong());
-        MAX_GET_LATENCY_UPDATER.set(this, in.readLong());
-        MAX_PUT_LATENCY_UPDATER.set(this, in.readLong());
-        MAX_REMOVE_LATENCY_UPDATER.set(this, in.readLong());
-        heapCost = in.readLong();
-        boolean hasNearCache = in.readBoolean();
-        if (hasNearCache) {
-            nearCacheStats = new NearCacheStatsImpl();
-            nearCacheStats.readData(in);
-        }
-        boolean hasIndex = in.readBoolean();
-        if (hasIndex) {
-            MapIndexStats.IndexStatsImpl[] stats = new MapIndexStats.IndexStatsImpl[in.readInt()];
-            for (int i = 0; i < stats.length; i++) {
-                MapIndexStats.IndexStatsImpl s = new MapIndexStats.IndexStatsImpl();
-                s.readData(in);
-                stats[i] = s;
-            }
-        }
     }
 
     @Override
@@ -419,7 +332,7 @@ public class LocalMapStatsImpl
 
     @Override
     public List<IndexStats> getIndexStats() {
-        return Collections.unmodifiableList(Arrays.asList(indexStats));
+        return Collections.unmodifiableList(indexStats);
     }
 
     @Override
@@ -431,18 +344,8 @@ public class LocalMapStatsImpl
         this.nearCacheStats = nearCacheStats;
     }
 
-    public void setIndexStats(IndexStats[] indexStats) {
+    public void setIndexStats(List<IndexStats> indexStats) {
         this.indexStats = indexStats;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.MAP_STATS;
     }
 
     public JsonObject toJson() {
@@ -472,6 +375,13 @@ public class LocalMapStatsImpl
         root.add("heapCost", heapCost);
         if (nearCacheStats != null) {
             root.add("nearCacheStats", nearCacheStats.toJson());
+        }
+        if (indexStats != null) {
+            JsonArray arr = new JsonArray();
+            for (IndexStats indexStat : indexStats) {
+                arr.add(indexStat.toJson());
+            }
+            root.add("indexStats", arr);
         }
         return root;
     }
@@ -505,6 +415,18 @@ public class LocalMapStatsImpl
         if (jsonNearCacheStats != null) {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.fromJson(jsonNearCacheStats.asObject());
+        }
+
+        JsonValue jsonIndexStats = json.get("indexStats");
+        if (jsonIndexStats != null) {
+            Iterator<JsonValue> iterator = jsonIndexStats.asArray().iterator();
+            ArrayList<IndexStats> arrayList = new ArrayList();
+            while(iterator.hasNext()) {
+                MapIndexStats.IndexStatsImpl stats = new MapIndexStats.IndexStatsImpl();
+                stats.fromJson(iterator.next().asObject());
+                arrayList.add(stats);
+            }
+            indexStats = arrayList;
         }
     }
 

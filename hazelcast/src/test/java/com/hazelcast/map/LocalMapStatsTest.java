@@ -1,11 +1,15 @@
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -14,6 +18,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -98,5 +103,85 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         multiMap0.get("test1");
         multiMap1.get("test1");
         assertEquals(inFirstInstance ? 0 : 3, multiMap1.getLocalMultiMapStats().getHits());
+    }
+
+
+    @Test
+    public void testLocalMapStats_withMemberGroups() throws Exception {
+        final String mapName = randomMapName();
+        final String[] firstMemberGroup = {"127.0.0.1", "127.0.0.2"};
+        final String[] secondMemberGroup = {"127.0.0.3"};
+
+        final Config config = createConfig(mapName, firstMemberGroup, secondMemberGroup);
+        final String[] addressArray = concatenateArrays(firstMemberGroup, secondMemberGroup);
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(addressArray);
+        final HazelcastInstance node1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance node3 = factory.newHazelcastInstance(config);
+
+        final IMap<Object, Object> test = node3.getMap(mapName);
+        test.put(1, 1);
+
+        assertBackupEntryCount(1, mapName, factory.getAllHazelcastInstances());
+    }
+
+    private void assertBackupEntryCount(final long expectedBackupEntryCount, final String mapName,
+                                        final Collection<HazelcastInstance> nodes) {
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                long backup = 0;
+                for (HazelcastInstance node : nodes) {
+                    final IMap<Object, Object> map = node.getMap(mapName);
+                    backup += getBackupEntryCount(map);
+                }
+                assertEquals(expectedBackupEntryCount, backup);
+            }
+        });
+    }
+
+    private long getBackupEntryCount(IMap<Object, Object> map) {
+        final LocalMapStats localMapStats = map.getLocalMapStats();
+        return localMapStats.getBackupEntryCount();
+    }
+
+    private String[] concatenateArrays(String[]... arrays) {
+        int len = 0;
+        for (String[] array : arrays) {
+            len += array.length;
+        }
+        String[] result = new String[len];
+        int destPos = 0;
+        for (String[] array : arrays) {
+            System.arraycopy(array, 0, result, destPos, array.length);
+            destPos += array.length;
+        }
+        return result;
+    }
+
+    private Config createConfig(String mapName, String[] firstGroup, String[] secondGroup) {
+        final MemberGroupConfig firstGroupConfig = createGroupConfig(firstGroup);
+        final MemberGroupConfig secondGroupConfig = createGroupConfig(secondGroup);
+
+        Config config = new Config();
+        config.getPartitionGroupConfig().setEnabled(true)
+                .setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
+        config.getPartitionGroupConfig().addMemberGroupConfig(firstGroupConfig);
+        config.getPartitionGroupConfig().addMemberGroupConfig(secondGroupConfig);
+        config.getNetworkConfig().getInterfaces().addInterface("127.0.0.*");
+
+        config.getMapConfig(mapName).setBackupCount(2);
+
+        return config;
+    }
+
+    private MemberGroupConfig createGroupConfig(String[] addressArray) {
+        final MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
+        for (String address : addressArray) {
+            memberGroupConfig.addInterface(address);
+        }
+        return memberGroupConfig;
     }
 }

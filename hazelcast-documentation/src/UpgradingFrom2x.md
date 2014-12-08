@@ -46,9 +46,9 @@ public static void main( String[] args ) throws InterruptedException {
   HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
   IMap map = hz.getMap( "test" );
   Collection<DistributedObject> objects = hazelcastInstance.getDistributedObjects();
-  for ( DistributedObject object : objects ) {
+  for ( DistributedObject distributedObject : objects ) {
     if ( distributedObject instanceof IMap ) {
-      System.out.println( "There is a map with name: " + object.getName() );
+      System.out.println( "There is a map with name: " + distributedObject.getName() );
     }
   }
 }
@@ -90,11 +90,11 @@ map.removeEntryListener( listenerId );
 Also MergePolicy interface has been renamed to MapMergePolicy and also returning null from the implemented `merge()` method causes the existing entry to be removed.
 
 - **IQueue changes:**
-There is no change on IQueue API but there are changes on how `IQueue` is configured. With Hazelcast 3.0 there will not be backing map configuration for queue. Settings like backup count will be directly configured on queue config. For queue configuration details, please see [Queue](#queue).
+There is no change on IQueue API but there are changes on how `IQueue` is configured. With Hazelcast 3.0 there will not be backing map configuration for queue. Settings like backup count will be directly configured on queue config. For queue configuration details, please see the [Queue section](#queue).
 - **Transaction API change:**
-In Hazelcast 3.0, transaction API is completely different. Please see [Transactions](#transactions).
+In Hazelcast 3.0, transaction API is completely different. Please see the [Transactions chapter](#transactions).
 - **ExecutorService API change:**
-Classes MultiTask and DistributedTask have been removed. All the functionality is supported by the newly presented interface IExecutorService. Please see [Executor Service](#executor-service).
+Classes MultiTask and DistributedTask have been removed. All the functionality is supported by the newly presented interface IExecutorService. Please see the [Executor Service section](#executor-service).
 - **LifeCycleService API:**
 The lifecycle has been simplified. `pause()`, `resume()`, `restart()` methods have been removed.
 - **AtomicNumber:**
@@ -103,7 +103,7 @@ The lifecycle has been simplified. `pause()`, `resume()`, `restart()` methods ha
 `await()` operation has been removed. We expect users to use `await()` method with timeout parameters.
 - **ISemaphore API:**
 The `ISemaphore` has been substantially changed. `attach()`, `detach()` methods have been removed.
-- In 2.x releases, the default value for *max-size* eviction policy was **cluster_wide_map_size**. In 3.x releases, default is **PER_NODE**. After upgrading, the *max-size* should be set according to this new default, if it is not changed. Otherwise, it is likely that OutOfMemory exception may be thrown.
+- In 2.x releases, the default value for `max-size` eviction policy was **cluster_wide_map_size**. In 3.x releases, default is **PER_NODE**. After upgrading, the `max-size` should be set according to this new default, if it is not changed. Otherwise, it is likely that OutOfMemory exception may be thrown.
 
 
 

@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.RemotePropagatable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
-public abstract class Operation implements DataSerializable {
+public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
 
     // serialized
     private String serviceName;
@@ -58,7 +59,6 @@ public abstract class Operation implements DataSerializable {
     private transient Address callerAddress;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
-    private transient long startTime;
 
     public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
@@ -195,16 +195,6 @@ public abstract class Operation implements DataSerializable {
         return responseHandler;
     }
 
-    public final long getStartTime() {
-        return startTime;
-    }
-
-    // Accessed using OperationAccessor
-    final Operation setStartTime(long startTime) {
-        this.startTime = startTime;
-        return this;
-    }
-
     public final long getInvocationTime() {
         return invocationTime;
     }
@@ -275,10 +265,13 @@ public abstract class Operation implements DataSerializable {
 
     @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
+        // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
+        // It is used to return deserialization exceptions to the caller
+        out.writeLong(callId);
+
         out.writeUTF(serviceName);
         out.writeInt(partitionId);
         out.writeInt(replicaIndex);
-        out.writeLong(callId);
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
@@ -290,10 +283,13 @@ public abstract class Operation implements DataSerializable {
 
     @Override
     public final void readData(ObjectDataInput in) throws IOException {
+        // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
+        // It is used to return deserialization exceptions to the caller
+        callId = in.readLong();
+
         serviceName = in.readUTF();
         partitionId = in.readInt();
         replicaIndex = in.readInt();
-        callId = in.readLong();
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();
@@ -306,4 +302,16 @@ public abstract class Operation implements DataSerializable {
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
 
     protected abstract void readInternal(ObjectDataInput in) throws IOException;
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Operation{");
+        sb.append("serviceName='").append(serviceName).append('\'');
+        sb.append(", callId=").append(callId);
+        sb.append(", invocationTime=").append(invocationTime);
+        sb.append(", waitTimeout=").append(waitTimeout);
+        sb.append(", callTimeout=").append(callTimeout);
+        sb.append('}');
+        return sb.toString();
+    }
 }

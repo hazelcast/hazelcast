@@ -24,6 +24,7 @@ import java.util.EventListener;
  * @param <E> message
  */
 public interface MessageListener<E> extends EventListener {
+
     /**
      * Invoked when a message is received for the added topic. Note that topic guarantees message ordering.
      * Therefore there is only one thread invoking onMessage. The user shouldn't keep the thread busy and preferably

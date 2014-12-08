@@ -35,6 +35,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     static final int PARALLEL_OPERATION_FACTORY = 5;
     static final int EVENT_PACKET = 6;
     static final int COLLECTION = 7;
+    static final int CALL_TIMEOUT_RESPONSE = 8;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -58,6 +59,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new EventPacket();
                     case COLLECTION:
                         return new SerializableCollection();
+                    case CALL_TIMEOUT_RESPONSE:
+                        return new CallTimeoutResponse();
                     default:
                         return null;
                 }

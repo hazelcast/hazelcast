@@ -21,21 +21,21 @@ import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.multimap.impl.operations.client.AddEntryListenerRequest;
-import com.hazelcast.multimap.impl.operations.client.ClearRequest;
-import com.hazelcast.multimap.impl.operations.client.ContainsRequest;
-import com.hazelcast.multimap.impl.operations.client.EntrySetRequest;
-import com.hazelcast.multimap.impl.operations.client.GetAllRequest;
-import com.hazelcast.multimap.impl.operations.client.KeyBasedContainsRequest;
-import com.hazelcast.multimap.impl.operations.client.KeySetRequest;
-import com.hazelcast.multimap.impl.operations.client.PortableEntrySetResponse;
-import com.hazelcast.multimap.impl.operations.client.PutRequest;
-import com.hazelcast.multimap.impl.operations.client.RemoveAllRequest;
-import com.hazelcast.multimap.impl.operations.client.SizeRequest;
-import com.hazelcast.multimap.impl.operations.client.ValuesRequest;
+import com.hazelcast.multimap.impl.client.AddEntryListenerRequest;
+import com.hazelcast.multimap.impl.client.ClearRequest;
+import com.hazelcast.multimap.impl.client.ContainsRequest;
+import com.hazelcast.multimap.impl.client.EntrySetRequest;
+import com.hazelcast.multimap.impl.client.GetAllRequest;
+import com.hazelcast.multimap.impl.client.KeyBasedContainsRequest;
+import com.hazelcast.multimap.impl.client.KeySetRequest;
+import com.hazelcast.multimap.impl.client.PortableEntrySetResponse;
+import com.hazelcast.multimap.impl.client.PutRequest;
+import com.hazelcast.multimap.impl.client.RemoveAllRequest;
+import com.hazelcast.multimap.impl.client.SizeRequest;
+import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -59,9 +59,7 @@ import static org.junit.Assert.*;
 public class MultiMapClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";
-//    static final CollectionProxyId mmProxyId = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
-//    static final CollectionProxyId listProxyId = new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST);
-    static final SerializationService ss = new SerializationServiceBuilder().build();
+    static final SerializationService ss = new DefaultSerializationServiceBuilder().build();
     static final Data dataKey = ss.toData(name);
 
     protected Config createConfig() {
@@ -71,7 +69,7 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
 //    @Test
 //    public void testAddAll() throws IOException {
 //
-//        List<Data> list = new ArrayList<Data>();
+//        List<Binary> list = new ArrayList<Binary>();
 //        list.add(ss.toData("item1"));
 //        list.add(ss.toData("item2"));
 //        list.add(ss.toData("item3"));
@@ -107,7 +105,7 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
 //        mm.put("key1", "value2");
 //        mm.put("key1", "value3");
 //
-//        List<Data> list = new ArrayList<Data>();
+//        List<Binary> list = new ArrayList<Binary>();
 //        list.add(ss.toData("value1"));
 //        list.add(ss.toData("value2"));
 //
@@ -132,7 +130,7 @@ public class MultiMapClientRequestTest extends ClientTestSupport {
 //        list.add("value2");
 //        list.add("value3");
 //
-//        Set<Data> dataSet = new HashSet<Data>(2);
+//        Set<Binary> dataSet = new HashSet<Binary>(2);
 //        dataSet.add(ss.toData("value2"));
 //        dataSet.add(ss.toData("value3"));
 //

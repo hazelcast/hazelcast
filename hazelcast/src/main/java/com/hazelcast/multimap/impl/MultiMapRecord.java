@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl;
 
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -78,11 +79,11 @@ public class MultiMapRecord implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(recordId);
-        out.writeObject(object);
+        IOUtil.writeObject(out, object);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         recordId = in.readLong();
-        object = in.readObject();
+        object = IOUtil.readObject(in);
     }
 }

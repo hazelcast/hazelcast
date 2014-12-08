@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,9 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -44,23 +41,81 @@ public class AtomicLongTest extends HazelcastTestSupport {
 
     @Test
     @ClientCompatibleTest
-    public void testSimpleAtomicLong() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        IAtomicLong an = hazelcastInstance.getAtomicLong("testAtomicLong");
-        assertEquals(0, an.get());
-        assertEquals(-1, an.decrementAndGet());
-        assertEquals(0, an.incrementAndGet());
-        assertEquals(1, an.incrementAndGet());
-        assertEquals(2, an.incrementAndGet());
-        assertEquals(1, an.decrementAndGet());
-        assertEquals(1, an.getAndSet(23));
-        assertEquals(28, an.addAndGet(5));
-        assertEquals(28, an.get());
-        assertEquals(28, an.getAndAdd(-3));
-        assertEquals(24, an.decrementAndGet());
-        Assert.assertFalse(an.compareAndSet(23, 50));
-        assertTrue(an.compareAndSet(24, 50));
-        assertTrue(an.compareAndSet(50, 0));
+    public void testSet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        atomicNumber.set(271);
+        assertEquals(271,atomicNumber.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testGet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertEquals(0,atomicNumber.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testDecrementAndGet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertEquals(-1,atomicNumber.decrementAndGet());
+        assertEquals(-2,atomicNumber.decrementAndGet());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testIncrementAndGet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertEquals(1,atomicNumber.incrementAndGet());
+        assertEquals(2,atomicNumber.incrementAndGet());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testGetAndSet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertEquals(0,atomicNumber.getAndSet(271));
+        assertEquals(271,atomicNumber.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testAddAndGet(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertEquals(271,atomicNumber.addAndGet(271));
+    }
+
+    @Test                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+    @ClientCompatibleTest
+    public void testGetAndAdd(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertEquals(0,atomicNumber.getAndAdd(271));
+        assertEquals(271,atomicNumber.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testCompareAndSet_whenSuccess(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertTrue(atomicNumber.compareAndSet(0, 271));
+        assertEquals(271,atomicNumber.get());
+    }
+
+    @Test
+    @ClientCompatibleTest
+    public void testCompareAndSet_whenNotSuccess(){
+        HazelcastInstance hzInstance = createHazelcastInstance();
+        IAtomicLong atomicNumber = hzInstance.getAtomicLong(randomString());
+        assertFalse(atomicNumber.compareAndSet(172, 0));
+        assertEquals(0,atomicNumber.get());
     }
 
     @Test

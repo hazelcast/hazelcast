@@ -28,8 +28,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
+import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA_SERIALIZABLE;
 
+/**
+ * This class is the default serializer for all types that are serialized using Hazelcast
+ * internal methods. Due to the operation responding on deserialization errors this class
+ * has a dependency to {@link com.hazelcast.nio.IOUtil#extractOperationCallId(Data, SerializationService)}.
+ * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
+ */
 final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
@@ -73,7 +79,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
     }
 
     public int getTypeId() {
-        return CONSTANT_TYPE_DATA;
+        return CONSTANT_TYPE_DATA_SERIALIZABLE;
     }
 
     public DataSerializable read(ObjectDataInput in) throws IOException {
@@ -83,6 +89,8 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         int factoryId = 0;
         String className = null;
         try {
+            // If you ever change the way this is serialized think about to change
+            // BasicOperationService::extractOperationCallId
             if (identified) {
                 factoryId = in.readInt();
                 final DataSerializableFactory dsf = factories.get(factoryId);
@@ -112,12 +120,14 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
             throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: "
                     + factoryId
                     + ", id: " + id
-                    + ", class: " + className
+                    + ", class: '" + className + "'"
                     + ", exception: " + e.getMessage(), e);
         }
     }
 
     public void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
+        // If you ever change the way this is serialized think about to change
+        // BasicOperationService::extractOperationCallId
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
         if (identified) {

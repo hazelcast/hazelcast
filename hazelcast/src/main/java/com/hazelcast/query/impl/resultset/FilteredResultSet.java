@@ -47,7 +47,7 @@ public class FilteredResultSet extends AbstractSet<QueryableEntry> {
                 break;
 
             }
-            entry.getKeyData().writeData(out);
+            out.writeData(entry.getKeyData());
         }
         return out.toByteArray();
     }

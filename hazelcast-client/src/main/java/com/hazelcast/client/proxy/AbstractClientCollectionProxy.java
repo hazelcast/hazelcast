@@ -42,6 +42,7 @@ import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -54,8 +55,8 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
 
     protected final String partitionKey;
 
-    public AbstractClientCollectionProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public AbstractClientCollectionProxy(String serviceName, String name) {
+        super(serviceName, name);
         partitionKey = getPartitionKey();
     }
 
@@ -79,7 +80,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
@@ -166,6 +167,10 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
                 } else {
                     listener.itemRemoved(itemEvent);
                 }
+            }
+
+            @Override
+            public void beforeListenerRegister() {
             }
 
             @Override

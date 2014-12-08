@@ -1,20 +1,21 @@
 package com.hazelcast.concurrent.idgen;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.UUID;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -29,8 +30,8 @@ public class IdGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testInit() {
-        testInit(0, false, 0);
         testInit(-1, false, 0);
+        testInit(0, true, 1);
         testInit(1, true, 2);
         testInit(10, true, 11);
     }

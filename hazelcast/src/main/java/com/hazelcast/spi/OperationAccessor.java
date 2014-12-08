@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.cluster.JoinOperation;
+import com.hazelcast.cluster.impl.operations.JoinOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationCycleOperation;
@@ -53,10 +53,6 @@ public final class OperationAccessor {
 
     public static void setCallId(Operation op, long callId) {
         op.setCallId(callId);
-    }
-
-    public static void setStartTime(Operation op, long startTime) {
-        op.setStartTime(startTime);
     }
 
     public static void setInvocationTime(Operation op, long invocationTime) {

@@ -21,7 +21,7 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.impl.QueueBackupAwareOperation;
+import com.hazelcast.queue.impl.operations.QueueBackupAwareOperation;
 import com.hazelcast.queue.impl.QueueContainer;
 import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;

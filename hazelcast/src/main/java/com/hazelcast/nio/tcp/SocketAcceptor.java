@@ -154,7 +154,6 @@ public class SocketAcceptor implements Runnable {
 
     private void log(Level level, String message, Exception e) {
         logger.log(level, message, e);
-        connectionManager.ioService.getSystemLogService().logConnection(message);
     }
 
 }

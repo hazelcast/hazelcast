@@ -60,14 +60,13 @@ public class ListIndexOfOperation extends CollectionOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(last);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         last = in.readBoolean();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 }

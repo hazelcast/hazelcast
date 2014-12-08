@@ -38,9 +38,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -91,6 +91,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
+    private static final int THREADS_PER_CORE = 20;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -123,7 +124,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
-            threadCount = coreSize * 2;
+            threadCount = coreSize * THREADS_PER_CORE;
         }
 
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
@@ -171,19 +172,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return nodeEngine.getProxyService();
     }
 
-    public void sendResponse(ClientEndpointImpl endpoint, Object response, int callId, boolean isError, boolean isEvent) {
+    public void sendResponse(ClientEndpoint endpoint, Data key, Object response, int callId, boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
-        sendResponse(endpoint, clientResponse, isEvent);
-    }
-
-    private void sendResponse(ClientEndpointImpl endpoint, ClientResponse response, boolean isEvent) {
-        Data resultData = serializationService.toData(response);
-        Connection conn = endpoint.getConnection();
-        final Packet packet = new Packet(resultData, serializationService.getPortableContext());
+        Data responseData = serializationService.toData(clientResponse);
+        int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
+        final Packet packet = new Packet(responseData, partitionId, serializationService.getPortableContext());
         if (isEvent) {
             packet.setHeader(Packet.HEADER_EVENT);
         }
+        Connection conn = endpoint.getConnection();
         conn.write(packet);
     }
 
@@ -221,18 +219,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return node.securityContext;
     }
 
-    public void bind(final ClientEndpoint ce) {
-        ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
+    public void bind(final ClientEndpoint endpoint) {
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
             Address address = new Address(conn.getRemoteSocketAddress());
-            TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) node.getConnectionManager();
-            connectionManager.bind((TcpIpConnection) conn, address, null, false);
+            ((TcpIpConnection) conn).setEndPoint(address);
         }
         sendClientEvent(endpoint);
     }
 
-    void sendClientEvent(ClientEndpointImpl endpoint) {
+    void sendClientEvent(ClientEndpoint endpoint) {
         if (!endpoint.isFirstConnection()) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
@@ -305,7 +301,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
             try {
                 final Connection conn = endpoint.getConnection();
-                if (conn.live()) {
+                if (conn.isAlive()) {
                     conn.close();
                 }
             } catch (Exception e) {
@@ -345,8 +341,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 if (request == null) {
                     handlePacketWithNullRequest();
                 } else if (request instanceof AuthenticationRequest) {
-                    endpoint = endpointManager.createEndpoint(conn);
-                    if (endpoint != null) {
+                    if (conn.isAlive()) {
+                        endpoint = new ClientEndpointImpl(ClientEngineImpl.this, conn);
                         processRequest(endpoint, request);
                     } else {
                         handleEndpointNotCreatedConnectionNotAlive();
@@ -359,7 +355,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                     handleAuthenticationFailure(endpoint, request);
                 }
             } catch (Throwable e) {
-                handleProcessingFailure(endpoint, request, e);
+                handleProcessingFailure(endpoint, request, packet.getData(), e);
             }
         }
 
@@ -378,7 +374,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void handleMissingEndpoint(Connection conn) {
-            if (conn.live()) {
+            if (conn.isAlive()) {
                 logger.severe("Dropping: " + packet + " -> no endpoint found for live connection.");
             } else {
                 if (logger.isFinestEnabled()) {
@@ -387,7 +383,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
         }
 
-        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Throwable e) {
+        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Data data, Throwable e) {
             Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
                 if (request == null) {
@@ -399,10 +395,34 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
             if (request != null && endpoint != null) {
                 endpoint.sendResponse(e, request.getCallId());
+            } else if (data != null && endpoint != null) {
+                int callId = extractCallId(data);
+                if (callId != -1) {
+                    endpoint.sendResponse(e, callId);
+                }
+                // Worst case, seems like we cannot even read the callId, wrong/broken packet?
             }
         }
 
+        private int extractCallId(Data data) {
+            try {
+                PortableReader portableReader = serializationService.createPortableReader(data);
+                return portableReader.readInt("cId");
+
+            } catch (Throwable e) {
+                Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, e.getMessage(), e);
+                }
+            }
+            return -1;
+        }
+
         private void processRequest(ClientEndpointImpl endpoint, ClientRequest request) throws Exception {
+            if (!node.joined()) {
+                throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+            }
+
             request.setEndpoint(endpoint);
             initService(request);
             request.setClientEngine(ClientEngineImpl.this);

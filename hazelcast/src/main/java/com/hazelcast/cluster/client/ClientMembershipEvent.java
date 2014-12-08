@@ -16,7 +16,7 @@
 
 package com.hazelcast.cluster.client;
 
-import com.hazelcast.cluster.ClusterDataSerializerHook;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;

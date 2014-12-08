@@ -23,6 +23,7 @@ package com.hazelcast.core;
  * @see IAtomicReference
  */
 public interface IAtomicLong extends DistributedObject {
+
     /**
      * Returns the name of this IAtomicLong instance.
      *

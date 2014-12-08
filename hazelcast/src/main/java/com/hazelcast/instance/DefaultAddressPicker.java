@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cluster.TcpIpJoiner;
+import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -361,7 +361,6 @@ class DefaultAddressPicker implements AddressPicker {
 
     private void log(Level level, String message) {
         logger.log(level, message);
-        node.getSystemLogService().logNode(message);
     }
 
     private class InterfaceDefinition {

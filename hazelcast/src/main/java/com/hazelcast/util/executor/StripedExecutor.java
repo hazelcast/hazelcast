@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Random;
@@ -188,6 +189,7 @@ public final class StripedExecutor implements Executor {
             try {
                 task.run();
             } catch (Throwable e) {
+                OutOfMemoryErrorDispatcher.inspectOutputMemoryError(e);
                 logger.severe(getName() + " caught an exception while processing task:" + task, e);
             }
         }

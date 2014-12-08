@@ -149,6 +149,6 @@ public final class Hazelcast {
      * @see OutOfMemoryHandler
      */
     public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
-        OutOfMemoryErrorDispatcher.setHandler(outOfMemoryHandler);
+        OutOfMemoryErrorDispatcher.setServerHandler(outOfMemoryHandler);
     }
 }

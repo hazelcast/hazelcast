@@ -21,18 +21,19 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.SerializableClientEndPoint;
 import com.hazelcast.management.SerializableMXBeans;
+import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
-import java.util.ArrayList;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.JsonUtil.getArray;
@@ -41,8 +42,6 @@ import static com.hazelcast.util.JsonUtil.getString;
 
 public class MemberStateImpl implements MemberState {
 
-    public static final int DEFAULT_PARTITION_COUNT = 271;
-
     private String address;
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
     private Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
@@ -50,9 +49,11 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
-    private List<Integer> partitions = new ArrayList<Integer>(DEFAULT_PARTITION_COUNT);
+    private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
+    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
+    private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
 
     public MemberStateImpl() {
     }
@@ -86,71 +87,62 @@ public class MemberStateImpl implements MemberState {
             executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("executorStats", executorStatsObject);
+        JsonObject cacheStatsObject = new JsonObject();
+        for (Map.Entry<String, LocalCacheStats> entry : cacheStats.entrySet()) {
+            cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
+        }
+        root.add("cacheStats", cacheStatsObject);
         JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
         }
         root.add("runtimeProps", runtimePropsObject);
-        JsonArray partitionsArray = new JsonArray();
-        for (Integer lsPartition : partitions) {
-            partitionsArray.add(lsPartition);
-        }
-        root.add("partitions", partitionsArray);
         JsonArray clientsArray = new JsonArray();
         for (SerializableClientEndPoint client : clients) {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
         root.add("beans", beans.toJson());
+        root.add("memoryStats", memoryStats.toJson());
+        root.add("memberPartitionState", memberPartitionState.toJson());
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
-        final Iterator<JsonObject.Member> mapStatsIterator = getObject(json, "mapStats").iterator();
-        while (mapStatsIterator.hasNext()) {
-            final JsonObject.Member next = mapStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "mapStats")) {
             LocalMapStatsImpl stats = new LocalMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             mapStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> multiMapStatsIterator = getObject(json, "multiMapStats").iterator();
-        while (multiMapStatsIterator.hasNext()) {
-            final JsonObject.Member next = multiMapStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "multiMapStats")) {
             LocalMultiMapStatsImpl stats = new LocalMultiMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             multiMapStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> queueStatsIterator = getObject(json, "queueStats").iterator();
-        while (queueStatsIterator.hasNext()) {
-            final JsonObject.Member next = queueStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "queueStats")) {
             LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
             stats.fromJson(next.getValue().asObject());
             queueStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> topicStatsIterator = getObject(json, "topicStats").iterator();
-        while (topicStatsIterator.hasNext()) {
-            final JsonObject.Member next = topicStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "topicStats")) {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             topicStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> executorStatsIterator = getObject(json, "executorStats").iterator();
-        while (executorStatsIterator.hasNext()) {
-            final JsonObject.Member next = executorStatsIterator.next();
+        for (JsonObject.Member next : getObject(json, "executorStats")) {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
             stats.fromJson(next.getValue().asObject());
             executorStats.put(next.getName(), stats);
         }
-        final Iterator<JsonObject.Member> propsIterator = getObject(json, "runtimeProps").iterator();
-        while (propsIterator.hasNext()) {
-            final JsonObject.Member next = propsIterator.next();
-            runtimeProps.put(next.getName(), next.getValue().asLong());
+        for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
+            LocalCacheStats stats = new LocalCacheStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            cacheStats.put(next.getName(), stats);
         }
-        final JsonArray jsonPartitions = getArray(json, "partitions");
-        for (JsonValue jsonPartition : jsonPartitions) {
-            partitions.add(jsonPartition.asInt());
+        for (JsonObject.Member next : getObject(json, "runtimeProps")) {
+            runtimeProps.put(next.getName(), next.getValue().asLong());
         }
         final JsonArray jsonClients = getArray(json, "clients");
         for (JsonValue jsonClient : jsonClients) {
@@ -160,22 +152,16 @@ public class MemberStateImpl implements MemberState {
         }
         beans = new SerializableMXBeans();
         beans.fromJson(getObject(json, "beans"));
+        JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
+        if (jsonMemoryStats != null) {
+            memoryStats.fromJson(jsonMemoryStats);
+        }
+        JsonObject jsonMemberPartitionState = getObject(json, "memberPartitionState", null);
+        if (jsonMemberPartitionState != null) {
+            memberPartitionState = new MemberPartitionStateImpl();
+            memberPartitionState.fromJson(jsonMemberPartitionState);
+        }
     }
-
-    public void clearPartitions() {
-        partitions.clear();
-    }
-
-    public void addPartition(int partitionId) {
-        partitions.add(partitionId);
-    }
-
-
-    @Override
-    public List<Integer> getPartitions() {
-        return partitions;
-    }
-
 
     @Override
     public Map<String, Long> getRuntimeProps() {
@@ -212,6 +198,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalCacheStats getLocalCacheStats(String cacheName) {
+        return cacheStats.get(cacheName);
+    }
+
+    @Override
     public String getAddress() {
         return address;
     }
@@ -240,6 +231,10 @@ public class MemberStateImpl implements MemberState {
         executorStats.put(name, localExecutorStats);
     }
 
+    public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
+        cacheStats.put(name, localCacheStats);
+    }
+
     public Collection<SerializableClientEndPoint> getClients() {
         return clients;
     }
@@ -258,6 +253,24 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalMemoryStats getLocalMemoryStats() {
+        return memoryStats;
+    }
+
+    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
+        this.memoryStats = memoryStats;
+    }
+
+    @Override
+    public MemberPartitionState getMemberPartitionState() {
+        return memberPartitionState;
+    }
+
+    public void setMemberPartitionState(MemberPartitionState memberPartitionState) {
+        this.memberPartitionState = memberPartitionState;
+    }
+
+    @Override
     public int hashCode() {
         int result = address != null ? address.hashCode() : 0;
         result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
@@ -265,7 +278,8 @@ public class MemberStateImpl implements MemberState {
         result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
-        result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
+        result = 31 * result + (cacheStats != null ? cacheStats.hashCode() : 0);
+        result = 31 * result + (memberPartitionState != null ? memberPartitionState.hashCode() : 0);
         return result;
     }
 
@@ -292,9 +306,6 @@ public class MemberStateImpl implements MemberState {
         if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null) {
             return false;
         }
-        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) {
-            return false;
-        }
         if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) {
             return false;
         }
@@ -302,6 +313,16 @@ public class MemberStateImpl implements MemberState {
             return false;
         }
         if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) {
+            return false;
+        }
+        if (cacheStats != null ? !cacheStats.equals(that.cacheStats) : that.cacheStats != null) {
+            return false;
+        }
+        if (memoryStats != null ? !memoryStats.equals(that.memoryStats) : that.memoryStats != null) {
+            return false;
+        }
+        if (memberPartitionState != null
+                ? !memberPartitionState.equals(that.memberPartitionState) : that.memberPartitionState != null) {
             return false;
         }
 
@@ -319,7 +340,9 @@ public class MemberStateImpl implements MemberState {
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
                 + ", executorStats=" + executorStats
-                + ", partitions=" + partitions
+                + ", cacheStats=" + cacheStats
+                + ", memoryStats=" + memoryStats
+                + ", memberPartitionState=" + memberPartitionState
                 + '}';
     }
 }

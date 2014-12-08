@@ -65,6 +65,14 @@ public final class SampleObjects {
             name = reader.readUTF("n");
             age = reader.readInt("a");
         }
+
+        @Override
+        public String toString() {
+            return "PortableEmployee{"
+                    + "age=" + age
+                    + ", name='" + name + '\''
+                    + '}';
+        }
     }
 
     public static class ValueType implements Serializable {

@@ -17,15 +17,12 @@
 package com.hazelcast.core;
 
 /**
- *
  * Used to get HazelcastInstance reference when submitting a Runnable/Callable using Hazelcast ExecutorService.
  * Before executing the Runnable/Callable Hazelcast will invoke
  * {@link HazelcastInstanceAware#setHazelcastInstance(HazelcastInstance)}  method with the reference to HazelcastInstance
  * that is executing. This way the implementer will have a chance to get the reference to HazelcastInstance.
- *
  */
 public interface HazelcastInstanceAware {
-
 
     void setHazelcastInstance(HazelcastInstance hazelcastInstance);
 }

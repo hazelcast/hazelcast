@@ -33,6 +33,10 @@ public interface ReplicatedRecordStore {
 
     Object remove(Object key);
 
+    void evict(Object key);
+
+    void removeTombstone(Object key);
+
     Object get(Object key);
 
     Object put(Object key, Object value);

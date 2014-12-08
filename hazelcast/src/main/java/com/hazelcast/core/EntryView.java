@@ -42,7 +42,7 @@ public interface EntryView<K, V> {
      * Returns the cost (in bytes) of the entry.
      * <p/>
      * <p><b>Warning:</b></p>
-     * <p>                                                                                      ˆ
+     * <p>
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
@@ -54,7 +54,7 @@ public interface EntryView<K, V> {
      * Returns the creation time of the entry.
      * <p/>
      * <p><b>Warning:</b></p>
-     * <p>                                                                                      ˆ
+     * <p>
      * This method returns -1 if statistics is not enabled.
      * </p>
      *

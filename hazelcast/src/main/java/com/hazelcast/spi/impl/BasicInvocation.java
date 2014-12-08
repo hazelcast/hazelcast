@@ -28,16 +28,16 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
-import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
@@ -53,8 +53,6 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  * {@link com.hazelcast.spi.impl.BasicInvocationFuture}.
  */
 abstract class BasicInvocation implements ResponseHandler, Runnable {
-
-    public static final long TIMEOUT = 5;
 
     /**
      * A response indicating the 'null' value.
@@ -84,12 +82,12 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
      */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
-    private static final int TEN_FACTOR = 10;
-    private static final int NINETY_NINE_COUNT = 99;
-    private static final int INVOKE_COUNT_FIVE = 5;
-
-    private static final AtomicReferenceFieldUpdater RESPONSE_RECEIVED_FIELD_UPDATER =
+    private static final AtomicReferenceFieldUpdater<BasicInvocation, Boolean> RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
+
+    private static final AtomicIntegerFieldUpdater<BasicInvocation> BACKUPS_COMPLETED_FIELD_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(BasicInvocation.class, "backupsCompleted");
+
 
     static final class InternalResponse {
 
@@ -111,6 +109,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private static final int LOG_MAX_INVOCATION_COUNT = 99;
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
 
+    /**
+     * The time in millis when the response of the primary has been received.
+     */
+    protected long pendingResponseReceivedMillis = -1;
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
     protected final String serviceName;
@@ -122,9 +124,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     protected final ILogger logger;
     final boolean resultDeserialized;
     boolean remote;
-    volatile int backupsCompleted;
-    volatile NormalResponse potentialResponse;
+
+    volatile NormalResponse pendingResponse;
     volatile int backupsExpected;
+    volatile int backupsCompleted;
 
     private final BasicInvocationFuture invocationFuture;
     private final BasicOperationService operationService;
@@ -132,7 +135,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
 
-    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+     //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private final String executorName;
@@ -143,8 +146,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
                     String executorName, boolean resultDeserialized) {
-        this.logger = nodeEngine.getLogger(BasicInvocation.class);
         this.operationService = (BasicOperationService) nodeEngine.operationService;
+        this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -176,16 +179,12 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         return partitionId;
     }
 
-    ExecutorService getAsyncExecutor() {
-        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
-    }
-
     private long getCallTimeout(long callTimeout) {
         if (callTimeout > 0) {
             return callTimeout;
         }
 
-        final long defaultCallTimeout = operationService.getDefaultCallTimeout();
+        final long defaultCallTimeout = operationService.getDefaultCallTimeoutMillis();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = op.getWaitTimeout();
             if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
@@ -223,9 +222,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex)
                     .setExecutorName(executorName);
-            if (op.getCallerUuid() == null) {
-                op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-            }
+
             if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
@@ -242,13 +239,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         } else {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    private void resetAndReInvoke() {
-        invokeCount = 0;
-        potentialResponse = null;
-        backupsExpected = -1;
-        doInvoke();
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
@@ -274,6 +264,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     private void doInvokeLocal() {
+        if (op.getCallerUuid() == null) {
+            op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+        }
+
         if (op instanceof BackupAwareOperation) {
             operationService.registerInvocation(this);
         }
@@ -395,7 +389,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
-    //@Override
     public void notify(Object obj) {
         Object response = resolveResponse(obj);
 
@@ -409,17 +402,46 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
 
+        if (response instanceof CallTimeoutResponse) {
+            handleTimeoutResponse();
+            return;
+        }
+
+        if (response instanceof NormalResponse) {
+            handleNormalResponse((NormalResponse) response);
+            return;
+        }
+
+        // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
+        invocationFuture.set(response);
+    }
+
+    private void handleNormalResponse(NormalResponse response) {
         //if a regular response came and there are backups, we need to wait for the backs.
-        //when the backups complete, the response will be send by the last backup.
-        if (response instanceof NormalResponse && op instanceof BackupAwareOperation) {
-            final NormalResponse resp = (NormalResponse) response;
-            if (resp.getBackupCount() > 0) {
-                waitForBackups(resp.getBackupCount(), TIMEOUT, TimeUnit.SECONDS, resp);
+        //when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
+
+        int backupsExpected = response.getBackupCount();
+        if (backupsExpected > backupsCompleted) {
+            // So the invocation has backups and since not all backups have completed, we need to wait.
+            // It could be that backups arrive earlier than the response.
+
+            this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
+
+            this.backupsExpected = backupsExpected;
+
+            // It is very important that the response is set after the backupsExpected is set. Else the system
+            // can assume the invocation is complete because there is a response and no backups need to respond.
+            this.pendingResponse = response;
+
+            if (backupsCompleted != backupsExpected) {
+                // We are done since not all backups have completed. Therefor we should not notify the future.
                 return;
             }
         }
 
-        //we don't need to wait for a backup, so we can set the response immediately.
+        // We are going to notify the future that a response is available. This can happen when:
+        // - we had a regular operation (so no backups we need to wait for) that completed.
+        // - we had a backup-aware operation that has completed, but also all its backups have completed.
         invocationFuture.set(response);
     }
 
@@ -435,7 +457,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             final ExecutionService ex = nodeEngine.getExecutionService();
             // fast retry for the first few invocations
             if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
-                getAsyncExecutor().execute(this);
+                operationService.asyncExecutor.execute(this);
             } else {
                 ex.schedule(ExecutionService.ASYNC_EXECUTOR, this, tryPauseMillis, TimeUnit.MILLISECONDS);
             }
@@ -450,10 +472,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         Throwable error = getError(obj);
         if (error == null) {
             return obj;
-        }
-
-        if (error instanceof CallTimeoutException) {
-            return resolveCallTimeout();
         }
 
         ExceptionAction action = onException(error);
@@ -474,7 +492,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
-    private Object resolveCallTimeout() {
+    private void handleTimeoutResponse() {
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
         }
@@ -485,10 +503,116 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             op.setWaitTimeout(waitTimeout);
         }
         invokeCount--;
-        return RETRY_RESPONSE;
+        handleRetryResponse();
     }
 
     protected abstract Address getTarget();
+
+    public void signalOneBackupComplete() {
+        final int newBackupsCompleted = BACKUPS_COMPLETED_FIELD_UPDATER.incrementAndGet(this);
+
+        final NormalResponse pendingResponse = this.pendingResponse;
+        if (pendingResponse == null) {
+            // No pendingResponse has been set, so we are done since the invocation on the primary needs to complete first.
+            return;
+        }
+
+        // If a pendingResponse is set, then the backupsExpected has been set. So we can now safely read backupsExpected.
+        final int backupsExpected = this.backupsExpected;
+        if (backupsExpected < newBackupsCompleted) {
+            // the backups have not yet completed. So we are done.
+            return;
+        }
+
+        if (backupsExpected != newBackupsCompleted) {
+            // We managed to complete one backup, but we were not the one completing the last backup. So we are done.
+            return;
+        }
+
+        // We are the lucky ones since we just managed to complete the last backup for this invocation and since the
+        // pendingResponse is set, we can set it on the future.
+        invocationFuture.set(pendingResponse);
+    }
+
+    public void handleOperationTimeout() {
+        if (pendingResponse != null) {
+            return;
+        }
+
+        if (invocationFuture.getWaitingThreadsCount() > 0) {
+            // there are already waiting threads
+            // no need to check timeout implicitly
+            return;
+        }
+
+        long maxCallTimeout = invocationFuture.getMaxCallTimeout();
+        if (maxCallTimeout == Long.MAX_VALUE) {
+            return;
+        }
+        long expirationTime = op.getInvocationTime() + maxCallTimeout;
+        if (expirationTime < 0) {
+            // impossible to expire
+            return;
+        }
+        if (expirationTime < Clock.currentTimeMillis()) {
+            invocationFuture.set(invocationFuture.newOperationTimeoutException(maxCallTimeout));
+        }
+    }
+
+    public void handleBackupTimeout(long timeoutMillis) {
+        // If the backups have completed, we are done.
+        // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
+        // backupsCompleted.
+        if (backupsExpected == backupsCompleted) {
+            return;
+        }
+
+        long responseReceivedMillis = this.pendingResponseReceivedMillis;
+        if (responseReceivedMillis == -1) {
+            // no response has yet been received, so we we are done. We are only going to re-invoke an operation
+            // if the response of the primary has been received, but the backups have not replied.
+            return;
+        }
+
+        long expirationTime = responseReceivedMillis + timeoutMillis;
+        boolean expired = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+        if (!expired) {
+            // This invocation has not yet expired (so has not been in the system for a too long period) we ignore it.
+            return;
+        }
+
+        boolean targetDead = nodeEngine.getClusterService().getMember(invTarget) == null;
+        if (targetDead) {
+            // The target doesn't exist, we are going to re-invoke this invocation. The reason why this operation is being invoked
+            // is that otherwise it would be possible to loose data. In this particular case it could have happened that e.g.
+            // a map.put was done, the primary has returned the response but has not yet completed the backups and then the
+            // primary fails. The consequence is that the backups never will be made and the effects of the map.put, even though
+            // it returned a value, will never be visible. So if we would complete the future, a response is send even though
+            // its changes never made it into the system.
+            resetAndReInvoke();
+            return;
+        }
+
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        final Response pendingResponse = this.pendingResponse;
+        if (pendingResponse != null) {
+            invocationFuture.set(pendingResponse);
+        }
+    }
+
+    private void resetAndReInvoke() {
+        invokeCount = 0;
+        pendingResponse = null;
+        pendingResponseReceivedMillis = -1;
+        backupsExpected = 0;
+        backupsCompleted = 0;
+        doInvoke();
+    }
+
+    @Override
+    public void run() {
+        doInvoke();
+    }
 
     @Override
     public String toString() {
@@ -503,69 +627,9 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         sb.append(", invokeCount=").append(invokeCount);
         sb.append(", callTimeout=").append(callTimeout);
         sb.append(", target=").append(invTarget);
+        sb.append(", backupsExpected=").append(backupsExpected);
+        sb.append(", backupsCompleted=").append(backupsCompleted);
         sb.append('}');
         return sb.toString();
-    }
-
-
-    //backupsCompleted is incremented while a lock is hold.
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
-    public void signalOneBackupComplete() {
-        synchronized (this) {
-            backupsCompleted++;
-
-            if (backupsExpected == -1) {
-                return;
-            }
-
-            if (backupsExpected != backupsCompleted) {
-                return;
-            }
-
-            if (potentialResponse != null) {
-                invocationFuture.set(potentialResponse);
-            }
-        }
-    }
-
-    private void waitForBackups(int backupCount, long timeout, TimeUnit unit, NormalResponse response) {
-        synchronized (this) {
-            this.backupsExpected = backupCount;
-
-            if (backupsCompleted == backupsExpected) {
-                invocationFuture.set(response);
-                return;
-            }
-
-            this.potentialResponse = response;
-        }
-
-        nodeEngine.getExecutionService().schedule(ExecutionService.ASYNC_EXECUTOR, new Runnable() {
-            @Override
-            public void run() {
-                synchronized (BasicInvocation.this) {
-                    if (backupsExpected == backupsCompleted) {
-                        return;
-                    }
-                }
-
-                if (nodeEngine.getClusterService().getMember(invTarget) != null) {
-                    synchronized (BasicInvocation.this) {
-                        if (BasicInvocation.this.potentialResponse != null) {
-                            invocationFuture.set(BasicInvocation.this.potentialResponse);
-                            BasicInvocation.this.potentialResponse = null;
-                        }
-                    }
-                    return;
-                }
-
-                resetAndReInvoke();
-            }
-        }, timeout, unit);
-    }
-
-    @Override
-    public void run() {
-        doInvoke();
     }
 }

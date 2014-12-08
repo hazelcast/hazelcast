@@ -178,7 +178,7 @@ public class MapConfigTest {
 
     @Test
     public void testGetMaxSize() {
-        assertEquals(MapConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
+        assertEquals(MaxSizeConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
     }
 
     @Test
@@ -201,7 +201,7 @@ public class MapConfigTest {
 
     @Test
     public void testSetEvictionPolicy() {
-        assertEquals(MapConfig.EvictionPolicy.LRU, new MapConfig().setEvictionPolicy(MapConfig.EvictionPolicy.LRU).getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, new MapConfig().setEvictionPolicy(EvictionPolicy.LRU).getEvictionPolicy());
     }
 
     /**

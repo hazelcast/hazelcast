@@ -16,7 +16,7 @@
 
 package com.hazelcast.queue.impl.client;
 
-import com.hazelcast.queue.impl.PollOperation;
+import com.hazelcast.queue.impl.operations.PollOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
@@ -26,7 +26,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.PollOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.PollOperation}
  */
 public class PollRequest extends QueueRequest {
 

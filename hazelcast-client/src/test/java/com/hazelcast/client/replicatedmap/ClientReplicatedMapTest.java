@@ -24,10 +24,14 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.WatchedOperationExecutor;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -42,6 +46,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class ClientReplicatedMapTest
         extends HazelcastTestSupport {
 

@@ -151,7 +151,7 @@ public final class HazelcastInstanceFactory {
                 Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
             }
             HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
-            OutOfMemoryErrorDispatcher.register(hazelcastInstance);
+            OutOfMemoryErrorDispatcher.registerServer(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
             final Node node = hazelcastInstance.node;
             final boolean firstMember = isFirstMember(node);
@@ -209,6 +209,14 @@ public final class HazelcastInstanceFactory {
     }
 
     public static void shutdownAll() {
+        shutdownAll(false);
+    }
+
+    public static void terminateAll() {
+        shutdownAll(true);
+    }
+
+    private static void shutdownAll(boolean terminate) {
         final List<HazelcastInstanceProxy> instances = new LinkedList<HazelcastInstanceProxy>();
         for (InstanceFuture f : INSTANCE_MAP.values()) {
             try {
@@ -219,7 +227,7 @@ public final class HazelcastInstanceFactory {
         }
 
         INSTANCE_MAP.clear();
-        OutOfMemoryErrorDispatcher.clear();
+        OutOfMemoryErrorDispatcher.clearServers();
         ManagementService.shutdownAll();
         Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
             public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {
@@ -227,7 +235,11 @@ public final class HazelcastInstanceFactory {
             }
         });
         for (HazelcastInstanceProxy proxy : instances) {
-            proxy.getLifecycleService().shutdown();
+            if (terminate) {
+                proxy.getLifecycleService().terminate();
+            } else {
+                proxy.getLifecycleService().shutdown();
+            }
             proxy.original = null;
         }
     }
@@ -248,7 +260,7 @@ public final class HazelcastInstanceFactory {
     }
 
     static void remove(HazelcastInstanceImpl instance) {
-        OutOfMemoryErrorDispatcher.deregister(instance);
+        OutOfMemoryErrorDispatcher.deregisterServer(instance);
         InstanceFuture future = INSTANCE_MAP.remove(instance.getName());
         if (future != null) {
             future.get().original = null;

@@ -298,7 +298,7 @@ public interface IMap<K, V>
      * // do some other stuff, when ready get the result
      * Object oldValue = future.get();
      * </code>
-     * Future.get() will block until the actual map.get() completes.
+     * Future.get() will block until the actual map.put() completes.
      * If the application requires timely response,
      * then Future.get(timeout, timeunit) can be used.
      * <code>
@@ -457,7 +457,7 @@ public interface IMap<K, V>
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
-     * Same as {@link #put(K, V, long, TimeUnit)} but MapStore, if defined,
+     * Same as {@link #put(K, V, long, java.util.concurrent.TimeUnit)} but MapStore, if defined,
      * will not be called to store/persist the entry.  If ttl is 0, then
      * the entry lives forever.
      * <p/>
@@ -593,7 +593,6 @@ public interface IMap<K, V>
      * @param ttl      maximum time for this entry to stay in the map
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
-     * @return old value of the entry
      * @throws NullPointerException if the specified key or value is null
      */
     void set(K key, V value, long ttl, TimeUnit timeunit);
@@ -761,6 +760,7 @@ public interface IMap<K, V>
      * other nodes for load balancing and/or membership change.
      *
      * @param listener entry listener
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @see #localKeySet()
      */
     String addLocalEntryListener(EntryListener<K, V> listener);
@@ -774,7 +774,7 @@ public interface IMap<K, V>
      * @param predicate    predicate for filtering entries
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
 
@@ -788,7 +788,7 @@ public interface IMap<K, V>
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
@@ -817,6 +817,7 @@ public interface IMap<K, V>
      * @param listener     entry listener
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
@@ -843,6 +844,7 @@ public interface IMap<K, V>
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified key is null
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
@@ -855,6 +857,7 @@ public interface IMap<K, V>
      * @param predicate    predicate for filtering entries
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
 
@@ -867,6 +870,7 @@ public interface IMap<K, V>
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 

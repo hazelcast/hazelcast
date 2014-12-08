@@ -21,6 +21,7 @@ import com.hazelcast.client.executor.tasks.CancellationAwareTask;
 import com.hazelcast.client.executor.tasks.FailingCallable;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.executor.tasks.SelectNoMembers;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
@@ -28,18 +29,18 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -178,6 +179,24 @@ public class ClientExecutorServiceTest {
 
         failingFuture.get();
     }
+
+    @Test
+    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+        IExecutorService service = client.getExecutorService(randomString());
+        final CountDownLatch latch = new CountDownLatch(1);
+        service.submit(new FailingCallable(), new ExecutionCallback<String>() {
+            @Override
+            public void onResponse(String response) {
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                latch.countDown();
+            }
+        });
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
 
     @Test(expected = IllegalStateException.class)
     public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {

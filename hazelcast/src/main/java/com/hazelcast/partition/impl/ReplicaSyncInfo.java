@@ -1,12 +1,10 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.Clock;
 
 final class ReplicaSyncInfo {
     final int partitionId;
     final int replicaIndex;
-    final long requestTime = Clock.currentTimeMillis();
     final Address target;
 
     ReplicaSyncInfo(int partitionId, int replicaIndex, Address target) {
@@ -47,7 +45,6 @@ final class ReplicaSyncInfo {
         StringBuilder sb = new StringBuilder("ReplicaSyncInfo{");
         sb.append("partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", requestTime=").append(requestTime);
         sb.append(", target=").append(target);
         sb.append('}');
         return sb.toString();

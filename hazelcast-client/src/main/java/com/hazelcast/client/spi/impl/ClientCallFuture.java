@@ -16,29 +16,30 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,8 +56,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final int retryCount;
     private final int retryWaitTime;
 
-
-    private Object response;
+    private volatile Object response;
 
     private final ClientRequest request;
 
@@ -76,7 +76,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
-    public ClientCallFuture(HazelcastClient client, ClientRequest request, EventHandler handler) {
+    public ClientCallFuture(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler) {
         final ClientProperties clientProperties = client.getClientProperties();
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
@@ -87,7 +87,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         int waitTime = clientProperties.getRetryWaitTime().getInteger();
         this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
 
-
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
@@ -96,18 +95,22 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         this.handler = handler;
     }
 
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
     }
 
+    @Override
     public boolean isCancelled() {
         return false;
     }
 
+    @Override
     public boolean isDone() {
         return response != null;
     }
 
+    @Override
     public V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -116,6 +119,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         }
     }
 
+    @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
@@ -143,6 +147,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return true;
     }
 
+    @Override
     public void notify(Object response) {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
@@ -184,7 +189,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             this.notifyAll();
         }
         for (ExecutionCallbackNode node : callbackNodeList) {
-            runAsynchronous(node.callback, node.executor);
+            runAsynchronous(node.callback, node.executor, node.deserialized);
         }
         callbackNodeList.clear();
     }
@@ -212,17 +217,30 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return (V) response;
     }
 
+    @Override
     public void andThen(ExecutionCallback<V> callback) {
         andThen(callback, executionService.getAsyncExecutor());
     }
 
+    @Override
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
         synchronized (this) {
             if (response != null) {
-                runAsynchronous(callback, executor);
+                runAsynchronous(callback, executor, true);
                 return;
             }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor, true));
+        }
+    }
+
+    public void andThenInternal(ExecutionCallback<Data> callback) {
+        ExecutorService executor = executionService.getAsyncExecutor();
+        synchronized (this) {
+            if (response != null) {
+                runAsynchronous(callback, executor, false);
+                return;
+            }
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor, false));
         }
     }
 
@@ -245,36 +263,47 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (handler == null && reSendCount.incrementAndGet() > retryCount) {
             return false;
         }
-        sleep();
-        executionService.execute(new ReSendTask());
+        if (handler != null) {
+            handler.beforeListenerRegister();
+        }
+        executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
     }
 
-    private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
-        executor.execute(new Runnable() {
-            public void run() {
-                try {
-                    callback.onResponse(serializationService.toObject(resolveResponse()));
-                } catch (Throwable t) {
-                    callback.onFailure(t);
+    private void runAsynchronous(final ExecutionCallback callback, Executor executor, final boolean deserialized) {
+        try {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Object resp;
+                        try {
+                            resp = resolveResponse();
+                        } catch (Throwable t) {
+                            callback.onFailure(t);
+                            return;
+                        }
+                        if (deserialized) {
+                            resp = serializationService.toObject(resp);
+                        }
+                        callback.onResponse(resp);
+                    } catch (Throwable t) {
+                        LOGGER.severe("Failed to execute callback: " + callback
+                                + "! Request: " + request + ", response: " + response, t);
+                    }
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException e) {
+            LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
+        }
     }
 
     public void setConnection(ClientConnection connection) {
         this.connection = connection;
     }
 
-    private void sleep() {
-        try {
-            Thread.sleep(retryWaitTime);
-        } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
-        }
-    }
-
     class ReSendTask implements Runnable {
+        @Override
         public void run() {
             try {
                 invocationService.reSend(ClientCallFuture.this);
@@ -293,10 +322,12 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
         final ExecutionCallback callback;
         final Executor executor;
+        final boolean deserialized;
 
-        ExecutionCallbackNode(ExecutionCallback callback, Executor executor) {
+        ExecutionCallbackNode(ExecutionCallback callback, Executor executor, boolean deserialized) {
             this.callback = callback;
             this.executor = executor;
+            this.deserialized = deserialized;
         }
     }
 }

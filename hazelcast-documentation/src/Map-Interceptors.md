@@ -3,11 +3,13 @@
 
 ### Interceptors
 
-You can add intercept operations and execute your own business logic synchronously blocking the operation. You can change the returned value from a get operation, change the value to be put or cancel operations by throwing exception.
+You can add intercept operations and then execute your own business logic synchronously blocking the operations. You can change the returned value from a `get` operation, change the value to be `put` or `cancel` operations by throwing an exception.
 
-Interceptors are different from listeners as with listeners you just take an action after the operation has been completed. Interceptor actions are synchronous and you can alter the behavior of operation, change the values or totally cancel it.
+Interceptors are different from listeners. With listeners, you take an action after the operation has been completed. Interceptor actions are synchronous and you can alter the behavior of operation, change the values, or totally cancel it.
 
-IMap API has two methods for adding and removing interceptor to the map:
+Map interceptors are chained, so adding the same interceptor multiple times to the same map can result in duplicate effects. This can easily happen when the interceptor is added to the map at node initialization, so that each node adds the same interceptor. When adding the interceptor in this way, be sure that the `hashCode()` method is implemented to return the same value for every instance of the interceptor. It is not strictly necessary, but it is a good idea to also implement `equals()` as this will ensure that the map interceptor can be removed reliably.
+
+IMap API has two methods for adding and removing an interceptor to the map,`addInterceptor` and `removeInterceptor`:
 
 ```java
 /**
@@ -35,9 +37,9 @@ Here is the `MapInterceptor` interface:
 public interface MapInterceptor extends Serializable {
 
   /**
-   * Intercept get operation before returning value.
+   * Intercept the get operation before it returns a value.
    * Return another object to change the return value of get(..)
-   * Returning null will cause the get(..) operation return original value,
+   * Returning null will cause the get(..) operation to return the original value,
    * namely return null if you do not want to change anything.
    * 
    *

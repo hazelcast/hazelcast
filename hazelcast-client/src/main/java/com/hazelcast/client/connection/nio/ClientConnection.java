@@ -17,15 +17,14 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -39,6 +38,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.Closeable;
@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -61,7 +60,6 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class ClientConnection implements Connection, Closeable {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
-    private static final int HEART_ATTACK_CLEANUP_TIMEOUT = 1500;
 
     private volatile boolean live = true;
 
@@ -89,7 +87,7 @@ public class ClientConnection implements Connection, Closeable {
     private final ClientInvocationServiceImpl invocationService;
     private boolean readFromSocket = true;
     private final AtomicInteger packetCount = new AtomicInteger(0);
-    private volatile int failedHeartBeat;
+    private volatile boolean heartBeating = true;
 
     public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
@@ -153,12 +151,6 @@ public class ClientConnection implements Connection, Closeable {
             }
             return false;
         }
-        if (!isHeartBeating()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is not heart-beating, won't write packet -> " + packet);
-            }
-            return false;
-        }
         writeHandler.enqueueSocketWritable(packet);
         return true;
     }
@@ -172,10 +164,10 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void write(Data data) throws IOException {
-        final int totalSize = data.totalSize();
+        final Packet packet = new Packet(data, serializationService.getPortableContext());
+        final int totalSize = packet.size();
         final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
         final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
-        final Packet packet = new Packet(data, serializationService.getPortableContext());
         boolean complete = false;
         while (!complete) {
             complete = packet.writeTo(buffer);
@@ -220,7 +212,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 
@@ -301,23 +293,32 @@ public class ClientConnection implements Connection, Closeable {
         if (socketChannelWrapper.isBlocking()) {
             return;
         }
-        if (connectionManager.isLive()) {
+        if (connectionManager.isAlive()) {
             try {
                 executionService.execute(new CleanResourcesTask());
             } catch (RejectedExecutionException e) {
                 logger.warning("Execution rejected ", e);
             }
         } else {
-            cleanResources(new HazelcastException("Client is shutting down!!!"));
+            cleanResources(new ConstructorFunction<Object, Throwable>() {
+                @Override
+                public Throwable createNew(Object arg) {
+                    return new HazelcastException("Client is shutting down!");
+                }
+            });
         }
-
     }
 
     private class CleanResourcesTask implements Runnable {
         @Override
         public void run() {
             waitForPacketsProcessed();
-            cleanResources(new TargetDisconnectedException(remoteEndpoint));
+            cleanResources(new ConstructorFunction<Object, Throwable>() {
+                @Override
+                public Throwable createNew(Object arg) {
+                    return new TargetDisconnectedException(remoteEndpoint);
+                }
+            });
         }
 
         private void waitForPacketsProcessed() {
@@ -340,19 +341,19 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
-    private void cleanResources(HazelcastException response) {
+    private void cleanResources(ConstructorFunction<Object, Throwable> responseCtor) {
         final Iterator<Map.Entry<Integer, ClientCallFuture>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
             iter.remove();
-            entry.getValue().notify(response);
+            entry.getValue().notify(responseCtor.createNew(null));
             eventHandlerMap.remove(entry.getKey());
         }
         final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
         while (iterator.hasNext()) {
             final ClientCallFuture future = iterator.next();
             iterator.remove();
-            future.notify(response);
+            future.notify(responseCtor.createNew(null));
         }
     }
 
@@ -381,38 +382,29 @@ public class ClientConnection implements Connection, Closeable {
     //failedHeartBeat is incremented in single thread.
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
-        failedHeartBeat++;
-        if (failedHeartBeat == connectionManager.getMaxFailedHeartbeatCount()) {
-            connectionManager.onDetectingUnresponsiveConnection(this);
-            final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
-            final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
+        if (!heartBeating) {
+            return;
+        }
+        final RemoveAllListeners request = new RemoveAllListeners();
+        invocationService.send(request, ClientConnection.this);
+        heartBeating = false;
+        connectionManager.onDetectingUnresponsiveConnection(this);
+        final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
+        final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 
-            while (iterator.hasNext()) {
-                final ClientCallFuture future = iterator.next();
-                iterator.remove();
-                future.notify(response);
-            }
+        while (iterator.hasNext()) {
+            final ClientCallFuture future = iterator.next();
+            iterator.remove();
+            future.notify(response);
         }
     }
 
     void heartBeatingSucceed() {
-        final int lastFailedHeartBeat = failedHeartBeat;
-        failedHeartBeat = 0;
-        if (lastFailedHeartBeat != 0) {
-            if (lastFailedHeartBeat >= connectionManager.getMaxFailedHeartbeatCount()) {
-                try {
-                    final RemoveAllListeners request = new RemoveAllListeners();
-                    final ICompletableFuture future = invocationService.send(request, ClientConnection.this);
-                    future.get(HEART_ATTACK_CLEANUP_TIMEOUT, TimeUnit.MILLISECONDS);
-                } catch (Exception e) {
-                    logger.warning("Clearing listeners upon recovering from heart-attack failed", e);
-                }
-            }
-        }
+        heartBeating = true;
     }
 
     public boolean isHeartBeating() {
-        return failedHeartBeat < connectionManager.getMaxFailedHeartbeatCount();
+        return heartBeating;
     }
 
     @Override

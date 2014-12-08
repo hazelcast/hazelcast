@@ -18,10 +18,8 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.Clock;
-import java.io.IOException;
+
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -132,26 +130,5 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
         COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
         TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(creationTime);
-        out.writeLong(pending);
-        out.writeLong(started);
-        out.writeLong(totalStartLatency);
-        out.writeLong(completed);
-        out.writeLong(totalExecutionTime);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        creationTime = in.readLong();
-        PENDING_UPDATER.set(this, in.readLong());
-        STARTED_UPDATER.set(this, in.readLong());
-        TOTAL_START_LATENCY_UPDATER.set(this, in.readLong());
-        COMPLETED_UPDATER.set(this, in.readLong());
-        TOTAL_EXECUTION_TIME_UPDATER.set(this, in.readLong());
     }
 }

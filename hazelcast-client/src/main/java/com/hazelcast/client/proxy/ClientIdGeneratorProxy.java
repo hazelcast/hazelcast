@@ -36,8 +36,8 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
     AtomicLong local;
 
-    public ClientIdGeneratorProxy(String instanceName, String serviceName, String objectId, IAtomicLong atomicLong) {
-        super(instanceName, serviceName, objectId);
+    public ClientIdGeneratorProxy(String serviceName, String objectId, IAtomicLong atomicLong) {
+        super(serviceName, objectId);
         this.atomicLong = atomicLong;
         this.name = objectId;
         residue = new AtomicInteger(BLOCK_SIZE);
@@ -45,7 +45,7 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
     }
 
     public boolean init(long id) {
-        if (id <= 0) {
+        if (id < 0) {
             return false;
         }
         long step = (id / BLOCK_SIZE);

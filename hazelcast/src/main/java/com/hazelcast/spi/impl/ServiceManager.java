@@ -16,8 +16,9 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -32,8 +33,9 @@ import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -124,6 +126,24 @@ final class ServiceManager {
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+        registerCacheServiceIfAvailable();
+    }
+
+    private void registerCacheServiceIfAvailable() {
+        //CacheService Optional initialization
+        try {
+            //search for jcache api jar on classpath
+            final String localClassName = "javax.cache.Caching";
+            ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+            Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
+            if (theClass != null) {
+                NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
+                Object serviceObject = nodeExtension.createService(ICacheService.class);
+                registerService(ICacheService.SERVICE_NAME, serviceObject);
+            }
+        } catch (ClassNotFoundException e) {
+            logger.finest("javax.cache api is not detected on classpath. Skipping CacheService...");
+        }
     }
 
     private void initServices(Map<String, Properties> serviceProps, Map<String, Object> serviceConfigObjects) {

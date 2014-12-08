@@ -27,9 +27,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.readNullableData;
-import static com.hazelcast.nio.IOUtil.writeNullableData;
-
 public class ApplyRequest extends ReadRequest {
 
     private Data function;
@@ -58,14 +55,14 @@ public class ApplyRequest extends ReadRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        writeNullableData(out, function);
+        out.writeData(function);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        function = readNullableData(in);
+        function = in.readData();
     }
 
     @Override

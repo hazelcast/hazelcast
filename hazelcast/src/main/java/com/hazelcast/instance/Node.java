@@ -19,42 +19,34 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.cluster.ConfigCheck;
-import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.cluster.impl.ConfigCheck;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.cluster.MulticastJoiner;
-import com.hazelcast.cluster.MulticastService;
-import com.hazelcast.cluster.NodeMulticastListener;
-import com.hazelcast.cluster.TcpIpJoiner;
+import com.hazelcast.cluster.impl.MulticastJoiner;
+import com.hazelcast.cluster.impl.MulticastService;
+import com.hazelcast.cluster.impl.NodeMulticastListener;
+import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -69,14 +61,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 
 public class Node {
 
@@ -88,11 +79,9 @@ public class Node {
 
     private volatile boolean completelyShutdown;
 
-    private final Set<Address> failedConnections = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
-
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
-    private final SerializationServiceImpl serializationService;
+    private final SerializationService serializationService;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -122,11 +111,9 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-    private final SystemLogService systemLogService;
-
     private final Joiner joiner;
 
-    public final NodeInitializer initializer;
+    private final NodeExtension nodeExtension;
 
     private ManagementCenterService managementCenterService;
 
@@ -146,47 +133,41 @@ public class Node {
         this.config = config;
         configClassLoader = config.getClassLoader();
         this.groupProperties = new GroupProperties(config);
-        SerializationService ss;
-        try {
-            String partitioningStrategyClassName = groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
-            final PartitioningStrategy partitioningStrategy;
-            if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
-                partitioningStrategy = ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
-            } else {
-                partitioningStrategy = new DefaultPartitioningStrategy();
-            }
-            ss = new SerializationServiceBuilder()
-                    .setClassLoader(configClassLoader)
-                    .setConfig(config.getSerializationConfig() != null ? config.getSerializationConfig() : new SerializationConfig())
-                    .setManagedContext(hazelcastInstance.managedContext)
-                    .setPartitioningStrategy(partitioningStrategy)
-                    .setHazelcastInstance(hazelcastInstance)
-                    .build();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
         buildInfo = BuildInfoProvider.getBuildInfo();
-        serializationService = (SerializationServiceImpl) ss;
-        systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
 
         String loggingType = groupProperties.LOGGING_TYPE.getString();
-        loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(),
-                loggingType, buildInfo);
+        loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
         }
+
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
-        address = addressPicker.getPublicAddress();
-        final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
-        loggingService.setThisMember(localMember);
-        logger = loggingService.getLogger(Node.class.getName());
-        initializer = NodeInitializerFactory.create(configClassLoader);
         try {
-            initializer.beforeInitialize(this);
+            address = addressPicker.getPublicAddress();
+            final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
+            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
+            loggingService.setThisMember(localMember);
+            logger = loggingService.getLogger(Node.class.getName());
+            nodeExtension = NodeExtensionFactory.create(configClassLoader);
+            nodeExtension.beforeStart(this);
+
+            serializationService = nodeExtension.createSerializationService();
+            securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
+            nodeEngine = new NodeEngineImpl(this);
+            clientEngine = new ClientEngineImpl(this);
+            connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
+            partitionService = new InternalPartitionServiceImpl(this);
+            clusterService = new ClusterServiceImpl(this);
+            textCommandService = new TextCommandServiceImpl(this);
+            nodeExtension.printNodeInfo(this);
+            versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
+            this.multicastService = createMulticastService(addressPicker);
+            initializeListeners(config);
+            joiner = nodeContext.createJoiner(this);
+
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();
@@ -194,18 +175,12 @@ public class Node {
             }
             throw ExceptionUtil.rethrow(e);
         }
-        securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
-        nodeEngine = new NodeEngineImpl(this);
-        clientEngine = new ClientEngineImpl(this);
-        connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-        partitionService = new InternalPartitionServiceImpl(this);
-        clusterService = new ClusterServiceImpl(this);
-        textCommandService = new TextCommandServiceImpl(this);
-        initializer.printNodeInfo(this);
-        versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
-        JoinConfig join = config.getNetworkConfig().getJoin();
+    }
+
+    private MulticastService createMulticastService(AddressPicker addressPicker) {
         MulticastService mcService = null;
         try {
+            JoinConfig join = config.getNetworkConfig().getJoin();
             if (join.getMulticastConfig().isEnabled()) {
                 MulticastConfig multicastConfig = join.getMulticastConfig();
                 MulticastSocket multicastSocket = new MulticastSocket(null);
@@ -220,6 +195,10 @@ public class Node {
                     // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
                     if (!bindAddress.getInetAddress().isLoopbackAddress()) {
                         multicastSocket.setInterface(bindAddress.getInetAddress());
+                    }
+                    else if (multicastConfig.isLoopbackModeEnabled()) {
+                        multicastSocket.setLoopbackMode(true);
+			            multicastSocket.setInterface(bindAddress.getInetAddress());
                     }
                 } catch (Exception e) {
                     logger.warning(e);
@@ -239,9 +218,7 @@ public class Node {
         } catch (Exception e) {
             logger.severe(e);
         }
-        this.multicastService = mcService;
-        initializeListeners(config);
-        joiner = nodeContext.createJoiner(this);
+        return mcService;
     }
 
     private void initializeListeners(Config config) {
@@ -285,17 +262,6 @@ public class Node {
 
     public ManagementCenterService getManagementCenterService() {
         return managementCenterService;
-    }
-
-    public SystemLogService getSystemLogService() {
-        return systemLogService;
-    }
-
-    public void failedConnection(Address address) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(getThisAddress() + " failed connecting to " + address);
-        }
-        failedConnections.add(address);
     }
 
     public SerializationService getSerializationService() {
@@ -384,7 +350,7 @@ public class Node {
         } catch (Exception e) {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
-        initializer.afterInitialize(this);
+        nodeExtension.afterStart(this);
     }
 
     public void shutdown(final boolean terminate) {
@@ -400,7 +366,13 @@ public class Node {
         }
         if (isActive()) {
             if (!terminate) {
+                final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
+                if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
+                    logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
+                }
                 clusterService.sendShutdownMessage();
+            } else {
+                logger.warning("Terminating forcefully...");
             }
             // set the joined=false first so that
             // threads do not process unnecessary
@@ -416,21 +388,25 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.finest("Shutting down node engine");
-            nodeEngine.shutdown(terminate);
+
+            textCommandService.stop();
             if (multicastService != null) {
-                logger.finest("Shutting down multicast service");
+                logger.info("Shutting down multicast service...");
                 multicastService.stop();
             }
-            logger.finest("Shutting down connection manager");
+            logger.info("Shutting down connection manager...");
             connectionManager.shutdown();
-            textCommandService.stop();
-            masterAddress = null;
+
+            logger.info("Shutting down node engine...");
+            nodeEngine.shutdown(terminate);
+
             if (securityContext != null) {
                 securityContext.destroy();
             }
-            initializer.destroy();
+            nodeExtension.destroy();
+            logger.finest("Destroying serialization service...");
             serializationService.destroy();
+
             int numThreads = threadGroup.activeCount();
             Thread[] threads = new Thread[numThreads * 2];
             numThreads = threadGroup.enumerate(threads, false);
@@ -443,8 +419,6 @@ public class Node {
                     thread.interrupt();
                 }
             }
-            failedConnections.clear();
-            systemLogService.shutdown();
             logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
@@ -484,16 +458,16 @@ public class Node {
         setActive(false);
     }
 
-    public Set<Address> getFailedConnections() {
-        return failedConnections;
-    }
-
     public ClassLoader getConfigClassLoader() {
         return configClassLoader;
     }
 
     public NodeEngineImpl getNodeEngine() {
         return nodeEngine;
+    }
+
+    public NodeExtension getNodeExtension() {
+        return nodeExtension;
     }
 
     public class NodeShutdownHookThread extends Thread {
@@ -508,10 +482,11 @@ public class Node {
                 if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
                     if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
-                        shutdown(true);
+                        hazelcastInstance.getLifecycleService().terminate();
                     }
                 } else {
-                    logger.finest("shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
+                    logger.finest(
+                            "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -521,7 +496,6 @@ public class Node {
 
     public void setJoined() {
         joined.set(true);
-        systemLogService.logJoin("setJoined() master: " + masterAddress);
     }
 
     public JoinRequest createJoinRequest() {
@@ -538,32 +512,19 @@ public class Node {
     }
 
     public ConfigCheck createConfigCheck() {
-        final ConfigCheck configCheck = new ConfigCheck();
-        final GroupConfig groupConfig = config.getGroupConfig();
-        final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
-        final boolean partitionGroupEnabled = partitionGroupConfig != null && partitionGroupConfig.isEnabled();
-
-        PartitionGroupConfig.MemberGroupType memberGroupType = partitionGroupEnabled
-                ? partitionGroupConfig.getGroupType()
-                : PartitionGroupConfig.MemberGroupType.PER_MEMBER;
-        configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword())
-                .setJoinerType(joiner != null ? joiner.getType() : "")
-                .setPartitionGroupEnabled(partitionGroupEnabled)
-                .setMemberGroupType(memberGroupType);
-        return configCheck;
+        String joinerType = joiner == null ? "" : joiner.getType();
+        return new ConfigCheck(config, joinerType);
     }
 
     public void rejoin() {
-        prepareForRejoin();
+        prepareForJoin();
         join();
     }
 
-    private void prepareForRejoin() {
-        systemLogService.logJoin("Rejoining!");
+    private void prepareForJoin() {
         masterAddress = null;
         joined.set(false);
         clusterService.reset();
-        failedConnections.clear();
     }
 
     public void join() {
@@ -573,26 +534,17 @@ public class Node {
             return;
         }
 
-        final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-        //This method used to be recursive. The problem is that eventually you can get a stackoverflow if
-        //there are enough retries. With an iterative approach you don't suffer from this problem.
-        int rejoinCount = 0;
-        for (; ; ) {
-            final long joinStartTime = joiner.getStartTime();
-            try {
-                joiner.join();
-                return;
-            } catch (Exception e) {
-                rejoinCount++;
-                if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                    logger.warning("Trying to rejoin for the " + rejoinCount + " time: " + e.getMessage());
-                    prepareForRejoin();
-                } else {
-                    logger.severe("Could not join cluster after " + rejoinCount + " attempts, shutting down!", e);
-                    shutdown(true);
-                    return;
-                }
-            }
+        try {
+            prepareForJoin();
+            joiner.join();
+        } catch (Throwable e) {
+            logger.severe("Error while joining the cluster!", e);
+        }
+
+        if (!joined()) {
+            long maxJoinTime = groupProperties.MAX_JOIN_SECONDS.getInteger() * 1000L;
+            logger.severe("Could not join cluster in " + maxJoinTime + " ms. Shutting down now!");
+            shutdownNodeByFiringEvents(Node.this, true);
         }
     }
 
@@ -602,32 +554,31 @@ public class Node {
 
     Joiner createJoiner() {
         JoinConfig join = config.getNetworkConfig().getJoin();
+        join.verify();
+
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             logger.info("Creating MulticastJoiner");
-            systemLogService.logJoin("Creating MulticastJoiner");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
             logger.info("Creating TcpIpJoiner");
-            systemLogService.logJoin("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (join.getAwsConfig().isEnabled()) {
             Class clazz;
             try {
                 logger.info("Creating AWSJoiner");
-                clazz = Class.forName("com.hazelcast.cluster.TcpIpJoinerOverAWS");
+                clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
                 Constructor constructor = clazz.getConstructor(Node.class);
-                systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
-                logger.severe("Error while creating AWSJoiner!", e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
         return null;
     }
 
+
     public void setAsMaster() {
         logger.finest("This node is being set as the master");
-        systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         setJoined();
     }
@@ -670,5 +621,4 @@ public class Node {
         }
         return attributes;
     }
-
 }

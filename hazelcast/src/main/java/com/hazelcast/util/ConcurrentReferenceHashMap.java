@@ -1567,12 +1567,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     /*
      * This class is needed for JDK5 compatibility.
      */
-    static class SimpleEntry<K, V> implements Entry<K, V>,
+    protected static class SimpleEntry<K, V> implements Entry<K, V>,
             java.io.Serializable {
         private static final long serialVersionUID = -8499721149061103585L;
 
-        private final K key;
-        private V value;
+        protected final K key;
+        protected V value;
 
         public SimpleEntry(K key, V value) {
             this.key = key;
@@ -1625,10 +1625,10 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * Custom Entry class used by EntryIterator.next(), that relays setValue
      * changes to the underlying map.
      */
-    final class WriteThroughEntry extends SimpleEntry<K, V> {
+    protected class WriteThroughEntry extends SimpleEntry<K, V> {
         private static final long serialVersionUID = -7900634345345313646L;
 
-        WriteThroughEntry(K k, V v) {
+        protected WriteThroughEntry(K k, V v) {
             super(k, v);
         }
 

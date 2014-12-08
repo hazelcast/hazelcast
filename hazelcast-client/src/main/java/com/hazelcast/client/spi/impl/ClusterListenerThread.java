@@ -1,11 +1,11 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
@@ -23,12 +23,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -36,27 +38,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
 
 class ClusterListenerThread extends Thread {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerThread.class);
     private static final int SLEEP_TIME = 1000;
+
     protected final List<MemberImpl> members = new LinkedList<MemberImpl>();
     protected ClientClusterServiceImpl clusterService;
     private volatile ClientConnection conn;
     private final CountDownLatch latch = new CountDownLatch(1);
     private final Collection<AddressProvider> addressProviders;
-    private HazelcastClient client;
+    private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
-
+    private Exception exception;
 
     public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
         super(group, name);
         this.addressProviders = addressProviders;
     }
 
-    public void init(HazelcastClient client) {
+    public void init(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
@@ -65,6 +69,9 @@ class ClusterListenerThread extends Thread {
 
     public void await() throws InterruptedException {
         latch.await();
+        if (exception != null) {
+            throw ExceptionUtil.rethrow(exception);
+        }
     }
 
     ClientConnection getConnection() {
@@ -78,7 +85,11 @@ class ClusterListenerThread extends Thread {
                     try {
                         conn = connectToOne();
                     } catch (Exception e) {
-                        LOGGER.severe("Error while connecting to cluster!", e);
+                        if (client.getLifecycleService().isRunning()) {
+                            LOGGER.severe("Error while connecting to cluster!", e);
+                            this.exception = e;
+                        }
+
                         client.getLifecycleService().shutdown();
                         latch.countDown();
                         return;
@@ -90,7 +101,7 @@ class ClusterListenerThread extends Thread {
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     if (LOGGER.isFinestEnabled()) {
-                        LOGGER.warning("Error while listening cluster events! -> " + conn, e);
+                        LOGGER.finest("Error while listening cluster events! -> " + conn, e);
                     } else {
                         LOGGER.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
                     }
@@ -159,6 +170,9 @@ class ClusterListenerThread extends Thread {
         }
         for (MemberImpl member : prevMembers.values()) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
+            if (clusterService.getMember(member.getAddress()) == null) {
+                connectionManager.removeEndpoint(member.getAddress());
+            }
         }
         for (MembershipEvent event : events) {
             clusterService.fireMembershipEvent(event);
@@ -180,7 +194,7 @@ class ClusterListenerThread extends Thread {
             } else if (event.getEventType() == ClientMembershipEvent.MEMBER_REMOVED) {
                 members.remove(member);
                 membersUpdated = true;
-//                    getConnectionManager().removeConnectionPool(member.getAddress()); //TODO
+                connectionManager.removeEndpoint(member.getAddress());
             } else if (event.getEventType() == ClientMembershipEvent.MEMBER_ATTRIBUTE_CHANGED) {
                 MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
                 Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
@@ -229,25 +243,29 @@ class ClusterListenerThread extends Thread {
 
     private ClientConnection connectToOne() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-        final int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+        final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+
+        final int connectionAttemptLimit = connAttemptLimit == 0 ? Integer.MAX_VALUE : connAttemptLimit;
+
         int attempt = 0;
         Throwable lastError = null;
+        Set<Address> triedAddresses = new HashSet<Address>();
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
             final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
+                triedAddresses.add(address);
+                LOGGER.finest("Trying to connect to " + address);
                 try {
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
                     return connection;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     lastError = e;
-                    LOGGER.finest("IO error during initial connection...", e);
-                } catch (AuthenticationException e) {
-                    lastError = e;
-                    LOGGER.warning("Authentication error on " + address, e);
+                    Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
+                    LOGGER.log(level, "Exception during initial connection to " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
@@ -256,7 +274,7 @@ class ClusterListenerThread extends Thread {
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
-                            + " try in %d ms later, attempt %d of %d.",
+                                    + " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));
 
             if (remainingTime > 0) {
@@ -267,7 +285,8 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
+                + triedAddresses, lastError);
     }
 }
 

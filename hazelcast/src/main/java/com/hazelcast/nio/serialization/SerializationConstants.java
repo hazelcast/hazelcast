@@ -21,9 +21,11 @@ public final class SerializationConstants {
     // WARNING: DON'T CHANGE VALUES!
     // WARNING: DON'T ADD ANY NEW CONSTANT SERIALIZER!
 
+    public static final int CONSTANT_TYPE_NULL = 0;
+
     public static final int CONSTANT_TYPE_PORTABLE = -1;
 
-    public static final int CONSTANT_TYPE_DATA = -2;
+    public static final int CONSTANT_TYPE_DATA_SERIALIZABLE = -2;
 
     public static final int CONSTANT_TYPE_BYTE = -3;
 

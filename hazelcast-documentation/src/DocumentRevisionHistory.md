@@ -4,44 +4,27 @@
 
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
-|[Chapter 1 - Introduction](#introduction)|[Configuring Hazelcast](#configuring-hazelcast)|The section 'Wildcard Configuration' previously placed under Configuration chapter moved to this section with the heading 'Using Wildcard', also the content improved.|
-|[Chapter 3 - Distributed Data Structures](#distributed-data-structures)|[IdGenerator](#idgenerator), [ICountDownLatch](#icountdownlatch), [IAtomicReference](#iatomic-reference)| Added as new sections.|
-||[MultiMap](#multimap)| Section improved by adding information about how it is implemented and by providing configuration information.|
-||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added *([Evicting Specific Entries](#evicting-specific-entries))*. Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) and [Map Locks](#map-locks) as new sections.|
-||[Queue](#queue)|Section improved with new subsections.|
-||[Lock](#lock), [ISemaphore](#isemaphore)|Sections updated by adding fairness related warnings.
-|[Chapter 5 - Distributed Computing](#distributed-computing)|[User Defined Services](#user-defined-services)| Added as a new section. Provides information on Hazelcast SPI.
-||[Executor Service](#executor-service)|HazelcastInstanceAware related information added.
-|[Chapter 6 - Distributed Query](#distributed-query)||Query section improved by adding 'how it works' information. Also, [Continuous Query](#continuous-query) section re-written and sample codes added. [Aggregators](#aggregators) added as a new section. A note related to the indexing of non-primitive types added to [Indexing](#indexing) section.|
-|[Chapter 7 - Transactions](#transactions)|[XA Transactions](#xa-transactions)|Added as a new section.|
-||[Sample JBoss AS 7 - EAP 6 Web Application Configuration](#sample-JBoss-AS-7-EAP-6-web-application-configuration)| Added as a new section.|
-|[Chapter 8 - Integrated Clustering](#integrated-clustering)|[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Added as a new section (Enterprise Only feature).|
-||[Filter Based Web Session Replication](#filter-based-web-session-replication)|Updated by adding SpringAwareWebFilter related information.
-|[Chapter 9 - Hazelcast JCache Implementation](#hazelcast-jcache-implementation)||Added as a new chapter.|
-|[Chapter 11 - Clients](#clients)|[Java Client](#java-client)|Client configuration related to AWS added and the whole section enhanced.|
-|[Chapter 12 - Serialization](#serialization)||All sections under this chapter re-written and enhanced. Also added HazelcastInstanceAware, Stream & ByteArray Serializer, Serializable & Externalizable sections.|
-||[Null Portable Serialization](#null-portable-serialization)| Added as a new section.|
-|[Chapter 13 - Management](#management)|[Clustered JMX](#clustered-jmx)|Added as a new section explaining how to monitor the statistics of distributed objects from a JMX interface (Enterprise Only feature).|
-||[Cluster Utilities](#cluster-utilities)|[Member Attributes](#member-attributes) added as a new section.|
-||[Clustered REST](#clustered-rest)|Added as a new section (Enterprise Only feature).|
-|[Chapter 15 - Performance](#performance)|[Threading Model](#threading-model)| Added as a new section.|
-|[Chapter 16 - WAN](#wan)|[WAN Replication Queue Size](#wan-replication-queue-size)| Added as a new section (Enterprise only feature).|
-|[Chapter 17 - Configuration](#configuration)|[Configuring TCP/IP Cluster](#configuring-tcp-ip-cluster)| Section improved by adding more detailed configuration options.|
-||[EC2 Auto Discovery](#ec2-auto-discovery)|Section improved by adding AWSClient Class description, Debugging information and more detailed tag explanations.|
-||[Ports](#ports)|Added as a new section explaining how to configure ports which Hazelcast uses to communicate between nodes. Also existing "Restricting Outbound Ports" moved under this new section with the heading "Outbound Ports".|
-||[System Property](#system-property)|Updated by adding the descriptions of missing system properties.|
-|[Chapter 18 - Network Partitioning](#network-partitioning-split-brain-syndrome)||Added as a new chapter.|
-|[Chapter 19 - FAQ](#frequently-asked-questions)||Updated with new questions.|
+|[Chapter 1 - Preface](#preface)||Added as a new chapter as the front matter of this manual.|
+|[Chapter 3 - Hazelcast Clusters](#hazelcast-clusters)||Added as a new chapter to explain the Hazelcast clusters and their features.|
+|[Chapter 5 - Distributed Data Structures](#distributed-data-structures)|[Map Persistence](#map-persistence)|Thread information related to MapLoader interface added as a note.
+||[Eviction](#eviction)|New `max-size` policies `FREE_HEAP_SIZE` and `FREE_HEAP_PERCENTAGE` descriptions added.
+||[Bounded Queue](#bounded-queue)|Whole section modified for a more cleaner description.|
+||[Queue Configuration](#queue-configuration)|Added as a new section to explain the important elements to configure a distributed queue.|
+|[Chapter 11 - Hazelcast JCache](#hazelcast-jcache)||Improved the whole chapter by adding an overview to JCache, an extensive description of the JCache API and Hazelcast's JCache extension, namely ICache.|
+|[Chapter 12 - Integrated Clustering](#integrated-clustering)|[Jetty Based Web Session Replication](#jetty-based-web-session-replication)|Added as a new section to explain replicating sessions for Jetty based web applications.|
+||[Hibernate Second Level Cache](#hibernate-second-level-cache)|Added the last paragraph to the section [HazelcastLocalCacheRegionFactory](#hazelcastlocalcacheregionfactory). This paragraph describes eviction support when Hazelcast is configured for Hibernate using local cache region factory.|
+|[Chapter 13 - Storage](#storage)|[High-Density Memory Store](#high-density-memory-store)|Added as a new section.|
+|[Chapter 14 - Clients](#clients)|[Java Client](#java-client)|Added information related to load balancer configuration.|
+|[Chapter 20 - Hazelcast Configuration](#hazelcast-configuration)|[Composing XML Configuration](#composing-xml-configuration)|Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets.|
+|||The whole (formerly known as the *Configuration* chapter) chapter redesigned to include all the Hazelcast configuration elements and attributes.|
+|[Chapter 22 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
+|[Chapter 23 - Glossary](#glossary)||Added as a new chapter.|
+
+
+
 
 
 
 <br> </br>
-
-
-
-
-
-
-
 
 

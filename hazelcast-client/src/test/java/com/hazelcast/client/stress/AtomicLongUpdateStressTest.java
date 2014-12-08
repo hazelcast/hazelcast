@@ -6,7 +6,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ProblematicTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,7 +66,6 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
     }
 
     @Test
-    @Category(ProblematicTest.class)
     public void testFixedCluster() {
         test(false);
     }

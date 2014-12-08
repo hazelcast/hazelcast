@@ -51,10 +51,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 /**
  * This class tests the usage of {@link XmlClientConfigBuilder}
@@ -124,6 +122,11 @@ public class XmlClientConfigBuilderTest {
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder();
         ClientConfig config = configBuilder.build();
         assertEquals("foobar", config.getGroupConfig().getName());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", config.getNetworkConfig().getSSLConfig().getFactoryClassName());
+        assertEquals(32, config.getNetworkConfig().getSocketOptions().getBufferSize());
+        assertFalse(config.getNetworkConfig().getSocketOptions().isKeepAlive());
+        assertFalse(config.getNetworkConfig().getSocketOptions().isTcpNoDelay());
+        assertEquals(3, config.getNetworkConfig().getSocketOptions().getLingerSeconds());
     }
 
     @Test

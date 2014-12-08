@@ -82,7 +82,7 @@ public class PartitionRuntimeState implements DataSerializable {
                     Integer knownIndex = addressIndexes.get(address);
 
                     if (knownIndex == null && index == 0) {
-                        unmatchAddresses.add(address + ":" + partition);
+                        unmatchAddresses.add(address + " -> " + partition);
                     }
                     if (knownIndex == null) {
                         partitionInfo.addressIndexes[index] = -1;
@@ -95,10 +95,11 @@ public class PartitionRuntimeState implements DataSerializable {
         }
 
         if (!unmatchAddresses.isEmpty()) {
-            //it can happen that the master address at any given moment is not known. Perhaps because
-            //of migration, perhaps because the system has not yet been initialized.
+            // it can happen that the primary address at any given moment is not known,
+            // most probably because master node has updated/published the partition table yet
+            // or partition table update is not received yet.
             logger.warning("Unknown owner addresses in partition state! "
-                    + unmatchAddresses);
+                    + "(Probably they have recently joined to or left the cluster.) " + unmatchAddresses);
         }
     }
 

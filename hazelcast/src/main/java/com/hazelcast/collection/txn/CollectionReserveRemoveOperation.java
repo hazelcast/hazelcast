@@ -61,7 +61,7 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(reservedItemId);
-        value.writeData(out);
+        out.writeData(value);
         out.writeUTF(transactionId);
     }
 
@@ -69,8 +69,7 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         reservedItemId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
         transactionId = in.readUTF();
     }
 }

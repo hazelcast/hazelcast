@@ -23,21 +23,28 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 public interface SerializationService {
 
-    Data toData(Object obj);
+    <B extends Data> B toData(Object obj);
 
-    Data toData(Object obj, PartitioningStrategy strategy);
+    <B extends Data> B toData(Object obj, PartitioningStrategy strategy);
 
     <T> T toObject(Object data);
 
     void writeObject(ObjectDataOutput out, Object obj);
 
-    Object readObject(ObjectDataInput in);
+    <T> T readObject(ObjectDataInput in);
+
+    void writeData(ObjectDataOutput out, Data data);
+
+    <B extends Data> B readData(ObjectDataInput in);
+
+    void disposeData(Data data);
 
     BufferObjectDataInput createObjectDataInput(byte[] data);
 
@@ -49,20 +56,23 @@ public interface SerializationService {
 
     ObjectDataInputStream createObjectDataInputStream(InputStream in);
 
-    ObjectDataOutputStream createObjectDataOutputStream(OutputStream out, ByteOrder order);
-
-    ObjectDataInputStream createObjectDataInputStream(InputStream in, ByteOrder order);
-
     void register(Class type, Serializer serializer);
 
     void registerGlobal(Serializer serializer);
 
     PortableContext getPortableContext();
 
-    PortableReader createPortableReader(Data data);
+    PortableReader createPortableReader(Data data) throws IOException;
 
     ClassLoader getClassLoader();
 
     ManagedContext getManagedContext();
 
+    ByteOrder getByteOrder();
+
+    BufferObjectDataOutput pop();
+
+    void push(BufferObjectDataOutput out);
+
+    void destroy();
 }

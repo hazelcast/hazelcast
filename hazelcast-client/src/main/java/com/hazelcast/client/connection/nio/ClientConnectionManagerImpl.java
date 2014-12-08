@@ -17,11 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -32,22 +28,22 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -57,18 +53,14 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.ssl.BasicSSLContextFactory;
-import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.InSelectorImpl;
 import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -76,31 +68,25 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT;
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
-public class ClientConnectionManagerImpl extends MembershipAdapter implements ClientConnectionManager, MembershipListener {
+public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-
-    private static final int TIMEOUT_PLUS = 2000;
     private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private final static IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -110,14 +96,13 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final int connectionTimeout;
     private final int heartBeatInterval;
     private final int heartBeatTimeout;
-    private final int maxFailedHeartbeatCount;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final Router router;
-    private SocketInterceptor socketInterceptor;
+    private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
     private final IOSelector inSelector;
     private final IOSelector outSelector;
@@ -135,9 +120,9 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
-    private volatile boolean live;
+    private volatile boolean alive;
 
-    public ClientConnectionManagerImpl(HazelcastClient client,
+    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
                                        LoadBalancer loadBalancer,
                                        AddressTranslator addressTranslator) {
         this.client = client;
@@ -145,7 +130,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         final ClientConfig config = client.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        connectionTimeout = networkConfig.getConnectionTimeout();
+        final int connTimeout = networkConfig.getConnectionTimeout();
+        connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         final ClientProperties clientProperties = client.getClientProperties();
         int timeout = clientProperties.getHeartbeatTimeout().getInteger();
@@ -153,10 +139,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
-
-        int failedHeartbeat = clientProperties.getMaxFailedHeartbeatCount().getInteger();
-        maxFailedHeartbeatCount = failedHeartbeat > 0 ? failedHeartbeat
-                : Integer.parseInt(PROP_MAX_FAILED_HEARTBEAT_COUNT_DEFAULT);
 
         smartRouting = networkConfig.isSmartRouting();
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
@@ -174,21 +156,10 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 Logger.getLogger(OutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
 
-        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
         socketOptions = networkConfig.getSocketOptions();
-        socketChannelWrapperFactory = initSocketChannel(networkConfig);
-    }
-
-    private SocketChannelWrapperFactory initSocketChannel(ClientNetworkConfig networkConfig) {
-        //ioService.getSSLConfig(); TODO
-        SSLConfig sslConfig = networkConfig.getSSLConfig();
-
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            LOGGER.info("SSL is enabled");
-            return new SSLSocketChannelWrapperFactory(sslConfig);
-        } else {
-            return new DefaultSocketChannelWrapperFactory();
-        }
+        ClientExtension clientExtension = client.getClientExtension();
+        socketChannelWrapperFactory = clientExtension.getSocketChannelWrapperFactory();
+        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
     }
 
     private Credentials initCredentials(ClientConfig config) {
@@ -197,7 +168,6 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         Credentials c = securityConfig.getCredentials();
         if (c == null) {
             final String credentialsClassname = securityConfig.getCredentialsClassname();
-            //todo: Should be moved to a reflection utility.
             if (credentialsClassname != null) {
                 try {
                     c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
@@ -213,27 +183,16 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
-        SocketInterceptor implementation = null;
         if (sic != null && sic.isEnabled()) {
-            implementation = (SocketInterceptor) sic.getImplementation();
-            if (implementation == null && sic.getClassName() != null) {
-                try {
-                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
-                } catch (Throwable e) {
-                    LOGGER.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
-                }
-            }
+            ClientExtension clientExtension = client.getClientExtension();
+            return clientExtension.getSocketInterceptor();
         }
-
-        if (implementation != null) {
-            implementation.init(sic.getProperties());
-        }
-        return implementation;
+        return null;
     }
 
     @Override
-    public boolean isLive() {
-        return live;
+    public boolean isAlive() {
+        return alive;
     }
 
     private SerializationService getSerializationService() {
@@ -242,36 +201,29 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     @Override
     public synchronized void start() {
-        if (live) {
+        if (alive) {
             return;
         }
-        live = true;
+        alive = true;
         inSelector.start();
         outSelector.start();
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
-        final HeartBeat heartBeat = new HeartBeat();
+        HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public synchronized void shutdown() {
-        if (!live) {
+        if (!alive) {
             return;
         }
-        live = false;
+        alive = false;
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
         inSelector.shutdown();
         outSelector.shutdown();
         connectionLockMap.clear();
-        final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-        clusterService.addMembershipListenerWithoutInit(this);
-    }
-
-    @Override
-    public int getMaxFailedHeartbeatCount() {
-        return maxFailedHeartbeatCount;
     }
 
     @Override
@@ -281,19 +233,37 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
     }
 
     @Override
-    public ClientConnection ownerConnection(Address address) throws Exception {
+    public ClientConnection ownerConnection(Address address) throws IOException {
         final Address translatedAddress = addressTranslator.translate(address);
         if (translatedAddress == null) {
-            throw new RetryableIOException(address + " can not be translated! ");
+            throw new IOException(address + " can not be translated! ");
         }
         return ownerConnectionFuture.createNew(translatedAddress);
+    }
+
+    @Override
+    public ClientConnection connectToAddress(Address target) throws Exception {
+        Authenticator authenticator = new ClusterAuthenticator();
+        int count = 0;
+        Exception lastError = null;
+        while (count < RETRY_COUNT) {
+            try {
+                return getOrConnect(target, authenticator);
+            } catch (IOException e) {
+                lastError = e;
+            } catch (HazelcastInstanceNotActiveException e) {
+                lastError = e;
+            }
+            count++;
+        }
+        throw lastError;
     }
 
     @Override
     public ClientConnection tryToConnect(Address target) throws Exception {
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
-        IOException lastError = null;
+        Exception lastError = null;
         while (count < RETRY_COUNT) {
             try {
                 if (target == null || !isMember(target)) {
@@ -303,6 +273,8 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                     return getOrConnect(target, authenticator);
                 }
             } catch (IOException e) {
+                lastError = e;
+            } catch (HazelcastInstanceNotActiveException e) {
                 lastError = e;
             }
             target = null;
@@ -350,21 +322,21 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             throw new IOException("Address is required!");
         }
 
-        ClientConnection clientConnection = connections.get(address);
+        ClientConnection clientConnection = connections.get(target);
         if (clientConnection == null) {
-            final Object lock = getLock(address);
+            final Object lock = getLock(target);
             synchronized (lock) {
-                clientConnection = connections.get(address);
+                clientConnection = connections.get(target);
                 if (clientConnection == null) {
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
                     try {
-                        clientConnection = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                        clientConnection = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
                     } catch (Exception e) {
                         future.cancel(true);
-                        throw new RetryableIOException(e);
+                        throw ExceptionUtil.rethrow(e, IOException.class);
                     }
-                    ClientConnection current = connections.putIfAbsent(address, clientConnection);
+                    ClientConnection current = connections.putIfAbsent(clientConnection.getRemoteEndpoint(), clientConnection);
                     if (current != null) {
                         clientConnection.close();
                         clientConnection = current;
@@ -389,7 +361,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
         @Override
         public ClientConnection call() throws Exception {
-            if (!live) {
+            if (!alive) {
                 throw new HazelcastException("ConnectionManager is not active!!!");
             }
             SocketChannel socketChannel = null;
@@ -428,7 +400,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 if (socketChannel != null) {
                     socketChannel.close();
                 }
-                throw ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e, IOException.class);
             }
         }
     }
@@ -498,7 +470,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         try {
             collectionWrapper = (SerializableCollection) sendAndReceive(auth, connection);
         } catch (Exception e) {
-            throw new RetryableIOException(e);
+            throw ExceptionUtil.rethrow(e, IOException.class);
         }
         final Iterator<Data> iter = collectionWrapper.iterator();
         if (iter.hasNext()) {
@@ -523,49 +495,12 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
         if (response instanceof Throwable) {
             Throwable t = (Throwable) response;
             ExceptionUtil.fixRemoteStackTrace(t, Thread.currentThread().getStackTrace());
+            if (t instanceof Exception) {
+                throw (Exception) t;
+            }
             throw new Exception(t);
         }
         return response;
-    }
-
-    interface SocketChannelWrapperFactory {
-        SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
-    }
-
-    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new DefaultSocketChannelWrapper(socketChannel);
-        }
-    }
-
-    static class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        final SSLContextFactory sslContextFactory;
-
-        SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {
-//            if (CipherHelper.isSymmetricEncryptionEnabled(ioService)) {
-//                throw new RuntimeException("SSL and SymmetricEncryption cannot be both enabled!");
-//            }
-            SSLContextFactory sslContextFactoryObject = (SSLContextFactory) sslConfig.getFactoryImplementation();
-            try {
-                String factoryClassName = sslConfig.getFactoryClassName();
-                if (sslContextFactoryObject == null && factoryClassName != null) {
-                    sslContextFactoryObject = (SSLContextFactory) Class.forName(factoryClassName).newInstance();
-                }
-                if (sslContextFactoryObject == null) {
-                    sslContextFactoryObject = new BasicSSLContextFactory();
-                }
-                sslContextFactoryObject.init(sslConfig.getProperties());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            sslContextFactory = sslContextFactoryObject;
-        }
-
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new SSLSocketChannelWrapper(sslContextFactory.getSSLContext(), socketChannel, client);
-        }
     }
 
     private Object getLock(Address address) {
@@ -582,49 +517,27 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
     class HeartBeat implements Runnable {
 
-        long begin;
-
+        @Override
         public void run() {
-            if (!live) {
+            if (!alive) {
                 return;
             }
-            begin = Clock.currentTimeMillis();
-            final Map<ClientConnection, Future> futureMap = new HashMap<ClientConnection, Future>();
+            final long now = Clock.currentTimeMillis();
             for (ClientConnection connection : connections.values()) {
-                if (begin - connection.lastReadTime() > heartBeatTimeout) {
+                if (now - connection.lastReadTime() > heartBeatTimeout) {
+                    connection.heartBeatingFailed();
+                }
+                if (now - connection.lastReadTime() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
-                    final ICompletableFuture future = invocationService.send(request, connection);
-                    futureMap.put(connection, future);
+                    invocationService.send(request, connection);
                 } else {
                     connection.heartBeatingSucceed();
                 }
             }
-            for (Map.Entry<ClientConnection, Future> entry : futureMap.entrySet()) {
-                final Future future = entry.getValue();
-                final ClientConnection connection = entry.getKey();
-                try {
-                    future.get(getRemainingTimeout(), TimeUnit.MILLISECONDS);
-                    connection.heartBeatingSucceed();
-                } catch (Exception ignored) {
-                    connection.heartBeatingFailed();
-                }
-            }
-        }
-
-        private long getRemainingTimeout() {
-            long timeout = heartBeatTimeout - Clock.currentTimeMillis() + begin;
-            return timeout < 0 ? 0 : timeout;
         }
     }
 
-    @Override
-    public void memberRemoved(final MembershipEvent event) {
-        final MemberImpl member = (MemberImpl) event.getMember();
-        final Address address = member.getAddress();
-        if (address == null) {
-            LOGGER.warning("Member's address is null " + member);
-            return;
-        }
+    public void removeEndpoint(Address address) {
         final ClientConnection clientConnection = connections.get(address);
         if (clientConnection != null) {
             clientConnection.close();
@@ -653,18 +566,25 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
         private ClientConnection getOrWaitForCreation() throws IOException {
             ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-            int connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
-            int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
-            int waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            long connectionAttemptLimit = networkConfig.getConnectionAttemptLimit();
+            long connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+            long waitTime = connectionAttemptLimit * connectionAttemptPeriod * 2;
+            if (waitTime < 0) {
+                waitTime = Long.MAX_VALUE;
+            }
+
             final ClientConnection currentOwnerConnection = ownerConnection;
             if (currentOwnerConnection != null) {
                 return currentOwnerConnection;
             }
+
+            long remainingWait = waitTime;
             synchronized (ownerConnectionLock) {
-                long endTime = System.currentTimeMillis() + waitTime;
-                while (ownerConnection == null && endTime > System.currentTimeMillis()) {
+                long waitStart = System.currentTimeMillis();
+                while (ownerConnection == null && remainingWait > 0) {
                     try {
-                        ownerConnectionLock.wait(waitTime);
+                        ownerConnectionLock.wait(remainingWait);
+                        remainingWait = waitTime - (System.currentTimeMillis() - waitStart);
                     } catch (InterruptedException e) {
                         throw new IOException(e);
                     }
@@ -677,12 +597,12 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
             }
         }
 
-        private ClientConnection createNew(Address address) throws RetryableIOException {
+        private ClientConnection createNew(Address address) throws IOException {
             final ManagerAuthenticator authenticator = new ManagerAuthenticator();
             final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, true);
             ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
             try {
-                ClientConnection conn = future.get(connectionTimeout + TIMEOUT_PLUS, TimeUnit.MILLISECONDS);
+                ClientConnection conn = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
                 synchronized (ownerConnectionLock) {
                     ownerConnection = conn;
                     ownerConnectionLock.notifyAll();
@@ -690,7 +610,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
                 return conn;
             } catch (Exception e) {
                 future.cancel(true);
-                throw new RetryableIOException(e);
+                throw ExceptionUtil.rethrow(e, IOException.class);
             }
         }
 
@@ -700,7 +620,7 @@ public class ClientConnectionManagerImpl extends MembershipAdapter implements Cl
 
         private void closeIfAddressMatches(Address address) {
             final ClientConnection currentOwnerConnection = ownerConnection;
-            if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
+            if (currentOwnerConnection == null || !currentOwnerConnection.isAlive()) {
                 return;
             }
             if (address.equals(currentOwnerConnection.getRemoteEndpoint())) {

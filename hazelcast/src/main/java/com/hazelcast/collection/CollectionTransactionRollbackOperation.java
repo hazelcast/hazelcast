@@ -51,6 +51,11 @@ public class CollectionTransactionRollbackOperation extends CollectionOperation 
     }
 
     @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(transactionId);

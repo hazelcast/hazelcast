@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 /**
  * FieldDefinition defines name, type, index of a field
  */
-public interface FieldDefinition extends DataSerializable {
+public interface FieldDefinition {
 
     /**
      * @return field type
@@ -45,9 +45,4 @@ public interface FieldDefinition extends DataSerializable {
      * @return factory id of this field's class
      */
     int getFactoryId();
-
-    /**
-     * @return version of this field's class
-     */
-    int getVersion();
 }

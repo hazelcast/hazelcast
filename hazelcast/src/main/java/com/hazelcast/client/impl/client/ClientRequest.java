@@ -29,7 +29,7 @@ import java.io.IOException;
 
 public abstract class ClientRequest implements SecureRequest, VersionedPortable {
 
-    protected int callId = -1;
+    protected volatile int callId = -1;
     protected transient ClientEngineImpl clientEngine;
     protected transient OperationService operationService;
     protected transient SerializationService serializationService;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.PortableContext;
@@ -43,13 +44,27 @@ public class DefaultPacketReader implements PacketReader {
             }
             boolean complete = packet.readFrom(inBuffer);
             if (complete) {
-                packet.setConn(connection);
-                ioService.handleMemberPacket(packet);
+                handlePacket(packet);
                 packet = null;
             } else {
                 break;
             }
         }
+    }
+
+    protected void handlePacket(Packet packet) {
+        packet.setConn(connection);
+        if (packet.isHeaderSet(Packet.HEADER_BIND)) {
+            handleBind(packet);
+        } else {
+            ioService.handleMemberPacket(packet);
+        }
+    }
+
+    protected void handleBind(Packet packet) {
+        TcpIpConnectionManager connectionManager = connection.getConnectionManager();
+        BindMessage bind = (BindMessage) ioService.toObject(packet.getData());
+        connectionManager.bind(connection, bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
     }
 
     protected Packet obtainPacket() {

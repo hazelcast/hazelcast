@@ -17,22 +17,21 @@
 package com.hazelcast.core;
 
 /**
- * Adapter for MembershipListener.
+ * Adapter for MembershipListener. All the methods are implemented and only override the relevant methods
+ *
  * @see com.hazelcast.core.MembershipListener
  */
 public class MembershipAdapter implements MembershipListener {
 
     @Override
-    public void memberAdded(final MembershipEvent membershipEvent) {
+    public void memberAdded(MembershipEvent membershipEvent) {
     }
 
     @Override
-    public void memberRemoved(final MembershipEvent membershipEvent) {
+    public void memberRemoved(MembershipEvent membershipEvent) {
     }
 
     @Override
-    public void memberAttributeChanged(final MemberAttributeEvent memberAttributeEvent) {
+    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
     }
-
-
 }

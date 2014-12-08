@@ -41,7 +41,7 @@ public interface ITopic<E> extends DistributedObject {
     /**
      * Publishes the message to all subscribers of this topic
      *
-     * @param message
+     * @param message the message to publish
      */
     void publish(E message);
 

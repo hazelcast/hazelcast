@@ -3,7 +3,7 @@
 
 ![](images/enterprise-onlycopy.jpg)
 
-Hazelcast allows you to intercept every remote operation executed by the client. This provides ability to add a very flexible custom security logic. You should implement `com.hazelcast.security.SecurityInterceptor`
+Hazelcast allows you to intercept every remote operation executed by the client. This lets you add a very flexible custom security logic. To do this, implement `com.hazelcast.security.SecurityInterceptor`.
 
 ```java
 public class MySecurityInterceptor implements SecurityInterceptor {
@@ -24,4 +24,4 @@ public class MySecurityInterceptor implements SecurityInterceptor {
 }
 ```
 
-`before` method will be called before processing the request on the remote server and `after` method will be called after the processing. Any exception thrown while executing `before` method will propagate to client but exceptions thrown while executing `after` method will be suppressed.  
+The `before` method will be called before processing the request on the remote server. The `after` method will be called after the processing. Exceptions thrown while executing the `before` method will propagate to the client, but exceptions thrown while executing the `after` method will be suppressed.  

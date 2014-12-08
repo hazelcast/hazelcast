@@ -24,7 +24,7 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
         super(config);
     }
 
-    public void setName(String name) {
+    public NearCacheConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

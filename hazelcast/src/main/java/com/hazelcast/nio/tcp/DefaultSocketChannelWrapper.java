@@ -75,6 +75,14 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
     }
 
     @Override
+    public void closeInbound() throws IOException {
+    }
+
+    @Override
+    public void closeOutbound() throws IOException {
+    }
+
+    @Override
     public void close() throws IOException {
         socketChannel.close();
     }

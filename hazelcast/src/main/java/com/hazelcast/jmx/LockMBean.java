@@ -46,6 +46,24 @@ public class LockMBean extends HazelcastMBean<ILock> {
         }
     }
 
+    @ManagedAnnotation("remainingLeaseTime")
+    @ManagedDescription("remaining time in milliseconds or -1 if not locked")
+    public long getRemainingLeaseTime() {
+        return managedObject.getRemainingLeaseTime();
+    }
+
+    @ManagedAnnotation("lockCount")
+    @ManagedDescription("re-entrant lock hold count, regardless of lock ownership")
+    public int getLockCount() {
+        return managedObject.getLockCount();
+    }
+
+    @ManagedAnnotation(value = "forceUnlock", operation = true)
+    @ManagedDescription("force unlock of this lock")
+    public void clear() {
+        managedObject.forceUnlock();
+    }
+
     @ManagedAnnotation("partitionKey")
     @ManagedDescription("the partitionKey")
     public String getPartitionKey() {

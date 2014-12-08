@@ -99,6 +99,9 @@ public class ClientNetworkConfig {
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
+        if (connectionAttemptPeriod < 0) {
+            throw new IllegalArgumentException("connectionAttemptPeriod cannot be negative");
+        }
         this.connectionAttemptPeriod = connectionAttemptPeriod;
         return this;
     }
@@ -117,9 +120,13 @@ public class ClientNetworkConfig {
      * attempt to retry as much as {@link ClientNetworkConfig#connectionAttemptLimit} times.
      *
      * @param connectionAttemptLimit number of times to attempt to connect
+     *                               A zero value means try forever.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
+        if (connectionAttemptLimit < 0) {
+            throw new IllegalArgumentException("connectionAttemptLimit cannot be negative");
+        }
         this.connectionAttemptLimit = connectionAttemptLimit;
         return this;
     }
@@ -135,9 +142,13 @@ public class ClientNetworkConfig {
 
     /**
      * @param connectionTimeout Timeout value in millis for nodes to accept client connection requests.
+     *                          A zero value means wait until connection established or an error occurs.
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig setConnectionTimeout(int connectionTimeout) {
+        if (connectionTimeout < 0) {
+            throw new IllegalArgumentException("connectionTimeout cannot be negative");
+        }
         this.connectionTimeout = connectionTimeout;
         return this;
     }

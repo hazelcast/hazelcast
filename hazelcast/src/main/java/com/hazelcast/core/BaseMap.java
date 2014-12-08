@@ -30,41 +30,41 @@ public interface BaseMap<K, V> extends DistributedObject {
      * Returns {@code true} if this map contains an entry for the specified
      * key.
      *
-     * @param key key
-     * @return {@code true} if this map contains an entry for the specified key
+     * @param key The specified key.
+     * @return {@code true} if this map contains an entry for the specified key.
      */
     boolean containsKey(Object key);
 
     /**
      * Returns the value for the specified key, or {@code null} if this map does not contain this key.
      *
-     * @param key key
-     * @return value
+     * @param key The specified key.
+     * @return The value for the specified key.
      */
     V get(Object key);
 
     /**
-     * Associates the specified value with the specified key in this map
+     * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
      *
-     * @param key   key
-     * @param value value
-     * @return previous value associated with {@code key} or {@code null}
+     * @param key   The specified key.
+     * @param value The value to associate with the key.
+     * @return Previous value associated with {@code key} or {@code null}
      * if there was no mapping for {@code key}.
      */
     V put(K key, V value);
 
     /**
-     * Associates the specified value with the specified key in this map
+     * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
      * <p/>
      * <p/> This method is preferred to {@link #put(Object, Object)}
      * if the old value is not needed.
      *
-     * @param key   key
-     * @param value value
+     * @param key   The specified key.
+     * @param value The value to associate with the key.
      */
     void set(K key, V value);
 
@@ -79,15 +79,15 @@ public interface BaseMap<K, V> extends DistributedObject {
      *       return map.get(key);</pre>
      * except that the action is performed atomically.
      *
-     * @param key   key
-     * @param value value
-     * @return previous value associated with {@code key} or {@code null}
+     * @param key   The specified key.
+     * @param value The value to associate with the key when there is no previous value.
+     * @return The previous value associated with {@code key}, or {@code null}
      * if there was no mapping for {@code key}.
      */
     V putIfAbsent(K key, V value);
 
     /**
-     * Replaces the entry for a key only if currently mapped to some value.
+     * Replaces the entry for a key only if it is currently mapped to some value.
      * This is equivalent to
      * <pre>
      *   if (map.containsKey(key)) {
@@ -95,9 +95,9 @@ public interface BaseMap<K, V> extends DistributedObject {
      *   } else return null;</pre>
      * except that the action is performed atomically.
      *
-     * @param key   key
-     * @param value value
-     * @return previous value associated with {@code key} or {@code null}
+     * @param key   The specified key.
+     * @param value The value to replace the previous value.
+     * @return The previous value associated with {@code key}, or {@code null}
      * if there was no mapping for {@code key}.
      */
     V replace(K key, V value);
@@ -112,10 +112,10 @@ public interface BaseMap<K, V> extends DistributedObject {
      *   } else return false;</pre>
      * except that the action is performed atomically.
      *
-     * @param key      key
-     * @param oldValue old value
-     * @param newValue new value
-     * @return {@code true} if the value was replaced
+     * @param key      The specified key.
+     * @param oldValue Replace the key value if it is the old value.
+     * @param newValue The new value to replace the old value.
+     * @return {@code true} if the value was replaced.
      */
     boolean replace(K key, V oldValue, V newValue);
 
@@ -124,8 +124,8 @@ public interface BaseMap<K, V> extends DistributedObject {
      * <p>The map will not contain a mapping for the specified key once the
      * call returns.
      *
-     * @param key key
-     * @return previous value associated with {@code key} or {@code null}
+     * @param key Remove the mapping for this key.
+     * @return The previous value associated with {@code key}, or {@code null}
      * if there was no mapping for {@code key}.
      */
     V remove(Object key);
@@ -139,7 +139,7 @@ public interface BaseMap<K, V> extends DistributedObject {
      * * <p> This method is preferred to {@link #remove(Object)}
      * if the old value is not needed.
      *
-     * @param key key
+     * @param key Remove the mapping for this key.
      */
     void delete(Object key);
 
@@ -153,23 +153,23 @@ public interface BaseMap<K, V> extends DistributedObject {
      *   } else return false;</pre>
      * except that the action is performed atomically.
      *
-     * @param key   key
-     * @param value value
-     * @return {@code true} if the value was removed
+     * @param key   The specified key.
+     * @param value Remove the key if it has this value.
+     * @return {@code true} if the value was removed.
      */
     boolean remove(Object key, Object value);
 
     /**
      * Returns <tt>true</tt> if this map contains no entries.
      *
-     * @return <tt>true</tt> if this map contains no entries
+     * @return <tt>true</tt> if this map contains no entries.
      */
     boolean isEmpty();
 
     /**
      * Returns the number of entries in this map.
      *
-     * @return the number of entries in this map
+     * @return the number of entries in this map.
      */
     int size();
 }

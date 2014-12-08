@@ -28,6 +28,12 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
+/**
+ * A DelegatingFuture that can cancel a Runnable/Callable that is executed by an {@link com.hazelcast.core.IExecutorService}.
+ * It does this by sending a CancellationRequest to the remote owning member and then cancelling the running task.
+ *
+ * @param <V>
+ */
 public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 
     private final ClientContext context;
@@ -35,7 +41,6 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     private final Address target;
     private final int partitionId;
     private volatile boolean cancelled;
-
 
     public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
                                              String uuid, Address target, int partitionId) {

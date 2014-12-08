@@ -27,9 +27,9 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.replicatedmap.impl.CleanerRegistrator;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 
 /**
  * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
@@ -67,13 +66,12 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     protected final Member localMember;
 
     private final EntryTaskScheduler ttlEvictionScheduler;
-    private final ScheduledFuture<?> cleanerFuture;
     private final EventService eventService;
 
     private final Object[] mutexes;
     private final String name;
 
-    protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine, CleanerRegistrator cleanerRegistrator,
+    protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine,
                                                 ReplicatedMapService replicatedMapService) {
         this.name = name;
 
@@ -94,8 +92,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         for (int i = 0; i < mutexes.length; i++) {
             mutexes[i] = new Object();
         }
-
-        this.cleanerFuture = cleanerRegistrator.registerCleaner(this);
     }
 
     @Override
@@ -118,11 +114,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
 
     @Override
     public void destroy() {
-        if (cleanerFuture.isCancelled()) {
-            return;
-        }
-        cleanerFuture.cancel(true);
-
         replicationPublisher.destroy();
         storage.clear();
         replicatedMapService.destroyDistributedObject(getName());
@@ -186,13 +177,26 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     }
 
     void fireEntryListenerEvent(Object key, Object oldValue, Object value) {
-        EntryEventType eventType =
-                value == null ? EntryEventType.REMOVED : oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-        EntryEvent event = new EntryEvent(getName(), localMember, eventType.getType(), key, oldValue, value);
+        EntryEventType eventType = value == null ? EntryEventType.REMOVED
+                : oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
 
-        Collection<EventRegistration> registrations = eventService.getRegistrations(ReplicatedMapService.SERVICE_NAME, getName());
+        fireEntryListenerEvent(key, oldValue, value, eventType);
+    }
+
+    void fireEntryListenerEvent(Object key, Object oldValue, Object value, EntryEventType eventType) {
+        Collection<EventRegistration> registrations = eventService.getRegistrations(
+                ReplicatedMapService.SERVICE_NAME, name);
         if (registrations.size() > 0) {
-            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registrations, event, getName().hashCode());
+            EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
+                    key, oldValue, value);
+
+            for (EventRegistration registration : registrations) {
+                EventFilter filter = registration.getFilter();
+                boolean publish = filter == null || filter.eval(marshallKey(key));
+                if (publish) {
+                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, event, name.hashCode());
+                }
+            }
         }
     }
 

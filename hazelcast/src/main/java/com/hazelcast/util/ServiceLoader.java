@@ -46,6 +46,10 @@ public final class ServiceLoader {
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
     private static final String FILTERING_CLASS_LOADER = FilteringClassLoader.class.getCanonicalName();
 
+    //see https://github.com/hazelcast/hazelcast/issues/3922
+    private static final String IGNORED_GLASSFISH_MAGIC_CLASSLOADER =
+            "com.sun.enterprise.v3.server.APIClassLoaderServiceImpl$APIClassLoader";
+
     private ServiceLoader() {
     }
 
@@ -118,7 +122,9 @@ public final class ServiceLoader {
                 final URI uri = url.toURI();
 
                 ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
-                urlDefinitions.add(new URLDefinition(uri, highestClassLoader));
+                if (!highestClassLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
+                    urlDefinitions.add(new URLDefinition(uri, highestClassLoader));
+                }
             }
             return urlDefinitions;
 

@@ -67,7 +67,7 @@ public final class GroupConfig {
     }
 
     /**
-     * Gets the name of the group.
+     * Gets the group name of the group.
      *
      * @return the name
      */
@@ -76,7 +76,7 @@ public final class GroupConfig {
     }
 
     /**
-     * Sets the group name.
+     * Sets the group name of the group.
      *
      * @param name the name to set
      * @return the updated GroupConfig.
@@ -88,7 +88,7 @@ public final class GroupConfig {
     }
 
     /**
-     * Gets the password to connec to to the group.
+     * Gets the password of the group.
      *
      * @return the password
      */
@@ -97,7 +97,7 @@ public final class GroupConfig {
     }
 
     /**
-     * Sets the password.
+     * Sets the password for the group.
      *
      * @param password the password to set
      * @return the updated GroupConfig.

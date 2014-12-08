@@ -42,7 +42,6 @@ class NamedPortableV2 extends NamedPortable implements VersionedPortable {
         return PortableTest.FACTORY_ID;
     }
 
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("NamedPortableV2{");

@@ -146,4 +146,26 @@ public final class VectorClockTimestamp
         }
         return hasLesser;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        VectorClockTimestamp that = (VectorClockTimestamp) o;
+        if (clocks != null ? !clocks.equals(that.clocks) : that.clocks != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return clocks != null ? clocks.hashCode() : 0;
+    }
 }

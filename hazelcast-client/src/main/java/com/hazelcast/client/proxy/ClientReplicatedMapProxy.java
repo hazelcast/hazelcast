@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
-import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
@@ -66,11 +66,11 @@ public class ClientReplicatedMapProxy<K, V>
         extends ClientProxy
         implements ReplicatedMap<K, V> {
 
-    private volatile ClientNearCache<Object> nearCache;
+    private volatile ClientHeapNearCache<Object> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
-    public ClientReplicatedMapProxy(String instanceName, String serviceName, String objectName) {
-        super(instanceName, serviceName, objectName);
+    public ClientReplicatedMapProxy(String serviceName, String objectName) {
+        super(serviceName, objectName);
     }
 
     @Override
@@ -208,35 +208,7 @@ public class ClientReplicatedMapProxy<K, V>
     }
 
     private EventHandler<ReplicatedMapPortableEntryEvent> createHandler(final EntryListener<K, V> listener) {
-        return new EventHandler<ReplicatedMapPortableEntryEvent>() {
-            public void handle(ReplicatedMapPortableEntryEvent event) {
-                V value = (V) event.getValue();
-                V oldValue = (V) event.getOldValue();
-                K key = (K) event.getKey();
-                Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member, event.getEventType().getType(), key,
-                        oldValue, value);
-                switch (event.getEventType()) {
-                    case ADDED:
-                        listener.entryAdded(entryEvent);
-                        break;
-                    case REMOVED:
-                        listener.entryRemoved(entryEvent);
-                        break;
-                    case UPDATED:
-                        listener.entryUpdated(entryEvent);
-                        break;
-                    case EVICTED:
-                        listener.entryEvicted(entryEvent);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
-                }
-            }
-            @Override
-            public void onListenerRegister() {
-            }
-        };
+        return new ReplicatedMapEventHandler(listener);
     }
 
     private void initNearCache() {
@@ -245,7 +217,7 @@ public class ClientReplicatedMapProxy<K, V>
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientNearCache<Object> nearCache = new ClientNearCache<Object>(getName(), ClientNearCacheType.ReplicatedMap,
+            ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(),
                     getContext(), nearCacheConfig);
             this.nearCache = nearCache;
         }
@@ -254,5 +226,46 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public String toString() {
         return "ReplicatedMap{" + "name='" + getName() + '\'' + '}';
+    }
+
+    private class ReplicatedMapEventHandler implements EventHandler<ReplicatedMapPortableEntryEvent> {
+        private final EntryListener<K, V> listener;
+
+        public ReplicatedMapEventHandler(EntryListener<K, V> listener) {
+            this.listener = listener;
+        }
+
+        public void handle(ReplicatedMapPortableEntryEvent event) {
+            V value = (V) event.getValue();
+            V oldValue = (V) event.getOldValue();
+            K key = (K) event.getKey();
+            Member member = getContext().getClusterService().getMember(event.getUuid());
+            EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member, event.getEventType().getType(), key,
+                    oldValue, value);
+            switch (event.getEventType()) {
+                case ADDED:
+                    listener.entryAdded(entryEvent);
+                    break;
+                case REMOVED:
+                    listener.entryRemoved(entryEvent);
+                    break;
+                case UPDATED:
+                    listener.entryUpdated(entryEvent);
+                    break;
+                case EVICTED:
+                    listener.entryEvicted(entryEvent);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+        }
+
+        @Override
+        public void onListenerRegister() {
+        }
     }
 }

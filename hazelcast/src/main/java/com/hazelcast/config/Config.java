@@ -60,6 +60,8 @@ public class Config {
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
+    private final Map<String, CacheSimpleConfig> cacheConfigs = new ConcurrentHashMap<String, CacheSimpleConfig>();
+
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
     private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
@@ -97,6 +99,8 @@ public class Config {
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
     private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
+
+    private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
     private String licenseKey;
 
@@ -236,6 +240,54 @@ public class Config {
         this.mapConfigs.clear();
         this.mapConfigs.putAll(mapConfigs);
         for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+
+    public CacheSimpleConfig findCacheConfig(String name) {
+        name = getBaseName(name);
+        return lookupByPattern(cacheConfigs, name);
+    }
+
+    public CacheSimpleConfig getCacheConfig(String name) {
+        String baseName = getBaseName(name);
+        CacheSimpleConfig config = lookupByPattern(cacheConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        CacheSimpleConfig defConfig = cacheConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new CacheSimpleConfig();
+            defConfig.setName("default");
+            addCacheConfig(defConfig);
+        }
+        config = new CacheSimpleConfig(defConfig);
+        config.setName(name);
+        addCacheConfig(config);
+        return config;
+    }
+
+    public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
+        cacheConfigs.put(cacheConfig.getName(), cacheConfig);
+        return this;
+    }
+
+    /**
+     * @return the cacheConfigs
+     */
+    public Map<String, CacheSimpleConfig> getCacheConfigs() {
+        return cacheConfigs;
+    }
+
+    /**
+     * @param cacheConfigs the cacheConfigs to set
+     */
+    public Config setCacheConfigs(Map<String, CacheSimpleConfig> cacheConfigs) {
+        this.cacheConfigs.clear();
+        this.cacheConfigs.putAll(cacheConfigs);
+        for (final Entry<String, CacheSimpleConfig> entry : this.cacheConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -467,7 +519,7 @@ public class Config {
     public TopicConfig findTopicConfig(String name) {
         String baseName = getBaseName(name);
         TopicConfig config = lookupByPattern(topicConfigs, baseName);
-        if (config  != null) {
+        if (config != null) {
             return config.getAsReadOnly();
         }
         return getTopicConfig("default").getAsReadOnly();
@@ -780,6 +832,15 @@ public class Config {
         return this;
     }
 
+    public NativeMemoryConfig getNativeMemoryConfig() {
+        return nativeMemoryConfig;
+    }
+
+    public Config setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
+        this.nativeMemoryConfig = nativeMemoryConfig;
+        return this;
+    }
+
     /**
      * @return the configurationUrl
      */
@@ -849,6 +910,8 @@ public class Config {
         }
     }
 
+    // TODO: This mechanism isn't used anymore to determine if 2 HZ configurations are compatible.
+    // See {@link ConfigCheck} for more information.
     /**
      * @param config
      * @return true if config is compatible with this one,

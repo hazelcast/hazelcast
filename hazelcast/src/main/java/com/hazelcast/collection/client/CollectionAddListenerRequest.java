@@ -25,11 +25,11 @@ import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.SetPermission;
@@ -63,8 +63,19 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
+        Data partitionKey = serializationService.toData(name);
+        ItemListener listener = createItemListener(endpoint, partitionKey);
+        final EventService eventService = clientEngine.getEventService();
+        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
+        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
+        final String registrationId = registration.getId();
+        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
+        return registrationId;
+    }
 
-        ItemListener listener = new ItemListener() {
+    private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {
+        return new ItemListener() {
+
             @Override
             public void itemAdded(ItemEvent item) {
                 send(item);
@@ -76,21 +87,20 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
             }
 
             private void send(ItemEvent event) {
-                if (endpoint.live()) {
-                    Data item = serializationService.toData(event.getItem());
-                    final ItemEventType eventType = event.getEventType();
-                    final String uuid = event.getMember().getUuid();
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, eventType, uuid);
-                    endpoint.sendEvent(portableItemEvent, getCallId());
+                if (endpoint.isAlive()) {
+                    if (!(event instanceof DataAwareItemEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+
+                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
+                    Data item = dataAwareItemEvent.getItemData();
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
+                            event.getMember().getUuid());
+                    endpoint.sendEvent(partitionKey, portableItemEvent, getCallId());
                 }
             }
         };
-        final EventService eventService = clientEngine.getEventService();
-        final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
-        final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
-        final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
-        return registrationId;
     }
 
     @Override

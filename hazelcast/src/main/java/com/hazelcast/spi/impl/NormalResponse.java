@@ -73,7 +73,7 @@ public class NormalResponse extends Response {
         final boolean isData = value instanceof Data;
         out.writeBoolean(isData);
         if (isData) {
-            ((Data) value).writeData(out);
+            out.writeData((Data) value);
         } else {
             out.writeObject(value);
         }
@@ -86,9 +86,7 @@ public class NormalResponse extends Response {
 
         final boolean isData = in.readBoolean();
         if (isData) {
-            Data data = new Data();
-            data.readData(in);
-            value = data;
+            value = in.readData();
         } else {
             value = in.readObject();
         }

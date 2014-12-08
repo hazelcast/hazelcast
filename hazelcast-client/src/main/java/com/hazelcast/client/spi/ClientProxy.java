@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientDestroyRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -33,16 +34,13 @@ public abstract class ClientProxy implements DistributedObject {
     private static final AtomicReferenceFieldUpdater<ClientProxy, ClientContext> CONTEXT_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(ClientProxy.class, ClientContext.class, "context");
 
-    protected final String instanceName;
-
     private final String serviceName;
 
     private final String objectName;
 
     private volatile ClientContext context;
 
-    protected ClientProxy(String instanceName, String serviceName, String objectName) {
-        this.instanceName = instanceName;
+    protected ClientProxy(String serviceName, String objectName) {
         this.serviceName = serviceName;
         this.objectName = objectName;
     }
@@ -66,6 +64,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected final void setContext(ClientContext context) {
         this.context = context;
     }
+
 
     @Deprecated
     public final Object getId() {
@@ -100,9 +99,25 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
+    /**
+     * Called when proxy is created.
+     * Overriding implementations can add initialization specific logic into this method
+     * like registering a listener, creating a cleanup task etc.
+     */
+    protected void onInitialize() {
+    }
+
+    /**
+     * Called before proxy is destroyed.
+     * Overriding implementations should clean/release resources created during initialization.
+     */
     protected void onDestroy() {
     }
 
+    /**
+     * Called before client shutdown.
+     * Overriding implementations can add shutdown specific logic here.
+     */
     protected void onShutdown() {
     }
 
@@ -164,6 +179,15 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
+    private String getInstanceName() {
+        ClientContext ctx = context;
+        if (ctx != null) {
+            HazelcastInstance instance = ctx.getHazelcastInstance();
+            return instance.getName();
+        }
+        return "";
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -175,7 +199,8 @@ public abstract class ClientProxy implements DistributedObject {
 
         ClientProxy that = (ClientProxy) o;
 
-        if (!instanceName.equals(that.instanceName)) {
+        String instanceName = getInstanceName();
+        if (!instanceName.equals(that.getInstanceName())) {
             return false;
         }
         if (!objectName.equals(that.objectName)) {
@@ -190,6 +215,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public int hashCode() {
+        String instanceName = getInstanceName();
         int result = instanceName.hashCode();
         result = 31 * result + serviceName.hashCode();
         result = 31 * result + objectName.hashCode();

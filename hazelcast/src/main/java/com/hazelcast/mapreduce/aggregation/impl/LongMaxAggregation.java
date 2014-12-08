@@ -134,7 +134,7 @@ public class LongMaxAggregation<Key, Value>
     private static final class LongMaxReducer
             extends Reducer<Long, Long> {
 
-        private volatile long max = Long.MIN_VALUE;
+        private long max = Long.MIN_VALUE;
 
         @Override
         public void reduce(Long value) {

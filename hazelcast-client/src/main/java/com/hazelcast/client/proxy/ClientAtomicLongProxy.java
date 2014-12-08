@@ -39,8 +39,8 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     private final String name;
     private volatile Data key;
 
-    public ClientAtomicLongProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientAtomicLongProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ValidationUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,11 +89,6 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     @Override
-    public int remainingCapacity() {
-        return config.getMaxSize() - size();
-    }
-
-    @Override
     public boolean remove(Object o) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);
@@ -115,10 +111,11 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public int drainTo(Collection<? super E> objects, int i) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        ValidationUtil.checkNotNull(objects, "Collection is null");
         if (this.equals(objects)) {
             throw new IllegalArgumentException("Can not drain to same Queue");
         }
+        final NodeEngine nodeEngine = getNodeEngine();
         Collection<Data> dataList = drainInternal(i);
         for (Data data : dataList) {
             E e = nodeEngine.toObject(data);
@@ -202,7 +199,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
 
     @Override
     public boolean addAll(Collection<? extends E> es) {
-        return addAllInternal(getDataList(es));
+        return addAllInternal(toDataList(es));
     }
 
     @Override
@@ -219,6 +216,16 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         final NodeEngine nodeEngine = getNodeEngine();
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
+            dataList.add(nodeEngine.toData(o));
+        }
+        return dataList;
+    }
+
+    private List<Data> toDataList(Collection<?> objects) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        List<Data> dataList = new ArrayList<Data>(objects.size());
+        for (Object o : objects) {
+            ValidationUtil.checkNotNull(o, "Object is null");
             dataList.add(nodeEngine.toData(o));
         }
         return dataList;

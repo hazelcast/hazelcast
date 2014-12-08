@@ -71,15 +71,14 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest {
     public void write(PortableWriter writer) throws IOException {
         writer.writeLong("tid", threadId);
         ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         threadId = reader.readLong("tid");
         ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     @Override

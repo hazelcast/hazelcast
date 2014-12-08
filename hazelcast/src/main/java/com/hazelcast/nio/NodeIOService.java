@@ -25,10 +25,13 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.tcp.PacketReader;
+import com.hazelcast.nio.tcp.PacketWriter;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -59,11 +62,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public SystemLogService getSystemLogService() {
-        return node.getSystemLogService();
-    }
-
-    @Override
     public void onOutOfMemory(OutOfMemoryError oom) {
         OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
     }
@@ -75,7 +73,6 @@ public class NodeIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-        getSystemLogService().logConnection(e.getClass().getName() + ": " + e.getMessage());
         new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
@@ -153,7 +150,7 @@ public class NodeIOService implements IOService {
     @Override
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
-            node.failedConnection(address);
+            node.getJoiner().blacklist(address);
         }
     }
 
@@ -187,6 +184,11 @@ public class NodeIOService implements IOService {
     @Override
     public int getSocketLingerSeconds() {
         return this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
+    }
+
+    @Override
+    public int getSocketConnectTimeoutSeconds() {
+        return this.node.getGroupProperties().SOCKET_CONNECT_TIMEOUT_SECONDS.getInteger();
     }
 
     @Override
@@ -251,6 +253,26 @@ public class NodeIOService implements IOService {
     @Override
     public PortableContext getPortableContext() {
         return node.getSerializationService().getPortableContext();
+    }
+
+    @Override
+    public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
+        return node.getNodeExtension().getSocketChannelWrapperFactory();
+    }
+
+    @Override
+    public MemberSocketInterceptor getMemberSocketInterceptor() {
+        return node.getNodeExtension().getMemberSocketInterceptor();
+    }
+
+    @Override
+    public PacketReader createPacketReader(TcpIpConnection connection) {
+        return node.getNodeExtension().createPacketReader(connection, this);
+    }
+
+    @Override
+    public PacketWriter createPacketWriter(TcpIpConnection connection) {
+        return node.getNodeExtension().createPacketWriter(connection, this);
     }
 
     @Override

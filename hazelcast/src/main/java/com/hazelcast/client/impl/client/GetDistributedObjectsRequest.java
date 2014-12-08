@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class GetDistributedObjectsRequest extends ClientRequest {
+
     @Override
     public void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
@@ -49,10 +50,12 @@ public class GetDistributedObjectsRequest extends ClientRequest {
         return ClientEngineImpl.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return ClientPortableHook.ID;
     }
 
+    @Override
     public int getClassId() {
         return ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO;
     }

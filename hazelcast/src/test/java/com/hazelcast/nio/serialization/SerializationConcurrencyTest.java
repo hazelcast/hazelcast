@@ -32,8 +32,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-
 /**
  * @author mdogan 1/4/13
  */
@@ -41,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SerializationConcurrencyTest {
 
-    static final int FACTORY_ID = 1;
+    static final short FACTORY_ID = 1;
 
     @Test
     public void test() throws IOException, InterruptedException {
@@ -56,7 +54,7 @@ public class SerializationConcurrencyTest {
                 throw new IllegalArgumentException();
             }
         };
-        final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory).build();
+        final SerializationService ss = new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory).build();
 
         final int k = 10;
         final AtomicBoolean error = new AtomicBoolean(false);
@@ -71,27 +69,27 @@ public class SerializationConcurrencyTest {
                         for (int j = 0; j < 10000; j++) {
                             String key = "key" + rnd();
                             Data dataKey = ss.toData(key);
-                            assertEquals(key, ss.toObject(dataKey));
+                            Assert.assertEquals(key, ss.toObject(dataKey));
 
                             Long value = 123L + rnd();
                             Data dataValue = ss.toData(value);
-                            assertEquals(value, ss.toObject(dataValue));
+                            Assert.assertEquals(value, ss.toObject(dataValue));
 
                             Address address = new Address("here here" + rnd(), 13131 + rnd());
                             Data dataAddress = ss.toData(address);
-                            assertEquals(address, ss.toObject(dataAddress));
+                            Assert.assertEquals(address, ss.toObject(dataAddress));
 
                             Person person = new Person(13 + rnd(), 199L + rnd(), 56.89d, "mehmet", address);
                             Data dataPerson = ss.toData(person);
-                            assertEquals(person, ss.toObject(dataPerson));
+                            Assert.assertEquals(person, ss.toObject(dataPerson));
 
                             PortableAddress portableAddress = new PortableAddress("there there " + rnd(), 90909 + rnd());
                             Data dataPortableAddress = ss.toData(portableAddress);
-                            assertEquals(portableAddress, ss.toObject(dataPortableAddress));
+                            Assert.assertEquals(portableAddress, ss.toObject(dataPortableAddress));
 
                             PortablePerson portablePerson = new PortablePerson(63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
                             Data dataPortablePerson = ss.toData(portablePerson);
-                            assertEquals(portablePerson, ss.toObject(dataPortablePerson));
+                            Assert.assertEquals(portablePerson, ss.toObject(dataPortablePerson));
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

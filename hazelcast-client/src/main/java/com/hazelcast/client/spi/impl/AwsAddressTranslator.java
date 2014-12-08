@@ -40,16 +40,16 @@ public class AwsAddressTranslator implements AddressTranslator {
         if (address == null) {
             return null;
         }
-        String privateAddress = getLookupTable().get(address.getHost());
-        if (privateAddress != null) {
-            return constructPrivateAddress(privateAddress, address);
+        String publicAddress = getLookupTable().get(address.getHost());
+        if (publicAddress != null) {
+            return constructPrivateAddress(publicAddress, address);
         }
 
         refresh();
 
-        privateAddress = getLookupTable().get(address.getHost());
-        if (privateAddress != null) {
-            return constructPrivateAddress(privateAddress, address);
+        publicAddress = getLookupTable().get(address.getHost());
+        if (publicAddress != null) {
+            return constructPrivateAddress(publicAddress, address);
         }
 
         return null;

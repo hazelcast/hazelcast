@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.AddressUtil;
 
@@ -133,7 +133,7 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return Data.FACTORY_ID;
+        return ClusterDataSerializerHook.F_ID;
     }
 
     @Override

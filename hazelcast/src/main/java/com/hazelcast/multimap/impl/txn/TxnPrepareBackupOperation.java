@@ -30,7 +30,6 @@ public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation impleme
 
     private static final long LOCK_EXTENSION_TIME_IN_MILLIS = 10000L;
     String caller;
-    long threadId;
     long ttl;
 
     public TxnPrepareBackupOperation() {
@@ -54,14 +53,12 @@ public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(caller);
-        out.writeLong(threadId);
         out.writeLong(ttl);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         caller = in.readUTF();
-        threadId = in.readLong();
         ttl = in.readLong();
     }
 

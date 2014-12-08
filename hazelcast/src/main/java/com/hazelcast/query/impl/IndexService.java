@@ -25,6 +25,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -70,7 +71,7 @@ public class IndexService {
     }
 
 
-    public IndexStats[] createStatistics() {
+    public List<IndexStats> createStatistics() {
         if (localMapIndexStats == null) {
             return null;
         }
@@ -86,7 +87,7 @@ public class IndexService {
             objects.add(s);
         }
 
-        return objects.toArray(new IndexStats[objects.size()]);
+        return objects;
     }
 
     private Index findIndex(String attribute, Predicate predicate) {

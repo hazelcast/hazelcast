@@ -19,6 +19,8 @@ package com.hazelcast.replicatedmap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
@@ -26,26 +28,31 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
+import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -123,6 +130,64 @@ public class ReplicatedMapTest
             assertEquals("bar", entry.getValue());
         }
 
+        for (Map.Entry<String, String> entry : map1.entrySet()) {
+            assertStartsWith("foo-", entry.getKey());
+            assertEquals("bar", entry.getValue());
+        }
+    }
+
+    @Test
+    public void testPutAllObjectDelay0()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testPutAllObjectDelayDefault()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testPutAllBinaryDelay0()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testPutAllBinaryDelayDefault()
+            throws Exception {
+
+        testPutAll(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testPutAll(Config config) throws TimeoutException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        final Map<String, String> mapTest = new HashMap<String, String>();
+        for (int i = 0; i < 100; i++) {
+            mapTest.put("foo-" + i, "bar");
+        }
+
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                map1.putAll(mapTest);
+            }
+        }, 60, EntryEventType.ADDED, map1, map2);
+
+        for (Map.Entry<String, String> entry : map2.entrySet()) {
+            assertStartsWith("foo-", entry.getKey());
+            assertEquals("bar", entry.getValue());
+        }
         for (Map.Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
@@ -332,6 +397,80 @@ public class ReplicatedMapTest
             throws Exception {
 
         testUpdate(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelay0() throws Exception {
+        Config config = buildConfig(InMemoryFormat.BINARY, 0);
+        testVectorClocksAreSameAfterConflictResolution(config);
+    }
+
+    @Test
+    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelayDefault() throws Exception {
+        Config config = buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
+        testVectorClocksAreSameAfterConflictResolution(config);
+    }
+
+    @Test
+    public void testVectorClocksAreSameAfterConflictResolutionObjectDelay0() throws Exception {
+        Config config = buildConfig(InMemoryFormat.OBJECT, 0);
+        testVectorClocksAreSameAfterConflictResolution(config);
+    }
+
+    @Test
+    public void testVectorClocksAreSameAfterConflictResolutionObjectDelayDefault() throws Exception {
+        Config config = buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
+        testVectorClocksAreSameAfterConflictResolution(config);
+    }
+
+    private void testVectorClocksAreSameAfterConflictResolution(Config config) throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final String replicatedMapName = randomMapName();
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(replicatedMapName);
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(replicatedMapName);
+
+        final int collidingKeyCount = 15;
+        final int operations = 1000;
+        final Random random = new Random();
+        Thread thread1 = createPutOperationThread(map1, collidingKeyCount, operations, random);
+        Thread thread2 = createPutOperationThread(map2, collidingKeyCount, operations, random);
+        thread1.start();
+        thread2.start();
+        thread1.join();
+        thread2.join();
+
+        for (int i = 0; i < collidingKeyCount; i++) {
+            final String key = "foo-" + i;
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    VectorClockTimestamp v1 = getVectorClockForKey(map1, key);
+                    VectorClockTimestamp v2 = getVectorClockForKey(map2, key);
+                    assertEquals(v1, v2);
+                    assertEquals(map1.get(key), map2.get(key));
+                }
+            });
+        }
+    }
+
+
+    private Thread createPutOperationThread(final ReplicatedMap<String, String> map, final int collidingKeyCount,
+                                            final int operations, final Random random) {
+        return new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < operations; i++) {
+                    map.put("foo-" + random.nextInt(collidingKeyCount), "bar");
+                }
+            }
+        });
+    }
+
+    private VectorClockTimestamp getVectorClockForKey(ReplicatedMap map, Object key) throws Exception {
+        ReplicatedRecord foo = getReplicatedRecord(map, key);
+        return foo.getVectorClockTimestamp();
     }
 
     private void testUpdate(Config config)
@@ -975,6 +1114,141 @@ public class ReplicatedMapTest
 
         assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
     }
+
+    @Test
+    public void testAddListenerObjectDelay0()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testAddListenerObjectDelayDefault()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testAddListenerBinaryDelay0()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testAddListenerBinaryDelayDefault()
+            throws Exception {
+
+        testAddEntryListener(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testAddEntryListener(Config config)
+            throws TimeoutException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntryListener listener = new SimpleEntryListener(1, 0);
+        map2.addEntryListener(listener, "foo-18");
+
+        final int operations = 100;
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < operations; i++) {
+                    map1.put("foo-" + i, "bar");
+                }
+            }
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+
+        assertOpenEventually(listener.addLatch);
+    }
+
+    @Test
+    public void testEvictionObjectDelay0()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.OBJECT, 0));
+    }
+
+    @Test
+    public void testEvictionObjectDelayDefault()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testEvictionBinaryDelay0()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.BINARY, 0));
+    }
+
+    @Test
+    public void testEvictionBinaryDelayDefault()
+            throws Exception {
+
+        testEviction(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    private void testEviction(Config config) throws TimeoutException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        SimpleEntryListener listener = new SimpleEntryListener(0, 100);
+        map2.addEntryListener(listener);
+
+        SimpleEntryListener listenerKey = new SimpleEntryListener(0, 1);
+        map1.addEntryListener(listenerKey, "foo-54");
+
+        final int operations = 100;
+        WatchedOperationExecutor executor = new WatchedOperationExecutor();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < operations; i++) {
+                    map1.put("foo-" + i, "bar", 3, TimeUnit.SECONDS);
+                }
+            }
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
+
+        assertOpenEventually(listener.evictLatch);
+        assertOpenEventually(listenerKey.evictLatch);
+    }
+
+    private class SimpleEntryListener extends EntryAdapter {
+
+        CountDownLatch addLatch;
+        CountDownLatch evictLatch;
+
+        SimpleEntryListener(int addCount, int evictCount) {
+            addLatch = new CountDownLatch(addCount);
+            evictLatch = new CountDownLatch(evictCount);
+        }
+
+        @Override
+        public void entryAdded(EntryEvent event) {
+            addLatch.countDown();
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent event) {
+            evictLatch.countDown();
+        }
+    }
+
 
     @Test(expected = java.lang.IllegalArgumentException.class)
     public void putNullKey()

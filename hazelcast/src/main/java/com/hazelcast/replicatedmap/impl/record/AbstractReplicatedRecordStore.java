@@ -16,13 +16,14 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.replicatedmap.impl.CleanerRegistrator;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.AbstractMap;
@@ -44,19 +45,37 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class AbstractReplicatedRecordStore<K, V>
         extends AbstractBaseReplicatedRecordStore<K, V> {
-
     static final String CLEAR_REPLICATION_MAGIC_KEY = ReplicatedMapService.SERVICE_NAME + "$CLEAR$MESSAGE$";
 
-    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine, CleanerRegistrator cleanerRegistrator,
+//    entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
+//    order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
+//    keep the tombstone alive. if there is no event in this period then the tombstone is removed.
+    static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
+
+    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
                                          ReplicatedMapService replicatedMapService) {
 
-        super(name, nodeEngine, cleanerRegistrator, replicatedMapService);
+        super(name, nodeEngine, replicatedMapService);
+    }
+
+    @Override
+    public void removeTombstone(Object key) {
+        ValidationUtil.isNotNull(key, "key");
+        storage.checkState();
+        K marshalledKey = (K) marshallKey(key);
+        synchronized (getMutex(marshalledKey)) {
+            ReplicatedRecord<K, V> current = storage.get(marshalledKey);
+            if (current == null || current.getValue() != null) {
+                return;
+            }
+            storage.remove(marshalledKey, current);
+        }
     }
 
     @Override
     public Object remove(Object key) {
         ValidationUtil.isNotNull(key, "key");
-        long time = System.currentTimeMillis();
+        long time = Clock.currentTimeMillis();
         storage.checkState();
         V oldValue;
         K marshalledKey = (K) marshallKey(key);
@@ -67,40 +86,67 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 oldValue = null;
             } else {
                 oldValue = (V) current.getValue();
-
-                // Force removal of the underlying stored entry
-                storage.remove(marshalledKey, current);
-
-                vectorClockTimestamp = current.incrementVectorClock(localMember);
-                ReplicationMessage message = buildReplicationMessage(key, null, vectorClockTimestamp, -1);
-                replicationPublisher.publishReplicatedMessage(message);
+                if (oldValue != null) {
+                    current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
+                    scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
+                    vectorClockTimestamp = current.incrementVectorClock(localMember);
+                    ReplicationMessage message = buildReplicationMessage(key, null, vectorClockTimestamp,
+                            TOMBSTONE_REMOVAL_PERIOD_MS);
+                    replicationPublisher.publishReplicatedMessage(message);
+                }
             }
-            cancelTtlEntry(marshalledKey);
         }
         Object unmarshalledOldValue = unmarshallValue(oldValue);
         fireEntryListenerEvent(key, unmarshalledOldValue, null);
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementRemoves(System.currentTimeMillis() - time);
+            mapStats.incrementRemoves(Clock.currentTimeMillis() - time);
         }
         return unmarshalledOldValue;
     }
 
     @Override
+    public void evict(Object key) {
+        ValidationUtil.isNotNull(key, "key");
+        long time = Clock.currentTimeMillis();
+        storage.checkState();
+        V oldValue;
+        K marshalledKey = (K) marshallKey(key);
+        synchronized (getMutex(marshalledKey)) {
+            final ReplicatedRecord current = storage.get(marshalledKey);
+            if (current == null) {
+                oldValue = null;
+            } else {
+                oldValue = (V) current.getValue();
+                if (oldValue != null) {
+                    current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
+                    scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
+                    current.incrementVectorClock(localMember);
+                }
+            }
+        }
+        Object unmarshalledOldValue = unmarshallValue(oldValue);
+        fireEntryListenerEvent(key, unmarshalledOldValue, null, EntryEventType.EVICTED);
+        if (replicatedMapConfig.isStatisticsEnabled()) {
+            mapStats.incrementRemoves(Clock.currentTimeMillis() - time);
+        }
+    }
+
+    @Override
     public Object get(Object key) {
         ValidationUtil.isNotNull(key, "key");
-        long time = System.currentTimeMillis();
+        long time = Clock.currentTimeMillis();
         storage.checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
 
         // Force return null on ttl expiration (but before cleanup thread run)
         long ttlMillis = replicatedRecord == null ? 0 : replicatedRecord.getTtlMillis();
-        if (ttlMillis > 0 && System.currentTimeMillis() - replicatedRecord.getUpdateTime() >= ttlMillis) {
+        if (ttlMillis > 0 && Clock.currentTimeMillis() - replicatedRecord.getUpdateTime() >= ttlMillis) {
             replicatedRecord = null;
         }
 
         Object value = replicatedRecord == null ? null : unmarshallValue(replicatedRecord.getValue());
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementGets(System.currentTimeMillis() - time);
+            mapStats.incrementGets(Clock.currentTimeMillis() - time);
         }
         return value;
     }
@@ -121,7 +167,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
-        long time = System.currentTimeMillis();
+        long time = Clock.currentTimeMillis();
         storage.checkState();
         V oldValue = null;
         K marshalledKey = (K) marshallKey(key);
@@ -138,7 +184,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
             }
             if (ttlMillis > 0) {
-                scheduleTtlEntry(ttlMillis, marshalledKey, null);
+                scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);
             } else {
                 cancelTtlEntry(marshalledKey);
             }
@@ -150,7 +196,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         Object unmarshalledOldValue = unmarshallValue(oldValue);
         fireEntryListenerEvent(key, unmarshalledOldValue, value);
         if (replicatedMapConfig.isStatisticsEnabled()) {
-            mapStats.incrementPuts(System.currentTimeMillis() - time);
+            mapStats.incrementPuts(Clock.currentTimeMillis() - time);
         }
         return unmarshalledOldValue;
     }

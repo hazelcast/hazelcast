@@ -37,8 +37,8 @@ import java.util.ListIterator;
  */
 public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> implements IList<E> {
 
-    public ClientListProxy(String instanceName, String serviceName, String name) {
-        super(instanceName, serviceName, name);
+    public ClientListProxy(String serviceName, String name) {
+        super(serviceName, name);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {

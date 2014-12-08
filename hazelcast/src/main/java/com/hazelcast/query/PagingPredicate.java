@@ -22,8 +22,11 @@ import java.util.Map;
 /**
  * @deprecated As of release 3.4, replaced by {@link com.hazelcast.query.impl.predicate.PagingPredicate}
  */
-@Deprecated
 public class PagingPredicate extends com.hazelcast.query.impl.predicate.PagingPredicate {
+
+    /**
+     * Used for serialization internally
+     */
     public PagingPredicate() {
     }
 
@@ -42,4 +45,5 @@ public class PagingPredicate extends com.hazelcast.query.impl.predicate.PagingPr
     public PagingPredicate(Predicate predicate, Comparator<Map.Entry> comparator, int pageSize) {
         super(predicate, comparator, pageSize);
     }
+
 }

@@ -10,14 +10,14 @@ import java.io.IOException;
 */
 class ComplexDataSerializable implements DataSerializable {
 
-    private SimpleDataSerializable ds;
-    private NamedPortable portable;
-    private SimpleDataSerializable ds2;
+    private DataSerializable ds;
+    private Portable portable;
+    private DataSerializable ds2;
 
     ComplexDataSerializable() {
     }
 
-    ComplexDataSerializable(NamedPortable portable, SimpleDataSerializable ds, SimpleDataSerializable ds2) {
+    ComplexDataSerializable(Portable portable, DataSerializable ds, DataSerializable ds2) {
         this.portable = portable;
         this.ds = ds;
         this.ds2 = ds2;
@@ -25,18 +25,16 @@ class ComplexDataSerializable implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        ds.writeData(out);
+        out.writeObject(ds);
         out.writeObject(portable);
-        ds2.writeData(out);
+        out.writeObject(ds2);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        ds = new SimpleDataSerializable();
-        ds.readData(in);
+        ds = in.readObject();
         portable = in.readObject();
-        ds2 = new SimpleDataSerializable();
-        ds2.readData(in);
+        ds2 = in.readObject();
     }
 
     @Override

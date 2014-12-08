@@ -24,9 +24,10 @@ import com.hazelcast.spi.annotation.Beta;
  * Reducers may be distributed inside of the cluster but there is always only one Reducer
  * per key.
  * <p/>
- * Reducers are always called in a thread-safe way however they may be moved from one thread to another
- * in the internal thread pool. For this reason internal state should be made visible to other threads by for
- * example using the volatile key word.
+ * Reducers are always called in a thread-safe way however they may be moved from one thread to
+ * another in the internal thread pool. As of version 3.3.3 the internal state is automatically
+ * ensured to be visible according to the Java memory model by the framework. The previous
+ * requirement for making fields volatile is dropped.
  * </p>
  * <p>
  * Due to the fact that there is only one Reducer per key mapped values needs to be
@@ -39,7 +40,7 @@ import com.hazelcast.spi.annotation.Beta;
  * <pre>
  * public class SumReducer implements Reducer&lt;Integer, Integer>
  * {
- *   private volatile int sum = 0;
+ *   private int sum = 0;
  *
  *   public void reduce( Integer value )
  *   {
@@ -85,5 +86,4 @@ public abstract class Reducer<ValueIn, ValueOut> {
      * @return the final reduced result
      */
     public abstract ValueOut finalizeReduce();
-
 }

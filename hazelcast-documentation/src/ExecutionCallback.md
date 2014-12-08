@@ -3,9 +3,9 @@
 
 ### Execution Callback
 
-`ExecutionCallback` offered by Hazelcast allows you to asynchronously get notified when the execution is done. 
+`ExecutionCallback` offered by Hazelcast allows you to asynchronously be notified when the execution is done. 
 
-Let's use the Fibonacci series to explain this. Below sample code is the calculation.
+Let's use the Fibonacci series to explain this. The example code below is the calculation.
 
 ```java
 public class Fibonacci<Long> implements Callable<Long>, Serializable {
@@ -32,7 +32,7 @@ public class Fibonacci<Long> implements Callable<Long>, Serializable {
 }
 ```
 
-And, below sample code prints the result asynchronously.
+The example code below prints the result asynchronously.
 
 
 ```java
@@ -59,5 +59,5 @@ es.submit(task, new ExecutionCallback<Long> () {
 };
 ```
 
-As it can be seen, `ExecutionCallback` has the methods `onResponse` and `onFailure`. The former one in the above code is called upon a valid response and prints the calculation result, whereas the latter one is called upon a failure and prints the stacktrace.
+`ExecutionCallback` has the methods `onResponse` and `onFailure`. In the above code, `onResponse` is called upon a valid response and prints the calculation result, whereas `onFailure` is called upon a failure and prints the stacktrace.
 

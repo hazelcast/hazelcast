@@ -17,9 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
@@ -33,8 +31,7 @@ public final class ClassDefinitionBuilder {
     private final int factoryId;
     private final int classId;
     private final int version;
-    private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
-    private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
+    private final List<FieldDefinitionImpl> fieldDefinitions = new ArrayList<FieldDefinitionImpl>();
 
     private int index;
     private boolean done;
@@ -149,34 +146,29 @@ public final class ClassDefinitionBuilder {
 
     public ClassDefinitionBuilder addPortableField(String fieldName, ClassDefinition def) {
         check();
-        if (def.getClassId() == Data.NO_CLASS_ID) {
+        if (def.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
-        nestedClassDefinitions.add(def);
+                FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
         return this;
     }
 
     public ClassDefinitionBuilder addPortableArrayField(String fieldName, ClassDefinition def) {
         check();
-        if (def.getClassId() == Data.NO_CLASS_ID) {
+        if (def.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));
-        nestedClassDefinitions.add(def);
+                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
         return this;
     }
 
     public ClassDefinition build() {
         done = true;
         final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
-        for (FieldDefinition fd : fieldDefinitions) {
+        for (FieldDefinitionImpl fd : fieldDefinitions) {
             cd.addFieldDef(fd);
-        }
-        for (ClassDefinition nestedCd : nestedClassDefinitions) {
-            cd.addClassDef(nestedCd);
         }
         return cd;
     }

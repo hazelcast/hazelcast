@@ -31,6 +31,7 @@ public abstract class AbstractClientMapReduceJobTest extends HazelcastTestSuppor
 
     protected Config buildConfig() {
         Config config = new XmlConfigBuilder().build();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
         return config;
     }

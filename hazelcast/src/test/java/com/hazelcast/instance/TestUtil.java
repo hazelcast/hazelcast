@@ -20,14 +20,20 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import org.junit.Ignore;
+
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.util.ArrayList;
+import java.util.List;
 
 @Ignore("not a JUnit test")
 public final class TestUtil {
 
-    static final private SerializationService serializationService = new SerializationServiceBuilder().build();
+    static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private TestUtil() {
     }
@@ -71,5 +77,50 @@ public final class TestUtil {
             }
         }
     }
+
+    public static Integer getAvailablePort(int basePort) {
+        return getAvailablePorts(basePort, 1).get(0);
+    }
+
+    public static List<Integer> getAvailablePorts(int basePort, int portCount) {
+        List<Integer> availablePorts = new ArrayList<Integer>();
+        int port = basePort;
+        for (int i = 0; i < portCount; i++) {
+            while (!isPortAvailable(port)) {
+                port++;
+            }
+            availablePorts.add(port++);
+        }
+        return availablePorts;
+    }
+
+    // Checks the DatagramSocket as well to check if the port is available in UDP and TCP.
+    public static boolean isPortAvailable(int port) {
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+
+        } finally {
+            if (ds != null) {
+                ds.close();
+            }
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException e) {
+
+                }
+            }
+        }
+
+        return false;
+    }
+
 }
 

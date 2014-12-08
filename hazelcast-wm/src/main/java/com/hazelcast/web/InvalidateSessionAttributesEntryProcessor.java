@@ -28,14 +28,14 @@ import java.util.Map.Entry;
  */
 public class InvalidateSessionAttributesEntryProcessor extends AbstractWebDataEntryProcessor<Object> {
 
-    private String sessionId;
+    private String sessionIdWithAttributeSeparator;
 
     // Serialization Constructor
     public InvalidateSessionAttributesEntryProcessor() {
     }
 
     public InvalidateSessionAttributesEntryProcessor(String sessionId) {
-            this.sessionId = sessionId;
+            this.sessionIdWithAttributeSeparator = sessionId + WebFilter.HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR;
     }
 
     @Override
@@ -48,7 +48,7 @@ public class InvalidateSessionAttributesEntryProcessor extends AbstractWebDataEn
         Object key = entry.getKey();
         if (key instanceof String) {
             String k = (String) key;
-            if (k.startsWith(sessionId + WebFilter.HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR)) {
+            if (k.startsWith(sessionIdWithAttributeSeparator)) {
                 entry.setValue(null);
             }
         }
@@ -57,11 +57,11 @@ public class InvalidateSessionAttributesEntryProcessor extends AbstractWebDataEn
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        sessionId = in.readUTF();
+        sessionIdWithAttributeSeparator = in.readUTF();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(sessionId);
+        out.writeUTF(sessionIdWithAttributeSeparator);
     }
 }

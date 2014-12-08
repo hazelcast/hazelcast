@@ -18,16 +18,15 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.lock.client.IsLockedRequest;
 import com.hazelcast.concurrent.lock.client.GetLockCountRequest;
 import com.hazelcast.concurrent.lock.client.GetRemainingLeaseRequest;
+import com.hazelcast.concurrent.lock.client.IsLockedRequest;
 import com.hazelcast.concurrent.lock.client.LockRequest;
 import com.hazelcast.concurrent.lock.client.UnlockRequest;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ThreadUtil;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -37,8 +36,8 @@ public class ClientLockProxy extends ClientProxy implements ILock {
 
     private volatile Data key;
 
-    public ClientLockProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientLockProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
     }
 
     @Deprecated
@@ -80,7 +79,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public ICondition newCondition(String name) {
-        return new ClientConditionProxy(instanceName, this, name, getContext());
+        return new ClientConditionProxy(this, name, getContext());
     }
 
     public void lock() {
@@ -88,7 +87,8 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        lock();
+        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), Long.MAX_VALUE, -1);
+        invokeInterruptibly(request, getKeyData());
     }
 
     public boolean tryLock() {

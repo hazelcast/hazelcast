@@ -66,7 +66,7 @@ public class CustomSerializationTest {
                 .setImplementation(new FooXmlSerializer())
                 .setTypeClass(Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService ss = new SerializationServiceBuilder().setConfig(config).build();
+        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
         Foo foo = new Foo();
         foo.setFoo("f");
         Data d = ss.toData(foo);

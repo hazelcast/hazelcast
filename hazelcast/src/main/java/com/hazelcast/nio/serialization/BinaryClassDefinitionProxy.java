@@ -16,24 +16,21 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 import java.util.Set;
 
 public final class BinaryClassDefinitionProxy extends BinaryClassDefinition implements ClassDefinition {
+
+    public BinaryClassDefinitionProxy(int factoryId, int classId, int version) {
+        this.classId = classId;
+        this.version = version;
+        this.factoryId = factoryId;
+    }
 
     public BinaryClassDefinitionProxy(int factoryId, int classId, int version, byte[] binary) {
         this.classId = classId;
         this.version = version;
         this.factoryId = factoryId;
         setBinary(binary);
-    }
-
-    public ClassDefinition toReal(PortableContext context) throws IOException {
-        final ClassDefinition cd = context.lookup(factoryId, classId, version);
-        return cd != null ? cd : context.createClassDefinition(factoryId, getBinary());
     }
 
     public FieldDefinition getField(String name) {
@@ -65,14 +62,6 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
     }
 
     public int getFieldCount() {
-        throw new UnsupportedOperationException();
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException();
     }
 }

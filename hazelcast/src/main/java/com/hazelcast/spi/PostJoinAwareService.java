@@ -23,8 +23,9 @@ public interface PostJoinAwareService {
 
     /**
      * Post join operations must be lock free; means no locks at all;
-     * no partition locks, no key-based locks, no service level locks!
-     * <p/>
+     * no partition locks, no key-based locks, no service level locks or
+     * no database interaction!
+     * <p>
      * Post join operations should return response, at least a null response.
      */
     Operation getPostJoinOperation();

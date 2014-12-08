@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
  * Implementation for {@link com.hazelcast.query.impl.Index}
  */
 public class IndexImpl implements Index {
+
     /**
      * Creates instance from NullObject is a inner class.
      */
@@ -44,8 +45,8 @@ public class IndexImpl implements Index {
 
     private final Predicate predicate;
 
-    private volatile AttributeType attributeType;
     private MapIndexStats.IndexUsageIncrementer indexUsageIncrementer;
+    private volatile TypeConverters.TypeConverter converter;
 
     public IndexImpl(String attribute, boolean ordered, Predicate predicate) {
         this.attribute = attribute;
@@ -70,8 +71,8 @@ public class IndexImpl implements Index {
     public void clear() {
         recordValues.clear();
         indexStore.clear();
-        // Clear attribute type
-        attributeType = null;
+        // Clear converter
+        converter = null;
     }
 
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
@@ -81,16 +82,18 @@ public class IndexImpl implements Index {
     @Override
     public void saveEntryIndex(QueryableEntry e) throws QueryException {
         /*
-         * At first, check if attribute type is not initialized, initialize it before saving an entry index
+         * At first, check if converter is not initialized, initialize it before saving an entry index
          * Because, if entity index is saved before,
-         * that thread can be blocked before executing attribute type setting code block,
-         * another thread can query over indexes without knowing attribute type and
+         * that thread can be blocked before executing converter setting code block,
+         * another thread can query over indexes without knowing the converter and
          * this causes to class cast exceptions.
          */
-        if (attributeType == null) {
+        if (converter == null) {
             // Initialize attribute type by using entry index
-            attributeType = e.getAttributeType(attribute);
+            AttributeType attributeType = e.getAttributeType(attribute);
+            converter = attributeType == null ? new IdentityConverter() : attributeType.getConverter();
         }
+
         if (predicate != null && !predicate.apply(e)) {
             return;
         }
@@ -109,8 +112,7 @@ public class IndexImpl implements Index {
             indexStore.newIndex(newValue, e);
         } else {
             // update
-            indexStore.removeIndex(oldValue, key);
-            indexStore.newIndex(newValue, e);
+            indexStore.updateIndex(oldValue, newValue, e);
         }
     }
 
@@ -128,7 +130,7 @@ public class IndexImpl implements Index {
     @Override
     public Set<QueryableEntry> getRecords(Comparable[] values) {
         if (values.length == 1) {
-            if (attributeType != null) {
+            if (converter != null) {
                 Set<QueryableEntry> records = indexStore.getRecords(convert(values[0]));
                 onIndexUsage();
                 return records;
@@ -137,7 +139,7 @@ public class IndexImpl implements Index {
             }
         } else {
             MultiResultSet results = new MultiResultSet();
-            if (attributeType != null) {
+            if (converter != null) {
                 Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
@@ -151,7 +153,7 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        if (attributeType != null) {
+        if (converter != null) {
             Set<QueryableEntry> records = indexStore.getRecords(convert(value));
             onIndexUsage();
             return records;
@@ -162,7 +164,7 @@ public class IndexImpl implements Index {
 
     @Override
     public Set<QueryableEntry> getRecords() {
-        if (attributeType != null) {
+        if (converter != null) {
             Set<QueryableEntry> records = indexStore.getRecords();
             onIndexUsage();
             return records;
@@ -179,7 +181,7 @@ public class IndexImpl implements Index {
     @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable from, Comparable to) {
         MultiResultSet results = new MultiResultSet();
-        if (attributeType != null) {
+        if (converter != null) {
             indexStore.getSubRecordsBetween(results, convert(from), convert(to));
             onIndexUsage();
         }
@@ -189,7 +191,7 @@ public class IndexImpl implements Index {
     @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue) {
         MultiResultSet results = new MultiResultSet();
-        if (attributeType != null) {
+        if (converter != null) {
             indexStore.getSubRecords(results, comparisonType, convert(searchedValue));
             onIndexUsage();
         }
@@ -197,10 +199,7 @@ public class IndexImpl implements Index {
     }
 
     private Comparable convert(Comparable value) {
-        if (attributeType == null) {
-            return value;
-        }
-        return attributeType.getConverter().convert(value);
+        return converter.convert(value);
     }
 
     public ConcurrentMap<Data, Comparable> getRecordValues() {

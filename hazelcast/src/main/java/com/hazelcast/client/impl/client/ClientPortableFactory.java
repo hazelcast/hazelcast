@@ -67,6 +67,9 @@ public class ClientPortableFactory implements PortableFactory {
             case ClientPortableHook.REMOVE_LISTENER:
                 portable = new RemoveDistributedObjectListenerRequest();
                 break;
+            case ClientPortableHook.REMOVE_ALL_LISTENERS:
+                portable = new RemoveAllListeners();
+                break;
             default:
                 portable = null;
         }

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.util;
 
 /**
@@ -21,7 +37,7 @@ public final class QuickMath {
      * @param x
      * @return <code>true</code> if <code>x</code> is power of two
      */
-    public static boolean isPowerOfTwo(int x) {
+    public static boolean isPowerOfTwo(long x) {
         return (x & (x - 1)) == 0;
     }
 
@@ -34,7 +50,79 @@ public final class QuickMath {
      * @param b
      * @return remainder of the division of a by b.
      */
-    public static int mod(int a, int b) {
+    public static int modPowerOfTwo(int a, int b) {
         return a & (b - 1);
+    }
+
+    /**
+     * Computes the remainder of the division of <code>a</code> by <code>b</code>.
+     * <code>a</code> has to be non-negative integer and <code>b</code> has to be power of two
+     * otherwise the result is undefined.
+     *
+     * @param a
+     * @param b
+     * @return remainder of the division of a by b.
+     */
+    public static long modPowerOfTwo(long a, int b) {
+        return a & (b - 1);
+    }
+
+    public static int nextPowerOfTwo(int value) {
+        if (!isPowerOfTwo(value)) {
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value++;
+        }
+        return value;
+    }
+
+    public static long nextPowerOfTwo(long value) {
+        if (!isPowerOfTwo(value)) {
+            value--;
+            value |= value >> 1;
+            value |= value >> 2;
+            value |= value >> 4;
+            value |= value >> 8;
+            value |= value >> 16;
+            value |= value >> 32;
+            value++;
+        }
+        return value;
+    }
+
+    public static int log2(int value) {
+        return 31 - Integer.numberOfLeadingZeros(value);
+    }
+
+    public static int log2(long value) {
+        return 63 - Long.numberOfLeadingZeros(value);
+    }
+
+    public static int divideByAndCeilToInt(double d, int k) {
+        return (int) Math.ceil(d / k);
+    }
+
+    public static long divideByAndCeilToLong(double d, int k) {
+        return (long) Math.ceil(d / k);
+    }
+
+    public static int divideByAndRoundToInt(double d, int k) {
+        return (int) Math.rint(d / k);
+    }
+
+    public static long divideByAndRoundToLong(double d, int k) {
+        return (long) Math.rint(d / k);
+    }
+
+    public static int normalize(int value, int factor) {
+        return divideByAndCeilToInt(value, factor) * factor;
+    }
+
+    public static long normalize(long value, int factor) {
+        return divideByAndCeilToLong(value, factor) * factor;
     }
 }

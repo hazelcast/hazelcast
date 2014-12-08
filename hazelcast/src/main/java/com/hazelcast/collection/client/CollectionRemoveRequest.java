@@ -50,13 +50,12 @@ public class CollectionRemoveRequest extends CollectionRequest {
 
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        value.writeData(writer.getRawDataOutput());
+        writer.getRawDataOutput().writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
-        value = new Data();
-        value.readData(reader.getRawDataInput());
+        value = reader.getRawDataInput().readData();
     }
 
     @Override

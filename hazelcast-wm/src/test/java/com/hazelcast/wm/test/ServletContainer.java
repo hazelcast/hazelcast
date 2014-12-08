@@ -7,4 +7,7 @@ public interface ServletContainer {
     public void stop() throws Exception;
 
     public void start() throws Exception;
+
+    public boolean isRunning();
+
 }

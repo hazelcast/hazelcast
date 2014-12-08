@@ -5,12 +5,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -22,6 +23,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
         final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100);
         final IMap<Object, Object> map = builder.build();
@@ -39,6 +41,7 @@ public class WriteBehindItemCounterTest extends HazelcastTestSupport {
         final TestMapUsingMapStoreBuilder builder = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(nodeCount)
+                .withNodeFactory(createHazelcastInstanceFactory(nodeCount))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(100);
         final IMap<Object, Object> map = builder.build();

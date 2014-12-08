@@ -18,6 +18,15 @@ package com.hazelcast.map;
 
 import java.io.Serializable;
 
+/**
+ * MapInterceptor is used to intercept changes to the map, allowing access to the values before and
+ * after adding it to the map
+ *
+ * MapInterceptors are chained when added to the map, which means that when an interceptor is added
+ * on node initialization it could be added twice. To prevent this make sure to implement the
+ * hashCode method to return the same value for every instance of the class.
+ *
+ */
 public interface MapInterceptor extends Serializable {
 
     /**

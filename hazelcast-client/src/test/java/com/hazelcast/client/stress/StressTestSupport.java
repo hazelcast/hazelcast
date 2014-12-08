@@ -50,9 +50,17 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
+        stopTest = true;
+        if (killMemberThread != null) {
+            try {
+                killMemberThread.join(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS * 4));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         for (HazelcastInstance hz : instances) {
             try {
-                hz.shutdown();
+                hz.getLifecycleService().terminate();
             } catch (Exception e) {
                 e.printStackTrace();
             }

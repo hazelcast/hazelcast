@@ -62,10 +62,6 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
             res.append("\n");
             command.setResponse(null, stringToBytes(res.toString()));
-        } else if (uri.startsWith(URI_STATE_DUMP)) {
-            String stateDump = textCommandService.getNode().getSystemLogService().dump();
-            stateDump += textCommandService.getNode().getPartitionService().toString() + "\n";
-            command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stringToBytes(stateDump));
         } else {
             command.send400();
         }

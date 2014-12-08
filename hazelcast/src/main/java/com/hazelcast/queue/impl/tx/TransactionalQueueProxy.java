@@ -25,6 +25,8 @@ import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
+
 /**
  * Provides proxy for the Transactional Queue.
  *
@@ -48,6 +50,9 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
     @Override
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        checkNotNull(e, "Offered item should not be null.");
+        checkNotNull(unit, "TimeUnit should not be null.");
+
         checkTransactionState();
         Data data = getNodeEngine().toData(e);
         return offerInternal(data, unit.toMillis(timeout));
@@ -71,6 +76,8 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
     @Override
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        checkNotNull(unit, "TimeUnit should not be null.");
+
         checkTransactionState();
         Data data = pollInternal(unit.toMillis(timeout));
         return getNodeEngine().toObject(data);
@@ -89,6 +96,8 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
 
     @Override
     public E peek(long timeout, TimeUnit unit) throws InterruptedException {
+        checkNotNull(unit, "TimeUnit should not be null.");
+
         checkTransactionState();
         Data data = peekInternal(unit.toMillis(timeout));
         return getNodeEngine().toObject(data);

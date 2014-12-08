@@ -25,7 +25,7 @@ import java.util.EventObject;
  */
 public class Message<E> extends EventObject {
 
-    private final E messageObject;
+    protected E messageObject;
     private final long publishTime;
     private final Member publishingMember;
 

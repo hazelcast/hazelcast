@@ -39,6 +39,14 @@ public class AcquireRequest extends SemaphoreRequest {
         this.timeout = timeout;
     }
 
+    public AcquireRequest(String name, int permitCount) {
+        super(name, permitCount);
+    }
+
+    public AcquireRequest(String name) {
+        super(name, 1);
+    }
+
     @Override
     protected Operation prepareOperation() {
         return new AcquireOperation(name, permitCount, timeout);
@@ -76,14 +84,7 @@ public class AcquireRequest extends SemaphoreRequest {
 
     @Override
     public Object[] getParameters() {
-        if (permitCount == 1) {
-            if (timeout > 0) {
-                // tryAcquire(timeout, TimeUnit)
-                return new Object[]{timeout, TimeUnit.MILLISECONDS};
-            }
-            // acquire(), tryAcquire()
-            return null;
-        } else if (timeout > 0) {
+        if (timeout > 0) {
             //tryAcquire(permit, timeout, TimeUnit)
             return new Object[]{permitCount, timeout, TimeUnit.MILLISECONDS};
         }

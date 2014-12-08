@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
+import java.io.IOException;
+
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
  */
@@ -32,17 +34,19 @@ public interface ClientConnectionManager {
     void shutdown();
 
     /**
-     * Check if client connection manager is live.
-     * ClientConnectionManager is not live only when client is closing.
+     * Check if client connection manager is alive.
+     * ClientConnectionManager is not alive only when client is closing.
      *
-     * @return true if live, false otherwise.
+     * @return true if alive, false otherwise.
      */
-    boolean isLive();
+    boolean isAlive();
 
     /**
      * Start clientConnectionManager
      */
     void start();
+
+    ClientConnection connectToAddress(Address target) throws Exception;
 
     /**
      * Tries to connect to an address in member list.
@@ -59,9 +63,9 @@ public interface ClientConnectionManager {
      *
      * @param address to be connection to established
      * @return ownerConnection
-     * @throws Exception
+     * @throws java.io.IOException
      */
-    ClientConnection ownerConnection(Address address) throws Exception;
+    ClientConnection ownerConnection(Address address) throws IOException;
 
     /**
      * Called when an owner connection is closed
@@ -80,6 +84,12 @@ public interface ClientConnectionManager {
      * @param clientConnection closed connection
      */
     void onConnectionClose(ClientConnection clientConnection);
+
+    /**
+     * Called when a member left the cluster
+     * @param address address of the member
+     */
+    void removeEndpoint(Address address);
 
     /**
      * Removes event handler corresponding to callId from responsible ClientConnection
@@ -120,8 +130,4 @@ public interface ClientConnectionManager {
      */
     void onDetectingUnresponsiveConnection(ClientConnection connection);
 
-    /**
-     * @return number of max allowed heart beat failures
-     */
-    int getMaxFailedHeartbeatCount();
 }

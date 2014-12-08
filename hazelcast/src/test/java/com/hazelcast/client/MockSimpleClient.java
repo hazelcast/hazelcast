@@ -112,7 +112,7 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
-        public boolean live() {
+        public boolean isAlive() {
             return live;
         }
 

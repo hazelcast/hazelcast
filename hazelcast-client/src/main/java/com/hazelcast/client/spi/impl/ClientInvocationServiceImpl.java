@@ -16,13 +16,14 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -41,13 +42,13 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 public final class ClientInvocationServiceImpl implements ClientInvocationService {
 
     private final ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
 
     private final ResponseThread responseThread;
     private volatile boolean isShutdown;
 
-    public ClientInvocationServiceImpl(HazelcastClient client) {
+    public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
@@ -86,14 +87,22 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     @Override
+    public <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) throws Exception {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        final Address owner = partitionService.getPartitionOwner(partitionId);
+        return send(request, owner);
+    }
+
+    @Override
     public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
         return sendAndHandle(request, handler);
     }
 
-    @Override
     public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler)
             throws Exception {
-        return sendAndHandle(request, target, handler);
+        final ClientConnection clientConnection = connectionManager.connectToAddress(target);
+        request.setSingleConnection();
+        return doSend(request, clientConnection, handler);
     }
 
     // NIO public
@@ -130,11 +139,6 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return doSend(request, connection, handler);
     }
 
-    private ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws Exception {
-        final ClientConnection connection = connectionManager.tryToConnect(target);
-        return doSend(request, connection, handler);
-    }
-
     private ICompletableFuture doSend(ClientRequest request, ClientConnection connection, EventHandler handler) {
         final ClientCallFuture future = new ClientCallFuture(client, request, handler);
         sendInternal(future, connection, -1);
@@ -145,14 +149,30 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         connection.registerCallId(future);
         future.setConnection(connection);
         final SerializationService ss = client.getSerializationService();
-        final Data data = ss.toData(future.getRequest());
+        final ClientRequest request = future.getRequest();
+        final Data data = ss.toData(request);
         Packet packet = new Packet(data, partitionId, ss.getPortableContext());
-        if (!connection.write(packet)) {
-            final int callId = future.getRequest().getCallId();
+        if (!isAllowedToSendRequest(connection, request) || !connection.write(packet)) {
+            final int callId = request.getCallId();
             connection.deRegisterCallId(callId);
             connection.deRegisterEventHandler(callId);
             future.notify(new TargetNotMemberException("Address : " + connection.getRemoteEndpoint()));
         }
+    }
+
+    private boolean isAllowedToSendRequest(ClientConnection connection, ClientRequest request) {
+        if (!connection.isHeartBeating()) {
+            if (request instanceof ClientPingRequest) {
+                //ping request should be send even though heart is not beating
+                return true;
+            }
+
+            if (logger.isFinestEnabled()) {
+                logger.warning("Connection is not heart-beating, won't write request -> " + request);
+            }
+            return false;
+        }
+        return true;
     }
 
     public void shutdown() {
@@ -184,7 +204,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         }
 
         private void doRun() {
-            for (;;) {
+            while (true) {
                 Packet task;
                 try {
                     task = workQueue.take();

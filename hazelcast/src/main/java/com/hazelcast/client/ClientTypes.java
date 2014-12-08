@@ -16,6 +16,9 @@
 
 package com.hazelcast.client;
 
+/**
+ * Constants class that contains the different types of clients.
+ */
 public final class ClientTypes {
 
     /**

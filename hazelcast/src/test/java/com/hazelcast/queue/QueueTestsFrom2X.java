@@ -48,9 +48,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author ali 6/3/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueTestsFrom2X extends HazelcastTestSupport {
@@ -61,6 +58,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final String value = "hello";
         final HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueItemListener");
+
         queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
                 assertEquals(value, itemEvent.getItem());

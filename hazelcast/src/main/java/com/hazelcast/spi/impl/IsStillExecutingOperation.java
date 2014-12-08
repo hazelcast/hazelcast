@@ -3,13 +3,14 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 
 /**
  * An operation that checks if another operation is still running.
  */
-public class IsStillExecutingOperation extends AbstractOperation {
+public class IsStillExecutingOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private long operationCallId;
 

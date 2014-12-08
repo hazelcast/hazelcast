@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
@@ -59,8 +58,6 @@ public final class TcpIpConnection implements Connection {
 
     private final ILogger logger;
 
-    private final SystemLogService systemLogService;
-
     private final int connectionId;
 
     private TcpIpConnectionMonitor monitor;
@@ -69,15 +66,10 @@ public final class TcpIpConnection implements Connection {
                            int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
-        this.systemLogService = connectionManager.ioService.getSystemLogService();
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
         this.readHandler = new ReadHandler(this, in);
         this.writeHandler = new WriteHandler(this, out);
-    }
-
-    public SystemLogService getSystemLogService() {
-        return systemLogService;
     }
 
     @Override
@@ -141,7 +133,7 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 
@@ -194,11 +186,12 @@ public final class TcpIpConnection implements Connection {
             return;
         }
         live = false;
+
         if (socketChannel != null && socketChannel.isOpen()) {
+            readHandler.shutdown();
+            writeHandler.shutdown();
             socketChannel.close();
         }
-        readHandler.shutdown();
-        writeHandler.shutdown();
     }
 
     @Override
@@ -224,7 +217,6 @@ public final class TcpIpConnection implements Connection {
         }
 
         logger.info(message);
-        systemLogService.logConnection(message);
         connectionManager.destroyConnection(this);
         connectionManager.ioService.onDisconnect(endPoint);
         if (t != null && monitor != null) {
@@ -238,9 +230,10 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public String toString() {
-        final Socket socket = this.socketChannel.socket();
-        final SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return "Connection [" + remoteSocketAddress + " -> " + endPoint
-                + "] live=" + live + ", client=" + isClient() + ", type=" + type;
+        Socket socket = this.socketChannel.socket();
+        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
+        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+        return "Connection [" + localSocketAddress + " -> " + remoteSocketAddress
+                + "], endpoint=" + endPoint + ", live=" + live + ", type=" + type;
     }
 }

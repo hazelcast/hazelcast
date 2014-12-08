@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.impl.OfferOperation;
+import com.hazelcast.queue.impl.operations.OfferOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
@@ -32,7 +32,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.OfferOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.OfferOperation}
  */
 public class OfferRequest extends QueueRequest {
 
@@ -65,15 +65,14 @@ public class OfferRequest extends QueueRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        data.writeData(out);
+        out.writeData(data);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        data = new Data();
-        data.readData(in);
+        data = in.readData();
     }
 
     @Override

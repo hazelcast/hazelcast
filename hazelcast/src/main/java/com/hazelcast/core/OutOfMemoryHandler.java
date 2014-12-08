@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.OutOfMemoryHandlerHelper;
 
 /**
  * Handler for <code>OutOfMemoryError</code>
@@ -63,11 +63,23 @@ public abstract class OutOfMemoryHandler {
      * @see OutOfMemoryHandler#tryStopThreads(HazelcastInstance)
      * @see OutOfMemoryHandler#tryShutdown(HazelcastInstance)
      *
-     * @param oom OutOfMemoryError thrown by JVM
+     * @param oome OutOfMemoryError thrown by JVM
      * @param hazelcastInstances All HazelcastInstances known by JVM,
      *                           can include inactive or NULL instances.
      */
-    public abstract void onOutOfMemory(OutOfMemoryError oom, HazelcastInstance[] hazelcastInstances);
+    public abstract void onOutOfMemory(OutOfMemoryError oome, HazelcastInstance[] hazelcastInstances);
+
+    /**
+     * Decides if the OutOfMemoryError thrown will be handled by this OutOfMemoryHandler or not.
+     * If <tt>true</tt> is return, {@link #onOutOfMemory(OutOfMemoryError, HazelcastInstance[])} will be called
+     * to handle error, otherwise OutOfMemoryError will be ignored.
+     *
+     * @param oome OutOfMemoryError thrown by JVM
+     * @return true if OutOfMemoryError will be handled, false otherwise
+     */
+    public boolean shouldHandle(OutOfMemoryError oome) {
+        return true;
+    }
 
     /**
      * Just inactivates <tt>HazelcastInstance</tt>; leaves threads, connections untouched.
@@ -75,7 +87,7 @@ public abstract class OutOfMemoryHandler {
      * @param hazelcastInstance
      */
     protected final void inactivate(final HazelcastInstance hazelcastInstance) {
-        OutOfMemoryErrorDispatcher.Helper.inactivate(hazelcastInstance);
+        OutOfMemoryHandlerHelper.inactivate(hazelcastInstance);
     }
 
     /**
@@ -84,7 +96,7 @@ public abstract class OutOfMemoryHandler {
      * @param hazelcastInstance
      */
     protected final void tryCloseConnections(HazelcastInstance hazelcastInstance) {
-        OutOfMemoryErrorDispatcher.Helper.tryCloseConnections(hazelcastInstance);
+        OutOfMemoryHandlerHelper.tryCloseConnections(hazelcastInstance);
     }
 
     /**
@@ -93,7 +105,7 @@ public abstract class OutOfMemoryHandler {
      * @param hazelcastInstance
      */
     protected final void tryStopThreads(final HazelcastInstance hazelcastInstance) {
-        OutOfMemoryErrorDispatcher.Helper.tryStopThreads(hazelcastInstance);
+        OutOfMemoryHandlerHelper.tryStopThreads(hazelcastInstance);
     }
 
     /**
@@ -103,6 +115,6 @@ public abstract class OutOfMemoryHandler {
      * @param hazelcastInstance
      */
     protected final void tryShutdown(final HazelcastInstance hazelcastInstance) {
-        OutOfMemoryErrorDispatcher.Helper.tryShutdown(hazelcastInstance);
+        OutOfMemoryHandlerHelper.tryShutdown(hazelcastInstance);
     }
 }

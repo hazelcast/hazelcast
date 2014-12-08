@@ -12,4 +12,7 @@ public interface ClientListenerService {
 
     boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId);
 
+    void registerListener(String uuid, Integer callId);
+
+    String deRegisterListener(String uuid);
 }

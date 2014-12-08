@@ -69,10 +69,7 @@ public class MapConfig {
      * The number of default time to wait eviction
      */
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
-    /**
-     * Maximum size
-     */
-    public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
+
     /**
      * Default policy for eviction
      */
@@ -127,24 +124,6 @@ public class MapConfig {
     private PartitioningStrategyConfig partitioningStrategyConfig;
 
     private MapConfigReadOnly readOnly;
-
-    /**
-     * Eviction Policy enum
-     */
-    public enum EvictionPolicy {
-        /**
-         * Least Recently Used
-         */
-        LRU,
-        /**
-         * Least Frequently Used
-         */
-        LFU,
-        /**
-         * None
-         */
-        NONE
-    }
 
     public MapConfig(String name) {
         this.name = name;
@@ -207,11 +186,11 @@ public class MapConfig {
     }
 
     /**
-     * Data type that will be used for storing records.
+     * Binary type that will be used for storing records.
      * Possible values:
      * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms
-     * OFFHEAP : values will be stored in non-heap region of JVM
+     * NATIVE : values will be stored in non-heap region of JVM
      *
      * @param inMemoryFormat the record type to set
      * @throws IllegalArgumentException if inMemoryFormat is null.
@@ -367,7 +346,7 @@ public class MapConfig {
     /**
      * Maximum number of seconds for each entry to stay idle in the map. Entries that are
      * idle(not touched) for more than maxIdleSeconds will get
-     * automatically evicted from the map. Entry is touched if get, put or
+     * automatically evicted from the map. Entry is touched if get, getAll, put or
      * containsKey is called.
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.

@@ -21,6 +21,28 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.queue.impl.operations.AddAllBackupOperation;
+import com.hazelcast.queue.impl.operations.AddAllOperation;
+import com.hazelcast.queue.impl.operations.CheckAndEvictOperation;
+import com.hazelcast.queue.impl.operations.ClearBackupOperation;
+import com.hazelcast.queue.impl.operations.ClearOperation;
+import com.hazelcast.queue.impl.operations.CompareAndRemoveBackupOperation;
+import com.hazelcast.queue.impl.operations.CompareAndRemoveOperation;
+import com.hazelcast.queue.impl.operations.ContainsOperation;
+import com.hazelcast.queue.impl.operations.DrainBackupOperation;
+import com.hazelcast.queue.impl.operations.DrainOperation;
+import com.hazelcast.queue.impl.operations.IsEmptyOperation;
+import com.hazelcast.queue.impl.operations.IteratorOperation;
+import com.hazelcast.queue.impl.operations.OfferBackupOperation;
+import com.hazelcast.queue.impl.operations.OfferOperation;
+import com.hazelcast.queue.impl.operations.PeekOperation;
+import com.hazelcast.queue.impl.operations.PollBackupOperation;
+import com.hazelcast.queue.impl.operations.PollOperation;
+import com.hazelcast.queue.impl.operations.QueueReplicationOperation;
+import com.hazelcast.queue.impl.operations.RemainingCapacityOperation;
+import com.hazelcast.queue.impl.operations.RemoveBackupOperation;
+import com.hazelcast.queue.impl.operations.RemoveOperation;
+import com.hazelcast.queue.impl.operations.SizeOperation;
 import com.hazelcast.queue.impl.tx.QueueTransactionRollbackOperation;
 import com.hazelcast.queue.impl.tx.TxnOfferBackupOperation;
 import com.hazelcast.queue.impl.tx.TxnOfferOperation;
@@ -29,12 +51,17 @@ import com.hazelcast.queue.impl.tx.TxnPollBackupOperation;
 import com.hazelcast.queue.impl.tx.TxnPollOperation;
 import com.hazelcast.queue.impl.tx.TxnPrepareBackupOperation;
 import com.hazelcast.queue.impl.tx.TxnPrepareOperation;
+import com.hazelcast.queue.impl.tx.TxnReserveOfferBackupOperation;
 import com.hazelcast.queue.impl.tx.TxnReserveOfferOperation;
+import com.hazelcast.queue.impl.tx.TxnReservePollBackupOperation;
 import com.hazelcast.queue.impl.tx.TxnReservePollOperation;
 import com.hazelcast.queue.impl.tx.TxnRollbackBackupOperation;
 import com.hazelcast.queue.impl.tx.TxnRollbackOperation;
 import com.hazelcast.util.ConstructorFunction;
 
+/**
+ * A {@link com.hazelcast.nio.serialization.DataSerializerHook} for the queue operations and support structures.
+ */
 public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_DS_FACTORY, -11);
@@ -72,16 +99,19 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int TXN_PREPARE_BACKUP = 27;
     public static final int TXN_PREPARE = 28;
     public static final int TXN_RESERVE_OFFER = 29;
-    public static final int TXN_RESERVE_POLL = 30;
-    public static final int TXN_ROLLBACK_BACKUP = 31;
-    public static final int TXN_ROLLBACK = 32;
+    public static final int TXN_RESERVE_OFFER_BACKUP = 30;
+    public static final int TXN_RESERVE_POLL = 31;
+    public static final int TXN_RESERVE_POLL_BACKUP = 32;
+    public static final int TXN_ROLLBACK_BACKUP = 33;
 
-    public static final int CHECK_EVICT = 33;
-    public static final int TRANSACTION_ROLLBACK = 34;
-    public static final int TX_QUEUE_ITEM = 35;
-    public static final int QUEUE_CONTAINER = 36;
-    public static final int TXN_PEEK = 37;
-    public static final int IS_EMPTY = 38;
+    public static final int TXN_ROLLBACK = 34;
+    public static final int CHECK_EVICT = 35;
+    public static final int TRANSACTION_ROLLBACK = 36;
+    public static final int TX_QUEUE_ITEM = 37;
+    public static final int QUEUE_CONTAINER = 38;
+    public static final int TXN_PEEK = 39;
+    public static final int IS_EMPTY = 40;
+    public static final int REMAINING_CAPACITY = 41;
 
 
     public int getFactoryId() {
@@ -90,7 +120,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[REMAINING_CAPACITY + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
@@ -237,9 +267,19 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
                 return new TxnReserveOfferOperation();
             }
         };
+        constructors[TXN_RESERVE_OFFER_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnReserveOfferBackupOperation();
+            }
+        };
         constructors[TXN_RESERVE_POLL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TxnReservePollOperation();
+            }
+        };
+        constructors[TXN_RESERVE_POLL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnReservePollBackupOperation();
             }
         };
         constructors[TXN_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -282,6 +322,12 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new IsEmptyOperation();
+            }
+        };
+        constructors[REMAINING_CAPACITY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemainingCapacityOperation();
             }
         };
 

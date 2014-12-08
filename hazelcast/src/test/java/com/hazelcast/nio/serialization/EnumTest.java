@@ -18,9 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ProblematicTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,7 +33,7 @@ import static org.junit.Assert.assertSame;
 @Category(QuickTest.class)
 public class EnumTest {
 
-    final SerializationService ss = new SerializationServiceBuilder().build();
+    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test1() throws IOException {

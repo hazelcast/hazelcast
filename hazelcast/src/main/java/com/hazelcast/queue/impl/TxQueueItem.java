@@ -28,7 +28,6 @@ import java.io.IOException;
 public class TxQueueItem extends QueueItem {
 
     private String transactionId;
-
     private boolean pollOperation;
 
     public TxQueueItem() {

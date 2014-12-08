@@ -37,8 +37,8 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     private final String name;
     private volatile Data key;
 
-    public ClientTopicProxy(String instanceName, String serviceName, String objectId) {
-        super(instanceName, serviceName, objectId);
+    public ClientTopicProxy(String serviceName, String objectId) {
+        super(serviceName, objectId);
         this.name = objectId;
     }
 
@@ -64,6 +64,10 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
                 Member member = clusterService.getMember(event.getUuid());
                 Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
                 listener.onMessage(message);
+            }
+
+            @Override
+            public void beforeListenerRegister() {
             }
 
             @Override

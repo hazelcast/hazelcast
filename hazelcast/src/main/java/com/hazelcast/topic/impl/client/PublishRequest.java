@@ -79,15 +79,14 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         ObjectDataOutput out = writer.getRawDataOutput();
-        message.writeData(out);
+        out.writeData(message);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         ObjectDataInput in = reader.getRawDataInput();
-        message = new Data();
-        message.readData(in);
+        message = in.readData();
     }
 
     @Override

@@ -129,7 +129,7 @@ public class DoubleSumAggregation<Key, Value>
     private static final class DoubleSumReducer
             extends Reducer<Double, Double> {
 
-        private volatile double sum;
+        private double sum;
 
         @Override
         public void reduce(Double value) {

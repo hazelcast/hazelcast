@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * @author mdogan 5/15/13
+ * Client implementation of the {@link com.hazelcast.core.Cluster}.
  */
 public class ClientClusterProxy implements Cluster {
 
@@ -40,7 +40,7 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public String addMembershipListener(MembershipListener listener) {
-        return clusterService.addMembershipListenerWithInit(listener);
+        return clusterService.addMembershipListener(listener);
     }
 
     @Override

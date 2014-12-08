@@ -16,13 +16,13 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -44,8 +44,9 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PortablePredicatesTest {
 
-    private static final int FACTORY_ID = 1;
-    private final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+    private static final short FACTORY_ID = 1;
+    private final SerializationService ss = new DefaultSerializationServiceBuilder()
+            .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     @Test
     public void testPortablePredicate() {

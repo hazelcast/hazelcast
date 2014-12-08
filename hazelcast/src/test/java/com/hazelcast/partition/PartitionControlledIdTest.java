@@ -26,7 +26,6 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PartitioningStrategyConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
@@ -42,6 +41,7 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
@@ -73,10 +73,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     private static HazelcastInstance[] instances;
 
     @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws Exception {
-        Hazelcast.shutdownAll();
-
+    public static void startHazelcastInstances() throws Exception {
         Config config = new Config();
         PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         config.getMapConfig("default")
@@ -88,9 +85,15 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
     }
 
+    @AfterClass
+    public static void killHazelcastInstances() {
+        HazelcastInstanceFactory.terminateAll();
+    }
+
     private HazelcastInstance getHazelcastInstance(String partitionKey) {
         Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
         Member owner = partition.getOwner();
+        assertNotNull(owner);
 
         HazelcastInstance hz = null;
         for (HazelcastInstance instance : instances) {

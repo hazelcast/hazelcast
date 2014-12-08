@@ -18,11 +18,12 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.DynamicByteBuffer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,41 +42,49 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
+        if (!(out instanceof PortableDataOutput)) {
+            throw new IllegalArgumentException("ObjectDataOutput must be instance of PortableDataOutput!");
+        }
         if (p.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        if (!(out instanceof BufferObjectDataOutput)) {
-            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
-        }
+
         ClassDefinition cd = context.lookupOrRegisterClassDefinition(p);
 
-        BufferObjectDataOutput bufferedOut = (BufferObjectDataOutput) out;
-        DefaultPortableWriter writer = new DefaultPortableWriter(this, bufferedOut, cd);
+        PortableDataOutput output = (PortableDataOutput) out;
+        DynamicByteBuffer headerBuffer = output.getHeaderBuffer();
+
+        int pos = headerBuffer.position();
+        out.writeInt(pos);
+
+        headerBuffer.putInt(cd.getFactoryId());
+        headerBuffer.putInt(cd.getClassId());
+        headerBuffer.putInt(cd.getVersion());
+
+        DefaultPortableWriter writer = new DefaultPortableWriter(this, output, cd);
         p.writePortable(writer);
         writer.end();
     }
 
     public Portable read(ObjectDataInput in) throws IOException {
-        if (!(in instanceof PortableContextAwareInputStream)) {
-            throw new IllegalArgumentException("ObjectDataInput must be instance of PortableContextAwareInputStream!");
+        if (!(in instanceof PortableDataInput)) {
+            throw new IllegalArgumentException("ObjectDataInput must be instance of PortableDataInput!");
         }
-        PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
-        int factoryId = ctxIn.getFactoryId();
-        int classId = ctxIn.getClassId();
-        int version = ctxIn.getVersion();
-        return read(in, factoryId, classId, version);
-    }
 
-    Portable read(ObjectDataInput in, int factoryId, int classId, int version) throws IOException {
-        if (!(in instanceof BufferObjectDataInput)) {
-            throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
-        }
+        PortableDataInput input = (PortableDataInput) in;
+        ByteBuffer headerBuffer = input.getHeaderBuffer();
+
+        int pos = input.readInt();
+        headerBuffer.position(pos);
+
+        int factoryId = headerBuffer.getInt();
+        int classId = headerBuffer.getInt();
+        int version = headerBuffer.getInt();
 
         Portable portable = createNewPortableInstance(factoryId, classId);
         int portableVersion = findPortableVersion(factoryId, classId, portable);
 
-        DefaultPortableReader reader = createReader((BufferObjectDataInput) in, factoryId, classId,
-                version, portableVersion);
+        DefaultPortableReader reader = createReader(input, factoryId, classId, version, portableVersion);
         portable.readPortable(reader);
         reader.end();
         return portable;
@@ -104,17 +113,26 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         return portable;
     }
 
-    Portable readAndInitialize(BufferObjectDataInput in, int factoryId, int classId, int version) throws IOException {
-        Portable p = read(in, factoryId, classId, version);
+    Portable readAndInitialize(BufferObjectDataInput in) throws IOException {
+        Portable p = read(in);
         final ManagedContext managedContext = context.getManagedContext();
         return managedContext != null ? (Portable) managedContext.initialize(p) : p;
     }
 
-    DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version) {
+    DefaultPortableReader createReader(BufferObjectDataInput in) throws IOException {
+        ByteBuffer headerBuffer = ((PortableDataInput) in).getHeaderBuffer();
+
+        int pos = in.readInt();
+        headerBuffer.position(pos);
+
+        int factoryId = headerBuffer.getInt();
+        int classId = headerBuffer.getInt();
+        int version = headerBuffer.getInt();
+
         return createReader(in, factoryId, classId, version, version);
     }
 
-    DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
+    private DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
             int portableVersion) {
 
         int effectiveVersion = version;
@@ -122,7 +140,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
             effectiveVersion = context.getVersion();
         }
 
-        ClassDefinition cd = context.lookup(factoryId, classId, effectiveVersion);
+        ClassDefinition cd = context.lookupClassDefinition(factoryId, classId, effectiveVersion);
         if (cd == null) {
             throw new HazelcastSerializationException("Could not find class-definition for "
                     + "factory-id: " + factoryId + ", class-id: " + classId + ", version: " + effectiveVersion);
@@ -140,6 +158,5 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     public void destroy() {
         factories.clear();
     }
-
 }
 

@@ -89,7 +89,7 @@ public class SimpleMapTestFromClient {
         for (int i = 0; i < THREAD_COUNT; i++) {
             es.submit(new Runnable() {
                 public void run() {
-                    IMap<String, byte[]> map = client.getMap("default");
+                    IMap<String, Object> map = client.getMap("default");
                     while (true) {
                         int key = (int) (Math.random() * ENTRY_COUNT);
                         int operation = ((int) (Math.random() * 100));

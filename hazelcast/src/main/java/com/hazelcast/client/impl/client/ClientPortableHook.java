@@ -26,7 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Portable that creates a lot of the client related Porable instances.
+ * Portable that creates a lot of the client related Portable instances.
  */
 public class ClientPortableHook implements PortableHook {
 

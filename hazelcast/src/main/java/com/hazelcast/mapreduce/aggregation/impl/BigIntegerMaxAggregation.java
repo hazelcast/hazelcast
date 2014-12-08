@@ -134,7 +134,7 @@ public class BigIntegerMaxAggregation<Key, Value>
     private static final class BigIntegerMaxReducer
             extends Reducer<BigInteger, BigInteger> {
 
-        private volatile BigInteger max;
+        private BigInteger max;
 
         @Override
         public void reduce(BigInteger value) {

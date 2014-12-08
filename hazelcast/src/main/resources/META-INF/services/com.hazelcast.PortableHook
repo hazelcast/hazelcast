@@ -2,7 +2,7 @@ com.hazelcast.spi.impl.SpiPortableHook
 com.hazelcast.partition.PartitionPortableHook
 com.hazelcast.client.impl.client.ClientPortableHook
 com.hazelcast.transaction.client.ClientTxnPortableHook
-com.hazelcast.map.MapPortableHook
+com.hazelcast.map.impl.MapPortableHook
 com.hazelcast.queue.impl.QueuePortableHook
 com.hazelcast.multimap.impl.MultiMapPortableHook
 com.hazelcast.collection.CollectionPortableHook
@@ -15,3 +15,4 @@ com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook
 com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook
 com.hazelcast.mapreduce.impl.MapReducePortableHook
 com.hazelcast.replicatedmap.impl.client.ReplicatedMapPortableHook
+com.hazelcast.cache.impl.CachePortableHook
