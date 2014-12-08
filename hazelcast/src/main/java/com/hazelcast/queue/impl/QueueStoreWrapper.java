@@ -253,7 +253,6 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
                     }
                     dataMap.put(entry.getKey(), data);
                 }
-                return (Map<Long, Data>) map;
             } else {
                 for (Map.Entry<Long, ?> entry : map.entrySet()) {
                     dataMap.put(entry.getKey(), serializationService.toData(entry.getValue()));
