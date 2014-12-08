@@ -2,28 +2,28 @@
 
 It makes you feel good...
 
-### Issue Reports
+## Issue Reports
 Thanks for reporting your issue.  Please share with us the following information, to help us resolve your issue quickly and efficiently.
-*	Hazelcast version that you are using  (e.g. 3.4  also specify minor release or latest snapshot)
-2.	Cluster Size (number of Hazelcast member nodes)
-3.	Number of Clients
-4.	Version of Java (also JVM parameters can be added)
-5.	Operating System (for Linux kernel version will be helpful)
-6.	Logs and Stack Traces (if available)
-7.	Steps to reproduce  (detailed description of steps to reproduce your issue)
-8.	Unit Test with hazelcast.xml file (if you can include a unit test which reproduces your issue, we would be grateful)
-9.	Integration module versions if available (e.g. tomcat , jetty, spring , hibernate) with Detailed configuration information (web.xml, hibernate configuration, spring context.xml etc.)
+*	Hazelcast version that you use (e.g. 3.4, also specify whether it is a minor release or the latest snapshot).
+2.	Cluster size, i.e. the number of Hazelcast cluster members.
+3.	Number of the clients.
+4.	Version of Java. It is also helpful to mention the JVM parameters.
+5.	Operating system. If it is Linux, kernel version is helpful.
+6.	Logs and stack traces, if available.
+7.	Detailed description of the steps to reproduce your issue.
+8.	Unit test with the `hazelcast.xml` file. If you could include a unit test which reproduces your issue, we would be grateful.
+9.	If available, integration module versions (e.g. Tomcat, Jetty, Spring, Hibernate). Also, include their  detailed configuration information such as `web.xml`, Hibernate configuration and `context.xml` for Spring.
 
-### Pull Requests
-Thanks for creating pull request.
-*	Contributions are submitted, reviewed, and accepted using GitHub pull requests.
-2.	In order to merge your pull request, please sing [Contributor Agreement Form].
-3.	Try to make clean commits that are easily readable (including descriptive commit messages)
-4.	The latest changes are in the master branch.
-5.	Run "mvn clean validate -Pcheckstyle" from terminal before you push, if you get a checkstyle error please fix them to can be merge your PR. 
-6.	Run "mvn clean install -PfindBugs" from terminal before you push, if you get a findbugs error please fix them to can be merge your PR.
-7.	Please keep pull requests as small as possible.
-8.	If you are submitting a pull request as a solution to specific issue, please don't forget to mention the issue number either in the pull request description or in commit message.
+## Pull Requests
+Thanks for creating your pull request (PR).
+*	Contributions are submitted, reviewed, and accepted using the pull requests on GitHub.
+2.	In order to merge your PR, please sign the [Contributor Agreement Form].
+3.	Try to make clean commits that are easily readable (including descriptive commit messages).
+4.	The latest changes are in the **master** branch.
+5.	Before your push, run the command `mvn clean validate -Pcheckstyle` at your terminal and fix the checkstyle errors (if any). Push your PR that is free of checkstyle errors.
+6.	Before your push, run the command `mvn clean install -PfindBugs` at your terminal and fix the findbugs errors (if any). Push your PR that is free of findbugs errors.
+7.	Please keep your PRs as small as possible, i.e. if you plan to perform a huge change, do not submit a single and large PR for it.
+8.	If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description or commit message.
 
 
 [Contributor Agreement Form]:https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement
