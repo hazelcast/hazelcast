@@ -1,7 +1,7 @@
 
-### Improvements
+### Enhancements
 
-This section lists the improvements performed for Hazelcast 3.4 release.
+This section lists the enhancements performed for Hazelcast 3.4 release.
 
 - Event packets sent to the client do not have "partitionId" [[#4071]](https://github.com/hazelcast/hazelcast/issues/4071).
 - Spring Configuration for ReplicatedMap is Missing [[#3966]](https://github.com/hazelcast/hazelcast/issues/3966).
