@@ -1,11 +1,14 @@
 
 ### Fixes
 
-**3.4-RC1 Fixes**
+**3.4 Fixes**
 
-This section lists issues solved for **Hazelcast 3.4-RC1** (Release Candidate 1) release.
+This section lists issues solved for **Hazelcast 3.4** release.
 
-- JCache evicts the records which are not expired yet. To solve this issue, the `clear` method should be removed that runs when the size is smaller then the minimum eviction element count (`MIN_EVICTION_ELEMENT_COUNT`) [[#4124]](https://github.com/hazelcast/hazelcast/issues/4124).
+- Deadlock happens in MapReduce implementation when there is a high load on the system. The issue has been solved by offloading Distributed MapReduce result collection to the async executor [[#4238]](https://github.com/hazelcast/hazelcast/issues/4238).
+- When the class `ClientExecutorServiceSubmitTest.java` is compiled using the Eclipse compiler, it gives a compile error: "*The method submit(Runnable, ExecutionCallback) is ambiguous for the type IExecutorService*". The reason is that the `IExecutorService.java` class does not have some generics. The issue has been solved by adding these missing generics to the `IExecutorService.java` class [[#4234]](https://github.com/hazelcast/hazelcast/issues/4234).
+- JCache declarative listener registration does not work [[#4215]](https://github.com/hazelcast/hazelcast/issues/4215).
+- JCache evicts the records which are not expired yet. To solve this issue, the `clear` method should be removed that runs when the size is smaller than the minimum eviction element count (`MIN_EVICTION_ELEMENT_COUNT`) [[#4124]](https://github.com/hazelcast/hazelcast/issues/4124).
 - Hazelcast Enterprise Native Memory operations should be updated in relation with the Hazelcast sync listener changes [[#4089]](https://github.com/hazelcast/hazelcast/issues/4089).
 - The completion listener (JCache) relies on event ordering but if the completion listener is registered in another node then event ordering is not guaranteed [[#4073]](https://github.com/hazelcast/hazelcast/issues/4073).
 - Event packets sent to the client do not have "partitionId" [[#4071]](https://github.com/hazelcast/hazelcast/issues/4071).
