@@ -40,7 +40,7 @@ public class BasicBackPressureService {
 
     // The key is either a connection instance (remote executed operations) or 'this'. This is needed because there is
     // no local connection.
-    // The value is an array of AtomicInteger with a length of partition-count+1. The last item is for generic-operations.
+    // The value is an array of AtomicInteger with a length of partitioncount+1. The last item is for generic-operations.
     private final ConcurrentMap<Object, AtomicInteger[]> syncDelaysPerConnection
             = new ConcurrentHashMap<Object, AtomicInteger[]>();
     private final boolean backPressureEnabled;
@@ -158,6 +158,10 @@ public class BasicBackPressureService {
         return connection == null ? this : connection;
     }
 
+    /**
+     * Cleans up all sync delay administration for dead connections. Without this cleanup, eventually the system could
+     * run into an OOME.
+     */
     public void cleanup() {
         if (!backPressureEnabled) {
             return;
