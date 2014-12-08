@@ -434,15 +434,12 @@ public abstract class HazelcastTestSupport {
     }
 
     public static boolean isAllInSafeState() {
-        for (HazelcastInstance hz : HazelcastInstanceFactory.getAllHazelcastInstances()) {
-            if (!isInstanceInSafeState(hz)) {
-                return false;
-            }
-        }
-        return true;
+        final Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
+        final HazelcastInstance[] nodes = nodeSet.toArray(new HazelcastInstance[nodeSet.size()]);
+        return isAllInSafeState(nodes);
     }
 
-    public static boolean isAllInSafeState(HazelcastInstance... nodes) {
+    public static boolean isAllInSafeState(HazelcastInstance[] nodes) {
         for (HazelcastInstance node : nodes) {
             if (!isInstanceInSafeState(node)) {
                 return false;
