@@ -287,6 +287,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queue.add(2);
         queue.add(3);
 
+        // this triggers bulk loading.
         final int value = queue.peek();
 
         assertEquals(1, value);
