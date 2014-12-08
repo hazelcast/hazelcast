@@ -62,9 +62,9 @@ public class SimpleClusterUtil {
         return getNode(random.nextInt(cluster.size()));
     }
 
-    public void terminateRandomNode(){
+    public void shutdownRandomNode(){
         HazelcastInstance node = getRandomNode();
-        node.getLifecycleService().terminate();
+        node.getLifecycleService().shutdown();
         cluster.remove(node);
     }
 
