@@ -442,10 +442,27 @@ public abstract class HazelcastTestSupport {
         return true;
     }
 
+    public static boolean isAllInSafeState(HazelcastInstance... nodes) {
+        for (HazelcastInstance node : nodes) {
+            if (!isInstanceInSafeState(node)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void waitAllForSafeState() {
         assertTrueEventually(new AssertTask() {
             public void run() {
                 assertTrue(isAllInSafeState());
+            }
+        });
+    }
+
+    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(isAllInSafeState(nodes));
             }
         });
     }

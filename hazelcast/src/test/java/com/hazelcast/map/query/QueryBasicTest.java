@@ -779,7 +779,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new ParentPortableObject(1L));
-        waitAllForSafeState();
+        waitAllForSafeState(hz1, hz2);
 
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
@@ -842,7 +842,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
-        waitAllForSafeState();
+        waitAllForSafeState(hz1, hz2);
 
         Collection<Object> values = map.values(new SqlPredicate("child.timestamp > 0"));
         assertEquals(1, values.size());
