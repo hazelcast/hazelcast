@@ -1,7 +1,7 @@
 # You can now add comments using a hash-sign upfront the line :)
 src/Preface.md
 src/WhatsNew.md
-#	src/WhatsNewImprovements.md
+	src/WhatsNewImprovements.md
 	src/WhatsNewFixes.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
