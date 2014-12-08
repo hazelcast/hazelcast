@@ -28,16 +28,16 @@ import java.net.SocketAddress;
 public interface Endpoint {
 
     /**
-     * Returns unique uuid for this endpoint
+     * Returns the unique uuid for this endpoint.
      *
-     * @return unique uuid for this endpoint
+     * @return the unique uuid for this endpoint
      */
     String getUuid();
 
     /**
-     * Returns socket address of this endpoint
+     * Returns the socket address for this endpoint.
      *
-     * @return socket address of this endpoint
+     * @return the socket address for this endpoint
      */
     SocketAddress getSocketAddress();
 }
