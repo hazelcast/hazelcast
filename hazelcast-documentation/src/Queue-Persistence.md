@@ -2,9 +2,9 @@
 ### Queue Persistence
 
 
-Hazelcast allows you to load and store the distributed queue entries from/to a persistent datastore using the interface `QueueStore`. If queue store is enabled, each entry added to the queue will also be stored at the configured queue store. When the number of items in the queue exceeds the memory limit, the items will only persisted in the queue store, they will not be stored in the queue memory. 
+Hazelcast allows you to load and store the distributed queue items from/to a persistent datastore using the interface `QueueStore`. If queue store is enabled, each item added to the queue will also be stored at the configured queue store. When the number of items in the queue exceeds the memory limit, the items will only persisted in the queue store, they will not be stored in the queue memory. 
 
-`QueueStore` interface enables you to store, load, and delete entries with methods like `store`, `storeAll`, `load` and `delete`. The following sample class includes all of the `QueueStore` methods.
+`QueueStore` interface enables you to store, load, and delete items with methods like `store`, `storeAll`, `load` and `delete`. The following example class includes all of the `QueueStore` methods.
 
 ```java
 public class TheQueueStore implements QueueStore<Item> {
@@ -47,7 +47,7 @@ public class TheQueueStore implements QueueStore<Item> {
     }
 ```
 
-`Item` must be serializable. Following is a sample queue store configuration.
+`Item` must be serializable. Following is an example queue store configuration.
 
 ```xml
 <queue-store>

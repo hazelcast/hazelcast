@@ -211,12 +211,11 @@ public class MaxSizeChecker {
     /**
      * used when deciding evictable or not.
      */
-    private int getApproximateMaxSize(int maxSizeFromConfig) {
+    public static int getApproximateMaxSize(int maxSizeFromConfig) {
         // because not to exceed the max size much we start eviction early.
         // so decrease the max size with ratio .95 below
         return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
     }
-
 
     private List<Integer> findPartitionIds() {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();

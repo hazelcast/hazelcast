@@ -16,15 +16,7 @@
 
 package com.hazelcast.memory;
 
-import com.hazelcast.monitor.LocalInstanceStats;
-import com.hazelcast.monitor.LocalMemoryStats;
-import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
-import com.hazelcast.util.EmptyStatement;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
+import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
 
 /**
  * This class provides heap usage statistics
@@ -32,8 +24,9 @@ import java.lang.management.MemoryUsage;
  */
 public final class MemoryStatsSupport {
 
-    private static final MBeanServer PLATFORM_M_BEAN_SERVER = ManagementFactory.getPlatformMBeanServer();
-    private static final long TOTAL_PHYSICAL_MEMORY = queryPhysicalMemory("TotalPhysicalMemorySize");
+    private static final long TOTAL_PHYSICAL_MEMORY = readLongAttribute("TotalPhysicalMemorySize", -1L);
+
+    private static final long TOTAL_SWAP_SPACE = readLongAttribute("TotalSwapSpaceSize", -1L);
 
     /**
      * No public constructor is needed for utility classes
@@ -45,43 +38,15 @@ public final class MemoryStatsSupport {
     }
 
     public static long freePhysicalMemory() {
-        return queryPhysicalMemory("FreePhysicalMemorySize");
+        return readLongAttribute("FreePhysicalMemorySize", -1L);
     }
 
-    private static long queryPhysicalMemory(String type) {
-        try {
-            ObjectName name = new ObjectName("java.lang", "type", "OperatingSystem");
-            Object attribute = PLATFORM_M_BEAN_SERVER.getAttribute(name, type);
-            if (attribute != null) {
-                return Long.parseLong(attribute.toString());
-            }
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
-        }
-        return -1L;
+    public static long totalSwapSpace() {
+        return TOTAL_SWAP_SPACE;
     }
 
-    public static MemoryUsage getHeapMemoryUsage() {
-        return ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+    public static long freeSwapSpace() {
+        return readLongAttribute("FreeSwapSpaceSize", -1L);
     }
 
-    public static LocalMemoryStats getMemoryStats() {
-        LocalMemoryStatsImpl stats = new LocalMemoryStatsImpl();
-        stats.setTotalPhysical(totalPhysicalMemory());
-        stats.setFreePhysical(freePhysicalMemory());
-
-        MemoryUsage memoryUsage = getHeapMemoryUsage();
-        stats.setMaxHeap(memoryUsage.getMax());
-        stats.setCommittedHeap(memoryUsage.getCommitted());
-        stats.setUsedHeap(memoryUsage.getUsed());
-
-        stats.setCommittedNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
-        stats.setMaxNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
-        stats.setUsedNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
-        stats.setFreeNativeMemory(LocalInstanceStats.STAT_NOT_AVAILABLE);
-
-        stats.setGcStats(GCStatsSupport.getGCStats());
-
-        return stats;
-    }
 }

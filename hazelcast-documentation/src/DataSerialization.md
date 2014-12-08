@@ -4,7 +4,7 @@
 
 ## DataSerializable
 
-As mentioned in the [Serializable & Externalizable](#serializable-externalizable) section, Java serialization is an easy mechanism. However, we do not have a control on how fields are serialized or deserialized. Moreover, this mechanism can lead to excessive CPU loads since it keeps track of objects to handle the cycles and streams class descriptors. These are performance decreasing factors; thus, serialized data may not have an optimal size.
+As mentioned in the [Serializable & Externalizable section](#serializable-externalizable), Java serialization is an easy mechanism. However, we do not have a control on how fields are serialized or deserialized. Moreover, this mechanism can lead to excessive CPU loads since it keeps track of objects to handle the cycles and streams class descriptors. These are performance decreasing factors; thus, serialized data may not have an optimal size.
 
 The `DataSerializable` interface of Hazelcast overcomes these issues. Here is an example of a class implementing the `com.hazelcast.nio.serialization.DataSerializable` interface.
 
@@ -81,7 +81,7 @@ As you can see, since `address` field itself is `DataSerializable`, it is callin
 
 For a faster serialization of objects, avoiding reflection and long class names, Hazelcast recommends you implement `com.hazelcast.nio.serialization.IdentifiedDataSerializable` which is a slightly better version of `DataSerializable`.
 
-`DataSerializable` uses reflection to create a class instance, as mentioned in above section. But, `IdentifiedDataSerializable` uses a factory for this purpose and it is faster during deserialization which requires new instance creations.
+`DataSerializable` uses reflection to create a class instance, as mentioned in the [DataSerializable section](#dataserializable). But, `IdentifiedDataSerializable` uses a factory for this purpose and it is faster during deserialization which requires new instance creations.
 
 `IdentifiedDataSerializable` extends `DataSerializable` and introduces two new methods.
 
@@ -172,4 +172,13 @@ As the last step, you need to register `EmployeeDataSerializableFactory` declara
   ...
 </hazelcast>
 ```
+
+
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Serialization Configuration section](#serialization-configuration) for a full description of Hazelcast Serialization configuration.*
+
  

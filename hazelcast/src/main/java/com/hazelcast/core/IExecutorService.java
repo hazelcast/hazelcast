@@ -153,7 +153,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param callback callback
      */
-    void submit(Runnable task, ExecutionCallback callback);
+    <T> void submit(Runnable task, ExecutionCallback<T> callback);
 
     /**
      * Submits task to a randomly selected members. Caller will be notified for the result of the task by
@@ -164,7 +164,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param callback callback
      * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
      */
-    void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback callback);
+    <T> void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback<T> callback);
 
     /**
      * Submits task to owner of the specified key. Caller will be notified for the result of the task by
@@ -173,7 +173,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param callback callback
      */
-    void submitToKeyOwner(Runnable task, Object key, ExecutionCallback callback);
+    <T> void submitToKeyOwner(Runnable task, Object key, ExecutionCallback<T> callback);
 
     /**
      * Submits task to the specified member. Caller will be notified for the result of the task by
@@ -182,7 +182,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * @param task task
      * @param callback callback
      */
-    void submitToMember(Runnable task, Member member, ExecutionCallback callback);
+    <T> void submitToMember(Runnable task, Member member, ExecutionCallback<T> callback);
 
     /**
      * Submits task to the specified members. Caller will be notified for the result of the each task by

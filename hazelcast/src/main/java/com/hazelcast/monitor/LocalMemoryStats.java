@@ -16,28 +16,12 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalMemoryStats extends LocalInstanceStats {
 
-    long getTotalPhysical();
+import com.hazelcast.memory.MemoryStats;
 
-    long getFreePhysical();
+public interface LocalMemoryStats extends MemoryStats, LocalInstanceStats {
 
-    long getMaxHeap();
-
-    long getCommittedHeap();
-
-    long getUsedHeap();
-
-    long getFreeHeap();
-
-    long getMaxNativeMemory();
-
-    long getCommittedNativeMemory();
-
-    long getUsedNativeMemory();
-
-    long getFreeNativeMemory();
-
+    @Override
     LocalGCStats getGCStats();
 
 }

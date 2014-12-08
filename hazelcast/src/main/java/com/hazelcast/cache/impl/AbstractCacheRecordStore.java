@@ -17,9 +17,17 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.eviction.EvictionChecker;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.cache.impl.eviction.EvictionStrategy;
+import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
+import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.cache.impl.record.CacheRecordMap;
+import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.IOUtil;
@@ -51,7 +59,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
@@ -60,17 +67,14 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 /**
  * @author sozal 14/10/14
  */
-public abstract class AbstractCacheRecordStore<
-        R extends CacheRecord, CRM extends CacheRecordMap<Data, R>>
+public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore {
 
     protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
-    protected static final long DEFAULT_EXPIRATION_TASK_INITIAL_DELAY = 10;
-    protected static final long DEFAULT_EXPIRATION_TASK_PERIOD = 10;
-
     protected final String name;
     protected final int partitionId;
+    protected final int partitionCount;
     protected final NodeEngine nodeEngine;
     protected final AbstractCacheService cacheService;
     protected final CacheConfig cacheConfig;
@@ -82,24 +86,29 @@ public abstract class AbstractCacheRecordStore<
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
     protected final EvictionPolicy evictionPolicy;
+    protected final CacheMaxSizeConfig maxSizeConfig;
     protected volatile boolean hasExpiringEntry;
     protected final boolean evictionEnabled;
-    protected final int evictionPercentage;
-    protected final int evictionThresholdPercentage;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
-    protected ScheduledFuture<?> expirationTaskScheduler;
+    protected final CacheMaxSizeChecker maxSizeChecker;
+    protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
+    protected final EvictionChecker evictionChecker;
+    protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
             final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
+        this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
         this.cacheConfig = cacheService.getCacheConfig(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache already destroyed, node " + nodeEngine.getLocalMember());
+            throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
+                    + nodeEngine.getLocalMember());
         }
+        this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -111,14 +120,23 @@ public abstract class AbstractCacheRecordStore<
         if (cacheConfig.isStatisticsEnabled()) {
             this.statistics = cacheService.createCacheStatIfAbsent(name);
         }
-        Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
+        final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
         this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
                 ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
+        this.maxSizeConfig = cacheConfig.getMaxSizeConfig();
         this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
-        this.evictionPercentage = cacheConfig.getEvictionPercentage();
-        this.evictionThresholdPercentage = cacheConfig.getEvictionThresholdPercentage();
-        this.expirationTaskScheduler = scheduleExpirationTask();
+        this.maxSizeChecker = createCacheMaxSizeChecker(maxSizeConfig);
+        this.evictionPolicyEvaluator = creatEvictionPolicyEvaluator(evictionPolicy);
+        this.evictionChecker = createEvictionChecker();
+        this.evictionStrategy = creatEvictionStrategy();
+
+        if (maxSizeConfig == null) {
+            throw new IllegalStateException("Max-Size config must be configured");
+        }
+        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
+            throw new IllegalStateException("Eviction policy cannot be null or NONE");
+        }
     }
     //CHECKSTYLE:ON
 
@@ -155,7 +173,45 @@ public abstract class AbstractCacheRecordStore<
 
     protected abstract Data toHeapData(Object obj);
 
-    protected abstract boolean isEvictionRequired();
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
+        if (maxSizeConfig == null) {
+            throw new IllegalArgumentException("Max-Size config cannot be null");
+        }
+
+        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+        if (maxSizePolicy == null) {
+            throw new IllegalArgumentException("Max-Size policy cannot be null");
+        }
+        if (maxSizePolicy == CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+            return new EntryCountCacheMaxSizeChecker(maxSizeConfig, records, partitionCount);
+        }
+
+        return null;
+    }
+
+    protected EvictionPolicyEvaluator<Data, R> creatEvictionPolicyEvaluator(EvictionPolicy evictionPolicy) {
+        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
+            throw new IllegalArgumentException("Eviction policy cannot be null or NONE");
+        }
+
+        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionPolicy);
+    }
+
+    protected EvictionChecker createEvictionChecker() {
+        return new MaxSizeEvictionChecker();
+    }
+
+    protected EvictionStrategy<Data, R, CRM> creatEvictionStrategy() {
+        return EvictionStrategyProvider.getDefaultEvictionStrategy();
+    }
+
+    protected boolean isEvictionRequired() {
+        if (maxSizeChecker != null) {
+            return maxSizeChecker.isReachedToMaxSize();
+        } else {
+            return false;
+        }
+    }
 
     protected void updateHasExpiringEntry(R record) {
         if (record != null) {
@@ -165,48 +221,20 @@ public abstract class AbstractCacheRecordStore<
         }
     }
 
+    public boolean isEvictionEnabled() {
+        return evictionEnabled && evictionStrategy != null && evictionPolicyEvaluator != null;
+    }
+
     @Override
     public int evictIfRequired() {
-        if (evictionEnabled) {
-            if (isEvictionRequired()) {
-                int evictedCount = records.evictRecords(evictionPercentage, evictionPolicy);
-                if (isStatisticsEnabled()) {
-                    statistics.increaseCacheEvictions(evictedCount);
-                }
+        int evictedCount = 0;
+        if (isEvictionEnabled()) {
+            evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker);
+            if (isStatisticsEnabled() && evictedCount > 0) {
+                statistics.increaseCacheEvictions(evictedCount);
             }
         }
-        return 0;
-    }
-
-    @Override
-    public int evictExpiredRecords(int percentage) {
-        int expiredCount = records.evictExpiredRecords(percentage);
-        if (isStatisticsEnabled()) {
-            statistics.increaseCacheExpiries(expiredCount);
-        }
-        return expiredCount;
-    }
-
-    @Override
-    public int forceEvict() {
-        int evicted = 0;
-        int percentage = Math.max(MIN_FORCED_EVICT_PERCENTAGE, evictionPercentage);
-
-        if (hasExpiringEntry) {
-            int expiredCount = records.evictExpiredRecords(ONE_HUNDRED_PERCENT);
-            if (isStatisticsEnabled()) {
-                statistics.increaseCacheExpiries(expiredCount);
-            }
-            evicted += expiredCount;
-        }
-
-        int evictedCount = records.evictRecords(percentage, EvictionPolicy.RANDOM);
-        if (isStatisticsEnabled()) {
-            statistics.increaseCacheEvictions(evictedCount);
-        }
-        evicted += evictedCount;
-
-        return evicted;
+        return evictedCount;
     }
 
     protected Data toData(Object obj) {
@@ -262,18 +290,8 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                case OBJECT:
-                case NATIVE:
-                    dataValue = toEventData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(CacheEventType.EXPIRED, key, null, dataValue, false, IGNORE_COMPLETION);
+            publishEvent(CacheEventType.EXPIRED, key, null,
+                    toEventData(record), false, IGNORE_COMPLETION);
         }
         return true;
     }
@@ -288,18 +306,8 @@ public abstract class AbstractCacheRecordStore<
         }
         records.remove(key);
         if (isEventsEnabled) {
-            final Data dataValue;
-            switch (cacheConfig.getInMemoryFormat()) {
-                case BINARY:
-                case OBJECT:
-                case NATIVE:
-                    dataValue = toEventData(record);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid storage format: "
-                            + cacheConfig.getInMemoryFormat());
-            }
-            publishEvent(CacheEventType.EXPIRED, key, null, dataValue, false, IGNORE_COMPLETION);
+            publishEvent(CacheEventType.EXPIRED, key, null,
+                    toEventData(record), false, IGNORE_COMPLETION);
         }
         return null;
     }
@@ -1338,16 +1346,9 @@ public abstract class AbstractCacheRecordStore<
 
     @Override
     public void destroy() {
-        closeScheduledTasks();
         clear();
         closeResources();
         closeListeners();
-    }
-
-    protected void closeScheduledTasks() {
-        if (expirationTaskScheduler != null) {
-            expirationTaskScheduler.cancel(true);
-        }
     }
 
     protected void closeListeners() {
@@ -1384,29 +1385,13 @@ public abstract class AbstractCacheRecordStore<
         }
     }
 
-    protected ScheduledFuture<?> scheduleExpirationTask() {
-        return nodeEngine.getExecutionService()
-                .scheduleWithFixedDelay("hz:cache",
-                        new ExpirationTask(),
-                        DEFAULT_EXPIRATION_TASK_INITIAL_DELAY,
-                        DEFAULT_EXPIRATION_TASK_PERIOD,
-                        TimeUnit.SECONDS);
-    }
+    protected class MaxSizeEvictionChecker implements EvictionChecker {
 
-    protected void onExpiry() {
-        if (hasExpiringEntry) {
-            evictExpiredRecords(evictionPercentage);
-        }
-    }
-
-    /**
-     * Task to evict expired records
-     */
-    protected class ExpirationTask implements Runnable {
         @Override
-        public void run() {
-            onExpiry();
+        public boolean isEvictionRequired() {
+            return maxSizeChecker.isReachedToMaxSize();
         }
+
     }
 
 }

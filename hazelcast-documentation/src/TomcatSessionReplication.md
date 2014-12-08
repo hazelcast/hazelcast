@@ -63,7 +63,7 @@ This type of deployment is simple: just configure your Tomcat and launch. There 
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
 - Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*tomcatversion*>`-`<*version*>`.jar` and `hazelcast.xml` in the folder `$CATALINA_HOME/lib/`.
 
-- Put a `<Listener>` tag into the file `$CATALINA_HOME$/conf/server.xml` as shown below.
+- Put a `<Listener>` element into the file `$CATALINA_HOME$/conf/server.xml` as shown below.
 
 ```xml
 <Server>
@@ -73,7 +73,7 @@ This type of deployment is simple: just configure your Tomcat and launch. There 
 </Server>
 ```
 
-- Put a `<Manager>` tag into the file `$CATALINA_HOME$/conf/context.xml` as shown below.
+- Put a `<Manager>` element into the file `$CATALINA_HOME$/conf/context.xml` as shown below.
 
 ```xml
 <Context>
@@ -85,9 +85,9 @@ This type of deployment is simple: just configure your Tomcat and launch. There 
 
 - Start Tomcat instances with a configured load balancer and deploy the web application.
 
-***Optional Listener Tag Parameters***
+***Optional Attributes for Listener Element***
 
-- Optionally, you can add `configLocation` attribute into the `<Listener>` tag. If not provided, `hazelcast.xml` in the classpath is used by default. URL or full filesystem path as a `configLocation` value is supported.
+- Optionally, you can add `configLocation` attribute into the `<Listener>` element. If not provided, `hazelcast.xml` in the classpath is used by default. URL or full filesystem path as a `configLocation` value is supported.
 
 <br></br>
 
@@ -108,7 +108,7 @@ In this deployment type, Tomcat instances work as clients on an existing Hazelca
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-client-`<*version*>`.jar`,            `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*version*>`.jar` and           `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*tomcatversion*>`-`<*version*>`.jar` in the folder `$CATALINA_HOME/lib/`.
 
-- Put a `<Listener>` tag into the `$CATALINA_HOME$/conf/server.xml` as shown below.
+- Put a `<Listener>` element into the `$CATALINA_HOME$/conf/server.xml` as shown below.
 
 ```xml
 <Server>
@@ -118,7 +118,7 @@ In this deployment type, Tomcat instances work as clients on an existing Hazelca
 </Server>
 ```
 
-- Update the `<Manager>` tag in the `$CATALINA_HOME$/conf/context.xml` as shown below.
+- Update the `<Manager>` element in the `$CATALINA_HOME$/conf/context.xml` as shown below.
 
 ```xml
 <Context>
@@ -132,18 +132,18 @@ In this deployment type, Tomcat instances work as clients on an existing Hazelca
 
 
 
-***Optional Listener Tag Parameters***
+***Optional Attributes for Listener Element***
 
-- Optionally, you can add `configLocation` attribute into the `<Listener>` tag. If not provided, `hazelcast-client-default.xml` in `hazelcast-client-`<*version*>`.jar` file is used by default. Any client XML file in the classpath, URL or full filesystem path as a `configLocation` value is also supported.
+- Optionally, you can add `configLocation` attribute into the `<Listener>` element. If not provided, `hazelcast-client-default.xml` in `hazelcast-client-`<*version*>`.jar` file is used by default. Any client XML file in the classpath, URL or full filesystem path as a `configLocation` value is also supported.
 
-#### Optional Manager Tag Parameters
+#### Optional Attributes for Manager Element
 
-`<Manager>` tag is used both in P2P and Client/Server mode. You can use the following parameters to configure Tomcat Session Replication Module to better serve your needs.
+`<Manager>` element is used both in P2P and Client/Server mode. You can use the following attributes to configure Tomcat Session Replication Module to better serve your needs.
 
-- Add `mapName` attribute into `<Manager>` tag. Its default value is *default Hazelcast Distributed Map*. Use this attribute if you have a specially configured map for special cases like WAN Replication, Eviction, MapStore, etc.
-- Add `sticky` attribute into `<Manager>` tag. Its default value is *true*.
-- Add `processExpiresFrequency` attribute into `<Manager>` tag. It specifies the frequency of session validity check, in seconds. Its default value is *6* and the minimum value that you can set is *1*.
-- Add `deferredWrite` attribute into `<Manager>` tag. Its default value is *true*.
+- Add `mapName` attribute into `<Manager>` element. Its default value is *default Hazelcast Distributed Map*. Use this attribute if you have a specially configured map for special cases like WAN Replication, Eviction, MapStore, etc.
+- Add `sticky` attribute into `<Manager>` element. Its default value is *true*.
+- Add `processExpiresFrequency` attribute into `<Manager>` element. It specifies the frequency of session validity check, in seconds. Its default value is *6* and the minimum value that you can set is *1*.
+- Add `deferredWrite` attribute into `<Manager>` elemenet. Its default value is *true*.
 
 <br></br>
 
@@ -151,7 +151,7 @@ In this deployment type, Tomcat instances work as clients on an existing Hazelca
 
 Tomcat Web Session Replication Module has its own nature of caching. Attribute changes during the HTTP Request/HTTP Response cycle is cached by default. Distributing those changes to the Hazelcast Cluster is costly. Because of that, Session Replication is only done at the end of each request for updated and deleted attributes. The risk in this approach is losing data if a Tomcat crash happens in the middle of the HTTP Request operation.
 
-You can change that behavior by setting `deferredWrite=false` in your `<Manager>` tag configuration. By disabling it, all updates that are done on session objects are directly distributed into Hazelcast Cluster.
+You can change that behavior by setting `deferredWrite=false` in your `<Manager>` element. By disabling it, all updates that are done on session objects are directly distributed into Hazelcast Cluster.
 
 #### Session Expiry
 

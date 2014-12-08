@@ -186,8 +186,11 @@ public abstract class AbstractHazelcastCacheManager
             }
             //create the cache proxy which already exists in the cluster
             final ICache<K, V> cacheProxy = createCacheProxy(cacheConfig);
-            final ICache<?, ?> iCache = caches.putIfAbsent(cacheNameWithPrefix, cacheProxy);
-            cache = iCache != null ? iCache : cacheProxy;
+            cache = caches.putIfAbsent(cacheNameWithPrefix, cacheProxy);
+            if (cache == null) {
+                registerListeners(cacheConfig, cacheProxy);
+                cache = cacheProxy;
+            }
         }
         return cache;
     }

@@ -45,7 +45,6 @@ public interface ICacheRecordStore {
 
     // Defined as constant for check-style error
     int ONE_HUNDRED_PERCENT = 100;
-    int MIN_FORCED_EVICT_PERCENTAGE = 20;
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -411,20 +410,5 @@ public interface ICacheRecordStore {
      * @return the number of evicted records.
      */
     int evictIfRequired();
-
-    /**
-     * Evict cache record store as <code>evictionPercentange</code>.
-     * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
-     * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
-     * @param evictionPercentange The eviction percentage relative to cache record store capacity.
-     * @return the number of evicted records.
-     */
-    int evictExpiredRecords(int evictionPercentange);
-
-    /**
-     * Forcibly evict all expired records.
-     * @return the number of evicted records.
-     */
-    int forceEvict();
 
 }

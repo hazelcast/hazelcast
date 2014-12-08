@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -847,7 +848,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -904,7 +905,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -979,7 +980,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -1041,23 +1042,27 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
             }
 
+            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 removedKey[0] = event.getKey();
                 removedValue[0] = event.getOldValue();
             }
 
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updatedKey[0] = event.getKey();
                 oldValue[0] = event.getOldValue();
                 newValue[0] = event.getValue();
             }
 
+            @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 
@@ -1138,17 +1143,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.destroy();
         loader.preloadValues = true;
         map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
-        assertFalse(map.isEmpty());
 
         final IMap<Integer, SampleIndexableObject> mapFinal = map;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
+                final int mapSize = mapFinal.size();
+                final String message = format("Map size is %d", mapSize);
+
                 Set<Entry<Integer, SampleIndexableObject>> result = mapFinal.entrySet(predicate);
-                assertEquals(1, result.size());
-                assertEquals(5, (int) result.iterator().next().getValue().value);
+                assertEquals(message, 1, result.size());
+                assertEquals(message, 5, (int) result.iterator().next().getValue().value);
             }
-        });
+        }, 300);
 
     }
 

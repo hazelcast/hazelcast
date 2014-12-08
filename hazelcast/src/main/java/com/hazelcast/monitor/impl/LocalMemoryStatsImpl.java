@@ -1,6 +1,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 
@@ -32,6 +33,19 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     private LocalGCStats gcStats;
 
     public LocalMemoryStatsImpl() {
+    }
+
+    public LocalMemoryStatsImpl(MemoryStats memoryStats) {
+        setTotalPhysical(memoryStats.getTotalPhysical());
+        setFreePhysical(memoryStats.getFreePhysical());
+        setMaxNativeMemory(memoryStats.getMaxNativeMemory());
+        setCommittedNativeMemory(memoryStats.getCommittedNativeMemory());
+        setUsedNativeMemory(memoryStats.getUsedNativeMemory());
+        setFreeNativeMemory(memoryStats.getFreeNativeMemory());
+        setMaxHeap(memoryStats.getMaxHeap());
+        setCommittedHeap(memoryStats.getCommittedHeap());
+        setUsedHeap(memoryStats.getUsedHeap());
+        setGcStats(new LocalGCStatsImpl(memoryStats.getGCStats()));
     }
 
     @Override
@@ -131,7 +145,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SerializableMemoryStats{");
+        final StringBuilder sb = new StringBuilder("LocalMemoryStats{");
         sb.append("totalPhysical=").append(totalPhysical);
         sb.append(", freePhysical=").append(freePhysical);
         sb.append(", maxNativeMemory=").append(maxNativeMemory);

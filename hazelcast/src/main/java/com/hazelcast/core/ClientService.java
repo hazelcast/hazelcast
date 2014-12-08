@@ -19,8 +19,8 @@ package com.hazelcast.core;
 import java.util.Collection;
 
 /**
- * ClientService allows to query connected {@link Client}s and
- * attach/detach {@link ClientListener}s to listen connection events.
+ * ClientService allows you to query connected {@link Client}s and
+ * attach/detach {@link ClientListener}s to listen to connection events.
  *
  * All the methods are thread-safe.
  *
@@ -32,16 +32,16 @@ public interface ClientService {
     /**
      * Returns all connected clients to this member.
      *
-     * @return all connected clients to this member.
+     * @return all connected clients to this member
      */
     Collection<Client> getConnectedClients();
 
     /**
-     * Adds a ClientListener
+     * Adds a ClientListener.
      *
      * When a ClientListener is added more than once, it will receive duplicate events.
      *
-     * @param clientListener ClientListener
+     * @param clientListener the ClientListener to add
      * @return registration id. This id can be used to remove the listener using the {@link #removeClientListener(String)} method.
      * @throws java.lang.NullPointerException if clientListener is null.
      */
@@ -52,7 +52,7 @@ public interface ClientService {
      *
      * Can safely be called with a non existing id, or when the ClientListener already is removed.
      *
-     * @param registrationId Id of listener registration.
+     * @param registrationId Id of the ClientListener registration.
      * @return true if registration is removed, false otherwise
      * @throws java.lang.NullPointerException if registrationId is null.
      */

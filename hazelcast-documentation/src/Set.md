@@ -71,5 +71,16 @@ public class Sample implements ItemListener {
        
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *To learn more about the configuration of listeners please refer to [Listener Configurations](#listener-configurations).*
+<br></br>
+
+***RELATED INFORMATION***
+
+*To learn more about the configuration of listeners please refer to the [Listener Configurations section](#listener-configurations).*
+
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Set Configuration section](#set-configuration) for a full description of Hazelcast Distributed Set configuration.*
 

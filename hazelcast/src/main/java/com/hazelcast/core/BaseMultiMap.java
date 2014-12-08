@@ -33,7 +33,7 @@ public interface BaseMultiMap<K, V> extends DistributedObject {
      *
      * @param key   the key to be stored
      * @param value the value to be stored
-     * @return true if size of the multimap is increased, false if the multimap
+     * @return true if the size of the multimap is increased, false if the multimap
      *         already contains the key-value pair.
      */
     boolean put(K key, V value);
@@ -41,8 +41,8 @@ public interface BaseMultiMap<K, V> extends DistributedObject {
     /**
      * Returns the collection of values associated with the key.
      *
-     * @param key the key whose associated values are to be returned
-     * @return the collection of the values associated with the key.
+     * @param key the key whose associated values are returned
+     * @return the collection of the values associated with the key
      */
     Collection<V> get(K key);
 
@@ -56,26 +56,26 @@ public interface BaseMultiMap<K, V> extends DistributedObject {
     boolean remove(Object key, Object value);
 
     /**
-     * Removes all the entries with the given key.
+     * Removes all the entries associated with the given key.
      *
      * @param key the key of the entries to remove
-     * @return the collection of removed values associated with the given key. Returned collection
-     *         might be modifiable but it has no effect on the multimap
+     * @return the collection of removed values associated with the given key. The returned collection
+     *         might be modifiable but it has no effect on the multimap.
      */
     Collection<V> remove(Object key);
 
     /**
-     * Returns number of values matching to given key in the multimap.
+     * Returns the number of values matching the given key in the multimap.
      *
-     * @param key the key whose values count are to be returned
-     * @return number of values matching to given key in the multimap.
+     * @param key the key whose number of values is to be returned
+     * @return the number of values matching the given key in the multimap
      */
     int valueCount(K key);
 
     /**
      * Returns the number of key-value pairs in the multimap.
      *
-     * @return the number of key-value pairs in the multimap.
+     * @return the number of key-value pairs in the multimap
      */
     int size();
 }

@@ -18,7 +18,7 @@ As an alternative to downloading and installing Hazelcast, you can find Hazelcas
 	<dependency>
 		<groupId>com.hazelcast</groupId>
 		<artifactId>hazelcast</artifactId>
-		<version>3.3</version>
+		<version>3.4</version>
 	</dependency>
 </dependencies>
 ```

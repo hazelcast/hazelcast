@@ -277,50 +277,38 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return null;
     }
 
-    public boolean isExpired(Record record, long time, boolean backup) {
+    public boolean isExpired(Record record, long now, boolean backup) {
         return record == null
-                || isIdleExpired(record, time, backup) == null
-                || isTTLExpired(record, time, backup) == null;
+                || isIdleExpired(record, now, backup) == null
+                || isTTLExpired(record, now, backup) == null;
     }
 
-    private Record isIdleExpired(Record record, long time, boolean backup) {
+    private Record isIdleExpired(Record record, long now, boolean backup) {
         if (record == null) {
             return null;
         }
-        boolean result;
         // lastAccessTime : updates on every touch (put/get).
         final long lastAccessTime = record.getLastAccessTime();
-
-        assert lastAccessTime > 0L;
-        assert time > 0L;
-        assert time >= lastAccessTime;
-
-        result = time - lastAccessTime >= calculateExpirationWithDelay(mapContainer.getMaxIdleMillis(), backup);
-
-        return result ? null : record;
+        final long maxIdleMillis = mapContainer.getMaxIdleMillis();
+        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis, backup);
+        final long passedMillis = now - lastAccessTime;
+        return passedMillis >= idleMillis ? null : record;
     }
 
 
-    private Record isTTLExpired(Record record, long time, boolean backup) {
+    private Record isTTLExpired(Record record, long now, boolean backup) {
         if (record == null) {
             return null;
         }
-        boolean result;
         final long ttl = record.getTtl();
         // when ttl is zero or negative, it should remain eternally.
         if (ttl < 1L) {
             return record;
         }
         final long lastUpdateTime = record.getLastUpdateTime();
-
-        assert ttl > 0L : String.format("wrong ttl %d", ttl);
-        assert lastUpdateTime > 0L : String.format("wrong lastUpdateTime %d", lastUpdateTime);
-        assert time > 0L : String.format("wrong time %d", time);
-        assert time >= lastUpdateTime : String.format("time >= lastUpdateTime (%d >= %d)",
-                time, lastUpdateTime);
-
-        result = time - lastUpdateTime >= calculateExpirationWithDelay(ttl, backup);
-        return result ? null : record;
+        final long lifeMillis = calculateExpirationWithDelay(ttl, backup);
+        final long passedMillis = now - lastUpdateTime;
+        return passedMillis >= lifeMillis ? null : record;
     }
 
     /**
@@ -333,10 +321,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void doPostExpirationOperations(Data key, Object value) {
         final String mapName = this.name;
         final MapServiceContext mapServiceContext = this.mapServiceContext;
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
-            nearCacheProvider.invalidateAllNearCaches(mapName, key);
-        }
         getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
     }
 

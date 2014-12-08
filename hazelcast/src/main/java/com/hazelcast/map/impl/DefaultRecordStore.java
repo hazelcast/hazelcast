@@ -111,6 +111,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void putRecord(Data key, Record record) {
+        markRecordStoreExpirable(record.getTtl());
+
         final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
         updateSizeEstimator(calculateRecordHeapCost(record));
@@ -409,11 +411,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         mapDataStore.reset();
     }
 
-
     @Override
     public Object evict(Data key, boolean backup) {
-        checkIfLoaded();
-
         return evictInternal(key, backup);
     }
 

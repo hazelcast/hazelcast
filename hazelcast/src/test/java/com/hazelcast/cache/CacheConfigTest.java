@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.config.CacheMaxSizeConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
@@ -25,6 +26,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -37,6 +39,9 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.Factory;
+import javax.cache.event.CacheEntryCreatedListener;
+import javax.cache.event.CacheEntryListenerException;
 import javax.cache.spi.CachingProvider;
 import java.io.IOException;
 import java.net.URI;
@@ -44,6 +49,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
@@ -51,10 +57,9 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheConfigTest {
+public class CacheConfigTest extends HazelcastTestSupport {
 
     private final URL configUrl1 = getClass().getClassLoader().getResource("test-hazelcast-jcache.xml");
     private final URL configUrl2 = getClass().getClassLoader().getResource("test-hazelcast-jcache2.xml");
@@ -67,9 +72,7 @@ public class CacheConfigTest {
     }
 
     @Test
-    public void cacheConfigXmlTest()
-            throws IOException {
-
+    public void cacheConfigXmlTest() throws IOException {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
         assertEquals("test-group1",config1.getGroupConfig().getName());
@@ -84,44 +87,50 @@ public class CacheConfigTest {
         assertTrue(cacheConfig1.isStatisticsEnabled());
         assertTrue(cacheConfig1.isManagementEnabled());
 
+        assertNotNull(cacheConfig1.getMaxSizeConfig());
+        assertEquals(50, cacheConfig1.getMaxSizeConfig().getSize());
+        assertEquals(CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT,
+                cacheConfig1.getMaxSizeConfig().getMaxSizePolicy());
+
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
         assertEquals(2, cacheEntryListeners.size());
 
         CacheSimpleEntryListenerConfig listenerConfig0 = cacheEntryListeners.get(0);
         assertFalse(listenerConfig0.isSynchronous());
         assertFalse(listenerConfig0.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.MyEntryListenerFactory", listenerConfig0.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.MyEntryEventFilterFactory", listenerConfig0.getCacheEntryEventFilterFactory());
+        assertEquals("com.hazelcast.cache.MyEntryListenerFactory",
+                listenerConfig0.getCacheEntryListenerFactory());
+        assertEquals("com.hazelcast.cache.MyEntryEventFilterFactory",
+                listenerConfig0.getCacheEntryEventFilterFactory());
 
         CacheSimpleEntryListenerConfig listenerConfig1 = cacheEntryListeners.get(1);
         assertTrue(listenerConfig1.isSynchronous());
         assertTrue(listenerConfig1.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.MySyncEntryListenerFactory", listenerConfig1.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.MySyncEntryEventFilterFactory", listenerConfig1.getCacheEntryEventFilterFactory());
-
+        assertEquals("com.hazelcast.cache.MySyncEntryListenerFactory",
+                listenerConfig1.getCacheEntryListenerFactory());
+        assertEquals("com.hazelcast.cache.MySyncEntryEventFilterFactory",
+                listenerConfig1.getCacheEntryEventFilterFactory());
     }
 
     @Test
-    public void cacheManagerByLocationClasspathTest()
-            throws URISyntaxException {
+    public void cacheManagerByLocationClasspathTest() throws URISyntaxException {
         URI uri1 = new URI("MY-SCOPE");
         Properties properties = new Properties();
-        properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, "classpath:test-hazelcast-jcache.xml");
+        properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION,
+                "classpath:test-hazelcast-jcache.xml");
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null, properties);
         assertNotNull(cacheManager);
 
         Cache<Integer, String> testCache = cacheManager.getCache("testCache", Integer.class, String.class);
         assertNotNull(testCache);
-
     }
 
     @Test
-    public void cacheManagerByLocationFileTest()
-            throws URISyntaxException {
+    public void cacheManagerByLocationFileTest() throws URISyntaxException {
         URI uri = new URI("MY-SCOPE");
 
         String urlStr = configUrl1.toString();
-        assertEquals("file", urlStr.substring(0,4));
+        assertEquals("file", urlStr.substring(0, 4));
         Properties properties = new Properties();
         properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, urlStr);
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, properties);
@@ -139,8 +148,7 @@ public class CacheConfigTest {
     }
 
     @Test
-    public void cacheManagerByInstanceNameTest()
-            throws URISyntaxException {
+    public void cacheManagerByInstanceNameTest() throws URISyntaxException {
         final String instanceName= "instanceName66";
         Config config = new Config();
         config.setInstanceName(instanceName);
@@ -178,6 +186,47 @@ public class CacheConfigTest {
 
             Cache<Object, Object> cache = cacheManager.getCache("test");
             Assert.assertNotNull("Pre-configured cache cannot be retrieved on instance: " + i, cache);
+        }
+    }
+
+    @Test
+    public void testEntryListenerFactoryFromSimpleCacheConfig(){
+        String cacheName = randomString();
+        Config config = createConfig(cacheName);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        Cache<Object, Object> cache = cacheManager.getCache(cacheName);
+        EntryListener.latch = new CountDownLatch(1);
+        cache.put(randomString(), randomString());
+        assertOpenEventually(EntryListener.latch);
+    }
+
+    Config createConfig(String cacheName){
+        Config config = new Config();
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
+        cacheSimpleConfig.setName(cacheName);
+        CacheSimpleEntryListenerConfig cacheSimpleEntryListenerConfig = new CacheSimpleEntryListenerConfig();
+        cacheSimpleEntryListenerConfig.setCacheEntryListenerFactory(EntryListenerFactory.class.getName());
+        cacheSimpleConfig.addEntryListenerConfig(cacheSimpleEntryListenerConfig);
+        config.addCacheConfig(cacheSimpleConfig);
+        return config;
+    }
+
+    public static class EntryListenerFactory implements Factory<EntryListener> {
+        @Override
+        public EntryListener create() {
+            return new EntryListener();
+        }
+    }
+
+    public static class EntryListener implements CacheEntryCreatedListener {
+
+        static volatile CountDownLatch latch;
+
+        @Override
+        public void onCreated(Iterable iterable) throws CacheEntryListenerException {
+            latch.countDown();
         }
     }
 }

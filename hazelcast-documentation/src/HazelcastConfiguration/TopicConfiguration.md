@@ -1,4 +1,7 @@
-### Topic Configuration
+## Topic Configuration
+
+
+The following are the example configurations.
 
 **Declarative Configuration:**
 
@@ -36,9 +39,9 @@ HazelcastInstance instance = Hazelcast.newHazelcastInstance()
 
 It has below attributes.
 
-- statistics-enabled: By default, it is **true**, meaning statistics are calculated.
-- global-ordering-enabled: By default, it is **false**, meaning there is no global order guarantee by default.???
-- message-listeners: ???
+- `statistics-enabled`: By default, it is **true**, meaning statistics are calculated.
+- `global-ordering-enabled`: By default, it is **false**, meaning there is no global order guarantee.
+- `message-listeners`: This element lets you add listeners (listener classes) for the topic messages.
 
 
 
@@ -51,7 +54,7 @@ Topic related but not topic specific configuration parameters
 <br></br>
 ***RELATED INFORMATION*** 
 
-*For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
+*For description of these parameters, please see [Global Event Configuration](#global-event-configuration).*
 
 
 

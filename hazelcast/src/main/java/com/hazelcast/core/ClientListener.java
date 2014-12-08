@@ -29,14 +29,14 @@ public interface ClientListener extends EventListener {
     /**
      * Invoked when a new client is connected.
      *
-     * @param client Client instance
+     * @param client the client instance
      */
     void clientConnected(Client client);
 
     /**
      * Invoked when a new client is disconnected.
      *
-     * @param client Client instance
+     * @param client the client instance
      */
     void clientDisconnected(Client client);
 }
