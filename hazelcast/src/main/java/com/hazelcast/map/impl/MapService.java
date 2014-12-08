@@ -19,24 +19,13 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.partition.InternalPartitionLostEvent;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsAwareService;
-import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.wan.WanReplicationEvent;
-
 import java.util.Map;
 import java.util.Properties;
 
@@ -53,30 +42,16 @@ import java.util.Properties;
  * @see MapReplicationSupportingService
  * @see MapStatisticsAwareService
  * @see MapPartitionAwareService
+ * @see MapQuorumAwareService
  * @see MapServiceContext
  */
-public class MapService implements ManagedService, MigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
-        PartitionAwareService {
+public class MapService extends AbstractMapService  {
 
     /**
      * Service name of map service used
      * to register {@link com.hazelcast.spi.impl.ServiceManager#registerService}
      */
     public static final String SERVICE_NAME = "hz:impl:mapService";
-
-    private ManagedService managedService;
-    private MigrationAwareService migrationAwareService;
-    private TransactionalService transactionalService;
-    private RemoteService remoteService;
-    private EventPublishingService eventPublishingService;
-    private PostJoinAwareService postJoinAwareService;
-    private SplitBrainHandlerService splitBrainHandlerService;
-    private ReplicationSupportingService replicationSupportingService;
-    private StatisticsAwareService statisticsAwareService;
-    private PartitionAwareService mapPartitionAwareService;
-    private MapServiceContext mapServiceContext;
 
     public MapService() {
     }
@@ -171,51 +146,13 @@ public class MapService implements ManagedService, MigrationAwareService,
         return statisticsAwareService.getStats();
     }
 
-    public void setMapServiceContext(MapServiceContext mapServiceContext) {
-        this.mapServiceContext = mapServiceContext;
+    @Override
+    public String getQuorumName(String name) {
+        return mapQuorumAwareService.getQuorumName(name);
     }
 
     public MapServiceContext getMapServiceContext() {
         return mapServiceContext;
     }
 
-    void setManagedService(ManagedService managedService) {
-        this.managedService = managedService;
-    }
-
-    void setMigrationAwareService(MigrationAwareService migrationAwareService) {
-        this.migrationAwareService = migrationAwareService;
-    }
-
-    void setTransactionalService(TransactionalService transactionalService) {
-        this.transactionalService = transactionalService;
-    }
-
-    void setRemoteService(RemoteService remoteService) {
-        this.remoteService = remoteService;
-    }
-
-    void setEventPublishingService(EventPublishingService eventPublishingService) {
-        this.eventPublishingService = eventPublishingService;
-    }
-
-    void setPostJoinAwareService(PostJoinAwareService postJoinAwareService) {
-        this.postJoinAwareService = postJoinAwareService;
-    }
-
-    void setSplitBrainHandlerService(SplitBrainHandlerService splitBrainHandlerService) {
-        this.splitBrainHandlerService = splitBrainHandlerService;
-    }
-
-    void setReplicationSupportingService(ReplicationSupportingService replicationSupportingService) {
-        this.replicationSupportingService = replicationSupportingService;
-    }
-
-    void setStatisticsAwareService(StatisticsAwareService statisticsAwareService) {
-        this.statisticsAwareService = statisticsAwareService;
-    }
-
-    public void setMapPartitionAwareService(PartitionAwareService mapPartitionAwareService) {
-        this.mapPartitionAwareService = mapPartitionAwareService;
-    }
 }

@@ -20,9 +20,10 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, DataSerializable {
+public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, MutatingOperation, DataSerializable {
 
     private MapService mapService;
     private RecordStore recordStore;

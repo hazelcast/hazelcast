@@ -29,9 +29,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +40,8 @@ import java.util.List;
 /**
  * Puts records to map which are loaded from map store by {@link com.hazelcast.core.IMap#loadAll}
  */
-public class PutFromLoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
+public class PutFromLoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation,
+        BackupAwareOperation {
 
     private List<Data> keyValueSequence;
 

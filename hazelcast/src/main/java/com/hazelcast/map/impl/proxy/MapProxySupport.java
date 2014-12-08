@@ -974,7 +974,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Object o = getService().getMapServiceContext().toObject(f.get());
             return (EntryView) o;
         } catch (Throwable t) {
-            throw new RuntimeException(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 

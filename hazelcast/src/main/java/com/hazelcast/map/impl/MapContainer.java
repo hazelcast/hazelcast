@@ -35,7 +35,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
 import com.hazelcast.wan.WanReplicationService;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,6 +80,8 @@ public class MapContainer {
 
     private final String name;
 
+    private final String quorumName;
+
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
@@ -93,6 +94,7 @@ public class MapContainer {
         this.ttlMillisFromConfig = calculateTTLMillis(mapConfig);
         this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
+        this.quorumName = mapConfig.getQuorumName();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         recordFactory = createRecordFactory(nodeEngine);
         initWanReplication(nodeEngine);
@@ -254,6 +256,10 @@ public class MapContainer {
 
     public String getName() {
         return name;
+    }
+
+    public String getQuorumName() {
+        return quorumName;
     }
 }
 

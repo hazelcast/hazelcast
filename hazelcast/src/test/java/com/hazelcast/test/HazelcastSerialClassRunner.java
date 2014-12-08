@@ -21,12 +21,17 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
 /**
- * Run the tests randomly and log the running test.
+ * Run the tests in series and log the running test.
  */
 public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
 
     public HazelcastSerialClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
+    }
+
+    public HazelcastSerialClassRunner(Class<?> klass, Object[] parameters,
+                                      String name) throws InitializationError {
+        super(klass, parameters, name);
     }
 
     @Override

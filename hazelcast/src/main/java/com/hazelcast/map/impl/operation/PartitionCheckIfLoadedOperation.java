@@ -19,8 +19,9 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean isFinished;
 

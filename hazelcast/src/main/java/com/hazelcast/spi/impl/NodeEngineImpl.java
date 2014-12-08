@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
@@ -77,6 +78,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
     private final PacketTransceiver packetTransceiver;
+    private final QuorumServiceImpl quorumService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -91,6 +93,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
         this.packetTransceiver = new PacketTransceiverImpl(
                 node, logger, operationService, eventService, wanReplicationService, executionService);
+        quorumService = new QuorumServiceImpl(this);
     }
 
     public PacketTransceiver getPacketTransceiver() {
@@ -174,6 +177,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public WanReplicationService getWanReplicationService() {
         return wanReplicationService;
+    }
+
+    @Override
+    public QuorumServiceImpl getQuorumService() {
+        return quorumService;
     }
 
     @Override

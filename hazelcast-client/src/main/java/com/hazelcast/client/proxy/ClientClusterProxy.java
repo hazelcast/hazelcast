@@ -21,7 +21,6 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -63,4 +62,5 @@ public class ClientClusterProxy implements Cluster {
     public long getClusterTime() {
         return clusterService.getClusterTime();
     }
+
 }

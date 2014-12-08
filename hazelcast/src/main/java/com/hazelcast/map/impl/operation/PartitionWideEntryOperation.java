@@ -28,7 +28,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;

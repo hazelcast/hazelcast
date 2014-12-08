@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -309,6 +310,16 @@ public interface HazelcastInstance {
      * @return the partition service of this Hazelcast instance
      */
     PartitionService getPartitionService();
+
+    /**
+     * Returns the quorum service of this Hazelcast instance.
+     * <p/>
+     * Quorum service can be used to retrieve quorum callbacks which let you to notify quorum results of your own to
+     * the cluster quorum service.
+     *
+     * @return the quorum service of this Hazelcast instance
+     */
+    QuorumService getQuorumService();
 
     /**
      * Returns the client service of this Hazelcast instance.

@@ -24,9 +24,10 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import java.util.Set;
 
-public class MapKeySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class MapKeySetOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
     private Set<Data> keySet;
 
     public MapKeySetOperation(String name) {

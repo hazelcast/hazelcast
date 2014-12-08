@@ -27,14 +27,14 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.Iterator;
 
-public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation, MutatingOperation {
 
     private String attributeName;
     private boolean ordered;

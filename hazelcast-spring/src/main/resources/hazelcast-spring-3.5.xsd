@@ -220,6 +220,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY">
@@ -378,6 +379,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
@@ -872,6 +874,8 @@
                             </xs:unique>
                         </xs:element>
                         <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
+
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -2033,4 +2037,47 @@
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>
+
+
+    <xs:complexType name="quorum">
+        <xs:all>
+            <xs:element name="quorum-size" type="quorum-size" maxOccurs="1"/>
+            <xs:element name="quorum-type" type="quorum-type" maxOccurs="1"/>
+            <xs:element name="quorum-function-class-name" type="xs:string" maxOccurs="1"/>
+            <xs:element name="quorum-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="quorum-listener" type="quorum-listener" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:simpleType name="quorum-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="READ"/>
+            <xs:enumeration value="WRITE"/>
+            <xs:enumeration value="READ_WRITE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="quorum-size">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="quorum-listener">
+        <xs:complexContent>
+            <xs:extension base="listener">
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
 </xs:schema>

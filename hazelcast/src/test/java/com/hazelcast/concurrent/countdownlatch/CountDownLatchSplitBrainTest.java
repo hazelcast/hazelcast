@@ -12,19 +12,14 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastTestSupport;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class CountDownLatchSplitBrainTest extends HazelcastTestSupport {
 
@@ -73,14 +68,6 @@ public class CountDownLatchSplitBrainTest extends HazelcastTestSupport {
 
         ICountDownLatch countDownLatchTest = h3.getCountDownLatch(name);
         assertEquals(3, countDownLatchTest.getCount());
-    }
-
-    private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
-        final Node n1 = TestUtil.getNode(h1);
-        final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
     }
 
     private Config newConfig() {

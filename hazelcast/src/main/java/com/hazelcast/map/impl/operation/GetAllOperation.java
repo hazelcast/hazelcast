@@ -23,13 +23,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GetAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class GetAllOperation extends AbstractMapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
     private Set<Data> keys = new HashSet<Data>();
     private MapEntrySet entrySet;

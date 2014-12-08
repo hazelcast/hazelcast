@@ -22,8 +22,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * Triggers map store load of all given keys.
  */
-public class LoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class LoadAllOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private List<Data> keys;
 

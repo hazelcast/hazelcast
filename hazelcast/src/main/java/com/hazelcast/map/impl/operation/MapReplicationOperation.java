@@ -33,8 +33,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,7 +48,7 @@ import java.util.Set;
 
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
-public class MapReplicationOperation extends AbstractOperation {
+public class MapReplicationOperation extends AbstractOperation implements MutatingOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
     private Map<String, Collection<DelayedEntry>> delayedEntries;

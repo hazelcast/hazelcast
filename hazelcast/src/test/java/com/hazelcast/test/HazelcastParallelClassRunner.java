@@ -23,6 +23,9 @@ import org.junit.runners.model.Statement;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Runs the tests in parallel with multiple threads.
+ */
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     private static final int MAX_THREADS = !TestEnvironment.isMockNetwork() ? 1
@@ -32,6 +35,11 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
+    }
+
+    public HazelcastParallelClassRunner(Class<?> klass, Object[] parameters,
+                                        String name) throws InitializationError {
+        super(klass, parameters, name);
     }
 
     @Override

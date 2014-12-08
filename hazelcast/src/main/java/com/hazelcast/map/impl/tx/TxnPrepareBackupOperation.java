@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,7 +28,7 @@ import java.io.IOException;
 /**
  *  An operation to prepare transaction by locking the key on key backup owner.
  */
-public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
     private String lockOwner;

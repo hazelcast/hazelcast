@@ -26,7 +26,7 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
-public class ContainsKeyOperation extends KeyBasedMapOperation implements ReadonlyOperation, WaitSupport {
+public class ContainsKeyOperation extends KeyBasedMapOperation implements  ReadonlyOperation, WaitSupport {
 
     private boolean containsKey;
 
