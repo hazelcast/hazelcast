@@ -153,7 +153,31 @@ public class GroupProperties {
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
+
+    /**
+     * Using back pressure one can prevent an overload of pending asynchronous backups. Imagine there is a map with a
+     * single asynchronous backup, it could happen that producing asynchronous backups happens at a higher rate than
+     * the consumption of the backup and this can eventually lead to an OOME (especially of the backups are slow).
+     *
+     * With back-pressure enabled this can't happen.
+     *
+     * It is implemented by making asynchronous backups operations synchronous. This prevent the internal queues to overflow
+     * because the invoker will wait for the primary and the backups to complete. The frequency of this is determined by the
+     * sync-window.
+     *
+     * In Hazelcast 3.4.1 we'll provide back pressure for any async operation; not only for sync operations with async backups.
+     *
+     * In the future we'll replace this approach by relying on TCP/IP congestion control; but for this to work we need to
+     * create multiple connections between members because currently a member can't stop consuming from a connection
+     * when that member is overloaded because it could also stop to read important packets like heartbeats and other system
+     * operations.
+     */
     public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
+
+    /**
+     * This property only has meaning when back-pressure is enabled. The larger the sync-window the less frequent a
+     * asynchronous backup is converted to a sync backup.
+     */
     public static final String PROP_BACKPRESSURE_SYNCWINDOW = "hazelcast.backpressure.syncwindow";
 
     /**
