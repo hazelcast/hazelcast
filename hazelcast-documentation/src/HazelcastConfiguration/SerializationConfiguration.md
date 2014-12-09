@@ -49,7 +49,7 @@ serializerConfig.setTypeClass( "Employee" )
                 .setClassName( "com.EmployeeSerializer" );
 ```
 
-It has below attributes.
+It has below elements.
 
 - `portable-version`: Defines the versioning of the portable serialization. Portable version will be used to differentiate two same classes that have changes on it like adding/removing field or changing a type of a field.
 - `use-native-byte-order`: Set to true to use native byte order of the underlying platform. 

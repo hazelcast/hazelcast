@@ -18,7 +18,7 @@ config.getManagementCenterConfig().setEnabled( "true" )
 ```
    
 
-It has below parameters.
+It has below attributes.
 
 
 - `enabled`: This attribute should be set to `true` to be enable to run Management Center.

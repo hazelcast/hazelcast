@@ -29,7 +29,7 @@ collectionList.setName( "MyList" ).setBackupCount( "1" )
 ```
    
 
-It has below parameters.
+It has below elements.
 
 
 - `backup-count`: Count of synchronous backups. Remember that, List is a non-partitioned data structure, i.e. all entries of a List resides in one partition. When this parameter is '1', it means there will be a backup of that List in another node in the cluster. When it is '2', 2 nodes will have the backup.

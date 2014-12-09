@@ -20,7 +20,7 @@ package com.hazelcast.core;
  * Base interface for all distributed objects.
  *
  * All distributed objects are not garbage collectable unless {@link #destroy()} is called first.
- * Note: Failure to destroy after use is complete will lead to memory leaks.
+ * Note: Failure to destroy after you are done using a distributed object will lead to memory leaks.
  *
  * @see IMap
  * @see IQueue
@@ -44,8 +44,8 @@ public interface DistributedObject {
     Object getId();
 
     /**
-     * Returns the key of partition this DistributedObject is assigned to. The returned value only has meaning
-     * for a non partitioned data-structure like an IAtomicLong. For a partitioned data-structure like an IMap
+     * Returns the key of the partition that this DistributedObject is assigned to. The returned value only has meaning
+     * for a non-partitioned data structure like an {@link IAtomicLong}. For a partitioned data structure like an {@link IMap},
      * the returned value will not be null, but otherwise undefined.
      *
      * @return the partition key.
@@ -53,7 +53,7 @@ public interface DistributedObject {
     String getPartitionKey();
 
     /**
-     * Returns the unique name for this DistributedObject. Returned value will never be null.
+     * Returns the unique name for this DistributedObject. The returned value will never be null.
      *
      * @return the unique name for this object.
      */
@@ -61,6 +61,8 @@ public interface DistributedObject {
 
     /**
      * Returns the service name for this object.
+     *
+     * @return the service name for this object.
      */
     String getServiceName();
 

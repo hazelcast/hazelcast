@@ -22,7 +22,7 @@ executorConfig.setPoolSize( "1" ).setQueueCapacity( "10" )
           .setStatisticsEnabled( true );
 ```
 
-It has below attributes.
+It has below elements.
 
 - `pool-size`: The number of executor threads per Member for the Executor.
 - `queue-capacity`: Executor's task queue capacity.

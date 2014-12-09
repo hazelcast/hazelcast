@@ -27,14 +27,14 @@ public interface EntryView<K, V> {
     /**
      * Returns the key of the entry.
      *
-     * @return key
+     * @return the key of the entry
      */
     K getKey();
 
     /**
      * Returns the value of the entry.
      *
-     * @return value
+     * @return the value of the entry
      */
     V getValue();
 
@@ -46,7 +46,7 @@ public interface EntryView<K, V> {
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
-     * @return cost in bytes
+     * @return the cost in bytes of the entry
      */
     long getCost();
 
@@ -58,14 +58,14 @@ public interface EntryView<K, V> {
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
-     * @return creation time
+     * @return the creation time of the entry
      */
     long getCreationTime();
 
     /**
      * Returns the expiration time of the entry.
      *
-     * @return expiration time
+     * @return the expiration time of the entry
      */
     long getExpirationTime();
 
@@ -77,57 +77,57 @@ public interface EntryView<K, V> {
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
-     * @return hits
+     * @return number of hits of the entry
      */
     long getHits();
 
     /**
-     * Returns the last access time to the entry.
+     * Returns the last access time for the entry.
      * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
-     * @return last access time
+     * @return the last access time for the entry
      */
     long getLastAccessTime();
 
     /**
-     * Returns the last time value is flushed to mapstore.
+     * Returns the last time the value was flushed to mapstore.
      * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
-     * @return last store time
+     * @return the last store time for the value
      */
     long getLastStoredTime();
 
     /**
-     * Returns the last time value is updated.
+     * Returns the last time the value was updated.
      * <p/>
      * <p><b>Warning:</b></p>
      * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
-     * @return last update time
+     * @return the last time the value was updated
      */
     long getLastUpdateTime();
 
     /**
      * Returns the version of the entry
      *
-     * @return version
+     * @return the version of the entry
      */
     long getVersion();
 
     /**
-     * Returns last set time to live second.
+     * Returns the last set time to live second.
      *
-     * @return time to live second.
+     * @return the last set time to live second.
      */
     long getTtl();
 }

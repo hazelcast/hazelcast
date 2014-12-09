@@ -20,10 +20,9 @@ Thanks for creating your pull request (PR).
 2.	In order to merge your PR, please sign the [Contributor Agreement Form].
 3.	Try to make clean commits that are easily readable (including descriptive commit messages).
 4.	The latest changes are in the **master** branch.
-5.	Before your push, run the command `mvn clean validate -Pcheckstyle` at your terminal and fix the checkstyle errors (if any). Push your PR that is free of checkstyle errors.
-6.	Before your push, run the command `mvn clean install -PfindBugs` at your terminal and fix the findbugs errors (if any). Push your PR that is free of findbugs errors.
-7.	Please keep your PRs as small as possible, i.e. if you plan to perform a huge change, do not submit a single and large PR for it.
-8.	If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description or commit message.
+5.	Before your push, run the command `mvn clean package -P findBugs,checkstyle` at your terminal and fix the checkstyle and findbugs errors (if any). Push your PR that is free of checkstyle and findbugs errors.
+6.	Please keep your PRs as small as possible, i.e. if you plan to perform a huge change, do not submit a single and large PR for it. For an enhancement or larger feature,you can create a GitHub issue first to discuss.
+7.	If you submit a PR as the solution to a specific issue, please mention the issue number either in the PR description or commit message.
 
 
 [Contributor Agreement Form]:https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement

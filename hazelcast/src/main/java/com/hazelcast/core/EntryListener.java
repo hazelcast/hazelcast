@@ -33,40 +33,43 @@ public interface EntryListener<K, V> extends EventListener {
     /**
      * Invoked when an entry is added.
      *
-     * @param event entry event
+     * @param event the event invoked when an entry is added
      */
     void entryAdded(EntryEvent<K, V> event);
 
     /**
      * Invoked when an entry is removed.
      *
-     * @param event entry event
+     * @param event the event invoked when an entry is removed
      */
     void entryRemoved(EntryEvent<K, V> event);
 
     /**
      * Invoked when an entry is updated.
      *
-     * @param event entry event
+     * @param event the event invoked when an entry is updated
      */
     void entryUpdated(EntryEvent<K, V> event);
 
     /**
      * Invoked when an entry is evicted.
      *
-     * @param event entry event
+     * @param event the event invoked when an entry is evicted
      */
     void entryEvicted(EntryEvent<K, V> event);
 
     /**
-     * Invoked when all entries evicted by {@link IMap#evictAll()}.
+     * Invoked when all entries are evicted by {@link IMap#evictAll()}.
      *
-     * @param event map event
+     * @param event the map event invoked when all entries are evicted by {@link IMap#evictAll()}
      */
     void mapEvicted(MapEvent event);
 
     /**
-     * Invoked when all entries are removed by {@link IMap#clear()}.}
+     * Invoked when all entries are removed by {@link IMap#clear()}.
+     *
+     * @param event the map event invoked when all entries are removed by {@link IMap#clear()}
+
      */
     void mapCleared(MapEvent event);
 }

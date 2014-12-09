@@ -52,7 +52,7 @@ public interface IAtomicReference<E> extends DistributedObject {
     void set(E newValue);
 
     /**
-     * Gets the value and sets the new value.
+     * Gets the old value and sets the new value.
      *
      * @param newValue the new value.
      * @return the old value.
@@ -84,14 +84,14 @@ public interface IAtomicReference<E> extends DistributedObject {
      * Checks if the reference contains the value.
      *
      * @param value the value to check (is allowed to be null).
-     * @return if the value is found, false otherwise.
+     * @return true if the value is found, false otherwise.
      */
     boolean contains(E value);
 
     /**
      * Alters the currently stored reference by applying a function on it.
      *
-     * @param function the function
+     * @param function the function that alters the currently stored reference
      * @throws IllegalArgumentException if function is null.
      */
     void alter(IFunction<E, E> function);
@@ -99,8 +99,8 @@ public interface IAtomicReference<E> extends DistributedObject {
     /**
      * Alters the currently stored reference by applying a function on it and gets the result.
      *
-     * @param function the function
-     * @return the new value.
+     * @param function the function that alters the currently stored reference
+     * @return the new value, the result of the applied function.
      * @throws IllegalArgumentException if function is null.
      */
     E alterAndGet(IFunction<E, E> function);
@@ -108,8 +108,8 @@ public interface IAtomicReference<E> extends DistributedObject {
     /**
      * Alters the currently stored reference by applying a function on it on and gets the old value.
      *
-     * @param function the function
-     * @return  the old value
+     * @param function the function that alters the currently stored reference
+     * @return  the old value, the value before the function is applied
      * @throws IllegalArgumentException if function is null.
      */
     E getAndAlter(IFunction<E, E> function);
@@ -117,7 +117,7 @@ public interface IAtomicReference<E> extends DistributedObject {
     /**
      * Applies a function on the value, the actual stored value will not change.
      *
-     * @param function the function
+     * @param function the function applied on the value, the stored value does not change
      * @return  the result of the function application
      * @throws IllegalArgumentException if function is null.
      */
