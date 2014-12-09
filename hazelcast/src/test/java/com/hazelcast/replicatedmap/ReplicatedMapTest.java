@@ -24,14 +24,10 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,7 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Field;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,22 +51,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ReplicatedMapTest extends HazelcastTestSupport {
-
-    private static Field REPLICATED_RECORD_STORE;
-
-    static {
-        try {
-            REPLICATED_RECORD_STORE = ReplicatedMapProxy.class.getDeclaredField("replicatedRecordStore");
-            REPLICATED_RECORD_STORE.setAccessible(true);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+public class ReplicatedMapTest extends ReplicatedMapBaseTest {
 
     @Test
     public void testAddObjectDelay0() throws Exception {
@@ -983,6 +966,15 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
     }
 
+    private Integer findValue(int key, AbstractMap.SimpleEntry<Integer, Integer>[] values) {
+        for (AbstractMap.SimpleEntry<Integer, Integer> value : values) {
+            if (value.getKey().equals(key)) {
+                return value.getValue();
+            }
+        }
+        return null;
+    }
+
     @Test
     public void testAddListenerObjectDelay0() throws Exception {
         testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, 0));
@@ -1129,72 +1121,5 @@ public class ReplicatedMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         map1.removeEntryListener(null);
-    }
-
-    private Config buildConfig(InMemoryFormat inMemoryFormat, long replicationDelay) {
-        Config config = new Config();
-        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("default");
-        replicatedMapConfig.setReplicationDelayMillis(replicationDelay);
-        replicatedMapConfig.setInMemoryFormat(inMemoryFormat);
-        return config;
-    }
-
-    private Integer findValue(int key, AbstractMap.SimpleEntry<Integer, Integer>[] values) {
-        for (AbstractMap.SimpleEntry<Integer, Integer> value : values) {
-            if (value.getKey().equals(key)) {
-                return value.getValue();
-            }
-        }
-        return null;
-    }
-
-    private void assertMatchSuccessfulOperationQuota(double quota, int completeOps, int... values) {
-        float[] quotas = new float[values.length];
-        Object[] args = new Object[values.length + 1];
-        args[0] = quota;
-
-        for (int i = 0; i < values.length; i++) {
-            quotas[i] = (float) values[i] / completeOps;
-            args[i + 1] = quotas[i];
-        }
-
-        boolean success = true;
-        for (int i = 0; i < values.length; i++) {
-            if (quotas[i] < quota) {
-                success = false;
-                break;
-            }
-        }
-
-        if (!success) {
-            StringBuilder sb = new StringBuilder("Quote (%s) for updates not reached,");
-            for (int i = 0; i < values.length; i++) {
-                sb.append(" map").append(i + 1).append(": %s,");
-            }
-            sb.deleteCharAt(sb.length() - 1);
-            fail(String.format(sb.toString(), args));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <K, V> ReplicatedRecord<K, V> getReplicatedRecord(ReplicatedMap<K, V> map, K key) throws Exception {
-        ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
-        return ((AbstractReplicatedRecordStore<K, V>) REPLICATED_RECORD_STORE.get(proxy)).getReplicatedRecord(key);
-    }
-
-    @SuppressWarnings("unchecked")
-    private <K, V> ReplicationPublisher<K, V> getReplicationPublisher(ReplicatedMap<K, V> map) throws Exception {
-        ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
-        return ((AbstractReplicatedRecordStore<K, V>) REPLICATED_RECORD_STORE.get(proxy)).getReplicationPublisher();
-    }
-
-    @SuppressWarnings("unchecked")
-    private AbstractMap.SimpleEntry<Integer, Integer>[] buildTestValues() {
-        Random random = new Random();
-        AbstractMap.SimpleEntry<Integer, Integer>[] testValues = new AbstractMap.SimpleEntry[100];
-        for (int i = 0; i < testValues.length; i++) {
-            testValues[i] = new AbstractMap.SimpleEntry<Integer, Integer>(random.nextInt(), random.nextInt());
-        }
-        return testValues;
     }
 }
