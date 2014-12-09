@@ -936,21 +936,25 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 cacheConfig.setBackupCount(getIntegerValue("backup-count", value, CacheSimpleConfig.DEFAULT_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
                 cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, CacheSimpleConfig.MIN_BACKUP_COUNT));
-            } else if ("eviction-policy".equals(nodeName)) {
-                cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
-            } else if ("max-size".equals(nodeName)) {
-                final CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+            } else if ("eviction".equals(nodeName)) {
+                final CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
                 final Node size = n.getAttributes().getNamedItem("size");
-                final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
+                final Node maxSizePolicy = n.getAttributes().getNamedItem("max-size-policy");
+                final Node evictionPolicy = n.getAttributes().getNamedItem("eviction-policy");
                 if (size != null) {
-                    maxSizeConfig.setSize(Integer.parseInt(getTextContent(size)));
+                    evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
                 }
                 if (maxSizePolicy != null) {
-                    maxSizeConfig.setMaxSizePolicy(
-                            CacheMaxSizeConfig.CacheMaxSizePolicy.valueOf(
+                    evictionConfig.setMaxSizePolicy(
+                            CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
                                     upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                cacheConfig.setMaxSizeConfig(maxSizeConfig);
+                if (evictionPolicy != null) {
+                    evictionConfig.setEvictionPolicy(
+                            EvictionPolicy.valueOf(
+                                    upperCaseInternal(getTextContent(evictionPolicy))));
+                }
+                cacheConfig.setEvictionConfig(evictionConfig);
             }
         }
         this.config.addCacheConfig(cacheConfig);

@@ -44,12 +44,23 @@ public final class EvictionStrategyProvider {
     /**
      * Gets the {@link EvictionStrategy} implementation specified with <code>evictionStrategyType</code>.
      *
-     * @param evictionStrategyType {@link EvictionStrategyType} of requested {@link EvictionStrategy} implementation
+     * @param evictionConfig {@link EvictionConfig} for requested {@link EvictionStrategy} implementation
      *
      * @return the requested {@link EvictionStrategy} implementation
      */
-    public static EvictionStrategy getEvictionStrategy(EvictionStrategyType evictionStrategyType) {
+    public static EvictionStrategy getEvictionStrategy(EvictionConfig evictionConfig) {
+        if (evictionConfig == null) {
+            return null;
+        }
+        final EvictionStrategyType evictionStrategyType = evictionConfig.getEvictionStrategyType();
+        if (evictionStrategyType == null) {
+            return null;
+        }
         return EVICTION_STRATEGY_MAP.get(evictionStrategyType);
+
+        // TODO "evictionStrategyFactory" can be handled here from a single point
+        // for user defined custom implementations.
+        // So "EvictionStrategy" implementation can be taken from user defined factory.
     }
 
     /**

@@ -27,7 +27,7 @@ import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheMaxSizeConfig;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.IOUtil;
@@ -85,10 +85,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean isEventsEnabled = true;
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
-    protected final EvictionPolicy evictionPolicy;
-    protected final CacheMaxSizeConfig maxSizeConfig;
+    protected final CacheEvictionConfig evictionConfig;
     protected volatile boolean hasExpiringEntry;
-    protected final boolean evictionEnabled;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
     protected final CacheMaxSizeChecker maxSizeChecker;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
@@ -108,6 +106,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
+        this.evictionConfig = cacheConfig.getEvictionConfig();
+        if (evictionConfig == null) {
+            throw new IllegalStateException("Eviction config cannot be null");
+        }
         this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
@@ -122,21 +124,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
-        this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
-                ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
-        this.maxSizeConfig = cacheConfig.getMaxSizeConfig();
-        this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
-        this.maxSizeChecker = createCacheMaxSizeChecker(maxSizeConfig);
-        this.evictionPolicyEvaluator = creatEvictionPolicyEvaluator(evictionPolicy);
-        this.evictionChecker = createEvictionChecker();
-        this.evictionStrategy = creatEvictionStrategy();
-
-        if (maxSizeConfig == null) {
-            throw new IllegalStateException("Max-Size config must be configured");
-        }
-        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
-            throw new IllegalStateException("Eviction policy cannot be null or NONE");
-        }
+        this.maxSizeChecker = createCacheMaxSizeChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
+        this.evictionPolicyEvaluator = creatEvictionPolicyEvaluator(evictionConfig);
+        this.evictionChecker = createEvictionChecker(evictionConfig);
+        this.evictionStrategy = creatEvictionStrategy(evictionConfig);
     }
     //CHECKSTYLE:ON
 
@@ -173,36 +164,34 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected abstract Data toHeapData(Object obj);
 
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
-        if (maxSizeConfig == null) {
-            throw new IllegalArgumentException("Max-Size config cannot be null");
-        }
-
-        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
+    protected CacheMaxSizeChecker createCacheMaxSizeChecker(int size,
+            CacheEvictionConfig.CacheMaxSizePolicy maxSizePolicy) {
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
-        if (maxSizePolicy == CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
-            return new EntryCountCacheMaxSizeChecker(maxSizeConfig, records, partitionCount);
+        if (maxSizePolicy == CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+            return new EntryCountCacheMaxSizeChecker(size, records, partitionCount);
         }
 
         return null;
     }
 
-    protected EvictionPolicyEvaluator<Data, R> creatEvictionPolicyEvaluator(EvictionPolicy evictionPolicy) {
+    protected EvictionPolicyEvaluator<Data, R> creatEvictionPolicyEvaluator(CacheEvictionConfig cacheEvictionConfig) {
+        final EvictionPolicy evictionPolicy = cacheEvictionConfig.getEvictionPolicy();
+
         if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
             throw new IllegalArgumentException("Eviction policy cannot be null or NONE");
         }
 
-        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionPolicy);
+        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(cacheEvictionConfig);
     }
 
-    protected EvictionChecker createEvictionChecker() {
+    protected EvictionChecker createEvictionChecker(CacheEvictionConfig cacheEvictionConfig) {
         return new MaxSizeEvictionChecker();
     }
 
-    protected EvictionStrategy<Data, R, CRM> creatEvictionStrategy() {
-        return EvictionStrategyProvider.getDefaultEvictionStrategy();
+    protected EvictionStrategy<Data, R, CRM> creatEvictionStrategy(CacheEvictionConfig cacheEvictionConfig) {
+        return EvictionStrategyProvider.getEvictionStrategy(cacheEvictionConfig);
     }
 
     protected boolean isEvictionRequired() {
@@ -222,7 +211,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public boolean isEvictionEnabled() {
-        return evictionEnabled && evictionStrategy != null && evictionPolicyEvaluator != null;
+        return evictionStrategy != null && evictionPolicyEvaluator != null;
     }
 
     @Override

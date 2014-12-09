@@ -17,12 +17,13 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.CacheMaxSizeConfig;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InterfacesConfig;
@@ -507,19 +508,25 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String name = getTextContent(attName);
             fillAttributeValues(node, cacheConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                if ("max-size".equals(cleanNodeName(childNode))) {
-                    final CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+                if ("eviction".equals(cleanNodeName(childNode))) {
+                    final CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
                     final Node size = childNode.getAttributes().getNamedItem("size");
-                    final Node maxSizePolicy = childNode.getAttributes().getNamedItem("policy");
+                    final Node maxSizePolicy = childNode.getAttributes().getNamedItem("max-size-policy");
+                    final Node evictionPolicy = childNode.getAttributes().getNamedItem("eviction-policy");
                     if (size != null) {
-                        maxSizeConfig.setSize(Integer.parseInt(getTextContent(size)));
+                        evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
                     }
                     if (maxSizePolicy != null) {
-                        maxSizeConfig.setMaxSizePolicy(
-                                CacheMaxSizeConfig.CacheMaxSizePolicy.valueOf(
+                        evictionConfig.setMaxSizePolicy(
+                                CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
                                         upperCaseInternal(getTextContent(maxSizePolicy))));
                     }
-                    cacheConfigBuilder.addPropertyValue("maxSizeConfig", maxSizeConfig);
+                    if (evictionPolicy != null) {
+                        evictionConfig.setEvictionPolicy(
+                                EvictionPolicy.valueOf(
+                                        upperCaseInternal(getTextContent(evictionPolicy))));
+                    }
+                    cacheConfigBuilder.addPropertyValue("evictionConfig", evictionConfig);
                 }
                 if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = new ManagedList();
