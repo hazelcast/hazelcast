@@ -1,6 +1,8 @@
 ## Management Center Configuration
 
-This configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. Sample configurations are shown below.
+This configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. 
+
+The example configurations are shown below.
 
 **Declarative:**
 

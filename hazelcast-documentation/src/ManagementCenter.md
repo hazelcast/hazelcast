@@ -36,6 +36,13 @@ java -jar mancenter-*version*.war 8080 mancenter
 
 The Management Center creates a folder with the name "mancenter" under your "user/home" folder to save data files. You can change the data folder by setting the `hazelcast.mancenter.home` system property.
 
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Management Center Configuration section](#management-center-configuration) for a full description of Hazelcast Management Center configuration.*
+
 
 
 ### Tool Overview
