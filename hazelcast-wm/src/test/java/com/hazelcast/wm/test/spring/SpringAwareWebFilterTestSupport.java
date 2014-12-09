@@ -84,23 +84,32 @@ public abstract class SpringAwareWebFilterTestSupport extends AbstractWebFilterT
 
     }
 
-    protected SpringSecuritySession login(SpringSecuritySession springSecuritySession) throws Exception {
-        return login(springSecuritySession, SPRING_SECURITY_DEFAULT_USERNAME, SPRING_SECURITY_DEFAULT_PASSWORD);
+    protected SpringSecuritySession login(SpringSecuritySession springSecuritySession,
+                                          boolean createSessionBeforeLogin) throws Exception {
+        return login(springSecuritySession, SPRING_SECURITY_DEFAULT_USERNAME, SPRING_SECURITY_DEFAULT_PASSWORD,
+                createSessionBeforeLogin);
     }
 
     protected SpringSecuritySession login(SpringSecuritySession springSecuritySession,
                                           String username,
-                                          String password) throws Exception {
+                                          String password,
+                                          boolean createSessionBeforeLogin) throws Exception {
         if (springSecuritySession== null) {
             springSecuritySession = new SpringSecuritySession();
         }
+
+        if (createSessionBeforeLogin) {
+            request(RequestType.POST_REQUEST,
+                    SPRING_SECURITY_LOGIN_URL,
+                    serverPort1, springSecuritySession.cookieStore);
+        }
+
         HttpResponse response =
             request(
                 RequestType.POST_REQUEST,
                 SPRING_SECURITY_LOGIN_URL + "?" +
                     SPRING_SECURITY_LOGIN_USERNAME_PARAM + "=" + username + "&" +
-                    SPRING_SECURITY_LOGIN_PASSWORD_PARAM + "=" + password + "&" +
-                    SPRING_SECURITY_REMEMBER_ME_PARAM + "=" + "true",
+                    SPRING_SECURITY_LOGIN_PASSWORD_PARAM + "=" + password,
                 serverPort1, springSecuritySession.cookieStore);
         springSecuritySession.lastResponse = response;
         return springSecuritySession;
