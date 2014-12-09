@@ -38,13 +38,13 @@ section, [ICache Configuration](#icache-configuration). As already mentioned, tw
 To configure the use of the LRU (Less Recently Used) policy:
 
 ```xml
-<eviction size="10000" size-policy="ENTRY-COUNT" eviction-policy="LRU" />
+<eviction size="10000" max-size-policy="ENTRY-COUNT" eviction-policy="LRU" />
 ```
 
 And to configure the use of the LFU (Less Frequently Used) policy:
 
 ```xml
-<eviction size="10000" size-policy="ENTRY-COUNT" eviction-policy="LFU" />
+<eviction size="10000" max-size-policy="ENTRY-COUNT" eviction-policy="LFU" />
 ```
 
 The default eviction policy is LRU, therefore Hazelcast JCache does not offer the possibility to perform no eviction.

@@ -93,6 +93,7 @@ Hazelcast.*
 
 ##### Evictable
 
+
 An `com.hazelcast.cache.impl.eviction.Evictable` is the basic element of the eviction system. The `Evictable` interface defines
 a set of properties to identify if an instance is expired or to retrieve timestamps or values to predict the qualification for
 eviction.
@@ -163,7 +164,7 @@ interface EvictionPolicyStrategy<A, E extends Evictable> {
    * deliver a predictable timing results of the eviction system.
    */
   Iterable<EvictionCandidate<A, E>> evaluate(
-      Iterable<EvictionCandidate<A, E>> evictionCandidates);
+      Iterable<EvictionCandidate<A, E>> evictionCandidates );
 
   /**
    * A hook method that is called when new entries are created on the
@@ -172,7 +173,7 @@ interface EvictionPolicyStrategy<A, E extends Evictable> {
    * EvictionStrategy and also has to delegate the call to the given
    * EvictionPolicyStrategy.
    */
-  void onCreation(Evictable evictable);
+  void onCreation( Evictable evictable );
 
   /**
    * A hook method that is called when an entry is loaded on the passed
@@ -182,7 +183,7 @@ interface EvictionPolicyStrategy<A, E extends Evictable> {
    * EvictionStrategy and also has to delegate the call to the given
    * EvictionPolicyStrategy.
    */
-  void onLoad(Evictable evictable);
+  void onLoad( Evictable evictable );
 
   /**
    * A hook method that is called when entries are accessed (get) in
@@ -191,7 +192,7 @@ interface EvictionPolicyStrategy<A, E extends Evictable> {
    * EvictionStrategy and also has to delegate the call to the given
    * EvictionPolicyStrategy.
    */
-  void onRead(Evictable evictable);
+  void onRead( Evictable evictable );
 
   /**
    * A hook method that is called when entries are updated in the passed
@@ -199,7 +200,7 @@ interface EvictionPolicyStrategy<A, E extends Evictable> {
    * internal state of EvictionStrategy and also has to delegate the call
    * to the given EvictionPolicyStrategy.
    */
-  void onUpdate(Evictable evictable);
+  void onUpdate( Evictable evictable );
 
   /**
    * A hook method that is called when entries are removed in the passed
@@ -208,14 +209,14 @@ interface EvictionPolicyStrategy<A, E extends Evictable> {
    * EvictionStrategy and also has to delegate the call to the given
    * EvictionPolicyStrategy.
    */
-  void onRemove(Evictable evictable);
+  void onRemove( Evictable evictable );
 
   /**
    * The configure method is called after constructing the instance to pass
    * in properties defined by the user. Configuration properties might be
    * different from each other and are meant to be implementation specific.
    */
-  void configure(Properties properties);
+  void configure( Properties properties );
 }
 ```
 
@@ -243,7 +244,7 @@ interface EvictableStore<A, E extends Evictable> {
    * evict, by the EvictionPolicyStrategy, selected EvictionCandidates
    * from the internal data structures.
    */
-  int evict(Iterable<EvictionCandidate<A, E>> evictionCandidates);
+  int evict( Iterable<EvictionCandidate<A, E>> evictionCandidates );
 
   /**
    * Returns the current count of the partition.
@@ -274,37 +275,42 @@ short time. The hook methods to update internal state of the `EvictionStrategy` 
 `EvictionPolicyStrategy`.
 
 ```java
-interface EvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>> {
+interface EvictionStrategy<A, E extends Evictable,
+                           S extends EvictableStore<A, E>> {
   /**
    * The evict method is called by a storage to trigger eviction from the
    * passed in EvictableStore. It is up to the implementation to provide a
    * full set of entries as candidates to the EvictionPolicyStrategy or to
    * select just a subset to speed up eviction.
    */
-  int evict(S evictableStore, EvictionPolicyStrategy<A, E> evictionPolicyStrategy,
-      EvictionEvaluator<A, E, S> evictionEvaluator);
+  int evict( S evictableStore,
+             EvictionPolicyStrategy<A, E> evictionPolicyStrategy,
+             EvictionEvaluator<A, E, S> evictionEvaluator );
 
   /**
    * A hook method that is called when new entries are created on the passed
    * EvictableStore instance.
    */
-  void onCreation(S evictableStore, EvictionPolicyStrategy evictionPolicyStrategy,
-      Evictable evictable);
+  void onCreation( S evictableStore,
+                   EvictionPolicyStrategy evictionPolicyStrategy,
+                   Evictable evictable );
 
   /**
    * A hook method that is called when an entry is loaded on the passed
    * EvictableStore instance by an configured external resource like a
    * database storage or similar.
    */
-  void onLoad(S evictableStore, EvictionPolicyStrategy evictionPolicyStrategy,
-      Evictable evictable);
+  void onLoad( S evictableStore,
+               EvictionPolicyStrategy evictionPolicyStrategy,
+               Evictable evictable );
 
   /**
    * A hook method that is called when entries are accessed (get) in the
    * passed EvictableStore instance.
    */
-  void onRead(S evictableStore, EvictionPolicyStrategy evictionPolicyStrategy,
-      Evictable evictable);
+  void onRead( S evictableStore,
+               EvictionPolicyStrategy evictionPolicyStrategy,
+               Evictable evictable );
 
   /**
    * A hook method that is called when entries are updated in the passed
@@ -317,8 +323,9 @@ interface EvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E
    * A hook method that is called when entries are removed in the passed
    * EvictableStore instance.
    */
-  void onRemove(S evictableStore, EvictionPolicyStrategy evictionPolicyStrategy,
-      Evictable evictable);
+  void onRemove( S evictableStore,
+                 EvictionPolicyStrategy evictionPolicyStrategy,
+                 Evictable evictable );
 }
 ```
 
@@ -326,7 +333,8 @@ For implementations with no need to store internal state there is an abstract ba
 as delegate only operations.
 
 ```java
-abstract class AbstractEvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>>
+abstract class AbstractEvictionStrategy<A, E extends Evictable,
+                                        S extends EvictableStore<A, E>>
     implements EvictionStrategy<A, E, S> {
 
     // ... delegate implementations for onX hook methods
@@ -339,12 +347,13 @@ An `com.hazelcast.cache.impl.eviction.EvictionEvaluator` is used to implement lo
 or not such as based on the state of an EvictableStore, such as element count or memory consumption.
 
 ```java
-interface EvictionEvaluator<A, E extends Evictable, S extends EvictableStore<A, E>> {
+interface EvictionEvaluator<A, E extends Evictable,
+                            S extends EvictableStore<A, E>> {
   /**
    * The isEvictionRequired method implementation will decide, based on the
    * passed EvictableStore if an eviction is necessary or not.
    */
-  boolean isEvictionRequired(S evictableStore);
+  boolean isEvictionRequired( S evictableStore );
 }
 ```
 
@@ -364,14 +373,14 @@ interface SampleableEvictableStore<A, E extends Evictable>
    * be executed in a constant time to deliver predictable timing results of
    * the eviction system.
    */
-  Iterable<EvictionCandidate<A, E>> sample(int sampleCount);
+  Iterable<EvictionCandidate<A, E>> sample( int sampleCount );
 
   /**
    * Some implementations might hold internal state whenever the sample
    * method is called. This method can be used to cleanup internal state
    * after eviction happened.
    */
-  void cleanupSampling(Iterable<EvictionCandidate<A, E>> candidates);
+  void cleanupSampling( Iterable<EvictionCandidate<A, E>> candidates );
 }
 ```
 
