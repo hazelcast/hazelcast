@@ -24,5 +24,10 @@ package com.hazelcast.core;
  */
 public interface HazelcastInstanceAware {
 
+    /**
+     * Gets the HazelcastInstance reference when submitting a Runnable/Callable using Hazelcast ExecutorService.
+     *
+     * @param hazelcastInstance the HazelcastInstance reference
+     */
     void setHazelcastInstance(HazelcastInstance hazelcastInstance);
 }
