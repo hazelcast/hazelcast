@@ -181,6 +181,7 @@ src/HazelcastConfiguration/ConfigurationOverview.md
 	src/HazelcastConfiguration/JobTrackerConfiguration.md
 	src/HazelcastConfiguration/ServicesConfiguration.md
 	src/HazelcastConfiguration/MgtCenterConfiguration.md
+	src/HazelcastConfiguration/WANReplConfiguration.md
 #		src/ConfigSpecifyInterfaces.md
 #		src/EC2AutoDiscovery.md
 #		src/Ports.md
