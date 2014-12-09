@@ -2,10 +2,12 @@ package com.hazelcast.cache.eviction;
 
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
+import com.hazelcast.cache.impl.eviction.EvictionConfig;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
+import com.hazelcast.cache.impl.eviction.EvictionStrategyType;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -54,8 +56,19 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
+        EvictionConfig evictionConfig = new EvictionConfig() {
+            @Override
+            public EvictionStrategyType getEvictionStrategyType() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyType getEvictionPolicyType() {
+                return EvictionPolicyType.LRU;
+            }
+        };
         EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(EvictionPolicy.LRU);
+                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records =
                 new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 
@@ -96,8 +109,19 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
+        EvictionConfig evictionConfig = new EvictionConfig() {
+            @Override
+            public EvictionStrategyType getEvictionStrategyType() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyType getEvictionPolicyType() {
+                return EvictionPolicyType.LFU;
+            }
+        };
         EvictionPolicyEvaluator evictionPolicyEvaluator =
-                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(EvictionPolicy.LFU);
+                EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig);
         List<EvictionCandidate<Integer, CacheObjectRecord>> records =
                 new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
 

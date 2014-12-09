@@ -3,7 +3,9 @@ package com.hazelcast.cache.eviction;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
+import com.hazelcast.cache.impl.eviction.EvictionConfig;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
 import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
 import com.hazelcast.cache.impl.eviction.EvictionStrategyType;
@@ -73,8 +75,19 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
 
         SerializationService serializationService = node.getSerializationService();
 
+        EvictionConfig evictionConfig = new EvictionConfig() {
+            @Override
+            public EvictionStrategyType getEvictionStrategyType() {
+                return EvictionStrategyType.SAMPLING_BASED_EVICTION;
+            }
+
+            @Override
+            public EvictionPolicyType getEvictionPolicyType() {
+                return null;
+            }
+        };
         EvictionStrategy evictionStrategy =
-                EvictionStrategyProvider.getEvictionStrategy(EvictionStrategyType.SAMPLING_BASED_EVICTION);
+                EvictionStrategyProvider.getEvictionStrategy(evictionConfig);
         CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(1000);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
