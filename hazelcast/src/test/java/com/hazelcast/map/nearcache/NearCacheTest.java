@@ -552,7 +552,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 final MapProxyImpl mapProxy = (MapProxyImpl) map;
-                final MapService mapService = mapProxy.getService();
+                final MapService mapService = (MapService) mapProxy.getService();
                 final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
                 final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
                 final NearCache nearCache = nearCacheProvider.getNearCache(mapName);
