@@ -42,7 +42,7 @@ queueConfig.getQueueStoreConfig()
         .setProperty( "binary", "false" );
 ```
 
-It has below attributes and parameters.
+It has below elements.
 
 - `max-size`: Value of maximum size of items in the Queue.
 - `backup-count`: Count of synchronous backups. Remember that, Queue is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.

@@ -21,9 +21,9 @@ HazelcastInstance member1 = Hazelcast.newHazelcastInstance( member1Config );
 ```
 
 
-It has only "attribute" parameter.
+It has only the `attribute` element.
 
-- attribute: You specify the name, type and value of your attribute here.
+- `attribute`: You specify the name, type and value of your attribute here.
 
 
 

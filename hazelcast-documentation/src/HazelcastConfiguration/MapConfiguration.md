@@ -58,7 +58,7 @@ mapIndexConfig.setAttribute( "name" ).setOrdered( "false" );
 ```
 
 
-It has below attributes.
+It has below elements.
 
 - `in-memory-format`: Determines how the data will be stored in memory. It has two values: BINARY and OBJECT. BINARY is the default option and enables to store the data in serialized binary format. If OBJECT is set as the value, data will be stored in deserialized form.
 - `backup-count`: Defines the count of synchronous backups. If it is set as 1, for example, backup of a partition will be placed on another node. If it is 2, it will be placed on 2 other nodes.

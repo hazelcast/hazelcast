@@ -23,7 +23,7 @@ GroupConfig groupConfig = new GroupConfig();
 groupConfig.setName( "testCluster" ).setPassword( "1q2w3e" );
 ```
    
-It has below sub-elements.
+It has below elements.
 
 - `name`: Name of the group to be created.
 - `password`: Password of the group to be created.

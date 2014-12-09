@@ -34,7 +34,7 @@ wtcConfig.setReplicationImplObject("com.hazelcast.wan.impl.WanNoDelayReplication
 ```
 
 
-It has below attributes.
+It has below elements.
 
 - name: Name for your WAN replication configuration.
 - target-cluster: Create a group and its password using this parameter.

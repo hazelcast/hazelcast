@@ -37,7 +37,7 @@ HazelcastInstance instance = Hazelcast.newHazelcastInstance()
 ```
 
 
-It has below attributes.
+It has below elements.
 
 - `statistics-enabled`: By default, it is **true**, meaning statistics are calculated.
 - `global-ordering-enabled`: By default, it is **false**, meaning there is no global order guarantee.

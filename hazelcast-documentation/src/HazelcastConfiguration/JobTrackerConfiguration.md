@@ -27,7 +27,7 @@ JTcfg.setName( "default" ).setQueueSize( "0" )
 ```
    
 
-It has below parameters.
+It has below elements.
 
 
 - `max-thread-size`: Configures the maximum thread pool size of the JobTracker.
