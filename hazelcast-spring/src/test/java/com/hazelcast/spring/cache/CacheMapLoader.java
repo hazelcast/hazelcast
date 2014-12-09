@@ -38,7 +38,7 @@ public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
         type = mapName;
     }
 
-    public void destroy() {
+    public void destroy() 
     }
 
     public Object load(final Object key) {
