@@ -478,13 +478,11 @@ public class WebFilter implements Filter {
         boolean isInstanceOfRequestWrapper = false;
         if (req instanceof RequestWrapper) {
             isInstanceOfRequestWrapper = true;
-        } else {
-            if (req instanceof HttpServletRequestWrapper) {
-                HttpServletRequestWrapper wrapper = (HttpServletRequestWrapper) req;
-                ServletRequest wrappedRequest = wrapper.getRequest();
-                if (wrappedRequest != null && isInstanceOfRequestWrapper(wrappedRequest)) {
-                    isInstanceOfRequestWrapper = true;
-                }
+        } else if (req instanceof HttpServletRequestWrapper) {
+            HttpServletRequestWrapper wrapper = (HttpServletRequestWrapper) req;
+            ServletRequest wrappedRequest = wrapper.getRequest();
+            if (wrappedRequest != null && isInstanceOfRequestWrapper(wrappedRequest)) {
+                isInstanceOfRequestWrapper = true;
             }
         }
         return isInstanceOfRequestWrapper;

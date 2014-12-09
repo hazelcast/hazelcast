@@ -21,6 +21,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.wm.test.JettyServer;
 import com.hazelcast.wm.test.ServletContainer;
 import com.hazelcast.wm.test.TomcatServer;
+import org.apache.http.HttpStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +31,7 @@ import org.springframework.security.core.session.SessionRegistry;
 import java.util.Iterator;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -51,7 +53,7 @@ public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
         SessionRegistry sessionRegistry1 = applicationContext1.getBean(SessionRegistry.class);
         SessionRegistry sessionRegistry2 = applicationContext2.getBean(SessionRegistry.class);
 
-        SpringSecuritySession sss = login(null);
+        SpringSecuritySession sss = login(null, false);
 
         request("hello.jsp", serverPort1, sss.cookieStore);
 
@@ -83,8 +85,9 @@ public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
 
     @Test
     public void test_issue_3742() throws Exception {
-        SpringSecuritySession sss = login(null);
+        SpringSecuritySession sss = login(null, true);
         logout(sss);
+        assertEquals(HttpStatus.SC_MOVED_TEMPORARILY, sss.lastResponse.getStatusLine().getStatusCode());
     }
 
 }
