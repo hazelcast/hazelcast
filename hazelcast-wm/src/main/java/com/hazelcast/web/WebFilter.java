@@ -448,7 +448,7 @@ public class WebFilter implements Filter {
         if (!(req instanceof HttpServletRequest)) {
             chain.doFilter(req, res);
         } else {
-            if (isInstanceOfRequestWrapper(req)) {
+            if (req instanceof RequestWrapper) {
                 LOGGER.finest("Request is instance of RequestWrapper! Continue...");
                 chain.doFilter(req, res);
                 return;
@@ -472,20 +472,6 @@ public class WebFilter implements Filter {
                 session.sessionDeferredWrite();
             }
         }
-    }
-
-    private boolean isInstanceOfRequestWrapper(ServletRequest req) {
-        boolean isInstanceOfRequestWrapper = false;
-        if (req instanceof RequestWrapper) {
-            isInstanceOfRequestWrapper = true;
-        } else if (req instanceof HttpServletRequestWrapper) {
-            HttpServletRequestWrapper wrapper = (HttpServletRequestWrapper) req;
-            ServletRequest wrappedRequest = wrapper.getRequest();
-            if (wrappedRequest != null && isInstanceOfRequestWrapper(wrappedRequest)) {
-                isInstanceOfRequestWrapper = true;
-            }
-        }
-        return isInstanceOfRequestWrapper;
     }
 
     public final void destroy() {
@@ -544,7 +530,16 @@ public class WebFilter implements Filter {
         }
 
         HttpSession getOriginalSession(boolean create) {
-            return super.getSession(create);
+            // Find the top non-wrapped Http Servlet request
+            HttpServletRequest req = (HttpServletRequest) getRequest();
+            while (req instanceof HttpServletRequestWrapper) {
+                req = (HttpServletRequest) ((HttpServletRequestWrapper) req).getRequest();
+            }
+            if (req != null) {
+                return req.getSession(create);
+            } else {
+                return super.getSession(create);
+            }
         }
 
         @Override
