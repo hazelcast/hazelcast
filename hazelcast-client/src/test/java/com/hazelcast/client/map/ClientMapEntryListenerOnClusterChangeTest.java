@@ -25,6 +25,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * This test ensures that EntryListener on a map don't get lost on cluster changes.
+ *
+ * There is one client and an increasing/decreasing number of server instances. The clients puts the value 1 with a
+ * constantly increased key (1, 2, 3, ...) into the map. The partition owner listens on the entryAdded event and adds
+ * 1 to the event value. The client reacts on the entryUpdated event and checks if the event value is 2.
+ *
+ * The test checks for the number of received entryAdded and entryUpdated events and if the values are correct.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ClientMapEntryListenerOnClusterChangeTest extends HazelcastTestSupport {
@@ -94,6 +103,7 @@ public class ClientMapEntryListenerOnClusterChangeTest extends HazelcastTestSupp
         final ClientThread clientThread = new ClientThread(mapClient);
         clientThread.start();
 
+        // Grow cluster to max size
         while (serverInstances.size() < maxClusterSize) {
             TimeUnit.MILLISECONDS.sleep(CHANGE_CLUSTER_INTERVAL_MS);
 
@@ -114,6 +124,7 @@ public class ClientMapEntryListenerOnClusterChangeTest extends HazelcastTestSupp
             );
         }
 
+        // Shrink cluster to single node
         if (shrinkCluster) {
             while (serverInstances.size() > 1) {
                 TimeUnit.MILLISECONDS.sleep(CHANGE_CLUSTER_INTERVAL_MS);
