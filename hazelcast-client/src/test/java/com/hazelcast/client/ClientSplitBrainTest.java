@@ -16,6 +16,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +44,7 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
 
 
     @Test
+    @Repeat(10)
     public void testClientListeners_InSplitBrain() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
@@ -51,15 +53,12 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addAddress("127.0.0.1");
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final String mapName = randomMapName();
-        final IMap<Object, Boolean> map1 = h1.getMap(mapName);
-        final IMap<Object, Boolean> map2 = h2.getMap(mapName);
-        final IMap<Object, Boolean> mapC = client.getMap(mapName);
-
-        final CountDownLatch mergedLatch = new CountDownLatch(1);
+        final IMap<Object, Boolean> mapNode1 = h1.getMap(mapName);
+        final IMap<Object, Boolean> mapNode2 = h2.getMap(mapName);
+        final IMap<Object, Boolean> mapClient = client.getMap(mapName);
 
         final int ITERATION_COUNT = 20;
         final AtomicInteger[] atomicIntegers = new AtomicInteger[ITERATION_COUNT];
@@ -67,23 +66,18 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
             atomicIntegers[i] = new AtomicInteger(0);
         }
 
-        h1.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+        final CountDownLatch mergedLatch = new CountDownLatch(1);
+        final LifecycleListener mergeListener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
                 if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
                     mergedLatch.countDown();
                 }
             }
-        });
+        };
+        h1.getLifecycleService().addLifecycleListener(mergeListener);
+        h2.getLifecycleService().addLifecycleListener(mergeListener);
 
-        h2.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                    mergedLatch.countDown();
-                }
-            }
-        });
-
-        map1.addEntryListener(new EntryAdapter<Object, Boolean>() {
+        final EntryAdapter<Object, Boolean> entryListener = new EntryAdapter<Object, Boolean>() {
             @Override
             public void onEntryEvent(EntryEvent<Object, Boolean> event) {
                 final Boolean shouldCount = event.getValue();
@@ -91,44 +85,24 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
                     atomicIntegers[(Integer) event.getKey()].incrementAndGet();
                 }
             }
-        }, true);
-
-        map2.addEntryListener(new EntryAdapter<Object, Boolean>() {
-            @Override
-            public void onEntryEvent(EntryEvent<Object, Boolean> event) {
-                final Boolean shouldCount = event.getValue();
-                if (shouldCount) {
-                    atomicIntegers[(Integer) event.getKey()].incrementAndGet();
-                }
-            }
-        }, true);
-
-
-        mapC.addEntryListener(new EntryAdapter<Object, Boolean>() {
-            @Override
-            public void onEntryEvent(EntryEvent<Object, Boolean> event) {
-                final Boolean shouldCount = event.getValue();
-                if (shouldCount) {
-                    atomicIntegers[(Integer) event.getKey()].incrementAndGet();
-                }
-            }
-        }, true);
-
+        };
+        mapNode1.addEntryListener(entryListener, true);
+        mapNode2.addEntryListener(entryListener, true);
+        mapClient.addEntryListener(entryListener, true);
 
         closeConnectionBetween(h2, h1);
-        final Random random = new Random();
 
+        final Random random = new Random();
         final Thread clientThread = new Thread() {
             @Override
             public void run() {
-
                 //Just to generate pressure
                 while (mergedLatch.getCount() != 0) {
-                    mapC.put(random.nextInt() % 1000, false);
+                    mapClient.put(random.nextInt() % 1000, false);
                 }
 
                 for (int i = 0; i < ITERATION_COUNT; i++) {
-                    mapC.put(i, true);
+                    mapClient.put(i, true);
                 }
             }
         };
