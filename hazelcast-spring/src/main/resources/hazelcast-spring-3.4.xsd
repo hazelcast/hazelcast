@@ -373,12 +373,12 @@
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="max-size" type="cache-max-size" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="eviction" type="cache-eviction" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 When maximum size is reached, cache is evicted based on the eviction policy
                                                 Size can be any integer between 0 and Integer.MAX_VALUE.
-                                                0 means Integer.MAX_VALUE. Default is 0.
+                                                0 means 10000. Default is 0.
                                                 Cache Max-Size policy has these valid values:
                                                     ENTRY_COUNT (Maximum number of cache entries in the cache),
                                                     USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes for each JVM),
@@ -1710,12 +1710,34 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="cache-max-size">
+    <xs:complexType name="cache-eviction">
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional" />
-        <xs:attribute name="policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional" />
+        <xs:attribute name="size-policy" type="cache-size-policy" default="ENTRY_COUNT" use="optional" />
+        <xs:attribute name="eviction-strategy-factory" use="optional"
+                       default="com.hazelcast.cache.impl.eviction.impl.sampling.SamplingBasedEvictionStrategyFactory">
+            <xs:annotation>
+                <xs:documentation>
+                    The full canonical classname for a javax.cache.configuration.Factory to create an implementation
+                    of com.hazelcast.cache.impl.eviction.EvictionStrategy to create eviction candidates to apply the
+                    com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy implementation to. The default created
+                    implementation is SamplingBasedEvictionStrategy which samples a fixed number of random elements
+                    from the underlying partition storage.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="eviction-policy-strategy-factory" use="optional"
+                      default="com.hazelcast.cache.impl.eviction.impl.policies.LRUEvictionPolicyStrategyFactory">
+            <xs:annotation>
+                <xs:documentation>
+                    The full canonical classname for an implementation of
+                    com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy to compare eviction candidates and select
+                    the best matching prospect for eviction.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
-    <xs:simpleType name="cache-max-size-policy">
+    <xs:simpleType name="cache-size-policy">
         <xs:restriction base="xs:string">
             <xs:enumeration value="ENTRY_COUNT" />
             <xs:enumeration value="USED_NATIVE_MEMORY_SIZE" />

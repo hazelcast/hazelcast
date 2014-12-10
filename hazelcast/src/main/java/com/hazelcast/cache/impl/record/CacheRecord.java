@@ -72,5 +72,4 @@ public interface CacheRecord<V> extends Expirable, Evictable {
      * Resets the access hit count of this {@link Evictable} to <code>0</code>.
      */
     void resetAccessHit();
-
 }

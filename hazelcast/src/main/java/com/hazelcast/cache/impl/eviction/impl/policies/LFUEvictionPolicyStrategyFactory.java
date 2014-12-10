@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.cache.impl.eviction.impl.policies;
 
-/**
- * Interface for checking about if eviction is required or not.
- */
-public interface EvictionChecker {
+import com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy;
+import com.hazelcast.cache.impl.eviction.policies.LFUSingleEvictionPolicyStrategy;
 
-    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
-        @Override
-        public boolean isEvictionRequired() {
-            // Evict always at any case
-            return true;
-        }
-    };
+import javax.cache.configuration.Factory;
 
-    /**
-     * Checks for if eviction is required or not.
-     *
-     * @return <code>true</code> if eviction is required, otherwise <code>false</code>
-     */
-    boolean isEvictionRequired();
+public class LFUEvictionPolicyStrategyFactory
+        implements Factory<EvictionPolicyStrategy> {
 
+    private static final EvictionPolicyStrategy EVICTION_POLICY_STRATEGY = new LFUSingleEvictionPolicyStrategy();
+
+    @Override
+    public EvictionPolicyStrategy create() {
+        return EVICTION_POLICY_STRATEGY;
+    }
 }

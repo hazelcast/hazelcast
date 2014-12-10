@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * <p>
- *     Sampling based {@link com.hazelcast.cache.impl.eviction.EvictionStrategy} implementations for cache.
- * </p>
- */
-package com.hazelcast.cache.impl.eviction.impl.strategy.sampling;
+package com.hazelcast.cache.impl.eviction.impl.sampling;
+
+import com.hazelcast.cache.impl.eviction.EvictionStrategy;
+
+import javax.cache.configuration.Factory;
+
+public class SamplingBasedEvictionStrategyFactory implements Factory<EvictionStrategy> {
+
+    private static final EvictionStrategy EVICTION_STRATEGY = new SamplingBasedEvictionStrategy();
+
+    @Override
+    public EvictionStrategy create() {
+        return EVICTION_STRATEGY;
+    }
+}

@@ -17,52 +17,27 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.SampleableConcurrentHashMap;
+import com.hazelcast.util.EvictableSampleableConcurrentHashMap;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 public class CacheRecordHashMap
-        extends SampleableConcurrentHashMap<Data, CacheRecord>
+        extends EvictableSampleableConcurrentHashMap<Data, CacheRecord>
         implements SampleableCacheRecordMap<Data, CacheRecord> {
 
-    public CacheRecordHashMap(int initialCapacity) {
+    private final int globalEntryCapacity;
+
+    // This can only be used from the single threaded partition thread system!
+    // Never ever expose this number to a user thread!
+    private int partitionEntryCount;
+
+    public CacheRecordHashMap(int initialCapacity, int globalEntryCapacity) {
         super(initialCapacity);
-    }
-
-    public CacheRecordHashMap(int initialCapacity, float loadFactor, int concurrencyLevel,
-            ConcurrentReferenceHashMap.ReferenceType keyType,
-            ConcurrentReferenceHashMap.ReferenceType valueType,
-            EnumSet<Option> options) {
-        super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
-    }
-
-    public class EvictableSamplingEntry extends SamplingEntry implements EvictionCandidate {
-
-        public EvictableSamplingEntry(Data key, CacheRecord value) {
-            super(key, value);
-        }
-
-        @Override
-        public Object getAccessor() {
-            return getKey();
-        }
-
-        @Override
-        public Evictable getEvictable() {
-            return getValue();
-        }
-
-    }
-
-    @Override
-    protected EvictableSamplingEntry createSamplingEntry(Data key, CacheRecord value) {
-        return new EvictableSamplingEntry(key, value);
+        this.globalEntryCapacity = globalEntryCapacity;
     }
 
     @Override
@@ -73,7 +48,7 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public <C extends EvictionCandidate<Data, CacheRecord>> int evict(Iterable<C> evictionCandidates) {
+    public int evict(Iterable<EvictionCandidate<Data, CacheRecord>> evictionCandidates) {
         if (evictionCandidates == null) {
             return 0;
         }
@@ -87,8 +62,79 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public Iterable<EvictableSamplingEntry> sample(int sampleCount) {
-        return super.getRandomSamples(sampleCount);
+    public CacheRecord put(Data key, CacheRecord value) {
+        CacheRecord cacheRecord = super.put(key, value);
+        if (cacheRecord == null) {
+            partitionEntryCount++;
+        }
+        return cacheRecord;
     }
 
+    @Override
+    public CacheRecord putIfAbsent(Data key, CacheRecord value) {
+        CacheRecord cacheRecord = super.putIfAbsent(key, value);
+        if (cacheRecord == null) {
+            partitionEntryCount++;
+        }
+        return cacheRecord;
+    }
+
+    @Override
+    public CacheRecord remove(Object key) {
+        CacheRecord cacheRecord = super.remove(key);
+        if (cacheRecord != null) {
+            partitionEntryCount--;
+        }
+        return cacheRecord;
+    }
+
+    @Override
+    public boolean remove(Object key, Object value) {
+        boolean result = super.remove(key, value);
+        if (result) {
+            partitionEntryCount--;
+        }
+        return result;
+    }
+
+    @Override
+    public void putAll(Map<? extends Data, ? extends CacheRecord> m) {
+        super.putAll(m);
+        partitionEntryCount = size();
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        partitionEntryCount = 0;
+    }
+
+    @Override
+    public long getPartitionEntryCount() {
+        return partitionEntryCount;
+    }
+
+    @Override
+    public long getGlobalEntryCapacity() {
+        return globalEntryCapacity;
+    }
+
+    @Override
+    public long getPartitionMemoryConsumption() {
+        return -1;
+    }
+
+    @Override
+    public Iterable<EvictionCandidate<Data, CacheRecord>> sample(int sampleCount) {
+        return (Iterable) super.samplingIterator(sampleCount);
+    }
+
+    @Override
+    public void cleanupSampling(Iterable<EvictionCandidate<Data, CacheRecord>> evictionCandidates) {
+    }
+
+    @Override
+    public int fetch(int tableIndex, int size, List<Data> keys) {
+        return super.fetch(tableIndex, size, keys);
+    }
 }

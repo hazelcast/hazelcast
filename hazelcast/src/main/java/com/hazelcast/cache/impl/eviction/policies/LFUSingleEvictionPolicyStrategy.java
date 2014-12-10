@@ -14,23 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction.impl.evaluator;
+package com.hazelcast.cache.impl.eviction.policies;
 
 import com.hazelcast.cache.impl.eviction.Evictable;
 
 /**
- * Interface for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy#LRU} policy.
+ * This class is a LFU (Less Frequently Used) implementation of the
+ * {@link com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy}
+ *
+ * @param <A> accessor (key) type of the evictable entry
+ * @param <E> {@link com.hazelcast.cache.impl.eviction.Evictable} type (value) of the entry
  */
-public class LRUEvictionPolicyEvaluator<A, E extends Evictable>
-        extends AbstractEvictionPolicyEvaluator<A, E> {
+public class LFUSingleEvictionPolicyStrategy<A, E extends Evictable>
+        extends AbstractSingleEvictionPolicyStrategy<A, E> {
 
     @Override
-    protected Evictable selectEvictableAsPolicy(Evictable current, Evictable candidate) {
-        if (candidate.getAccessTime() < current.getAccessTime()) {
-            return candidate;
-        } else {
-            return current;
-        }
+    protected Evictable compareEvictable(Evictable current, Evictable candidate) {
+        return current.getAccessHits() > candidate.getAccessHits() ? candidate : current;
     }
-
 }

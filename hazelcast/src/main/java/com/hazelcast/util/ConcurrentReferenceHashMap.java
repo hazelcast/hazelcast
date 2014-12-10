@@ -387,7 +387,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * backup in case a null (pre-initialized) value is ever seen in
      * an unsynchronized access method.
      */
-    static final class HashEntry<K, V> {
+    static class HashEntry<K, V> {
         final Object keyRef;
         final int hash;
         volatile Object valueRef;
@@ -457,7 +457,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * subclasses from ReentrantLock opportunistically, just to
      * simplify some locking and avoid separate construction.
      */
-    static final class Segment<K, V> extends ReentrantLock implements Serializable {
+    static class Segment<K, V> extends ReentrantLock implements Serializable {
         /*
          * Segments maintain a table of entry lists that are ALWAYS
          * kept in a consistent state, so can be read without locking.
@@ -875,7 +875,11 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
+    Segment<K, V> newSegment(int initialCapacity, float lf, ReferenceType keyType, ReferenceType valueType,
+                       boolean identityComparisons) {
 
+        return new Segment<K, V>(initialCapacity, lf, keyType, valueType, false);
+    }
 
     /* ---------------- Public operations -------------- */
 
@@ -934,7 +938,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         identityComparisons = options != null && options.contains(Option.IDENTITY_COMPARISONS);
 
         for (int i = 0; i < this.segments.length; ++i)
-            this.segments[i] = new Segment<K, V>(cap, loadFactor,
+            this.segments[i] = newSegment(cap, loadFactor,
                     keyType, valueType, identityComparisons);
     }
 

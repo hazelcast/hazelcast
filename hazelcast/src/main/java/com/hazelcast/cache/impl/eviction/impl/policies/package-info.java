@@ -16,7 +16,8 @@
 
 /**
  * <p>
- *     {@link com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator} implementations for cache.
+ *     This package contains the factories for bundled policies such as
+ *     LRU and LFU.
  * </p>
  */
-package com.hazelcast.cache.impl.eviction.impl.evaluator;
+package com.hazelcast.cache.impl.eviction.impl.policies;

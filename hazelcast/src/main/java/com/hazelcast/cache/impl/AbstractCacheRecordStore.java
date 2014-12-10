@@ -17,19 +17,16 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.impl.eviction.EvictionChecker;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.cache.impl.eviction.EvictionEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyStrategy;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
-import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
-import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
-import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.eviction.evaluators.MaxEntryCountEvictionEvaluator;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheMaxSizeConfig;
-import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -41,6 +38,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.cache.CacheException;
 import javax.cache.configuration.Factory;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
@@ -65,7 +63,8 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 
 /**
- * @author sozal 14/10/14
+ * An abstract implementation of a cache record store. {@link com.hazelcast.cache.impl.AbstractCacheRecordStore}
+ * subclasses implement the different backend storages as native memory, file based storage or on-heap.
  */
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore {
@@ -85,14 +84,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean isEventsEnabled = true;
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
-    protected final EvictionPolicy evictionPolicy;
-    protected final CacheMaxSizeConfig maxSizeConfig;
+    protected final CacheEvictionConfig evictionConfig;
     protected volatile boolean hasExpiringEntry;
-    protected final boolean evictionEnabled;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
-    protected final CacheMaxSizeChecker maxSizeChecker;
-    protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
-    protected final EvictionChecker evictionChecker;
+    protected final EvictionPolicyStrategy<Data, R> evictionPolicyStrategy;
+    protected final EvictionEvaluator evictionEvaluator;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
 
     //CHECKSTYLE:OFF
@@ -108,7 +104,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
-        this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -121,22 +116,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             this.statistics = cacheService.createCacheStatIfAbsent(name);
         }
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
+        this.evictionConfig = cacheConfig.getEvictionConfig();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
-        this.evictionPolicy = cacheConfig.getEvictionPolicy() != null
-                ? cacheConfig.getEvictionPolicy() : EvictionPolicy.NONE;
-        this.maxSizeConfig = cacheConfig.getMaxSizeConfig();
-        this.evictionEnabled = evictionPolicy != EvictionPolicy.NONE;
-        this.maxSizeChecker = createCacheMaxSizeChecker(maxSizeConfig);
-        this.evictionPolicyEvaluator = creatEvictionPolicyEvaluator(evictionPolicy);
-        this.evictionChecker = createEvictionChecker();
-        this.evictionStrategy = creatEvictionStrategy();
-
-        if (maxSizeConfig == null) {
-            throw new IllegalStateException("Max-Size config must be configured");
-        }
-        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
-            throw new IllegalStateException("Eviction policy cannot be null or NONE");
-        }
+        this.evictionPolicyStrategy = createEvictionPolicyEvaluator(evictionConfig);
+        this.evictionEvaluator = createEvictionEvaluator(evictionConfig);
+        this.evictionStrategy = createEvictionStrategy(evictionConfig);
+        this.records = createRecordCacheMap();
     }
     //CHECKSTYLE:ON
 
@@ -173,43 +158,27 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected abstract Data toHeapData(Object obj);
 
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(CacheMaxSizeConfig maxSizeConfig) {
-        if (maxSizeConfig == null) {
-            throw new IllegalArgumentException("Max-Size config cannot be null");
+    protected EvictionPolicyStrategy<Data, R> createEvictionPolicyEvaluator(CacheEvictionConfig evictionConfig) {
+        try {
+            String className = evictionConfig.getEvictionPolicyStrategyFactory();
+            Factory<? extends EvictionPolicyStrategy<Data, R>> factory = ClassLoaderUtil.newInstance(null, className);
+            return factory.create();
+        } catch (Exception e) {
+            throw new CacheException(e);
         }
-
-        final CacheMaxSizeConfig.CacheMaxSizePolicy maxSizePolicy = maxSizeConfig.getMaxSizePolicy();
-        if (maxSizePolicy == null) {
-            throw new IllegalArgumentException("Max-Size policy cannot be null");
-        }
-        if (maxSizePolicy == CacheMaxSizeConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
-            return new EntryCountCacheMaxSizeChecker(maxSizeConfig, records, partitionCount);
-        }
-
-        return null;
     }
 
-    protected EvictionPolicyEvaluator<Data, R> creatEvictionPolicyEvaluator(EvictionPolicy evictionPolicy) {
-        if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
-            throw new IllegalArgumentException("Eviction policy cannot be null or NONE");
-        }
-
-        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionPolicy);
+    protected EvictionEvaluator createEvictionEvaluator(CacheEvictionConfig evictionConfig) {
+        return new MaxEntryCountEvictionEvaluator(partitionCount);
     }
 
-    protected EvictionChecker createEvictionChecker() {
-        return new MaxSizeEvictionChecker();
-    }
-
-    protected EvictionStrategy<Data, R, CRM> creatEvictionStrategy() {
-        return EvictionStrategyProvider.getDefaultEvictionStrategy();
-    }
-
-    protected boolean isEvictionRequired() {
-        if (maxSizeChecker != null) {
-            return maxSizeChecker.isReachedToMaxSize();
-        } else {
-            return false;
+    protected EvictionStrategy<Data, R, CRM> createEvictionStrategy(CacheEvictionConfig evictionConfig) {
+        try {
+            String className = evictionConfig.getEvictionStrategyFactory();
+            Factory<? extends EvictionStrategy<Data, R, CRM>> factory = ClassLoaderUtil.newInstance(null, className);
+            return factory.create();
+        } catch (Exception e) {
+            throw new CacheException(e);
         }
     }
 
@@ -221,18 +190,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    public boolean isEvictionEnabled() {
-        return evictionEnabled && evictionStrategy != null && evictionPolicyEvaluator != null;
-    }
-
     @Override
     public int evictIfRequired() {
-        int evictedCount = 0;
-        if (isEvictionEnabled()) {
-            evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker);
-            if (isStatisticsEnabled() && evictedCount > 0) {
-                statistics.increaseCacheEvictions(evictedCount);
-            }
+        int evictedCount = evictionStrategy.evict(records, evictionPolicyStrategy, evictionEvaluator);
+        if (isStatisticsEnabled() && evictedCount > 0) {
+            statistics.increaseCacheEvictions(evictedCount);
         }
         return evictedCount;
     }
@@ -477,6 +439,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
+        evictionStrategy.onUpdate(records, evictionPolicyStrategy, record);
     }
 
     protected void onUpdateRecordError(Data key, R record, Object value, Data newDataValue,
@@ -557,6 +520,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onDeleteRecord(Data key, R record, Data dataValue, boolean deleted) {
+        if (deleted) {
+            evictionStrategy.onRemove(records, evictionPolicyStrategy, record);
+        }
     }
 
     protected void onDeleteRecordError(Data key, R record, Data dataValue,
@@ -739,6 +705,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onGet(Data key, ExpiryPolicy expiryPolicy, Object value, R record) {
+        evictionStrategy.onRead(records, evictionPolicyStrategy, record);
     }
 
     protected void onGetError(Data key, ExpiryPolicy expiryPolicy, Object value,
@@ -792,7 +759,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void onPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
             boolean getValue, boolean disableWriteThrough, R record, Object oldValue,
-            boolean isExpired, boolean isNewPut, boolean isSaveSucceed) {
+            boolean isExpired, boolean isNewPut, boolean isSaveSucceed, boolean loadThrough) {
+        if (isNewPut && !loadThrough) {
+            evictionStrategy.onCreation(records, evictionPolicyStrategy, record);
+        } else if (loadThrough) {
+            evictionStrategy.onLoad(records, evictionPolicyStrategy, record);
+        }
     }
 
     protected void onPutError(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
@@ -801,7 +773,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean getValue, boolean disableWriteThrough, int completionId) {
+            boolean getValue, boolean disableWriteThrough, boolean loadThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -830,7 +802,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
 
             onPut(key, value, expiryPolicy, caller, getValue, disableWriteThrough,
-                    record, oldValue, isExpired, isOnNewPut, isSaveSucceed);
+                    record, oldValue, isExpired, isOnNewPut, isSaveSucceed, loadThrough);
 
             updateGetAndPutStat(isSaveSucceed, getValue, oldValue == null, start);
 
@@ -846,22 +818,27 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
             boolean getValue, int completionId) {
-        return put(key, value, expiryPolicy, caller, getValue, false, completionId);
+        return put(key, value, expiryPolicy, caller, getValue, false, false, completionId);
     }
 
     @Override
     public void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId) {
-        put(key, value, expiryPolicy, caller, false, false, completionId);
+        put(key, value, expiryPolicy, caller, false, false, false, completionId);
     }
 
     @Override
     public Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
             String caller, int completionId) {
-        return put(key, value, expiryPolicy, caller, true, false, completionId);
+        return put(key, value, expiryPolicy, caller, true, false, false, completionId);
     }
 
     protected void onPutIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean disableWriteThrough, R record, boolean isExpired, boolean isSaveSucceed) {
+            boolean disableWriteThrough, R record, boolean isExpired, boolean isSaveSucceed, boolean loadThrough) {
+        if (loadThrough) {
+            evictionStrategy.onLoad(records, evictionPolicyStrategy, record);
+        } else {
+            evictionStrategy.onCreation(records, evictionPolicyStrategy, record);
+        }
     }
 
     protected void onPutIfAbsentError(Data key, Object value, ExpiryPolicy expiryPolicy,
@@ -869,7 +846,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean disableWriteThrough, int completionId) {
+            boolean disableWriteThrough, boolean loadThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -888,7 +865,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
 
             onPutIfAbsent(key, value, expiryPolicy, caller, disableWriteThrough,
-                    record, isExpired, result);
+                    record, isExpired, result, loadThrough);
 
             updateHasExpiringEntry(record);
 
@@ -907,7 +884,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy,
             String caller, int completionId) {
-        return putIfAbsent(key, value, expiryPolicy, caller, false, completionId);
+        return putIfAbsent(key, value, expiryPolicy, caller, false, false, completionId);
     }
 
     protected void onReplace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
@@ -1269,7 +1246,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 final Data key = entry.getKey();
                 final Object value = entry.getValue();
                 if (value != null) {
-                    put(key, value, null, null, false, true, IGNORE_COMPLETION);
+                    put(key, value, null, null, false, true, true, IGNORE_COMPLETION);
                     keysLoaded.add(key);
                 }
             }
@@ -1278,7 +1255,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 final Data key = entry.getKey();
                 final Object value = entry.getValue();
                 if (value != null) {
-                    final boolean hasPut = putIfAbsent(key, value, null, null, true, IGNORE_COMPLETION);
+                    final boolean hasPut = putIfAbsent(key, value, null, null, true, true, IGNORE_COMPLETION);
                     if (hasPut) {
                         keysLoaded.add(key);
                     }
@@ -1384,14 +1361,4 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             IOUtil.closeResource((Closeable) defaultExpiryPolicy);
         }
     }
-
-    protected class MaxSizeEvictionChecker implements EvictionChecker {
-
-        @Override
-        public boolean isEvictionRequired() {
-            return maxSizeChecker.isReachedToMaxSize();
-        }
-
-    }
-
 }

@@ -16,7 +16,8 @@
 
 /**
  * <p>
- *     Max-Size policy interfaces for cache.
+ *     Sampling based {@link com.hazelcast.cache.impl.eviction.EvictionStrategy} implementation
+ *     for Hazelcast JCache.
  * </p>
  */
-package com.hazelcast.cache.impl.maxsize;
+package com.hazelcast.cache.impl.eviction.impl.sampling;

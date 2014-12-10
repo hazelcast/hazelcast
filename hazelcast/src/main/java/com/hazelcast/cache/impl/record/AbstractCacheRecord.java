@@ -64,7 +64,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     }
 
     @Override
-    public long getAccessTime() {
+    public long getLastAccessTime() {
         return accessTime;
     }
 
@@ -74,13 +74,18 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSeri
     }
 
     @Override
-    public int getAccessHit() {
+    public int getAccessHits() {
         return accessHit;
     }
 
     @Override
     public void setAccessHit(int accessHit) {
         this.accessHit = accessHit;
+    }
+
+    @Override
+    public boolean isExpired(long timestamp) {
+        return isExpiredAt(timestamp);
     }
 
     @Override
