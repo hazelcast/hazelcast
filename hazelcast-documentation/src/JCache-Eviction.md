@@ -2,32 +2,30 @@
 ### JCache Eviction
 
 Growing to an infinite size is in general not the expected behavior of caches. [Expiry Policies](#expirepolicy) is one way to
-prevent infinite growth but defining a meaningful expiration timeout is hard sometimes. Hazelcast JCache therefore provides a
-feature called eviction. Eviction offers the possibility to remove entries based on the cache size or amount of used memory
-(Enterprise Only) and not based on timeouts.
+prevent infinite growth but defining a meaningful expiration timeout is hard sometimes. Hazelcast JCache therefore provides the eviction feature. Eviction offers the possibility to remove entries based on the cache size or amount of used memory
+(Hazelcast Enterprise Only) and not based on timeouts.
 
 #### General information
 
-Since a cache is designed for high throughput and fast reads a lot of effort went into designing the eviction system as
+Since a cache is designed for high throughput and fast reads, a lot of effort went into designing the eviction system as
 predictable as possible. All built-in implementations provide an amortized O(1) runtime. The default operation runtime is
 rendered as O(1) but can be faster than the normal runtime cost if the algorithm finds an expired entry while sampling.
 
-Most importantly, in typical production system two common types of caches are found.
+Most importantly, in typical production system two common types of caches are found:
 
-Caches for reference data (Reference Caches) are normally small and are used to speed up de-referencing as a lookup table. Those
+- **Reference Caches**: Caches for reference data are normally small and are used to speed up the de-referencing as a lookup table. Those
 caches are commonly tend to be small and contain a previously known, fixed number of elements (e.g. states of the USA or
 abbreviations of elements).
-
-The other type of caches normally caches an active data set (Active DataSet Caches). Those caches normally run to their maximum
-size and evict oldest or not frequently used entries to keep in memory bounds. They normally sit in front of a database or HTML
-generators to cache latest requested data.
+- **Active DataSet Caches**:  The other type of caches normally caches an active data set. These caches run to their maximum
+size and evict the oldest or not frequently used entries to keep in memory bounds. They sit in front of a database or HTML
+generators to cache the latest requested data.
 
 Hazelcast JCache eviction supports both types of caches using a slightly different approach based on the configured maximum size
-of the cache. For detailed information please find [Eviction Algorithm](#eviction-algorithm).
+of the cache. For detailed information, please see the [Eviction Algorithm section](#eviction-algorithm).
 
 #### Eviction Policies
 
-Hazelcast JCache provides two commonly known eviction policies, LRU and LFU, but loosens the rules for predictable runtime
+Hazelcast JCache provides two commonly known eviction policies: LRU () and LFU, but loosens the rules for predictable runtime
 behavior. LRU normally recognized as `Least Recently Used` is implemented as `Less Recently Used` and LRU as
 `Less Frequently Used`. The details about this difference is explained later in this chapter,
 [Eviction Algorithm](#eviction-algorithm).
