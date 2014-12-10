@@ -15,11 +15,11 @@
 ||[Hibernate Second Level Cache](#hibernate-second-level-cache)|Added the last paragraph to the section [HazelcastLocalCacheRegionFactory](#hazelcastlocalcacheregionfactory). This paragraph describes eviction support when Hazelcast is configured for Hibernate using local cache region factory.|
 |[Chapter 13 - Storage](#storage)|[High-Density Memory Store](#high-density-memory-store)|Added as a new section.|
 |[Chapter 14 - Clients](#clients)|[Java Client](#java-client)|Added information related to load balancer configuration.|
-|[Chapter 19 - Back Pressure](#back-pressure)||Added as a new chapter.|
-|[Chapter 21 - Hazelcast Configuration](#hazelcast-configuration)|[Composing XML Configuration](#composing-xml-configuration)|Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets.|
+|[Chapter 18 - Performance](#performance)|[Back Pressure](#back-pressure)|Added as a new section.|
+|[Chapter 20 - Hazelcast Configuration](#hazelcast-configuration)|[Composing XML Configuration](#composing-xml-configuration)|Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets.|
 |||The whole (formerly known as the *Configuration* chapter) chapter redesigned to include all the Hazelcast configuration elements and attributes.|
-|[Chapter 23 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
-|[Chapter 24 - Glossary](#glossary)||Added as a new chapter.|
+|[Chapter 22 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
+|[Chapter 23 - Glossary](#glossary)||Added as a new chapter.|
 
 
 
