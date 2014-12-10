@@ -402,7 +402,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private void cancelReplicaSync(int partitionId) {
         ReplicaSyncInfo syncInfo = replicaSyncRequests.get(partitionId);
         if (syncInfo != null && replicaSyncRequests.compareAndSet(partitionId, syncInfo, null)) {
-            replicaSyncRequests.set(partitionId, null);
             replicaSyncScheduler.cancel(partitionId);
             finishReplicaSyncProcess();
         }
@@ -825,7 +824,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!isMigrationActive()) {
+        // mdogan:
+        // merged two conditions into single `if-return` block to
+        // conform checkstyle return-count rule.
+        if (!isMigrationActive() || partition.isMigrating()) {
             schedulePartitionReplicaSync(syncInfo, target, REPLICA_SYNC_RETRY_DELAY);
             return;
         }
@@ -835,7 +837,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 return;
             }
 
-            replicaSyncRequests.set(partitionId, null);
+            replicaSyncRequests.compareAndSet(partitionId, syncInfo, null);
             schedulePartitionReplicaSync(syncInfo, target, REPLICA_SYNC_RETRY_DELAY);
             return;
         }
@@ -1907,6 +1909,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : entries) {
                 ReplicaSyncInfo syncInfo = entry.getValue();
                 int partitionId = syncInfo.partitionId;
+                ReplicaSyncInfo current = partitionService.replicaSyncRequests.get(partitionId);
+                if (current != null) {
+                    partitionService.logger.warning("Current: " + current + " --- " + "Other: " + syncInfo);
+                }
                 if (partitionService.replicaSyncRequests.compareAndSet(partitionId, syncInfo, null)) {
                     partitionService.finishReplicaSyncProcess();
                 }
