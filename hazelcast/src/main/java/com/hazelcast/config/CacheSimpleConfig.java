@@ -69,9 +69,10 @@ public class CacheSimpleConfig {
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    // Default value of max-size config is ENTRY_COUNT with 10.000 max entry count
-    private CacheMaxSizeConfig maxSizeConfig = new CacheMaxSizeConfig();
+    // Default value of eviction config is
+    //      * ENTRY_COUNT with 10.000 max entry count
+    //      * LRU as eviction policy
+    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
     private CacheSimpleConfig readOnly;
 
@@ -90,18 +91,13 @@ public class CacheSimpleConfig {
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
-        // Eviction policy cannot be null or NONE
-        if (cacheSimpleConfig.evictionPolicy != null && cacheSimpleConfig.evictionPolicy != EvictionPolicy.NONE) {
-            this.evictionPolicy = cacheSimpleConfig.evictionPolicy;
-        }
-        // Max-Size config cannot be null
-        if (cacheSimpleConfig.maxSizeConfig != null) {
-            this.maxSizeConfig = cacheSimpleConfig.maxSizeConfig;
+        // Eviction config cannot be null
+        if (evictionConfig != null) {
+            this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
     }
 
     public CacheSimpleConfig() {
-
     }
 
     public CacheSimpleConfig getAsReadOnly() {
@@ -245,26 +241,14 @@ public class CacheSimpleConfig {
         return this;
     }
 
-    public EvictionPolicy getEvictionPolicy() {
-        return evictionPolicy;
+    public CacheEvictionConfig getEvictionConfig() {
+        return evictionConfig;
     }
 
-    public CacheSimpleConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        // Eviction policy cannot be null or NONE
-        if (evictionPolicy != null && evictionPolicy != EvictionPolicy.NONE) {
-            this.evictionPolicy = evictionPolicy;
-        }
-        return this;
-    }
-
-    public CacheMaxSizeConfig getMaxSizeConfig() {
-        return maxSizeConfig;
-    }
-
-    public CacheSimpleConfig setMaxSizeConfig(CacheMaxSizeConfig maxSizeConfig) {
-        // Max-Size config cannot be null
-        if (maxSizeConfig != null) {
-            this.maxSizeConfig = maxSizeConfig;
+    public CacheSimpleConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
+        // Eviction config cannot be null
+        if (evictionConfig != null) {
+            this.evictionConfig = evictionConfig;
         }
         return this;
     }

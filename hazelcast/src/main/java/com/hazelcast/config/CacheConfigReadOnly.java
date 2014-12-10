@@ -33,12 +33,12 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheMaxSizeConfig getMaxSizeConfig() {
-        final CacheMaxSizeConfig maxSizeConfig = super.getMaxSizeConfig();
-        if (maxSizeConfig == null) {
+    public CacheEvictionConfig getEvictionConfig() {
+        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+        if (evictionConfig == null) {
             return null;
         }
-        return maxSizeConfig.getAsReadOnly();
+        return evictionConfig.getAsReadOnly();
     }
 
     @Override
@@ -85,7 +85,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setEvictionPolicy(final EvictionPolicy evictionPolicy) {
+    public CacheConfig<K, V> setEvictionConfig(final CacheEvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
