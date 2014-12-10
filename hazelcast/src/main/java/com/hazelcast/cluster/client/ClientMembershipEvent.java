@@ -19,11 +19,9 @@ package com.hazelcast.cluster.client;
 import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import java.io.IOException;
 
 public final class ClientMembershipEvent implements IdentifiedDataSerializable {
@@ -87,7 +85,7 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        member.writeData(out);
+        out.writeObject(member);
         out.writeInt(eventType);
         out.writeBoolean(memberAttributeChange != null);
         if (memberAttributeChange != null) {
@@ -97,8 +95,7 @@ public final class ClientMembershipEvent implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        member = new MemberImpl();
-        member.readData(in);
+        member = in.readObject();
         eventType = in.readInt();
         if (in.readBoolean()) {
             memberAttributeChange = new MemberAttributeChange();
