@@ -194,7 +194,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                hz1.getLifecycleService().terminate();
+                hz1.getLifecycleService().shutdown();
             }
         };
 
@@ -225,7 +225,7 @@ public class ClientIssueTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                hz1.getLifecycleService().terminate();
+                hz1.getLifecycleService().shutdown();
             }
         };
 
