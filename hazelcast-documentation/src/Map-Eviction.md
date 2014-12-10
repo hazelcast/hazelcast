@@ -1,5 +1,5 @@
 
-### Eviction
+### Map Eviction
 
 Unless you delete the map entries manually or use an eviction policy, they will remain in the map. Hazelcast supports policy based eviction for distributed maps. Currently supported policies are LRU (Least Recently Used) and LFU (Least Frequently Used). 
 
