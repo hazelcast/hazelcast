@@ -433,7 +433,7 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
 
         BACKPRESSURE_ENABLED = new GroupProperty(config, PROP_BACKPRESSURE_ENABLED, "false");
-        BACKPRESSURE_SYNCWINDOW = new GroupProperty(config, PROP_BACKPRESSURE_SYNCWINDOW, "1000");
+        BACKPRESSURE_SYNCWINDOW = new GroupProperty(config, PROP_BACKPRESSURE_SYNCWINDOW, "100");
     }
 
     public static class GroupProperty {
