@@ -93,6 +93,148 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         cachingProvider.close();
     }
 
+    @Test(timeout = 30000)
+    public void testPutIfAbsentWithSyncListener_whenEntryExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        String key = randomString();
+        cache.put(key, randomString());
+        // there should not be any hanging due to sync listener
+        cache.putIfAbsent(key, randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testReplaceWithSyncListener_whenEntryNotExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        // there should not be any hanging due to sync listener
+        cache.replace(randomString(), randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testReplaceIfSameWithSyncListener_whenEntryNotExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        // there should not be any hanging due to sync listener
+        cache.replace(randomString(), randomString(), randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testReplaceIfSameWithSyncListener_whenValueIsNotSame(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        String key = randomString();
+        cache.put(key, randomString());
+        // there should not be any hanging due to sync listener
+
+        cache.replace(key, randomString(), randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testRemoveWithSyncListener_whenEntryNotExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        // there should not be any hanging due to sync listener
+        cache.remove(randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testRemoveIfSameWithSyncListener_whenEntryNotExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        // there should not be any hanging due to sync listener
+        cache.remove(randomString(), randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testRemoveIfSameWithSyncListener_whenValueIsNotSame(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        String key = randomString();
+        cache.put(key, randomString());
+        // there should not be any hanging due to sync listener
+        cache.remove(key, randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testGetAndReplaceWithSyncListener_whenEntryNotExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        // there should not be any hanging due to sync listener
+        cache.getAndReplace(randomString(), randomString());
+    }
+
+    @Test(timeout = 30000)
+    public void testGetAndRemoveWithSyncListener_whenEntryNotExists(){
+        CachingProvider cachingProvider = getCachingProvider();
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .setTypes(String.class, String.class).addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration<String, String>(
+                                FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true, true));
+
+        Cache<String, String> cache = cacheManager.createCache(randomString(), config);
+        // there should not be any hanging due to sync listener
+        cache.getAndRemove(randomString());
+    }
+
     public static class TestListener
             implements CacheEntryCreatedListener<String, String>,
                        CacheEntryUpdatedListener<String, String>,
