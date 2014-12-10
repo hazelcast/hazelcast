@@ -130,12 +130,17 @@ public class CacheReplicationOperation extends AbstractOperation {
                 final Data key = e.getKey();
                 final CacheRecord record = e.getValue();
                 final long expirationTime = record.getExpirationTime();
+
+                // If entry is already expired we skip it
                 if (expirationTime > now) {
                     out.writeData(key);
                     out.writeObject(record);
                 }
             }
-            //empty data will terminate the iteration for read
+            // Empty data will terminate the iteration for read in case
+            // expired entries were found while serializing, since the
+            // real subCount will then be different from the one written
+            // before
             out.writeData(new DefaultData());
         }
     }
@@ -155,10 +160,14 @@ public class CacheReplicationOperation extends AbstractOperation {
             String name = in.readUTF();
             Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
             data.put(name, m);
-            for (int j = 0; j < subCount; j++) {
+            // subCount + 1 because of the DefaultData written as the last entry
+            // which adds another Data entry at the end of the stream!
+            for (int j = 0; j < subCount + 1; j++) {
                 Data key = in.readData();
+                // Empty data received so reading can be stopped here since
+                // since the real object subCount might be different from
+                // the number on the stream due to found expired entries
                 if (key.dataSize() == 0) {
-                    //empty data received so reading done here
                     break;
                 }
                 CacheRecord record = in.readObject();
