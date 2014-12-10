@@ -162,6 +162,7 @@ src/Performance.md
 		src/ThreadingEvent.md
 		src/ThreadingExecutor.md
 		src/ThreadingOperation.md
+src/BackPressure.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 #src/Config.md
