@@ -103,4 +103,6 @@ Property Name | Default Value | Type | Description
 `hazelcast.client.request.retry.wait.time`|250|string|The frequency of the connection retries.
 `hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
+`hazelcast.backpressure.enabled`|false|bool|Enable back pressure.
+`hazelcast.backpressure.syncwindow`|1000|string|Used when back pressure is enabled. The larger the sync window value, the less frequent a asynchronous backup is converted to a sync backup.
 
