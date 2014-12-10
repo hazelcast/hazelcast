@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
@@ -53,30 +52,12 @@ public abstract class PartitionClientRequest extends ClientRequest {
         ClientEndpoint endpoint = getEndpoint();
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        InvocationBuilder builder = getInvocationBuilder(op)
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex())
                 .setTryCount(TRY_COUNT)
                 .setResultDeserialized(false)
                 .setCallback(new CallbackImpl(endpoint));
         builder.invoke();
-    }
-
-    private InvocationBuilder getInvocationBuilder(Operation op) {
-        final Address target = getTarget();
-        if (target != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, target);
-        }
-
-        final int partitionId = getPartition();
-        if (partitionId == -1) {
-            throw new IllegalArgumentException("Partition id is -1");
-        }
-
-        return operationService.createInvocationBuilder(getServiceName(), op, partitionId);
-    }
-
-    protected Address getTarget() {
-        return null;
     }
 
     protected abstract Operation prepareOperation();

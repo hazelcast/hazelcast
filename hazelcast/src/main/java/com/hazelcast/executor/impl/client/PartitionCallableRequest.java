@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,7 +27,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -37,35 +35,21 @@ import java.util.concurrent.Callable;
 /**
  * This class is used for sending the task to a particular partition
  */
-public class PartitionCallableRequest extends PartitionClientRequest implements RefreshableRequest {
+public class PartitionCallableRequest extends PartitionClientRequest {
 
     private String name;
     private String uuid;
     private Callable callable;
     private int partitionId;
-    private Address target;
-    private ConstructorFunction<Object, Address> targetCreator;
 
     public PartitionCallableRequest() {
     }
 
     public PartitionCallableRequest(String name, String uuid, Callable callable, int partitionId) {
-        this(name, uuid, callable, partitionId, null);
-    }
-
-    public PartitionCallableRequest(String name, String uuid, Callable callable, int partitionId,
-                                    ConstructorFunction<Object, Address> targetCreator) {
         this.name = name;
         this.uuid = uuid;
         this.callable = callable;
         this.partitionId = partitionId;
-        this.targetCreator = targetCreator;
-        this.target = targetCreator != null ? targetCreator.createNew(null) : null;
-    }
-
-    @Override
-    public Address getTarget() {
-        return target;
     }
 
     @Override
@@ -110,11 +94,6 @@ public class PartitionCallableRequest extends PartitionClientRequest implements 
         writer.writeInt("p", partitionId);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
         rawDataOutput.writeObject(callable);
-        final boolean isTargetNull = target == null;
-        rawDataOutput.writeBoolean(isTargetNull);
-        if (!isTargetNull) {
-            target.writeData(rawDataOutput);
-        }
     }
 
     @Override
@@ -124,11 +103,6 @@ public class PartitionCallableRequest extends PartitionClientRequest implements 
         partitionId = reader.readInt("p");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
-        final boolean isTargetNull = rawDataInput.readBoolean();
-        if (!isTargetNull) {
-            target = new Address();
-            target.readData(rawDataInput);
-        }
     }
 
     @Override
@@ -139,13 +113,5 @@ public class PartitionCallableRequest extends PartitionClientRequest implements 
                 + ", callable=" + callable
                 + ", partitionId=" + partitionId
                 + '}';
-    }
-
-    @Override
-    public void refresh() {
-        if (target == null) {
-            return;
-        }
-        target = targetCreator.createNew(null);
     }
 }

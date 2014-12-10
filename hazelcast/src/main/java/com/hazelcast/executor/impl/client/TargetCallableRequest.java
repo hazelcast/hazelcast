@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.ConstructorFunction;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
@@ -37,21 +38,33 @@ import java.util.concurrent.Callable;
 /**
  * This class is used for sending the task to a particular target
  */
-public final class TargetCallableRequest extends TargetClientRequest {
+public final class TargetCallableRequest extends TargetClientRequest implements RefreshableRequest {
 
     private String name;
     private String uuid;
     private Callable callable;
     private Address target;
+    private ConstructorFunction<Object, Address> targetAddressCreator;
 
     public TargetCallableRequest() {
     }
 
     public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
+        this(name, uuid, callable, target, null);
+    }
+
+    public TargetCallableRequest(String name, String uuid, Callable callable,
+                                 ConstructorFunction<Object, Address> targetAddressCreator) {
+        this(name, uuid, callable, null, targetAddressCreator);
+    }
+
+    private TargetCallableRequest(String name, String uuid, Callable callable,
+                                  Address target, ConstructorFunction<Object, Address> targetAddressCreator) {
         this.name = name;
         this.uuid = uuid;
         this.callable = callable;
-        this.target = target;
+        this.target = targetAddressCreator == null ? target : targetAddressCreator.createNew(null);
+        this.targetAddressCreator = targetAddressCreator;
     }
 
     @SuppressWarnings("unchecked")
@@ -108,5 +121,13 @@ public final class TargetCallableRequest extends TargetClientRequest {
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    @Override
+    public void refresh() {
+        if (targetAddressCreator == null) {
+            return;
+        }
+        target = targetAddressCreator.createNew(null);
     }
 }

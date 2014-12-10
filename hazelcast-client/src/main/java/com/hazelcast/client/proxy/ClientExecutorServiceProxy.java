@@ -409,19 +409,17 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> Future<T> submitToRandomInternal(Callable<T> task, T defaultValue, boolean preventSync) {
         checkIfNotNull(task);
         final String uuid = getUUID();
-        final int partitionId = randomPartitionId();
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId, newTargetCreator());
-        final ICompletableFuture<T> f = invokeFuture(request, request.getTarget());
-        return checkSync(f, uuid, request.getTarget(), partitionId, preventSync, defaultValue);
+        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, newTargetCreator());
+        final ICompletableFuture<T> f = invokeFuture(request);
+        return checkSync(f, uuid, request.getTarget(), -1, preventSync, defaultValue);
     }
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
         checkIfNotNull(task);
 
         final String uuid = getUUID();
-        final int partitionId = randomPartitionId();
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId, newTargetCreator());
-        final ICompletableFuture<T> f = invokeFuture(request, request.getTarget());
+        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, newTargetCreator());
+        final ICompletableFuture<T> f = invokeFuture(request);
         f.andThen(callback);
     }
 
