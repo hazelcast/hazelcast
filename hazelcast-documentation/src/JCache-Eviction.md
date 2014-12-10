@@ -30,8 +30,7 @@ behavior. LRU, normally recognized as `Least Recently Used`, is implemented as `
 `Less Frequently Used`. The details about this difference is explained in the
 [Eviction Algorithm section](#eviction-algorithm).
 
-Eviction Policies are configured by providing the corresponding abbreviation to the configuration as shown in the configuration
-section, [ICache Configuration](#icache-configuration). As already mentioned, two built-in policies are available:
+Eviction Policies are configured by providing the corresponding abbreviation to the configuration as shown in the [ICache Configuration section](#icache-configuration). As already mentioned, two built-in policies are available:
 
 To configure the use of the LRU (Less Recently Used) policy:
 
@@ -45,12 +44,12 @@ And to configure the use of the LFU (Less Frequently Used) policy:
 <eviction size="10000" max-size-policy="ENTRY-COUNT" eviction-policy="LFU" />
 ```
 
-The default eviction policy is LRU, therefore Hazelcast JCache does not offer the possibility to perform no eviction.
+The default eviction policy is LRU. Therefore, Hazelcast JCache does not offer the possibility to perform no eviction.
 
 #### Eviction Strategy
 
-Eviction strategies implement the logic to select one or more eviction candidates from the underlying storage implementation and
-pass them to the eviction policies. Hazelcast JCache provides a amortized O(1) cost implementation for this strategy to select a
+Eviction strategies implement the logic of selecting one or more eviction candidates from the underlying storage implementation and
+passing them to the eviction policies. Hazelcast JCache provides an amortized O(1) cost implementation for this strategy to select a
 fixed number of samples from the current partition that it is executed against.
 
 The default implementation is `com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy` which, as
@@ -59,11 +58,11 @@ mentioned, samples random 15 elements. A detailed description of the algorithm w
 #### Eviction Algorithm
 
 The Hazelcast JCache eviction algorithm is specially designed for the use case of high performance caches and with predictability
-in mind. The built-in implementations provide an amortized O(1) runtime and therefore provide highly predictable runtime behavior
-which does not rely on any kind of background threads to handle the eviction. Therefore the algorithm takes some assumptions into
+in mind. The built-in implementations provide an amortized O(1) runtime and therefore provide a highly predictable runtime behavior
+which does not rely on any kind of background threads to handle the eviction. Therefore, the algorithm takes some assumptions into
 account to prevent network operations and concurrent accesses.
 
-As an explanation of how the algorithm itself works let's examine the following flowchart step by step.
+As an explanation of how the algorithm, works let's examine the following flowchart step by step.
 
 ![](images/eviction/eviction-flowchart.png)
 
