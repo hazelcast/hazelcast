@@ -58,7 +58,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final int retryCount;
     private final int retryWaitTime;
 
-    private Object response;
+    private volatile Object response;
 
     private final ClientRequest request;
 
@@ -89,7 +89,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         int waitTime = clientProperties.getRetryWaitTime().getInteger();
         this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
 
-
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
@@ -98,18 +97,22 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         this.handler = handler;
     }
 
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
     }
 
+    @Override
     public boolean isCancelled() {
         return false;
     }
 
+    @Override
     public boolean isDone() {
         return response != null;
     }
 
+    @Override
     public V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
@@ -118,6 +121,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         }
     }
 
+    @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
@@ -145,6 +149,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return true;
     }
 
+    @Override
     public void notify(Object response) {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
@@ -214,10 +219,12 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return (V) response;
     }
 
+    @Override
     public void andThen(ExecutionCallback<V> callback) {
         andThen(callback, executionService.getAsyncExecutor());
     }
 
+    @Override
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
         synchronized (this) {
             if (response != null) {
@@ -301,6 +308,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     }
 
     class ReSendTask implements Runnable {
+        @Override
         public void run() {
             try {
                 invocationService.reSend(ClientCallFuture.this);
