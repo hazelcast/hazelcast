@@ -115,7 +115,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
             String key = memberAttributeEvent.getKey();
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            ClientMembershipEvent event = new ClientMembershipEvent(member, memberAttributeChange);
+            ClientMembershipEvent event = new ClientMembershipEvent(null, memberAttributeChange);
             endpoint.sendEvent(null, event, getCallId());
         }
     }
