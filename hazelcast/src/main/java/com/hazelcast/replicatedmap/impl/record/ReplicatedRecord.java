@@ -33,18 +33,19 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * @param <K> key type
  * @param <V> value type
  */
-public class ReplicatedRecord<K, V>
-        implements IdentifiedDataSerializable {
+public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
     private static final AtomicLongFieldUpdater<ReplicatedRecord> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(ReplicatedRecord.class, "hits");
+            .newUpdater(ReplicatedRecord.class, "lastAccessTime");
     private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
 
     // These fields are only accessed through the updaters
+    @SuppressWarnings("unused")
     private volatile long hits;
+    @SuppressWarnings("unused")
     private volatile long lastAccessTime;
 
     private K key;
@@ -233,7 +234,6 @@ public class ReplicatedRecord<K, V>
         sb.append('}');
         return sb.toString();
     }
-
 }
 
 
