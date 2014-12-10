@@ -434,6 +434,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         .setValidateTarget(false)
                         .setService(this);
                 nodeEngine.getOperationService().executeOperation(op);
+
+                MigrationInfo migrationInfo = new MigrationInfo(partition.getPartitionId(), null, partition.getOwnerOrNull());
+                sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
+                sendMigrationEvent(migrationInfo, MigrationStatus.COMPLETED);
             }
         }
     }
