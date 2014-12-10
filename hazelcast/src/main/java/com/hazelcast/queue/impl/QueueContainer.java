@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  * such as pool,peek,clear..
  */
 public class QueueContainer implements IdentifiedDataSerializable {
+    private static final int ID_PROMOTION_OFFSET = 100000;
 
     private LinkedList<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
@@ -599,7 +600,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 itemQueue.addAll(values);
                 final QueueItem lastItem = itemQueue.peekLast();
                 if (lastItem != null) {
-                    setId(lastItem.itemId);
+                    setId(lastItem.itemId + ID_PROMOTION_OFFSET);
                 }
                 backupMap.clear();
                 backupMap = null;
