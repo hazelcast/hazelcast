@@ -1378,7 +1378,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         @Override
         public boolean isEvictionRequired() {
-            return maxSizeChecker.isReachedToMaxSize();
+            if (maxSizeChecker != null) {
+                return maxSizeChecker.isReachedToMaxSize();
+            } else {
+                return false;
+            }
         }
 
     }
