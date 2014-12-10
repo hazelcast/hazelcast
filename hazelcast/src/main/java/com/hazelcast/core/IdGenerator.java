@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 /**
- * The IdGenerator is responsible for creating unique id's (a {@code long}) in a cluster.
+ * The IdGenerator is responsible for creating unique ids (a {@code long}) in a cluster.
  *
  * In theory a {@link com.hazelcast.core.IAtomicLong#incrementAndGet()} could be used to provide the same functionality.
  * The big difference is that the incrementAndGet requires one or more remote calls for every invocation and therefor
