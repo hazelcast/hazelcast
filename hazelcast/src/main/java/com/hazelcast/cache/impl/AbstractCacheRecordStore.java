@@ -874,6 +874,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                         now, disableWriteThrough, completionId) != null;
             } else {
                 result = false;
+                publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
             }
 
             onPutIfAbsent(key, value, expiryPolicy, caller, disableWriteThrough,
@@ -922,6 +923,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             if (record == null || isExpired) {
                 replaced = false;
+                publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
             } else {
                 replaced = updateRecordWithExpiry(key, value, record, expiryPolicy,
                         now, false, completionId);
@@ -978,6 +980,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     replaced = false;
                 }
             }
+            if (!replaced) {
+                publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
+            }
 
             onReplace(key, oldValue, newValue, expiryPolicy, caller, false,
                     record, isExpired, replaced);
@@ -1014,6 +1019,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 obj = null;
                 replaced = false;
+                publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
             } else {
                 replaced = updateRecordWithExpiry(key, value, record, expiryPolicy,
                         now, false, completionId);
@@ -1163,6 +1169,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 obj = null;
                 removed = false;
+                publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
             } else {
                 obj = toValue(record);
                 removed = deleteRecord(key, completionId);
