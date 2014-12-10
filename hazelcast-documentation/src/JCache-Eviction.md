@@ -25,10 +25,10 @@ of the cache. For detailed information, please see the [Eviction Algorithm secti
 
 #### Eviction Policies
 
-Hazelcast JCache provides two commonly known eviction policies: LRU () and LFU, but loosens the rules for predictable runtime
-behavior. LRU normally recognized as `Least Recently Used` is implemented as `Less Recently Used` and LRU as
-`Less Frequently Used`. The details about this difference is explained later in this chapter,
-[Eviction Algorithm](#eviction-algorithm).
+Hazelcast JCache provides two commonly known eviction policies, LRU and LFU, but loosens the rules for predictable runtime
+behavior. LRU, normally recognized as `Least Recently Used`, is implemented as `Less Recently Used`, and LFU known as `Least Frequently Used` is implemented as
+`Less Frequently Used`. The details about this difference is explained in the
+[Eviction Algorithm section](#eviction-algorithm).
 
 Eviction Policies are configured by providing the corresponding abbreviation to the configuration as shown in the configuration
 section, [ICache Configuration](#icache-configuration). As already mentioned, two built-in policies are available:
