@@ -111,6 +111,8 @@ src/JCache.md
 	src/JCache-ICacheConf.md
 	src/JCache-AsyncOperations.md
 	src/JCache-CustomExpiryPolicy.md
+	src/JCache-Eviction.md
+#	src/JCache-Eviction-SPI.md
 	src/JCache-AdditionalMethods.md
 	src/JCache-BackupAwareEP.md
 	src/JCache-SpecCompliance.md
