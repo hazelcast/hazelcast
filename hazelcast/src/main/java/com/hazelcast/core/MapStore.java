@@ -20,17 +20,17 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Hazelcast distributed map implementation is an in-memory data store but
- * it can be backed by any type of data store such as RDBMS, OODBMS, NOSQL or simply
- * a file based data store.
+ * Hazelcast distributed map implementation is an in-memory data store, but
+ * it can be backed by any type of data store such as RDBMS, OODBMS, NOSQL, or simply
+ * a file-based data store.
  * <p/>
  * IMap.put(key, value) normally stores the entry into JVM's memory. If MapStore
  * implementation is provided then Hazelcast will also call the MapStore
- * implementation to store the entry into a user defined storage such as
+ * implementation to store the entry into a user-defined storage, such as
  * RDBMS or some other external storage system. It is completely up to the user
  * how the key-value will be stored or deleted.
  * <p/>
- * Same goes for IMap.remove(key)
+ * Same goes for IMap.remove(key).
  * <p/>
  * Store implementation can be called synchronously (write-through)
  * or asynchronously (write-behind) depending on the configuration.
@@ -51,9 +51,9 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
 
     /**
      * Stores multiple entries. Implementation of this method can optimize the
-     * store operation by storing all entries in one database connection for instance.
-     * storeAll used when writeDelaySeconds is positive (write-behind).
-     * If an exception is thrown the entries will be tried to be stored one by one using store() method.
+     * store operation by storing all entries in one database connection.
+     * storeAll is used when writeDelaySeconds is positive (write-behind).
+     * If an exception is thrown, the entries will try to be stored one by one using the store() method.
      *
      * @param map map of entries to store
      */
@@ -63,15 +63,15 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
      * Deletes the entry with a given key from the store.
      * If an exception is thrown the remove operation will fail.
      *
-     * @param key key to delete from the store.
+     * @param key the key to delete from the store.
      */
     void delete(K key);
 
     /**
      * Deletes multiple entries from the store.
-     * If an exception is thrown the entries will be tried to be deleted one by one using delete() method.
+     * If an exception is thrown the entries will try to be deleted one by one using the delete() method.
      *
-     * @param keys keys of the entries to delete.
+     * @param keys the keys of the entries to delete.
      */
     void deleteAll(Collection<K> keys);
 }
