@@ -29,9 +29,8 @@ import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,8 +46,8 @@ public abstract class AbstractJoiner implements Joiner {
     private final ExceptionHandler whileWaitMergeExceptionHandler;
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
     private final AtomicInteger tryCount = new AtomicInteger(0);
-    protected final Set<Address> blacklistedAddresses
-            = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+    // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
+    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
     protected final Config config;
     protected final Node node;
     protected final ILogger logger;
@@ -64,14 +63,23 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     @Override
-    public void blacklist(Address callerAddress) {
-        logger.info(callerAddress + " is added to the blacklist.");
-        blacklistedAddresses.add(callerAddress);
+    public void blacklist(Address address, boolean permanent) {
+        logger.info(address + " is added to the blacklist.");
+        blacklistedAddresses.putIfAbsent(address, permanent);
+    }
+
+    @Override
+    public boolean unblacklist(Address address) {
+        if (blacklistedAddresses.remove(address, Boolean.FALSE)) {
+            logger.info(address + " is removed from the blacklist.");
+            return true;
+        }
+        return false;
     }
 
     @Override
     public boolean isBlacklisted(Address address) {
-        return blacklistedAddresses.contains(address);
+        return blacklistedAddresses.containsKey(address);
     }
 
     public abstract void doJoin();

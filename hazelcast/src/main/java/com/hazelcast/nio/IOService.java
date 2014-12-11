@@ -64,6 +64,8 @@ public interface IOService {
 
     ThreadGroup getThreadGroup();
 
+    void onSuccessfulConnection(Address address);
+
     void onFailedConnection(Address address);
 
     void shouldConnectTo(Address address);
