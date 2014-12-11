@@ -68,7 +68,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         HazelcastInstance hz = nodeFactory.newInstances(cfg)[0];
         assertClusterSizeEventually(NODE_COUNT, hz);
         IMap<Object, Object> map = hz.getMap(mapName);
-        waitAllForSafeState();
+        waitAllForSafeState(hz);
 
         assertFalse(map.isEmpty());
         assertTrue(MAX_SIZE_PER_CLUSTER >= map.size());
