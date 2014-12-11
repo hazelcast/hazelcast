@@ -1,8 +1,8 @@
 
 ### JCache Eviction
 
-Growing to an infinite size is in general not the expected behavior of caches. [Expiry Policies](#expirepolicy) is one way to
-prevent infinite growth but defining a meaningful expiration timeout is hard sometimes. Hazelcast JCache therefore provides the eviction feature. Eviction offers the possibility to remove entries based on the cache size or amount of used memory
+Growing to an infinite size is in general not the expected behavior of caches. Implementing an [expiry policy](#expirepolicy) is one way to
+prevent the infinite growth but sometimes it is hard to define a meaningful expiration timeout. Therefore, Hazelcast JCache provides the eviction feature. Eviction offers the possibility to remove entries based on the cache size or amount of used memory
 (Hazelcast Enterprise Only) and not based on timeouts.
 
 #### General information
@@ -62,74 +62,75 @@ in mind. The built-in implementations provide an amortized O(1) runtime and ther
 which does not rely on any kind of background threads to handle the eviction. Therefore, the algorithm takes some assumptions into
 account to prevent network operations and concurrent accesses.
 
-As an explanation of how the algorithm, works let's examine the following flowchart step by step.
+As an explanation of how the algorithm works, let's examine the following flowchart step by step.
 
 ![](images/eviction/eviction-flowchart.png)
 
 1. A new cache is created. Without any special settings, the eviction is configured to kick in when the **cache** exceeds 10.000
-elements and an LRU (Less Recently Used) policy is set up
-2. The user puts in a new entry (e.g. key-value pair)
-3. For every put the eviction strategy evaluates the current cache size and decides if an eviction is necessary or not, if not the entry is stored in step 10
-4. If eviction is required a new sampling is started, to make things efficient, built-in sampler is implemented as an lazy iterator
-5. The sampling algorithm selects a random sample from the underlying data storage
-6. The eviction strategy tests the sampled entry to already be expired (lazy expiration), if expired the sampling stops and the entry is removed in step 9
-7. If not yet expired, the entry (eviction candidate) is compared to the last best matching candidate (based on the eviction policy) and the new best matching candidate is remembered
-8. The sampling is repeated for 15 times and then the best matching eviction candidate is returned to the eviction strategy
-9. The expired or best matching eviction candidate is removed from the underlying data storage
-10. The new put entry is stored
-11. The put operation returns to the user
+elements and an LRU (Less Recently Used) policy is set up.
+2. The user puts in a new entry (e.g. a key-value pair).
+3. For every put, the eviction strategy evaluates the current cache size and decides if an eviction is necessary or not. If not the entry is stored in step 10.
+4. If eviction is required, a new sampling is started. The built-in sampler is implemented as an lazy iterator.
+5. The sampling algorithm selects a random sample from the underlying data storage.
+6. The eviction strategy tests the sampled entry to already be expired (lazy expiration). If expired, the sampling stops and the entry is removed in step 9.
+7. If not yet expired, the entry (eviction candidate) is compared to the last best matching candidate (based on the eviction policy) and the new best matching candidate is remembered.
+8. The sampling is repeated for 15 times and then the best matching eviction candidate is returned to the eviction strategy.
+9. The expired or best matching eviction candidate is removed from the underlying data storage.
+10. The new put entry is stored.
+11. The put operation returns to the user.
 
-As seen by the flowchart the general eviction operation is pretty easy. As long as the cache haven't reached it maximum capacity
-or you execute updates (put/replace) no eviction is executed.
+As seen by the flowchart, the general eviction operation is easy. As long as the cache does not reach its maximum capacity
+or you execute updates (put/replace), no eviction is executed.
 
 To prevent network operations and concurrent access, as mentioned earlier, the cache size is estimated based on the size of the
-currently handled partition. Due to imbalanced partitions this can lead to the fact that single partitions might start to evict
-earlier than other partitions.
+currently handled partition. Due to the imbalanced partitions, the single partitions might start to evict
+earlier than the other partitions.
 
-Already mentioned in the introduction section, typically two types of caches are found in production systems. For small caches,
+As mentioned in the [General Information section](#general-information), typically two types of caches are found in the production systems. For small caches,
 referred to as *Reference Caches*, the eviction algorithm has a special set of rules depending on the maximum configured cache
-size. A deeper look into this rules is given in a few seconds. The other type of cache is referred to as *Active DataSet Cache*,
-which in most cases makes heavy use of the eviction to keep the most active data set in RAM. Those kinds of caches using a very
+size. Please see the [Reference Caches section](#reference-caches) for details. The other type of cache is referred to as *Active DataSet Cache*,
+which in most cases makes heavy use of the eviction to keep the most active data set in the memory. Those kinds of caches using a very
 simple but efficient way to estimate the cluster-wide cache size.
 
 All of the following calculations have a well known set of fixed variables:
-- `GlobalCapacity`: The GlobalCapacity is the user defined maximum cache size (cluster-wide)
-- `PartitionCount`: The number of partitions in the cluster (defaults to 271)
-- `BalancedPartitionSize`: The number of elements in a balanced partition state, `BalancedPartitionSize := GlobalCapacity / PartitionCount`
-- `Deviation`: The deviation is an approximated standard deviation (tests proofed it to be pretty near), `Deviation := sqrt(BalancedPartitionSize)`
 
-##### Reference Cache
+- `GlobalCapacity`: The user defined maximum cache size (cluster-wide).
+- `PartitionCount`: The number of partitions in the cluster (defaults to 271).
+- `BalancedPartitionSize`: The number of elements in a balanced partition state, `BalancedPartitionSize := GlobalCapacity / PartitionCount`.
+- `Deviation`: An approximated standard deviation (tests proofed it to be pretty near), `Deviation := sqrt(BalancedPartitionSize)`.
 
-A Reference Cache is typically quite small and the number of elements to store in such reference caches is normally perfectly
-known prior to creating the cache. Typical examples of reference caches are lookup tables for abbreviations or states of a
-country. They tend to have a fixed but small element number and eviction is an unlikely event and rather undesirable behavior.
+##### Reference Caches
 
-Since an imbalanced partition is a worst problem small and mid-sized caches than for caches with millions of entries, the normal
-estimation rule (as discussed in a bit) isn't applied to these kinds of caches. To prevent unwanted eviction on small and
+A Reference Cache is typically small and the number of elements to store in the reference caches is normally 
+known prior to creating the cache. Typical examples of reference caches are lookup tables for abbreviations or the states of a
+country. They tend to have a fixed but small element number and the eviction is an unlikely event and rather undesirable behavior.
+
+Since an imbalanced partition is the worst problem in the small and mid-sized caches than for the caches with millions of entries, the normal
+estimation rule (as discussed in a bit) is not applied to these kinds of caches. To prevent unwanted eviction on the small and
 mid-sized caches, Hazelcast implements a special set of rules to estimate the cluster size.
 
-To adjust the imbalance of partitions as found in typical runtime, the actual calculated maximum cache size (as known as eviction
-threshold) is slightly higher than the user defined size. That means that a couple of more elements can be stored into the cache
+To adjust the imbalance of partitions as found in the typical runtime, the actual calculated maximum cache size (as known as the eviction
+threshold) is slightly higher than the user defined size. That means more elements can be stored into the cache
 than expected by the user. This needs to be taken into account especially for large objects, since those can easily exceed the
 expected memory consumption!
 
 **Small caches:**
 
 If a cache is configured with no more than `4.000` element, this cache is considered to be a small cache. The actual partition
-size is derived from the number of elements (GlobalCapacity) and the deviation using the following formula:
+size is derived from the number of elements (`GlobalCapacity`) and the deviation using the following formula:
 
 ```plain
 MaxPartitionSize := Deviation * 5 + BalancedPartitionSize
 ```
 
-This formula ends up with quite big partition sizes which summed up exceed the expected maximum cache size (set by the user)
-heavily, but due to the fact that small caches are typically have a well known maximum number of elements, this is not a big
-issue. Only if small caches are used for another use case than a reference cache, this needs to be taken into account.
+This formula ends up with big partition sizes which summed up exceed the expected maximum cache size (set by the user), 
+but since the small caches typically have a well known maximum number of elements, this is not a big
+issue. Only if the small caches are used for a use case other than using it as a reference cache, this needs to be taken into account.
 
 **Mid-sized caches**
 
-A mid-sized cache is defined as caches with a maximum number of element that is bigger than `4.000` but not bigger than
-`1.000.000` elements. The calculation of mid-sized caches is quite similar to the one of small caches but with a different
+A mid-sized cache is defined as a cache with a maximum number of elements that is bigger than `4.000` but not bigger than
+`1.000.000` elements. The calculation of mid-sized caches is similar to that of the small caches but with a different
 multiplier. To calculate the maximum number of elements per partition, the following formula is used:
 
 ```plain
@@ -138,9 +139,9 @@ MaxPartitionSize := Deviation * 3 + BalancedPartitionSize
 
 ##### Active DataSet Caches
 
-For large caches, maximum cache size bigger than `1.000.000` items, there is no additional calculation needed. The maximum
+For large caches, where the maximum cache size is bigger than `1.000.000` elements, there is no additional calculation needed. The maximum
 partition size is considered to be equal to `BalancedPartitionSize` since statistically big partitions are expected to almost
-balance themselves. Therefore the formula is as easy as:
+balance themselves. Therefore, the formula is as easy as the following:
 
 ```plain
 MaxPartitionSize := BalancedPartitionSize
@@ -149,12 +150,12 @@ MaxPartitionSize := BalancedPartitionSize
 ##### Cache size estimation
 
 As mentioned earlier, Hazelcast JCache provides an estimation algorithm to prevent cluster-wide network operations, concurrent
-access to other partitions and background tasks. It also offers a highly predictable operation runtime when eviction is necessary.
+access to other partitions and background tasks. It also offers a highly predictable operation runtime when the eviction is necessary.
 
-The estimation algorithm is based on the previously calculated maximum partition size (see last two sections) and is calculated
-against against the current partition only.
+The estimation algorithm is based on the previously calculated maximum partition size (please see the [Reference Caches section](#reference-caches) and [Active DataSet Caches section](#active-dataset-caches)) and is calculated
+against the current partition only.
 
-The algorithm to reckon the number of stored entries in the cache (cluster-wide) and if eviction is necessary is shown in the
+The algorithm to reckon the number of stored entries in the cache (cluster-wide) and if the eviction is necessary is shown in the
 following pseudo-code example:
 
 ```plain
