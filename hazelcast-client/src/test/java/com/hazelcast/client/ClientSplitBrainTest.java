@@ -41,7 +41,6 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         Hazelcast.shutdownAll();
     }
 
-
     @Test
     public void testClientListeners_InSplitBrain() throws InterruptedException {
         Config config = new Config();
@@ -65,31 +64,40 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         }
 
         final CountDownLatch mergedLatch = new CountDownLatch(1);
-        final LifecycleListener mergeListener = new LifecycleListener() {
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                    mergedLatch.countDown();
-                }
-            }
-        };
+        final LifecycleListener mergeListener = createMergeListener(mergedLatch);
         h1.getLifecycleService().addLifecycleListener(mergeListener);
         h2.getLifecycleService().addLifecycleListener(mergeListener);
 
-        final EntryAdapter<Object, Boolean> entryListener = new EntryAdapter<Object, Boolean>() {
-            @Override
-            public void onEntryEvent(EntryEvent<Object, Boolean> event) {
-                final Boolean shouldCount = event.getValue();
-                if (shouldCount) {
-                    atomicIntegers[(Integer) event.getKey()].incrementAndGet();
-                }
-            }
-        };
+        final EntryAdapter<Object, Boolean> entryListener = createEntryListener(atomicIntegers);
         mapNode1.addEntryListener(entryListener, true);
         mapNode2.addEntryListener(entryListener, true);
         mapClient.addEntryListener(entryListener, true);
 
         closeConnectionBetween(h2, h1);
 
+        final Thread clientThread = startClientPutThread(mapClient, ITERATION_COUNT, mergedLatch);
+        assertTrue(mergedLatch.await(30, TimeUnit.SECONDS));
+        assertEquals(2, h1.getCluster().getMembers().size());
+        assertEquals(2, h2.getCluster().getMembers().size());
+        clientThread.join();
+
+        checkEventsEventually(atomicIntegers);
+    }
+
+    private void checkEventsEventually(final AtomicInteger[] atomicIntegers) {
+        for (int i = 0; i < atomicIntegers.length; i++) {
+            final int id = i;
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals("id " + id, 3, atomicIntegers[id].get());
+                }
+            }, 10);
+        }
+    }
+
+    private Thread startClientPutThread(final IMap<Object, Boolean> mapClient, final int iterationCount,
+                                        final CountDownLatch mergedLatch) {
         final Random random = new Random();
         final Thread clientThread = new Thread() {
             @Override
@@ -99,29 +107,36 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
                     mapClient.put(random.nextInt() % 1000, false);
                 }
 
-                for (int i = 0; i < ITERATION_COUNT; i++) {
+                for (int i = 0; i < iterationCount; i++) {
                     mapClient.put(i, true);
                 }
             }
         };
 
         clientThread.start();
-        assertTrue(mergedLatch.await(30, TimeUnit.SECONDS));
-        assertEquals(2, h1.getCluster().getMembers().size());
-        assertEquals(2, h2.getCluster().getMembers().size());
-        clientThread.join();
+        return clientThread;
+    }
 
-        for (int i = 0; i < ITERATION_COUNT; i++) {
-            final int id = i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals("id " + id, 3, atomicIntegers[id].get());
+    private EntryAdapter<Object, Boolean> createEntryListener(final AtomicInteger[] atomicIntegers) {
+        return new EntryAdapter<Object, Boolean>() {
+            @Override
+            public void onEntryEvent(EntryEvent<Object, Boolean> event) {
+                final Boolean shouldCount = event.getValue();
+                if (shouldCount) {
+                    atomicIntegers[(Integer) event.getKey()].incrementAndGet();
                 }
-            }, 10);
-        }
+            }
+        };
+    }
 
-
+    private LifecycleListener createMergeListener(final CountDownLatch mergedLatch) {
+        return new LifecycleListener() {
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                    mergedLatch.countDown();
+                }
+            }
+        };
     }
 
     private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
