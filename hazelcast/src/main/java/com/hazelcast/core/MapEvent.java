@@ -21,7 +21,7 @@ public class MapEvent extends AbstractIMapEvent {
     /**
      * Returns the number of entries affected by this event.
      *
-     * @return number of entries affected.
+     * @return number of entries affected by this event
      */
     public int getNumberOfEntriesAffected() {
         return numberOfEntriesAffected;
