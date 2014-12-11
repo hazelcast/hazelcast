@@ -32,7 +32,7 @@ import java.util.Map;
 public interface Member extends DataSerializable, Endpoint {
 
     /**
-     * Returns if this member is the local member.
+     * Returns true if this member is the local member.
      *
      * @return <tt>true</tt> if this member is the
      *         local member, <tt>false</tt> otherwise.
@@ -52,14 +52,14 @@ public interface Member extends DataSerializable, Endpoint {
     /**
      * Returns the socket address of this member.
      *
-     * @return socket address of this member
+     * @return the socket address of this member
      */
     InetSocketAddress getSocketAddress();
 
     /**
-     * Returns UUID of this member.
+     * Returns the UUID of this member.
      *
-     * @return UUID of this member.
+     * @return the UUID of this member.
      */
     String getUuid();
 
@@ -67,7 +67,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns configured attributes for this member.<br/>
      * <b>This method might not be available on all native clients.</b>
      *
-     * @return Attributes for this member.
+     * @return configured attributes for this member.
      * @since 3.2
      */
     Map<String, Object> getAttributes();
@@ -77,7 +77,7 @@ public interface Member extends DataSerializable, Endpoint {
      * null if value is undefined.
      *
      * @param key The key to lookup.
-     * @return The value for this members key.
+     * @return The value for this member key.
      * @since 3.2
      */
     String getStringAttribute(String key);
@@ -87,37 +87,37 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setStringAttribute(String key, String value);
 
     /**
-     * Returns the value of the specified key for this member or
-     * null if value is undefined.
+     * Returns the value of the specified key for this member, or
+     * null if the value is undefined.
      *
-     * @param key The key to lookup.
-     * @return The value for this members key.
+     * @param key The key to look up
+     * @return the value for this member key
      * @since 3.2
      */
     Boolean getBooleanAttribute(String key);
 
     /**
-     * Defines a key-value pair boolean attribute for this member available
+     * Defines a key-value pair boolean attribute for this member that is available
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setBooleanAttribute(String key, boolean value);
 
     /**
      * Returns the value of the specified key for this member or
-     * null if value is undefined.
+     * null if the value is undefined.
      *
-     * @param key The key to lookup.
-     * @return The value for this members key.
+     * @param key The key to look up.
+     * @return The value for this member key.
      * @since 3.2
      */
     Byte getByteAttribute(String key);
@@ -127,7 +127,7 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setByteAttribute(String key, byte value);
@@ -136,8 +136,8 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns the value of the specified key for this member or
      * null if value is undefined.
      *
-     * @param key The key to lookup.
-     * @return The value for this members key.
+     * @param key The key to look up.
+     * @return The value for this member key.
      * @since 3.2
      */
     Short getShortAttribute(String key);
@@ -147,7 +147,7 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setShortAttribute(String key, short value);
@@ -156,7 +156,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns the value of the specified key for this member or
      * null if value is undefined.
      *
-     * @param key The key to lookup.
+     * @param key The key to look up.
      * @return The value for this members key.
      * @since 3.2
      */
@@ -167,7 +167,7 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setIntAttribute(String key, int value);
@@ -176,7 +176,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns the value of the specified key for this member or
      * null if value is undefined.
      *
-     * @param key The key to lookup.
+     * @param key The key to look up.
      * @return The value for this members key.
      * @since 3.2
      */
@@ -187,7 +187,7 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setLongAttribute(String key, long value);
@@ -196,8 +196,8 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns the value of the specified key for this member or
      * null if value is undefined.
      *
-     * @param key The key to lookup.
-     * @return The value for this members key.
+     * @param key The key to look up.
+     * @return The value for this member key.
      * @since 3.2
      */
     Float getFloatAttribute(String key);
@@ -207,7 +207,7 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setFloatAttribute(String key, float value);
@@ -216,7 +216,7 @@ public interface Member extends DataSerializable, Endpoint {
      * Returns the value of the specified key for this member or
      * null if value is undefined.
      *
-     * @param key The key to lookup.
+     * @param key The key to look up.
      * @return The value for this members key.
      * @since 3.2
      */
@@ -227,7 +227,7 @@ public interface Member extends DataSerializable, Endpoint {
      * to other cluster members.
      *
      * @param key The key for this property.
-     * @param value The value corresponds to this attribute and this member.
+     * @param value The value that corresponds to this attribute and this member.
      * @since 3.2
      */
     void setDoubleAttribute(String key, double value);
