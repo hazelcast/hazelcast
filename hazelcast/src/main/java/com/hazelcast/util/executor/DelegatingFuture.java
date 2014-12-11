@@ -39,17 +39,14 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private volatile boolean done;
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
-        this.future = future;
-        this.serializationService = serializationService;
-        this.defaultValue = null;
-        this.hasDefaultValue = false;
+        this(future, serializationService, null);
     }
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = defaultValue;
-        this.hasDefaultValue = true;
+        this.hasDefaultValue = defaultValue != null;
     }
 
     @Override

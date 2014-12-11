@@ -43,15 +43,6 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     private volatile boolean cancelled;
 
     public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
-                                             String uuid, Address target, int partitionId) {
-        super(future, context.getSerializationService());
-        this.context = context;
-        this.uuid = uuid;
-        this.target = target;
-        this.partitionId = partitionId;
-    }
-
-    public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
                                              String uuid, Address target, int partitionId, V defaultValue) {
         super(future, context.getSerializationService(), defaultValue);
         this.context = context;

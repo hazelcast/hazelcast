@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.executor.impl.ExecutorPortableHook;
-import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -25,31 +25,35 @@ import com.hazelcast.spi.Operation;
 import java.util.concurrent.Callable;
 
 /**
- * This class is used for sending the task to a particular target.
+ * A {@link com.hazelcast.client.impl.client.TargetClientRequest} which includes a {@link java.util.concurrent.Callable}
+ * and finds a target address to sent that callable according to given partitionId of a key.
  */
-public class TargetCallableRequest extends AbstractTargetCallableRequest {
+public class KeyOwnerTargetCallableRequest extends AbstractTargetCallableRequest {
 
-    public TargetCallableRequest() {
+    public KeyOwnerTargetCallableRequest() {
     }
 
-    public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
-        super(name, uuid, callable, target);
+    public KeyOwnerTargetCallableRequest(String name, String uuid, Callable callable, int partitionId) {
+        super(name, uuid, callable, partitionId);
     }
-
 
     @Override
     public Operation getOperation(String name, String uuid, Data callableData) {
-        return new MemberCallableTaskOperation(name, uuid, callableData);
+        return new CallableTaskOperation(name, uuid, callableData);
     }
 
     @Override
-    public int getPartitionId() {
-        return -1;
+    public Address getTarget() {
+        return null;
     }
 
+    /**
+     * Returns class identifier for this portable class. Class id should be unique per PortableFactory.
+     *
+     * @return class id
+     */
     @Override
     public int getClassId() {
-        return ExecutorPortableHook.TARGET_CALLABLE_REQUEST;
+        return ExecutorPortableHook.KEY_OWNER_TARGET_CALLABLE_REQUEST;
     }
-
 }
