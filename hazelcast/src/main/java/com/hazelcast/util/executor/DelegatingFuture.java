@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 
 public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
-    private final ICompletableFuture future;
+    protected final ICompletableFuture future;
     private final SerializationService serializationService;
     private final V defaultValue;
     private final boolean hasDefaultValue;
