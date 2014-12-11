@@ -42,8 +42,8 @@ public class MemberLeftException extends ExecutionException implements Retryable
     }
 
     /**
-     * Returns the member which left the cluster
-     * @return member
+     * Returns the member that left the cluster
+     * @return the member that left the cluster
      */
     public Member getMember() {
         return member;
