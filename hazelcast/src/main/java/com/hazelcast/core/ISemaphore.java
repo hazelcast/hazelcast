@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * threads invoking any of the {@link #acquire() acquire} methods are selected
  * to obtain permits in the order in which their invocation of those methods
  * was processed(first-in-first-out; FIFO).  Note that FIFO ordering necessarily
- * applies to specific internal points of execution within the cluster.  So,
+ * applies to specific internal points of execution within the cluster. Therefore,
  * it is possible for one member to invoke {@code acquire} before another, but reach
  * the ordering point after the other, and similarly upon return from the method.
  * <p/>This class also provides convenience methods to {@link
@@ -56,8 +56,9 @@ public interface ISemaphore extends DistributedObject {
     String getName();
 
     /**
-     * Try to initialize this ISemaphore instance with given permit count
+     * Try to initialize this ISemaphore instance with the given permit count
      *
+     * @param permits the given permit count
      * @return true if initialization success
      */
     boolean init(int permits);
@@ -70,10 +71,10 @@ public interface ISemaphore extends DistributedObject {
      * disabled for thread scheduling purposes and lies dormant until
      * one of three things happens:
      * <ul>
-     * <li>Some other thread invokes one of the {@link #release} methods for this
-     * semaphore and the current thread is next to be assigned a permit;
-     * <li>This ISemaphore instance is destroyed; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
+     * <li>some other thread invokes one of the {@link #release} methods for this
+     * semaphore and the current thread is next to be assigned a permit,
+     * <li>this ISemaphore instance is destroyed, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
      * </ul>
      * <p>If the current thread:
@@ -99,17 +100,17 @@ public interface ISemaphore extends DistributedObject {
      * disabled for thread scheduling purposes and lies dormant until
      * one of three things happens:
      * <ul>
-     * <li>Some other thread invokes one of the {@link #release() release}
+     * <li>some other thread invokes one of the {@link #release() release}
      * methods for this semaphore, the current thread is next to be assigned
-     * permits and the number of available permits satisfies this request;
-     * <li>This ISemaphore instance is destroyed; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
+     * permits and the number of available permits satisfies this request,
+     * <li>this ISemaphore instance is destroyed, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
      * </ul>
      * <p/>
      * <p>If the current thread:
      * <ul>
-     * <li>has its interrupted status set on entry to this method; or
+     * <li>has its interrupted status set on entry to this method, or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
      * for a permit,
      * </ul>
@@ -220,11 +221,11 @@ public interface ISemaphore extends DistributedObject {
      * disabled for thread scheduling purposes and lies dormant until
      * one of three things happens:
      * <ul>
-     * <li>Some other thread invokes the {@link #release} method for this
-     * semaphore and the current thread is next to be assigned a permit; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread; or
-     * <li>The specified waiting time elapses.
+     * <li>some other thread invokes the {@link #release} method for this
+     * semaphore and the current thread is next to be assigned a permit, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread, or
+     * <li>the specified waiting time elapses.
      * </ul>
      * <p/>
      * If a permit is acquired then the value {@code true} is returned.
@@ -260,12 +261,12 @@ public interface ISemaphore extends DistributedObject {
      * the current thread becomes disabled for thread scheduling
      * purposes and lies dormant until one of three things happens:
      * <ul>
-     * <li>Some other thread invokes one of the {@link #release() release}
+     * <li>some other thread invokes one of the {@link #release() release}
      * methods for this semaphore, the current thread is next to be assigned
-     * permits and the number of available permits satisfies this request; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread; or
-     * <li>The specified waiting time elapses.
+     * permits and the number of available permits satisfies this request, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread, or
+     * <li>the specified waiting time elapses.
      * </ul>
      * <p/>
      * If the permits are acquired then the value {@code true} is returned.
@@ -276,7 +277,7 @@ public interface ISemaphore extends DistributedObject {
      * <p/>
      * <p>If the current thread:
      * <ul>
-     * <li>has its interrupted status set on entry to this method; or
+     * <li>has its interrupted status set on entry to this method, or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
      * for a permit,
      * </ul>
