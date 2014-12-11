@@ -434,8 +434,14 @@ public abstract class HazelcastTestSupport {
     }
 
     public static boolean isAllInSafeState() {
-        for (HazelcastInstance hz : HazelcastInstanceFactory.getAllHazelcastInstances()) {
-            if (!isInstanceInSafeState(hz)) {
+        final Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
+        final HazelcastInstance[] nodes = nodeSet.toArray(new HazelcastInstance[nodeSet.size()]);
+        return isAllInSafeState(nodes);
+    }
+
+    public static boolean isAllInSafeState(HazelcastInstance[] nodes) {
+        for (HazelcastInstance node : nodes) {
+            if (!isInstanceInSafeState(node)) {
                 return false;
             }
         }
@@ -446,6 +452,14 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             public void run() {
                 assertTrue(isAllInSafeState());
+            }
+        });
+    }
+
+    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(isAllInSafeState(nodes));
             }
         });
     }
