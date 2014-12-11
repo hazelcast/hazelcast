@@ -50,15 +50,47 @@ public class CacheEvictionConfig
     }
 
     public CacheEvictionConfig(int size, CacheMaxSizePolicy maxSizePolicy, EvictionPolicy evictionPolicy) {
-        setSize(size);
-        setMaxSizePolicy(maxSizePolicy);
-        setEvictionPolicy(evictionPolicy);
+        /**
+         * ===== NOTE =====
+         *
+         * Do not use setters, because they are overriden in readonly version of this config and
+         * cause "UnsupportedOperationException". So just set directly if value is valid.
+         */
+
+        // Size cannot be non-positive number
+        if (size > 0) {
+            this.size = size;
+        }
+        // Max-Size policy cannot be null
+        if (maxSizePolicy != null) {
+            this.maxSizePolicy = maxSizePolicy;
+        }
+        // Eviction policy cannot be null or NONE
+        if (evictionPolicy != null && evictionPolicy != EvictionPolicy.NONE) {
+            this.evictionPolicy = evictionPolicy;
+        }
     }
 
     public CacheEvictionConfig(CacheEvictionConfig config) {
-        this.size = config.size;
-        setMaxSizePolicy(config.maxSizePolicy);
-        setEvictionPolicy(config.evictionPolicy);
+        /**
+         * ===== NOTE =====
+         *
+         * Do not use setters, because they are overriden in readonly version of this config and
+         * cause "UnsupportedOperationException". So just set directly if value is valid.
+         */
+
+        // Size cannot be non-positive number
+        if (config.size > 0) {
+            this.size = config.size;
+        }
+        // Max-Size policy cannot be null
+        if (config.maxSizePolicy != null) {
+            this.maxSizePolicy = config.maxSizePolicy;
+        }
+        // Eviction policy cannot be null or NONE
+        if (config.evictionPolicy != null && config.evictionPolicy != EvictionPolicy.NONE) {
+            this.evictionPolicy = config.evictionPolicy;
+        }
     }
 
     /**
