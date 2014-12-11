@@ -6,9 +6,9 @@ package com.hazelcast.core;
 public interface IMapEvent {
 
     /**
-     * Returns the member fired this event.
+     * Returns the member that fired this event.
      *
-     * @return the member fired this event.
+     * @return the member that fired this event.
      */
     Member getMember();
 
@@ -22,7 +22,7 @@ public interface IMapEvent {
     /**
      * Returns the name of the map for this event.
      *
-     * @return name of the map.
+     * @return name of the map for this event.
      */
     String getName();
 
