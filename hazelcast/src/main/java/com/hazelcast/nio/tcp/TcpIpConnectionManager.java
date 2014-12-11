@@ -248,6 +248,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             return false;
         }
         connection.setEndPoint(remoteEndPoint);
+        ioService.onSuccessfulConnection(remoteEndPoint);
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
         }
@@ -314,6 +315,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
+        ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
             log(Level.FINEST, "Sending bind packet to " + remoteEndPoint);
