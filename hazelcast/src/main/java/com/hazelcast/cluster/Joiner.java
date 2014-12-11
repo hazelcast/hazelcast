@@ -35,16 +35,34 @@ public interface Joiner {
     /**
      * Adds an address to the blacklist. Blacklist is useful if a node should ignore another node, e.g. when
      * the groupname of 2 machines is not the same and they should form different clusters.
-     *
+     * <p/>
+     * If blacklist is permanent, then this operation is write-once. It cannot be unblacklisted again.
+     * If blacklist is temporary, blacklist can be removed via {@link #unblacklist(com.hazelcast.nio.Address)}.
+     * <p/>
      * Method is thread-safe.
-     *
+     * <p/>
      * If the address already is blacklisted, the call is ignored
      *
-     * @param address the address to blacklist.
+     * @param address   the address to blacklist.
+     * @param permanent if blacklist is permanent or not
      * @throws java.lang.NullPointerException if address is null.
      * @see #isBlacklisted(com.hazelcast.nio.Address)
      */
-    void blacklist(Address address);
+    void blacklist(Address address, boolean permanent);
+
+    /**
+     * Removes an address from the blacklist if it's temporarily blacklisted.
+     * This method has no effect if given address is not blacklisted. Permanent blacklists
+     * cannot be undone.
+     * <p/>
+     * Method is thread-safe.
+     * <p/>
+     * If the address is not blacklisted, the call is ignored.
+     *
+     * @param address the address to unblacklist.
+     * @return true if address is unblacklisted, false otherwise.
+     */
+    boolean unblacklist(Address address);
 
     /**
      * Checks if an address is blacklisted.
@@ -54,7 +72,7 @@ public interface Joiner {
      * @param address the address to check.
      * @return true if blacklisted, false otherwise.
      * @throws java.lang.NullPointerException if address is null.
-     * @see #blacklist(com.hazelcast.nio.Address)
+     * @see #blacklist(com.hazelcast.nio.Address, boolean)
      */
     boolean isBlacklisted(Address address);
 }
