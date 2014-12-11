@@ -280,6 +280,18 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    /**
+     * This method executes the normal assertEquals with expected and actual values.
+     * In addition it formats the given string with those values to provide a good assert message.
+     *
+     * @param message     assert message which is formatted with expected and actual values
+     * @param expected    expected value which is used for assert
+     * @param actual      actual value which is used for assert
+     */
+    public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
+        assertEquals(String.format(message, expected, actual), expected, actual);
+    }
+
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");

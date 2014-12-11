@@ -253,18 +253,33 @@ public class ClientRegressionTest
 
     @Test
     public void testMapDestroyIssue764() throws Exception {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        assertNoOfDistributedObject("Initially the server should have %d distributed objects, but had %d", 0, server.getDistributedObjects());
+        assertNoOfDistributedObject("Initially the client should have %d distributed objects, but had %d", 0, client.getDistributedObjects());
 
-        assertEquals(0, client.getDistributedObjects().size());
+        IMap map = client.getMap("mapToDestroy");
+        assertNoOfDistributedObject("After getMap() the server should have %d distributed objects, but had %d", 1, server.getDistributedObjects());
+        assertNoOfDistributedObject("After getMap() the client should have %d distributed objects, but had %d", 1, client.getDistributedObjects());
 
-        IMap map = client.getMap("m");
-
-        assertEquals(1, client.getDistributedObjects().size());
         map.destroy();
+        // Get the distributed objects as fast as possible to catch a race condition more likely
+        Collection<DistributedObject> serverDistributedObjects = server.getDistributedObjects();
+        Collection<DistributedObject> clientDistributedObjects = client.getDistributedObjects();
+        assertNoOfDistributedObject("After destroy() the server should should have %d distributed objects, but had %d", 0, serverDistributedObjects);
+        assertNoOfDistributedObject("After destroy() the client should should have %d distributed objects, but had %d", 0, clientDistributedObjects);
+    }
 
-        assertEquals(0, instance.getDistributedObjects().size());
-        assertEquals(0, client.getDistributedObjects().size());
+    private void assertNoOfDistributedObject(String message, int expected, Collection<DistributedObject> distributedObjects) {
+        StringBuilder sb = new StringBuilder(message + "\n");
+        for (DistributedObject distributedObject : distributedObjects) {
+            sb
+                    .append("Name: ").append(distributedObject.getName())
+                    .append(", Service: ").append(distributedObject.getServiceName())
+                    .append(", PartitionKey: ").append(distributedObject.getPartitionKey())
+                    .append("\n");
+        }
+        assertEqualsStringFormat(sb.toString(), expected, distributedObjects.size());
     }
 
     /**
