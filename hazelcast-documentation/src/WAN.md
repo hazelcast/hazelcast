@@ -13,7 +13,7 @@ would be operating at native speed in their own LAN (Local Area Network) setting
 these clusters to be replicated to each other: updates to Tokyo cluster also go to London and New York, in the meantime updates
 from New York cluster are synchronized to Tokyo and London.
 
-### WAN Replication Configuration
+### Configuring WAN Replication
 
 The current WAN Replication implementation supports two different operation modes.
 

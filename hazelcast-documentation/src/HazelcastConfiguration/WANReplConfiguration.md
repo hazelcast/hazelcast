@@ -1,4 +1,4 @@
-### WAN Replication Configuration
+## WAN Replication Configuration
 
 The following are the example configurations.
 
