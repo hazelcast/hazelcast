@@ -253,18 +253,54 @@ public class ClientRegressionTest
 
     @Test
     public void testMapDestroyIssue764() throws Exception {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
-
-        assertEquals(0, client.getDistributedObjects().size());
+        assertEqualsStringFormat(
+                "Initially the server should have %d distributed objects, but had %d",
+                0,
+                server.getDistributedObjects().size()
+        );
+        assertEqualsStringFormat(
+                "Initially the client should have %d distributed objects, but had %d",
+                0,
+                client.getDistributedObjects().size()
+        );
 
         IMap map = client.getMap("m");
+        assertEqualsStringFormat(
+                "After getMap() the server should have %d distributed objects, but had %d",
+                1,
+                server.getDistributedObjects().size()
+        );
+        assertEqualsStringFormat(
+                "After getMap() the client should have %d distributed objects, but had %d",
+                1,
+                client.getDistributedObjects().size()
+        );
 
-        assertEquals(1, client.getDistributedObjects().size());
         map.destroy();
-
-        assertEquals(0, instance.getDistributedObjects().size());
-        assertEquals(0, client.getDistributedObjects().size());
+        Collection<DistributedObject> serverDistributedObjects = server.getDistributedObjects();
+        Collection<DistributedObject> clientDistributedObjects = client.getDistributedObjects();
+        if (serverDistributedObjects.size() > 0) {
+            StringBuilder sb = new StringBuilder("After destroy() the server should have %d distributed objects, but had %d:\n");
+            for (DistributedObject distributedObject : serverDistributedObjects) {
+                sb
+                        .append("* Name: ").append(distributedObject.getName())
+                        .append(", Service: ").append(distributedObject.getServiceName())
+                        .append("\n");
+            }
+            assertEqualsStringFormat(sb.toString(), 0, serverDistributedObjects.size());
+        }
+        if (clientDistributedObjects.size() > 0) {
+            StringBuilder sb = new StringBuilder("After destroy() the should should have %d distributed objects, but had %d:\n");
+            for (DistributedObject distributedObject : clientDistributedObjects) {
+                sb
+                        .append("* Name: ").append(distributedObject.getName())
+                        .append(", Service: ").append(distributedObject.getServiceName())
+                        .append("\n");
+            }
+            assertEqualsStringFormat(sb.toString(), 0, clientDistributedObjects.size());
+        }
     }
 
     /**
