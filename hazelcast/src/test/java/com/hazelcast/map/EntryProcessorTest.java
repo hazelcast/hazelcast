@@ -530,14 +530,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         instance1.shutdown();
+        waitAllForSafeState();
+
         IMap<Integer, Integer> map3 = instance3.getMap("testBackups");
 
         for (int i = 0; i < 1000; i++) {
             assertEquals((Object) (i + 1), map3.get(i));
         }
-        instance2.shutdown();
-        instance3.shutdown();
-
     }
 
     @Test
