@@ -254,52 +254,31 @@ public class ClientIssueTest extends HazelcastTestSupport {
     public void testMapDestroyIssue764() throws Exception {
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        assertEqualsStringFormat(
-                "Initially the server should have %d distributed objects, but had %d",
-                0,
-                server.getDistributedObjects().size()
-        );
-        assertEqualsStringFormat(
-                "Initially the client should have %d distributed objects, but had %d",
-                0,
-                client.getDistributedObjects().size()
-        );
+        assertNoOfDistributedObject("Initially the server should have %d distributed objects, but had %d", 0, server.getDistributedObjects());
+        assertNoOfDistributedObject("Initially the client should have %d distributed objects, but had %d", 0, client.getDistributedObjects());
 
-        IMap map = client.getMap("m");
-        assertEqualsStringFormat(
-                "After getMap() the server should have %d distributed objects, but had %d",
-                1,
-                server.getDistributedObjects().size()
-        );
-        assertEqualsStringFormat(
-                "After getMap() the client should have %d distributed objects, but had %d",
-                1,
-                client.getDistributedObjects().size()
-        );
+        IMap map = client.getMap("mapToDestroy");
+        assertNoOfDistributedObject("After getMap() the server should have %d distributed objects, but had %d", 1, server.getDistributedObjects());
+        assertNoOfDistributedObject("After getMap() the client should have %d distributed objects, but had %d", 1, client.getDistributedObjects());
 
         map.destroy();
+        // Get the distributed objects as fast as possible to catch a race condition more likely
         Collection<DistributedObject> serverDistributedObjects = server.getDistributedObjects();
         Collection<DistributedObject> clientDistributedObjects = client.getDistributedObjects();
-        if (serverDistributedObjects.size() > 0) {
-            StringBuilder sb = new StringBuilder("After destroy() the server should have %d distributed objects, but had %d:\n");
-            for (DistributedObject distributedObject : serverDistributedObjects) {
-                sb
-                        .append("* Name: ").append(distributedObject.getName())
-                        .append(", Service: ").append(distributedObject.getServiceName())
-                        .append("\n");
-            }
-            assertEqualsStringFormat(sb.toString(), 0, serverDistributedObjects.size());
+        assertNoOfDistributedObject("After destroy() the server should should have %d distributed objects, but had %d", 0, serverDistributedObjects);
+        assertNoOfDistributedObject("After destroy() the client should should have %d distributed objects, but had %d", 0, clientDistributedObjects);
+    }
+
+    private void assertNoOfDistributedObject(String message, int expected, Collection<DistributedObject> distributedObjects) {
+        StringBuilder sb = new StringBuilder(message + "\n");
+        for (DistributedObject distributedObject : distributedObjects) {
+            sb
+                    .append("Name: ").append(distributedObject.getName())
+                    .append(", Service: ").append(distributedObject.getServiceName())
+                    .append(", PartitionKey: ").append(distributedObject.getPartitionKey())
+                    .append("\n");
         }
-        if (clientDistributedObjects.size() > 0) {
-            StringBuilder sb = new StringBuilder("After destroy() the should should have %d distributed objects, but had %d:\n");
-            for (DistributedObject distributedObject : clientDistributedObjects) {
-                sb
-                        .append("* Name: ").append(distributedObject.getName())
-                        .append(", Service: ").append(distributedObject.getServiceName())
-                        .append("\n");
-            }
-            assertEqualsStringFormat(sb.toString(), 0, clientDistributedObjects.size());
-        }
+        assertEqualsStringFormat(sb.toString(), expected, distributedObjects.size());
     }
 
     /**
