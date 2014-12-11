@@ -125,7 +125,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
                 assertEquals("Foo", value1);
                 assertEquals("Foo", value2);
             }
-        });
+        }, timeoutSeconds());
     }
 
     private ICacheRecordStore getRecordStore(CacheService cacheService, String cacheName, int partitionId) {
@@ -180,7 +180,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
                 assertEquals("Foo", value1);
                 assertEquals("Foo", value2);
             }
-        });
+        }, timeoutSeconds());
     }
 
     @Test
@@ -220,7 +220,11 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
                 assertEquals("Foo", value1);
                 assertEquals("Foo", value2);
             }
-        });
+        }, timeoutSeconds());
+    }
+
+    private static int timeoutSeconds() {
+        return 300;
     }
 
     @Test
@@ -266,7 +270,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
                     assertEquals("Foo2", value1);
                 }
             }
-        });
+        }, timeoutSeconds());
     }
 
     public static class SimpleEntryProcessor
