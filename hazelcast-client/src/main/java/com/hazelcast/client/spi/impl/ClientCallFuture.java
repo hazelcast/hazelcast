@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.executor.impl.client.RefreshableRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -86,7 +88,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
         int waitTime = clientProperties.getRetryWaitTime().getInteger();
         this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
-
 
         this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
@@ -258,6 +259,9 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         }
         if (handler != null) {
             handler.beforeListenerRegister();
+        }
+        if (request instanceof RefreshableRequest) {
+            ((RefreshableRequest) request).refresh();
         }
         executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
         return true;
