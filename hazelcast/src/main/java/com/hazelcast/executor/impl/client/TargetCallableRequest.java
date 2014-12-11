@@ -43,7 +43,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     private String name;
     private String uuid;
     private Callable callable;
-    private Address target;
+    private volatile Address target;
     private ConstructorFunction<Object, Address> targetAddressCreator;
 
     public TargetCallableRequest() {
