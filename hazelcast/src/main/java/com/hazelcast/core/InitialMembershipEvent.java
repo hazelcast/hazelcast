@@ -44,7 +44,7 @@ public class InitialMembershipEvent extends EventObject {
      * Returns an immutable set of ordered members at the moment this {@link InitialMembershipListener} is
      * registered. See {@link com.hazelcast.core.Cluster#getMembers()} for more information.
      *
-     * @return a set of members.
+     * @return an immutable set of ordered members.
      */
     public Set<Member> getMembers() {
         return members;
