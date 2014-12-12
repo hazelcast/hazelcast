@@ -49,9 +49,9 @@ public class MigrationEvent implements DataSerializable {
     }
 
     /**
-     * Returns the id of the partition which is (or being) migrated
+     * Returns the id of the partition which is (or is being) migrated
      *
-     * @return partition id
+     * @return the id of the partition which is (or is being) migrated
      */
     public int getPartitionId() {
         return partitionId;
@@ -60,7 +60,7 @@ public class MigrationEvent implements DataSerializable {
     /**
      * Returns the old owner of the migrating partition
      *
-     * @return old owner of partition
+     * @return the old owner of the migrating partition
      */
     public Member getOldOwner() {
         return oldOwner;
@@ -69,16 +69,16 @@ public class MigrationEvent implements DataSerializable {
     /**
      * Returns the new owner of the migrating partition
      *
-     * @return new owner of partition
+     * @return the new owner of the migrating partition
      */
     public Member getNewOwner() {
         return newOwner;
     }
 
     /**
-     * Returns the status of the migration: Started, completed or failed
+     * Returns the status of the migration: started, completed or failed
      *
-     * @return migration status
+     * @return the migration status: started, completed or failed
      */
     public MigrationStatus getStatus() {
         return status;
