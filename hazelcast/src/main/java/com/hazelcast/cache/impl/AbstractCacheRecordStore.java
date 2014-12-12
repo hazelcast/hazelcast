@@ -723,6 +723,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
+    public void putRecord(Data key, CacheRecord record) {
+        if (!records.containsKey(key)) {
+            evictIfRequired();
+        }
+        records.put(key, (R) record);
+    }
+
+    @Override
     public CacheRecord removeRecord(Data key) {
         return records.remove(key);
     }

@@ -344,12 +344,23 @@ public interface ICacheRecordStore {
     /**
      * Associates the specified record with the specified key.
      * This is simply a put operation on the internal map data
-     * without any CacheLoad.
+     * without any CacheLoad. It also <b>DOES NOT</b> trigger eviction,
+     * be aware of the fact it might cause an OutOfMemoryException!
      *
      * @param key the key to the entry.
      * @param record the value to be associated with the specified key.
      */
     void setRecord(Data key, CacheRecord record);
+
+    /**
+     * Associates the specified record with the specified key.
+     * This is simply a put operation on the internal map data
+     * without any CacheLoad. It also <b>DOES</b> trigger eviction!
+     *
+     * @param key the key to the entry.
+     * @param record the value to be associated with the specified key.
+     */
+    void putRecord(Data key, CacheRecord record);
 
     /**
      * Removes the record for a key.

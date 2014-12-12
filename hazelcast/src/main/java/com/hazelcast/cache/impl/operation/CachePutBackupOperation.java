@@ -54,7 +54,7 @@ public class CachePutBackupOperation
             throws Exception {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
-        cache.setRecord(key, cacheRecord);
+        cache.putRecord(key, cacheRecord);
         response = Boolean.TRUE;
     }
 
