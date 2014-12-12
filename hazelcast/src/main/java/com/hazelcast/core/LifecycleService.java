@@ -29,7 +29,8 @@ public interface LifecycleService {
     boolean isRunning();
 
     /**
-     * gracefully shutdowns HazelcastInstance. Different from {@link #terminate()}, it waits for partition operations to be completed.
+     * gracefully shutdowns HazelcastInstance. Different from {@link #terminate()},
+     * it waits for partition operations to be completed.
      */
     void shutdown();
 
