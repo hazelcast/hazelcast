@@ -92,7 +92,7 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
                 public void run() throws Exception {
                     assertEquals("id " + id, 3, atomicIntegers[id].get());
                 }
-            }, 10);
+            });
         }
     }
 
