@@ -16,6 +16,20 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.ObjectWithBigDecimal;
+import com.hazelcast.query.SampleObjects.ObjectWithBoolean;
+import com.hazelcast.query.SampleObjects.ObjectWithByte;
+import com.hazelcast.query.SampleObjects.ObjectWithChar;
+import com.hazelcast.query.SampleObjects.ObjectWithDate;
+import com.hazelcast.query.SampleObjects.ObjectWithDouble;
+import com.hazelcast.query.SampleObjects.ObjectWithFloat;
+import com.hazelcast.query.SampleObjects.ObjectWithInteger;
+import com.hazelcast.query.SampleObjects.ObjectWithLong;
+import com.hazelcast.query.SampleObjects.ObjectWithShort;
+import com.hazelcast.query.SampleObjects.ObjectWithSqlDate;
+import com.hazelcast.query.SampleObjects.ObjectWithSqlTimestamp;
+import com.hazelcast.query.SampleObjects.ObjectWithUUID;
 import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -25,14 +39,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -88,24 +104,63 @@ public class SqlPredicateTest {
 
     @Test
     public void testSql_withDate() {
-        Employee value = createValue();
+        Date date = new Date();
+        ObjectWithDate value = new ObjectWithDate(date);
+        SimpleDateFormat format = new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US);
+        assertSqlTrue("attribute > '" + format.format(new Date(0)) + "'", value);
+        assertSqlTrue("attribute >= '" + format.format(new Date(0)) + "'", value);
+        assertSqlTrue("attribute < '" + format.format(new Date(date.getTime() + 1000)) + "'", value);
+        assertSqlTrue("attribute <= '" + format.format(new Date(date.getTime() + 1000)) + "'", value);
+    }
 
-        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(DateHelperTest.DATE_FORMAT, Locale.US);
-        assertSqlTrue("createDate >= '" + simpleDateFormat.format(new Date(0)) + "'", value);
-        assertSqlTrue("sqlDate >= '" + new java.sql.Date(0) + "'", value);
-        assertSqlTrue("date >= '" + new Timestamp(0) + "'", value);
+    @Test
+    public void testSql_withSqlDate() {
+        java.sql.Date date = new java.sql.Date(System.currentTimeMillis());
+        ObjectWithSqlDate value = new ObjectWithSqlDate(date);
+        SimpleDateFormat format = new SimpleDateFormat(DateHelperTest.SQL_DATE_FORMAT, Locale.US);
+        assertSqlTrue("attribute > '" + format.format(new java.sql.Date(0)) + "'", value);
+        assertSqlTrue("attribute >= '" + format.format(new java.sql.Date(0)) + "'", value);
+        assertSqlTrue("attribute < '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'", value);
+        assertSqlTrue("attribute <= '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'", value);
+    }
+
+    @Test
+    public void testSql_withTimestamp() {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        ObjectWithSqlTimestamp value = new ObjectWithSqlTimestamp(timestamp);
+        SimpleDateFormat format = new SimpleDateFormat(DateHelperTest.TIMESTAMP_FORMAT, Locale.US);
+        assertSqlTrue("attribute > '" + format.format(new Timestamp(0)) + "'", value);
+        assertSqlTrue("attribute >= '" + format.format(new Timestamp(0)) + "'", value);
+        assertSqlTrue("attribute < '" + format.format(new Timestamp(timestamp.getTime() + 1000)) + "'", value);
+        assertSqlTrue("attribute <= '" + format.format(new Timestamp(timestamp.getTime() + 1000)) + "'", value);
     }
 
     @Test
     public void testSql_withBigDecimal() {
-        Employee value = createValue();
+        ObjectWithBigDecimal value = new ObjectWithBigDecimal(new BigDecimal("1.23E3"));
+        assertSqlTrue("attribute > '" + new BigDecimal("1.23E2") + "'", value);
+        assertSqlTrue("attribute >= '" + new BigDecimal("1.23E3") + "'", value);
+        assertSqlFalse("attribute = '" + new BigDecimal("1.23") + "'", value);
+        assertSqlTrue("attribute = '1.23E3'", value);
+        assertSqlTrue("attribute = 1.23E3", value);
+        assertSqlFalse("attribute = 1.23", value);
+    }
 
-        assertSqlTrue("bigDecimal > '" + new BigDecimal("1.23E2") + "'", value);
-        assertSqlTrue("bigDecimal >= '" + new BigDecimal("1.23E3") + "'", value);
-        assertSqlFalse("bigDecimal = '" + new BigDecimal("1.23") + "'", value);
-        assertSqlTrue("bigDecimal = '1.23E3'", value);
-        assertSqlTrue("bigDecimal = 1.23E3", value);
-        assertSqlFalse("bigDecimal = 1.23", value);
+    @Test
+    public void testSql_withBigInteger() {
+        SampleObjects.ObjectWithBigInteger value = new SampleObjects.ObjectWithBigInteger(new BigInteger("123"));
+        assertSqlTrue("attribute > '" + new BigInteger("122") + "'", value);
+        assertSqlTrue("attribute >= '" + new BigInteger("123") + "'", value);
+        assertSqlTrue("attribute = '" + new BigInteger("123") + "'", value);
+        assertSqlFalse("attribute = '" + new BigInteger("122") + "'", value);
+        assertSqlTrue("attribute < '" + new BigInteger("124") + "'", value);
+        assertSqlTrue("attribute <= '" + new BigInteger("123") + "'", value);
+        assertSqlTrue("attribute = 123", value);
+        assertSqlTrue("attribute = '123'", value);
+        assertSqlTrue("attribute != 124", value);
+        assertSqlFalse("attribute = 124", value);
+        assertSqlTrue("attribute between 122 and 124", value);
+        assertSqlTrue("attribute in (122, 123, 124)", value);
     }
 
     @Test
@@ -133,27 +188,106 @@ public class SqlPredicateTest {
 
     @Test
     public void testSql_withInteger() {
-        Employee value = new Employee("abc-123-xvz", 34, true, 10D);
-        assertSqlTrue("(age >= " + 20 + ") AND (age <= " + 40 + ")", value);
-        assertSqlTrue("(age >= " + 20 + ") AND (age <= " + 34 + ")", value);
-        assertSqlTrue("(age >= " + 34 + ") AND (age <= " + 35 + ")", value);
-        assertSqlTrue("age IN (" + 34 + ", " + 35 + ")", value);
-        assertSqlFalse("age = 33", value);
-        assertSqlTrue("age = 34", value);
-        assertSqlTrue("age > 5", value);
-        assertSqlTrue("age = -33", createValue(-33));
+        ObjectWithInteger value = new ObjectWithInteger(34);
+        assertSqlTrue("(attribute >= 20) AND (attribute <= 40)", value);
+        assertSqlTrue("(attribute >= 20 ) AND (attribute <= 34)", value);
+        assertSqlTrue("(attribute >= 34) AND (attribute <= 35)", value);
+        assertSqlTrue("attribute IN (34, 35)", value);
+        assertSqlFalse("attribute IN (33,35)", value);
+        assertSqlFalse("attribute = 33", value);
+        assertSqlTrue("attribute = 34", value);
+        assertSqlTrue("attribute > 5", value);
+        assertSqlTrue("attribute = -33", new ObjectWithInteger(-33));
     }
 
+    @Test
+    public void testSql_withLong() {
+        ObjectWithLong value = new ObjectWithLong(34L);
+        assertSqlTrue("(attribute >= 20) AND (attribute <= 40)", value);
+        assertSqlTrue("(attribute >= 20 ) AND (attribute <= 34)", value);
+        assertSqlTrue("(attribute >= 34) AND (attribute <= 35)", value);
+        assertSqlTrue("attribute IN (34, 35)", value);
+        assertSqlFalse("attribute IN (33,35)", value);
+        assertSqlFalse("attribute = 33", value);
+        assertSqlTrue("attribute = 34", value);
+        assertSqlTrue("attribute > 5", value);
+        assertSqlTrue("attribute = -33", new ObjectWithLong(-33));
+    }
 
     @Test
     public void testSql_withDouble() {
-        Employee value = new Employee("abc-123-xvz", 34, true, 10D);
-        assertSqlTrue("salary > 5", value);
-        assertSqlTrue("salary > 5 and salary < 11", value);
-        assertSqlFalse("salary > 15 or salary < 10", value);
-        assertSqlTrue("salary between 9.99 and 10.01", value);
-        assertSqlTrue("salary between 5 and 15", value);
+        ObjectWithDouble value = new ObjectWithDouble(10.001D);
+        assertSqlTrue("attribute > 5", value);
+        assertSqlTrue("attribute > 5 and attribute < 11", value);
+        assertSqlFalse("attribute > 15 or attribute < 10", value);
+        assertSqlTrue("attribute between 9.99 and 10.01", value);
+        assertSqlTrue("attribute between 5 and 15", value);
+    }
 
+    @Test
+    public void testSql_withFloat() {
+        ObjectWithFloat value = new ObjectWithFloat(10.001f);
+        assertSqlTrue("attribute > 5", value);
+        assertSqlTrue("attribute > 5 and attribute < 11", value);
+        assertSqlFalse("attribute > 15 or attribute < 10", value);
+        assertSqlTrue("attribute between 9.99 and 10.01", value);
+        assertSqlTrue("attribute between 5 and 15", value);
+    }
+
+    @Test
+    public void testSql_withShort() {
+        ObjectWithShort value = new ObjectWithShort((short) 10);
+        assertSqlTrue("attribute = 10", value);
+        assertSqlFalse("attribute = 11", value);
+        assertSqlTrue("attribute >= 10", value);
+        assertSqlTrue("attribute <= 10", value);
+        assertSqlTrue("attribute > 5", value);
+        assertSqlTrue("attribute > 5 and attribute < 11", value);
+        assertSqlFalse("attribute > 15 or attribute < 10", value);
+        assertSqlTrue("attribute between 5 and 15", value);
+        assertSqlTrue("attribute in (5, 10, 15)", value);
+        assertSqlFalse("attribute in (5, 11, 15)", value);
+    }
+
+    @Test
+    public void testSql_withByte() {
+        ObjectWithByte value = new ObjectWithByte((byte) 10);
+        assertSqlTrue("attribute = 10", value);
+        assertSqlFalse("attribute = 11", value);
+        assertSqlTrue("attribute >= 10", value);
+        assertSqlTrue("attribute <= 10", value);
+        assertSqlTrue("attribute > 5", value);
+        assertSqlTrue("attribute > 5 and attribute < 11", value);
+        assertSqlFalse("attribute > 15 or attribute < 10", value);
+        assertSqlTrue("attribute between 5 and 15", value);
+        assertSqlTrue("attribute in (5, 10, 15)", value);
+        assertSqlFalse("attribute in (5, 11, 15)", value);
+    }
+
+    @Test
+    public void testSql_withChar() {
+        ObjectWithChar value = new ObjectWithChar('%');
+        assertSqlTrue("attribute = '%'", value);
+        assertSqlFalse("attribute = '$'", value);
+        assertSqlTrue("attribute in ('A', '#', '%')", value);
+        assertSqlFalse("attribute in ('A', '#', '&')", value);
+    }
+
+    @Test
+    public void testSql_withBoolean() {
+        ObjectWithBoolean value = new ObjectWithBoolean(true);
+        assertSqlTrue("attribute", value);
+        assertSqlTrue("attribute = true", value);
+        assertSqlFalse("attribute = false", value);
+        assertSqlFalse("not attribute", value);
+    }
+
+    @Test
+    public void testSql_withUUID() {
+        UUID uuid = UUID.randomUUID();
+        ObjectWithUUID value = new ObjectWithUUID(uuid);
+        assertSqlTrue("attribute = '" + uuid.toString() + "'", value);
+        assertSqlFalse("attribute = '" + UUID.randomUUID().toString() + "'", value);
     }
 
     @Test

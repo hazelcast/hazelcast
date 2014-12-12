@@ -62,6 +62,8 @@ public final class ReflectionHelper {
             return AttributeType.BIG_INTEGER;
         } else if (klass == float.class || klass == Float.class) {
             return AttributeType.FLOAT;
+        } else if (klass == short.class || klass == Short.class) {
+            return AttributeType.SHORT;
         } else if (klass == byte.class || klass == Byte.class) {
             return AttributeType.BYTE;
         } else if (klass == char.class || klass == Character.class) {
