@@ -85,43 +85,33 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
      */
     @Test
     public void whenBackupEntryProcessor_isNotImplemented() throws Exception {
-        final String cacheName = randomString();
-        final Integer key = 1;
-
-        executeEntryProcessor(key, new SimpleEntryProcessor(), cacheName);
-
-        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode1);
-        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode2);
+        EntryProcessor<Integer, String, Void> entryProcessor = new SimpleEntryProcessor();
+        executeTestInternal(entryProcessor);
     }
 
     @Test
     public void whenBackupEntryProcessor_isImplemented() throws Exception {
-        final String cacheName = randomString();
-        final Integer key = 1;
-
-        executeEntryProcessor(key, new CustomBackupAwareEntryProcessor(), cacheName);
-
-        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode1);
-        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode2);
+        EntryProcessor<Integer, String, Void> entryProcessor = new CustomBackupAwareEntryProcessor();
+        executeTestInternal(entryProcessor);
     }
 
     @Test
     public void whenBackupEntryProcessor_isSame_withPrimaryEntryProcessor() throws Exception {
-        final String cacheName = randomString();
-        final Integer key = 1;
-
-        executeEntryProcessor(key, new SimpleBackupAwareEntryProcessor(), cacheName);
-
-        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode1);
-        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode2);
+        EntryProcessor<Integer, String, Void> entryProcessor = new SimpleBackupAwareEntryProcessor();
+        executeTestInternal(entryProcessor);
     }
 
     @Test
     public void whenBackupEntryProcessor_isNull() throws Exception {
+        EntryProcessor<Integer, String, Void> entryProcessor = new NullBackupAwareEntryProcessor();
+        executeTestInternal(entryProcessor);
+    }
+
+    private void executeTestInternal(EntryProcessor<Integer, String, Void> entryProcessor) {
         final String cacheName = randomString();
         final Integer key = 1;
 
-        executeEntryProcessor(key, new NullBackupAwareEntryProcessor(), cacheName);
+        executeEntryProcessor(key, entryProcessor, cacheName);
 
         assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode1);
         assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode2);
