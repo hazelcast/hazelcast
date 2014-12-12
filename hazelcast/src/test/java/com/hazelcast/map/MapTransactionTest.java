@@ -30,11 +30,11 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.predicate.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -838,7 +838,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         };
 
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate<String, Integer> p = e.equal(1);
+        Predicate<String, Integer> p = e.equal(1).build();
 
         map.addEntryListener(l, p, null, false);
 
@@ -1004,10 +1004,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                     final TransactionalMap<Object, Object> txMap = context.getMap("default");
 
-                    assertEquals(0, txMap.keySet(new SqlPredicate("age <= 10")).size());
+                    assertEquals(0, txMap.keySet(SqlPredicate.createPredicate("age <= 10")).size());
                     //put
                     txMap.put(2, employee2);
-                    Set keys = txMap.keySet(new SqlPredicate("age <= 10"));
+                    Set keys = txMap.keySet(SqlPredicate.createPredicate("age <= 10"));
                     Iterator iterator = keys.iterator();
 
                     assertEquals(1, keys.size());
@@ -1019,7 +1019,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     txMap.put(3, employee3);
                     txMap.put(4, employee4);
 
-                    keys = txMap.keySet(new SqlPredicate("age <= 10"));
+                    keys = txMap.keySet(SqlPredicate.createPredicate("age <= 10"));
                     assertEquals(3, keys.size());
 
                     // force rollback.
@@ -1033,7 +1033,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         }
         assertEquals(1, map.size());
         assertEquals(1, map.keySet().size());
-        assertEquals(0, map.keySet(new SqlPredicate("age <= 10")).size());
+        assertEquals(0, map.keySet(SqlPredicate.createPredicate("age <= 10")).size());
 
         h1.shutdown();
         h2.shutdown();
@@ -1063,7 +1063,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
-        assertEquals(1, txMap.keySet(new SqlPredicate("age = 34")).size());
+        assertEquals(1, txMap.keySet(SqlPredicate.createPredicate("age = 34")).size());
 
         context.commitTransaction();
 
@@ -1098,10 +1098,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertNull(txMap.put(emp2, emp2));
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
-        assertEquals(0, txMap.keySet(new SqlPredicate("a = 10")).size());
-        assertEquals(0, txMap.values(new SqlPredicate("a = 10")).size());
-        assertEquals(2, txMap.keySet(new SqlPredicate("a >= 10")).size());
-        assertEquals(2, txMap.values(new SqlPredicate("a >= 10")).size());
+        assertEquals(0, txMap.keySet(SqlPredicate.createPredicate("a = 10")).size());
+        assertEquals(0, txMap.values(SqlPredicate.createPredicate("a = 10")).size());
+        assertEquals(2, txMap.keySet(SqlPredicate.createPredicate("a >= 10")).size());
+        assertEquals(2, txMap.values(SqlPredicate.createPredicate("a >= 10")).size());
 
         context.commitTransaction();
 
@@ -1158,28 +1158,28 @@ public class MapTransactionTest extends HazelcastTestSupport {
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                assertEquals(0, txMap.values(new SqlPredicate("age <= 10")).size());
+                assertEquals(0, txMap.values(SqlPredicate.createPredicate("age <= 10")).size());
                 txMap.put(2, emp2);
-                Collection coll = txMap.values(new SqlPredicate("age <= 10"));
+                Collection coll = txMap.values(SqlPredicate.createPredicate("age <= 10"));
                 Iterator<Object> iterator = coll.iterator();
                 while (iterator.hasNext()) {
                     final SampleObjects.Employee e = (SampleObjects.Employee) iterator.next();
                     assertEquals(emp2, e);
                 }
-                coll = txMap.values(new SqlPredicate("age > 30 "));
+                coll = txMap.values(SqlPredicate.createPredicate("age > 30 "));
                 iterator = coll.iterator();
                 while (iterator.hasNext()) {
                     final SampleObjects.Employee e = (SampleObjects.Employee) iterator.next();
                     assertEquals(emp1, e);
                 }
                 txMap.remove(2);
-                coll = txMap.values(new SqlPredicate("age <= 10 "));
+                coll = txMap.values(SqlPredicate.createPredicate("age <= 10 "));
                 assertEquals(0, coll.size());
                 return true;
             }
         });
-        assertEquals(0, map2.values(new SqlPredicate("age <= 10")).size());
-        assertEquals(1, map2.values(new SqlPredicate("age = 34")).size());
+        assertEquals(0, map2.values(SqlPredicate.createPredicate("age <= 10")).size());
+        assertEquals(1, map2.values(SqlPredicate.createPredicate("age = 34")).size());
         h1.shutdown();
         h2.shutdown();
     }
@@ -1199,9 +1199,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
-                assertEquals(1, txMap.values(new SqlPredicate("age > 21")).size());
+                assertEquals(1, txMap.values(SqlPredicate.createPredicate("age > 21")).size());
                 txMap.put(1, employeeAtAge23);
-                Collection coll = txMap.values(new SqlPredicate("age > 21"));
+                Collection coll = txMap.values(SqlPredicate.createPredicate("age > 21"));
                 assertEquals(1, coll.size());
                 return true;
             }
@@ -1250,7 +1250,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
                 txMap.remove(1);
-                Collection<Object> coll = txMap.values(new SqlPredicate("age > 70 "));
+                Collection<Object> coll = txMap.values(SqlPredicate.createPredicate("age > 70 "));
                 assertEquals(0, coll.size());
                 return true;
             }

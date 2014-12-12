@@ -16,8 +16,15 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -44,9 +51,9 @@ public class PortablePredicatesTest {
     @Test
     public void testPortablePredicate() {
         PortableData data = createData("1", "Clark", "Kent", "Superman", 100);
-        assertTrue(new SqlPredicate("strength >= 75").apply(toQueryEntry("1", data)));
-        assertTrue(new SqlPredicate("firstName like C% and lastName like K%").apply(toQueryEntry("1", data)));
-        assertFalse(new SqlPredicate("character == 'Bizarro'").apply(toQueryEntry("1", data)));
+        assertTrue(SqlPredicate.createPredicate("strength >= 75").apply(toQueryEntry("1", data)));
+        assertTrue(SqlPredicate.createPredicate("firstName like C% and lastName like K%").apply(toQueryEntry("1", data)));
+        assertFalse(SqlPredicate.createPredicate("character == 'Bizarro'").apply(toQueryEntry("1", data)));
     }
 
     private PortableData createData(String id,

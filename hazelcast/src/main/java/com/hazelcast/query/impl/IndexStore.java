@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.resultset.MultiResultSet;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -30,9 +31,12 @@ public interface IndexStore {
     void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry);
     void removeIndex(Comparable oldValue, Data indexKey);
     void clear();
+    long getRecordCount();
 
     void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
     void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);
+    Set<QueryableEntry> getRecords();
+
     Set<QueryableEntry> getRecords(Comparable value);
     void getRecords(MultiResultSet results, Set<Comparable> values);
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue);

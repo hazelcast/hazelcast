@@ -496,7 +496,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
         EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
         EntryObject e = new PredicateBuilder().getEntryObject();
-        Predicate p = e.get("id").lessThan(5);
+        Predicate p = e.get("id").lessThan(5).build();
         Map<Integer, Object> res = map.executeOnEntries(entryProcessor, p);
 
         for (int i = 0; i < 5; i++) {

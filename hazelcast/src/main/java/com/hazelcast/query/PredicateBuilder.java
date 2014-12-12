@@ -16,21 +16,16 @@
 
 package com.hazelcast.query;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.QueryContext;
-import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicate.AndPredicate;
+import com.hazelcast.query.impl.predicate.OrPredicate;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
 /**
  * This class provides functionality to build predicate.
  */
-public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
+public class PredicateBuilder {
 
     List<Predicate> lsPredicates = new ArrayList<Predicate>();
 
@@ -44,17 +39,20 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         this.attribute = attribute;
     }
 
-    @Override
-    public boolean apply(Map.Entry mapEntry) {
-        return lsPredicates.get(0).apply(mapEntry);
-    }
-
     public EntryObject getEntryObject() {
         return new EntryObject(this);
     }
 
+    public PredicateBuilder and(PredicateBuilder predicateBuilder) {
+        return and(predicateBuilder.build());
+    }
+
+    public PredicateBuilder or(PredicateBuilder predicateBuilder) {
+        return or(predicateBuilder.build());
+    }
+
     public PredicateBuilder and(Predicate predicate) {
-        if (predicate != PredicateBuilder.this) {
+        if (predicate != PredicateBuilder.this.build()) {
             throw new QueryException("Illegal and statement expected: "
                     + PredicateBuilder.class.getSimpleName() + ", found: "
                     + ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
@@ -62,7 +60,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
         Predicate second = lsPredicates.remove(index);
-        lsPredicates.add(Predicates.and(first, second));
+        lsPredicates.add(new AndPredicate(first, second));
         return this;
     }
 
@@ -75,45 +73,8 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         int index = lsPredicates.size() - 2;
         Predicate first = lsPredicates.remove(index);
         Predicate second = lsPredicates.remove(index);
-        lsPredicates.add(Predicates.or(first, second));
+        lsPredicates.add(new OrPredicate(first, second));
         return this;
-    }
-
-    @Override
-    public Set<QueryableEntry> filter(QueryContext queryContext) {
-        Predicate p = lsPredicates.get(0);
-        if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).filter(queryContext);
-        }
-        return null;
-    }
-
-    @Override
-    public boolean isIndexed(QueryContext queryContext) {
-        Predicate p = lsPredicates.get(0);
-        if (p instanceof IndexAwarePredicate) {
-            return ((IndexAwarePredicate) p).isIndexed(queryContext);
-        }
-        return false;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attribute);
-        out.writeInt(lsPredicates.size());
-        for (Predicate predicate : lsPredicates) {
-            out.writeObject(predicate);
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        attribute = in.readUTF();
-        int size = in.readInt();
-        lsPredicates = new ArrayList<Predicate>(size);
-        for (int i = 0; i < size; i++) {
-            lsPredicates.add((Predicate) in.readObject());
-        }
     }
 
     @Override
@@ -124,5 +85,10 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
         sb.append(lsPredicates.size() == 0 ? "" : lsPredicates.get(0));
         sb.append("\n}");
         return sb.toString();
+    }
+
+    // should we create a copy of inline predicate?
+    public Predicate build() {
+        return lsPredicates.size() > 0 ? lsPredicates.get(0) : null;
     }
 }

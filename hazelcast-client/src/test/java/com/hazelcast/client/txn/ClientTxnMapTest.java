@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -308,10 +308,10 @@ public class ClientTxnMapTest {
         assertNull(txMap.put(emp2, emp2));
         assertEquals(2, txMap.size());
         assertEquals(2, txMap.keySet().size());
-        assertEquals(0, txMap.keySet(new SqlPredicate("age = 10")).size());
-        assertEquals(0, txMap.values(new SqlPredicate("age = 10")).size());
-        assertEquals(2, txMap.keySet(new SqlPredicate("age >= 10")).size());
-        assertEquals(2, txMap.values(new SqlPredicate("age >= 10")).size());
+        assertEquals(0, txMap.keySet(SqlPredicate.createPredicate("age = 10")).size());
+        assertEquals(0, txMap.values(SqlPredicate.createPredicate("age = 10")).size());
+        assertEquals(2, txMap.keySet(SqlPredicate.createPredicate("age >= 10")).size());
+        assertEquals(2, txMap.values(SqlPredicate.createPredicate("age >= 10")).size());
 
         context.commitTransaction();
 

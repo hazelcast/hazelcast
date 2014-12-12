@@ -23,7 +23,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
+
 import java.io.IOException;
 
 public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRequest {
@@ -51,7 +52,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
     @Override
     protected Predicate getPredicate() {
         if (cachedPredicate == null && predicate != null) {
-            cachedPredicate = new SqlPredicate(predicate);
+            cachedPredicate = SqlPredicate.createPredicate(predicate);
         }
         return cachedPredicate;
     }

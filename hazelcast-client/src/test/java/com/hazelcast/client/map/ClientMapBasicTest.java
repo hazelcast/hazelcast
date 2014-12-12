@@ -26,7 +26,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -991,7 +991,7 @@ public class ClientMapBasicTest {
         }
         expected.add(4);
 
-        final Set keySet = map.keySet(new SqlPredicate("this == 4value"));
+        final Set keySet = map.keySet(SqlPredicate.createPredicate("this == 4value"));
 
         assertEquals(expected, keySet);
     }
@@ -1032,7 +1032,7 @@ public class ClientMapBasicTest {
         }
         expected.add(4);
 
-        final Set keySet = map.keySet(new SqlPredicate("this == 4value"));
+        final Set keySet = map.keySet(SqlPredicate.createPredicate("this == 4value"));
 
         assertEquals(expected, keySet);
     }
@@ -1078,7 +1078,7 @@ public class ClientMapBasicTest {
             map.put(key, value);
         }
 
-        final Set<Map.Entry> entrySet = map.entrySet(new SqlPredicate("this == 1value"));
+        final Set<Map.Entry> entrySet = map.entrySet(SqlPredicate.createPredicate("this == 1value"));
 
         Map.Entry entry = entrySet.iterator().next();
         assertEquals(1, entry.getKey());
@@ -1154,6 +1154,11 @@ public class ClientMapBasicTest {
 
     static class DumPredicate implements Predicate {
         public boolean apply(Map.Entry mapEntry) {
+            return false;
+        }
+
+        @Override
+        public boolean isSubSet(Predicate predicate) {
             return false;
         }
     }

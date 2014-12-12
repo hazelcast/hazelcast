@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -36,6 +37,7 @@ import java.util.Iterator;
 
 public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
+    Predicate predicate;
     String attributeName;
     boolean ordered;
 
@@ -48,6 +50,11 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
     public AddIndexOperation() {
     }
 
+    public AddIndexOperation(String name, String attribute, boolean ordered, Predicate predicate) {
+        this(name, attribute, ordered);
+        this.predicate = predicate;
+    }
+
     @Override
     public void run() throws Exception {
         MapService mapService = getService();
@@ -56,7 +63,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
                 .getPartitionContainer(getPartitionId()).getRecordStore(name);
         IndexService indexService = mapContainer.getIndexService();
         SerializationService ss = getNodeEngine().getSerializationService();
-        Index index = indexService.addOrGetIndex(attributeName, ordered);
+        Index index = indexService.addOrGetIndex(attributeName, ordered, predicate);
         final long now = getNow();
         final Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
@@ -81,6 +88,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         super.writeInternal(out);
         out.writeUTF(attributeName);
         out.writeBoolean(ordered);
+        out.writeObject(predicate);
     }
 
     @Override
@@ -88,5 +96,6 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         super.readInternal(in);
         attributeName = in.readUTF();
         ordered = in.readBoolean();
+        predicate = in.readObject();
     }
 }

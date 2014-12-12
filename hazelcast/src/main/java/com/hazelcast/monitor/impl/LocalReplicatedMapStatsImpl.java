@@ -17,9 +17,12 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.monitor.IndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -328,6 +331,13 @@ public class LocalReplicatedMapStatsImpl
     @Override
     public long getHeapCost() {
         return 0;
+    }
+
+    @Override
+    public List<IndexStats> getIndexStats() {
+        // I think we do not need this feature in ReplicatedMap but
+        // we may consider implementing if needed.
+        throw new NotImplementedException();
     }
 
     @Override

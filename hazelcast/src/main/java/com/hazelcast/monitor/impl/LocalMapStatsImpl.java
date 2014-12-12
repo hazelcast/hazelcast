@@ -16,11 +16,17 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.monitor.IndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.util.Clock;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -91,6 +97,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private int backupCount;
 
     private NearCacheStatsImpl nearCacheStats;
+    private List<IndexStats> indexStats;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -324,12 +331,21 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
+    public List<IndexStats> getIndexStats() {
+        return Collections.unmodifiableList(indexStats);
+    }
+
+    @Override
     public NearCacheStatsImpl getNearCacheStats() {
         return nearCacheStats;
     }
 
     public void setNearCacheStats(NearCacheStatsImpl nearCacheStats) {
         this.nearCacheStats = nearCacheStats;
+    }
+
+    public void setIndexStats(List<IndexStats> indexStats) {
+        this.indexStats = indexStats;
     }
 
     public JsonObject toJson() {
@@ -359,6 +375,13 @@ public class LocalMapStatsImpl implements LocalMapStats {
         root.add("heapCost", heapCost);
         if (nearCacheStats != null) {
             root.add("nearCacheStats", nearCacheStats.toJson());
+        }
+        if (indexStats != null) {
+            JsonArray arr = new JsonArray();
+            for (IndexStats indexStat : indexStats) {
+                arr.add(indexStat.toJson());
+            }
+            root.add("indexStats", arr);
         }
         return root;
     }
@@ -392,6 +415,18 @@ public class LocalMapStatsImpl implements LocalMapStats {
         if (jsonNearCacheStats != null) {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.fromJson(jsonNearCacheStats.asObject());
+        }
+
+        JsonValue jsonIndexStats = json.get("indexStats");
+        if (jsonIndexStats != null) {
+            Iterator<JsonValue> iterator = jsonIndexStats.asArray().iterator();
+            ArrayList<IndexStats> arrayList = new ArrayList();
+            while(iterator.hasNext()) {
+                MapIndexStats.IndexStatsImpl stats = new MapIndexStats.IndexStatsImpl();
+                stats.fromJson(iterator.next().asObject());
+                arrayList.add(stats);
+            }
+            indexStats = arrayList;
         }
     }
 

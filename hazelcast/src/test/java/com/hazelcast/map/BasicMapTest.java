@@ -30,7 +30,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -967,6 +967,11 @@ public class BasicMapTest extends HazelcastTestSupport {
                 return true;
             return false;
         }
+
+        @Override
+        public boolean isSubSet(Predicate predicate) {
+            return false;
+        }
     }
 
     @Test
@@ -1134,7 +1139,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        final SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        final Predicate predicate = SqlPredicate.createPredicate("name='My-5'");
         Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
 
         assertEquals(1, result.size());
@@ -1156,6 +1161,7 @@ public class BasicMapTest extends HazelcastTestSupport {
                 assertEquals(message, 5, (int) result.iterator().next().getValue().value);
             }
         }, 300);
+
 
     }
 

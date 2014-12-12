@@ -232,13 +232,14 @@
 
 
     <!-- Query -->
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.SqlPredicate"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.query.SqlPredicate"/>
-    <suppress checks="MethodLength" files="com.hazelcast.query.SqlPredicate"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.predicate.SqlPredicate"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.query.impl.predicate.SqlPredicate"/>
+    <suppress checks="MethodLength" files="com.hazelcast.query.impl.predicate.SqlPredicate"/>
     <suppress checks="MethodLength" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.query.impl.ReflectionHelper"/>
     <suppress checks="ReturnCount" files="com.hazelcast.query.impl.ReflectionHelper"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.impl.QueryContext"/>
 
     <!-- hazelcast-wm -->
     <suppress checks="JavadocMethod" files="com.hazelcast.web[\\/]"/>

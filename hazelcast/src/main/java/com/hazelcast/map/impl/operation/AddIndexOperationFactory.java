@@ -18,8 +18,10 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 
 public class AddIndexOperationFactory implements OperationFactory {
@@ -27,8 +29,14 @@ public class AddIndexOperationFactory implements OperationFactory {
     String name;
     String attributeName;
     boolean ordered;
+    Predicate predicate;
 
     public AddIndexOperationFactory() {
+    }
+
+    public AddIndexOperationFactory(String name, String attributeName, boolean ordered, Predicate predicate) {
+        this(name, attributeName, ordered);
+        this.predicate = predicate;
     }
 
     public AddIndexOperationFactory(String name, String attributeName, boolean ordered) {
@@ -39,7 +47,7 @@ public class AddIndexOperationFactory implements OperationFactory {
 
     @Override
     public Operation createOperation() {
-        return new AddIndexOperation(name, attributeName, ordered);
+        return new AddIndexOperation(name, attributeName, ordered, predicate);
     }
 
     @Override

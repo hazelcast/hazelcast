@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query.impl.resultset;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.AbstractSet;
 import java.util.ArrayList;

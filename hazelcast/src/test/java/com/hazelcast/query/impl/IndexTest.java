@@ -26,9 +26,9 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.query.Predicates.AndPredicate;
-import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.predicate.AndPredicate;
+import com.hazelcast.query.impl.predicate.EqualPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -69,9 +69,10 @@ public class IndexTest {
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
         is.saveEntryIndex(new QueryEntry(ss, key, key, value));
-        assertNotNull(is.getIndex("favoriteCity"));
+        assertNotNull(is.getIndexes());
+        assertEquals(1, is.getIndexes().length);
         is.removeEntryIndex(key);
-        assertEquals(0,is.getIndex("favoriteCity").getRecords(SerializableWithEnum.City.Istanbul).size());
+        assertEquals(0, is.getIndexes()[0].getRecords(SerializableWithEnum.City.Istanbul).size());
     }
 
     @Test

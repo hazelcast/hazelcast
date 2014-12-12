@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.resultset.MultiResultSet;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +51,14 @@ public class UnsortedIndexStore extends BaseIndexStore {
         } finally {
             releaseWriteLock();
         }
+    }
+
+    public Set<QueryableEntry> getRecords() {
+        MultiResultSet queryableEntries = new MultiResultSet();
+        for (ConcurrentMap<Data, QueryableEntry> dataQueryableEntryConcurrentMap : recordMap.values()) {
+            queryableEntries.addResultSet(dataQueryableEntryConcurrentMap);
+        }
+        return queryableEntries;
     }
 
     @Override
@@ -125,6 +134,11 @@ public class UnsortedIndexStore extends BaseIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public long getRecordCount() {
+        return recordMap.size();
     }
 
     @Override

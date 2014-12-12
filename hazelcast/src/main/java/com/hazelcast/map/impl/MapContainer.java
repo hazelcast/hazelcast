@@ -59,7 +59,7 @@ public class MapContainer extends MapContainerSupport {
 
     private final Map<String, MapInterceptor> interceptorMap;
 
-    private final IndexService indexService = new IndexService();
+    private final IndexService indexService;
 
     private final SizeEstimator nearCacheSizeEstimator;
 
@@ -84,10 +84,15 @@ public class MapContainer extends MapContainerSupport {
         recordFactory = createRecordFactory(nodeEngine);
         initWanReplication(nodeEngine);
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
+        indexService = new IndexService();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheSizeEstimator = createNearCacheSizeEstimator();
         mapStoreContext = createMapStoreContext(this);
         mapStoreContext.start();
+        if(this.getMapConfig().isStatisticsEnabled()) {
+            indexService.enableStatistics();
+        }
+
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {

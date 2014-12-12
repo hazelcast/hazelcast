@@ -516,6 +516,11 @@ public class ListenerTest extends HazelcastTestSupport {
             public boolean apply(Map.Entry<String, String> mapEntry) {
                 return true;
             }
+
+            @Override
+            public boolean isSubSet(Predicate predicate) {
+                return false;
+            }
         };
     }
 
@@ -523,6 +528,11 @@ public class ListenerTest extends HazelcastTestSupport {
         return new Predicate<String, String>() {
             @Override
             public boolean apply(Map.Entry<String, String> mapEntry) {
+                return false;
+            }
+
+            @Override
+            public boolean isSubSet(Predicate predicate) {
                 return false;
             }
         };

@@ -97,8 +97,8 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
+import com.hazelcast.query.impl.predicate.PagingPredicate;
+import com.hazelcast.query.impl.predicate.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
@@ -836,6 +836,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public void addIndex(String attribute, boolean ordered) {
         MapAddIndexRequest request = new MapAddIndexRequest(name, attribute, ordered);
+        invoke(request);
+    }
+
+    @Override
+    public void addIndex(String attribute, boolean ordered, Predicate predicate) {
+        MapAddIndexRequest request = new MapAddIndexRequest(name, attribute, ordered, predicate);
         invoke(request);
     }
 

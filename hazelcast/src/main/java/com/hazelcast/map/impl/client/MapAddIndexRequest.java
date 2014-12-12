@@ -24,9 +24,11 @@ import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
@@ -36,8 +38,14 @@ public class MapAddIndexRequest extends AllPartitionsClientRequest implements Po
     private String name;
     private String attribute;
     private boolean ordered;
+    private Predicate predicate;
 
     public MapAddIndexRequest() {
+    }
+
+    public MapAddIndexRequest(String name, String attribute, boolean ordered, Predicate predicate) {
+        this(name, attribute, ordered);
+        this.predicate = predicate;
     }
 
     public MapAddIndexRequest(String name, String attribute, boolean ordered) {
@@ -73,7 +81,7 @@ public class MapAddIndexRequest extends AllPartitionsClientRequest implements Po
     }
 
     protected OperationFactory createOperationFactory() {
-        return new AddIndexOperationFactory(name, attribute, ordered);
+        return new AddIndexOperationFactory(name, attribute, ordered, predicate);
     }
 
     protected Object reduce(Map<Integer, Object> map) {

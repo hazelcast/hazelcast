@@ -42,7 +42,7 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.predicate.TruePredicate;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -603,6 +603,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException("Predicate should not be null!");
         }
         return queryLocal(predicate, IterationType.KEY, false);
+    }
+
+    @Override
+    public void addIndex(String attribute, boolean ordered) {
+        addIndexInternal(attribute, ordered, null);
+    }
+
+    @Override
+    public void addIndex(String attribute, boolean ordered, Predicate predicate) {
+        ValidationUtil.isNotNull(predicate, "predicate");
+        addIndexInternal(attribute, ordered, predicate);
     }
 
     @Override

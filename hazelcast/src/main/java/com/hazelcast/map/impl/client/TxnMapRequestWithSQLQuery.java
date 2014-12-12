@@ -19,7 +19,7 @@ import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import java.io.IOException;
 
 /**
@@ -40,7 +40,7 @@ public class TxnMapRequestWithSQLQuery extends AbstractTxnMapRequest {
     }
 
     protected Predicate getPredicate() {
-        return new SqlPredicate(predicate);
+        return SqlPredicate.createPredicate(predicate);
     }
 
     public int getClassId() {

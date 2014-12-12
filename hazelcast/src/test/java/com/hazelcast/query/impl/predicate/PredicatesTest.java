@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicate;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.ConnectorPredicate;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
@@ -36,8 +43,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
-import static com.hazelcast.query.Predicates.AndPredicate;
-import static com.hazelcast.query.Predicates.EqualPredicate;
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -57,7 +62,9 @@ import static com.hazelcast.query.SampleObjects.Value;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -78,7 +85,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         map.values(andPredicate);
     }
 
-    static class ShouldExecuteOncePredicate implements IndexAwarePredicate {
+        static class ShouldExecuteOncePredicate implements IndexAwarePredicate {
 
         boolean executed = false;
 
@@ -92,14 +99,20 @@ public class PredicatesTest extends HazelcastTestSupport {
         }
 
         @Override
+        public boolean isSubSet(Predicate predicate) {
+            return false;
+        }
+
+        @Override
         public Set<QueryableEntry> filter(final QueryContext queryContext) {
             return null;
         }
 
         @Override
-        public boolean isIndexed(final QueryContext queryContext) {
+        public boolean isIndexed(QueryContext queryContext) {
             return false;
         }
+
     }
 
     @Test
@@ -134,6 +147,247 @@ public class PredicatesTest extends HazelcastTestSupport {
         final Predicate or1 = or(equal(null, 3), equal(null, 4), equal(null, 5));
         assertPredicateTrue(or1, 4);
         assertPredicateFalse(or1, 6);
+    }
+
+    @Test
+    public void testAndIsSubset_whenComplexPredicate() {
+        ConnectorPredicate and = new AndPredicate(equal(null, 3),
+                and(equal(null, 10), notEqual(null, 15), or(equal(null, 44), notEqual(null, 45)),
+                                and(equal(null, 4), equal(null, 5))),
+                equal(null, 99));
+
+        assertTrue(and.contains(notEqual(null, 15)));
+        assertTrue(and.contains(equal(null, 99)));
+        assertTrue(and.contains(and(equal(null, 4), equal(null, 5))));
+        assertTrue(and.contains(or(equal(null, 44), notEqual(null, 45))));
+
+        assertFalse(and.contains(notEqual(null, 45)));
+        assertFalse(and.contains(and(equal(null, 4), equal(null, 5), equal(null, 6))));
+        assertFalse(and.contains(and(equal(null, 1), equal(null, 6))));
+        assertFalse(and.contains(notEqual(null, 11)));
+    }
+
+    @Test
+    public void testIsOrSubset_whenComplexPredicate() {
+        Predicate and1 = and(equal(null, 10), notEqual(null, 15), or(equal(null, 44), notEqual(null, 45)),
+                and(equal(null, 4), equal(null, 5)));
+        ConnectorPredicate or = new OrPredicate(equal(null, 3),
+                and1,
+                equal(null, 99), or(equal(null, 1), equal(null, 5)));
+
+        assertTrue(or.contains(equal(null, 99)));
+        assertTrue(or.contains(equal(null, 99)));
+        assertTrue(or.contains(equal(null, 3)));
+        assertTrue(or.contains(and1));
+        assertTrue(or.contains(or(equal(null, 1), equal(null, 5))));
+
+        assertFalse(or.contains(or(equal(null, 3), notEqual(null, 99))));
+        assertFalse(or.contains(notEqual(null, 15)));
+        assertFalse(or.contains(or(equal(null, 44), notEqual(null, 45))));
+        assertFalse(or.contains(and(equal(null, 4), equal(null, 5))));
+        assertFalse(or.contains(notEqual(null, 44)));
+        assertFalse(or.contains(notEqual(null, 45)));
+    }
+
+    @Test
+    public void testEqualPredicateEquals() {
+        assertTrue(equal("a", 4).equals(equal("a", 4)));
+        assertFalse(equal("a", 3).equals(equal("a", 4)));
+        assertFalse(equal("a", 3).equals(equal("b", 4)));
+        assertFalse(equal(null, 3).equals(equal("a", 4)));
+        assertFalse(equal(null, 3).equals(equal(null, 4)));
+        assertFalse(equal(null, 3).equals(equal(null, 4)));
+        assertTrue(equal(null, 4).equals(equal(null, 4)));
+    }
+
+    @Test
+    public void testNotEqualPredicateEquals() {
+        assertTrue(notEqual("a", 4).equals(notEqual("a", 4)));
+        assertFalse(notEqual("a", 3).equals(notEqual("a", 4)));
+        assertFalse(notEqual("a", 3).equals(notEqual("b", 4)));
+        assertFalse(notEqual(null, 3).equals(notEqual("a", 4)));
+        assertFalse(notEqual(null, 3).equals(notEqual(null, 4)));
+        assertFalse(notEqual(null, 3).equals(notEqual(null, 4)));
+        assertTrue(notEqual(null, 4).equals(notEqual(null, 4)));
+    }
+
+    @Test
+    public void testBetweenPredicateEquals() {
+        assertTrue(between("a", 4, 6).equals(between("a", 4, 6)));
+        assertFalse(between("b", 4, 6).equals(between("a", 4, 6)));
+        assertFalse(between("a", 4, 7).equals(between("a", 4, 6)));
+        assertFalse(between("a", 4, 6).equals(between("a", 5, 6)));
+        assertFalse(between("b", 3, 6).equals(between("a", 5, 5)));
+        assertTrue(between(null, 3, 6).equals(between(null, 3, 6)));
+        assertFalse(between("a", 5, 5).equals(between(null, 5, 5)));
+        assertFalse(between(null, 5, 5).equals(between("a", 5, 5)));
+    }
+
+    @Test
+    public void testLikePredicateEquals() {
+        assertEquals(like("a", "ff%"), like("a", "ff%"));
+        assertNotEquals(like("a", "ff%"), like("a", "f%"));
+        assertNotEquals(like("a", "ff%"), like("b", "ff%"));
+        assertNotEquals(like(null, "ff%"), like("b", "ff%"));
+        assertEquals(like(null, "ff%"), like(null, "ff%"));
+    }
+
+    @Test
+    public void testILikePredicateEquals() {
+        assertEquals(ilike("a", "ff%"), ilike("a", "ff%"));
+        assertNotEquals(ilike("a", "ff%"), ilike("a", "f%"));
+        assertNotEquals(ilike("a", "ff%"), ilike("b", "ff%"));
+        assertNotEquals(ilike(null, "ff%"), ilike("b", "ff%"));
+        assertEquals(ilike(null, "ff%"), ilike(null, "ff%"));
+    }
+
+    @Test
+    public void testInPredicateEquals() {
+        assertEquals(in("attr", "a", "b"), in("attr", "a", "b"));
+        assertEquals(in("attr", "b", "a"), in("attr", "b", "a"));
+        assertNotEquals(in("attr", "b", "a", "b"), in("attr", "b", "a"));
+        assertEquals(in("attr"), in("attr"));
+        assertNotEquals(in("attr", "a"), in("attr", "ab"));
+        assertNotEquals(in("attr", "a"), in("attr", "a", "b"));
+        assertNotEquals(in("attr", "c", "d"), in("attr", "a", "b"));
+    }
+
+    @Test
+    public void testInstanceOfPredicateEquals() {
+        assertEquals(instanceOf(Long.class), instanceOf(Long.class));
+        assertNotEquals(instanceOf(Long.class), instanceOf(Number.class));
+        assertNotEquals(instanceOf(Long.class), instanceOf(String.class));
+    }
+
+    @Test
+    public void testAndPredicateEquals() {
+        // todo: null argument
+        assertEquals(and(greaterEqual("a", 4), instanceOf(Long.class)), and(greaterEqual("a", 4), instanceOf(Long.class)));
+        assertEquals(and(greaterEqual("a", 4), and(instanceOf(Long.class), instanceOf(Object.class))),
+                     and(greaterEqual("a", 4), and(instanceOf(Object.class), instanceOf(Long.class))));
+        assertEquals(and(greaterEqual("a", 4), or(instanceOf(Long.class), instanceOf(Object.class))),
+                and(greaterEqual("a", 4), or(instanceOf(Object.class), instanceOf(Long.class))));
+        assertEquals(and(greaterEqual("a", 4), instanceOf(Long.class)),
+                and(greaterEqual("a", 4), instanceOf(Long.class)));
+    }
+
+    @Test
+    public void testOrPredicateEquals() {
+        // todo: null argument
+        assertEquals(or(greaterEqual("a", 4), instanceOf(Long.class)), or(greaterEqual("a", 4), instanceOf(Long.class)));
+        assertEquals(or(greaterEqual("a", 4), or(instanceOf(Long.class), instanceOf(Object.class))),
+                     or(greaterEqual("a", 4), or(instanceOf(Object.class), instanceOf(Long.class))));
+        assertEquals(or(greaterEqual("a", 4), instanceOf(Long.class)),
+                or(greaterEqual("a", 4), instanceOf(Long.class)));
+        assertEquals(or(greaterEqual("a", 4), instanceOf(Long.class)),
+                or(greaterEqual("a", 4), instanceOf(Long.class)));
+    }
+
+    @Test
+    public void testSqlPredicateEquals() {
+        assertEquals(SqlPredicate.createPredicate("a=5"), SqlPredicate.createPredicate("a=5"));
+        assertEquals(SqlPredicate.createPredicate("a=5 and B='test'"), SqlPredicate.createPredicate("a=5 and B='test'"));
+        assertEquals(SqlPredicate.createPredicate("a=5 and (B='test' or c=4)"), SqlPredicate.createPredicate("a=5 and (B='test' or c=4)"));
+        assertNotEquals(SqlPredicate.createPredicate("a=5 and (B='test' or c=4)"), SqlPredicate.createPredicate("a=5 and (B='test' and c=4)"));
+        assertNotEquals(SqlPredicate.createPredicate("a=5"), SqlPredicate.createPredicate("a=4"));
+    }
+
+    @Test
+    public void testPredicateBuilderEquals() {
+        PredicateBuilder pb = new PredicateBuilder();
+        EntryObject eo = pb.getEntryObject();
+        eo.get("test").equal(4);
+        eo.get("test2").equal(5);
+
+        PredicateBuilder pb1 = new PredicateBuilder();
+        EntryObject eo1 = pb1.getEntryObject();
+        eo1.get("test").equal(4);
+        eo1.get("test2").equal(5);
+
+        PredicateBuilder predicateBuilder = new PredicateBuilder();
+        predicateBuilder.getEntryObject().get("attr").between(5,6);
+
+        assertEquals(pb1.build(), pb.build());
+        assertEquals(pb1.and(eo1.get("rand").equal(5)).build(), pb.and(eo.get("rand").equal(5)).build());
+//        assertNotEquals(pb1.build(), pb.and(eo.get("rand").equal(5)).build());
+    }
+
+    @Test
+    public void testGreaterLessPredicateEquals() {
+        assertEquals(greaterEqual("a", 4), greaterEqual("a", 4));
+        assertNotEquals(greaterEqual("a", 5), greaterEqual("a", 4));
+        assertNotEquals(greaterEqual("b", 4), greaterEqual("a", 4));
+        assertNotEquals(greaterEqual(null, 4), greaterEqual("a", 4));
+        assertEquals(greaterEqual(null, 4), greaterEqual(null, 4));
+
+        assertEquals(greaterThan("a", 4), greaterThan("a", 4));
+        assertNotEquals(greaterThan("a", 5), greaterThan("a", 4));
+        assertNotEquals(greaterThan("b", 4), greaterThan("a", 4));
+        assertNotEquals(greaterThan(null, 4), greaterThan("a", 4));
+        assertEquals(greaterThan(null, 4), greaterThan(null, 4));
+
+        assertEquals(lessEqual("a", 4), lessEqual("a", 4));
+        assertNotEquals(lessEqual("a", 5), lessEqual("a", 4));
+        assertNotEquals(lessEqual("b", 4), lessEqual("a", 4));
+        assertNotEquals(lessEqual(null, 4), lessEqual("a", 4));
+        assertEquals(lessEqual(null, 4), lessEqual(null, 4));
+
+        assertEquals(lessThan("a", 4), lessThan("a", 4));
+        assertNotEquals(lessThan("a", 5), lessThan("a", 4));
+        assertNotEquals(lessThan("b", 4), lessThan("a", 4));
+        assertNotEquals(lessThan(null, 4), lessThan("a", 4));
+        assertEquals(lessThan(null, 4), lessThan(null, 4));
+    }
+
+    @Test
+    public void testPredicateIn() {
+        assertTrue(between(null, 15, 20).isSubSet(between(null, 12, 20)));
+        assertTrue(in("gg", 4, 20, 5).isSubSet(in("gg", 4, 5, 20, 89)));
+        assertTrue(greaterThan(null, 15).isSubSet(greaterThan(null, 10)));
+        assertTrue(greaterEqual(null, 99).isSubSet(greaterEqual(null, 99)));
+        assertTrue(lessThan(null, 97).isSubSet(lessThan(null, 98)));
+        assertTrue(lessEqual(null, 97).isSubSet(lessEqual(null, 100)));
+    }
+
+    @Test
+    public void testPredicateSqlContains() {
+        Predicate sqlPredicate = SqlPredicate.createPredicate("(((disabled_for_upload != true AND media_id != -1) AND qc_approval_media_state != 22) AND proxy_creation_state=14) AND content_approval_media_state != 18");
+        Predicate sqlPredicate1 = SqlPredicate.createPredicate("qc_approval_media_state != 22");
+        assertTrue(((ConnectorPredicate) sqlPredicate).contains(sqlPredicate1));
+    }
+
+    @Test
+    public void testPredicateBuilderSubset() {
+        EntryObject eo = new PredicateBuilder().getEntryObject();
+        Predicate p0 = eo
+                .isNot("disabled_for_upload")
+                .and(eo.get("media_id").notEqual(-1))
+                .and(eo.get("qc_approval_media_state").notEqual(22))
+                .and(eo.get("proxy_creation_state").equal(14))
+                .and(eo.get("content_approval_media_state").notEqual(18))
+                .and(eo.isNot("inactive")).build();
+
+        EntryObject eo1 = new PredicateBuilder().getEntryObject();
+        Predicate p1 = eo1
+                .get("quality_check_state").equal(12)
+                .and(eo1.get("clock_approval_media_state").notEqual(42))
+                .and(eo1.get("class_approval_media_state").notEqual(72)).build();
+
+        AndPredicate andPredicate = new AndPredicate(p1, p0);
+        assertTrue(andPredicate.contains(p1));
+        assertEquals(andPredicate.subtract(p1), p0);
+    }
+
+    @Test
+    public void tesConnectorPredicateEqual_whenMixedOrder() {
+        Predicate and0 = and(equal(null, 3),
+                and(equal(null, 10), notEqual(null, 15), equal(null, 4), equal(null, 5)),
+                equal(null, 99));
+        Predicate and1 = and(equal(null, 99),
+                and(equal(null, 10), equal(null, 4),  notEqual(null, 15), equal(null, 5)),
+                equal(null, 3));
+
+        assertTrue(and0.equals(and1));
     }
 
     @Test
@@ -246,10 +500,10 @@ public class PredicatesTest extends HazelcastTestSupport {
         Object value = new Employee(12, "abc-123-xvz", 34, true, 10D);
         EntryObject e = new PredicateBuilder().getEntryObject();
         EntryObject e2 = e.get("age");
-        Predicate predicate = e2.greaterEqual(29).and(e2.lessEqual(36));
+        Predicate predicate = e2.greaterEqual(29).and(e2.lessEqual(36)).build();
         assertTrue(predicate.apply(createEntry("1", value)));
         e = new PredicateBuilder().getEntryObject();
-        assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
+        assertTrue(e.get("id").equal(12).build().apply(createEntry("1", value)));
     }
 
     @Test(expected = NullPointerException.class)
@@ -279,7 +533,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testInNullWithNullArray() {
-        Predicates.in("", null);
+        in("", null);
     }
 
     private class DummyEntry extends QueryEntry {

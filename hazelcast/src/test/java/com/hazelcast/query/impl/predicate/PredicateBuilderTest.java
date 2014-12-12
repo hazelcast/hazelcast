@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicate;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,7 +45,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
-        Predicate predicate = e.key().get("id").equal("10").and(e.get("name").equal("value1"));
+        Predicate predicate = e.key().get("id").equal("10").and(e.get("name").equal("value1")).build();
 
         IMap<Id, Value> hazelcastLookupMap = hz.getMap("somemap");
 
@@ -62,7 +64,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
-        Predicate predicate = e.key().equal(10L);
+        Predicate predicate = e.key().equal(10L).build();
 
         IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("somemap");
 
@@ -80,7 +82,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
-        Predicate predicate = e.get("this").equal(1L);
+        Predicate predicate = e.get("this").equal(1L).build();
 
         IMap<Integer, Integer> hazelcastLookupMap = hz.getMap("somemap");
 
@@ -98,7 +100,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
-        Predicate predicate = e.get("id").equal("10");
+        Predicate predicate = e.get("id").equal("10").build();
 
         IMap<Integer, Id> hazelcastLookupMap = hz.getMap("somemap");
 

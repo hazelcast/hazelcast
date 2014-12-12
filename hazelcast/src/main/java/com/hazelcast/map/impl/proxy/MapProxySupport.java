@@ -87,9 +87,9 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.predicate.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.predicate.TruePredicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -162,7 +162,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     private void initializeIndexes() {
         for (MapIndexConfig index : getMapConfig().getMapIndexConfigs()) {
             if (index.getAttribute() != null) {
-                addIndex(index.getAttribute(), index.isOrdered());
+                addIndexInternal(index.getAttribute(), index.isOrdered(), index.getPredicate());
             }
         }
     }
@@ -1060,13 +1060,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return getMapQuerySupport().query(name, predicate, iterationType, dataResult);
     }
 
-    public void addIndex(final String attribute, final boolean ordered) {
+    public void addIndexInternal(final String attribute, final boolean ordered, Predicate predicate) {
         final NodeEngine nodeEngine = getNodeEngine();
-        if (attribute == null) {
-            throw new IllegalArgumentException("Attribute name cannot be null");
+        // todo: this is not the desirable way, maybe we should create FilterPredicate interface and use it in signature.
+        if (predicate instanceof PagingPredicate) {
+            throw new IllegalArgumentException("PagingPredicate is not allowed as index condition.");
         }
+
         try {
-            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered, predicate);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, nodeEngine));
         } catch (Throwable t) {

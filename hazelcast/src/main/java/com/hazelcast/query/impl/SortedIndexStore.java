@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.resultset.MultiResultSet;
 
 import java.util.Map;
 import java.util.Set;
@@ -162,6 +163,21 @@ public class SortedIndexStore extends BaseIndexStore {
         } finally {
             releaseReadLock();
         }
+    }
+
+    @Override
+    public Set<QueryableEntry> getRecords() {
+        // todo: too expensive?
+        MultiResultSet queryableEntries = new MultiResultSet();
+        for (ConcurrentMap<Data, QueryableEntry> dataQueryableEntryConcurrentMap : recordMap.values()) {
+            queryableEntries.addResultSet(dataQueryableEntryConcurrentMap);
+        }
+        return queryableEntries;
+    }
+
+    @Override
+    public long getRecordCount() {
+        return recordMap.size();
     }
 
     @Override

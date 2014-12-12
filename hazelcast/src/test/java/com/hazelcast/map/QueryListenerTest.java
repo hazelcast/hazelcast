@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -122,6 +122,11 @@ public class QueryListenerTest extends HazelcastTestSupport {
                 return true;
             return false;
         }
+
+        @Override
+        public boolean isSubSet(Predicate predicate) {
+            return false;
+        }
     }
 
     @Test
@@ -143,7 +148,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
             }
         };
 
-        Predicate predicate = new SqlPredicate("age >= 50");
+        Predicate predicate = SqlPredicate.createPredicate("age >= 50");
         map.addEntryListener(listener, predicate, null, false);
         int size = 100;
         for (int i = 0; i < size; i++) {

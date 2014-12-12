@@ -20,7 +20,7 @@ import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.predicate.SqlPredicate;
 import com.hazelcast.util.IterationType;
 import java.io.IOException;
 
@@ -38,7 +38,7 @@ public final class MapSQLQueryRequest extends AbstractMapQueryRequest {
 
     @Override
     protected Predicate getPredicate() {
-        return new SqlPredicate(sql);
+        return SqlPredicate.createPredicate(sql);
     }
 
     public int getClassId() {

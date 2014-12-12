@@ -16,17 +16,9 @@
 
 package com.hazelcast.query;
 
-import java.util.Map;
-
 /**
- * This class provides paging accessor of predicate.
+ * A generic type of predicate that is applied to an attribute.
  */
-public final class PagingPredicateAccessor {
-
-    private PagingPredicateAccessor() {
-    }
-
-    public static void setPagingPredicateAnchor(PagingPredicate predicate, Map.Entry anchor) {
-        predicate.setAnchor(anchor);
-    }
+public interface AttributePredicate extends Predicate {
+    String getAttribute();
 }
