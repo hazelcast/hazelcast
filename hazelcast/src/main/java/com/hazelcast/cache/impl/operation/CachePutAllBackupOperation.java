@@ -63,7 +63,7 @@ public class CachePutAllBackupOperation
             throws Exception {
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                cache.setRecord(entry.getKey(), entry.getValue());
+                cache.putRecord(entry.getKey(), entry.getValue());
             }
         }
     }
