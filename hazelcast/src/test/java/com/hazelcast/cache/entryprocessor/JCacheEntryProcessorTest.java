@@ -21,9 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -56,7 +54,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings("ALL")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JCacheEntryProcessorTest extends HazelcastTestSupport {
@@ -238,7 +235,7 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private void executeEntryProcessor(Integer key, EntryProcessor entryProcessor, String cacheName) {
+    private void executeEntryProcessor(Integer key, EntryProcessor<Integer, String, Void> entryProcessor, String cacheName) {
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
         CacheManager cacheManager = cachingProvider.getCacheManager();
 
@@ -258,16 +255,6 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
             fail("CacheRecordStore not yet initialized!!!");
         }
         return null;
-    }
-
-    private boolean isOwnerNode(Integer key, HazelcastInstance node) {
-        final PartitionService partitionService = node.getPartitionService();
-        final Partition partition = partitionService.getPartition(key);
-        final Cluster cluster = node.getCluster();
-        final Member localMember = cluster.getLocalMember();
-        final Member owner = partition.getOwner();
-
-        return localMember.equals(owner);
     }
 
     private static void setUpInternal() throws NoSuchFieldException, IllegalAccessException {
