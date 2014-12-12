@@ -24,7 +24,7 @@ public class GroupMismatchOperation extends AbstractClusterOperation
                 + " Cause: the target cluster has a different group-name");
 
         Node node = nodeEngine.getNode();
-        node.getJoiner().blacklist(getCallerAddress());
+        node.getJoiner().blacklist(getCallerAddress(), true);
     }
 }
 

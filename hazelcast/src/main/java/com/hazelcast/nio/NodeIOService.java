@@ -144,9 +144,16 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public void onSuccessfulConnection(Address address) {
+        if (!node.joined()) {
+            node.getJoiner().unblacklist(address);
+        }
+    }
+
+    @Override
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
-            node.getJoiner().blacklist(address);
+            node.getJoiner().blacklist(address, false);
         }
     }
 

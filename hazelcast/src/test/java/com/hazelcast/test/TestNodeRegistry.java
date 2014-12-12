@@ -331,7 +331,12 @@ final class TestNodeRegistry {
             }
 
             @Override
-            public void blacklist(Address callerAddress) {
+            public void blacklist(Address address, boolean permanent) {
+            }
+
+            @Override
+            public boolean unblacklist(Address address) {
+                return false;
             }
 
             @Override
