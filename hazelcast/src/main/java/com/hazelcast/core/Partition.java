@@ -17,19 +17,19 @@
 package com.hazelcast.core;
 
 /**
- * In Hazelcast the data is split up in partitions. By default 271 and configurable through the 'hazelcast.partition.count'
+ * In Hazelcast the data is split up in partitions: by default, 271 and configurable through the 'hazelcast.partition.count'
  * GroupProperty. Each partition is owned by one member and the ownership can change if members join or leave the cluster.
  *
- * Using this Partition object, you get access to who is the owner of a given partition. This object is not a DTO; so it will
+ * Using this Partition object, you get access to who is the owner of a given partition. This object is not a DTO, so it will
  * be updated when a member changes ownership.
  */
 public interface Partition {
 
     /**
-     * Returns id of the partition. This value will never change and will always be equal or larger than 0 and smaller
+     * Returns the id of the partition. This value will never change and will always be greater to  or equal to 0 and smaller
      * than the partition-count.
      *
-     * @return id of the partition
+     * @return the id of the partition
      */
     int getPartitionId();
 
@@ -40,7 +40,7 @@ public interface Partition {
      *
      * It can be that null is returned if the owner of a partition has not been established.
      *
-     * @return owner member of the partition
+     * @return the owner member of the partition
      */
     Member getOwner();
 }
