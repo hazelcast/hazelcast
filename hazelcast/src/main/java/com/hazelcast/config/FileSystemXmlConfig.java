@@ -27,7 +27,7 @@ import java.util.Properties;
 
 
 /**
- * A {@link Config} which is  which includes functionality for loading itself from a
+ * A {@link Config} which includes functionality for loading itself from a
  * XML configuration file.
  */
 public class FileSystemXmlConfig extends Config {
@@ -35,10 +35,10 @@ public class FileSystemXmlConfig extends Config {
     private static final ILogger LOGGER = Logger.getLogger(FileSystemXmlConfig.class);
 
     /**
-     * Creates a Config based on some Hazelcast xml file and uses the System.properties to resolve
+     * Creates a Config based on a Hazelcast xml file and uses the System.properties to resolve
      * variables in the XML.
      *
-     * @param configFilename the path of the file.
+     * @param configFilename the path of the Hazelcast xml configuration file.
      * @throws NullPointerException                  if configFilename is null.
      * @throws FileNotFoundException                 fi the file is not found.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
@@ -49,10 +49,10 @@ public class FileSystemXmlConfig extends Config {
 
 
     /**
-     * Creates a Config based on some Hazelcast xml file.
+     * Creates a Config based on a Hazelcast xml file.
      *
-     * @param configFilename the path of the file.
-     * @param properties     the Properties to use to resolve variables in the XML.
+     * @param configFilename the path of the Hazelcast xml configuration file.
+     * @param properties     the Properties to resolve variables in the XML.
      * @throws FileNotFoundException                 fi the file is not found.
      * @throws NullPointerException                  if configFilename is null.
      * @throws IllegalArgumentException              if properties is null.
@@ -66,7 +66,7 @@ public class FileSystemXmlConfig extends Config {
      * Creates a Config based on a Hazelcast xml file and uses the System.properties to resolve
      * variables in the XML.
      *
-     * @param configFile the configuration file.
+     * @param configFile the path of the Hazelcast xml configuration file.
      * @throws FileNotFoundException                 if the file doesn't exist.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
@@ -77,7 +77,7 @@ public class FileSystemXmlConfig extends Config {
     /**
      * Creates a Config based on a Hazelcast xml file.
      *
-     * @param configFile the configuration file.
+     * @param configFile the path of the Hazelcast xml configuration file.
      * @param properties the Properties to resolve variables in the XML.
      * @throws IllegalArgumentException              if configFile or properties is null.
      * @throws FileNotFoundException                 if the file doesn't exist.
