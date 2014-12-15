@@ -127,8 +127,8 @@ public class TransactionListTest extends HazelcastTestSupport {
             instance2.shutdown();
             aliveInstance = instance1;
         }
-        IList<Object> l = aliveInstance.getList(listName);
         waitClusterForSafeState(aliveInstance);
+        IList<Object> l = aliveInstance.getList(listName);
         for (int i = 0; i < 10; i++) {
             assertEquals(i, l.get(i));
         }
