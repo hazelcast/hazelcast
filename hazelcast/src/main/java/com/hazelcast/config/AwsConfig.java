@@ -27,10 +27,10 @@ import static com.hazelcast.util.ValidationUtil.hasText;
  * <h1>Filtering</h1>
  * There are 2 mechanisms for filtering out AWS instances and these mechanisms can be combined (AND).
  * <ol>
- * <li>If a securityGroup is configured only instanced within that security group are selected.
+ * <li>If a securityGroup is configured, only instances within that security group are selected.
  * </li>
  * <li>
- * If a tag key/value is set only instances with that tag key/value will be selected.
+ * If a tag key/value is set, only instances with that tag key/value will be selected.
  * </li>
  * </ol>
  * <p/>
@@ -54,7 +54,7 @@ public class AwsConfig {
     /**
      * Gets the access key to access AWS. Returns null if no access key is configured.
      *
-     * @return the access key.
+     * @return the access key to access AWS
      * @see #setAccessKey(String)
      */
     public String getAccessKey() {
@@ -64,7 +64,7 @@ public class AwsConfig {
     /**
      * Sets the access key to access AWS.
      *
-     * @param accessKey the access key.
+     * @param accessKey the access key to access AWS
      * @return the updated AwsConfig.
      * @throws IllegalArgumentException if accessKey is null or empty.
      * @see #getAccessKey()
@@ -88,7 +88,7 @@ public class AwsConfig {
     /**
      * Sets the secret key to access AWS.
      *
-     * @param secretKey the secret key
+     * @param secretKey the secret key to access AWS
      * @return the updated AwsConfig.
      * @throw IllegalArgumentException if secretKey is null or empty.
      * @see #getSecretKey()
@@ -102,7 +102,7 @@ public class AwsConfig {
     /**
      * Gets the region where the EC2 instances running the Hazelcast members will be running.
      *
-     * @return the region
+     * @return the region where the EC2 instances running the Hazelcast members will be running
      * @see #setRegion(String)
      */
     public String getRegion() {
@@ -112,7 +112,7 @@ public class AwsConfig {
     /**
      * Sets the region where the EC2 instances running the Hazelcast members will be running.
      *
-     * @param region the region
+     * @param region the region where the EC2 instances running the Hazelcast members will be running
      * @return the updated AwsConfig
      * @throws IllegalArgumentException if region is null or empty.
      */
@@ -122,18 +122,18 @@ public class AwsConfig {
     }
 
     /**
-     * Gets the host header; the address the EC2 API can be found.
+     * Gets the host header; the address where the EC2 API can be found.
      *
-     * @return the host header.
+     * @return the host header; the address where the EC2 API can be found
      */
     public String getHostHeader() {
         return hostHeader;
     }
 
     /**
-     * Sets the host header; the address the EC2 API can be found.
+     * Sets the host header; the address where the EC2 API can be found.
      *
-     * @param hostHeader the new host header
+     * @param hostHeader the new host header; the address where the EC2 API can be found
      * @return the updated AwsConfig
      * @throws IllegalArgumentException if hostHeader is null or an empty string.
      */
@@ -163,7 +163,7 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the security group name. See the filtering section for more information.
+     * Sets the security group name. See the filtering section above for more information.
      *
      * @param securityGroupName the security group name.
      * @return the updated AwsConfig.
@@ -177,16 +177,16 @@ public class AwsConfig {
     /**
      * Gets the security group name. If nothing has been configured, null is returned.
      *
-     * @return the security group name
+     * @return the security group name; null if nothing has been configured
      */
     public String getSecurityGroupName() {
         return securityGroupName;
     }
 
     /**
-     * Sets the tag key. See the filtering section for more information.
+     * Sets the tag key. See the filtering section above for more information.
      *
-     * @param tagKey the tag key.
+     * @param tagKey the tag key. See the filtering section above for more information.
      * @return the updated AwsConfig.
      * @see #setTagKey(String)
      */
@@ -196,9 +196,9 @@ public class AwsConfig {
     }
 
     /**
-     * Sets the tag value. see the filtering section for more information.
+     * Sets the tag value. See the filtering section above for more information.
      *
-     * @param tagValue the tag value.
+     * @param tagValue the tag value. See the filtering section above for more information.
      * @return the updated AwsConfig.
      * @see #setTagKey(String)
      * @see #getTagValue()
@@ -209,18 +209,18 @@ public class AwsConfig {
     }
 
     /**
-     * Gets the tag key; if nothing is specified null is returned.
+     * Gets the tag key. If nothing is specified, null is returned.
      *
-     * @return the tag key.
+     * @return the tag key. null if nothing is returned.
      */
     public String getTagKey() {
         return tagKey;
     }
 
     /**
-     * Gets the tag value. If nothing is specified null is returned.
+     * Gets the tag value. If nothing is specified, null is returned.
      *
-     * @return the tag value.
+     * @return the tag value. null if nothing is returned.
      */
     public String getTagValue() {
         return tagValue;
@@ -229,7 +229,7 @@ public class AwsConfig {
     /**
      * Gets the connection timeout in seconds.
      *
-     * @return the connectionTimeoutSeconds
+     * @return the connectionTimeoutSeconds; connection timeout in seconds
      * @see #setConnectionTimeoutSeconds(int)
      */
     public int getConnectionTimeoutSeconds() {
@@ -239,7 +239,7 @@ public class AwsConfig {
     /**
      * Sets the connect timeout in seconds. See {@link TcpIpConfig#setConnectionTimeoutSeconds(int)} for more information.
      *
-     * @param connectionTimeoutSeconds the connectionTimeoutSeconds to set
+     * @param connectionTimeoutSeconds the connectionTimeoutSeconds (connection timeout in seconds) to set
      * @return the updated AwsConfig.
      * @see #getConnectionTimeoutSeconds()
      * @see TcpIpConfig#setConnectionTimeoutSeconds(int)
