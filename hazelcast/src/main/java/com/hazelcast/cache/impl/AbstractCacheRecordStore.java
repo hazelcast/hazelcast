@@ -735,17 +735,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return records.remove(key);
     }
 
-    protected void onGet(Data key, ExpiryPolicy expiryPolicy, Object value, R record) {
+    protected void onGet(Data key, Object value, R record) {
     }
 
-    protected void onGetError(Data key, ExpiryPolicy expiryPolicy, Object value,
-            R record, Throwable error) {
+    protected void onGetError(Data key, Object value, R record, Throwable error) {
     }
 
     @Override
-    public Object get(Data key, ExpiryPolicy expiryPolicy) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
-
+    public Object get(Data key) {
         long now = Clock.currentTimeMillis();
         Object value = null;
         R record = records.get(key);
@@ -760,21 +757,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 if (value == null) {
                     return null;
                 }
-                record = createRecordWithExpiry(key, value, expiryPolicy, now,
+                record = createRecordWithExpiry(key, value, defaultExpiryPolicy, now,
                         true, IGNORE_COMPLETION);
             } else {
                 value = recordToValue(record);
-                onRecordAccess(record, expiryPolicy, now);
+                onRecordAccess(record, defaultExpiryPolicy, now);
                 if (isStatisticsEnabled()) {
                     statistics.increaseCacheHits(1);
                 }
             }
 
-            onGet(key, expiryPolicy, value, record);
+            onGet(key, value, record);
 
             return value;
         } catch (Throwable error) {
-            onGetError(key, expiryPolicy, value, record, error);
+            onGetError(key, value, record, error);
             throw ExceptionUtil.rethrow(error);
         }
     }
@@ -1213,13 +1210,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
-        //we don not call loadAll. shouldn't we ?
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
+    public MapEntrySet getAll(Set<Data> keySet) {
+        // TODO we don not call loadAll. shouldn't we ?
 
         final MapEntrySet result = new MapEntrySet();
         for (Data key : keySet) {
-            final Object value = get(key, expiryPolicy);
+            final Object value = get(key);
             if (value != null) {
                 result.add(key, toHeapData(value));
             }

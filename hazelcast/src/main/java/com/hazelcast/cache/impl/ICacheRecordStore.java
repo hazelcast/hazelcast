@@ -55,10 +55,9 @@ public interface ICacheRecordStore {
      * is called in an attempt to load the entry.
      * </p>
      * @param key the key whose associated value is to be returned.
-     * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @return the element, or null, if it does not exist.
      */
-    Object get(Data key, ExpiryPolicy expiryPolicy);
+    Object get(Data key);
 
     /**
      * Associates the specified value with the specified key in this cache,
@@ -282,11 +281,10 @@ public interface ICacheRecordStore {
      * the returned Map.
      *
      * @param keySet keys whose associated values are to be returned.
-     * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @return A simple wrapper for map of entries that were found for the given keys. Keys not found
      *         in the cache are not in the result.
      */
-    MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
+    MapEntrySet getAll(Set<Data> keySet);
 
     /**
      *  Calculates the entry size of this store which reflects the partition size of the cache.

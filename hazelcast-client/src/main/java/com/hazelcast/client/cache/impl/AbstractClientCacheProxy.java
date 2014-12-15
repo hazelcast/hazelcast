@@ -64,11 +64,6 @@ abstract class AbstractClientCacheProxy<K, V>
     //region ICACHE: JCACHE EXTENSION
     @Override
     public ICompletableFuture<V> getAsync(K key) {
-        return getAsync(key, null);
-    }
-
-    @Override
-    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
         final Data keyData = toData(key);
@@ -76,7 +71,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
+        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
         ClientCallFuture future;
         final ClientContext context = clientContext;
         try {
@@ -173,8 +168,8 @@ abstract class AbstractClientCacheProxy<K, V>
     }
 
     @Override
-    public V get(K key, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAsync(key, expiryPolicy);
+    public V get(K key) {
+        final Future<V> f = getAsync(key);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -183,7 +178,7 @@ abstract class AbstractClientCacheProxy<K, V>
     }
 
     @Override
-    public Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+    public Map<K, V> getAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
         if (keys.isEmpty()) {
@@ -198,7 +193,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keySet.isEmpty()) {
             return result;
         }
-        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
+        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet);
         final MapEntrySet mapEntrySet = toObject(invoke(request));
         final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Map.Entry<Data, Data> dataEntry : entrySet) {

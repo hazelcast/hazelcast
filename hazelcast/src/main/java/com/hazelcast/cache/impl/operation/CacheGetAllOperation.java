@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,19 +32,17 @@ import java.util.Set;
  * Gets all keys from the cache.
  * <p>{@link com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory} creates this operation.</p>
  * <p>Functionality: Filters out the partition keys and calls
- * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAll(java.util.Set, javax.cache.expiry.ExpiryPolicy)}</p>
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAll(java.util.Set)}</p>
  */
 public class CacheGetAllOperation
         extends PartitionWideCacheOperation
         implements ReadonlyOperation {
 
     private Set<Data> keys = new HashSet<Data>();
-    private ExpiryPolicy expiryPolicy;
 
-    public CacheGetAllOperation(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
+    public CacheGetAllOperation(String name, Set<Data> keys) {
         super(name);
         this.keys = keys;
-        this.expiryPolicy = expiryPolicy;
     }
 
     public CacheGetAllOperation() {
@@ -62,7 +59,7 @@ public class CacheGetAllOperation
                 partitionKeySet.add(key);
             }
         }
-        response = cache.getAll(partitionKeySet, expiryPolicy);
+        response = cache.getAll(partitionKeySet);
     }
 
     @Override
@@ -72,7 +69,7 @@ public class CacheGetAllOperation
 
     @Override
     public String toString() {
-        return "CacheGetAllOperation{" + "keys:" + keys.toString() + "expiryPolicy:" + expiryPolicy + '}';
+        return "CacheGetAllOperation{" + "keys:" + keys.toString() + '}';
     }
 
     @Override
@@ -80,7 +77,6 @@ public class CacheGetAllOperation
             throws IOException {
         //TODO not used validate and remove !!
         super.writeInternal(out);
-        out.writeObject(expiryPolicy);
         if (keys == null) {
             out.writeInt(-1);
         } else {
@@ -96,7 +92,6 @@ public class CacheGetAllOperation
             throws IOException {
         //TODO not used validate and remove !!
         super.readInternal(in);
-        expiryPolicy = in.readObject();
         int size = in.readInt();
         if (size > -1) {
             for (int i = 0; i < size; i++) {
