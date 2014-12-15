@@ -36,7 +36,7 @@ public class ClasspathXmlConfig extends Config {
      * Thread.currentThread contextClassLoader. The System.properties are used to resolve variables
      * in the XML.
      *
-     * @param resource the xml resource.
+     * @param resource the resource, an XML configuration file from the classpath.
      * @throws IllegalArgumentException              if the resource could not be found.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
@@ -48,7 +48,7 @@ public class ClasspathXmlConfig extends Config {
      * Creates a config which is loaded from a classpath resource using the
      * Thread.currentThread contextClassLoader.
      *
-     * @param resource   the xml resource.
+     * @param resource   the resource, an XML configuration file from the classpath.
      * @param properties the Properties to resolve variables in the XML.
      * @throws IllegalArgumentException              if the resource could not be found or if properties is null.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
@@ -62,7 +62,7 @@ public class ClasspathXmlConfig extends Config {
      * resolve variables in the XML.
      *
      * @param classLoader the ClassLoader used to load the resource.
-     * @param resource    the classpath resource
+     * @param resource    the resource, an XML configuration file from the classpath.
      * @throws IllegalArgumentException              if classLoader or resource is null, or if the resource is not found.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
@@ -74,8 +74,8 @@ public class ClasspathXmlConfig extends Config {
      * Creates a config which is loaded from a classpath resource.
      *
      * @param classLoader the ClassLoader used to load the resource.
-     * @param resource    the classpath resource
-     * @param properties  to properties used to resolve variables in the XML.
+     * @param resource    the resource, an XML configuration file from the classpath.
+     * @param properties  the properties used to resolve variables in the XML.
      * @throws IllegalArgumentException              if classLoader or resource is null, or if the resource is not found.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
