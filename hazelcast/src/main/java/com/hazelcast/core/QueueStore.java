@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * QueueStore makes a queue backed by a central data store; such as database, disk etc.
+ * QueueStore makes a queue backed by a central data store; such as database, disk, etc.
  *
  * @param <T> queue item type
  */
@@ -57,10 +57,10 @@ public interface QueueStore<T> {
     void deleteAll(Collection<Long> keys);
 
     /**
-     * Loads the value of a given key. If distributed map doesn't contain the value
-     * for the given key then Hazelcast will call implementation's load (key) method
+     * Loads the value of a given key. If distributed map does not contain the value
+     * for the given key, then Hazelcast will call the implementation load (key) method
      * to obtain the value. Implementation can use any means of loading the given key;
-     * such as an O/R mapping tool, simple SQL or reading a file etc.
+     * such as an O/R mapping tool, simple SQL, reading a file, etc.
      *
      * @param key
      * @return value of the key
@@ -68,10 +68,10 @@ public interface QueueStore<T> {
     T load(Long key);
 
     /**
-     * Loads given keys. This is batch load operation so that implementation can
+     * Loads the given keys. This is a batch load operation so that implementation can
      * optimize the multiple loads.
      *
-     * @param keys keys of the values entries to load
+     * @param keys keys of the value entries to load
      * @return map of loaded key-value pairs.
      */
     Map<Long, T> loadAll(Collection<Long> keys);
@@ -79,7 +79,7 @@ public interface QueueStore<T> {
     /**
      * Loads all of the keys from the store.
      *
-     * @return all the keys
+     * @return all the keys from the store
      */
     Set<Long> loadAllKeys();
 }

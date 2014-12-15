@@ -24,22 +24,22 @@ import com.hazelcast.transaction.TransactionalObject;
 public interface TransactionalList<E> extends TransactionalObject {
 
     /**
-     * Add new item to transactional list
-     * @param e item
-     * @return true if item is added successfully
+     * Adds a new item to the transactional list.
+     * @param e the new item added to the transactional list
+     * @return true if the item is added successfully, false otherwise
      */
     boolean add(E e);
 
     /**
-     * Add item from transactional list
-     * @param e item
-     * @return true if item is remove successfully
+     * Remove item from the transactional list
+     * @param e item to remove the transactional list
+     * @return true if the item is removed successfully, false otherwise
      */
     boolean remove(E e);
 
     /**
      * Returns the size of the list
-     * @return size
+     * @return the size of the list
      */
     int size();
 }
