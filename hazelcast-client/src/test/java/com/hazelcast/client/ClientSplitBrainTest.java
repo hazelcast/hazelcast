@@ -16,6 +16,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -104,7 +105,11 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
             public void run() {
                 //Just to generate pressure
                 while (mergedLatch.getCount() != 0) {
-                    mapClient.put(random.nextInt() % 1000, false);
+                    try {
+                        mapClient.put(random.nextInt() % 1000, false);
+                    } catch (Exception e) {
+                        EmptyStatement.ignore(e);
+                    }
                 }
 
                 for (int i = 0; i < iterationCount; i++) {
