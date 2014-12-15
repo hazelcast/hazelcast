@@ -17,13 +17,17 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
 
 import java.util.LinkedList;
@@ -36,6 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Main configuration to setup a Hazelcast Client
  */
 public class ClientConfig {
+
+    private static final ILogger LOGGER = Logger.getLogger(ClientConfig.class);
 
     /**
      * To pass properties
@@ -76,6 +82,8 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
 
+    private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
+
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
     private SerializationConfig serializationConfig = new SerializationConfig();
@@ -87,6 +95,13 @@ public class ClientConfig {
     private ManagedContext managedContext;
 
     private ClassLoader classLoader;
+
+    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+        if (configPatternMatcher == null) {
+            throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
+        }
+        this.configPatternMatcher = configPatternMatcher;
+    }
 
     /**
      * Gets a property already set or from system properties if not exists.
@@ -606,45 +621,16 @@ public class ClientConfig {
         return this;
     }
 
-    private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        T t = map.get(name);
-        if (t == null) {
-            int lastMatchingPoint = -1;
-            for (Map.Entry<String, T> entry : map.entrySet()) {
-                String pattern = entry.getKey();
-                T value = entry.getValue();
-                final int matchingPoint = getMatchingPoint(name, pattern);
-                if (matchingPoint > lastMatchingPoint) {
-                    lastMatchingPoint = matchingPoint;
-                    t = value;
-                }
-            }
+    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
+        T candidate = configPatterns.get(itemName);
+        if (candidate != null) {
+            return candidate;
         }
-        return t;
-    }
-
-    /**
-     * higher values means more specific matching
-     *
-     * @param name
-     * @param pattern
-     * @return -1 if name does not match at all, zero or positive otherwise
-     */
-    private static int getMatchingPoint(final String name, final String pattern) {
-        final int index = pattern.indexOf('*');
-        if (index == -1) {
-            return -1;
+        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
+        if (configPatternKey != null) {
+            return configPatterns.get(configPatternKey);
         }
-        final String firstPart = pattern.substring(0, index);
-        final int indexFirstPart = name.indexOf(firstPart, 0);
-        if (indexFirstPart == -1) {
-            return -1;
-        }
-        final String secondPart = pattern.substring(index + 1);
-        final int indexSecondPart = name.indexOf(secondPart, index + 1);
-        if (indexSecondPart == -1) {
-            return -1;
-        }
-        return firstPart.length() + secondPart.length();
+        LOGGER.warning("No configuration found for " + itemName + ", using default config!");
+        return null;
     }
 }
