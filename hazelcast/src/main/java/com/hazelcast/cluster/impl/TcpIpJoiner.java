@@ -156,6 +156,10 @@ public class TcpIpJoiner extends AbstractJoiner {
                         claimingMaster = false;
                         return;
                     }
+                } else {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Cannot claim myself as master! Will try to connect a possible master...");
+                    }
                 }
 
                 claimingMaster = false;
@@ -167,7 +171,11 @@ public class TcpIpJoiner extends AbstractJoiner {
     }
 
     private boolean claimMastership(Collection<Address> possibleAddresses) {
-        logger.finest("Claiming myself as master node!");
+        if (logger.isFinestEnabled()) {
+            Set<Address> votingEndpoints = new HashSet<Address>(possibleAddresses);
+            votingEndpoints.removeAll(blacklistedAddresses.keySet());
+            logger.finest("Claiming myself as master node! Asking to endpoints: " + votingEndpoints);
+        }
         claimingMaster = true;
         Collection<Future<Boolean>> responses = new LinkedList<Future<Boolean>>();
         for (Address address : possibleAddresses) {
@@ -211,6 +219,9 @@ public class TcpIpJoiner extends AbstractJoiner {
     private boolean isThisNodeMasterCandidate(Collection<Address> possibleAddresses) {
         int thisHashCode = node.getThisAddress().hashCode();
         for (Address address : possibleAddresses) {
+            if (isBlacklisted(address)) {
+                continue;
+            }
             if (node.connectionManager.getConnection(address) != null) {
                 if (thisHashCode > address.hashCode()) {
                     return false;
