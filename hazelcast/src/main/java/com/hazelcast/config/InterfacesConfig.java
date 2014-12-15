@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 /**
- * Contains the configuration for an Interfaces.
+ * Contains the configuration for Interfaces.
  */
 public class InterfacesConfig {
 
@@ -30,14 +30,14 @@ public class InterfacesConfig {
     private final Set<String> interfaceSet = new HashSet<String>();
 
     /**
-     * @return the enabled
+     * @return true if the interface is enabled
      */
     public boolean isEnabled() {
         return enabled;
     }
 
     /**
-     * @param enabled the enabled to set
+     * @param enabled the enabled interface to set
      */
     public InterfacesConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
@@ -47,7 +47,7 @@ public class InterfacesConfig {
     /**
      * Adds a new interface
      *
-     * @param ip
+     * @param ip the added interface
      */
     public InterfacesConfig addInterface(final String ip) {
         interfaceSet.add(ip);
