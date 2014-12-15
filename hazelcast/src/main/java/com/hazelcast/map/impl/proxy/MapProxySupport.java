@@ -294,22 +294,51 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private Data readBackupDataOrNull(Data key) {
-        final MapService mapService = getService();
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final Address thisAddress = nodeEngine.getThisAddress();
-        final int partitionId = partitionService.getPartitionId(key);
-        final InternalPartition partition = partitionService.getPartition(partitionId, false);
-        if (!partition.isOwnerOrBackup(thisAddress)) {
+        final int partitionId = getPartitionId(key);
+
+        if (!hasPartitionGotBackupOnThisNode(partitionId)) {
             return null;
         }
-        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-        final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
+
+        final RecordStore recordStore = getRecordStoreOrNull(partitionId);
         if (recordStore == null) {
             return null;
         }
         return recordStore.readBackupData(key);
+    }
+
+    private RecordStore getRecordStoreOrNull(int partitionId) {
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        return partitionContainer.getExistingRecordStore(name);
+    }
+
+    private int getPartitionId(Data key) {
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        return partitionService.getPartitionId(key);
+    }
+
+    private boolean hasPartitionGotBackupOnThisNode(int partitionId) {
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final InternalPartition partition = partitionService.getPartition(partitionId, false);
+        final Address thisAddress = nodeEngine.getThisAddress();
+        final MapConfig mapConfig = getMapConfig();
+        final int backupCount = mapConfig.getBackupCount();
+        // start from index 1 since index 0 includes owner address.
+        for (int i = 1; i <= backupCount; i++) {
+            final Address replicaAddress = partition.getReplicaAddress(i);
+            if (thisAddress.equals(replicaAddress)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
