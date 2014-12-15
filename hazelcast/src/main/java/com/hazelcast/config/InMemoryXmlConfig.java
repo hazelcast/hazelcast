@@ -26,17 +26,17 @@ import java.util.Properties;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
- * Creates a {@link Config} loaded from an in memory Hazelcast XML String.
+ * Creates a {@link Config} loaded from an in-memory Hazelcast XML String.
  */
 public class InMemoryXmlConfig extends Config {
 
     private static final ILogger LOGGER = Logger.getLogger(InMemoryXmlConfig.class);
 
     /**
-     * Creates a Config from the provided XML and uses the System.properties to resolve variables
+     * Creates a Config from the provided XML string and uses the System.properties to resolve variables
      * in the XML.
      *
-     * @param xml the XML content
+     * @param xml the XML content as a Hazelcast XML String
      * @throws IllegalArgumentException              if the XML is null or empty.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
@@ -45,9 +45,9 @@ public class InMemoryXmlConfig extends Config {
     }
 
     /**
-     * Creates a Config from the provided XML and properties to resolve the variables in the XML.
+     * Creates a Config from the provided XML string and properties to resolve the variables in the XML.
      *
-     * @param xml the XML content
+     * @param xml the XML content as a Hazelcast XML String
      * @throws IllegalArgumentException              if the XML is null or empty or if properties is null.
      * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
      */
