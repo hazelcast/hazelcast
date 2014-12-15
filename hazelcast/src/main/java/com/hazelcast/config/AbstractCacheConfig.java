@@ -119,7 +119,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      *
      * @param cacheEntryListenerConfiguration the {@link CacheEntryListenerConfiguration}
      * @return the {@link CacheConfig}
-     * @throws IllegalArgumentException is the same CacheEntryListenerConfiguration
+     * @throws IllegalArgumentException if the same CacheEntryListenerConfiguration
      *                                  is used more than once
      */
     public CacheConfiguration<K, V> addCacheEntryListenerConfiguration(
@@ -183,7 +183,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether statistics gathering is enabled on a cache.
+     * Sets whether or not statistics gathering is enabled on a cache.
      * <p/>
      * Statistics may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
@@ -202,7 +202,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether management is enabled on a cache.
+     * Sets whether or not management is enabled on a cache.
      * <p/>
      * Management may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
