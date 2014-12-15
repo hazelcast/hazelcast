@@ -53,8 +53,8 @@ public class CacheEvictionConfig
         /**
          * ===== NOTE =====
          *
-         * Do not use setters, because they are overriden in readonly version of this config and
-         * cause "UnsupportedOperationException". So just set directly if value is valid.
+         * Do not use setters, because they are overridden in the readonly version of this config and
+         * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
         // Size cannot be non-positive number
