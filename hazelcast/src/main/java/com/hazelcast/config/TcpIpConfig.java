@@ -53,9 +53,9 @@ public class TcpIpConfig {
     }
 
     /**
-     * Sets the connection timeout. This is the maximum amount of time Hazelcast is going to to try to
+     * Sets the connection timeout. This is the maximum amount of time Hazelcast will try to
      * connect to a well known member before giving up. Setting it to a too low value could mean that a
-     * member is not able to connect to a cluster. Setting it too a too high value means that member startup
+     * member is not able to connect to a cluster. Setting it as too high a value means that member startup
      * could slow down because of longer timeouts (e.g. when a well known member is not up).
      *
      * @param connectionTimeoutSeconds the connection timeout in seconds.
@@ -74,7 +74,7 @@ public class TcpIpConfig {
     /**
      * Checks if the Tcp/Ip join mechanism is enabled.
      *
-     * @return the enabled
+     * @return true if enabled, false otherwise
      */
     public boolean isEnabled() {
         return enabled;
@@ -83,7 +83,7 @@ public class TcpIpConfig {
     /**
      * Enables or disables the Tcp/Ip join mechanism.
      *
-     * @param enabled the enabled to set
+     * @param enabled true to enable the Tcp/Ip join mechanism, false to disable
      * @return TcpIpConfig the updated TcpIpConfig config.
      */
     public TcpIpConfig setEnabled(final boolean enabled) {
@@ -108,7 +108,7 @@ public class TcpIpConfig {
     /**
      * Sets the well known members.
      * <p/>
-     * If members is empty, calling this method will have the same effect as calling {@link #clear()}.
+     * If members are empty, calling this method will have the same effect as calling {@link #clear()}.
      * <p/>
      * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
      * are going to be added.
@@ -131,7 +131,7 @@ public class TcpIpConfig {
     /**
      * Adds a 'well known' member.
      * <p/>
-     * Each HazelcastInstance will try to connect to at least one of the members to find all other members
+     * Each HazelcastInstance will try to connect to at least one of the members, to find all other members,
      * and create a cluster.
      * <p/>
      * A member can be a comma separated string, e..g '10.11.12.1,10.11.12.2' which indicates multiple members
