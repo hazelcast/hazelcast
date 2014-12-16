@@ -68,7 +68,7 @@ public class SerializationConfig {
     }
 
     /**
-     * @return global serializer config
+     * @return the global serializer configuration
      * @see {@link com.hazelcast.config.GlobalSerializerConfig}
      */
     public GlobalSerializerConfig getGlobalSerializerConfig() {
@@ -76,8 +76,8 @@ public class SerializationConfig {
     }
 
     /**
-     * @param globalSerializerConfig configuration of serializer will be used
-     *                               that if no other serializer is applicable
+     * @param globalSerializerConfig configuration of serializer that will be used
+     *                               if no other serializer is applicable
      * @return GlobalSerializerConfig
      */
     public SerializationConfig setGlobalSerializerConfig(GlobalSerializerConfig globalSerializerConfig) {
@@ -86,7 +86,7 @@ public class SerializationConfig {
     }
 
     /**
-     * @return list of {@link com.hazelcast.config.SerializerConfig}'s
+     * @return list of {@link com.hazelcast.config.SerializerConfig}s
      */
     public Collection<SerializerConfig> getSerializerConfigs() {
         if (serializerConfigs == null) {
@@ -114,8 +114,8 @@ public class SerializationConfig {
     }
 
     /**
-     * Portable version will be used to differentiate two same class that have changes on it
-     * , like adding/removing field or changing a type of a field.
+     * Portable version will be used to differentiate two versions of the same class that have changes on the class,
+     * like adding/removing a field or changing a type of a field.
      *
      * @return version of portable classes
      */
@@ -124,7 +124,7 @@ public class SerializationConfig {
     }
 
     /**
-     * @param portableVersion int value for version of portable classes
+     * @param portableVersion int value for the version of portable classes
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
      */
     public SerializationConfig setPortableVersion(int portableVersion) {
@@ -298,7 +298,7 @@ public class SerializationConfig {
     }
 
     /**
-     * @param classDefinition to be registered
+     * @param classDefinition the class definition to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
      * @see {@link com.hazelcast.nio.serialization.ClassDefinition}
      */
@@ -321,8 +321,8 @@ public class SerializationConfig {
     }
 
     /**
-     * Default value is true.
-     * When enabled, serialization system will check class definitions error at start and throw an Serialization
+     * Default value is true (enabled).
+     * When enabled, serialization system will check for class definitions error at start and throw an Serialization
      * Exception with error definition.
      *
      * @return true if enabled.
@@ -332,7 +332,7 @@ public class SerializationConfig {
     }
 
     /**
-     * When enabled, serialization system will check class definitions error at start and throw an Serialization
+     * When enabled, serialization system will check for class definitions error at start and throw an Serialization
      * Exception with error definition.
      *
      * @param checkClassDefErrors set to false to disable.
@@ -344,7 +344,7 @@ public class SerializationConfig {
     }
 
     /**
-     * @return true if serialization is configured as use native byte order of the underlying platform.
+     * @return true if serialization is configured to use native byte order of the underlying platform.
      */
     public boolean isUseNativeByteOrder() {
         return useNativeByteOrder;
@@ -382,7 +382,7 @@ public class SerializationConfig {
     /**
      * Enables compression when default java serialization is used.
      *
-     * @return true if enabled.
+     * @return true if compression enabled.
      */
     public boolean isEnableCompression() {
         return enableCompression;
@@ -391,7 +391,7 @@ public class SerializationConfig {
     /**
      * Enables compression when default java serialization is used.
      *
-     * @param enableCompression set to true to enable
+     * @param enableCompression set to true to enable compression
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
      */
     public SerializationConfig setEnableCompression(boolean enableCompression) {
@@ -400,7 +400,7 @@ public class SerializationConfig {
     }
 
     /**
-     * Default value is  true.
+     * Default value is true.
      * Enables shared object when default java serialization is used.
      *
      * @return true if enabled.
@@ -422,7 +422,7 @@ public class SerializationConfig {
 
     /**
      * Default value is false.
-     * Unsafe is not public api of java. Use with caution!
+     * Unsafe, it is not public api of java. Use with caution!
      *
      * @return true if using unsafe is allowed
      */
@@ -431,7 +431,7 @@ public class SerializationConfig {
     }
 
     /**
-     * Unsafe is not public api of java. Use with caution!
+     * Unsafe, it is not public api of java. Use with caution!
      *
      * @param allowUnsafe set to true to allow usage of unsafe
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
