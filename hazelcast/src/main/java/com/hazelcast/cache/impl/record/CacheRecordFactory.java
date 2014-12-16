@@ -67,11 +67,12 @@ public class CacheRecordFactory<R extends CacheRecord> {
     }
 
     /**
-     * Determines whether the Cache Entry associated with this value would be expired
+     * Determines whether the Cache Entry associated with this value will expire
      * at the specified time.
      *
-     * @param now time in milliseconds (since the Epoc).
-     * @return true if the value would be expired at the specified time.
+     * @param expirationTime the expiration time
+     * @param now the time in milliseconds (since the Epoc)
+     * @return true if the value will expire at the specified time
      */
     public static boolean isExpiredAt(long expirationTime, long now) {
         return expirationTime > -1 && expirationTime <= now;
