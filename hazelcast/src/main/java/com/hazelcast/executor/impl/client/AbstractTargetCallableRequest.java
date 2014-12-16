@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.executor.impl.client;
 import com.hazelcast.client.impl.client.TargetClientRequest;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
-import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,8 +26,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ConstructorFunction;
 
 import javax.security.auth.Subject;
 import java.io.IOException;
@@ -36,35 +35,52 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 /**
- * This class is used for sending the task to a particular target
+ * Defines base behavior of sending a {@link java.util.concurrent.Callable} to a specific target.
  */
-public final class TargetCallableRequest extends TargetClientRequest implements RefreshableRequest {
+abstract class AbstractTargetCallableRequest extends TargetClientRequest {
 
     private String name;
+
     private String uuid;
+
     private Callable callable;
+
     private volatile Address target;
-    private ConstructorFunction<Object, Address> targetAddressCreator;
 
-    public TargetCallableRequest() {
+    private int partitionId;
+
+    public AbstractTargetCallableRequest() {
     }
 
-    public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
-        this(name, uuid, callable, target, null);
+    public AbstractTargetCallableRequest(String name, String uuid, Callable callable, Address target) {
+        this(name, uuid, callable, -1, target);
     }
 
-    public TargetCallableRequest(String name, String uuid, Callable callable,
-                                 ConstructorFunction<Object, Address> targetAddressCreator) {
-        this(name, uuid, callable, null, targetAddressCreator);
+    public AbstractTargetCallableRequest(String name, String uuid, Callable callable, int partitionId) {
+        this(name, uuid, callable, partitionId, null);
     }
 
-    private TargetCallableRequest(String name, String uuid, Callable callable,
-                                  Address target, ConstructorFunction<Object, Address> targetAddressCreator) {
+    private AbstractTargetCallableRequest(String name, String uuid, Callable callable, int partitionId, Address target) {
         this.name = name;
         this.uuid = uuid;
         this.callable = callable;
-        this.target = targetAddressCreator == null ? target : targetAddressCreator.createNew(null);
-        this.targetAddressCreator = targetAddressCreator;
+        this.partitionId = partitionId;
+        this.target = target;
+    }
+
+    @Override
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        final Address target = getTarget();
+        if (target != null) {
+            return operationService.createInvocationBuilder(getServiceName(), op, target);
+        }
+
+        final int partitionId = getPartitionId();
+        if (partitionId == -1) {
+            throw new IllegalArgumentException("Partition id is -1");
+        }
+
+        return operationService.createInvocationBuilder(getServiceName(), op, partitionId);
     }
 
     @SuppressWarnings("unchecked")
@@ -76,12 +92,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
             callable = securityContext.createSecureCallable(subject, callable);
         }
         Data callableData = serializationService.toData(callable);
-        return new MemberCallableTaskOperation(name, uuid, callableData);
-    }
-
-    @Override
-    public Address getTarget() {
-        return target;
+        return getOperation(name, uuid, callableData);
     }
 
     @Override
@@ -94,9 +105,25 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
         return ExecutorPortableHook.F_ID;
     }
 
+
     @Override
-    public int getClassId() {
-        return ExecutorPortableHook.TARGET_CALLABLE_REQUEST;
+    public Permission getRequiredPermission() {
+        return null;
+    }
+
+    public abstract Operation getOperation(String name, String uuid, Data callableData);
+
+    @Override
+    public Address getTarget() {
+        return target;
+    }
+
+    public void setTarget(Address target) {
+        this.target = target;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
@@ -105,7 +132,12 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
         writer.writeUTF("u", uuid);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
         rawDataOutput.writeObject(callable);
-        target.writeData(rawDataOutput);
+        rawDataOutput.writeBoolean(target != null);
+        if (target != null) {
+            target.writeData(rawDataOutput);
+        } else {
+            rawDataOutput.writeInt(partitionId);
+        }
     }
 
     @Override
@@ -114,20 +146,14 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
         uuid = reader.readUTF("u");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
-        target = new Address();
-        target.readData(rawDataInput);
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
-    public void refresh() {
-        if (targetAddressCreator == null) {
-            return;
+        final boolean isTarget = rawDataInput.readBoolean();
+        if (isTarget) {
+            target = new Address();
+            target.readData(rawDataInput);
+            partitionId = -1;
+        } else {
+            partitionId = rawDataInput.readInt();
         }
-        target = targetAddressCreator.createNew(null);
     }
+
 }

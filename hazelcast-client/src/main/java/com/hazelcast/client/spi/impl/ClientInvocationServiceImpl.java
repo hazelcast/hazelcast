@@ -98,6 +98,7 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return sendAndHandle(request, handler);
     }
 
+    @Override
     public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler)
             throws Exception {
         final ClientConnection clientConnection = connectionManager.connectToAddress(target);

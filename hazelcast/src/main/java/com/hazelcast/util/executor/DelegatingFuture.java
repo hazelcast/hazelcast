@@ -30,7 +30,7 @@ import java.util.concurrent.TimeoutException;
 
 public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
-    protected final ICompletableFuture future;
+    private final ICompletableFuture future;
     private final SerializationService serializationService;
     private final V defaultValue;
     private final boolean hasDefaultValue;
@@ -39,17 +39,14 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private volatile boolean done;
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
-        this.future = future;
-        this.serializationService = serializationService;
-        this.defaultValue = null;
-        this.hasDefaultValue = false;
+        this(future, serializationService, null);
     }
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = defaultValue;
-        this.hasDefaultValue = true;
+        this.hasDefaultValue = defaultValue != null;
     }
 
     @Override
@@ -131,6 +128,10 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     protected void setDone() {
         this.done = true;
+    }
+
+    protected ICompletableFuture getFuture() {
+        return future;
     }
 
     @Override
