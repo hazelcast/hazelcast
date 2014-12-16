@@ -15,7 +15,7 @@ public interface CacheOperationProvider {
 
     Operation createPutOperation(Data key, Data value, ExpiryPolicy policy, boolean get, int completionId);
 
-    Operation createGetOperation(Data key, ExpiryPolicy policy);
+    Operation createGetOperation(Data key);
 
     Operation createContainsKeyOperation(Data key);
 
@@ -33,7 +33,7 @@ public interface CacheOperationProvider {
 
     Operation createKeyIteratorOperation(int lastTableIndex, int fetchSize);
 
-    OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
+    OperationFactory createGetAllOperationFactory(Set<Data> keySet);
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);
 

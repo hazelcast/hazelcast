@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashSet;
@@ -48,16 +47,13 @@ public class CacheGetAllRequest
         implements Portable, RetryableRequest, SecureRequest {
 
     private Set<Data> keys = new HashSet<Data>();
-    private ExpiryPolicy expiryPolicy;
-
 
     public CacheGetAllRequest() {
     }
 
-    public CacheGetAllRequest(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
+    public CacheGetAllRequest(String name, Set<Data> keys) {
         super(name);
         this.keys = keys;
-        this.expiryPolicy = expiryPolicy;
     }
 
     public int getFactoryId() {
@@ -71,7 +67,7 @@ public class CacheGetAllRequest
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider();
-        return operationProvider.createGetAllOperationFactory(keys, expiryPolicy);
+        return operationProvider.createGetAllOperationFactory(keys);
     }
 
     @Override
@@ -98,7 +94,6 @@ public class CacheGetAllRequest
                 output.writeData(key);
             }
         }
-        output.writeObject(expiryPolicy);
     }
 
     public void read(PortableReader reader)
@@ -112,7 +107,6 @@ public class CacheGetAllRequest
                 keys.add(key);
             }
         }
-        expiryPolicy = input.readObject();
     }
 
     public Permission getRequiredPermission() {

@@ -27,7 +27,6 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
@@ -39,15 +38,13 @@ public class CacheGetRequest
         extends AbstractCacheRequest {
 
     protected Data key;
-    protected ExpiryPolicy expiryPolicy;
 
     public CacheGetRequest() {
     }
 
-    public CacheGetRequest(String name, Data key, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
+    public CacheGetRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
         super(name, inMemoryFormat);
         this.key = key;
-        this.expiryPolicy = expiryPolicy;
     }
 
     public int getClassId() {
@@ -61,7 +58,7 @@ public class CacheGetRequest
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider();
-        return operationProvider.createGetOperation(key, expiryPolicy);
+        return operationProvider.createGetOperation(key);
     }
 
     public void write(PortableWriter writer)
@@ -69,8 +66,6 @@ public class CacheGetRequest
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
-        out.writeObject(expiryPolicy);
-
     }
 
     public void read(PortableReader reader)
@@ -78,7 +73,6 @@ public class CacheGetRequest
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
-        this.expiryPolicy = in.readObject();
     }
 
 }

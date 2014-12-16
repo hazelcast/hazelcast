@@ -83,16 +83,6 @@ public class ClientCacheProxy<K, V>
     }
 
     @Override
-    public V get(K key) {
-        return get(key, null);
-    }
-
-    @Override
-    public Map<K, V> getAll(Set<? extends K> keys) {
-        return getAll(keys, null);
-    }
-
-    @Override
     public boolean containsKey(K key) {
         ensureOpen();
         validateNotNull(key);

@@ -17,51 +17,29 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
-
-import javax.cache.expiry.ExpiryPolicy;
-import java.io.IOException;
 
 /**
  * Cache Get Operation.
  * <p>Provides the cache get functionality.</p>
- * @see com.hazelcast.cache.impl.ICacheRecordStore#get(Data, javax.cache.expiry.ExpiryPolicy)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#get(Data)
  */
 public class CacheGetOperation
         extends AbstractCacheOperation
         implements ReadonlyOperation {
 
-    private ExpiryPolicy expiryPolicy;
-
     public CacheGetOperation() {
     }
 
-    public CacheGetOperation(String name, Data key, ExpiryPolicy expiryPolicy) {
+    public CacheGetOperation(String name, Data key) {
         super(name, key);
-        this.expiryPolicy = expiryPolicy;
     }
 
     @Override
     public void run()
             throws Exception {
-        response = cache.get(key, expiryPolicy);
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
-        super.writeInternal(out);
-        out.writeObject(expiryPolicy);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
-        super.readInternal(in);
-        expiryPolicy = in.readObject();
+        response = cache.get(key);
     }
 
     @Override

@@ -41,8 +41,8 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createGetOperation(Data key, ExpiryPolicy policy) {
-        return new CacheGetOperation(nameWithPrefix, key, policy);
+    public Operation createGetOperation(Data key) {
+        return new CacheGetOperation(nameWithPrefix, key);
     }
 
     @Override
@@ -87,8 +87,8 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy) {
-        return new CacheGetAllOperationFactory(nameWithPrefix, keySet, policy);
+    public OperationFactory createGetAllOperationFactory(Set<Data> keySet) {
+        return new CacheGetAllOperationFactory(nameWithPrefix, keySet);
     }
 
     @Override

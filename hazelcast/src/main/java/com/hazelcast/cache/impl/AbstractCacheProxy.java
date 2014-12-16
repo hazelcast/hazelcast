@@ -64,15 +64,10 @@ abstract class AbstractCacheProxy<K, V>
     //region ICACHE: JCACHE EXTENSION
     @Override
     public InternalCompletableFuture<V> getAsync(K key) {
-        return getAsync(key, null);
-    }
-
-    @Override
-    public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
         final Data keyData = serializationService.toData(key);
-        final Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
+        final Operation op = operationProvider.createGetOperation(keyData);
         return invoke(op, keyData, false);
     }
 
@@ -152,8 +147,8 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     @Override
-    public V get(K key, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAsync(key, expiryPolicy);
+    public V get(K key) {
+        final Future<V> f = getAsync(key);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -162,7 +157,7 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     @Override
-    public Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+    public Map<K, V> getAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
         if (keys.isEmpty()) {
@@ -176,7 +171,7 @@ abstract class AbstractCacheProxy<K, V>
         final Map<K, V> result = new HashMap<K, V>();
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
-            OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
+            OperationFactory factory = operationProvider.createGetAllOperationFactory(ks);
             OperationService operationService = getNodeEngine().getOperationService();
             Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {

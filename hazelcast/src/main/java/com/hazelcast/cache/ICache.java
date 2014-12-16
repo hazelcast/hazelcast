@@ -19,8 +19,6 @@ package com.hazelcast.cache;
 import com.hazelcast.core.ICompletableFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This {@link com.hazelcast.cache.ICache} interface is the {@link javax.cache.Cache} extension offered by
@@ -115,28 +113,6 @@ public interface ICache<K, V>
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key);
-
-    /**
-     * Asynchronously gets an entry from cache using a custom {@link javax.cache.expiry.ExpiryPolicy}.
-     * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
-     * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
-     * the value of the key from any kind of external resource.
-     *
-     * @param key the key whose associated value is to be returned
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAsync(Object)}
-     *
-     * @return ICompletableFuture to retrieve the value assigned to the given key
-     *
-     * @throws java.lang.NullPointerException if given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     *
-     * @see javax.cache.Cache#get(K)
-     * @see com.hazelcast.core.ICompletableFuture
-     */
-    ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy);
 
     /**
      * Asynchronously associates the specified value with the specified key in the cache.
@@ -504,7 +480,6 @@ public interface ICache<K, V>
      */
     ICompletableFuture<Boolean> replaceAsync(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy);
 
-
     /**
      * Asynchronously replaces the assigned value of the given key by the specified value and returns
      * the previously assigned value.
@@ -550,51 +525,6 @@ public interface ICache<K, V>
      * @see com.hazelcast.core.ICompletableFuture
      */
     ICompletableFuture<V> getAndReplaceAsync(K key, V value, ExpiryPolicy expiryPolicy);
-
-    /**
-     * Retrieves the mapped value of the given key using a custom {@link javax.cache.expiry.ExpiryPolicy}.
-     * If no mapping exists <tt>null</tt> is returned.
-     * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
-     * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
-     * the value of the key from any kind of external resource.
-     *
-     * @param key the key whose associated value is to be returned
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #get(Object)}
-     *
-     * @return returns the value assigned to the given key or null if not assigned
-     *
-     * @throws java.lang.NullPointerException if given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     *
-     * @see javax.cache.Cache#get(K)
-     */
-    V get(K key, ExpiryPolicy expiryPolicy);
-
-    /**
-     * Gets a collection of entries from the cache with custom expiry policy, returning them as
-     * {@link Map} of the values associated with the set of keys requested.
-     * <p>
-     * If the cache is configured for <tt>read-through</tt> operation mode, the underlying
-     * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
-     * the values of the keys from any kind of external resource.
-     *
-     * @param keys the keys whose associated values are to be returned
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAll(java.util.Set)}
-     *
-     * @return A map of entries that were found for the given keys. Keys not found
-     *         in the cache are not in the returned map.
-     *
-     * @throws java.lang.NullPointerException if given keys is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     *
-     * @see javax.cache.Cache#getAll(java.util.Set)
-     */
-    Map<K, V> getAll(Set<? extends K> keys, ExpiryPolicy expiryPolicy);
 
     /**
      * Associates the specified value with the specified key in the cache using a custom {@link javax.cache.expiry.ExpiryPolicy}.
