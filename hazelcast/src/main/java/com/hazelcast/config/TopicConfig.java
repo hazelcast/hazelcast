@@ -44,9 +44,9 @@ public class TopicConfig {
     }
 
     /**
-     * Creates a  {@link TopicConfig} by cloning another TopicConfig.
+     * Creates a {@link TopicConfig} by cloning another TopicConfig.
      *
-     * @param config
+     * @param config the TopicConfig to clone
      */
     public TopicConfig(TopicConfig config) {
         isNotNull(config, "config");
@@ -65,7 +65,7 @@ public class TopicConfig {
     /**
      * Gets the name of the topic, null if nothing is set.
      *
-     * @return the name
+     * @return the name of the topic
      */
     public String getName() {
         return name;
@@ -74,7 +74,7 @@ public class TopicConfig {
     /**
      * Sets the name of the topic.
      *
-     * @param name the name to set
+     * @param name the topic name to set
      * @return the updated TopicConfig
      * @throws IllegalArgumentException if name is null or an empty string.
      */
