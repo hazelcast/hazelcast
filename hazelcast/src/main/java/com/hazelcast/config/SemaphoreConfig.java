@@ -77,7 +77,7 @@ public class SemaphoreConfig {
     /**
      * Sets the name of the semaphore.
      *
-     * @param name the name
+     * @param name the name of the semaphore
      * @return the updated SemaphoreConfig
      * @throws IllegalArgumentException if name is null or empty.
      */
@@ -120,7 +120,7 @@ public class SemaphoreConfig {
     /**
      * Sets the number of synchronous backups.
      *
-     * @param backupCount the number of synchronous backups
+     * @param backupCount the number of synchronous backups to set
      * @return the updated SemaphoreConfig
      * @throws new IllegalArgumentException if backupCount smaller than 0.
      * @see #setAsyncBackupCount(int)
@@ -147,7 +147,7 @@ public class SemaphoreConfig {
     /**
      * Sets the number of asynchronous backups.
      *
-     * @param asyncBackupCount the number of asynchronous backups
+     * @param asyncBackupCount the number of asynchronous backups to set
      * @return the updated SemaphoreConfig
      * @throws new IllegalArgumentException if asyncBackupCount smaller than 0.
      * @see #setBackupCount(int) (int)
@@ -164,7 +164,7 @@ public class SemaphoreConfig {
     /**
      * Returns the total number of backups; the returned value will always equal or bigger than 0.
      *
-     * @return total number of backups.
+     * @return the total number of backups.
      */
     public int getTotalBackupCount() {
         return asyncBackupCount + backupCount;
