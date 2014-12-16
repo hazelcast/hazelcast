@@ -30,11 +30,11 @@ import java.util.Set;
  *
  * There are three different types of extensions methods provided:
  * <ul>
- *   <li>asynchronous version of typical blocking cache operations (due to remote calls)</li>
+ *   <li>asynchronous version of typical blocking cache operations (due to remote calls),</li>
  *   <li>typical cache operations, providing a custom {@link javax.cache.expiry.ExpiryPolicy} parameter
- *       to apply a special expiration to that specific operation</li>
+ *       to apply a special expiration to that specific operation, and</li>
  *   <li>common collection-like operations (e.g. {@link #size()}) or typical Hazelcast-list additions
- *       (e.g. {@link #destroy()})</li>
+ *       (e.g. {@link #destroy()}).</li>
  * </ul><p>
  *
  * To take advantage of the methods of this interface, the {@link javax.cache.Cache} instance needs to be
@@ -48,7 +48,7 @@ import java.util.Set;
  * <b>Asynchronous operations:</b><br>
  * For most of the typical operations, Hazelcast provides asynchronous versions to program in a more reactive
  * styled way. All asynchronous operations follow the same naming pattern: the operation's name from JCache
- * extended by the term <tt>Async</tt>, e.g. the asynchronous version of {@link javax.cache.Cache#get(Object)}
+ * extended by the term <tt>Async</tt>; for example, the asynchronous version of {@link javax.cache.Cache#get(Object)}
  * is {@link #getAsync(Object)}.<br>
  * These methods return an {@link com.hazelcast.core.ICompletableFuture} that can be used to get the result by
  * implementing a callback based on {@link com.hazelcast.core.ExecutionCallback} or wait for the operation to be
@@ -153,7 +153,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to get notified when the operation succeed
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -180,7 +180,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to get notified when the operation succeed
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -213,7 +213,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve if a previous value was assigned with the key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -250,7 +250,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve if a previous value was assigned with the key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -276,7 +276,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -304,7 +304,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -324,7 +324,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve if value could be removed or not
      *
-     * @throws java.lang.NullPointerException if given key is null
+     * @throws java.lang.NullPointerException if the given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -357,7 +357,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve if value could be removed or not
      *
-     * @throws java.lang.NullPointerException if given key or oldValue is null
+     * @throws java.lang.NullPointerException if the given key or oldValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -378,7 +378,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve a possible previously assigned value for the removed key
      *
-     * @throws java.lang.NullPointerException if given key is null
+     * @throws java.lang.NullPointerException if the given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -399,7 +399,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to get notified if the operation succeed or not
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -423,7 +423,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to get notified if the operation succeed or not
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -458,7 +458,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to get notified if the operation succeed or not
      *
-     * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
+     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -495,7 +495,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to get notified if the operation succeed or not
      *
-     * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
+     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -518,7 +518,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -542,7 +542,7 @@ public interface ICache<K, V>
      *
      * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -565,7 +565,7 @@ public interface ICache<K, V>
      *
      * @return returns the value assigned to the given key or null if not assigned
      *
-     * @throws java.lang.NullPointerException if given key is null
+     * @throws java.lang.NullPointerException if the given key is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -588,7 +588,7 @@ public interface ICache<K, V>
      * @return A map of entries that were found for the given keys. Keys not found
      *         in the cache are not in the returned map.
      *
-     * @throws java.lang.NullPointerException if given keys is null
+     * @throws java.lang.NullPointerException if the given keys are null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -604,7 +604,7 @@ public interface ICache<K, V>
      * @param expiryPolicy custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #put(Object, Object)}
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -623,7 +623,7 @@ public interface ICache<K, V>
      *
      * @return returns the value previously assigned to the given key or null if not assigned
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -647,7 +647,7 @@ public interface ICache<K, V>
      * @param expiryPolicy custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #putAll(java.util.Map)}
      *
-     * @throws java.lang.NullPointerException if given map is null
+     * @throws java.lang.NullPointerException if the given map is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -681,7 +681,7 @@ public interface ICache<K, V>
      *
      * @return true if a value was set
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -740,7 +740,7 @@ public interface ICache<K, V>
      *
      * @return true if a value was replaced
      *
-     * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
+     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -763,7 +763,7 @@ public interface ICache<K, V>
      *
      * @return the value previously assigned to the given key
      *
-     * @throws java.lang.NullPointerException if given key or value is null
+     * @throws java.lang.NullPointerException if the given key or value is null
      * @throws javax.cache.CacheException if anything exceptional
      *         happens while invoking the request, other exceptions are wrapped
      *
@@ -786,7 +786,7 @@ public interface ICache<K, V>
     void destroy();
 
     /**
-     * Directly access to local Cache Statistics.
+     * Directly access local Cache Statistics.
      *
      * @return CacheStatistics instance or an empty statistics if not enabled
      */
