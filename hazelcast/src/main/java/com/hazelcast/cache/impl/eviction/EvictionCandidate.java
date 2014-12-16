@@ -27,14 +27,14 @@ public interface EvictionCandidate<A, E extends Evictable> {
     /**
      * The accessor (key or id) of {@link Evictable} entry or record or whatever.
      *
-     * @return the accessor
+     * @return the accessor (key or id) of {@link Evictable} entry or record or whatever
      */
     A getAccessor();
 
     /**
      * The value of {@link Evictable} entry or record or whatever.
      *
-     * @return the value
+     * @return the value of {@link Evictable} entry or record or whatever
      */
     E getEvictable();
 
