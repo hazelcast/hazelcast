@@ -41,7 +41,7 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
     /**
      * Creates an AbstractEntryProcessor.
      *
-     * @param applyOnBackup if the {@link #process(java.util.Map.Entry)} should also be applied on the backup.
+     * @param applyOnBackup true if the {@link #process(java.util.Map.Entry)} should also be applied on the backup.
      */
     public AbstractEntryProcessor(boolean applyOnBackup) {
         if (applyOnBackup) {
