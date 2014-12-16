@@ -44,7 +44,7 @@ public final class EvictionStrategyProvider {
     /**
      * Gets the {@link EvictionStrategy} implementation specified with <code>evictionStrategyType</code>.
      *
-     * @param evictionConfig {@link EvictionConfig} for requested {@link EvictionStrategy} implementation
+     * @param evictionConfig {@link EvictionConfig} for the requested {@link EvictionStrategy} implementation
      *
      * @return the requested {@link EvictionStrategy} implementation
      */
@@ -64,7 +64,7 @@ public final class EvictionStrategyProvider {
     }
 
     /**
-     * Gets default {@link EvictionStrategy} implementation.
+     * Gets the default {@link EvictionStrategy} implementation.
      *
      * @return the default {@link EvictionStrategy} implementation
      */
