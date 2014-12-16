@@ -544,6 +544,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         if (node.getMasterAddress() != null) {
             sendMasterAnswer(joinMessage.getAddress());
+        } else {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Received a master question from " + joinMessage.getAddress()
+                        + ", but this node is not master itself or doesn't have a master yet!");
+            }
         }
     }
 
