@@ -20,7 +20,7 @@ import static com.hazelcast.util.ValidationUtil.hasText;
 
 /**
  * Contains the configuration for an index in a map. This class should be used in combination
- * with the {@link MapConfig}. THe reason to create an map index, is to speed up searches for
+ * with the {@link MapConfig}. The reason to create an map index is to speed up searches for
  * particular map entries.
  */
 public class MapIndexConfig {
@@ -30,7 +30,7 @@ public class MapIndexConfig {
     private MapIndexConfigReadOnly readOnly;
 
     /**
-     * Creates a MapIndexConfig without an attribute and with ordered is false.
+     * Creates a MapIndexConfig without an attribute and with ordered set to false.
      */
     public MapIndexConfig() {
     }
@@ -39,7 +39,7 @@ public class MapIndexConfig {
      * Creates a MapIndexConfig with the given attribute and ordered setting.
      *
      * @param attribute the attribute that is going to be indexed.
-     * @param ordered   if the index is ordered.
+     * @param ordered   true if the index is ordered.
      * @see #setOrdered(boolean)
      * @see #setAttribute(String)
      */
@@ -93,9 +93,9 @@ public class MapIndexConfig {
     }
 
     /**
-     * Configures the index to be ordered or not ordered. Some indices can be ordered, e.g. age. Sometimes you
+     * Configures the index to be ordered or not ordered. Some indices can be ordered, such as age. Sometimes you
      * want to look for all people with an age equal or greater than X. In other cases an ordered index doesn't make
-     * sense, e.g. a phone number of a person.
+     * sense, such as a phone number for a person.
      *
      * @param ordered if the index should be an ordered index.
      * @return the updated MapIndexConfig.
