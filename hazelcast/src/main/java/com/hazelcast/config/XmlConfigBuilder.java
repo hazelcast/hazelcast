@@ -97,9 +97,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
 
     /**
-     * Constructs a XmlConfigBuilder that reads from the provided file.
+     * Constructs a XmlConfigBuilder that reads from the provided XML file.
      *
-     * @param xmlFileName the name of the XML file
+     * @param xmlFileName the name of the XML file that the XmlConfigBuilder reads from
      * @throws FileNotFoundException if the file can't be found.
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
@@ -120,8 +120,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     /**
-     * Constructs a XMLConfigBuilder that read from the given URL
-     * @param url
+     * Constructs a XMLConfigBuilder that reads from the given URL.
+     * @param url the given url that the XMLConfigBuilder reads from
      * @throws IOException
      */
     public XmlConfigBuilder(URL url) throws IOException {
@@ -144,7 +144,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Gets the current used properties. Can be null if no properties are set.
      *
-     * @return the used properties.
+     * @return the current used properties.
      * @see #setProperties(java.util.Properties)
      */
     public Properties getProperties() {
