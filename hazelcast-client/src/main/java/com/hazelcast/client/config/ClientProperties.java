@@ -22,7 +22,7 @@ package com.hazelcast.client.config;
 public class ClientProperties {
 
     /**
-     * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
+     * Client will be sending heartbeat messages to members and this is the timeout. If there is not any message
      * passing between client and member within the given time via this property in milliseconds the connection
      * will be closed.
      */
@@ -127,6 +127,9 @@ public class ClientProperties {
         return eventThreadCount;
     }
 
+    /**
+     * A single client property.
+     */
     public static class ClientProperty {
 
         private final String name;

@@ -81,13 +81,12 @@ public class PublishOperation extends AbstractNamedOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        message.writeData(out);
+        out.writeData(message);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        message = new Data();
-        message.readData(in);
+        message = in.readData();
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -65,14 +64,14 @@ public class PutBackupOperation extends MultiMapKeyBasedOperation implements Bac
         super.writeInternal(out);
         out.writeLong(recordId);
         out.writeInt(index);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
         index = in.readInt();
-        value = IOUtil.readData(in);
+        value = in.readData();
     }
 
     public int getId() {

@@ -3,7 +3,7 @@
 
 ### Entry Statistics
 
-Hazelcast keeps extra information about each map entry such as creation time, last update time, last access time, number of hits, version, and this information is exposed to the developer via `IMap.getEntryView(key)` call. Here is an example:
+Hazelcast keeps extra information about each map entry, such as creation time, last update time, last access time, number of hits, and version. This information is exposed to the developer via a `IMap.getEntryView(key)` call. Here is an example:
 
 ```java
 import com.hazelcast.core.Hazelcast;

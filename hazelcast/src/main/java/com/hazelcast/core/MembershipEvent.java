@@ -37,7 +37,7 @@ public class MembershipEvent extends EventObject {
 
     /**
      * This event type is fired if a member left the cluster or was decided to be
-     * unresponsive by other members for a extended time range.
+     * unresponsive by other members for a extended time.
      */
     public static final int MEMBER_REMOVED = 2;
 
@@ -65,13 +65,13 @@ public class MembershipEvent extends EventObject {
     }
 
     /**
-     * Returns a consistent view of the the members exactly after this MembershipEvent has been processed. So if a
-     * member is removed, the returned set will not include this member. And if a member is added it will include
+     * Returns a consistent view of the the members immediately after this MembershipEvent has been processed. If a
+     * member is removed, the returned set will not include this member. If a member is added, it will include
      * this member.
      * <p/>
-     * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} is that the content could already
-     * have changed while processing this event so it becomes very difficult to write a deterministic algorithm since
-     * you can't get a deterministic view of the members. This method solves that problem.
+     * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} method is that the content could already
+     * have changed while processing this event, so it becomes very difficult to write a deterministic algorithm since
+     * you cannot get a deterministic view of the members. This method solves that problem.
      * <p/>
      * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
      *
@@ -105,7 +105,7 @@ public class MembershipEvent extends EventObject {
     /**
      * Returns the removed or added member.
      *
-     * @return member which is removed/added
+     * @return member which is removed or added
      */
     public Member getMember() {
         return member;

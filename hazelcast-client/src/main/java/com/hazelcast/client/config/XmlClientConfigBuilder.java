@@ -109,6 +109,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         }
     }
 
+    ClientConfig build(ClientConfig clientConfig) {
+        try {
+            parse(clientConfig);
+            return clientConfig;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
     private void parse(ClientConfig clientConfig) throws Exception {
         this.clientConfig = clientConfig;
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -138,6 +147,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 fillProperties(node, clientConfig.getProperties());
             } else if ("serialization".equals(nodeName)) {
                 handleSerialization(node);
+            } else if ("native-memory".equals(nodeName)) {
+                fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
             } else if ("group".equals(nodeName)) {
                 handleGroup(node);
             } else if ("listeners".equals(nodeName)) {
@@ -174,6 +185,10 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             } else if ("cache-local-entries".equals(nodeName)) {
                 nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
+            } else if ("local-update-policy".equals(nodeName)) {
+                String value = getTextContent(child);
+                NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
+                nearCacheConfig.setLocalUpdatePolicy(policy);
             }
         }
         clientConfig.addNearCacheConfig(name, nearCacheConfig);

@@ -16,11 +16,14 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
@@ -28,6 +31,11 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation
+ */
 public class CacheIterateRequest
         extends PartitionClientRequest
         implements RetryableRequest {
@@ -36,20 +44,24 @@ public class CacheIterateRequest
     private int partitionId;
     private int tableIndex;
     private int batch;
+    private InMemoryFormat inMemoryFormat;
 
     public CacheIterateRequest() {
     }
 
-    public CacheIterateRequest(String name, int partitionId, int tableIndex, int batch) {
+    public CacheIterateRequest(String name, int partitionId, int tableIndex, int batch, InMemoryFormat inMemoryFormat) {
         this.name = name;
         this.partitionId = partitionId;
         this.tableIndex = tableIndex;
         this.batch = batch;
+        this.inMemoryFormat = inMemoryFormat;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheKeyIteratorOperation(name, tableIndex, batch);
+        ICacheService service = getService();
+        CacheOperationProvider cacheOperationProvider = service.getCacheOperationProvider(name, inMemoryFormat);
+        return cacheOperationProvider.createKeyIteratorOperation(tableIndex, batch);
     }
 
     @Override
@@ -83,6 +95,7 @@ public class CacheIterateRequest
         writer.writeInt("p", partitionId);
         writer.writeInt("t", tableIndex);
         writer.writeInt("b", batch);
+        writer.writeUTF("i", inMemoryFormat.name());
     }
 
     @Override
@@ -93,5 +106,6 @@ public class CacheIterateRequest
         partitionId = reader.readInt("p");
         tableIndex = reader.readInt("t");
         batch = reader.readInt("b");
+        inMemoryFormat = InMemoryFormat.valueOf(reader.readUTF("i"));
     }
 }

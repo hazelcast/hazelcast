@@ -51,6 +51,11 @@ public final class PartitionAwareKey<K, P> implements PartitionAware<Object>, Da
     private PartitionAwareKey() {
     }
 
+    /**
+     * Gets the key (not the partitionKey).
+     *
+     * @return the key (not the partitionKey)
+     */
     public K getKey() {
         return key;
     }

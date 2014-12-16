@@ -26,6 +26,9 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
     public void writeObject(Object object) throws IOException {
     }
 
+    public void writeData(Data data) throws IOException {
+    }
+
     public void write(int b) throws IOException {
     }
 
@@ -66,6 +69,9 @@ final class EmptyObjectDataOutput implements ObjectDataOutput {
     }
 
     public void writeUTF(String s) throws IOException {
+    }
+
+    public void writeByteArray(byte[] value) throws IOException {
     }
 
     public void writeCharArray(char[] chars) throws IOException {

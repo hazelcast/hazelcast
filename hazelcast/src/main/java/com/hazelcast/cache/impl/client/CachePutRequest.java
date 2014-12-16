@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,6 +30,11 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CachePutOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CachePutOperation
+ */
 public class CachePutRequest
         extends AbstractCacheRequest {
 
@@ -41,22 +48,23 @@ public class CachePutRequest
     public CachePutRequest() {
     }
 
-    public CachePutRequest(String name, Data key, Data value) {
-        super(name);
+    public CachePutRequest(String name, Data key, Data value, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.value = value;
         this.expiryPolicy = null;
     }
 
-    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        super(name);
+    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;
     }
 
-    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get) {
-        super(name);
+    public CachePutRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get,
+                           InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;
@@ -73,30 +81,29 @@ public class CachePutRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutOperation(name, key, value, expiryPolicy, get, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createPutOperation(key, value, expiryPolicy, get, completionId);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         writer.writeBoolean("g", get);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
         out.writeObject(expiryPolicy);
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         get = reader.readBoolean("g");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
         expiryPolicy = in.readObject();
     }
 

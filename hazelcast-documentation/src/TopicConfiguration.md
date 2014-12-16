@@ -1,6 +1,6 @@
 
 
-### Topic Configuration
+### Configuring Topic
 
 **Declarative Configuration:**
 
@@ -35,13 +35,13 @@ topicConfig.addMessageListenerConfig( new ListenerConfig( implementation ) );
 HazelcastInstance instance = Hazelcast.newHazelcastInstance()
 ```
 
-Default values are
+Default values are:
 
-- Global ordering is **false**, meaning there is no global order guarantee by default.
+- `global-ordering` is **false**, meaning that by default, there is no guarantee of global order.
 
-- Statistics are **true**, meaning statistics are calculated by default.
+- `statistics` is **true**, meaning that by default, statistics are calculated.
 
-Topic related but not topic specific configuration parameters
+Topic related but not topic specific configuration parameters:
 
    - `hazelcast.event.queue.capacity`: default value is 1,000,000
    - `hazelcast.event.queue.timeout.millis`: default value is 250
@@ -50,6 +50,13 @@ Topic related but not topic specific configuration parameters
 <br></br>
 ***RELATED INFORMATION*** 
 
-*For description of these parameters, please see [Global Event Configuration](#global-event-configuration)*
+*For description of these parameters, please see the [Global Event Configuration section](#global-event-configuration).*
+
+<br></br>
+
+***RELATED INFORMATION***
+
+*Please refer to the [Topic Configuration section](#topic-configuration) for a full description of Hazelcast Distributed Topic configuration.*
+
 
 

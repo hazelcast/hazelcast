@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
  * such as pool,peek,clear..
  */
 public class QueueContainer implements IdentifiedDataSerializable {
+    private static final int ID_PROMOTION_OFFSET = 100000;
 
     private LinkedList<QueueItem> itemQueue;
     private Map<Long, QueueItem> backupMap;
@@ -78,7 +79,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private long totalAgedCount;
 
     private boolean isEvictionScheduled;
-
 
     public QueueContainer(String name) {
         this.name = name;
@@ -540,25 +540,27 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     public void mapIterateAndRemove(Map map) {
-        if (map.size() > 0) {
-            if (store.isEnabled()) {
-                try {
-                    store.deleteAll(map.keySet());
-                } catch (Exception e) {
-                    throw new HazelcastException(e);
-                }
-            }
-            Iterator<QueueItem> iter = getItemQueue().iterator();
-            while (iter.hasNext()) {
-                QueueItem item = iter.next();
-                if (map.containsKey(item.getItemId())) {
-                    iter.remove();
-                    //For Stats
-                    age(item, Clock.currentTimeMillis());
-                }
-            }
-            scheduleEvictionIfEmpty();
+        if (map.size() <= 0) {
+            return;
         }
+
+        if (store.isEnabled()) {
+            try {
+                store.deleteAll(map.keySet());
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+        Iterator<QueueItem> iter = getItemQueue().iterator();
+        while (iter.hasNext()) {
+            QueueItem item = iter.next();
+            if (map.containsKey(item.getItemId())) {
+                iter.remove();
+                //For Stats
+                age(item, Clock.currentTimeMillis());
+            }
+        }
+        scheduleEvictionIfEmpty();
     }
 
     public void compareAndRemoveBackup(Set<Long> itemIdSet) {
@@ -599,7 +601,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 itemQueue.addAll(values);
                 final QueueItem lastItem = itemQueue.peekLast();
                 if (lastItem != null) {
-                    setId(lastItem.itemId);
+                    setId(lastItem.itemId + ID_PROMOTION_OFFSET);
                 }
                 backupMap.clear();
                 backupMap = null;

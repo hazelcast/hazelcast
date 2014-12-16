@@ -23,8 +23,8 @@ import java.io.Serializable;
  *
  * This class is called IFunction instead of Function to prevent clashes with the one in Java 8.
  *
- * @param <T>
- * @param <R>
+ * @param <T> an argument
+ * @param <R> a result
  * @since 3.2
  */
 public interface IFunction<T, R> extends Serializable {

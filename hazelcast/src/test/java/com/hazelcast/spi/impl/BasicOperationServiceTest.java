@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -50,6 +51,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -140,15 +142,25 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testSyncOperationTimeoutSingleMember() {
-        testOperationTimeout(1);
+        testOperationTimeout(1, false);
     }
 
     @Test
     public void testSyncOperationTimeoutMultiMember() {
-        testOperationTimeout(3);
+        testOperationTimeout(3, false);
     }
 
-    private void testOperationTimeout(int memberCount) {
+    @Test
+    public void testAsyncOperationTimeoutSingleMember() {
+        testOperationTimeout(1, true);
+    }
+
+    @Test
+    public void testAsyncOperationTimeoutMultiMember() {
+        testOperationTimeout(3, true);
+    }
+
+    private void testOperationTimeout(int memberCount, boolean async) {
         assertTrue(memberCount > 0);
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "3000");
@@ -166,11 +178,30 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnPartition(null, new TimedOutBackupAwareOperation(), partitionId);
 
-        try {
-            future.getSafely();
-            fail("Should throw OperationTimeoutException!");
-        } catch (OperationTimeoutException ignored) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        if (async) {
+            future.andThen(new ExecutionCallback<Object>() {
+                @Override
+                public void onResponse(Object response) {
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (t instanceof OperationTimeoutException) {
+                        latch.countDown();
+                    }
+                }
+            });
+        } else {
+            try {
+                future.getSafely();
+                fail("Should throw OperationTimeoutException!");
+            } catch (OperationTimeoutException ignored) {
+                latch.countDown();
+            }
         }
+
+        assertOpenEventually("Should throw OperationTimeoutException", latch);
 
         for (HazelcastInstance instance : instances) {
             assertNoLitterInOpService(instance);

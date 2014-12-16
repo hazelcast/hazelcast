@@ -72,7 +72,7 @@ public class MapLockTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("testBackupDies");
         final int size = 50;
-        final CountDownLatch latch = new CountDownLatch(size + 1);
+        final CountDownLatch latch = new CountDownLatch(1);
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -82,7 +82,6 @@ public class MapLockTest extends HazelcastTestSupport {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
                     }
-                    latch.countDown();
                 }
                 for (int i = 0; i < size; i++) {
                     assertTrue(map1.isLocked(i));
@@ -100,7 +99,7 @@ public class MapLockTest extends HazelcastTestSupport {
         try {
             Thread.sleep(1000);
             h2.shutdown();
-            latch.await();
+            assertTrue(latch.await(30, TimeUnit.SECONDS));
             for (int i = 0; i < size; i++) {
                 assertFalse(map1.isLocked(i));
             }
@@ -307,6 +306,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
         assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(KEY));
     }
+
 
     /**
      * Do not use ungraceful node.getLifecycleService().terminate(), because that leads

@@ -23,7 +23,7 @@ Some example usages are listed below. Hazelcast can be used:
 
 
 
--	To share thousands of keys in a cluster where there is a web service interface on application server and some validation,
+-	To share thousands of keys in a cluster where there is a web service interface on an application server and some validation,
 
 
 
@@ -31,7 +31,7 @@ Some example usages are listed below. Hazelcast can be used:
 
 
 
--	As a front layer for Cassandra back end,
+-	As a front layer for a Cassandra back-end,
 
 
 
@@ -53,4 +53,4 @@ Some example usages are listed below. Hazelcast can be used:
 
 -	As a real time streamer for performance detection,
 
--	As a storage for session data in web applications (enables horizontal scalability of the web application).
+-	As storage for session data in web applications (enables horizontal scalability of the web application).

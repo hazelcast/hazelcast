@@ -18,15 +18,14 @@ package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalQueueStats;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Concurrent, blocking, distributed, observable queue.
  *
- * Queues are stored in one node in the cluster with one backup.
+ * The IQueue is not a partitioned data-structure. All the content of the IQueue is stored in a single machine (and
+ * in the backup). The IQueue will not scale by adding more members in the cluster.
  *
  * @see BaseQueue
  * @see java.util.Queue
@@ -36,135 +35,23 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E> {
 
-    /**
-     * {@inheritDoc}
+    /*
+     * Added poll(), poll(long timeout, TimeUnit unit) and take()
+     * methods here to prevent wrong method return type issue when
+     * compiled with java 8.
+     *
+     * For additional details see:
+     *
+     * http://mail.openjdk.java.net/pipermail/compiler-dev/2014-November/009139.html
+     * https://bugs.openjdk.java.net/browse/JDK-8064803
+     *
      */
-    boolean add(E e);
 
-    /**
-     * {@inheritDoc}
-     */
-    boolean offer(E e);
-
-    /**
-     * {@inheritDoc}
-     */
-    void put(E e) throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    E take() throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    E poll(long timeout, TimeUnit unit) throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    int remainingCapacity();
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean remove(Object o);
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean contains(Object o);
-
-    /**
-     * {@inheritDoc}
-     */
-    int drainTo(Collection<? super E> c);
-
-    /**
-     * {@inheritDoc}
-     */
-    int drainTo(Collection<? super E> c, int maxElements);
-
-    /**
-     * {@inheritDoc}
-     */
-    E remove();
-
-    /**
-     * {@inheritDoc}
-     */
     E poll();
 
-    /**
-     * {@inheritDoc}
-     */
-    E element();
+    E poll(long timeout, TimeUnit unit) throws InterruptedException;
 
-    /**
-     * {@inheritDoc}
-     */
-    E peek();
-
-    /**
-     * {@inheritDoc}
-     */
-    int size();
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean isEmpty();
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p> The view's <tt>iterator</tt> is a "weakly consistent" iterator,
-     * and guarantees to traverse elements as they existed upon
-     * construction of the iterator, and may (but is not guaranteed to)
-     * reflect any modifications subsequent to construction.
-     */
-    Iterator<E> iterator();
-
-    /**
-     * {@inheritDoc}
-     */
-    Object[] toArray();
-
-    /**
-     * {@inheritDoc}
-     */
-    <T> T[] toArray(T[] a);
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean containsAll(Collection<?> c);
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean addAll(Collection<? extends E> c);
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean removeAll(Collection<?> c);
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean retainAll(Collection<?> c);
-
-    /**
-     * {@inheritDoc}
-     */
-    void clear();
+    E take() throws InterruptedException;
 
     /**
      * Returns LocalQueueStats for this queue.

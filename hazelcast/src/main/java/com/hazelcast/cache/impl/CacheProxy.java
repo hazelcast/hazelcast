@@ -16,10 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
-import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
-import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -53,24 +50,31 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
- * ICache implementation:
- *
+ * <h1>ICache implementation</h1>
+ * <p>
  * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
- * HazelcastServerCacheManager. Represent a cache on server or embedded mode.
+ * HazelcastServerCacheManager. It represents a cache for server or embedded mode.
+ * </p>
+ * <p>
+ * Each cache method actually is an operation which is sent to related partition(s) or node(s).
+ * Operations are executed on partition's or node's executor pools and the results are delivered to the user.
+ * </p>
+ * <p>
+ * In order to access a {@linkplain CacheProxy} by name, a cacheManager should be used. It's advised to use
+ * {@link com.hazelcast.cache.ICache} instead.
+ * </p>
  *
- * Each cache operation is basically a simple cache operation send to related partition(s) or node(s)
- *
- * @param <K> key type
- * @param <V> value type
+ * @param <K> the type of key.
+ * @param <V> the type of value.
  */
 public class CacheProxy<K, V>
-        extends AbstractCacheProxyExtension<K, V> {
+        extends AbstractCacheProxy<K, V> {
 
     protected final ILogger logger;
 
-    private HazelcastCacheManager cacheManager;
+    private AbstractHazelcastCacheManager cacheManager;
 
-    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, CacheService cacheService,
+    protected CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService,
                          HazelcastServerCacheManager cacheManager) {
         super(cacheConfig, nodeEngine, cacheService);
         this.cacheManager = cacheManager;
@@ -92,9 +96,11 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(key);
         final Data k = serializationService.toData(key);
-        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
-        final InternalCompletableFuture<Boolean> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), op,
-                getPartitionId(getNodeEngine(), k));
+//        final Operation op = new CacheContainsKeyOperation(getDistributedObjectName(), k);
+        Operation operation = operationProvider.createContainsKeyOperation(k);
+        OperationService operationService = getNodeEngine().getOperationService();
+        int partitionId = getPartitionId(getNodeEngine(), k);
+        InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
         return f.getSafely();
     }
 
@@ -110,8 +116,7 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
         }
-        final OperationFactory operationFactory = new CacheLoadAllOperationFactory(getDistributedObjectName(), keysData,
-                replaceExistingValues);
+        OperationFactory operationFactory = operationProvider.createLoadAllOperationFactory(keysData, replaceExistingValues);
         try {
             submitLoadAllTask(operationFactory, completionListener);
         } catch (Exception e) {
@@ -192,19 +197,19 @@ public class CacheProxy<K, V>
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
-        removeAllInternal(keys, true);
+        removeAllInternal(keys);
     }
 
     @Override
     public void removeAll() {
         ensureOpen();
-        removeAllInternal(null, true);
+        removeAllInternal(null);
     }
 
     @Override
     public void clear() {
         ensureOpen();
-        removeAllInternal(null, false);
+        clearInternal();
     }
 
     @Override
@@ -223,13 +228,13 @@ public class CacheProxy<K, V>
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        final Data k = serializationService.toData(key);
+        final Data keyData = serializationService.toData(key);
         final Integer completionId = registerCompletionLatch(1);
-        final Operation op = new CacheEntryProcessorOperation(getDistributedObjectName(), k, completionId, entryProcessor,
-                arguments);
+        Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
         try {
-            final InternalCompletableFuture<T> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), op,
-                    getPartitionId(getNodeEngine(), k));
+            OperationService operationService = getNodeEngine().getOperationService();
+            int partitionId = getPartitionId(getNodeEngine(), keyData);
+            final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
             final T safely = f.getSafely();
             waitCompletionLatch(completionId);
             return safely;
@@ -291,7 +296,7 @@ public class CacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
         final String regId = service.registerListener(getDistributedObjectName(), entryListener);
@@ -308,14 +313,13 @@ public class CacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
         }
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
             if (!service.deregisterListener(getDistributedObjectName(), regId)) {
                 addListenerLocally(regId, cacheEntryListenerConfiguration);
             } else {
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                deregisterCompletionListener();
                 //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
             }

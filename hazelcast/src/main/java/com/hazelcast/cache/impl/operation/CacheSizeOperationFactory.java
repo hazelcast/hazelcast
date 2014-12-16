@@ -26,7 +26,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
 /**
- * Factory for CacheSizeOperation
+ * Factory implementation of {@link CacheSizeOperation}.
+ * @see CacheSizeOperation
  */
 public class CacheSizeOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {

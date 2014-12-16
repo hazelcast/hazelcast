@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 /**
- * PartitioningStrategy allows keys to be located on the same member
- * This makes related data to be stored in the same location. (See data-affinity.)
+ * PartitioningStrategy allows keys to be located on the same member.
+ * This causes related data to be stored in the same location. (See data-affinity.)
  *
  * @param <K> key type
  */
@@ -27,8 +27,8 @@ public interface PartitioningStrategy<K> {
     /**
      * Returns the key object that will be used by Hazelcast to specify the partition.
      *
-     * @param key actual key object
-     * @return partition key object or null to fallback to default partition calculation
+     * @param key actual key object used by Hazelcast to specify the partition
+     * @return the partition key object, or null to fallback to the default partition calculation
      */
     Object getPartitionKey(K key);
 }

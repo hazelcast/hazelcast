@@ -2,13 +2,13 @@
 
 ## Listener Configurations
 
-Event listeners can be added to and removed from the related object using Hazelcast API.
+You can add or remove event listeners to/from the related object using the Hazelcast API.
 
-Downside of attaching listeners using API is the possibility of missing events between creation of object and registering listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. Listeners can be registered using either declarative, programmatic or Spring configuration.
+The downside of attaching listeners using this API is the possibility of missing events between the creation of an object and registering the listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. You can register listeners using declarative, programmatic, or Spring configuration.
 
--  **MembershipListener**
+####  MembershipListener
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<listeners>
@@ -16,14 +16,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</listeners>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		config.addListenerConfig(
 		    new ListenerConfig( "com.hazelcast.examples.MembershipListener" ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -32,9 +32,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
--   **DistributedObjectListener**
+#### DistributedObjectListener
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<listeners>
@@ -42,14 +42,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</listeners>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		config.addListenerConfig(
 		    new ListenerConfig( "com.hazelcast.examples.DistributedObjectListener" ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -58,9 +58,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
--   **MigrationListener**
+#### MigrationListener
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<listeners>
@@ -68,14 +68,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</listeners>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		config.addListenerConfig( 
 		    new ListenerConfig( "com.hazelcast.examples.MigrationListener" ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -84,9 +84,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
--   **LifecycleListener**
+#### LifecycleListener
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<listeners>
@@ -94,14 +94,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</listeners>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		config.addListenerConfig(
 		    new ListenerConfig( "com.hazelcast.examples.LifecycleListener" ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:listeners>
@@ -110,9 +110,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:listeners>
 ```
 
--   **EntryListener** for IMap
+#### EntryListener for IMap
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<map name="default">
@@ -125,7 +125,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</map>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		mapConfig.addEntryListenerConfig(
@@ -133,7 +133,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		                             false, false ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:map name="default">
@@ -145,9 +145,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:map>
 ```
 
--   **EntryListener** for MultiMap
+#### EntryListener for MultiMap
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<multimap name="default">
@@ -159,7 +159,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		    </entry-listeners>
 		</multimap>
 ```
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		multiMapConfig.addEntryListenerConfig(
@@ -167,7 +167,7 @@ Downside of attaching listeners using API is the possibility of missing events b
 		                             false, false ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:multimap name="default" value-collection-type="LIST">
@@ -179,9 +179,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:multimap>
 ```
 
--   **ItemListener** for IQueue
+#### ItemListener for IQueue
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<queue name="default">
@@ -194,14 +194,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</queue>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		queueConfig.addItemListenerConfig(
 		    new ItemListenerConfig( "com.hazelcast.examples.ItemListener", true ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:queue name="default" >
@@ -212,9 +212,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:queue>
 ```
 
--   **MessageListener** for ITopic
+#### MessageListener for ITopic
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<topic name="default">
@@ -226,14 +226,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</topic>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		topicConfig.addMessageListenerConfig(
 		    new ListenerConfig( "com.hazelcast.examples.MessageListener" ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:topic name="default">
@@ -244,9 +244,9 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</hz:topic>
 ```
 
--   **ClientListener** 
+#### ClientListener
 
-	-	Declarative Configuration
+- Declarative Configuration
 
 		```xml
 		<listeners>
@@ -254,14 +254,14 @@ Downside of attaching listeners using API is the possibility of missing events b
 		</listeners>
 ```
 
-	-	Programmatic Configuration
+- Programmatic Configuration
 
 		```java
 		topicConfig.addMessageListenerConfig(
 		    new ListenerConfig( "com.hazelcast.examples.ClientListener" ) );
 ```
 
-	-	Spring XML configuration
+- Spring XML configuration
 
 		```xml
 		<hz:listeners>

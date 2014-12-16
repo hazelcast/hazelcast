@@ -39,6 +39,7 @@ public final class FactoryIdHelper {
     public static final String MAP_REDUCE_DS_FACTORY = "hazelcast.serialization.ds.map_reduce";
     public static final String WEB_DS_FACTORY = "hazelcast.serialization.ds.web";
     public static final String CACHE_DS_FACTORY = "hazelcast.serialization.ds.cache";
+    public static final String ENTERPRISE_CACHE_DS_FACTORY = "hazelcast.serialization.ds.enterprise.cache";
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
     public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";

@@ -17,20 +17,20 @@
 package com.hazelcast.nio.serialization;
 
 
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-final class StreamSerializerAdapter implements SerializerAdapter {
+class StreamSerializerAdapter implements SerializerAdapter {
 
-    private final SerializationServiceImpl service;
-    private final StreamSerializer serializer;
+    protected final SerializationService service;
+    protected final StreamSerializer serializer;
 
-    public StreamSerializerAdapter(SerializationServiceImpl service, StreamSerializer serializer) {
+    public StreamSerializerAdapter(SerializationService service, StreamSerializer serializer) {
         this.service = service;
         this.serializer = serializer;
     }
@@ -45,19 +45,21 @@ final class StreamSerializerAdapter implements SerializerAdapter {
     }
 
     @SuppressWarnings("unchecked")
-    public byte[] write(Object object) throws IOException {
+    public Data toData(Object object, int partitionHash) throws IOException {
         final BufferObjectDataOutput out = service.pop();
-        byte[] bytes;
         try {
             serializer.write(out, object);
-            bytes = out.toByteArray();
+            byte[] header = null;
+            if (out instanceof PortableDataOutput) {
+                header = ((PortableDataOutput) out).getPortableHeader();
+            }
+            return new DefaultData(serializer.getTypeId(), out.toByteArray(), partitionHash, header);
         } finally {
             service.push(out);
         }
-        return bytes;
     }
 
-    public Object read(Data data) throws IOException {
+    public Object toObject(Data data) throws IOException {
         final BufferObjectDataInput in = service.createObjectDataInput(data);
         try {
             return serializer.read(in);

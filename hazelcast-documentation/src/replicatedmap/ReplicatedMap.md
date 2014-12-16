@@ -3,17 +3,17 @@
 
 A replicated map is a weakly consistent, distributed key-value data structure provided by Hazelcast.
 
-In difference to all other data structures which are partitioned in design, a replicated map does not partition data
-(it does not spread data to different cluster members) but replicates the data to all nodes.
+All other data structures are partitioned in design. A replicated map does not partition data
+(it does not spread data to different cluster members); instead, it replicates the data to all nodes.
 
-This leads to higher memory consumption but faster read and write access since data are available on all nodes and
+This leads to higher memory consumption. However, a replicated map has faster read and write access since the data are available on all nodes and
 writes take place on local nodes, eventually being replicated to all other nodes.
 
 Weak consistency compared to eventually consistency means that replication is done on a best efforts basis. Lost or missing updates
-are neither tracked nor resent. This kind of data structures is suitable for immutable
+are neither tracked nor resent. This kind of data structure is suitable for immutable
 objects, catalogue data or idempotent calculable data (like HTML pages).
 
-It nearly fully implements the `java.util.Map` interface but lacks the methods from `java.util.concurrent.ConcurrentMap` since
+Replicated map nearly fully implements the `java.util.Map` interface, but it lacks the methods from `java.util.concurrent.ConcurrentMap` since
 there are no atomic guarantees to writes or reads.
 
 ```java
@@ -34,8 +34,7 @@ for ( Customer customer : colCustomers ) {
 }
 ```
 
-`HazelcastInstance::getReplicatedMap` actually returns `com.hazelcast.core.ReplicatedMap` which, as stated above, extends
+`HazelcastInstance::getReplicatedMap`returns `com.hazelcast.core.ReplicatedMap` which, as stated above, extends the
 `java.util.Map` interface.
 
-The `com.hazelcast.core.ReplicatedMap` interface has some additional methods for registering entry listeners or retrieving
-values in an expected order.
+The `com.hazelcast.core.ReplicatedMap` interface has some additional methods for registering entry listeners or retrieving values in an expected order.

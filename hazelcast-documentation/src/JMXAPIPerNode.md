@@ -3,7 +3,7 @@
 
 ## JMX API per Node
 
-Hazelcast members expose various management beans which includes statistics about distributed data structures and states of Hazelcast node internals.
+Hazelcast members expose various management beans which include statistics about distributed data structures and the states of Hazelcast node internals.
 
 The metrics are local to the nodes, i.e. they do not reflect cluster wide values.
 

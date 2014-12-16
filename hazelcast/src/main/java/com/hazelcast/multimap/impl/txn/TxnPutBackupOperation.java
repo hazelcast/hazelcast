@@ -57,14 +57,13 @@ public class TxnPutBackupOperation extends MultiMapKeyBasedOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     public int getId() {

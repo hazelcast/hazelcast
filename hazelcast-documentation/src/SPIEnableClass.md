@@ -3,7 +3,7 @@
 
 ### Enable the Class
 
-Now, we need to enable the class `CounterService`. Declarative way of doing this is shown below.
+Now, we need to enable the class `CounterService`. The declarative way of doing this is shown below.
 
 ```xml
 <network>
@@ -17,11 +17,20 @@ Now, we need to enable the class `CounterService`. Declarative way of doing this
 </services>
 ```
 
-`CounterService` is declared within the `services` tag of configuration. 
+`CounterService` is declared within the `services` configuration element. 
 
 - Setting the `enabled` attribute as `true` enables the service.
-- `name` attribute defines the name of the service. It should be a unique name (`CounterService` in our case) since it will be looked up when a remote call is made. Note that, the value of this attribute will be sent at each request. So, a longer value means more data (de)serialization. A good practice is giving an understandable name with the shortest possible length.
-- `class-name`: Class name of the service (`CounterService` in our case). Class should have a *no-arg* constructor. Otherwise, the object cannot be initialized.
+- The `name` attribute defines the name of the service. It should be a unique name (`CounterService` in our case) since it will be looked up when a remote call is made. Note that the value of this attribute will be sent at each request, and that a longer `name` value means more data (de)serialization. A good practice is to give an understandable name with the shortest possible length.
+- `class-name` is the class name of the service (`CounterService` in our case). The class should have a *no-arg* constructor. Otherwise, the object cannot be initialized.
 
-Moreover, note that multicast is enabled as the join mechanism. In the later sections, we will see why.
+Note that multicast is enabled as the join mechanism. In the later sections for the `CounterService` example, we will see why.
+
+
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Services Configuration section](#services-configuration) for a full description of Hazelcast SPI configuration.*
+
 

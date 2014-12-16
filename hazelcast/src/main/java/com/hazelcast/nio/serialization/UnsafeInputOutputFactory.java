@@ -19,9 +19,8 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
-/**
- * @author mdogan 6/15/13
- */
+import java.nio.ByteOrder;
+
 final class UnsafeInputOutputFactory implements InputOutputFactory {
 
     @Override
@@ -37,5 +36,10 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
     @Override
     public BufferObjectDataOutput createOutput(int size, SerializationService service) {
         return new UnsafeObjectDataOutput(size, service);
+    }
+
+    @Override
+    public ByteOrder getByteOrder() {
+        return ByteOrder.nativeOrder();
     }
 }

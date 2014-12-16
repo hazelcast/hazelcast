@@ -2,12 +2,12 @@
 
 ## List
 
-Hazelcast List is very similar to Hazelcast Set but it allows duplicate elements.
+Hazelcast List is similar to Hazelcast Set, but Hazelcast List also allows duplicate elements.
 
 * Besides allowing duplicate elements, Hazelcast List preserves the order of elements.
-* Hazelcast List is non-partitioned data structure where values and each backup is represented by its own single partition.
+* Hazelcast List is a non-partitioned data structure where values and each backup are represented by their own single partition.
 * Hazelcast List cannot be scaled beyond the capacity of a single machine.
-* There is no batching while iterating over List. All items will be copied to local and iteration will occur locally.
+* All items are copied to local and iteration occurs locally.
 
 ### Sample List Code
 
@@ -71,6 +71,17 @@ public class Sample implements ItemListener{
        
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *To learn more about the configuration of listeners please refer to [Listener Configurations](#listener-configurations).*
+<br></br>
+
+***RELATED INFORMATION***
+
+*To learn more about the configuration of listeners please refer to the [Listener Configurations section](#listener-configurations).*
+
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [List Configuration section](#list-configuration) for a full description of Hazelcast Distributed List configuration.*
 
 

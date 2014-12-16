@@ -45,7 +45,7 @@ import com.hazelcast.management.request.MemberConfigRequest;
 import com.hazelcast.management.request.RunGcRequest;
 import com.hazelcast.management.request.ShutdownMemberRequest;
 import com.hazelcast.management.request.ThreadDumpRequest;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -95,6 +95,7 @@ public class ManagementCenterService {
     private final ManagementCenterConfig managementCenterConfig;
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private final TimedMemberStateFactory timedMemberStateFactory;
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
@@ -108,15 +109,14 @@ public class ManagementCenterService {
         commandHandler = new ConsoleCommandHandler(instance);
         taskPollThread = new TaskPollThread();
         stateSendThread = new StateSendThread();
+        timedMemberStateFactory = new TimedMemberStateFactory(instance);
         identifier = newManagementCenterIdentifier();
         registerListeners();
     }
 
-
     private String getManagementCenterUrl() {
         return managementCenterConfig.getUrl();
     }
-
 
     private void registerListeners() {
         if (!managementCenterConfig.isEnabled()) {
@@ -125,7 +125,6 @@ public class ManagementCenterService {
         instance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
         instance.getCluster().addMembershipListener(new MemberListenerImpl());
     }
-
 
     private ManagementCenterConfig getManagementCenterConfig() {
         ManagementCenterConfig config = instance.node.config.getManagementCenterConfig();
@@ -160,6 +159,7 @@ public class ManagementCenterService {
             return;
         }
 
+        timedMemberStateFactory.init();
         taskPollThread.start();
         stateSendThread.start();
         logger.info("Hazelcast will connect to Hazelcast Management Center on address: \n" + managementCenterUrl);
@@ -274,12 +274,10 @@ public class ManagementCenterService {
      * Thread for sending cluster state to the Management Center.
      */
     private final class StateSendThread extends Thread {
-        private final TimedMemberStateFactory timedMemberStateFactory;
         private final long updateIntervalMs;
 
         private StateSendThread() {
             super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
-            timedMemberStateFactory = new TimedMemberStateFactory(instance);
             updateIntervalMs = calcUpdateInterval();
         }
 

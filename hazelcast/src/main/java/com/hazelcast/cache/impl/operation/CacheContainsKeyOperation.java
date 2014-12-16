@@ -21,7 +21,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
 
 /**
- * Cache ContainsKey Operation
+ * Cache contains key operation, determines if the cache contains an entry for the specified key.
+ * <p>
+ * More formally, returns <tt>true</tt> if and only if the cache contains a
+ * mapping for a key <tt>k</tt> such that <tt>key.equals(k)</tt>.
+ * (There can be at most one such mapping.)
  */
 public class CacheContainsKeyOperation
         extends AbstractCacheOperation

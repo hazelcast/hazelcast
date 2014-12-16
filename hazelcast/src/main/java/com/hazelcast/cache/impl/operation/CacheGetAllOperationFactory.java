@@ -30,7 +30,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.operation.CacheGetAllOperation}
+ * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheGetAllOperation}.
+ * @see com.hazelcast.spi.OperationFactory
  */
 public class CacheGetAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
@@ -70,7 +71,7 @@ public class CacheGetAllOperationFactory
         out.writeObject(expiryPolicy);
         out.writeInt(keys.size());
         for (Data key : keys) {
-            key.writeData(out);
+            out.writeData(key);
         }
     }
 
@@ -81,8 +82,7 @@ public class CacheGetAllOperationFactory
         expiryPolicy = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             keys.add(data);
         }
     }

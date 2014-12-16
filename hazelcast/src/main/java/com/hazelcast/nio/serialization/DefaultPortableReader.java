@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
@@ -124,7 +123,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = readPosition(fieldName, FieldType.BYTE_ARRAY);
             in.position(pos);
-            return IOUtil.readByteArray(in);
+            return in.readByteArray();
         } finally {
             in.position(currentPos);
         }
@@ -210,7 +209,7 @@ public class DefaultPortableReader implements PortableReader {
             in.position(pos);
             final boolean isNull = in.readBoolean();
             if (!isNull) {
-                return serializer.readAndInitialize(in, fd.getFactoryId(), fd.getClassId(), fd.getVersion());
+                return serializer.readAndInitialize(in);
             }
             return null;
         } finally {
@@ -242,8 +241,7 @@ public class DefaultPortableReader implements PortableReader {
                 for (int i = 0; i < len; i++) {
                     final int start = in.readInt(offset + i * 4);
                     in.position(start);
-                    portables[i] = serializer.readAndInitialize(in, fd.getFactoryId(),
-                            fd.getClassId(), fd.getVersion());
+                    portables[i] = serializer.readAndInitialize(in);
                 }
             }
             return portables;
@@ -287,8 +285,7 @@ public class DefaultPortableReader implements PortableReader {
                 if (isNull) {
                     throw new NullPointerException("Parent field is null: " + fieldNames[i]);
                 }
-                reader = serializer
-                        .createReader(in, fd.getFactoryId(), fd.getClassId(), fd.getVersion());
+                reader = serializer.createReader(in);
             }
             if (fd == null) {
                 throw throwUnknownFieldException(fieldName);

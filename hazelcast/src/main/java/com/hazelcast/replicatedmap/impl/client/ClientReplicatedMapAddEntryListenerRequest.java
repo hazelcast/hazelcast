@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -77,14 +78,15 @@ public class ClientReplicatedMapAddEntryListenerRequest
     private class ClientReplicatedMapEntryListener implements EntryListener<Object, Object> {
 
         private void handleEvent(EntryEvent<Object, Object> event) {
-            if (endpoint.live()) {
+            if (endpoint.isAlive()) {
                 Object key = event.getKey();
                 Object value = event.getValue();
                 Object oldValue = event.getOldValue();
                 EntryEventType eventType = event.getEventType();
                 String uuid = event.getMember().getUuid();
                 Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
-                endpoint.sendEvent(portableEntryEvent, getCallId());
+                Data partitionKey = serializationService.toData(key);
+                endpoint.sendEvent(partitionKey, portableEntryEvent, getCallId());
             }
         }
 

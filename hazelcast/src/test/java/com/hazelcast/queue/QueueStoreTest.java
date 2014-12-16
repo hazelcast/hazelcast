@@ -24,6 +24,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -230,7 +231,6 @@ public class QueueStoreTest extends HazelcastTestSupport {
         queueStoreConfig.setFactoryImplementation(queueStoreFactory);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-
         HazelcastInstance instance = createHazelcastInstance(config);
 
         final IQueue<Integer> queue = instance.getQueue(queueName);
@@ -243,8 +243,9 @@ public class QueueStoreTest extends HazelcastTestSupport {
         assertEquals("Queue store size should be 1 but found " + size, 1, size);
     }
 
+
     @Test
-    public void testQueueStoreFactoryIsNotInitialized_whenQueueStoreConfigDisabled() {
+    public void testQueueStoreFactoryIsNotInitialized_whenDisabledInQueueStoreConfig() {
         final String queueName = randomString();
         final Config config = new Config();
         final QueueConfig queueConfig = config.getQueueConfig(queueName);
@@ -263,8 +264,44 @@ public class QueueStoreTest extends HazelcastTestSupport {
         final TestQueueStore testQueueStore = (TestQueueStore) queueStore;
         final int size = testQueueStore.store.size();
 
-        assertEquals("Expected no queue store operation" +
-                " since we disabled it in queue store", 0, size);
+        assertEquals("Expected not queue store operation" +
+                " since we disabled it in QueueStoreConfig but found initialized ", 0, size);
+    }
+
+    @Test
+    public void testQueueStore_withBinaryModeOn() {
+        final String queueName = randomString();
+        // create queue store config.
+        final QueueStoreConfig queueStoreConfig = getBinaryQueueStoreConfig();
+        // create queue config.
+        final QueueConfig queueConfig = new QueueConfig();
+        queueConfig.setName(queueName);
+        queueConfig.setQueueStoreConfig(queueStoreConfig);
+        // create config.
+        final Config config = new Config();
+        config.addQueueConfig(queueConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        final IQueue<Integer> queue = node.getQueue(queueName);
+        queue.add(1);
+        queue.add(2);
+        queue.add(3);
+
+        // this triggers bulk loading.
+        final int value = queue.peek();
+
+        assertEquals(1, value);
+    }
+
+    private QueueStoreConfig getBinaryQueueStoreConfig() {
+        final QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        final QueueStore<Data> binaryQueueStore = new BasicQueueStore<Data>();
+        queueStoreConfig.setStoreImplementation(binaryQueueStore);
+        queueStoreConfig.setEnabled(true);
+        queueStoreConfig.setProperty("binary", "true");
+        queueStoreConfig.setProperty("memory-limit", "0");
+        queueStoreConfig.setProperty("bulk-load", "100");
+        return queueStoreConfig;
     }
 
 
@@ -452,4 +489,98 @@ public class QueueStoreTest extends HazelcastTestSupport {
             latchDeleteAll.countDown();
         }
     }
+
+
+    public static class BasicQueueStore<T> implements QueueStore<T> {
+
+        final Map<Long, T> store = new LinkedHashMap<Long, T>();
+
+        /**
+         * Stores the key-value pair.
+         *
+         * @param key   key of the entry to store
+         * @param value value of the entry to store
+         */
+        @Override
+        public void store(Long key, T value) {
+            store.put(key, value);
+        }
+
+        /**
+         * Stores multiple entries. Implementation of this method can optimize the
+         * store operation by storing all entries in one database connection for instance.
+         *
+         * @param map map of entries to store
+         */
+        @Override
+        public void storeAll(Map<Long, T> map) {
+            for (Map.Entry<Long, T> entry : map.entrySet()) {
+                store(entry.getKey(), entry.getValue());
+            }
+        }
+
+        /**
+         * Deletes the entry with a given key from the store.
+         *
+         * @param key key to delete from the store.
+         */
+        @Override
+        public void delete(Long key) {
+            store.remove(key);
+        }
+
+        /**
+         * Deletes multiple entries from the store.
+         *
+         * @param keys keys of the entries to delete.
+         */
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+            for (Long key : keys) {
+                store.remove(key);
+            }
+        }
+
+        /**
+         * Loads the value of a given key. If distributed map doesn't contain the value
+         * for the given key then Hazelcast will call implementation's load (key) method
+         * to obtain the value. Implementation can use any means of loading the given key;
+         * such as an O/R mapping tool, simple SQL or reading a file etc.
+         *
+         * @param key
+         * @return value of the key
+         */
+        @Override
+        public T load(Long key) {
+            return store.get(key);
+        }
+
+        /**
+         * Loads given keys. This is batch load operation so that implementation can
+         * optimize the multiple loads.
+         *
+         * @param keys keys of the values entries to load
+         * @return map of loaded key-value pairs.
+         */
+        @Override
+        public Map<Long, T> loadAll(Collection<Long> keys) {
+            final Map<Long, T> loadedEntries = new HashMap<Long, T>();
+            for (Long key : keys) {
+                final T value = load(key);
+                loadedEntries.put(key, value);
+            }
+            return loadedEntries;
+        }
+
+        /**
+         * Loads all of the keys from the store.
+         *
+         * @return all the keys
+         */
+        @Override
+        public Set<Long> loadAllKeys() {
+            return store.keySet();
+        }
+    }
+
 }

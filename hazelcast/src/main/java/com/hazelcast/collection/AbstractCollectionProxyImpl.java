@@ -222,4 +222,10 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
             throw new NullPointerException("Object is null");
         }
     }
+
+    protected void throwExceptionIfNegative(int index) {
+        if (index < 0) {
+            throw new IndexOutOfBoundsException("Index is negative");
+        }
+    }
 }

@@ -18,130 +18,190 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.NavigableSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Store indexes rankly.
  */
-public class SortedIndexStore implements IndexStore {
-    private static final float LOAD_FACTOR = 0.75f;
-    private final ConcurrentMap<Comparable, ConcurrentMap<Data, QueryableEntry>> mapRecords
-            = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
-    private final NavigableSet<Comparable> sortedSet = new ConcurrentSkipListSet<Comparable>();
+public class SortedIndexStore extends BaseIndexStore {
 
+    private final ConcurrentMap<Data, QueryableEntry> recordsWithNullValue
+            = new ConcurrentHashMap<Data, QueryableEntry>();
+
+    private final ConcurrentSkipListMap<Comparable, ConcurrentMap<Data, QueryableEntry>> recordMap
+            = new ConcurrentSkipListMap<Comparable, ConcurrentMap<Data, QueryableEntry>>();
+
+    @Override
+    public void newIndex(Comparable newValue, QueryableEntry record) {
+        takeWriteLock();
+        try {
+            if (newValue instanceof IndexImpl.NullObject) {
+                recordsWithNullValue.put(record.getIndexKey(), record);
+            } else {
+                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
+                if (records == null) {
+                    records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
+                    recordMap.put(newValue, records);
+                }
+                records.put(record.getIndexKey(), record);
+            }
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    @Override
+    public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
+        takeWriteLock();
+        try {
+            removeIndex(oldValue, entry.getIndexKey());
+            newIndex(newValue, entry);
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    @Override
+    public void removeIndex(Comparable oldValue, Data indexKey) {
+        takeWriteLock();
+        try {
+            if (oldValue instanceof IndexImpl.NullObject) {
+                recordsWithNullValue.remove(indexKey);
+            } else {
+                ConcurrentMap<Data, QueryableEntry> records = recordMap.get(oldValue);
+                if (records != null) {
+                    records.remove(indexKey);
+                    if (records.size() == 0) {
+                        recordMap.remove(oldValue);
+                    }
+                }
+            }
+        } finally {
+            releaseWriteLock();
+        }
+    }
+
+    @Override
+    public void clear() {
+        takeWriteLock();
+        try {
+            recordsWithNullValue.clear();
+            recordMap.clear();
+        } finally {
+            releaseWriteLock();
+        }
+    }
 
     @Override
     public void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to) {
-        Set<Comparable> values = sortedSet.subSet(from, to);
-        for (Comparable value : values) {
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
-            if (records != null) {
-                results.addResultSet(records);
+        takeReadLock();
+        try {
+            SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap =
+                    recordMap.subMap(from, true, to, true);
+            for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
+                results.addResultSet(value);
             }
-        }
-        // to wasn't included so include now
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(to);
-        if (records != null) {
-            results.addResultSet(records);
+        } finally {
+            releaseReadLock();
         }
     }
 
     @Override
     public void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue) {
-        Set<Comparable> values;
-        boolean notEqual = false;
-        switch (comparisonType) {
-            case LESSER:
-                values = sortedSet.headSet(searchedValue, false);
-                break;
-            case LESSER_EQUAL:
-                values = sortedSet.headSet(searchedValue, true);
-                break;
-            case GREATER:
-                values = sortedSet.tailSet(searchedValue, false);
-                break;
-            case GREATER_EQUAL:
-                values = sortedSet.tailSet(searchedValue, true);
-                break;
-            case NOT_EQUAL:
-                values = sortedSet;
-                notEqual = true;
-                break;
-            default:
-                throw new IllegalArgumentException("Unrecognized comparisonType:" + comparisonType);
+        takeReadLock();
+        try {
+            SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap;
+            switch (comparisonType) {
+                case LESSER:
+                    subMap = recordMap.headMap(searchedValue, false);
+                    break;
+                case LESSER_EQUAL:
+                    subMap = recordMap.headMap(searchedValue, true);
+                    break;
+                case GREATER:
+                    subMap = recordMap.tailMap(searchedValue, false);
+                    break;
+                case GREATER_EQUAL:
+                    subMap = recordMap.tailMap(searchedValue, true);
+                    break;
+                case NOT_EQUAL:
+                    // TODO There maybe more efficient way such as
+                    // Make a copy of current record map and just remove searched value.
+                    // So remaining records are not equal to searched value
+                    for (Map.Entry<Comparable, ConcurrentMap<Data, QueryableEntry>> entry : recordMap.entrySet()) {
+                        if (!searchedValue.equals(entry.getKey())) {
+                            results.addResultSet(entry.getValue());
+                        }
+                    }
+                    return;
+                default:
+                    throw new IllegalArgumentException("Unrecognized comparisonType: " + comparisonType);
+            }
+            for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
+                results.addResultSet(value);
+            }
+        } finally {
+            releaseReadLock();
         }
-
-        for (Comparable value : values) {
-            if (notEqual && searchedValue.equals(value)) {
-                // skip this value if predicateType is NOT_EQUAL
-                continue;
-            }
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
-            if (records != null) {
-                results.addResultSet(records);
-            }
-        }
     }
 
     @Override
-    public void newIndex(Comparable newValue, QueryableEntry record) {
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
-        if (records == null) {
-            records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-            mapRecords.put(newValue, records);
-            if (!(newValue instanceof IndexImpl.NullObject)) {
-                sortedSet.add(newValue);
+    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable value) {
+        takeReadLock();
+        try {
+            if (value instanceof IndexImpl.NullObject) {
+                return recordsWithNullValue;
+            } else {
+                return recordMap.get(value);
             }
-        }
-        records.put(record.getIndexKey(), record);
-    }
-
-    @Override
-    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
-        return mapRecords.get(indexValue);
-    }
-
-    @Override
-    public void clear() {
-        mapRecords.clear();
-        sortedSet.clear();
-    }
-
-    @Override
-    public void removeIndex(Comparable oldValue, Data indexKey) {
-        ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
-        if (records != null) {
-            records.remove(indexKey);
-            if (records.size() == 0) {
-                mapRecords.remove(oldValue);
-                sortedSet.remove(oldValue);
-            }
+        } finally {
+            releaseReadLock();
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
-        return new SingleResultSet(mapRecords.get(value));
+        takeReadLock();
+        try {
+            if (value instanceof IndexImpl.NullObject) {
+                return new SingleResultSet(recordsWithNullValue);
+            } else {
+                return new SingleResultSet(recordMap.get(value));
+            }
+        } finally {
+            releaseReadLock();
+        }
     }
 
     @Override
     public void getRecords(MultiResultSet results, Set<Comparable> values) {
-        for (Comparable value : values) {
-            ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(value);
-            if (records != null) {
-                results.addResultSet(records);
+        takeReadLock();
+        try {
+            for (Comparable value : values) {
+                ConcurrentMap<Data, QueryableEntry> records;
+                if (value instanceof IndexImpl.NullObject) {
+                    records = recordsWithNullValue;
+                } else {
+                    records = recordMap.get(value);
+                }
+                if (records != null) {
+                    results.addResultSet(records);
+                }
             }
+        } finally {
+            releaseReadLock();
         }
     }
 
     @Override
     public String toString() {
         return "SortedIndexStore{"
-                + "mapRecords=" + mapRecords.size()
+                + "recordMap=" + recordMap.size()
                 + '}';
     }
 }

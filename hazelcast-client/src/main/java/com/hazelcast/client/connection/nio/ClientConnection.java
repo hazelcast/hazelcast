@@ -38,6 +38,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.Closeable;
@@ -163,10 +164,10 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void write(Data data) throws IOException {
-        final int totalSize = data.totalSize();
+        final Packet packet = new Packet(data, serializationService.getPortableContext());
+        final int totalSize = packet.size();
         final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
         final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
-        final Packet packet = new Packet(data, serializationService.getPortableContext());
         boolean complete = false;
         while (!complete) {
             complete = packet.writeTo(buffer);
@@ -211,7 +212,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean live() {
+    public boolean isAlive() {
         return live;
     }
 
@@ -292,23 +293,32 @@ public class ClientConnection implements Connection, Closeable {
         if (socketChannelWrapper.isBlocking()) {
             return;
         }
-        if (connectionManager.isLive()) {
+        if (connectionManager.isAlive()) {
             try {
                 executionService.execute(new CleanResourcesTask());
             } catch (RejectedExecutionException e) {
                 logger.warning("Execution rejected ", e);
             }
         } else {
-            cleanResources(new HazelcastException("Client is shutting down!!!"));
+            cleanResources(new ConstructorFunction<Object, Throwable>() {
+                @Override
+                public Throwable createNew(Object arg) {
+                    return new HazelcastException("Client is shutting down!");
+                }
+            });
         }
-
     }
 
     private class CleanResourcesTask implements Runnable {
         @Override
         public void run() {
             waitForPacketsProcessed();
-            cleanResources(new TargetDisconnectedException(remoteEndpoint));
+            cleanResources(new ConstructorFunction<Object, Throwable>() {
+                @Override
+                public Throwable createNew(Object arg) {
+                    return new TargetDisconnectedException(remoteEndpoint);
+                }
+            });
         }
 
         private void waitForPacketsProcessed() {
@@ -331,19 +341,19 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
-    private void cleanResources(HazelcastException response) {
+    private void cleanResources(ConstructorFunction<Object, Throwable> responseCtor) {
         final Iterator<Map.Entry<Integer, ClientCallFuture>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
             iter.remove();
-            entry.getValue().notify(response);
+            entry.getValue().notify(responseCtor.createNew(null));
             eventHandlerMap.remove(entry.getKey());
         }
         final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
         while (iterator.hasNext()) {
             final ClientCallFuture future = iterator.next();
             iterator.remove();
-            future.notify(response);
+            future.notify(responseCtor.createNew(null));
         }
     }
 

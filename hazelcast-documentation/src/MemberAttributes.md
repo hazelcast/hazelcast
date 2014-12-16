@@ -2,13 +2,13 @@
 
 
 ### Member Attributes
-You can define various member attributes on your Hazelcast members. You can use member attributes to tag your members as your business logic requirements.
+You can define various member attributes on your Hazelcast members. You can use these member attributes to tag your members as your business logic requirements.
 
-In order to define member attribute on a member you can either
+In order to define member attribute on a member you can either:
 
-- Provide `MemberAttributeConfig` to your `Config` object.
+- provide `MemberAttributeConfig` to your `Config` object,
 
-- Provide member attributes at runtime via attribute setter methods on `Member` interface.
+- or provide member attributes at runtime via attribute setter methods on the `Member` interface.
 
 For example, you can tag your members with their CPU characteristics and you can route CPU intensive tasks to those CPU-rich members.
 

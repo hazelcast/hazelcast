@@ -61,7 +61,6 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         }
     }
 
-
     protected abstract OperationFactory createOperationFactory();
 
     protected abstract Object reduce(Map<Address, Object> map);
@@ -109,6 +108,4 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             parent.notify(target, object);
         }
     }
-
-
 }

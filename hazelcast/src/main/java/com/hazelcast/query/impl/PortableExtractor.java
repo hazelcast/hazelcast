@@ -16,8 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -95,7 +93,7 @@ final class PortableExtractor {
     }
 
     private static FieldDefinition getFieldDefinition(Data data, String fieldName, PortableContext portableContext) {
-        ClassDefinition classDefinition = data.getClassDefinition();
+        ClassDefinition classDefinition = portableContext.lookupClassDefinition(data);
         FieldDefinition fieldDefinition = portableContext.getFieldDefinition(classDefinition, fieldName);
         return fieldDefinition == null ? NULL_PORTABLE_FIELD_DEFINITION : fieldDefinition;
     }
@@ -140,21 +138,6 @@ final class PortableExtractor {
 
         @Override
         public int getFactoryId() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getVersion() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
             throw new UnsupportedOperationException();
         }
     }

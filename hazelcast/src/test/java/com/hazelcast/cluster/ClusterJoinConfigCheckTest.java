@@ -3,11 +3,11 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,13 +19,15 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Test that the Hazelcast infrastructure can deal correctly with {@link com.hazelcast.cluster.ConfigCheck} violations.
+ * Test that the Hazelcast infrastructure can deal correctly with {@link com.hazelcast.cluster.impl.ConfigCheck} violations.
  * Most of the actual cases are tested in the {@link com.hazelcast.cluster.ConfigCheckTest}. In this class we run a bunch
  * of integration tests to make sure that it really works like it is supposed to work.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClusterJoinConfigCheckTest {
+
+    private static final int BASE_PORT = 7777;
 
     @Before
     @After
@@ -43,7 +45,7 @@ public class ClusterJoinConfigCheckTest {
         whenGroupPasswordMismatch_thenNewNodeIsShutDown(false);
     }
 
-    public void whenGroupPasswordMismatch_thenNewNodeIsShutDown(boolean tcp) {
+    private void whenGroupPasswordMismatch_thenNewNodeIsShutDown(boolean tcp) {
         Config config1 = new Config();
         config1.getGroupConfig().setName("foo");
         config1.getGroupConfig().setPassword("password");
@@ -65,7 +67,7 @@ public class ClusterJoinConfigCheckTest {
         whenDifferentGroups_thenDifferentClustersAreFormed(false);
     }
 
-    public void whenDifferentGroups_thenDifferentClustersAreFormed(boolean tcp) {
+    private void whenDifferentGroups_thenDifferentClustersAreFormed(boolean tcp) {
         Config config1 = new Config();
         config1.getGroupConfig().setName("group1");
 
@@ -106,8 +108,13 @@ public class ClusterJoinConfigCheckTest {
         assertEquals(1, hz1.getCluster().getMembers().size());
     }
 
-    private void enableTcp(Config config1) {
-        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
-        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+    private void enableTcp(Config config) {
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
+        // Use a base port to these nodes can find each other
+        // for the case that they are not started from default port (5701)
+        final int basePort = TestUtil.getAvailablePort(BASE_PORT);
+        config.getNetworkConfig().setPort(basePort);
     }
 }

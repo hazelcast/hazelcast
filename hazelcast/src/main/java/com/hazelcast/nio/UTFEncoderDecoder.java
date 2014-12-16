@@ -541,7 +541,7 @@ public final class UTFEncoderDecoder {
 
         if (allAscii) {
             while (bufferPos != bufferLimit) {
-                data[charArrCount++] = (char) (buffer[bufferPos++] & 0xFF);
+                data[charArrCount++] = (char)(buffer[bufferPos++] & 0xFF);
             }
 
             for (readCount = bufferPos - 1; readCount < utfLength; readCount++) {

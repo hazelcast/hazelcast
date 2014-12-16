@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -42,13 +42,13 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 public final class ClientInvocationServiceImpl implements ClientInvocationService {
 
     private final ILogger logger = Logger.getLogger(ClientInvocationService.class);
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final ClientConnectionManager connectionManager;
 
     private final ResponseThread responseThread;
     private volatile boolean isShutdown;
 
-    public ClientInvocationServiceImpl(HazelcastClient client) {
+    public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
@@ -87,14 +87,22 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     @Override
+    public <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) throws Exception {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        final Address owner = partitionService.getPartitionOwner(partitionId);
+        return send(request, owner);
+    }
+
+    @Override
     public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception {
         return sendAndHandle(request, handler);
     }
 
-    @Override
     public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler)
             throws Exception {
-        return sendAndHandle(request, target, handler);
+        final ClientConnection clientConnection = connectionManager.connectToAddress(target);
+        request.setSingleConnection();
+        return doSend(request, clientConnection, handler);
     }
 
     // NIO public
@@ -128,11 +136,6 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
 
     private ICompletableFuture sendAndHandle(ClientRequest request, EventHandler handler) throws Exception {
         final ClientConnection connection = connectionManager.tryToConnect(null);
-        return doSend(request, connection, handler);
-    }
-
-    private ICompletableFuture sendAndHandle(ClientRequest request, Address target, EventHandler handler) throws Exception {
-        final ClientConnection connection = connectionManager.tryToConnect(target);
         return doSend(request, connection, handler);
     }
 

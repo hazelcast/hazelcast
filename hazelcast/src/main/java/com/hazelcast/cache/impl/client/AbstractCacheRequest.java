@@ -16,24 +16,36 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
+import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * Abstract cache request to handle a completion id registration.
+ */
 public abstract class AbstractCacheRequest
         extends KeyBasedClientRequest
         implements RetryableRequest {
 
     protected String name;
 
+    protected InMemoryFormat inMemoryFormat;
+
     public AbstractCacheRequest() {
     }
 
-    public AbstractCacheRequest(String name) {
+    public AbstractCacheRequest(String name, InMemoryFormat inMemoryFormat) {
         this.name = name;
+        this.inMemoryFormat = inMemoryFormat;
     }
 
     public final int getFactoryId() {
@@ -47,9 +59,25 @@ public abstract class AbstractCacheRequest
     public void setCompletionId(Integer completionId) {
     }
 
+    protected CacheOperationProvider getOperationProvider() {
+        ICacheService service = getService();
+        return service.getCacheOperationProvider(name, inMemoryFormat);
+    }
+
     @Override
     public Permission getRequiredPermission() {
         return null;
     }
 
+    public void write(PortableWriter writer)
+            throws IOException {
+        writer.writeUTF("n", name);
+        writer.writeUTF("i", inMemoryFormat.name());
+    }
+
+    public void read(PortableReader reader)
+            throws IOException {
+        name = reader.readUTF("n");
+        inMemoryFormat = InMemoryFormat.valueOf(reader.readUTF("i"));
+    }
 }

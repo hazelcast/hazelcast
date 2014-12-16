@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -27,7 +28,8 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
 
 /**
- * Provides Listener Registration Service.
+ * <p>Listener can be registered and unregistered by {@link com.hazelcast.cache.impl.CacheService}. This operator
+ * delegates the request to the cache service.</p>
  */
 public class CacheListenerRegistrationOperation
         extends AbstractNamedOperation
@@ -50,12 +52,16 @@ public class CacheListenerRegistrationOperation
     public void run()
             throws Exception {
         final CacheService service = getService();
+        CacheConfig cacheConfig = service.getCacheConfig(name);
         if (register) {
             //REGISTER
-            service.getCacheConfig(name).addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-        } else {
+            if (cacheConfig == null) {
+                throw new IllegalStateException("CacheConfig does not exist!!! name: " + name);
+            }
+            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+        } else if (cacheConfig != null) {
             //UNREGISTER
-            service.getCacheConfig(name).removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
         }
     }
 

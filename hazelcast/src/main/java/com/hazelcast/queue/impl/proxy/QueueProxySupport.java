@@ -22,20 +22,21 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.impl.AddAllOperation;
-import com.hazelcast.queue.impl.ClearOperation;
-import com.hazelcast.queue.impl.CompareAndRemoveOperation;
-import com.hazelcast.queue.impl.ContainsOperation;
-import com.hazelcast.queue.impl.DrainOperation;
-import com.hazelcast.queue.impl.IsEmptyOperation;
-import com.hazelcast.queue.impl.IteratorOperation;
-import com.hazelcast.queue.impl.OfferOperation;
-import com.hazelcast.queue.impl.PeekOperation;
-import com.hazelcast.queue.impl.PollOperation;
-import com.hazelcast.queue.impl.QueueOperation;
+import com.hazelcast.queue.impl.operations.AddAllOperation;
+import com.hazelcast.queue.impl.operations.ClearOperation;
+import com.hazelcast.queue.impl.operations.CompareAndRemoveOperation;
+import com.hazelcast.queue.impl.operations.ContainsOperation;
+import com.hazelcast.queue.impl.operations.DrainOperation;
+import com.hazelcast.queue.impl.operations.IsEmptyOperation;
+import com.hazelcast.queue.impl.operations.IteratorOperation;
+import com.hazelcast.queue.impl.operations.OfferOperation;
+import com.hazelcast.queue.impl.operations.PeekOperation;
+import com.hazelcast.queue.impl.operations.PollOperation;
+import com.hazelcast.queue.impl.operations.QueueOperation;
 import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.queue.impl.RemoveOperation;
-import com.hazelcast.queue.impl.SizeOperation;
+import com.hazelcast.queue.impl.operations.RemainingCapacityOperation;
+import com.hazelcast.queue.impl.operations.RemoveOperation;
+import com.hazelcast.queue.impl.operations.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -101,6 +102,11 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
 
     public int size() {
         SizeOperation operation = new SizeOperation(name);
+        return (Integer) invokeAndGet(operation);
+    }
+
+    public int remainingCapacity() {
+        RemainingCapacityOperation operation = new RemainingCapacityOperation(name);
         return (Integer) invokeAndGet(operation);
     }
 

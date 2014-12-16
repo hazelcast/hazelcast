@@ -16,8 +16,7 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.map.MapDataSerializerHook;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -45,16 +44,16 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeNullableData(out, getIndexKey());
-        IOUtil.writeNullableData(out, getKeyData());
-        IOUtil.writeNullableData(out, getValueData());
+        out.writeData(indexKey);
+        out.writeData(keyData);
+        out.writeData(valueData);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        indexKey = IOUtil.readNullableData(in);
-        keyData = IOUtil.readNullableData(in);
-        valueData = IOUtil.readNullableData(in);
+        indexKey = in.readData();
+        keyData = in.readData();
+        valueData = in.readData();
     }
 
     @Override

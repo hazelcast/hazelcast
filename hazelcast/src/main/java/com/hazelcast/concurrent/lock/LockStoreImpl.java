@@ -38,11 +38,10 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     private final transient ConstructorFunction<Data, LockResourceImpl> lockConstructor =
             new ConstructorFunction<Data, LockResourceImpl>() {
-                @Override
-                public LockResourceImpl createNew(Data key) {
-                    return new LockResourceImpl(key, LockStoreImpl.this);
-                }
-            };
+        public LockResourceImpl createNew(Data key) {
+            return new LockResourceImpl(key, LockStoreImpl.this);
+        }
+    };
 
     private final ConcurrentMap<Data, LockResourceImpl> locks = new ConcurrentHashMap<Data, LockResourceImpl>();
     private ObjectNamespace namespace;
@@ -133,6 +132,12 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         } else {
             return lock.canAcquireLock(caller, threadId);
         }
+    }
+
+    @Override
+    public boolean isTransactionallyLocked(Data key) {
+        LockResourceImpl lock = locks.get(key);
+        return lock != null && lock.isTransactional() && lock.isLocked();
     }
 
     @Override

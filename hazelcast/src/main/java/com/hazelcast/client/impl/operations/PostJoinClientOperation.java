@@ -22,11 +22,13 @@ public class PostJoinClientOperation extends AbstractOperation {
 
     @Override
     public void run() throws Exception {
-        if (mappings != null) {
-            ClientEngineImpl engine = getService();
-            for (Map.Entry<String, String> entry : mappings.entrySet()) {
-                engine.addOwnershipMapping(entry.getKey(), entry.getValue());
-            }
+        if (mappings == null) {
+            return;
+        }
+
+        ClientEngineImpl engine = getService();
+        for (Map.Entry<String, String> entry : mappings.entrySet()) {
+            engine.addOwnershipMapping(entry.getKey(), entry.getValue());
         }
     }
 

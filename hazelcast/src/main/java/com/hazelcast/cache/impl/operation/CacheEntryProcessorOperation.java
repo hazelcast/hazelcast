@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.BackupAwareEntryProcessor;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,9 @@ import java.io.IOException;
 
 /**
  * Operation of the Cache Entry Processor.
+ * <p>{@link javax.cache.processor.EntryProcessor} is executed on the partition.
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore} provides the required functionality and this
+ * operation is responsible for parameter passing and handling the backup at the end.</p>
  */
 public class CacheEntryProcessorOperation
         extends AbstractMutatingCacheOperation {
@@ -36,6 +40,7 @@ public class CacheEntryProcessorOperation
     private Object[] arguments;
 
     private transient CacheRecord backupRecord;
+    private transient EntryProcessor backupEntryProcessor;
 
     public CacheEntryProcessorOperation() {
     }
@@ -55,7 +60,11 @@ public class CacheEntryProcessorOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new CachePutBackupOperation(name, key, backupRecord);
+        if (backupEntryProcessor != null) {
+            return new CacheBackupEntryProcessorOperation(name, key, backupEntryProcessor, arguments);
+        } else {
+            return new CachePutBackupOperation(name, key, backupRecord);
+        }
     }
 
     @Override
@@ -66,8 +75,14 @@ public class CacheEntryProcessorOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.invoke(key, entryProcessor, arguments);
-        backupRecord = cache.getRecord(key);
+        response = cache.invoke(key, entryProcessor, arguments, completionId);
+        if (entryProcessor instanceof BackupAwareEntryProcessor) {
+            BackupAwareEntryProcessor processor = (BackupAwareEntryProcessor) entryProcessor;
+            backupEntryProcessor = processor.createBackupEntryProcessor();
+        }
+        if (backupEntryProcessor == null) {
+            backupRecord = cache.getRecord(key);
+        }
     }
 
     @Override

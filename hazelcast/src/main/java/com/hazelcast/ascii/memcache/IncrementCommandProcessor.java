@@ -19,8 +19,6 @@ package com.hazelcast.ascii.memcache;
 import com.hazelcast.ascii.TextCommandConstants;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ByteUtil;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.UnsupportedEncodingException;
@@ -28,18 +26,10 @@ import java.net.URLDecoder;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-/**
- * User: sancar
- * Date: 3/8/13
- * Time: 3:51 PM
- */
 public class IncrementCommandProcessor extends MemcacheCommandProcessor<IncrementCommand> {
-
-    private final ILogger logger;
 
     public IncrementCommandProcessor(TextCommandServiceImpl textCommandService) {
         super(textCommandService);
-        logger = textCommandService.getNode().getLogger(this.getClass().getName());
     }
 
     public void handle(IncrementCommand incrementCommand) {
@@ -94,10 +84,9 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
             final byte[] value1 = entry.getValue();
             final long current = (value1 == null || value1.length == 0) ? 0 : byteArrayToLong(value1);
             long result = -1;
-
             result = incrementCommandTypeCheck(incrementCommand, result, current);
 
-            incrementCommand.setResponse(ByteUtil.concatenate(stringToBytes(String.valueOf(result))
+            incrementCommand.setResponse(concatenate(stringToBytes(String.valueOf(result))
                     , TextCommandConstants.RETURN));
             MemcacheEntry newValue = new MemcacheEntry(key, longToByteArray(result), entry.getFlag());
             textCommandService.put(mapName, key, newValue);

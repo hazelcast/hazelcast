@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,7 +25,9 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * Cache Remove Operation
+ * Operation implementation for cache remove functionality.
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, Object, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#remove(Data, String, int)
  */
 public class CacheRemoveOperation
         extends AbstractMutatingCacheOperation {
@@ -35,10 +36,6 @@ public class CacheRemoveOperation
     private Data oldValue;
 
     public CacheRemoveOperation() {
-    }
-
-    public CacheRemoveOperation(String name, Data key, Data oldValue) {
-        this(name, key, oldValue, IGNORE_COMPLETION);
     }
 
     public CacheRemoveOperation(String name, Data key, Data oldValue, int completionId) {
@@ -50,9 +47,9 @@ public class CacheRemoveOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.remove(key, getCallerUuid());
+            response = cache.remove(key, getCallerUuid(), completionId);
         } else {
-            response = cache.remove(key, oldValue, getCallerUuid());
+            response = cache.remove(key, oldValue, getCallerUuid(), completionId);
         }
     }
 
@@ -75,13 +72,13 @@ public class CacheRemoveOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, oldValue);
+        out.writeData(oldValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        oldValue = IOUtil.readNullableData(in);
+        oldValue = in.readData();
     }
 }

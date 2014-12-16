@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,7 +26,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache Replace Operation
+ * Operator implementation for cache replace functionality.
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, ExpiryPolicy, String, int)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#replace(Data, Object, Object, ExpiryPolicy, String, int)
  */
 public class CacheReplaceOperation
         extends AbstractMutatingCacheOperation {
@@ -38,10 +39,6 @@ public class CacheReplaceOperation
     private ExpiryPolicy expiryPolicy;
 
     public CacheReplaceOperation() {
-    }
-
-    public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy) {
-        this(name, key, oldValue, newValue, expiryPolicy, IGNORE_COMPLETION);
     }
 
     public CacheReplaceOperation(String name, Data key, Data oldValue, Data newValue, ExpiryPolicy expiryPolicy,
@@ -56,9 +53,9 @@ public class CacheReplaceOperation
     public void run()
             throws Exception {
         if (oldValue == null) {
-            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid());
+            response = cache.replace(key, newValue, expiryPolicy, getCallerUuid(), completionId);
         } else {
-            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid());
+            response = cache.replace(key, oldValue, newValue, expiryPolicy, getCallerUuid(), completionId);
         }
         if (Boolean.TRUE.equals(response)) {
             backupRecord = cache.getRecord(key);
@@ -79,8 +76,8 @@ public class CacheReplaceOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        newValue.writeData(out);
-        IOUtil.writeNullableData(out, oldValue);
+        out.writeData(newValue);
+        out.writeData(oldValue);
         out.writeObject(expiryPolicy);
     }
 
@@ -88,9 +85,8 @@ public class CacheReplaceOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        newValue = new Data();
-        newValue.readData(in);
-        oldValue = IOUtil.readNullableData(in);
+        newValue = in.readData();
+        oldValue = in.readData();
         expiryPolicy = in.readObject();
     }
 

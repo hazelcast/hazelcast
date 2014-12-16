@@ -43,6 +43,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         final IMap map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
                 .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withWriteDelaySeconds(1)
                 .withPartitionCount(1)
                 .build();

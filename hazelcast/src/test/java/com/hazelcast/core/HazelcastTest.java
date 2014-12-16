@@ -16,21 +16,34 @@
 
 package com.hazelcast.core;
 
+import static com.hazelcast.core.Hazelcast.getAllHazelcastInstances;
+import static java.util.Collections.emptySet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
 import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastTest extends HazelcastTestSupport {
+
+    @Before
+    @After
+    public void cleanup(){
+        Hazelcast.shutdownAll();
+        assertEquals(emptySet(), getAllHazelcastInstances());
+    }
 
     @Test(expected = NullPointerException.class)
     public void getOrCreateHazelcastInstance_nullConfig() {
@@ -68,4 +81,26 @@ public class HazelcastTest extends HazelcastTestSupport {
         assertSame(hz1, hz2);
         hz1.shutdown();
     }
+
+    @Test
+    public void testNewInstanceByName() {
+        Config config = new Config();
+        config.setInstanceName("test");
+
+        HazelcastInstance hc1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hc2 = Hazelcast.getHazelcastInstanceByName("test");
+        HazelcastInstance hc3 = Hazelcast.getHazelcastInstanceByName(hc1.getName());
+
+        assertTrue(hc1 == hc2);
+        assertTrue(hc1 == hc3);
+    }
+
+    @Test(expected = DuplicateInstanceNameException.class)
+    public void testNewInstanceByNameFail() {
+        Config config = new Config();
+        config.setInstanceName("test");
+        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
+    }
+
 }

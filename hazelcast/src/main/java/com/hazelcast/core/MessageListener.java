@@ -24,12 +24,13 @@ import java.util.EventListener;
  * @param <E> message
  */
 public interface MessageListener<E> extends EventListener {
+
     /**
      * Invoked when a message is received for the added topic. Note that topic guarantees message ordering.
-     * Therefore there is only one thread invoking onMessage. The user shouldn't keep the thread busy and preferably
-     * dispatch it via an Executor. This will increase the performance of the topic.
+     * Therefore there is only one thread invoking onMessage. The user should not keep the thread busy, but preferably
+     * should dispatch it via an Executor. This will increase the performance of the topic.
      *
-     * @param message received message
+     * @param message the message that is received for the added topic
      */
     void onMessage(Message<E> message);
 }

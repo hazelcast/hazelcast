@@ -40,7 +40,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             @Override
             public Portable create(int classId) {
                 if (classId == 6) {
-                    return new ClientIssueTest.SamplePortable();
+                    return new ClientRegressionTest.SamplePortable();
                 }
                 return null;
             }
@@ -68,7 +68,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         }, true);
 
-        map.put(1, new ClientIssueTest.SamplePortable(1));
+        map.put(1, new ClientRegressionTest.SamplePortable(1));
         assertOpenEventually(latch);
     }
 
@@ -89,7 +89,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         }, true);
 
-        queue.offer(new ClientIssueTest.SamplePortable(1));
+        queue.offer(new ClientRegressionTest.SamplePortable(1));
         assertOpenEventually(latch);
     }
 
@@ -110,7 +110,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         }, true);
 
-        set.add(new ClientIssueTest.SamplePortable(1));
+        set.add(new ClientRegressionTest.SamplePortable(1));
         assertOpenEventually(latch);
     }
 
@@ -131,7 +131,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         }, true);
 
-        list.add(new ClientIssueTest.SamplePortable(1));
+        list.add(new ClientRegressionTest.SamplePortable(1));
         assertOpenEventually(latch);
     }
 
@@ -147,7 +147,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
             }
         });
 
-        topic.publish(new ClientIssueTest.SamplePortable(1));
+        topic.publish(new ClientRegressionTest.SamplePortable(1));
         assertOpenEventually(latch);
     }
 

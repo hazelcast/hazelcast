@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -24,6 +26,12 @@ import java.nio.ByteOrder;
  * Provides serialization methods for arrays of primitive types
  */
 public interface ObjectDataInput extends DataInput {
+
+    /**
+     * @return the byte array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    byte[] readByteArray() throws IOException;
 
     /**
      * @return the char array read
@@ -67,6 +75,12 @@ public interface ObjectDataInput extends DataInput {
      * @throws IOException if it reaches end of file before finish reading
      */
     <T> T readObject() throws IOException;
+
+    /**
+     * @return data read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    Data readData() throws IOException;
 
     /**
      * Returns class loader that internally used for objects

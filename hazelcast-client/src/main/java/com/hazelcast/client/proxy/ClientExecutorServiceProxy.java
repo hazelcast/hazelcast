@@ -36,6 +36,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -408,23 +409,32 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> Future<T> submitToRandomInternal(Callable<T> task, T defaultValue, boolean preventSync) {
         checkIfNotNull(task);
         final String uuid = getUUID();
-        final int partitionId = randomPartitionId();
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
-        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
-        return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
+        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, newTargetCreator());
+        final ICompletableFuture<T> f = invokeFuture(request);
+        return checkSync(f, uuid, request.getTarget(), -1, preventSync, defaultValue);
     }
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
         checkIfNotNull(task);
-        checkIfNotNull(task);
+
         final String uuid = getUUID();
-        final int partitionId = randomPartitionId();
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
-        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
+        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, newTargetCreator());
+        final ICompletableFuture<T> f = invokeFuture(request);
         f.andThen(callback);
     }
 
-    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address, T defaultValue, boolean preventSync) {
+    private ConstructorFunction<Object, Address> newTargetCreator() {
+        return new ConstructorFunction<Object, Address>() {
+            @Override
+            public Address createNew(Object arg) {
+                final int partitionId = randomPartitionId();
+                return getPartitionOwner(partitionId);
+            }
+        };
+    }
+
+    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address, T defaultValue,
+                                                 boolean preventSync) {
         checkIfNotNull(task);
         final String uuid = getUUID();
         final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, address);
@@ -541,9 +551,13 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private <T> ICompletableFuture<T> invokeFuture(PartitionCallableRequest request, int partitionId) {
+        final Address partitionOwner = getPartitionOwner(partitionId);
+        return invokeFuture(request, partitionOwner);
+    }
+
+    private <T> ICompletableFuture<T> invokeFuture(PartitionCallableRequest request, Address target) {
         try {
-            final Address partitionOwner = getPartitionOwner(partitionId);
-            return getContext().getInvocationService().invokeOnTarget(request, partitionOwner);
+            return getContext().getInvocationService().invokeOnTarget(request, target);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

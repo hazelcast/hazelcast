@@ -32,7 +32,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Cache PutAllBackup Operation
+ * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
+ * multiple entries.
+ * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
 public class CachePutAllBackupOperation
         extends AbstractNamedOperation
@@ -61,7 +63,7 @@ public class CachePutAllBackupOperation
             throws Exception {
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                cache.setRecord(entry.getKey(), entry.getValue());
+                cache.putRecord(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -76,7 +78,7 @@ public class CachePutAllBackupOperation
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 final Data key = entry.getKey();
                 final CacheRecord record = entry.getValue();
-                key.writeData(out);
+                out.writeData(key);
                 out.writeObject(record);
             }
         }
@@ -91,8 +93,7 @@ public class CachePutAllBackupOperation
             int size = in.readInt();
             cacheRecords = new HashMap<Data, CacheRecord>(size);
             for (int i = 0; i < size; i++) {
-                final Data key = new Data();
-                key.readData(in);
+                final Data key = in.readData();
                 final CacheRecord record = in.readObject();
                 cacheRecords.put(key, record);
             }

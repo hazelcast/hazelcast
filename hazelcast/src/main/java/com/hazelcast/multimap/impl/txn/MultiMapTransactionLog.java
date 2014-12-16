@@ -39,17 +39,15 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     Data key;
     long ttl;
     long threadId;
-    long txVersion;
 
     public MultiMapTransactionLog() {
     }
 
-    public MultiMapTransactionLog(Data key, String name, long ttl, long threadId, long version) {
+    public MultiMapTransactionLog(Data key, String name, long ttl, long threadId) {
         this.key = key;
         this.name = name;
         this.ttl = ttl;
         this.threadId = threadId;
-        this.txVersion = version;
     }
 
     public Future prepare(NodeEngine nodeEngine) {
@@ -64,7 +62,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Future commit(NodeEngine nodeEngine) {
-        TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, txVersion, opList);
+        TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, opList);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();
@@ -91,10 +89,9 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         for (Operation op : opList) {
             out.writeObject(op);
         }
-        key.writeData(out);
+        out.writeData(key);
         out.writeLong(ttl);
         out.writeLong(threadId);
-        out.writeLong(txVersion);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -103,11 +100,9 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         ttl = in.readLong();
         threadId = in.readLong();
-        txVersion = in.readLong();
     }
 
     public Object getKey() {

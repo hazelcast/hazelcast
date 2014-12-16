@@ -2,9 +2,9 @@
 ### Queue Persistence
 
 
-Hazelcast allows you to load and store the distributed queue entries from/to a persistent datastore using the interface `QueueStore`. If queue store is enabled, each entry added to queue will also be stored at the configured queue store. When the number of items in queue exceeds the memory limit, items will only persisted to queue store, they will not be stored in queue memory. 
+Hazelcast allows you to load and store the distributed queue items from/to a persistent datastore using the interface `QueueStore`. If queue store is enabled, each item added to the queue will also be stored at the configured queue store. When the number of items in the queue exceeds the memory limit, the items will only persisted in the queue store, they will not be stored in the queue memory. 
 
-`QueueStore` interface enables you store, load and delete entries with its methods like `store`, `storeAll`, `load` and `delete`. Below sample class includes all the `QueueStore` methods.
+`QueueStore` interface enables you to store, load, and delete items with methods like `store`, `storeAll`, `load` and `delete`. The following example class includes all of the `QueueStore` methods.
 
 ```java
 public class TheQueueStore implements QueueStore<Item> {
@@ -47,7 +47,7 @@ public class TheQueueStore implements QueueStore<Item> {
     }
 ```
 
-As you can guess, `Item` must be serializable. And below is a sample queue store configuration.
+`Item` must be serializable. Following is an example queue store configuration.
 
 ```xml
 <queue-store>
@@ -63,11 +63,11 @@ As you can guess, `Item` must be serializable. And below is a sample queue store
 Let's explain the properties.
 
 -   **Binary**:
-    By default, Hazelcast stores queue items in serialized form in memory and before inserting into datastore, deserializes them. But if you will not reach the queue store from an external application, you can prefer the items to be inserted in binary form. So you get rid of de-serialization step which is a performance optimization. Binary feature is disabled by default.
+    By default, Hazelcast stores the queue items in serialized form in memory. Before it inserts the queue items into datastore, it deserializes them. But if you will not reach the queue store from an external application, you might prefer that the items be inserted in binary form. You can get rid of the de-serialization step; this would be a performance optimization. The binary feature is disabled by default.
     
 -   **Memory Limit**:
-    This is the number of items after which Hazelcast will just store items to datastore. For example, if memory limit is 1000, then 1001st item will be just put into datastore. This feature is useful when you want to avoid out-of-memory conditions. Default number for memory limit is 1000. If you want to always use memory, you can set it to `Integer.MAX_VALUE`.
+    This is the number of items after which Hazelcast will store items only to datastore. For example, if the memory limit is 1000, then the 1001st item will be put only to datastore. This feature is useful when you want to avoid out-of-memory conditions. The default number for `memory-limit` is 1000. If you want to always use memory, you can set it to `Integer.MAX_VALUE`.
     
 -   **Bulk Load**:
-    At initialization of queue, items are loaded from QueueStore in bulks. Bulk load is the size of these bulks. By default it is 250.
+    When the queue is initialized, items are loaded from `QueueStore` in bulks. Bulk load is the size of these bulks. By default, `bulk-load` is 250.
 

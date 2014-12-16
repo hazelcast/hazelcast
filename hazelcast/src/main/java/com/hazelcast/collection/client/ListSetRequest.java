@@ -54,14 +54,13 @@ public class ListSetRequest extends CollectionRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeInt("i", index);
-        value.writeData(writer.getRawDataOutput());
+        writer.getRawDataOutput().writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         index = reader.readInt("i");
-        value = new Data();
-        value.readData(reader.getRawDataInput());
+        value = reader.getRawDataInput().readData();
     }
 
     @Override

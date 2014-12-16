@@ -5,7 +5,7 @@
 ![](images/enterprise-onlycopy.jpg)
 
 
-Hazelcast supports standard Java Security (JAAS) based authentication between cluster members. You should configure one or moreLoginModules and an instance of `com.hazelcast.security.ICredentialsFactory`. Although Hazelcast has default implementations using cluster group and group-password and UsernamePasswordCredentials on authentication, it is advised to implement these according to specific needs and environment.
+Hazelcast supports standard Java Security (JAAS) based authentication between cluster members. To implement it, you configure one or more LoginModules and an instance of `com.hazelcast.security.ICredentialsFactory`. Although Hazelcast has default implementations using cluster group and group-password and UsernamePasswordCredentials on authentication, it is recommended that you implement the LoginModules and an instance of `com.hazelcast.security.ICredentialsFactory` according to your specific needs and environment.
 
 ```xml
 <security enabled="true">
@@ -40,7 +40,7 @@ Hazelcast supports standard Java Security (JAAS) based authentication between cl
 </security>
 ```
 
-You can define as many asLoginModules you wanted in configuration. Those are executed in given order. Usage attribute has 4 values; 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
+You can define as many asLoginModules you wanted in configuration. They are executed in the given order. The `usage` attribute has 4 values: 'required', 'requisite', 'sufficient' and 'optional' as defined in `javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag`.
 
 ```java
 package com.hazelcast.security;
@@ -58,4 +58,4 @@ public interface ICredentialsFactory {
 }
 ```
 
-Properties defined in configuration are passed to `ICredentialsFactory.configure()` method as java.util.Properties and to `LoginModule.initialize()` method as java.util.Map.
+Properties defined in configuration are passed to the `ICredentialsFactory.configure()` method as java.util.Properties and to the `LoginModule.initialize()` method as java.util.Map.

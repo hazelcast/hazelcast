@@ -8,7 +8,7 @@ import java.util.Arrays;
 */
 class InnerPortable implements Portable {
 
-    static final int CLASS_ID = 2;
+    static final short CLASS_ID = 2;
 
     byte[] bb;
     char[] cc;
@@ -56,7 +56,7 @@ class InnerPortable implements Portable {
         ll = reader.readLongArray("l");
         ff = reader.readFloatArray("f");
         dd = reader.readDoubleArray("d");
-        final Portable[] pp = reader.readPortableArray("nn");
+        Portable[] pp = reader.readPortableArray("nn");
         nn = new NamedPortable[pp.length];
         System.arraycopy(pp, 0, nn, 0, nn.length);
     }
@@ -95,5 +95,21 @@ class InnerPortable implements Portable {
 
     public int getFactoryId() {
         return PortableTest.FACTORY_ID;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("InnerPortable{");
+        sb.append("bb=").append(Arrays.toString(bb));
+        sb.append(", cc=").append(Arrays.toString(cc));
+        sb.append(", ss=").append(Arrays.toString(ss));
+        sb.append(", ii=").append(Arrays.toString(ii));
+        sb.append(", ll=").append(Arrays.toString(ll));
+        sb.append(", ff=").append(Arrays.toString(ff));
+        sb.append(", dd=").append(Arrays.toString(dd));
+        sb.append(", nn=").append(Arrays.toString(nn));
+        sb.append('}');
+        return sb.toString();
     }
 }

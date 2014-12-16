@@ -36,7 +36,7 @@ public class ExecutorTest extends HazelcastTestSupport {
         final CountDownLatch completedLatch = new CountDownLatch(1);
         final AtomicBoolean failed = new AtomicBoolean();
         // Local execution of callable may change the state of callable before sent to other members
-        // we avoid this by copying(serialize/de-serialize) for local executions
+        // we avoid this by serializing beforehand
         executorService.submitToAllMembers(myTask, new MultiExecutionCallback() {
             @Override
             public void onResponse(Member member, Object value) {

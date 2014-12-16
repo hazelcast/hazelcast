@@ -19,15 +19,18 @@ package com.hazelcast.executor.impl.client;
 import com.hazelcast.client.impl.client.TargetClientRequest;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
-import com.hazelcast.executor.impl.MemberCallableTaskOperation;
+import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.ConstructorFunction;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.Callable;
@@ -35,21 +38,33 @@ import java.util.concurrent.Callable;
 /**
  * This class is used for sending the task to a particular target
  */
-public final class TargetCallableRequest extends TargetClientRequest {
+public final class TargetCallableRequest extends TargetClientRequest implements RefreshableRequest {
 
     private String name;
     private String uuid;
     private Callable callable;
-    private Address target;
+    private volatile Address target;
+    private ConstructorFunction<Object, Address> targetAddressCreator;
 
     public TargetCallableRequest() {
     }
 
     public TargetCallableRequest(String name, String uuid, Callable callable, Address target) {
+        this(name, uuid, callable, target, null);
+    }
+
+    public TargetCallableRequest(String name, String uuid, Callable callable,
+                                 ConstructorFunction<Object, Address> targetAddressCreator) {
+        this(name, uuid, callable, null, targetAddressCreator);
+    }
+
+    private TargetCallableRequest(String name, String uuid, Callable callable,
+                                  Address target, ConstructorFunction<Object, Address> targetAddressCreator) {
         this.name = name;
         this.uuid = uuid;
         this.callable = callable;
-        this.target = target;
+        this.target = targetAddressCreator == null ? target : targetAddressCreator.createNew(null);
+        this.targetAddressCreator = targetAddressCreator;
     }
 
     @SuppressWarnings("unchecked")
@@ -57,9 +72,11 @@ public final class TargetCallableRequest extends TargetClientRequest {
     protected Operation prepareOperation() {
         SecurityContext securityContext = getClientEngine().getSecurityContext();
         if (securityContext != null) {
-            callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
+            Subject subject = getEndpoint().getSubject();
+            callable = securityContext.createSecureCallable(subject, callable);
         }
-        return new MemberCallableTaskOperation(name, uuid, callable);
+        Data callableData = serializationService.toData(callable);
+        return new MemberCallableTaskOperation(name, uuid, callableData);
     }
 
     @Override
@@ -104,5 +121,13 @@ public final class TargetCallableRequest extends TargetClientRequest {
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    @Override
+    public void refresh() {
+        if (targetAddressCreator == null) {
+            return;
+        }
+        target = targetAddressCreator.createNew(null);
     }
 }

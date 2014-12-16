@@ -23,7 +23,7 @@ import java.util.Properties;
  * MapLoader classes implementing MapLoaderLifecycleSupport
  * interface will be called by Hazelcast on init and destroy so that
  * implementation can do necessary configuration when initializing and
- * cleanup when destroying.
+ * clean up when destroying.
  */
 public interface MapLoaderLifecycleSupport {
     /**
@@ -31,7 +31,7 @@ public interface MapLoaderLifecycleSupport {
      * this method when the map is first used on the
      * HazelcastInstance. Implementation can
      * initialize required resources for the implementing
-     * mapLoader such as reading a config file and/or creating
+     * mapLoader, such as reading a config file and/or creating a
      * database connection.
      *
      * @param hazelcastInstance HazelcastInstance of this mapLoader.
@@ -42,9 +42,9 @@ public interface MapLoaderLifecycleSupport {
 
     /**
      * Hazelcast will call this method before shutting down.
-     * This method can be overridden to cleanup the resources
+     * This method can be overridden to clean up the resources
      * held by this map loader implementation, such as closing the
-     * database connections etc.
+     * database connections, etc.
      */
     void destroy();
 }

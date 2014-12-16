@@ -49,7 +49,6 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected final String name;
     protected final TransactionSupport tx;
     protected final MultiMapConfig config;
-    private long version = -1;
 
     private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
 
@@ -83,10 +82,9 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
             recordId = response.getNextRecordId();
-            version = response.getTxVersion();
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLog(key, name, ttl, getThreadId(), version);
+            log = new MultiMapTransactionLog(key, name, ttl, getThreadId());
             tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
@@ -116,10 +114,9 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             if (response == null) {
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
-            version = response.getTxVersion();
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLog(key, name, ttl, getThreadId(), version);
+            log = new MultiMapTransactionLog(key, name, ttl, getThreadId());
             tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
@@ -135,7 +132,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 break;
             }
         }
-        if (version != -1 || recordId != -1) {
+        if (recordId != -1) {
             TxnRemoveOperation operation = new TxnRemoveOperation(name, key, recordId, value);
             log.addOperation(operation);
             return recordId != -1;
@@ -154,9 +151,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             if (response == null) {
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
-            version = response.getTxVersion();
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
-            log = new MultiMapTransactionLog(key, name, ttl, getThreadId(), version);
+            log = new MultiMapTransactionLog(key, name, ttl, getThreadId());
             tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
@@ -172,6 +168,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null) {
             GetAllOperation operation = new GetAllOperation(name, key);
+            operation.setThreadId(ThreadUtil.getThreadId());
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 final OperationService operationService = getNodeEngine().getOperationService();
@@ -195,6 +192,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null) {
             CountOperation operation = new CountOperation(name, key);
+            operation.setThreadId(ThreadUtil.getThreadId());
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 final OperationService operationService = getNodeEngine().getOperationService();

@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -60,6 +61,46 @@ public class ClientServiceTest extends HazelcastTestSupport {
     public void cleanup() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAddClientListener_whenListenerIsNull(){
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        ClientService clientService = instance.getClientService();
+        clientService.addClientListener(null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testRemoveClientListener_whenIdIsNull(){
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        ClientService clientService = instance.getClientService();
+        clientService.removeClientListener(null);
+    }
+
+    @Test
+    public void testRemoveClientListener_whenListenerAlreadyRemoved(){
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        ClientService clientService = instance.getClientService();
+        ClientListener clientListener = mock(ClientListener.class);
+        String id = clientService.addClientListener(clientListener);
+
+        // first time remove
+        clientService.removeClientListener(id);
+
+        // second time remove
+        clientService.removeClientListener(id);
+    }
+
+    @Test
+    public void testRemoveClientListener_whenNonExistingId(){
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        ClientService clientService = instance.getClientService();
+
+        clientService.removeClientListener("foobar");
     }
 
     @Test
@@ -185,8 +226,6 @@ public class ClientServiceTest extends HazelcastTestSupport {
         }, 4);
 
         assertEquals(2, totalAdd.get());
-
-
     }
 
     @Test
@@ -345,5 +384,4 @@ public class ClientServiceTest extends HazelcastTestSupport {
             countDown();
         }
     }
-
 }

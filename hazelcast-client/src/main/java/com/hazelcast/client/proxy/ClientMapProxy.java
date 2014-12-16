@@ -16,8 +16,10 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
-import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
@@ -32,53 +34,55 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.MapValueCollection;
-import com.hazelcast.map.SimpleEntryView;
-import com.hazelcast.map.client.MapAddEntryListenerRequest;
-import com.hazelcast.map.client.MapAddIndexRequest;
-import com.hazelcast.map.client.MapAddInterceptorRequest;
-import com.hazelcast.map.client.MapClearRequest;
-import com.hazelcast.map.client.MapContainsKeyRequest;
-import com.hazelcast.map.client.MapContainsValueRequest;
-import com.hazelcast.map.client.MapDeleteRequest;
-import com.hazelcast.map.client.MapEntrySetRequest;
-import com.hazelcast.map.client.MapEvictAllRequest;
-import com.hazelcast.map.client.MapEvictRequest;
-import com.hazelcast.map.client.MapExecuteOnAllKeysRequest;
-import com.hazelcast.map.client.MapExecuteOnKeyRequest;
-import com.hazelcast.map.client.MapExecuteOnKeysRequest;
-import com.hazelcast.map.client.MapExecuteWithPredicateRequest;
-import com.hazelcast.map.client.MapFlushRequest;
-import com.hazelcast.map.client.MapGetAllRequest;
-import com.hazelcast.map.client.MapGetEntryViewRequest;
-import com.hazelcast.map.client.MapGetRequest;
-import com.hazelcast.map.client.MapIsEmptyRequest;
-import com.hazelcast.map.client.MapIsLockedRequest;
-import com.hazelcast.map.client.MapKeySetRequest;
-import com.hazelcast.map.client.MapLoadAllKeysRequest;
-import com.hazelcast.map.client.MapLoadGivenKeysRequest;
-import com.hazelcast.map.client.MapLockRequest;
-import com.hazelcast.map.client.MapPutAllRequest;
-import com.hazelcast.map.client.MapPutIfAbsentRequest;
-import com.hazelcast.map.client.MapPutRequest;
-import com.hazelcast.map.client.MapPutTransientRequest;
-import com.hazelcast.map.client.MapQueryRequest;
-import com.hazelcast.map.client.MapRemoveEntryListenerRequest;
-import com.hazelcast.map.client.MapRemoveIfSameRequest;
-import com.hazelcast.map.client.MapRemoveInterceptorRequest;
-import com.hazelcast.map.client.MapRemoveRequest;
-import com.hazelcast.map.client.MapReplaceIfSameRequest;
-import com.hazelcast.map.client.MapReplaceRequest;
-import com.hazelcast.map.client.MapSetRequest;
-import com.hazelcast.map.client.MapSizeRequest;
-import com.hazelcast.map.client.MapTryPutRequest;
-import com.hazelcast.map.client.MapTryRemoveRequest;
-import com.hazelcast.map.client.MapUnlockRequest;
-import com.hazelcast.map.client.MapValuesRequest;
+import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapKeySet;
+import com.hazelcast.map.impl.MapValueCollection;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapAddIndexRequest;
+import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
+import com.hazelcast.map.impl.client.MapClearRequest;
+import com.hazelcast.map.impl.client.MapContainsKeyRequest;
+import com.hazelcast.map.impl.client.MapContainsValueRequest;
+import com.hazelcast.map.impl.client.MapDeleteRequest;
+import com.hazelcast.map.impl.client.MapEntrySetRequest;
+import com.hazelcast.map.impl.client.MapEvictAllRequest;
+import com.hazelcast.map.impl.client.MapEvictRequest;
+import com.hazelcast.map.impl.client.MapExecuteOnAllKeysRequest;
+import com.hazelcast.map.impl.client.MapExecuteOnKeyRequest;
+import com.hazelcast.map.impl.client.MapExecuteOnKeysRequest;
+import com.hazelcast.map.impl.client.MapExecuteWithPredicateRequest;
+import com.hazelcast.map.impl.client.MapFlushRequest;
+import com.hazelcast.map.impl.client.MapGetAllRequest;
+import com.hazelcast.map.impl.client.MapGetEntryViewRequest;
+import com.hazelcast.map.impl.client.MapGetRequest;
+import com.hazelcast.map.impl.client.MapIsEmptyRequest;
+import com.hazelcast.map.impl.client.MapIsLockedRequest;
+import com.hazelcast.map.impl.client.MapKeySetRequest;
+import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
+import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
+import com.hazelcast.map.impl.client.MapLockRequest;
+import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapPutAllRequest;
+import com.hazelcast.map.impl.client.MapPutIfAbsentRequest;
+import com.hazelcast.map.impl.client.MapPutRequest;
+import com.hazelcast.map.impl.client.MapPutTransientRequest;
+import com.hazelcast.map.impl.client.MapQueryRequest;
+import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapRemoveIfSameRequest;
+import com.hazelcast.map.impl.client.MapRemoveInterceptorRequest;
+import com.hazelcast.map.impl.client.MapRemoveRequest;
+import com.hazelcast.map.impl.client.MapReplaceIfSameRequest;
+import com.hazelcast.map.impl.client.MapReplaceRequest;
+import com.hazelcast.map.impl.client.MapSetRequest;
+import com.hazelcast.map.impl.client.MapSizeRequest;
+import com.hazelcast.map.impl.client.MapTryPutRequest;
+import com.hazelcast.map.impl.client.MapTryRemoveRequest;
+import com.hazelcast.map.impl.client.MapUnlockRequest;
+import com.hazelcast.map.impl.client.MapValuesRequest;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -122,14 +126,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * @author mdogan 5/17/13
- */
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
+
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
+    protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+
     private final String name;
-    private volatile ClientNearCache<Data> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
+    private volatile ClientHeapNearCache<Data> nearCache;
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -138,6 +144,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean containsKey(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
         initNearCache();
         final Data keyData = toData(key);
         if (nearCache != null) {
@@ -149,13 +157,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 return true;
             }
         }
-        MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData);
+        MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData, ThreadUtil.getThreadId());
         Boolean result = invoke(request, keyData);
         return result;
     }
 
     @Override
     public boolean containsValue(Object value) {
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
         Data valueData = toData(value);
         MapContainsValueRequest request = new MapContainsValueRequest(name, valueData);
         Boolean result = invoke(request);
@@ -164,19 +174,20 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V get(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         initNearCache();
 
         final Data keyData = toData(key);
         if (nearCache != null) {
             Object cached = nearCache.get(keyData);
             if (cached != null) {
-                if (cached.equals(ClientNearCache.NULL_OBJECT)) {
+                if (cached.equals(ClientHeapNearCache.NULL_OBJECT)) {
                     return null;
                 }
                 return (V) cached;
             }
         }
-        MapGetRequest request = new MapGetRequest(name, keyData);
+        MapGetRequest request = new MapGetRequest(name, keyData, ThreadUtil.getThreadId());
         final V result = invoke(request, keyData);
         if (nearCache != null) {
             nearCache.put(keyData, result);
@@ -191,6 +202,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V remove(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
@@ -199,6 +211,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean remove(Object key, Object value) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        // I do not why but findbugs does not like this null check:
+        // value must be nonnull but is marked as nullable ["com.hazelcast.client.proxy.ClientMapProxy"]
+        // At ClientMapProxy.java:[lines 131-1253]
+        // checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -209,6 +227,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void delete(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapDeleteRequest request = new MapDeleteRequest(name, keyData, ThreadUtil.getThreadId());
@@ -223,6 +242,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> getAsync(final K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         initNearCache();
         final Data keyData = toData(key);
         if (nearCache != null) {
@@ -233,7 +253,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
         }
 
-        final MapGetRequest request = new MapGetRequest(name, keyData);
+        final MapGetRequest request = new MapGetRequest(name, keyData, ThreadUtil.getThreadId());
         request.setAsAsync();
         try {
             final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
@@ -264,6 +284,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -280,6 +303,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Future<V> removeAsync(final K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
@@ -294,6 +318,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
         MapTryRemoveRequest request = new MapTryRemoveRequest(name, keyData,
@@ -304,6 +329,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -315,6 +342,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -325,6 +354,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -340,6 +371,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -350,6 +383,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(oldValue, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(newValue, NULL_VALUE_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
         final Data oldValueData = toData(oldValue);
         final Data newValueData = toData(newValue);
@@ -362,6 +399,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V replace(K key, V value) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -372,6 +411,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void set(K key, V value, long ttl, TimeUnit timeunit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
@@ -382,6 +423,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void lock(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
@@ -389,6 +431,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData,
                 ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
@@ -397,6 +440,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean isLocked(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapIsLockedRequest request = new MapIsLockedRequest(name, keyData);
         Boolean result = invoke(request, keyData);
@@ -414,6 +458,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData,
                 ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, timeunit));
@@ -423,6 +468,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void unlock(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), false);
         invoke(request, keyData);
@@ -430,6 +476,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void forceUnlock(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), true);
         invoke(request, keyData);
@@ -501,8 +548,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public EntryView<K, V> getEntryView(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData);
+        MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData, ThreadUtil.getThreadId());
         SimpleEntryView entryView = invoke(request, keyData);
         if (entryView == null) {
             return null;
@@ -516,6 +564,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public boolean evict(K key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapEvictRequest request = new MapEvictRequest(name, keyData, ThreadUtil.getThreadId());
         Boolean result = invoke(request);
@@ -540,9 +589,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void loadAll(Set<K> keys, boolean replaceExistingValues) {
-        if (keys == null) {
-            throw new NullPointerException("Parameter keys should not be null.");
-        }
+        checkNotNull(keys, "Parameter keys should not be null.");
         if (keys.isEmpty()) {
             return;
         }
@@ -561,9 +608,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         final List<Data> dataKeys = new ArrayList<Data>(keys.size());
         for (K key : keys) {
-            if (key == null) {
-                throw new NullPointerException("Null key is not allowed");
-            }
+            checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
             final Data dataKey = toData(key);
             dataKeys.add(dataKey);
         }
@@ -596,7 +642,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             while (iterator.hasNext()) {
                 Data key = iterator.next();
                 Object cached = nearCache.get(key);
-                if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+                if (cached != null && !ClientHeapNearCache.NULL_OBJECT.equals(cached)) {
                     result.put((K) toObject(key), (V) cached);
                     iterator.remove();
                 }
@@ -609,8 +655,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         MapEntrySet mapEntrySet = invoke(request);
         Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Entry<Data, Data> dataEntry : entrySet) {
-            final V value = (V) toObject(dataEntry.getValue());
-            final K key = (K) toObject(dataEntry.getKey());
+            final V value = toObject(dataEntry.getValue());
+            final K key = toObject(dataEntry.getKey());
             result.put(key, value);
             if (nearCache != null) {
                 nearCache.put(dataEntry.getKey(), value);
@@ -805,12 +851,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         return invoke(request, keyData);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         request.setAsSubmitToKey();
@@ -824,6 +872,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         request.setAsSubmitToKey();
@@ -966,6 +1015,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     private void destroyNearCache() {
         if (nearCache != null) {
+            removeNearCacheInvalidationListener();
             nearCache.destroy();
         }
     }
@@ -1029,7 +1079,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
             @Override
             public void onListenerRegister() {
-
             }
         };
     }
@@ -1042,13 +1091,18 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     private void invalidateNearCache() {
         if (nearCache != null) {
-            nearCache.invalidate();
+            nearCache.clear();
         }
     }
 
     private void invalidateNearCache(Collection<Data> keys) {
         if (nearCache != null) {
-            nearCache.invalidate(keys);
+            if (keys == null || keys.isEmpty()) {
+                return;
+            }
+            for (Data key : keys) {
+                nearCache.invalidate(key);
+            }
         }
     }
 
@@ -1064,9 +1118,61 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientNearCache<Data> nearCacheInternal = new ClientNearCache<Data>(
-                    name, ClientNearCacheType.Map, getContext(), nearCacheConfig);
-            nearCache = nearCacheInternal;
+
+            nearCache = new ClientHeapNearCache<Data>(name, getContext(), nearCacheConfig);
+            if (nearCache.isInvalidateOnChange()) {
+                addNearCacheInvalidateListener();
+            }
+        }
+    }
+
+    private void addNearCacheInvalidateListener() {
+        try {
+            ClientRequest request = new MapAddNearCacheEntryListenerRequest(name, false);
+            EventHandler handler = new EventHandler<PortableEntryEvent>() {
+                @Override
+                public void handle(PortableEntryEvent event) {
+                    switch (event.getEventType()) {
+                        case ADDED:
+                        case REMOVED:
+                        case UPDATED:
+                        case EVICTED:
+                            final Data key = event.getKey();
+                            nearCache.remove(key);
+                            break;
+                        case CLEAR_ALL:
+                        case EVICT_ALL:
+                            nearCache.clear();
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                    }
+                }
+
+                @Override
+                public void beforeListenerRegister() {
+                    nearCache.clear();
+                }
+
+                @Override
+                public void onListenerRegister() {
+                    nearCache.clear();
+                }
+            };
+
+            String registrationId = getContext().getListenerService().listen(request, null, handler);
+            nearCache.setId(registrationId);
+        } catch (Exception e) {
+            Logger.getLogger(ClientHeapNearCache.class).severe(
+                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+        }
+    }
+
+    private void removeNearCacheInvalidationListener() {
+        if (nearCache != null && nearCache.getId() != null) {
+            String registrationId = nearCache.getId();
+            BaseClientRemoveListenerRequest request = new MapRemoveEntryListenerRequest(name, registrationId);
+            getContext().getListenerService().stopListening(request, registrationId);
         }
     }
 

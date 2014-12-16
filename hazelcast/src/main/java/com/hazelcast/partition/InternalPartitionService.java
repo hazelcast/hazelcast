@@ -32,9 +32,8 @@ public interface InternalPartitionService extends CoreService {
 
     String SERVICE_NAME = "hz:core:partitionService";
 
-    int MAX_PARALLEL_REPLICATIONS = 4;
-    long DEFAULT_REPLICA_SYNC_DELAY = 15000L;
-    long REPLICA_SYNC_RETRY_DELAY = 1000L;
+    long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
+    long REPLICA_SYNC_RETRY_DELAY = 500L;
 
     /**
      * Gets the owner of the partition if it's set.
@@ -119,6 +118,8 @@ public interface InternalPartitionService extends CoreService {
 
     int getMemberGroupsSize();
 
+    int getMaxBackupCount();
+
     String addMigrationListener(MigrationListener migrationListener);
 
     boolean removeMigrationListener(String registrationId);
@@ -157,10 +158,14 @@ public interface InternalPartitionService extends CoreService {
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
 
-    void setPartitionReplicaVersions(int partitionId, long[] versions);
+    void setPartitionReplicaVersions(int partitionId, long[] versions, int replicaOffset);
 
     void clearPartitionReplicaVersions(int partitionId);
 
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
+
+    int getPartitionStateVersion();
+
+    boolean hasOnGoingMigrationLocal();
 
 }

@@ -34,10 +34,20 @@ public enum EntryEventType {
         this.type = type;
     }
 
+    /**
+     * Returns the event type.
+     *
+     * @return the event type.
+     */
     public int getType() {
         return type;
     }
 
+    /**
+     * Returns the EntryEventType as an enum.
+     *
+     * @return the EntryEventType as an enum.
+     */
     public static EntryEventType getByType(final int eventType) {
         for (EntryEventType entryEventType : values()) {
             if (entryEventType.type == eventType) {

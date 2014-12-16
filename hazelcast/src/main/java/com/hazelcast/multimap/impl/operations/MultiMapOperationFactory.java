@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,6 +33,8 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     private Data value;
 
+    private long threadId;
+
     public MultiMapOperationFactory() {
     }
 
@@ -48,38 +49,47 @@ public class MultiMapOperationFactory implements OperationFactory {
         this.value = value;
     }
 
+    public MultiMapOperationFactory(String name, OperationFactoryType operationFactoryType, Data key, Data value, long threadId) {
+        this(name, operationFactoryType);
+        this.key = key;
+        this.value = value;
+        this.threadId = threadId;
+    }
+
     public Operation createOperation() {
-        //TODO: Don't use a if/else, but use a switch case.
 
-        if (operationFactoryType == OperationFactoryType.KEY_SET) {
-            return new KeySetOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.VALUES) {
-            return new ValuesOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.ENTRY_SET) {
-            return new EntrySetOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.CONTAINS) {
-            return new ContainsEntryOperation(name, key, value);
-        } else if (operationFactoryType == OperationFactoryType.SIZE) {
-            return new SizeOperation(name);
-        } else if (operationFactoryType == OperationFactoryType.CLEAR) {
-            return new ClearOperation(name);
+        switch(operationFactoryType) {
+            case KEY_SET:
+                 return new KeySetOperation(name);
+            case VALUES:
+                 return new ValuesOperation(name);
+            case ENTRY_SET:
+                 return new EntrySetOperation(name);
+            case CONTAINS:
+                 return new ContainsEntryOperation(name, key, value, threadId);
+            case SIZE:
+                 return new SizeOperation(name);
+            case CLEAR:
+                 return new ClearOperation(name);
+            default:
+                 return null;
         }
-
-        return null;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
+        out.writeLong(threadId);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
+        threadId = in.readLong();
+        key = in.readData();
+        value = in.readData();
     }
 
     public enum OperationFactoryType {

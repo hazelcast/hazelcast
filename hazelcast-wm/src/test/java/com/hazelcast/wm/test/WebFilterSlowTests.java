@@ -12,7 +12,6 @@ import org.junit.Test;
 
 public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
-
     protected WebFilterSlowTests(String serverXml1) {
         super(serverXml1);
     }
@@ -54,7 +53,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void testAttributeRemoval_issue_2618() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
@@ -77,7 +76,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void test_github_issue_2187() throws Exception {
-        IMap<String, String> map = hz.getMap("default");
+        IMap<String, String> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
@@ -89,7 +88,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void testAttributeDistribution() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
@@ -100,7 +99,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void testAttributeRemoval() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
@@ -113,7 +112,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void testAttributeUpdate() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
@@ -126,7 +125,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void testAttributeInvalidate() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));
@@ -140,7 +139,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
     @Test(timeout = 60000)
     public void testAttributeReloadSession() throws Exception {
-        IMap<String, Object> map = hz.getMap("default");
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
         CookieStore cookieStore = new BasicCookieStore();
 
         assertEquals("true", executeRequest("write", serverPort1, cookieStore));

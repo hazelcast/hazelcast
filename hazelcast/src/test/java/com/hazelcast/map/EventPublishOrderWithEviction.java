@@ -1,6 +1,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -88,7 +89,7 @@ public class EventPublishOrderWithEviction extends HazelcastTestSupport {
         String mapName = randomMapName();
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(mapName);
-        mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
+        mapConfig.setEvictionPolicy(EvictionPolicy.LRU);
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
         maxSizeConfig.setSize(maxSize);
         mapConfig.setMaxSizeConfig(maxSizeConfig);

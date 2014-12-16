@@ -11,9 +11,9 @@ You can monitor your Hazelcast members via the JMX protocol.
    - `-Dcom.sun.management.jmxremote.authenticate=false` (to disable JMX auth) (*optional*)
 
 
-- Enable Hazelcast property `hazelcast.jmx` (please refer to [Advanced Configuration Properties](#advanced-configuration-properties));
+- Enable the Hazelcast property `hazelcast.jmx` (please refer to the [Advanced Configuration Properties section](#advanced-configuration-properties)):
 
-   - using Hazelcast configuration (API, XML, Spring)
-   - or by setting system property `-Dhazelcast.jmx=true`
+   - using Hazelcast configuration (API, XML, Spring).
+   - or by setting the system property `-Dhazelcast.jmx=true`
 
 - Use jconsole, jvisualvm (with mbean plugin) or another JMX compliant monitoring tool.

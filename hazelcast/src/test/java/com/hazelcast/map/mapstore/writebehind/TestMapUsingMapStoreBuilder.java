@@ -33,6 +33,8 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     private int backupDelaySeconds = 10;
 
+    private TestHazelcastInstanceFactory instanceFactory;
+
     private TestMapUsingMapStoreBuilder() {
     }
 
@@ -54,6 +56,11 @@ public class TestMapUsingMapStoreBuilder<K, V> {
             throw new IllegalArgumentException("nodeCount < 1");
         }
         this.nodeCount = nodeCount;
+        return this;
+    }
+
+    public TestMapUsingMapStoreBuilder<K, V> withNodeFactory(TestHazelcastInstanceFactory factory) {
+        this.instanceFactory = factory;
         return this;
     }
 
@@ -128,8 +135,10 @@ public class TestMapUsingMapStoreBuilder<K, V> {
                     String.valueOf(backupCount));
         }
         // nodes.
-        final TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(nodeCount);
-        nodes = instanceFactory.newInstances(config);
+        nodes = new HazelcastInstance[nodeCount];
+        for(int i = 0; i < nodeCount; i++) {
+            nodes[i] = instanceFactory.newHazelcastInstance(config);
+        }
         return nodes[0].getMap(mapName);
     }
 

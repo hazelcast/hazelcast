@@ -20,24 +20,20 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+
 /**
  * This interface stores indexes of Query.
  */
 public interface IndexStore {
 
-    void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
-
-    void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);
-
-    Set<QueryableEntry> getRecords(Comparable value);
-
-    void getRecords(MultiResultSet results, Set<Comparable> values);
-
+    void newIndex(Comparable newValue, QueryableEntry entry);
+    void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry);
+    void removeIndex(Comparable oldValue, Data indexKey);
     void clear();
 
-    void removeIndex(Comparable oldValue, Data indexKey);
-
-    void newIndex(Comparable newValue, QueryableEntry entry);
-
+    void getSubRecordsBetween(MultiResultSet results, Comparable from, Comparable to);
+    void getSubRecords(MultiResultSet results, ComparisonType comparisonType, Comparable searchedValue);
+    Set<QueryableEntry> getRecords(Comparable value);
+    void getRecords(MultiResultSet results, Set<Comparable> values);
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue);
 }

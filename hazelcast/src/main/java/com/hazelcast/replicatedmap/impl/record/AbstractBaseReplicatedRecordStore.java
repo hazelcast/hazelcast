@@ -192,7 +192,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
 
             for (EventRegistration registration : registrations) {
                 EventFilter filter = registration.getFilter();
-                boolean publish = filter == null || filter.eval(key);
+                boolean publish = filter == null || filter.eval(marshallKey(key));
                 if (publish) {
                     eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, event, name.hashCode());
                 }

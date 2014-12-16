@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -102,12 +101,12 @@ public class ReplicatedMapDataSerializerHook
                 return new ReplicatedMapClearOperation();
             }
         };
-        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LocalReplicatedMapStatsImpl();
-            }
-        };
+//        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            @Override
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new LocalReplicatedMapStatsImpl();
+//            }
+//        };
 
         return new ArrayDataSerializableFactory(constructors);
     }

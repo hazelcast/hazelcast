@@ -6,11 +6,19 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
-import javax.management.*;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
+
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+
 import static org.junit.Assert.fail;
 
 /**
@@ -23,10 +31,10 @@ public final class JmxTestDataHolder {
     /**
      * Initialize with new hazelcast instance and mbean server
      */
-    public JmxTestDataHolder() {
+    public JmxTestDataHolder(TestHazelcastInstanceFactory factory) {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_ENABLE_JMX, "true");
-        hz = new TestHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        hz = factory.newHazelcastInstance(config);
         mbs = ManagementFactory.getPlatformMBeanServer();
     }
 

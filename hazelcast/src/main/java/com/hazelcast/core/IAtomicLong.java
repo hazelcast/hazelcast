@@ -23,18 +23,19 @@ package com.hazelcast.core;
  * @see IAtomicReference
  */
 public interface IAtomicLong extends DistributedObject {
+
     /**
      * Returns the name of this IAtomicLong instance.
      *
-     * @return name of this instance
+     * @return the name of this IAtomicLong instance
      */
     String getName();
 
     /**
      * Atomically adds the given value to the current value.
      *
-     * @param delta the value to add
-     * @return the updated value
+     * @param delta the value to add to the current value
+     * @return the updated value, the given value added to the current value
      */
     long addAndGet(long delta);
 
@@ -52,7 +53,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Atomically decrements the current value by one.
      *
-     * @return the updated value
+     * @return the updated value, the current value decremented by one
      */
     long decrementAndGet();
 
@@ -66,7 +67,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Atomically adds the given value to the current value.
      *
-     * @param delta the value to add
+     * @param delta the value to add to the current value
      * @return the old value before the add
      */
     long getAndAdd(long delta);
@@ -82,7 +83,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Atomically increments the current value by one.
      *
-     * @return the updated value
+     * @return the updated value, the current value incremented by one
      */
     long incrementAndGet();
 
@@ -103,7 +104,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Alters the currently stored value by applying a function on it.
      *
-     * @param function the function
+     * @param function the function applied to the currently stored value
      * @throws IllegalArgumentException if function is null.
      * @since 3.2
      */
@@ -112,7 +113,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Alters the currently stored value by applying a function on it and gets the result.
      *
-     * @param function the function
+     * @param function the function applied to the currently stored value
      * @return the new value.
      * @throws IllegalArgumentException if function is null.
      * @since 3.2
@@ -122,7 +123,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Alters the currently stored value by applying a function on it on and gets the old value.
      *
-     * @param function the function
+     * @param function the function applied to the currently stored value
      * @return  the old value
      * @throws IllegalArgumentException if function is null.
      * @since 3.2
@@ -132,7 +133,7 @@ public interface IAtomicLong extends DistributedObject {
     /**
      * Applies a function on the value, the actual stored value will not change.
      *
-     * @param function the function
+     * @param function the function applied to the value, the value is not changed
      * @return  the result of the function application
      * @throws IllegalArgumentException if function is null.
      * @since 3.2

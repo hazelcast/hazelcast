@@ -20,7 +20,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.impl.QueueItem;
 import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.queue.impl.SizeOperation;
+import com.hazelcast.queue.impl.operations.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -51,7 +51,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
     private final Set<Long> itemIdSet = new HashSet<Long>();
 
-    protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, TransactionSupport tx) {
+    protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name,
+                                             TransactionSupport tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;

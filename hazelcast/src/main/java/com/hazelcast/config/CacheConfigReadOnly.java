@@ -33,6 +33,15 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
+    public CacheEvictionConfig getEvictionConfig() {
+        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+        if (evictionConfig == null) {
+            return null;
+        }
+        return evictionConfig.getAsReadOnly();
+    }
+
+    @Override
     public CacheConfig<K, V> addCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
@@ -76,7 +85,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setEvictionPolicy(final EvictionPolicy evictionPolicy) {
+    public CacheConfig<K, V> setEvictionConfig(final CacheEvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

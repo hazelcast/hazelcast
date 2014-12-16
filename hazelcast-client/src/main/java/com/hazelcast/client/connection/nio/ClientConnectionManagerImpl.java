@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
@@ -28,6 +28,7 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Router;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.client.ClientRequest;
@@ -38,9 +39,9 @@ import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -52,15 +53,12 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.ssl.BasicSSLContextFactory;
-import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.nio.tcp.DefaultSocketChannelWrapper;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.InSelectorImpl;
 import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -102,9 +100,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-    private final HazelcastClient client;
+    private final HazelcastClientInstanceImpl client;
     private final Router router;
-    private SocketInterceptor socketInterceptor;
+    private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
     private final IOSelector inSelector;
     private final IOSelector outSelector;
@@ -122,9 +120,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final ConcurrentMap<Address, ClientConnection> connections
             = new ConcurrentHashMap<Address, ClientConnection>();
 
-    private volatile boolean live;
+    private volatile boolean alive;
 
-    public ClientConnectionManagerImpl(HazelcastClient client,
+    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
                                        LoadBalancer loadBalancer,
                                        AddressTranslator addressTranslator) {
         this.client = client;
@@ -158,21 +156,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 Logger.getLogger(OutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
 
-        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
         socketOptions = networkConfig.getSocketOptions();
-        socketChannelWrapperFactory = initSocketChannel(networkConfig);
-    }
-
-    private SocketChannelWrapperFactory initSocketChannel(ClientNetworkConfig networkConfig) {
-        //ioService.getSSLConfig(); TODO
-        SSLConfig sslConfig = networkConfig.getSSLConfig();
-
-        if (sslConfig != null && sslConfig.isEnabled()) {
-            LOGGER.info("SSL is enabled");
-            return new SSLSocketChannelWrapperFactory(sslConfig);
-        } else {
-            return new DefaultSocketChannelWrapperFactory();
-        }
+        ClientExtension clientExtension = client.getClientExtension();
+        socketChannelWrapperFactory = clientExtension.getSocketChannelWrapperFactory();
+        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
     }
 
     private Credentials initCredentials(ClientConfig config) {
@@ -181,7 +168,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         Credentials c = securityConfig.getCredentials();
         if (c == null) {
             final String credentialsClassname = securityConfig.getCredentialsClassname();
-            //todo: Should be moved to a reflection utility.
             if (credentialsClassname != null) {
                 try {
                     c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
@@ -197,27 +183,16 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
-        SocketInterceptor implementation = null;
         if (sic != null && sic.isEnabled()) {
-            implementation = (SocketInterceptor) sic.getImplementation();
-            if (implementation == null && sic.getClassName() != null) {
-                try {
-                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
-                } catch (Throwable e) {
-                    LOGGER.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
-                }
-            }
+            ClientExtension clientExtension = client.getClientExtension();
+            return clientExtension.getSocketInterceptor();
         }
-
-        if (implementation != null) {
-            implementation.init(sic.getProperties());
-        }
-        return implementation;
+        return null;
     }
 
     @Override
-    public boolean isLive() {
-        return live;
+    public boolean isAlive() {
+        return alive;
     }
 
     private SerializationService getSerializationService() {
@@ -226,23 +201,23 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public synchronized void start() {
-        if (live) {
+        if (alive) {
             return;
         }
-        live = true;
+        alive = true;
         inSelector.start();
         outSelector.start();
         invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
-        final HeartBeat heartBeat = new HeartBeat();
+        HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public synchronized void shutdown() {
-        if (!live) {
+        if (!alive) {
             return;
         }
-        live = false;
+        alive = false;
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
@@ -267,10 +242,28 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
+    public ClientConnection connectToAddress(Address target) throws Exception {
+        Authenticator authenticator = new ClusterAuthenticator();
+        int count = 0;
+        Exception lastError = null;
+        while (count < RETRY_COUNT) {
+            try {
+                return getOrConnect(target, authenticator);
+            } catch (IOException e) {
+                lastError = e;
+            } catch (HazelcastInstanceNotActiveException e) {
+                lastError = e;
+            }
+            count++;
+        }
+        throw lastError;
+    }
+
+    @Override
     public ClientConnection tryToConnect(Address target) throws Exception {
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
-        IOException lastError = null;
+        Exception lastError = null;
         while (count < RETRY_COUNT) {
             try {
                 if (target == null || !isMember(target)) {
@@ -280,6 +273,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     return getOrConnect(target, authenticator);
                 }
             } catch (IOException e) {
+                lastError = e;
+            } catch (HazelcastInstanceNotActiveException e) {
                 lastError = e;
             }
             target = null;
@@ -327,11 +322,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new IOException("Address is required!");
         }
 
-        ClientConnection clientConnection = connections.get(address);
+        ClientConnection clientConnection = connections.get(target);
         if (clientConnection == null) {
-            final Object lock = getLock(address);
+            final Object lock = getLock(target);
             synchronized (lock) {
-                clientConnection = connections.get(address);
+                clientConnection = connections.get(target);
                 if (clientConnection == null) {
                     final ConnectionProcessor connectionProcessor = new ConnectionProcessor(address, authenticator, false);
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
@@ -341,7 +336,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         future.cancel(true);
                         throw ExceptionUtil.rethrow(e, IOException.class);
                     }
-                    ClientConnection current = connections.putIfAbsent(address, clientConnection);
+                    ClientConnection current = connections.putIfAbsent(clientConnection.getRemoteEndpoint(), clientConnection);
                     if (current != null) {
                         clientConnection.close();
                         clientConnection = current;
@@ -366,7 +361,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         @Override
         public ClientConnection call() throws Exception {
-            if (!live) {
+            if (!alive) {
                 throw new HazelcastException("ConnectionManager is not active!!!");
             }
             SocketChannel socketChannel = null;
@@ -508,46 +503,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return response;
     }
 
-    interface SocketChannelWrapperFactory {
-        SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception;
-    }
-
-    static class DefaultSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new DefaultSocketChannelWrapper(socketChannel);
-        }
-    }
-
-    static class SSLSocketChannelWrapperFactory implements SocketChannelWrapperFactory {
-        final SSLContextFactory sslContextFactory;
-
-        SSLSocketChannelWrapperFactory(SSLConfig sslConfig) {
-//            if (CipherHelper.isSymmetricEncryptionEnabled(ioService)) {
-//                throw new RuntimeException("SSL and SymmetricEncryption cannot be both enabled!");
-//            }
-            SSLContextFactory sslContextFactoryObject = (SSLContextFactory) sslConfig.getFactoryImplementation();
-            try {
-                String factoryClassName = sslConfig.getFactoryClassName();
-                if (sslContextFactoryObject == null && factoryClassName != null) {
-                    sslContextFactoryObject = (SSLContextFactory) Class.forName(factoryClassName).newInstance();
-                }
-                if (sslContextFactoryObject == null) {
-                    sslContextFactoryObject = new BasicSSLContextFactory();
-                }
-                sslContextFactoryObject.init(sslConfig.getProperties());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            sslContextFactory = sslContextFactoryObject;
-        }
-
-        @Override
-        public SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
-            return new SSLSocketChannelWrapper(sslContextFactory.getSSLContext(), socketChannel, client);
-        }
-    }
-
     private Object getLock(Address address) {
         Object lock = connectionLockMap.get(address);
         if (lock == null) {
@@ -562,8 +517,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     class HeartBeat implements Runnable {
 
+        @Override
         public void run() {
-            if (!live) {
+            if (!alive) {
                 return;
             }
             final long now = Clock.currentTimeMillis();
@@ -621,11 +577,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (currentOwnerConnection != null) {
                 return currentOwnerConnection;
             }
+
+            long remainingWait = waitTime;
             synchronized (ownerConnectionLock) {
-                long endTime = System.currentTimeMillis() + waitTime;
-                while (ownerConnection == null && endTime > System.currentTimeMillis()) {
+                long waitStart = System.currentTimeMillis();
+                while (ownerConnection == null && remainingWait > 0) {
                     try {
-                        ownerConnectionLock.wait(waitTime);
+                        ownerConnectionLock.wait(remainingWait);
+                        remainingWait = waitTime - (System.currentTimeMillis() - waitStart);
                     } catch (InterruptedException e) {
                         throw new IOException(e);
                     }
@@ -661,7 +620,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         private void closeIfAddressMatches(Address address) {
             final ClientConnection currentOwnerConnection = ownerConnection;
-            if (currentOwnerConnection == null || !currentOwnerConnection.live()) {
+            if (currentOwnerConnection == null || !currentOwnerConnection.isAlive()) {
                 return;
             }
             if (address.equals(currentOwnerConnection.getRemoteEndpoint())) {

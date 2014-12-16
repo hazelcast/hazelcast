@@ -37,160 +37,162 @@ import java.util.concurrent.Future;
 public interface IExecutorService extends ExecutorService, DistributedObject {
 
     /**
-     * Executes task on a randomly selected member
+     * Executes a task on a randomly selected member.
      *
-     * @param command task
+     * @param command the task that is executed on a randomly selected member
      * @param memberSelector memberSelector
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     void execute(Runnable command, MemberSelector memberSelector);
 
     /**
-     * Executes task on owner of the specified key
+     * Executes a task on the owner of the specified key.
      *
-     * @param command task
-     * @param key key
+     * @param command a task executed on the owner of the specified key
+     * @param key the specified key
      */
     void executeOnKeyOwner(Runnable command, Object key);
 
     /**
-     * Executes task on the specified member
+     * Executes a task on the specified member.
      *
-     * @param command task
-     * @param member member
+     * @param command the task executed on the specified member
+     * @param member the specified member
      */
     void executeOnMember(Runnable command, Member member);
 
     /**
-     * Executes task on each of the specified members
+     * Executes a task on each of the specified members.
      *
-     * @param command task
-     * @param members members
+     * @param command the task executed on the specified members
+     * @param members the specified members
      */
     void executeOnMembers(Runnable command, Collection<Member> members);
 
     /**
-     * Executes task on each of the selected members
+     * Executes a task on each of the selected members.
      *
-     * @param command task
+     * @param command a task executed on each of the selected members
      * @param memberSelector memberSelector
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     void executeOnMembers(Runnable command, MemberSelector memberSelector);
 
     /**
-     * Executes task on all of known cluster members
+     * Executes a task on all of the known cluster members.
      *
-     * @param command task
+     * @param command a task executed  on all of the known cluster members
      */
     void executeOnAllMembers(Runnable command);
 
     /**
-     * Submits task to a randomly selected member and returns a Future
+     * Submits a task to a randomly selected member and returns a Future
      * representing that task.
      *
-     * @param task task
+     * @param task task submitted to a randomly selected member
      * @param memberSelector memberSelector
      * @return a Future representing pending completion of the task
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> Future<T> submit(Callable<T> task, MemberSelector memberSelector);
 
     /**
-     * Submits task to owner of the specified key and returns a Future
+     * Submits a task to the owner of the specified key and returns a Future
      * representing that task.
      *
-     * @param task task
-     * @param key key
+     * @param task task submitted to the owner of the specified key
+     * @param key the specified key
      * @return a Future representing pending completion of the task
      */
     <T> Future<T> submitToKeyOwner(Callable<T> task, Object key);
 
     /**
-     * Submits task to specified member and returns a Future
+     * Submits a task to the specified member and returns a Future
      * representing that task.
      *
-     * @param task task
-     * @param member member
+     * @param task the task submitted to the specified member
+     * @param member the specified member
      * @return a Future representing pending completion of the task
      */
     <T> Future<T> submitToMember(Callable<T> task, Member member);
 
     /**
-     * Submits task to given members and returns
+     * Submits a task to given members and returns
      * map of Member-Future pairs representing pending completion of the task on each member
      *
-     * @param task task
-     * @param members members
+     * @param task the task submitted to given members
+     * @param members the given members
      * @return map of Member-Future pairs representing pending completion of the task on each member
      */
     <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members);
 
     /**
-     * Submits task to selected members and returns
-     * map of Member-Future pairs representing pending completion of the task on each member
+     * Submits a task to selected members and returns a
+     * map of Member-Future pairs representing pending completion of the task on each member.
      *
-     * @param task task
+     * @param task the task submitted to selected members
      * @param memberSelector memberSelector
      * @return map of Member-Future pairs representing pending completion of the task on each member
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, MemberSelector memberSelector);
 
     /**
-     * Submits task to all cluster members and returns
-     * map of Member-Future pairs representing pending completion of the task on each member
+     * Submits task to all cluster members and returns a
+     * map of Member-Future pairs representing pending completion of the task on each member.
      *
-     * @param task task
+     * @param task the task submitted to all cluster members
      * @return map of Member-Future pairs representing pending completion of the task on each member
      */
     <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task);
 
     /**
-     * Submits task to a random member. Caller will be notified for the result of the task by
+     * Submits a task to a random member. Caller will be notified of the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task a task submitted to a random member
      * @param callback callback
      */
-    void submit(Runnable task, ExecutionCallback callback);
+    <T> void submit(Runnable task, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to a randomly selected members. Caller will be notified for the result of the task by
+     * Submits a task to randomly selected members. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task the task submitted to randomly selected members
      * @param memberSelector memberSelector
      * @param callback callback
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
-    void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback callback);
+    <T> void submit(Runnable task, MemberSelector memberSelector, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to owner of the specified key. Caller will be notified for the result of the task by
+     * Submits a task to the owner of the specified key. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task task submitted to the owner of the specified key
+     * @param key the specified key
      * @param callback callback
      */
-    void submitToKeyOwner(Runnable task, Object key, ExecutionCallback callback);
+    <T> void submitToKeyOwner(Runnable task, Object key, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to the specified member. Caller will be notified for the result of the task by
+     * Submits a task to the specified member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task the task submitted to the specified member
+     * @param member the specified member
      * @param callback callback
      */
-    void submitToMember(Runnable task, Member member, ExecutionCallback callback);
+    <T> void submitToMember(Runnable task, Member member, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to the specified members. Caller will be notified for the result of the each task by
+     * Submits a task to the specified members. Caller will be notified for the result of the each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task task
-     * @param members members
+     * @param task the task submitted to the specified members
+     * @param members the specified members
      * @param callback callback
      */
     void submitToMembers(Runnable task, Collection<Member> members, MultiExecutionCallback callback);
@@ -200,28 +202,28 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task task
+     * @param task the task submitted to the selected members
      * @param memberSelector memberSelector
      * @param callback callback
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     void submitToMembers(Runnable task, MemberSelector memberSelector, MultiExecutionCallback callback);
 
     /**
-     * Submits task to the all cluster members. Caller will be notified for the result of the each task by
+     * Submits task to all the cluster members. Caller will be notified for the result of each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task task
+     * @param task the task submitted to all the cluster members
      * @param callback callback
      */
     void submitToAllMembers(Runnable task, MultiExecutionCallback callback);
 
     /**
-     * Submits task to a random member. Caller will be notified for the result of the task by
+     * Submits a task to a random member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task the task submitted to a random member
      * @param callback callback
      */
     <T> void submit(Callable<T> task, ExecutionCallback<T> callback);
@@ -230,60 +232,60 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
      * Submits task to a randomly selected member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task the task submitted to a randomly selected member
      * @param memberSelector memberSelector
      * @param callback callback
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> void submit(Callable<T> task, MemberSelector memberSelector, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to owner of the specified key. Caller will be notified for the result of the task by
+     * Submits task to the owner of the specified key. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task the task submitted to the owner of the specified key
      * @param callback callback
      */
     <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to the specified member. Caller will be notified for the result of the task by
+     * Submits a task to the specified member. Caller will be notified for the result of the task by
      * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
      *
-     * @param task task
+     * @param task the task submitted to the specified member
      * @param callback callback
      */
     <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback);
 
     /**
-     * Submits task to the specified members. Caller will be notified for the result of the each task by
+     * Submits a task to the specified members. Caller will be notified for the result of each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task task
-     * @param members members
+     * @param task the task submitted to the specified members
+     * @param members the specified members
      * @param callback callback
      */
     <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback);
 
     /**
-     * Submits task to the selected members. Caller will be notified for the result of the each task by
+     * Submits task to the selected members. Caller will be notified for the result of each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task task
+     * @param task the task submitted to the selected members
      * @param memberSelector memberSelector
      * @param callback callback
-     * @throws {@link java.util.concurrent.RejectedExecutionException } if no member is selected
+     * @throws java.util.concurrent.RejectedExecutionException if no member is selected
      */
     <T> void submitToMembers(Callable<T> task, MemberSelector memberSelector, MultiExecutionCallback callback);
 
     /**
-     * Submits task to the all cluster members. Caller will be notified for the result of the each task by
+     * Submits task to all the cluster members. Caller will be notified for the result of the each task by
      * {@link MultiExecutionCallback#onResponse(Member, Object)}, and when all tasks are completed,
      * {@link MultiExecutionCallback#onComplete(java.util.Map)} will be called.
      *
-     * @param task task
+     * @param task the task submitted to all the cluster members
      * @param callback callback
      */
     <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback);
@@ -291,7 +293,7 @@ public interface IExecutorService extends ExecutorService, DistributedObject {
     /**
      * Returns local statistics related to this executor service.
      *
-     * @return local statistics related to this executor service.
+     * @return local statistics related to this executor service
      */
     LocalExecutorStats getLocalExecutorStats();
 }

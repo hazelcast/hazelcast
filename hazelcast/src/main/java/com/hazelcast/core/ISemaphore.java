@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * threads invoking any of the {@link #acquire() acquire} methods are selected
  * to obtain permits in the order in which their invocation of those methods
  * was processed(first-in-first-out; FIFO).  Note that FIFO ordering necessarily
- * applies to specific internal points of execution within the cluster.  So,
+ * applies to specific internal points of execution within the cluster. Therefore,
  * it is possible for one member to invoke {@code acquire} before another, but reach
  * the ordering point after the other, and similarly upon return from the method.
  * <p/>This class also provides convenience methods to {@link
@@ -56,24 +56,25 @@ public interface ISemaphore extends DistributedObject {
     String getName();
 
     /**
-     * Try to initialize this ISemaphore instance with given permit count
+     * Try to initialize this ISemaphore instance with the given permit count
      *
+     * @param permits the given permit count
      * @return true if initialization success
      */
     boolean init(int permits);
 
     /**
-     * <p>Acquires a permit, if one is available and returns immediately,
+     * <p>Acquires a permit if one is available, and returns immediately,
      * reducing the number of available permits by one.
      * <p/>
-     * <p>If no permit is available then the current thread becomes
+     * <p>If no permit is available, then the current thread becomes
      * disabled for thread scheduling purposes and lies dormant until
      * one of three things happens:
      * <ul>
-     * <li>Some other thread invokes one of the {@link #release} methods for this
-     * semaphore and the current thread is next to be assigned a permit;
-     * <li>This ISemaphore instance is destroyed; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
+     * <li>some other thread invokes one of the {@link #release} methods for this
+     * semaphore and the current thread is next to be assigned a permit,
+     * <li>this ISemaphore instance is destroyed, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
      * </ul>
      * <p>If the current thread:
@@ -91,7 +92,7 @@ public interface ISemaphore extends DistributedObject {
     void acquire() throws InterruptedException;
 
     /**
-     * <p>Acquires the given number of permits, if they are available,
+     * <p>Acquires the given number of permits if they are available,
      * and returns immediately, reducing the number of available permits
      * by the given amount.
      * <p/>
@@ -99,17 +100,17 @@ public interface ISemaphore extends DistributedObject {
      * disabled for thread scheduling purposes and lies dormant until
      * one of three things happens:
      * <ul>
-     * <li>Some other thread invokes one of the {@link #release() release}
+     * <li>some other thread invokes one of the {@link #release() release}
      * methods for this semaphore, the current thread is next to be assigned
-     * permits and the number of available permits satisfies this request;
-     * <li>This ISemaphore instance is destroyed; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
+     * permits and the number of available permits satisfies this request,
+     * <li>this ISemaphore instance is destroyed, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
      * </ul>
      * <p/>
      * <p>If the current thread:
      * <ul>
-     * <li>has its interrupted status set on entry to this method; or
+     * <li>has its interrupted status set on entry to this method, or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
      * for a permit,
      * </ul>
@@ -208,23 +209,23 @@ public interface ISemaphore extends DistributedObject {
     boolean tryAcquire(int permits);
 
     /**
-     * Acquires a permit from this semaphore, if one becomes available
+     * Acquires a permit from this semaphore if one becomes available
      * within the given waiting time and the current thread has not
      * been {@linkplain Thread#interrupt interrupted}.
      * <p/>
-     * Acquires a permit, if one is available and returns immediately,
+     * Acquires a permit if one is available and returns immediately
      * with the value {@code true},
      * reducing the number of available permits by one.
      * <p/>
-     * If no permit is available then the current thread becomes
+     * If no permit is available, then the current thread becomes
      * disabled for thread scheduling purposes and lies dormant until
      * one of three things happens:
      * <ul>
-     * <li>Some other thread invokes the {@link #release} method for this
-     * semaphore and the current thread is next to be assigned a permit; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread; or
-     * <li>The specified waiting time elapses.
+     * <li>some other thread invokes the {@link #release} method for this
+     * semaphore and the current thread is next to be assigned a permit, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread, or
+     * <li>the specified waiting time elapses.
      * </ul>
      * <p/>
      * If a permit is acquired then the value {@code true} is returned.
@@ -252,31 +253,31 @@ public interface ISemaphore extends DistributedObject {
     boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**
-     * Acquires the given number of permits, if they are available and
-     * returns immediately, with the value {@code true},
+     * Acquires the given number of permits if they are available and
+     * returns immediately with the value {@code true},
      * reducing the number of available permits by the given amount.
      * <p/>
-     * If insufficient permits are available then
+     * If insufficient permits are available, then
      * the current thread becomes disabled for thread scheduling
      * purposes and lies dormant until one of three things happens:
      * <ul>
-     * <li>Some other thread invokes one of the {@link #release() release}
+     * <li>some other thread invokes one of the {@link #release() release}
      * methods for this semaphore, the current thread is next to be assigned
-     * permits and the number of available permits satisfies this request; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread; or
-     * <li>The specified waiting time elapses.
+     * permits and the number of available permits satisfies this request, or
+     * <li>some other thread {@linkplain Thread#interrupt interrupts}
+     * the current thread, or
+     * <li>the specified waiting time elapses.
      * </ul>
      * <p/>
-     * If the permits are acquired then the value {@code true} is returned.
+     * If the permits are acquired then {@code true} is returned.
      * <p/>
-     * If the specified waiting time elapses then the value {@code false}
+     * If the specified waiting time elapses then {@code false}
      * is returned.  If the time is less than or equal to zero, the method
      * will not wait at all.
      * <p/>
      * <p>If the current thread:
      * <ul>
-     * <li>has its interrupted status set on entry to this method; or
+     * <li>has its interrupted status set on entry to this method, or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
      * for a permit,
      * </ul>
@@ -286,7 +287,7 @@ public interface ISemaphore extends DistributedObject {
      * @param permits the number of permits to acquire
      * @param timeout the maximum time to wait for the permits
      * @param unit    the time unit of the {@code timeout} argument
-     * @return {@code true} if all permits were acquired and {@code false}
+     * @return {@code true} if all permits were acquired, {@code false}
      *         if the waiting time elapsed before all permits could be acquired
      * @throws InterruptedException       if the current thread is interrupted
      * @throws IllegalArgumentException   if {@code permits} is negative

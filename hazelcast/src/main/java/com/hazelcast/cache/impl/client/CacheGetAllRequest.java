@@ -16,13 +16,13 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -38,19 +38,24 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * This client request  specifically calls {@link CacheGetAllOperationFactory} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory
+ */
 public class CacheGetAllRequest
-        extends AllPartitionsClientRequest
+        extends AbstractCacheAllPartitionsRequest
         implements Portable, RetryableRequest, SecureRequest {
 
-    protected String name;
     private Set<Data> keys = new HashSet<Data>();
     private ExpiryPolicy expiryPolicy;
+
 
     public CacheGetAllRequest() {
     }
 
     public CacheGetAllRequest(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
-        this.name = name;
+        super(name);
         this.keys = keys;
         this.expiryPolicy = expiryPolicy;
     }
@@ -65,7 +70,8 @@ public class CacheGetAllRequest
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new CacheGetAllOperationFactory(name, keys, expiryPolicy);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createGetAllOperationFactory(keys, expiryPolicy);
     }
 
     @Override
@@ -82,18 +88,14 @@ public class CacheGetAllRequest
         return resultSet;
     }
 
-    public String getServiceName() {
-        return CacheService.SERVICE_NAME;
-    }
-
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("size", keys.size());
         ObjectDataOutput output = writer.getRawDataOutput();
         if (!keys.isEmpty()) {
             for (Data key : keys) {
-                key.writeData(output);
+                output.writeData(key);
             }
         }
         output.writeObject(expiryPolicy);
@@ -101,27 +103,20 @@ public class CacheGetAllRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         int size = reader.readInt("size");
         ObjectDataInput input = reader.getRawDataInput();
         if (size > 0) {
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(input);
+                Data key = input.readData();
                 keys.add(key);
             }
         }
         expiryPolicy = input.readObject();
-
     }
 
     public Permission getRequiredPermission() {
         return null;
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return name;
     }
 
     @Override

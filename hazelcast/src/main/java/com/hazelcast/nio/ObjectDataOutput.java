@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -24,6 +26,12 @@ import java.nio.ByteOrder;
  * Provides serialization methods for arrays by extending DataOutput
  */
 public interface ObjectDataOutput extends DataOutput {
+
+    /**
+     * @param bytes byte array to be written
+     * @throws IOException
+     */
+    void writeByteArray(byte[] bytes) throws IOException;
 
     /**
      * @param chars char array to be written
@@ -66,6 +74,12 @@ public interface ObjectDataOutput extends DataOutput {
      * @throws IOException
      */
     void writeObject(Object object) throws IOException;
+
+    /**
+     * @param data data to be written
+     * @throws IOException
+     */
+    void writeData(Data data) throws IOException;
 
     /**
      * @return copy of internal byte array

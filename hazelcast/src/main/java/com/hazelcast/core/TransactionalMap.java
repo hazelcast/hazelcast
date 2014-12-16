@@ -27,9 +27,9 @@ import java.util.concurrent.TimeUnit;
  * Transactional implementation of {@link BaseMap}.
  * <p/>
  * <h2>MapStore Interaction</h2>
- * When using MapStore, the call to any MapStore methods is outside the transactional boundary.
- * If you need to have an XATransaction spanning Hazelcast operations and one more other XAResources,
- * such as a database, you should not use MapStore. Instead, enlist both resources in a transaction as shown below:
+ * When using MapStore, the call to any MapStore method is outside the transactional boundary.
+ * If you need to have an XATransaction spanning Hazelcast operations and one more other XAResources
+ * (such as a database), you should not use MapStore. Instead, enlist both resources in a transaction as shown below:
  * <p/>
  * <pre>
  * <code>
@@ -138,7 +138,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#putIfAbsent(Object, Object)}.
      * <p/>
-     * The object to be put will be accessible only in the current transaction context till transaction is committed.
+     * The object to be put will be accessible only in the current transaction context until the transaction is committed.
      *
      * @see IMap#putIfAbsent(Object, Object)
      */
@@ -147,7 +147,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#replace(Object, Object)}.
      * <p/>
-     * The object to be replaced will be accessible only in the current transaction context till transaction is committed.
+     * The object to be replaced will be accessible only in the current transaction context until the transaction is committed.
      *
      * @see IMap#replace(Object, Object)
      */
@@ -156,7 +156,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#replace(Object, Object, Object)}.
      * <p/>
-     * The object to be replaced will be accessible only in the current transaction context till transaction is committed.
+     * The object to be replaced will be accessible only in the current transaction context until the transaction is committed.
      *
      * @see IMap#replace(Object, Object, Object)
      */
@@ -165,7 +165,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#remove(Object)}.
      * <p/>
-     * The object to be removed will be removed from only the current transaction context till transaction is committed.
+     * The object to be removed will be removed from only the current transaction context until the transaction is committed.
      *
      * @see IMap#remove(Object)
      */
@@ -174,7 +174,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#delete(Object)}.
      * <p/>
-     * The object to be deleted will be removed from only the current transaction context till transaction is committed.
+     * The object to be deleted will be removed from only the current transaction context until the transaction is committed.
      *
      * @see IMap#delete(Object)
      */
@@ -183,7 +183,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#remove(Object, Object)}.
      * <p/>
-     * The object to be removed will be removed from only the current transaction context till transaction is committed.
+     * The object to be removed will be removed from only the current transaction context until the transaction is committed.
      *
      * @see IMap#remove(Object, Object)
      */

@@ -24,39 +24,47 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
 /**
- * Entry of Entry Processor for {@link CacheEntry}.
- *
- * @param <K>
- * @param <V>
- * @see com.hazelcast.map.EntryProcessor
+ * This class is an implementation of {@link MutableEntry} which is provided into
+ * {@link javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)}.
+ * <p>CacheEntryProcessorEntry may face multiple mutating operations like setValue, remove or CacheLoading, etc.</p>
+ * <p>This implementation may handle multiple operations executed on this entry and persist the resultant state into
+ * {@link CacheRecordStore} after entry processor get completed.</p>
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ * @see javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)
  */
-public class CacheEntryProcessorEntry<K, V>
+public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         implements MutableEntry<K, V> {
 
-    private K key;
-    private V value;
+    protected K key;
+    protected V value;
 
-    private State state = State.NONE;
+    protected State state = State.NONE;
 
-    private final Data keyData;
-    private CacheRecord record;
-    private CacheRecord recordLoaded;
+    protected final Data keyData;
+    protected R record;
+    protected R recordLoaded;
 
-    private final CacheRecordStore cacheRecordStore;
-    private final long now;
-    private final long start;
-    private final ExpiryPolicy expiryPolicy;
+    protected final AbstractCacheRecordStore cacheRecordStore;
+    protected final long now;
+    protected final long start;
+    protected final ExpiryPolicy expiryPolicy;
+    protected final int completionId;
 
-    public CacheEntryProcessorEntry(Data keyData, CacheRecord record, CacheRecordStore cacheRecordStore, long now) {
+    public CacheEntryProcessorEntry(Data keyData,
+                                    R record,
+                                    AbstractCacheRecordStore cacheRecordStore,
+                                    long now, int completionId) {
         this.keyData = keyData;
         this.record = record;
         this.cacheRecordStore = cacheRecordStore;
         this.now = now;
+        this.completionId = completionId;
         this.start = cacheRecordStore.cacheConfig.isStatisticsEnabled() ? System.nanoTime() : 0;
 
-        final Factory<ExpiryPolicy> expiryPolicyFactory = cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
+        final Factory<ExpiryPolicy> expiryPolicyFactory =
+                cacheRecordStore.cacheConfig.getExpiryPolicyFactory();
         this.expiryPolicy = expiryPolicyFactory.create();
-
     }
 
     @Override
@@ -105,7 +113,7 @@ public class CacheEntryProcessorEntry<K, V>
         }
         if (recordLoaded == null) {
             //LOAD IT
-            recordLoaded = cacheRecordStore.readThroughRecord(keyData, now);
+            recordLoaded = (R) cacheRecordStore.readThroughRecord(keyData, now);
         }
         if (recordLoaded != null) {
             state = State.LOAD;
@@ -114,21 +122,26 @@ public class CacheEntryProcessorEntry<K, V>
         return null;
     }
 
-    private V getRecordValue(CacheRecord theRecord) {
+    protected V getRecordValue(R record) {
         final Object objValue;
         switch (cacheRecordStore.cacheConfig.getInMemoryFormat()) {
             case BINARY:
-                objValue = cacheRecordStore.cacheService.toObject(theRecord.getValue());
+                objValue = cacheRecordStore.cacheService.toObject(record.getValue());
                 break;
             case OBJECT:
-                objValue = theRecord.getValue();
+                objValue = record.getValue();
                 break;
             default:
-                throw new IllegalArgumentException("Invalid storage format: " + cacheRecordStore.cacheConfig.getInMemoryFormat());
+                throw new IllegalArgumentException("Invalid storage format: "
+                        + cacheRecordStore.cacheConfig.getInMemoryFormat());
         }
         return (V) objValue;
     }
 
+    /**
+     * Provides a similar functionality as committing a transaction. So, at the end of the process method, applyChanges
+     * will be called to apply latest data into {@link CacheRecordStore}.
+     */
     public void applyChanges() {
         final boolean isStatisticsEnabled = cacheRecordStore.cacheConfig.isStatisticsEnabled();
         final CacheStatisticsImpl statistics = cacheRecordStore.statistics;
@@ -138,27 +151,27 @@ public class CacheEntryProcessorEntry<K, V>
                 cacheRecordStore.accessRecord(record, expiryPolicy, now);
                 break;
             case UPDATE:
-                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false);
+                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false, completionId);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNano(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 break;
             case REMOVE:
-                cacheRecordStore.remove(keyData, null);
+                cacheRecordStore.remove(keyData, null, completionId);
                 break;
             case CREATE:
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNano(System.nanoTime() - start);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false);
+                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false, completionId);
                 break;
             case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true);
+                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true, completionId);
                 break;
             case NONE:
-                //NOOP
+                cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false, completionId);
                 break;
             default:
                 break;
@@ -173,8 +186,10 @@ public class CacheEntryProcessorEntry<K, V>
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
-    private enum State {
+    protected enum State {
+
         NONE, ACCESS, UPDATE, LOAD, CREATE, REMOVE
 
     }
+
 }

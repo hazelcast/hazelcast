@@ -16,11 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+import java.io.Serializable;
+
 /**
  * Configuration for map's capacity.
  * You can set a limit for number of entries or total memory cost of entries.
  */
-public class MaxSizeConfig {
+public class MaxSizeConfig implements DataSerializable, Serializable {
 
     /**
      * Default maximum size of map.
@@ -51,21 +58,29 @@ public class MaxSizeConfig {
      */
     public enum MaxSizePolicy {
         /**
-         * Decide maximum size of map according to node
+         * Decide maximum entry count according to node
          */
         PER_NODE,
         /**
-         * Decide maximum size of map according to partition
+         * Decide maximum entry count according to partition
          */
         PER_PARTITION,
         /**
-         * Decide maximum size of map with use heap percentage
+         * Decide maximum size with use heap percentage
          */
         USED_HEAP_PERCENTAGE,
         /**
-         * Decide maximum size of map with use heap size
+         * Decide maximum size with use heap size
          */
-        USED_HEAP_SIZE
+        USED_HEAP_SIZE,
+        /**
+         * Decide minimum free heap percentage to trigger cleanup
+         */
+        FREE_HEAP_PERCENTAGE,
+        /**
+         * Decide minimum free heap size to trigger cleanup
+         */
+        FREE_HEAP_SIZE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {
@@ -93,6 +108,18 @@ public class MaxSizeConfig {
     public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(maxSizePolicy.toString());
+        out.writeInt(size);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
+        size = in.readInt();
     }
 
     @Override

@@ -20,7 +20,7 @@ import java.io.IOException;
 
 /**
  * For sample usage custom serialization and other way of custom serialization
- * see {@link com.hazelcast.nio.serialization.StreamSerializerAdapter}.
+ * see {@link com.hazelcast.nio.serialization.StreamSerializer}.
  *
  *  Note that read and write methods should be compatible
  *

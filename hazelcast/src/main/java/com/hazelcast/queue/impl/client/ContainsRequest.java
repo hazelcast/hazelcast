@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.impl.ContainsOperation;
+import com.hazelcast.queue.impl.operations.ContainsOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.ContainsOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.ContainsOperation}
  */
 public class ContainsRequest extends QueueRequest implements RetryableRequest {
 
@@ -61,7 +61,7 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data : dataList) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -72,8 +72,7 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             dataList.add(data);
         }
     }
@@ -91,6 +90,6 @@ public class ContainsRequest extends QueueRequest implements RetryableRequest {
         if (dataList.size() == 1) {
             return dataList.toArray();
         }
-        return new Object[]{dataList};
+        return new Object[] {dataList};
     }
 }

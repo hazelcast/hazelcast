@@ -17,14 +17,14 @@
 package com.hazelcast.core;
 
 /**
- * <p>Implementations of this interface are thought to select members
+ * <p>Implementations of this interface select members
  * that are capable of executing a special kind of task.<br/>
  * The {@link #select(Member)} method is called for every available
- * member in the cluster and it's up to the implementation to decide
+ * member in the cluster and it is up to the implementation to decide
  * if the member is going to be used or not.</p>
- * <p>A basic implementation for example could select members on
- * existence of a special attribute in the members like the following
- * example show:<br/>
+ * <p>For example, a basic implementation could select members on the
+ * existence of a special attribute in the members, like the following
+ * example:<br/>
  * <pre>public class MyMemberSelector implements MemberSelector {
  *     public boolean select(Member member) {
  *         return Boolean.TRUE.equals(member.getAttribute("my.special.executor"));
@@ -35,10 +35,10 @@ package com.hazelcast.core;
 public interface MemberSelector {
 
     /**
-     * Decides for the given member to be part of an operation or not.
+     * Decides if the given member will be part of an operation or not.
      *
-     * @param member the member instance to decide on
-     * @return true of member should take part in the operation otherwise false
+     * @param member the member instance to decide upon
+     * @return true if the member should take part in the operation, false otherwise
      */
     boolean select(Member member);
 

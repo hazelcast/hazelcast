@@ -18,7 +18,7 @@ package com.hazelcast.queue.impl.client;
 
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.impl.IteratorOperation;
+import com.hazelcast.queue.impl.operations.IteratorOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import java.util.Collection;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.IteratorOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.IteratorOperation}
  */
 public class IteratorRequest extends QueueRequest implements RetryableRequest {
 

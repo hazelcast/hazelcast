@@ -16,9 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.cluster.BindOperation;
+import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.instance.NodeInitializer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -35,18 +34,23 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
+
+import static java.lang.Boolean.parseBoolean;
 
 public class TcpIpConnectionManager implements ConnectionManager {
 
@@ -68,6 +72,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private final ILogger logger;
 
     private final int socketLingerSeconds;
+
+    private final int socketConnectTimeoutSeconds;
 
     private final boolean socketKeepAlive;
 
@@ -99,9 +105,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int selectorThreadCount;
 
-    private final IOSelector[] inSelectors;
+    private final InSelectorImpl[] inSelectors;
 
-    private final IOSelector[] outSelectors;
+    private final OutSelectorImpl[] outSelectors;
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
@@ -117,35 +123,54 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    private final NodeInitializer initializer;
+    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
+    // to deal with this should only be used for the test lab. In the future we need to create a real fix to this problem,
+    // but without this hack we can't do reliable benchmarking because the numbers have too much variation.
+    private final boolean selectorImbalanceWorkaroundEnabled;
+    private final Map<String, Integer> selectorIndexPerHostMap;
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel, NodeInitializer initializer) {
-        this.initializer = initializer;
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
+        this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        selectorThreadCount = ioService.getSelectorThreadCount();
-        inSelectors = new IOSelector[selectorThreadCount];
-        outSelectors = new IOSelector[selectorThreadCount];
+        this.selectorThreadCount = ioService.getSelectorThreadCount();
+        this.inSelectors = new InSelectorImpl[selectorThreadCount];
+        this.outSelectors = new OutSelectorImpl[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
-        outboundPortCount = ports == null ? 0 : ports.size();
+        this.outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
             outboundPorts.addAll(ports);
         }
-        socketChannelWrapperFactory = initializer.getSocketChannelWrapperFactory();
-        portableContext = ioService.getPortableContext();
+        this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
+        this.portableContext = ioService.getPortableContext();
+
+        this.selectorImbalanceWorkaroundEnabled = isSelectorImbalanceEnabled();
+        this.selectorIndexPerHostMap = selectorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
+    }
+
+    private boolean isSelectorImbalanceEnabled() {
+        boolean enabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
+        if (enabled) {
+            logger.severe("WARNING!!!! The 'hazelcast.selectorhack.enabled' has been enabled. This feature should not be used "
+                    + "in a production environment. It is a temporary work around to deal with imbalances between selector-load. "
+                    + "This issue will be fixed at some point in time. Using this feature in a production environment can lead "
+                    + "to other imbalance problems, e.g. when multiple members are on the same machine. Also this feature is not "
+                    + "100% reliable.  ");
+        }
+        return enabled;
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
         if (!isSocketInterceptorEnabled()) {
             return;
         }
-        final MemberSocketInterceptor memberSocketInterceptor = initializer.getMemberSocketInterceptor();
+        final MemberSocketInterceptor memberSocketInterceptor = ioService.getMemberSocketInterceptor();
         if (memberSocketInterceptor == null) {
             return;
         }
@@ -165,11 +190,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public PacketReader createPacketReader(TcpIpConnection connection) {
-        return initializer.createPacketReader(connection, ioService);
+        return ioService.createPacketReader(connection);
     }
 
     public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return initializer.createPacketWriter(connection, ioService);
+        return ioService.createPacketWriter(connection);
     }
 
     @Override
@@ -202,6 +227,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return ioService;
     }
 
+    public int getSocketConnectTimeoutSeconds() {
+        return socketConnectTimeoutSeconds;
+    }
+
     @Override
     public void addConnectionListener(ConnectionListener listener) {
         connectionListeners.add(listener);
@@ -212,13 +241,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
             log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
         final Address thisAddress = ioService.getThisAddress();
-        if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
+        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
             log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
                     + "! This node is not requested endpoint: " + localEndpoint);
             connection.close();
             return false;
         }
         connection.setEndPoint(remoteEndPoint);
+        ioService.onSuccessfulConnection(remoteEndPoint);
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
         }
@@ -270,7 +300,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {
         final Connection existingConnection = connectionsMap.get(remoteEndPoint);
-        if (existingConnection != null && existingConnection.live()) {
+        if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
                     log(Level.FINEST, existingConnection + " is already bound to " + remoteEndPoint
@@ -283,13 +313,17 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return false;
     }
 
-    void sendBindRequest(final TcpIpConnection connection, final Address remoteEndPoint, final boolean replyBack) {
+    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
+        ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
-        final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
-        final Data bindData = ioService.toData(bind);
-        final Packet packet = new Packet(bindData, portableContext);
-        packet.setHeader(Packet.HEADER_OP);
+        if (logger.isFinestEnabled()) {
+            log(Level.FINEST, "Sending bind packet to " + remoteEndPoint);
+        }
+        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
+        Data bindData = ioService.toData(bind);
+        Packet packet = new Packet(bindData, portableContext);
+        packet.setHeader(Packet.HEADER_BIND);
         connection.write(packet);
         //now you can send anything...
     }
@@ -305,16 +339,50 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
-        final int index = nextSelectorIndex();
+        InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
+        String remoteHost = remoteSocketAddress.getHostName();
+        int index = getSelectorIndex(remoteHost);
+
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
         connection.getReadHandler().register();
-        log(Level.INFO,  "Established socket connection between " + channel.socket().getLocalSocketAddress()
-                + " and " + channel.socket().getRemoteSocketAddress());
+
+        logConnectionEstablished(channel, remoteSocketAddress, index);
+
         return connection;
+    }
+
+    private int getSelectorIndex(String remoteHost) {
+        Integer index;
+        if (selectorImbalanceWorkaroundEnabled) {
+            synchronized (selectorIndexPerHostMap) {
+                index = selectorIndexPerHostMap.get(remoteHost);
+                if (index == null) {
+                    index = nextSelectorIndex();
+                    selectorIndexPerHostMap.put(remoteHost, index);
+                    logger.info(remoteHost + " no selector index found, retrieving a new one: " + index);
+                } else {
+                    logger.info(remoteHost + " selector index found: " + index);
+                }
+            }
+        } else {
+            index = nextSelectorIndex();
+        }
+        return index;
+    }
+
+    private void logConnectionEstablished(SocketChannelWrapper channel, InetSocketAddress remoteSocketAddress, Integer index) {
+        if (selectorImbalanceWorkaroundEnabled) {
+            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                    + " and " + remoteSocketAddress
+                    + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
+        } else {
+            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
+                    + " and " + remoteSocketAddress);
+        }
     }
 
     void failedConnection(Address address, Throwable t, boolean silent) {
@@ -368,9 +436,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
-            final Connection existingConn = connectionsMap.get(endPoint);
-            if (existingConn == connection && live) {
-                connectionsMap.remove(endPoint);
+            connectionsMap.remove(endPoint, connection);
+            if (live) {
                 ioService.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
                     public void run() {
@@ -386,7 +453,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 });
             }
         }
-        if (connection.live()) {
+        if (connection.isAlive()) {
             connection.close();
         }
     }
@@ -536,7 +603,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     public int getCurrentClientConnections() {
         int count = 0;
         for (TcpIpConnection conn : activeConnections) {
-            if (conn.live()) {
+            if (conn.isAlive()) {
                 if (conn.isClient()) {
                     count++;
                 }
@@ -569,6 +636,21 @@ public class TcpIpConnectionManager implements ConnectionManager {
             final Integer port = outboundPorts.removeFirst();
             outboundPorts.addLast(port);
             return port;
+        }
+    }
+
+    @Override
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        for (int k = 0; k < inSelectors.length; k++) {
+            InSelectorImpl inSelector = inSelectors[k];
+            sb.append(inSelector.getName()).append(".readEvents=")
+                    .append(inSelector.getReadEvents()).append("\n");
+        }
+
+        for (int k = 0; k < outSelectors.length; k++) {
+            OutSelectorImpl outSelector = outSelectors[k];
+            sb.append(outSelector.getName()).append(".writeEvents=")
+                    .append(outSelector.getWriteEvents()).append("\n");
         }
     }
 

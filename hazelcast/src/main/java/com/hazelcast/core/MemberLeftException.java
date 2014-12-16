@@ -27,7 +27,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Thrown when a member left during an invocation or execution.
+ * A {@link ExecutionException} thrown when a member left during an invocation or execution.
  */
 public class MemberLeftException extends ExecutionException implements RetryableException {
 
@@ -42,8 +42,8 @@ public class MemberLeftException extends ExecutionException implements Retryable
     }
 
     /**
-     * Returns the member which left the cluster
-     * @return member
+     * Returns the member that left the cluster
+     * @return the member that left the cluster
      */
     public Member getMember() {
         return member;

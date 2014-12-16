@@ -31,13 +31,13 @@ public interface ExecutionCallback<V> {
     /**
      * Called when an execution is completed successfully.
      *
-     * @param response result of execution
+     * @param response the result of the successful execution
      */
     void onResponse(V response);
 
     /**
      * Called when an execution is completed with an error.
-     * @param t exception thrown
+     * @param t the exception that is thrown
      */
     void onFailure(Throwable t);
 }

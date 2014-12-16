@@ -73,11 +73,11 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     private void lifecycleCheck(final NodeEngine engine) {
         if (engine == null || !engine.isActive()) {
-            throw throwNotActiveException();
+            throwNotActiveException();
         }
     }
 
-    protected RuntimeException throwNotActiveException() {
+    protected void throwNotActiveException() {
         throw new HazelcastInstanceNotActiveException();
     }
 
@@ -137,5 +137,11 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         int result = getServiceName() != null ? getServiceName().hashCode() : 0;
         result = 31 * result + (getName() != null ? getName().hashCode() : 0);
         return result;
+    }
+
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + "service=" + getServiceName() + ", name=" + getName() + '}';
     }
 }

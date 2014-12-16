@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
@@ -109,14 +110,17 @@ public final class ResponseHandlerFactory {
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
-            NormalResponse response;
-            if (!(obj instanceof NormalResponse)) {
+            Response response;
+            if (!(obj instanceof Response)) {
                 response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
             } else {
-                response = (NormalResponse) obj;
+                response = (Response) obj;
             }
 
-            nodeEngine.getOperationService().send(response, remotePropagatable.getCallerAddress());
+            OperationService operationService = nodeEngine.getOperationService();
+            if (!operationService.send(response, remotePropagatable.getCallerAddress())) {
+                throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
+            }
         }
 
         @Override

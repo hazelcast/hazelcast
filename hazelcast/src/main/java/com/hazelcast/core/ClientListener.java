@@ -19,8 +19,7 @@ package com.hazelcast.core;
 import java.util.EventListener;
 
 /**
- * ClientListener allows to get notified when a {@link Client} is connected to
- * or disconnected from cluster.
+ * The ClientListener provides the ability to listen to clients connecting and disconnecting from the cluster.
  *
  * @see Client
  * @see ClientService#addClientListener(ClientListener)
@@ -30,14 +29,14 @@ public interface ClientListener extends EventListener {
     /**
      * Invoked when a new client is connected.
      *
-     * @param client Client instance
+     * @param client the client instance
      */
     void clientConnected(Client client);
 
     /**
      * Invoked when a new client is disconnected.
      *
-     * @param client Client instance
+     * @param client the client instance
      */
     void clientDisconnected(Client client);
 }

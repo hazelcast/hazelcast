@@ -21,10 +21,11 @@ package com.hazelcast.core;
  */
 public class DuplicateInstanceNameException extends HazelcastException {
 
-    public DuplicateInstanceNameException() {
-        super();
-    }
-
+    /**
+     * The message when a duplicate instance name is detected.
+     *
+     * @param message the message when a duplicate instance name is detected
+     */
     public DuplicateInstanceNameException(String message) {
         super(message);
     }

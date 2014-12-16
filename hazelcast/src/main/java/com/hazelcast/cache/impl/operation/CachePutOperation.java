@@ -26,7 +26,11 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache Put operation
+ * Operation implementation for
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String)} and
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String)}.
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#put(Data, Object, ExpiryPolicy, String)
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndPut(Data, Object, ExpiryPolicy, String)
  */
 public class CachePutOperation
         extends AbstractMutatingCacheOperation {
@@ -37,10 +41,6 @@ public class CachePutOperation
     private ExpiryPolicy expiryPolicy;
 
     public CachePutOperation() {
-    }
-
-    public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get) {
-        this(name, key, value, expiryPolicy, get, IGNORE_COMPLETION);
     }
 
     public CachePutOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, boolean get, int completionId) {
@@ -54,9 +54,9 @@ public class CachePutOperation
     public void run()
             throws Exception {
         if (get) {
-            response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid());
+            response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
         } else {
-            cache.put(key, value, expiryPolicy, getCallerUuid());
+            cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
             response = null;
         }
         backupRecord = cache.getRecord(key);
@@ -78,7 +78,7 @@ public class CachePutOperation
         super.writeInternal(out);
         out.writeBoolean(get);
         out.writeObject(expiryPolicy);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
@@ -87,8 +87,7 @@ public class CachePutOperation
         super.readInternal(in);
         get = in.readBoolean();
         expiryPolicy = in.readObject();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 
     @Override

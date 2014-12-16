@@ -16,6 +16,7 @@
 
 package com.hazelcast.management;
 
+import com.hazelcast.config.EvictionPolicy;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -77,7 +78,7 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         config.setMaxSizeConfig(new MaxSizeConfig().setSize(getInt(json, "maxSize"))
                 .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(getString(json, "maxSizePolicy"))));
         config.setReadBackupData(getBoolean(json, "readBackupData"));
-        config.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
+        config.setEvictionPolicy(EvictionPolicy.valueOf(getString(json, "evictionPolicy")));
         config.setMergePolicy(getString(json, "mergePolicy"));
     }
 
@@ -92,10 +93,12 @@ public class MapConfigAdapter implements JsonSerializable, DataSerializable {
         config.setMinEvictionCheckMillis(in.readLong());
         config.setTimeToLiveSeconds(in.readInt());
         config.setMaxIdleSeconds(in.readInt());
-        config.setMaxSizeConfig(new MaxSizeConfig().setSize(in.readInt())
-                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
+        config.setMaxSizeConfig(
+                new MaxSizeConfig()
+                        .setSize(in.readInt())
+                        .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(in.readUTF())));
         config.setReadBackupData(in.readBoolean());
-        config.setEvictionPolicy(MapConfig.EvictionPolicy.valueOf(in.readUTF()));
+        config.setEvictionPolicy(EvictionPolicy.valueOf(in.readUTF()));
         config.setMergePolicy(in.readUTF());
     }
 

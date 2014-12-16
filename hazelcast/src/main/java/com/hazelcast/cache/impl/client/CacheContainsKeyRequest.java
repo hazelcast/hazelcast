@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,6 +29,11 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheContainsKeyOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheContainsKeyOperation
+ */
 public class CacheContainsKeyRequest
         extends AbstractCacheRequest {
 
@@ -35,8 +42,8 @@ public class CacheContainsKeyRequest
     public CacheContainsKeyRequest() {
     }
 
-    public CacheContainsKeyRequest(String name, Data key) {
-        super(name);
+    public CacheContainsKeyRequest(String name, Data key, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
     }
 
@@ -50,21 +57,21 @@ public class CacheContainsKeyRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheContainsKeyOperation(name, key);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createContainsKeyOperation(key);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 }

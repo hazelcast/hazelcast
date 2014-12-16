@@ -57,7 +57,8 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(8);
         final String value = "hello";
         final HazelcastInstance instance = createHazelcastInstance();
-        IQueue queue = instance.getQueue("testQueueItemListener");
+        IQueue<String> queue = instance.getQueue("testQueueItemListener");
+
         queue.addItemListener(new ItemListener<String>() {
             public void itemAdded(ItemEvent<String> itemEvent) {
                 assertEquals(value, itemEvent.getItem());
@@ -237,7 +238,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Test
     public void issue427QOfferIncorrectWithinTransaction() {
-        Config config = new Config();
+         Config config = new Config();
         config.getQueueConfig("default").setMaxSize(100);
         HazelcastInstance h = createHazelcastInstance(config);
         final TransactionContext transactionContext = h.newTransactionContext();

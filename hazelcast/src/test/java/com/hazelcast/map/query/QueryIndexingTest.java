@@ -11,7 +11,6 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -26,7 +25,6 @@ import static java.util.Collections.emptyList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -56,12 +54,6 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     @Before
     public void waitForCluster() {
         assertClusterSizeEventually(2, h1);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(h1.getPartitionService().isClusterSafe());
-            }
-        });
     }
 
     @Test
@@ -69,6 +61,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
 
         IMap<Integer, Employee> imap1 = h1.getMap("employees");
         imap1.putAll(employees);
+        waitAllForSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
 
@@ -87,6 +80,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         imap1.addIndex("city", true);
 
         imap1.putAll(employees);
+        waitAllForSafeState();
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
         assertEquals(count/2, matchingEntries.size());

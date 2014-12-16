@@ -18,40 +18,30 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-class AbstractCacheRecord<V>
-        implements CacheRecord<V> {
+/**
+ * Abstract implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} with key, value and
+ * expiration time as internal state.
+ * <p>This implementation provides getter, setter and serialization methods.</p>
+ *
+ * @param <V> the type of the value stored by this {@link AbstractCacheRecord}
+ */
+public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, DataSerializable {
 
-    private Data key;
-    private V value;
+    protected long creationTime = -1;
+    protected volatile long expirationTime = -1;
+    protected volatile long accessTime = -1;
+    protected volatile int accessHit;
 
-    private long expirationTime = -1;
+    protected AbstractCacheRecord() {
+    }
 
-    AbstractCacheRecord(Data key, V value, long expirationTime) {
-        this.key = key;
-        this.value = value;
+    public AbstractCacheRecord(long creationTime, long expirationTime) {
+        this.creationTime = creationTime;
         this.expirationTime = expirationTime;
-    }
-
-    public AbstractCacheRecord() {
-    }
-
-    @Override
-    public Data getKey() {
-        return key;
-    }
-
-    @Override
-    public V getValue() {
-        return value;
-    }
-
-    @Override
-    public void setValue(V value) {
-        this.value = value;
     }
 
     public long getExpirationTime() {
@@ -64,25 +54,65 @@ class AbstractCacheRecord<V>
     }
 
     @Override
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    @Override
+    public void setCreationTime(long creationTime) {
+        this.creationTime = creationTime;
+    }
+
+    @Override
+    public long getAccessTime() {
+        return accessTime;
+    }
+
+    @Override
+    public void setAccessTime(long accessTime) {
+        this.accessTime = accessTime;
+    }
+
+    @Override
+    public int getAccessHit() {
+        return accessHit;
+    }
+
+    @Override
+    public void setAccessHit(int accessHit) {
+        this.accessHit = accessHit;
+    }
+
+    @Override
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "CacheRecord can be accessed by only its own partition thread.")
+    public void incrementAccessHit() {
+        accessHit++;
+    }
+
+    @Override
+    public void resetAccessHit() {
+        accessHit = 0;
+    }
+
+    @Override
     public boolean isExpiredAt(long now) {
         return expirationTime > -1 && expirationTime <= now;
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        key.writeData(out);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(creationTime);
         out.writeLong(expirationTime);
-        out.writeObject(value);
+        out.writeLong(accessTime);
+        out.writeInt(accessHit);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        key = new Data();
-        key.readData(in);
+    public void readData(ObjectDataInput in) throws IOException {
+        creationTime = in.readLong();
         expirationTime = in.readLong();
-        value = in.readObject();
-
+        accessTime = in.readLong();
+        accessHit = in.readInt();
     }
 }

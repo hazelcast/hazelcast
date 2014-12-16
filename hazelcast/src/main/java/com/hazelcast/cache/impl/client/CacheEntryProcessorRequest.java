@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,6 +30,11 @@ import com.hazelcast.spi.Operation;
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CacheEntryProcessorOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation
+ */
 public class CacheEntryProcessorRequest
         extends AbstractCacheRequest {
 
@@ -39,9 +46,9 @@ public class CacheEntryProcessorRequest
     public CacheEntryProcessorRequest() {
     }
 
-    public CacheEntryProcessorRequest(String name, Data key, javax.cache.processor.EntryProcessor entryProcessor,
+    public CacheEntryProcessorRequest(String name, Data key, EntryProcessor entryProcessor, InMemoryFormat inMemoryFormat,
                                       Object... arguments) {
-        super(name);
+        super(name, inMemoryFormat);
         this.key = key;
         this.entryProcessor = entryProcessor;
         this.arguments = arguments;
@@ -57,15 +64,16 @@ public class CacheEntryProcessorRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CacheEntryProcessorOperation(name, key, completionId, entryProcessor, arguments);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createEntryProcessorOperation(key, completionId, entryProcessor, arguments);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
         out.writeObject(entryProcessor);
         out.writeBoolean(arguments != null);
         if (arguments != null) {
@@ -78,11 +86,10 @@ public class CacheEntryProcessorRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
         entryProcessor = in.readObject();
         final boolean hasArguments = in.readBoolean();
         if (hasArguments) {

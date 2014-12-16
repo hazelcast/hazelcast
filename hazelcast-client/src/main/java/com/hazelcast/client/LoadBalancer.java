@@ -28,6 +28,7 @@ import com.hazelcast.core.Member;
  * only the operations that are not key based will be router to the endpoint returned by the LoadBalancer. If it is
  * not {@link com.hazelcast.client.config.ClientConfig#isSmartRouting()}, {@link LoadBalancer} will not be used.
  * <p/>
+ *
  * For configuration see  {@link com.hazelcast.client.config.ClientConfig#setLoadBalancer(LoadBalancer)}
  */
 public interface LoadBalancer {

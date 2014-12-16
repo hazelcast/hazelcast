@@ -20,12 +20,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.query.QueryException;
@@ -47,9 +47,10 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class IndexTest {
 
-    static final int FACTORY_ID = 1;
+    static final short FACTORY_ID = 1;
 
-    final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+    final SerializationService ss = new DefaultSerializationServiceBuilder()
+            .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     @Test
     public void testBasics() {

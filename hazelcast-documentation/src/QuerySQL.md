@@ -2,7 +2,7 @@
 
 ### Distributed SQL Query
 
-`com.hazelcast.query.SqlPredicate` takes regular SQL `where` clause. Here is an example:
+`com.hazelcast.query.SqlPredicate` takes the regular SQL `where` clause. Here is an example:
 
 ```java
 IMap<Employee> map = hazelcastInstance.getMap( "employee" );

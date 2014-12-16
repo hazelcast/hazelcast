@@ -89,11 +89,6 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
     }
 
     @Override
-    public int remainingCapacity() {
-        return config.getMaxSize() - size();
-    }
-
-    @Override
     public boolean remove(Object o) {
         final NodeEngine nodeEngine = getNodeEngine();
         final Data data = nodeEngine.toData(o);

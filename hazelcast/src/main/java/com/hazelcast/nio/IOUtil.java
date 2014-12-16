@@ -20,16 +20,15 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.io.OutputStream;
-import java.io.InputStream;
-import java.io.DataOutput;
-import java.io.DataInput;
-import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
-
 import java.nio.ByteBuffer;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -55,7 +54,7 @@ public final class IOUtil {
      * format is ever changed this extraction method needs to be changed too!
      */
     public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
-        ObjectDataInput input = serializationService.createObjectDataInput(data.getBuffer());
+        ObjectDataInput input = serializationService.createObjectDataInput(data.getData());
         boolean identified = input.readBoolean();
         if (identified) {
             // read factoryId
@@ -90,30 +89,22 @@ public final class IOUtil {
         }
     }
 
-    public static void writeNullableData(ObjectDataOutput out, Data data) throws IOException {
-        if (data != null) {
-            out.writeBoolean(true);
-            data.writeData(out);
+    public static void writeObject(ObjectDataOutput out, Object object) throws IOException {
+        boolean isBinary = object instanceof Data;
+        out.writeBoolean(isBinary);
+        if (isBinary) {
+            out.writeData((Data) object);
         } else {
-            // null
-            out.writeBoolean(false);
+            out.writeObject(object);
         }
     }
 
-    public static Data readNullableData(ObjectDataInput in) throws IOException {
-        final boolean isNotNull = in.readBoolean();
-        if (isNotNull) {
-            Data data = new Data();
-            data.readData(in);
-            return data;
+    public static <T> T readObject(ObjectDataInput in) throws IOException {
+        boolean isBinary = in.readBoolean();
+        if (isBinary) {
+            return (T) in.readData();
         }
-        return null;
-    }
-
-    public static Data readData(ObjectDataInput in) throws IOException {
-        Data data = new Data();
-        data.readData(in);
-        return data;
+        return in.readObject();
     }
 
     public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
@@ -225,6 +216,9 @@ public final class IOUtil {
     }
 
     public static byte[] decompress(byte[] compressedData) throws IOException {
+        if (compressedData.length == 0) {
+            return compressedData;
+        }
         Inflater inflater = new Inflater();
         inflater.setInput(compressedData);
         ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);

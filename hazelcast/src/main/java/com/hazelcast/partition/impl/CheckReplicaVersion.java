@@ -57,7 +57,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
             response = true;
         } else {
             logBackupVersionMismatch(currentVersion);
-            partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex);
+            partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
             response = false;
         }
     }
@@ -65,8 +65,9 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
     private void logBackupVersionMismatch(long currentVersion) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Partition: " + getPartitionId() + " version is not matching to version of the owner -> "
-                    + currentVersion + " -vs- " + version);
+            logger.finest("Partition: " + getPartitionId() + ", Replica: " + getReplicaIndex()
+                    + " version is not matching to version of the owner! "
+                    + " Expected: " + version + ", Actual: " + currentVersion);
         }
     }
 

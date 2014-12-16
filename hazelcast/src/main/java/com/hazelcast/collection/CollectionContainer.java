@@ -197,7 +197,8 @@ public abstract class CollectionContainer implements DataSerializable {
         TxCollectionItem item = new TxCollectionItem(itemId, null, transactionId, false);
         Object o = txMap.put(itemId, item);
         if (o != null) {
-            logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
+            logger.severe("Transaction reservation item already exists on the backup member."
+                    + " Reservation item id : " + itemId);
         }
     }
 
@@ -207,7 +208,9 @@ public abstract class CollectionContainer implements DataSerializable {
             final CollectionItem item = iterator.next();
             if (value.equals(item.getValue())) {
                 iterator.remove();
-                txMap.put(item.getItemId(), new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
+                txMap.put(item.getItemId(), new TxCollectionItem(item)
+                        .setTransactionId(transactionId)
+                        .setRemoveOperation(true));
                 return item;
             }
         }
@@ -220,33 +223,38 @@ public abstract class CollectionContainer implements DataSerializable {
     public void reserveRemoveBackup(long itemId, String transactionId) {
         final CollectionItem item = getMap().remove(itemId);
         if (item == null) {
-            throw new TransactionException("Backup reserve failed: " + itemId);
+            throw new TransactionException("Transaction reservation failed on backup member. "
+                    +  "Reservation item id: " + itemId);
         }
         txMap.put(itemId, new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
     }
 
     public void ensureReserve(long itemId) {
         if (txMap.get(itemId) == null) {
-            throw new TransactionException("No reserve for itemId: " + itemId);
+            throw new TransactionException("Transaction reservation cannot be found for reservation item id: "
+                    + itemId);
         }
     }
 
     public void rollbackAdd(long itemId) {
         if (txMap.remove(itemId) == null) {
-            logger.warning("rollbackAdd operation-> No txn item for itemId: " + itemId);
+            logger.warning("Transaction log cannot be found for rolling back 'add()' operation. Missing log item id: "
+                    + itemId);
         }
     }
 
     public void rollbackAddBackup(long itemId) {
         if (txMap.remove(itemId) == null) {
-            logger.warning("rollbackAddBackup operation-> No txn item for itemId: " + itemId);
+            logger.warning("Transaction log cannot be found for rolling back 'add()' operation on backup member."
+                    + " Missing log item id: " + itemId);
         }
     }
 
     public void rollbackRemove(long itemId) {
         final TxCollectionItem txItem = txMap.remove(itemId);
         if (txItem == null) {
-            logger.warning("rollbackRemove No txn item for itemId: " + itemId);
+            logger.warning("Transaction log cannot be found for rolling back 'remove()' operation."
+                    + " Missing log item id: " + itemId);
         } else {
             CollectionItem item = new CollectionItem(itemId, txItem.value);
             getCollection().add(item);
@@ -256,14 +264,16 @@ public abstract class CollectionContainer implements DataSerializable {
     public void rollbackRemoveBackup(long itemId) {
         final TxCollectionItem item = txMap.remove(itemId);
         if (item == null) {
-            logger.warning("rollbackRemoveBackup No txn item for itemId: " + itemId);
+            logger.warning("Transaction log cannot be found for rolling back 'remove()' operation on backup member."
+                    + " Missing log item id: " + itemId);
         }
     }
 
     public void commitAdd(long itemId, Data value) {
         final TxCollectionItem txItem = txMap.remove(itemId);
         if (txItem == null) {
-            throw new TransactionException("No reserve :" + itemId);
+            throw new TransactionException("Transaction log cannot be found for committing 'add()' operation."
+                    + " Missing log item id :" + itemId);
         }
         CollectionItem item = new CollectionItem(itemId, value);
         getCollection().add(item);
@@ -278,14 +288,16 @@ public abstract class CollectionContainer implements DataSerializable {
     public CollectionItem commitRemove(long itemId) {
         final CollectionItem item = txMap.remove(itemId);
         if (item == null) {
-            logger.warning("commitRemove operation-> No txn item for itemId: " + itemId);
+            logger.warning("Transaction log cannot be found for committing 'remove()' operation."
+                    + " Missing log item id " + itemId);
         }
         return item;
     }
 
     public void commitRemoveBackup(long itemId) {
         if (txMap.remove(itemId) == null) {
-            logger.warning("commitRemoveBackup operation-> No txn item for itemId: " + itemId);
+            logger.warning("Transaction log cannot be found for committing 'remove()' operation on backup member."
+                    + " Missing log item id:" + itemId);
         }
     }
 

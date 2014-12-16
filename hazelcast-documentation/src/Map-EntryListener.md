@@ -3,7 +3,7 @@
 
 ### Entry Listener
 
-Map entry events can be listened. Hazelcast distributed map offers the method `addEntryListener` to add an entry listener to the map and listen to the entry events. 
+You can listen to map entry events. Hazelcast distributed map offers the method `addEntryListener` to add an entry listener to the map. 
 
 Let's take a look at the below sample code.
 
@@ -69,7 +69,7 @@ public class Modify {
 }
 ```
 
-Now, let's first execute the class `Listen` and then execute `Modify`. Check out the below output produced by `Listen`. 
+If you execute the class `Listen` and then execute `Modify`, you might get the below output produced by `Listen`. 
 
 ```
 entryAdded:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
@@ -82,5 +82,5 @@ entryRemoved:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
     oldValue=2, value=2, event=REMOVED, by Member [192.168.1.100]:5702
 ```
 
-Entry Listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access to other partitions. So, consideration should be given when running long tasks since listening to those tasks may cause other event listeners to starve.
+Entry Listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause other event listeners to starve.
 

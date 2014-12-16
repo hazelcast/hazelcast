@@ -18,6 +18,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
@@ -32,24 +33,26 @@ import static java.lang.Math.min;
  */
 final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
-    private static final int CALL_TIMEOUT = 5000;
+    private static final int MAX_CALL_TIMEOUT_EXTENSION = 60 * 1000;
+    private static final int IS_EXECUTING_CALL_TIMEOUT = 5000;
 
     private static final AtomicReferenceFieldUpdater<BasicInvocationFuture, Object> RESPONSE_FIELD_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(BasicInvocationFuture.class, Object.class, "response");
 
     volatile boolean interrupted;
-    private BasicInvocation basicInvocation;
+    private final AtomicInteger waiterCount = new AtomicInteger();
+    private final BasicOperationService operationService;
+    private final BasicInvocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
     private volatile Object response;
-    private final BasicOperationService operationService;
 
-    BasicInvocationFuture(BasicOperationService operationService, BasicInvocation basicInvocation, final Callback<E> callback) {
-        this.basicInvocation = basicInvocation;
+    BasicInvocationFuture(BasicOperationService operationService, BasicInvocation invocation, final Callback<E> callback) {
+        this.invocation = invocation;
         this.operationService = operationService;
 
         if (callback != null) {
             ExecutorCallbackAdapter<E> adapter = new ExecutorCallbackAdapter<E>(callback);
-            callbackHead = new ExecutionCallbackNode<E>(adapter, basicInvocation.getAsyncExecutor(), null);
+            callbackHead = new ExecutionCallbackNode<E>(adapter, operationService.asyncExecutor, null);
         }
     }
 
@@ -78,7 +81,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public void andThen(ExecutionCallback<E> callback) {
-        andThen(callback, basicInvocation.getAsyncExecutor());
+        andThen(callback, operationService.asyncExecutor);
     }
 
     private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
@@ -95,13 +98,13 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                             callback.onFailure((Throwable) resp);
                         }
                     } catch (Throwable cause) {
-                        basicInvocation.logger.severe("Failed asynchronous execution of execution callback: " + callback
-                                + "for call " + basicInvocation, cause);
+                        invocation.logger.severe("Failed asynchronous execution of execution callback: " + callback
+                                + "for call " + invocation, cause);
                     }
                 }
             });
-        } catch (RejectedExecutionException ignore) {
-            basicInvocation.logger.finest(ignore);
+        } catch (RejectedExecutionException e) {
+            invocation.logger.warning("Execution of callback: " + callback + " is rejected!", e);
         }
     }
 
@@ -121,10 +124,10 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
 
-                ILogger logger = basicInvocation.logger;
+                ILogger logger = invocation.logger;
                 if (logger.isFinestEnabled()) {
                     logger.info("Future response is already set! Current response: "
-                            + response + ", Offered response: " + offeredResponse + ", Invocation: " + basicInvocation);
+                            + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
                 return;
             }
@@ -138,7 +141,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             notifyAll();
         }
 
-        operationService.deregisterInvocation(basicInvocation);
+        operationService.deregisterInvocation(invocation);
         notifyCallbacks(callbackChain);
     }
 
@@ -151,7 +154,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private Object resolveInternalResponse(Object rawResponse) {
         if (rawResponse == null) {
-            throw new IllegalArgumentException("response can't be null: " + basicInvocation);
+            throw new IllegalArgumentException("response can't be null: " + invocation);
         }
 
         if (rawResponse instanceof NormalResponse) {
@@ -169,7 +172,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            basicInvocation.logger.severe("Unexpected timeout while processing " + this, e);
+            invocation.logger.severe("Unexpected timeout while processing " + this, e);
             return null;
         }
     }
@@ -196,55 +199,60 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             return response;
         }
 
-        long timeoutMs = getTimeoutMs(time, unit);
-        long maxCallTimeoutMs = getMaxCallTimeoutMs();
-        boolean longPolling = timeoutMs > maxCallTimeoutMs;
+        waiterCount.incrementAndGet();
+        try {
+            long timeoutMs = toTimeoutMs(time, unit);
+            long maxCallTimeoutMs = getMaxCallTimeout();
+            boolean longPolling = timeoutMs > maxCallTimeoutMs;
 
-        int pollCount = 0;
-        while (timeoutMs >= 0) {
-            long pollTimeoutMs = min(maxCallTimeoutMs, timeoutMs);
-            long startMs = Clock.currentTimeMillis();
-            long lastPollTime = 0;
-            pollCount++;
+            int pollCount = 0;
+            while (timeoutMs >= 0) {
+                long pollTimeoutMs = min(maxCallTimeoutMs, timeoutMs);
+                long startMs = Clock.currentTimeMillis();
+                long lastPollTime = 0;
+                pollCount++;
 
-            try {
-                pollResponse(pollTimeoutMs);
-                lastPollTime = Clock.currentTimeMillis() - startMs;
-                timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
+                try {
+                    pollResponse(pollTimeoutMs);
+                    lastPollTime = Clock.currentTimeMillis() - startMs;
+                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
-                if (response == BasicInvocation.WAIT_RESPONSE) {
-                    RESPONSE_FIELD_UPDATER.compareAndSet(this, BasicInvocation.WAIT_RESPONSE, null);
-                    continue;
-                } else if (response != null) {
-                    //if the thread is interrupted, but the response was not an interrupted-response,
-                    //we need to restore the interrupt flag.
-                    if (response != BasicInvocation.INTERRUPTED_RESPONSE && interrupted) {
-                        Thread.currentThread().interrupt();
+                    if (response == BasicInvocation.WAIT_RESPONSE) {
+                        RESPONSE_FIELD_UPDATER.compareAndSet(this, BasicInvocation.WAIT_RESPONSE, null);
+                        continue;
+                    } else if (response != null) {
+                        //if the thread is interrupted, but the response was not an interrupted-response,
+                        //we need to restore the interrupt flag.
+                        if (response != BasicInvocation.INTERRUPTED_RESPONSE && interrupted) {
+                            Thread.currentThread().interrupt();
+                        }
+                        return response;
                     }
-                    return response;
+                } catch (InterruptedException e) {
+                    interrupted = true;
                 }
-            } catch (InterruptedException e) {
-                interrupted = true;
-            }
 
-            if (!interrupted && longPolling) {
-                // no response!
-                Address target = basicInvocation.getTarget();
-                if (basicInvocation.remote && basicInvocation.nodeEngine.getThisAddress().equals(target)) {
-                    // target may change during invocation because of migration!
-                    continue;
-                }
-                basicInvocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
+                if (!interrupted && longPolling) {
+                    // no response!
+                    Address target = invocation.getTarget();
+                    if (invocation.remote && invocation.nodeEngine.getThisAddress().equals(target)) {
+                        // target may change during invocation because of migration!
+                        continue;
+                    }
 
-                boolean executing = isOperationExecuting(target);
-                if (!executing) {
-                    Object operationTimeoutException = newOperationTimeoutException(pollCount, pollTimeoutMs);
-                    // tries to set an OperationTimeoutException response if response is not set yet
-                    set(operationTimeoutException);
+                    invocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
+                    boolean executing = isOperationExecuting(target);
+                    if (!executing) {
+                        Object operationTimeoutException = newOperationTimeoutException(pollCount * pollTimeoutMs);
+                        // tries to set an OperationTimeoutException response if response is not set yet
+                        set(operationTimeoutException);
+                    }
                 }
             }
+            return BasicInvocation.TIMEOUT_RESPONSE;
+        } finally {
+            waiterCount.decrementAndGet();
         }
-        return BasicInvocation.TIMEOUT_RESPONSE;
     }
 
     private void pollResponse(final long pollTimeoutMs) throws InterruptedException {
@@ -261,11 +269,24 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-    private long getMaxCallTimeoutMs() {
-        return basicInvocation.callTimeout > 0 ? basicInvocation.callTimeout * 2 : Long.MAX_VALUE;
+    long getMaxCallTimeout() {
+        long callTimeout = invocation.callTimeout;
+        long maxCallTimeout = callTimeout + getCallTimeoutExtension(callTimeout);
+        return maxCallTimeout > 0 ? maxCallTimeout : Long.MAX_VALUE;
     }
 
-    private static long getTimeoutMs(long time, TimeUnit unit) {
+    private static long getCallTimeoutExtension(long callTimeout) {
+        if (callTimeout > 0) {
+            return Math.min(callTimeout, MAX_CALL_TIMEOUT_EXTENSION);
+        }
+        return 0L;
+    }
+
+    int getWaitingThreadsCount() {
+        return waiterCount.get();
+    }
+
+    private static long toTimeoutMs(long time, TimeUnit unit) {
         long timeoutMs = unit.toMillis(time);
         if (timeoutMs < 0) {
             timeoutMs = 0;
@@ -273,21 +294,21 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         return timeoutMs;
     }
 
-    private Object newOperationTimeoutException(int pollCount, long pollTimeoutMs) {
-        boolean hasResponse = basicInvocation.potentialResponse != null;
-        int backupsExpected = basicInvocation.backupsExpected;
-        int backupsCompleted = basicInvocation.backupsCompleted;
+    Object newOperationTimeoutException(long totalTimeoutMs) {
+        boolean hasResponse = invocation.pendingResponse != null;
+        int backupsExpected = invocation.backupsExpected;
+        int backupsCompleted = invocation.backupsCompleted;
 
         if (hasResponse) {
-            return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
                     + " Aborting invocation! " + toString()
-                    + " Not all backups have completed "
+                    + " Not all backups have completed! "
                     + " backups-expected:" + backupsExpected
                     + " backups-completed: " + backupsCompleted);
         } else {
-            return new OperationTimeoutException("No response for " + (pollTimeoutMs * pollCount) + " ms."
+            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
                     + " Aborting invocation! " + toString()
-                    + " No response has been send "
+                    + " No response has been received! "
                     + " backups-expected:" + backupsExpected
                     + " backups-completed: " + backupsCompleted);
         }
@@ -328,16 +349,16 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         if (unresolvedResponse == BasicInvocation.TIMEOUT_RESPONSE) {
-            return new TimeoutException("Call " + basicInvocation + " encountered a timeout");
+            return new TimeoutException("Call " + invocation + " encountered a timeout");
         }
 
         if (unresolvedResponse == BasicInvocation.INTERRUPTED_RESPONSE) {
-            return new InterruptedException("Call " + basicInvocation + " was interrupted");
+            return new InterruptedException("Call " + invocation + " was interrupted");
         }
 
         Object response = unresolvedResponse;
-        if (basicInvocation.resultDeserialized && response instanceof Data) {
-            response = basicInvocation.nodeEngine.toObject(response);
+        if (invocation.resultDeserialized && response instanceof Data) {
+            response = invocation.nodeEngine.toObject(response);
             if (response == null) {
                 return null;
             }
@@ -352,8 +373,8 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             }
 
             //it could be that the value of the response is Data.
-            if (basicInvocation.resultDeserialized && response instanceof Data) {
-                response = basicInvocation.nodeEngine.toObject(response);
+            if (invocation.resultDeserialized && response instanceof Data) {
+                response = invocation.nodeEngine.toObject(response);
                 if (response == null) {
                     return null;
                 }
@@ -362,7 +383,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
         if (response instanceof Throwable) {
             Throwable throwable = ((Throwable) response);
-            if (basicInvocation.remote) {
+            if (invocation.remote) {
                 fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             }
             return throwable;
@@ -393,31 +414,31 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             Operation isStillExecuting = createCheckOperation();
 
             BasicInvocation inv = new BasicTargetInvocation(
-                    basicInvocation.nodeEngine, basicInvocation.serviceName, isStillExecuting,
-                    target, 0, 0, CALL_TIMEOUT, null, null, true);
+                    invocation.nodeEngine, invocation.serviceName, isStillExecuting,
+                    target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, null, true);
             Future f = inv.invoke();
-            basicInvocation.logger.warning("Asking if operation execution has been started: " + toString());
-            executing = (Boolean) basicInvocation.nodeEngine.toObject(f.get(CALL_TIMEOUT, TimeUnit.MILLISECONDS));
+            invocation.logger.warning("Asking if operation execution has been started: " + toString());
+            executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
-            basicInvocation.logger.warning("While asking 'is-executing': " + toString(), e);
+            invocation.logger.warning("While asking 'is-executing': " + toString(), e);
         }
-        basicInvocation.logger.warning("'is-executing': " + executing + " -> " + toString());
+        invocation.logger.warning("'is-executing': " + executing + " -> " + toString());
         return executing;
     }
 
     private Operation createCheckOperation() {
-        if (basicInvocation.op instanceof TraceableOperation) {
-            TraceableOperation traceable = (TraceableOperation) basicInvocation.op;
-            return new TraceableIsStillExecutingOperation(basicInvocation.serviceName, traceable.getTraceIdentifier());
+        if (invocation.op instanceof TraceableOperation) {
+            TraceableOperation traceable = (TraceableOperation) invocation.op;
+            return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
         } else {
-            return new IsStillExecutingOperation(basicInvocation.op.getCallId());
+            return new IsStillExecutingOperation(invocation.op.getCallId());
         }
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("BasicInvocationFuture{");
-        sb.append("invocation=").append(basicInvocation.toString());
+        sb.append("invocation=").append(invocation.toString());
         sb.append(", response=").append(response);
         sb.append(", done=").append(isDone());
         sb.append('}');

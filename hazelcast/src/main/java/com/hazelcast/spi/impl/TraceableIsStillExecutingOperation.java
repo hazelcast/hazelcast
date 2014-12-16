@@ -3,10 +3,11 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 
-public class TraceableIsStillExecutingOperation extends AbstractOperation {
+public class TraceableIsStillExecutingOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private String serviceName;
     private Object identifier;

@@ -16,14 +16,64 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.*;
-import com.hazelcast.core.*;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.GlobalSerializerConfig;
+import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.ManagementCenterConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.MemberGroupConfig;
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreFactory;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
+import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -34,12 +84,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.nio.ByteOrder;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
@@ -114,6 +174,9 @@ public class TestFullApplicationContext {
     @Resource
     private SocketInterceptor socketInterceptor;
 
+    @Resource
+    private StreamSerializer dummySerializer;
+
     @BeforeClass
     @AfterClass
     public static void start() {
@@ -134,7 +197,7 @@ public class TestFullApplicationContext {
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
         assertEquals(2, testMapConfig.getBackupCount());
-        assertEquals(MapConfig.EvictionPolicy.NONE, testMapConfig.getEvictionPolicy());
+        assertEquals(EvictionPolicy.NONE, testMapConfig.getEvictionPolicy());
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
@@ -197,7 +260,7 @@ public class TestFullApplicationContext {
         assertEquals("simpleMap", simpleMapConfig.getName());
         assertEquals(3, simpleMapConfig.getBackupCount());
         assertEquals(1, simpleMapConfig.getAsyncBackupCount());
-        assertEquals(MapConfig.EvictionPolicy.LRU, simpleMapConfig.getEvictionPolicy());
+        assertEquals(EvictionPolicy.LRU, simpleMapConfig.getEvictionPolicy());
         assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
@@ -480,5 +543,38 @@ public class TestFullApplicationContext {
         assertTrue(memberAttributeConfig.getBooleanAttribute("attribute.boolean"));
         assertEquals(0.0d, memberAttributeConfig.getDoubleAttribute("attribute.double"), 0.0001d);
         assertEquals(1234.5678, memberAttributeConfig.getFloatAttribute("attribute.float"), 0.0001);
+    }
+
+    @Test
+    public void testSerializationConfig() {
+        SerializationConfig serializationConfig = config.getSerializationConfig();
+        assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
+        assertEquals(false, serializationConfig.isCheckClassDefErrors());
+        assertEquals(13, serializationConfig.getPortableVersion());
+
+        Map<Integer, String> dataSerializableFactoryClasses = serializationConfig
+                .getDataSerializableFactoryClasses();
+        assertFalse(dataSerializableFactoryClasses.isEmpty());
+        assertEquals(DummyDataSerializableFactory.class.getName(), dataSerializableFactoryClasses.get(1));
+
+        Map<Integer, DataSerializableFactory> dataSerializableFactories = serializationConfig
+                .getDataSerializableFactories();
+        assertFalse(dataSerializableFactories.isEmpty());
+        assertEquals(DummyDataSerializableFactory.class, dataSerializableFactories.get(2).getClass());
+
+        Map<Integer, String> portableFactoryClasses = serializationConfig.getPortableFactoryClasses();
+        assertFalse(portableFactoryClasses.isEmpty());
+        assertEquals(DummyPortableFactory.class.getName(), portableFactoryClasses.get(1));
+
+        Map<Integer, PortableFactory> portableFactories = serializationConfig.getPortableFactories();
+        assertFalse(portableFactories.isEmpty());
+        assertEquals(DummyPortableFactory.class, portableFactories.get(2).getClass());
+
+        Collection<SerializerConfig> serializerConfigs = serializationConfig.getSerializerConfigs();
+        assertFalse(serializerConfigs.isEmpty());
+
+        GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
+        assertNotNull(globalSerializerConfig);
+        assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
     }
 }

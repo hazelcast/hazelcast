@@ -28,8 +28,6 @@ public class MultiMapWrapper {
 
     private int hits;
 
-    private long version = -1;
-
     public MultiMapWrapper(Collection<MultiMapRecord> collection) {
         this.collection = collection;
     }
@@ -65,18 +63,6 @@ public class MultiMapWrapper {
             }
         }
         return false;
-    }
-
-    public long getVersion() {
-        return version;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
-    }
-
-    public long incrementAndGetVersion() {
-        return ++version;
     }
 
 }

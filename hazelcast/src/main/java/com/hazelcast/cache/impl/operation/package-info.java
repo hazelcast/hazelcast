@@ -15,9 +15,7 @@
  */
 
 /**
- * <p>
- *     Hazelcast JSR-107 aka JCache implementation
- *     Cache Operations
- * </p>
+ * <h1>Hazelcast JSR-107 aka JCache implementation</h1>
+ * <p>{@link com.hazelcast.cache.ICache} implementation's operations.</p>
  */
 package com.hazelcast.cache.impl.operation;

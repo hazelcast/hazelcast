@@ -25,23 +25,19 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 
-public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable, PortableContextAware {
+public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable {
 
     private static final int UTF_BUFFER_SIZE = 1024;
     private final SerializationService serializationService;
     private final DataOutputStream dataOut;
     private final ByteOrder byteOrder;
 
-    private final byte[] utfBuffer = new byte[UTF_BUFFER_SIZE];
+    private byte[] utfBuffer;
 
     public ObjectDataOutputStream(OutputStream outputStream, SerializationService serializationService) {
-        this(outputStream, serializationService, ByteOrder.BIG_ENDIAN);
-    }
-
-    public ObjectDataOutputStream(OutputStream outputStream, SerializationService serializationService, ByteOrder byteOrder) {
         this.serializationService = serializationService;
         this.dataOut = new DataOutputStream(outputStream);
-        this.byteOrder = byteOrder;
+        this.byteOrder = serializationService.getByteOrder();
     }
 
     public void write(int b) throws IOException {
@@ -120,6 +116,14 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    public void writeByteArray(byte[] bytes) throws IOException {
+        int len = (bytes == null) ? 0 : bytes.length;
+        writeInt(len);
+        if (len > 0) {
+            write(bytes);
+        }
+    }
+
     public void writeCharArray(char[] chars) throws IOException {
         int len = chars != null ? chars.length : 0;
         writeInt(len);
@@ -181,6 +185,9 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
     }
 
     public void writeUTF(String str) throws IOException {
+        if (utfBuffer == null) {
+            utfBuffer = new byte[UTF_BUFFER_SIZE];
+        }
         UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
@@ -190,6 +197,10 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     public void writeObject(Object object) throws IOException {
         serializationService.writeObject(this, object);
+    }
+
+    public void writeData(Data data) throws IOException {
+        serializationService.writeData(this, data);
     }
 
     public byte[] toByteArray() {
@@ -202,10 +213,6 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
 
     public void close() throws IOException {
         dataOut.close();
-    }
-
-    public PortableContext getPortableContext() {
-        return serializationService.getPortableContext();
     }
 
     public ByteOrder getByteOrder() {

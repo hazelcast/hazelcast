@@ -41,9 +41,9 @@
                 </hz:interfaces>
             </hz:network>
             <hz:replicatedmap name="replicatedMap" concurrency-level="3" in-memory-format="OBJECT" async-fillup="true" statistics-enabled="false" replication-delay-millis="10">
-                <hz:entry-listeners>
-                    <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
-                </hz:entry-listeners>
+                    <hz:entry-listeners>
+                        <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
+                    </hz:entry-listeners>
             </hz:replicatedmap>
         </hz:config>
     </hz:hazelcast>

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
- * Management bean for {@link Iqu}
+ * Management bean for {@link com.hazelcast.core.IQueue}
  */
 @ManagedDescription("IQueue")
 public class QueueMBean extends HazelcastMBean<IQueue> {

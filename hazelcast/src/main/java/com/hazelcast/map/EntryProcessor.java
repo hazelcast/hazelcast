@@ -40,7 +40,7 @@ import java.util.Map;
  * <p/>
  * <pre>
  * <code>
- * {@literal@}Override
+ * {@literal}Override
  *     public Object process(Map.Entry entry) {
  *        Value value = entry.getValue();
  *        // process and modify value
@@ -52,8 +52,9 @@ import java.util.Map;
  * </pre>
  * otherwise EntryProcessor does not guarantee to modify the entry.
  *
- * @param <K>
- * @param <V>
+ * @param <K> Type of key of a {@link java.util.Map.Entry}
+ * @param <V> Type of value of a {@link java.util.Map.Entry}
+ * @see AbstractEntryProcessor
  */
 public interface EntryProcessor<K, V> extends Serializable {
 
@@ -65,7 +66,7 @@ public interface EntryProcessor<K, V> extends Serializable {
      * <p/>
      * <pre>
      * <code>
-     * {@literal@}Override
+     * {@literal}Override
      *        public Object process(Map.Entry entry) {
      *          Value value = entry.getValue();
      *          // process and modify value

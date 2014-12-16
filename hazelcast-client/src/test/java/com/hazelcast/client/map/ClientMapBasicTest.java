@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -138,7 +137,7 @@ public class ClientMapBasicTest {
         map.put(null, val);
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test(expected = NullPointerException.class)
     public void testPut_whenValueNull() {
         final IMap map = client.getMap(randomString());
         final Object key = "Key";
@@ -253,7 +252,7 @@ public class ClientMapBasicTest {
         map.putAsync(null, val);
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test(expected = NullPointerException.class)
     public void testPutAsync_withValueNull() throws Exception {
         final IMap map = client.getMap(randomString());
         final Object key = "key";
@@ -346,7 +345,7 @@ public class ClientMapBasicTest {
         map.putIfAbsent(null, value);
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test(expected = NullPointerException.class)
     public void testPutIfAbsent_whenValueNull() throws Exception {
         final IMap map = client.getMap(randomString());
         final Object key = "key";
@@ -502,7 +501,7 @@ public class ClientMapBasicTest {
         assertFalse(map.containsValue("NOT_THERE"));
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test(expected = NullPointerException.class)
     public void testContainsValue_whenValueNull() {
         final IMap map = client.getMap(randomString());
         map.containsValue(null);
@@ -769,7 +768,7 @@ public class ClientMapBasicTest {
         assertFalse( result );
     }
 
-    @Test(expected = HazelcastSerializationException.class)
+    @Test(expected = NullPointerException.class)
     public void testEvict_whenKeyNull() throws InterruptedException {
         final IMap map = client.getMap(randomString());
         map.evict(null);

@@ -17,13 +17,12 @@
 package com.hazelcast.collection.client;
 
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.transaction.client.BaseTransactionRequest;
 
 import java.io.IOException;
 
@@ -52,13 +51,13 @@ public abstract class TxnCollectionRequest extends BaseTransactionRequest implem
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeUTF("n", name);
-        IOUtil.writeNullableData(writer.getRawDataOutput(), value);
+        writer.getRawDataOutput().writeData(value);
     }
 
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         name = reader.readUTF("n");
-        value = IOUtil.readNullableData(reader.getRawDataInput());
+        value = reader.getRawDataInput().readData();
     }
 }
 

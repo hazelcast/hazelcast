@@ -20,22 +20,22 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.security.Credentials;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Main configuration to setup a Hazelcast Client
  */
 public class ClientConfig {
-
 
     /**
      * To pass properties
@@ -76,9 +76,11 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
 
-    private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
+    private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
     private SerializationConfig serializationConfig = new SerializationConfig();
+
+    private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
     private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
@@ -231,7 +233,11 @@ public class ClientConfig {
      * @see com.hazelcast.config.NearCacheConfig
      */
     public NearCacheConfig getNearCacheConfig(String mapName) {
-        return lookupByPattern(nearCacheConfigMap, mapName);
+        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, mapName);
+        if (nearCacheConfig == null) {
+            nearCacheConfig = nearCacheConfigMap.get("default");
+        }
+        return nearCacheConfig;
     }
 
     /**
@@ -591,6 +597,14 @@ public class ClientConfig {
         return this;
     }
 
+    public NativeMemoryConfig getNativeMemoryConfig() {
+        return nativeMemoryConfig;
+    }
+
+    public ClientConfig setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
+        this.nativeMemoryConfig = nativeMemoryConfig;
+        return this;
+    }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);

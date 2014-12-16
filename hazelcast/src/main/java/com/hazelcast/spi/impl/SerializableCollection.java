@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -56,7 +55,7 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
         }
         out.writeInt(collection.size());
         for (Data data : collection) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -68,7 +67,7 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
         }
         collection = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            collection.add(IOUtil.readData(in));
+            collection.add(in.readData());
         }
     }
 

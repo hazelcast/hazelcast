@@ -506,7 +506,7 @@ public class SplitBrainHandlerTest {
         cm2.block(n1.address);
         cm3.block(n1.address);
 
-        assertTrue(splitLatch.await(20, TimeUnit.SECONDS));
+        assertTrue(splitLatch.await(120, TimeUnit.SECONDS));
         assertEquals(3, hz1.getCluster().getMembers().size());
         assertEquals(2, hz2.getCluster().getMembers().size());
         assertEquals(2, hz3.getCluster().getMembers().size());
@@ -517,7 +517,7 @@ public class SplitBrainHandlerTest {
         cm2.unblock(n1.address);
         cm3.unblock(n1.address);
 
-        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+        assertTrue(mergeLatch.await(120, TimeUnit.SECONDS));
         assertEquals(3, hz1.getCluster().getMembers().size());
         assertEquals(3, hz2.getCluster().getMembers().size());
         assertEquals(3, hz3.getCluster().getMembers().size());
@@ -701,7 +701,7 @@ public class SplitBrainHandlerTest {
         @Override
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
             NodeIOService ioService = new NodeIOService(node);
-            return new FirewallingTcpIpConnectionManager(ioService, serverSocketChannel, node);
+            return new FirewallingTcpIpConnectionManager(ioService, serverSocketChannel);
         }
     }
 
@@ -709,5 +709,4 @@ public class SplitBrainHandlerTest {
         Node node = TestUtil.getNode(hz);
         return (FirewallingTcpIpConnectionManager) node.getConnectionManager();
     }
-
 }

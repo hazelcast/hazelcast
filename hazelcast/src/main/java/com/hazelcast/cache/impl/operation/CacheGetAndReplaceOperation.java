@@ -26,7 +26,9 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
- * Cache GetAndReplace Operation
+ * Cache GetAndReplace Operation.
+ * <p>Operation to call the cache record store method.</p>
+ * @see com.hazelcast.cache.impl.ICacheRecordStore#getAndReplace(Data, Object, javax.cache.expiry.ExpiryPolicy, String, int)
  */
 public class CacheGetAndReplaceOperation
         extends AbstractMutatingCacheOperation {
@@ -35,10 +37,6 @@ public class CacheGetAndReplaceOperation
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAndReplaceOperation() {
-    }
-
-    public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        this(name, key, value, expiryPolicy, IGNORE_COMPLETION);
     }
 
     public CacheGetAndReplaceOperation(String name, Data key, Data value, ExpiryPolicy expiryPolicy, int completionId) {
@@ -50,7 +48,7 @@ public class CacheGetAndReplaceOperation
     @Override
     public void run()
             throws Exception {
-        response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid());
+        response = cache.getAndReplace(key, value, expiryPolicy, getCallerUuid(), completionId);
         backupRecord = cache.getRecord(key);
     }
 
@@ -68,7 +66,7 @@ public class CacheGetAndReplaceOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        value.writeData(out);
+        out.writeData(value);
         out.writeObject(expiryPolicy);
     }
 
@@ -76,8 +74,7 @@ public class CacheGetAndReplaceOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
         expiryPolicy = in.readObject();
     }
 

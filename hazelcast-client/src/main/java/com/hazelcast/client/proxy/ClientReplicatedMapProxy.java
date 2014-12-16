@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
-import com.hazelcast.client.nearcache.ClientNearCacheType;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
@@ -66,7 +66,7 @@ public class ClientReplicatedMapProxy<K, V>
         extends ClientProxy
         implements ReplicatedMap<K, V> {
 
-    private volatile ClientNearCache<Object> nearCache;
+    private volatile ClientHeapNearCache<Object> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
@@ -217,7 +217,7 @@ public class ClientReplicatedMapProxy<K, V>
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientNearCache<Object> nearCache = new ClientNearCache<Object>(getName(), ClientNearCacheType.ReplicatedMap,
+            ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(),
                     getContext(), nearCacheConfig);
             this.nearCache = nearCache;
         }

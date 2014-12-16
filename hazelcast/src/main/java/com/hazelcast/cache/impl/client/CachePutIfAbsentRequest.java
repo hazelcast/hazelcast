@@ -16,8 +16,10 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -28,6 +30,11 @@ import com.hazelcast.spi.Operation;
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
+/**
+ * This client request  specifically calls {@link CachePutIfAbsentOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation
+ */
 public class CachePutIfAbsentRequest
         extends AbstractCacheRequest {
 
@@ -39,8 +46,8 @@ public class CachePutIfAbsentRequest
     public CachePutIfAbsentRequest() {
     }
 
-    public CachePutIfAbsentRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy) {
-        super(name);
+    public CachePutIfAbsentRequest(String name, Data key, Data value, ExpiryPolicy expiryPolicy, InMemoryFormat inMemoryFormat) {
+        super(name, inMemoryFormat);
         this.key = key;
         this.value = value;
         this.expiryPolicy = expiryPolicy;
@@ -56,28 +63,27 @@ public class CachePutIfAbsentRequest
 
     @Override
     protected Operation prepareOperation() {
-        return new CachePutIfAbsentOperation(name, key, value, expiryPolicy, completionId);
+        CacheOperationProvider operationProvider = getOperationProvider();
+        return operationProvider.createPutIfAbsentOperation(key, value, expiryPolicy, completionId);
     }
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeUTF("n", name);
+        super.write(writer);
         writer.writeInt("c", completionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
-        value.writeData(out);
+        out.writeData(key);
+        out.writeData(value);
         out.writeObject(expiryPolicy);
     }
 
     public void read(PortableReader reader)
             throws IOException {
-        name = reader.readUTF("n");
+        super.read(reader);
         completionId = reader.readInt("c");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
-        value = new Data();
-        value.readData(in);
+        key = in.readData();
+        value = in.readData();
         expiryPolicy = in.readObject();
     }
 

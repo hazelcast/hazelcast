@@ -5,7 +5,7 @@
 
 `ByteArraySerializer` exposes the raw ByteArray used internally by Hazelcast. It is a good option if the serialization library you are using deals with ByteArrays instead of streams.
 
-Let's implement ByteArraySerializer for the `Employee` class mentioned in previous sections.
+Let's implement `ByteArraySerializer` for the `Employee` class mentioned in the [StreamSerializer section](#streamserializer).
 
 ```java
 public class EmployeeByteArraySerializer
@@ -35,7 +35,7 @@ public class EmployeeByteArraySerializer
 }
 ```
 
-And, as usual, let's register the `EmployeeByteArraySerializer` in the configuration file `hazelcast.xml`, as shown below.
+As usual, let's register the `EmployeeByteArraySerializer` in the configuration file `hazelcast.xml`, as shown below.
 
 ```xml
 <serialization>
@@ -45,4 +45,12 @@ And, as usual, let's register the `EmployeeByteArraySerializer` in the configura
 </serialization>
 ```
 
+
 <br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [Serialization Configuration section](#serialization-configuration) for a full description of Hazelcast Serialization configuration.*
+
+ 

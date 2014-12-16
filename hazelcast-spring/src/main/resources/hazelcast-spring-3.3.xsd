@@ -628,9 +628,9 @@
     <xs:complexType name="attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="name" use="required" type="attributeName"/>
-                <!--xs:attribute name="name" use="required" type="xs:ID"/-->
-                <xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
+        		<xs:attribute name="name" use="required" type="attributeName"/>
+        		<!--xs:attribute name="name" use="required" type="xs:ID"/-->
+        		<xs:attribute name="type" use="optional" default="string" type="attributeTypeEnum"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>

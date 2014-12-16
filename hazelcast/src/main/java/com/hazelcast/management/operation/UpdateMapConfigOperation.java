@@ -18,7 +18,7 @@ package com.hazelcast.management.operation;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.management.MapConfigAdapter;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;

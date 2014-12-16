@@ -17,9 +17,13 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheEvictionConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InterfacesConfig;
@@ -111,6 +115,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private final ParserContext parserContext;
 
         private ManagedMap mapConfigManagedMap;
+        private ManagedMap cacheConfigManagedMap;
         private ManagedMap queueManagedMap;
         private ManagedMap listManagedMap;
         private ManagedMap setManagedMap;
@@ -125,6 +130,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.parserContext = parserContext;
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(Config.class);
             this.mapConfigManagedMap = createManagedMap("mapConfigs");
+            this.cacheConfigManagedMap = createManagedMap("cacheConfigs");
             this.queueManagedMap = createManagedMap("queueConfigs");
             this.listManagedMap = createManagedMap("listConfigs");
             this.setManagedMap = createManagedMap("setConfigs");
@@ -166,6 +172,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleQueue(node);
                 } else if ("map".equals(nodeName)) {
                     handleMap(node);
+                } else if ("cache".equals(nodeName)) {
+                    handleCache(node);
                 } else if ("multimap".equals(nodeName)) {
                     handleMultiMap(node);
                 } else if ("list".equals(nodeName)) {
@@ -492,6 +500,45 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
+        }
+
+        public void handleCache(Node node) {
+            BeanDefinitionBuilder cacheConfigBuilder = createBeanBuilder(CacheSimpleConfig.class);
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getTextContent(attName);
+            fillAttributeValues(node, cacheConfigBuilder);
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                if ("eviction".equals(cleanNodeName(childNode))) {
+                    final CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+                    final Node size = childNode.getAttributes().getNamedItem("size");
+                    final Node maxSizePolicy = childNode.getAttributes().getNamedItem("max-size-policy");
+                    final Node evictionPolicy = childNode.getAttributes().getNamedItem("eviction-policy");
+                    if (size != null) {
+                        evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+                    }
+                    if (maxSizePolicy != null) {
+                        evictionConfig.setMaxSizePolicy(
+                                CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
+                                        upperCaseInternal(getTextContent(maxSizePolicy))));
+                    }
+                    if (evictionPolicy != null) {
+                        evictionConfig.setEvictionPolicy(
+                                EvictionPolicy.valueOf(
+                                        upperCaseInternal(getTextContent(evictionPolicy))));
+                    }
+                    cacheConfigBuilder.addPropertyValue("evictionConfig", evictionConfig);
+                }
+                if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
+                    ManagedList listeners = new ManagedList();
+                    for (Node listenerNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                        final BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(CacheSimpleEntryListenerConfig.class);
+                        fillAttributeValues(listenerNode, listenerConfBuilder);
+                        listeners.add(listenerConfBuilder.getBeanDefinition());
+                    }
+                    cacheConfigBuilder.addPropertyValue("cacheEntryListeners", listeners);
+                }
+            }
+            cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());
         }
 
         public void handleWanReplication(Node node) {

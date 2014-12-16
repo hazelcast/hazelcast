@@ -97,7 +97,7 @@ public interface HazelcastInstance {
      * Returns the job tracker instance with the specified name.
      *
      * @param name name of the job tracker
-     * @return job tracker instance with specified name
+     * @return job tracker instance with the specified name
      * @since 3.2
      */
     JobTracker getJobTracker(String name);
@@ -118,7 +118,7 @@ public interface HazelcastInstance {
      * Integer.
      * <p/>
      * Locks are fail-safe. If a member holds a lock and some of the
-     * members go down, cluster will keep your locks safe and available.
+     * members go down, the cluster will keep your locks safe and available.
      * Moreover, when a member leaves the cluster, all the locks acquired
      * by this dead member will be removed so that these locks can be
      * available for live members immediately.
@@ -145,17 +145,17 @@ public interface HazelcastInstance {
 
     /**
      * Returns the Cluster that this Hazelcast instance is part of.
-     * Cluster interface allows you to add listener for membership
-     * events and learn more about the cluster that this Hazelcast
+     * Cluster interface allows you to add a listener for membership
+     * events and to learn more about the cluster that this Hazelcast
      * instance is part of.
      *
-     * @return cluster that this Hazelcast instance is part of
+     * @return the cluster that this Hazelcast instance is part of
      */
     Cluster getCluster();
 
 
     /**
-     * Returns the local Endpoint which this HazelcastInstance is belongs to.
+     * Returns the local Endpoint which this HazelcastInstance belongs to.
      * <p/>
      *
      * Returned endpoint will be a {@link Member} instance for cluster nodes
@@ -164,7 +164,7 @@ public interface HazelcastInstance {
      * @see Member
      * @see Client
      *
-     * @return local endpoint
+     * @return the local {@link Endpoint} which this HazelcastInstance belongs to
      */
     Endpoint getLocalEndpoint();
 
@@ -178,30 +178,30 @@ public interface HazelcastInstance {
      * and don't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
-     * @return executor service for the given name
+     * @return the distributed executor service for the given name
      */
     IExecutorService getExecutorService(String name);
 
     /**
-     * Executes given transactional task in current thread using default options
+     * Executes the given transactional task in current thread using default options
      * and returns the result of the task.
      *
-     * @param task task to be executed
+     * @param task the transactional task to be executed
      * @param <T> return type of task
-     * @return returns result of transactional task
+     * @return result of the transactional task
      *
      * @throws TransactionException if an error occurs during transaction.
      */
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
 
     /**
-     * Executes given transactional task in current thread using given options
+     * Executes the given transactional task in current thread using given options
      * and returns the result of the task.
      *
      * @param options options for this transactional task
      * @param task task to be executed
      * @param <T> return type of task
-     * @return returns result of transactional task
+     * @return result of the transactional task
      *
      * @throws TransactionException if an error occurs during transaction.
      */
@@ -210,7 +210,7 @@ public interface HazelcastInstance {
     /**
      * Creates a new TransactionContext associated with the current thread using default options.
      *
-     * @return new TransactionContext
+     * @return new TransactionContext associated with the current thread
      */
     TransactionContext newTransactionContext();
 
@@ -218,7 +218,7 @@ public interface HazelcastInstance {
      * Creates a new TransactionContext associated with the current thread with given options.
      *
      * @param options options for this transaction
-     * @return new TransactionContext
+     * @return new TransactionContext associated with the current thread
      */
     TransactionContext newTransactionContext(TransactionOptions options);
 
@@ -228,44 +228,44 @@ public interface HazelcastInstance {
      * <tt>AtomicLong.incrementAndGet()</tt> . Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
-     * @param name name of the IdGenerator
+     * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
      */
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates cluster-wide atomic long. Hazelcast IAtomicLong is distributed
+     * Creates cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicLong</tt>.
      *
-     * @param name name of the IAtomicLong proxy
+     * @param name name of the {@link IAtomicLong} proxy
      * @return IAtomicLong proxy for the given name
      */
     IAtomicLong getAtomicLong(String name);
 
     /**
-     * Creates cluster-wide atomic reference. Hazelcast IAtomicReference is distributed
+     * Creates cluster-wide atomic reference. Hazelcast {@link IAtomicReference} is distributed
      * implementation of <tt>java.util.concurrent.atomic.AtomicReference</tt>.
      *
-     * @param name name of the IAtomicReference proxy
-     * @return IAtomicReference proxy for the given name
+     * @param name name of the {@link IAtomicReference} proxy
+     * @return {@link IAtomicReference} proxy for the given name
      */
     <E> IAtomicReference<E> getAtomicReference(String name);
 
     /**
-     * Creates cluster-wide CountDownLatch. Hazelcast ICountDownLatch is distributed
+     * Creates cluster-wide CountDownLatch. Hazelcast {@link ICountDownLatch} is distributed
      * implementation of <tt>java.util.concurrent.CountDownLatch</tt>.
      *
-     * @param name name of the ICountDownLatch proxy
-     * @return ICountDownLatch proxy for the given name
+     * @param name name of the {@link ICountDownLatch} proxy
+     * @return {@link ICountDownLatch} proxy for the given name
      */
     ICountDownLatch getCountDownLatch(String name);
 
     /**
-     * Creates cluster-wide semaphore. Hazelcast ISemaphore is distributed
+     * Creates cluster-wide semaphore. Hazelcast {@link ISemaphore} is distributed
      * implementation of <tt>java.util.concurrent.Semaphore</tt>.
      *
-     * @param name name of the ISemaphore proxy
-     * @return ISemaphore proxy for the given name
+     * @param name name of the {@link ISemaphore} proxy
+     * @return {@link ISemaphore} proxy for the given name
      */
     ISemaphore getSemaphore(String name);
 
@@ -287,7 +287,7 @@ public interface HazelcastInstance {
 
     /**
      * Removes the specified Distributed Object listener. Returns silently
-     * if specified instance listener doesn't exist.
+     * if the specified instance listener does not exist.
      *
      * @param registrationId Id of listener registration.
      * @return true if registration is removed, false otherwise
@@ -304,9 +304,9 @@ public interface HazelcastInstance {
     /**
      * Returns the partition service of this Hazelcast instance.
      * InternalPartitionService allows you to introspect current partitions in the
-     * cluster, partition owner members and listen for partition migration events.
+     * cluster, partition the owner members, and listen for partition migration events.
      *
-     * @return partition service
+     * @return the partition service of this Hazelcast instance
      */
     PartitionService getPartitionService();
 
@@ -314,7 +314,7 @@ public interface HazelcastInstance {
      * Returns the client service of this Hazelcast instance.
      * Client service allows you to get information about connected clients.
      *
-     * @return the ClientService.
+     * @return the {@link ClientService} of this Hazelcast instance.
      */
     ClientService getClientService();
 
@@ -322,9 +322,9 @@ public interface HazelcastInstance {
      * Returns the logging service of this Hazelcast instance.
      * LoggingService allows you to listen for LogEvents
      * generated by Hazelcast runtime. You can log the events somewhere
-     * or take action base on the message.
+     * or take action based on the message.
      *
-     * @return logging service
+     * @return the logging service of this Hazelcast instance
      */
     LoggingService getLoggingService();
 
@@ -333,7 +333,7 @@ public interface HazelcastInstance {
      * to shutdown this HazelcastInstance and listen for
      * the lifecycle events.
      *
-     * @return lifecycle service
+     * @return the lifecycle service for this instance
      */
     LifecycleService getLifecycleService();
 
@@ -361,13 +361,13 @@ public interface HazelcastInstance {
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used
      * to store dependencies that otherwise are hard to obtain. HazelcastInstance can be
-     * obtained by implementing HazelcastInstanceAware interface when submitting a Runnable/Callable to
+     * obtained by implementing a {@link HazelcastInstanceAware} interface when submitting a Runnable/Callable to
      * Hazelcast ExecutorService. By storing the dependencies in the user-context, they can be retrieved as soon
      * as you have a reference to the HazelcastInstance.
      * <p/>
      * This structure is purely local and Hazelcast remains agnostic abouts its content.
      *
-     * @return the user context.
+     * @return a ConcurrentMap that can be used to add user-context to the HazelcastInstance.
      */
     ConcurrentMap<String, Object> getUserContext();
 

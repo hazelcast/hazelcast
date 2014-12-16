@@ -19,21 +19,20 @@ package com.hazelcast.core;
 import java.util.Map;
 
 /**
- * MultiExecutionCallback allows to get notified when an execution is completed on each member
- * which task is submitted to. After all executions are completed on all submitted members,
- * {@link #onComplete(java.util.Map)} method is called with map of all results.
+ * MultiExecutionCallback provides notification for when an execution is completed on each member
+ * that a task is submitted to. After all executions are completed on all submitted members,
+ * the {@link #onComplete(java.util.Map)} method is called with a map of all results.
  *
  * @see IExecutorService
  * @see ExecutionCallback
- *
  */
 public interface MultiExecutionCallback {
 
     /**
      * Called when an execution is completed on a member.
      *
-     * @param member member which task is submitted to.
-     * @param value result of execution
+     * @param member member that the task is submitted to.
+     * @param value result of the execution
      */
     void onResponse(Member member, Object value);
 

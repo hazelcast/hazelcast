@@ -48,18 +48,18 @@ public class ItemEvent<E> extends EventObject {
     }
 
     /**
-     * Returns the item related to event.
+     * Returns the item related to the event.
      *
-     * @return the item.
+     * @return the item related to the event.
      */
     public E getItem() {
         return item;
     }
 
     /**
-     * Returns the member fired this event.
+     * Returns the member that fired this event.
      *
-     * @return the member fired this event.
+     * @return the member that fired this event.
      */
     public Member getMember() {
         return member;

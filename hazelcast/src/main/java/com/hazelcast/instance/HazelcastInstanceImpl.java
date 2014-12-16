@@ -54,10 +54,10 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.management.ThreadMonitoringService;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.impl.QueueService;
@@ -74,6 +74,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.HealthMonitor;
 import com.hazelcast.util.HealthMonitorLevel;
+import com.hazelcast.util.PerformanceMonitor;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,8 +84,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 @SuppressWarnings("unchecked")
 @PrivateApi
-public final class HazelcastInstanceImpl
-        implements HazelcastInstance {
+public class HazelcastInstanceImpl implements HazelcastInstance {
 
     public final Node node;
 
@@ -98,8 +98,6 @@ public final class HazelcastInstanceImpl
 
     final ManagedContext managedContext;
 
-    final ThreadMonitoringService threadMonitoringService;
-
     final ThreadGroup threadGroup;
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
@@ -108,7 +106,6 @@ public final class HazelcastInstanceImpl
             throws Exception {
         this.name = name;
         this.threadGroup = new ThreadGroup(name);
-        threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
         ManagedContext configuredManagedContext = config.getManagedContext();
         managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -130,15 +127,22 @@ public final class HazelcastInstanceImpl
 
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
-            initHealthMonitor();
+            initMonitors();
         } catch (Throwable e) {
             try {
-                node.connectionManager.shutdown();
+                // Terminate the node by terminating node engine,
+                // connection manager, multicast service, operation threads, etc ... if they are exist
+                node.shutdown(true);
             } catch (Throwable ignored) {
                 EmptyStatement.ignore(ignored);
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    private void initMonitors() {
+        initHealthMonitor();
+        initPerformanceMonitor();
     }
 
     private void initManagedContext(ManagedContext configuredManagedContext) {
@@ -157,6 +161,17 @@ public final class HazelcastInstanceImpl
             int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
             new HealthMonitor(this, healthLevel, delaySeconds).start();
         }
+    }
+
+    private void initPerformanceMonitor() {
+        boolean enabled = node.getGroupProperties().PERFORMANCE_MONITORING_ENABLED.getBoolean();
+        if (!enabled) {
+            return;
+        }
+
+        logger.finest("Starting performance monitor");
+        int delaySeconds = node.getGroupProperties().PERFORMANCE_MONITORING_DELAY_SECONDS.getInteger();
+        new PerformanceMonitor(this, delaySeconds).start();
     }
 
     public ManagementService getManagementService() {
@@ -406,6 +421,10 @@ public final class HazelcastInstanceImpl
 
     public SerializationService getSerializationService() {
         return node.getSerializationService();
+    }
+
+    public MemoryStats getMemoryStats() {
+        return node.getNodeExtension().getMemoryStats();
     }
 
     @Override

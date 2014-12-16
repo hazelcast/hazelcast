@@ -24,12 +24,10 @@ import java.util.logging.LogRecord;
 public class LogEvent extends EventObject {
     final LogRecord logRecord;
     final Member member;
-    final String groupName;
 
-    public LogEvent(LogRecord logRecord, String groupName, Member member) {
+    public LogEvent(LogRecord logRecord, Member member) {
         super(member);
         this.logRecord = logRecord;
-        this.groupName = groupName;
         this.member = member;
     }
 

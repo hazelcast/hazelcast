@@ -53,9 +53,13 @@ public class MulticastConfig {
      * Default value of time to live of multicast.
      */
     public static final int DEFAULT_MULTICAST_TTL = 32;
+    /**
+     * Default flag that indicates if the loopback mode
+     * is turned on or off.
+     */
+    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = false;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;
-
 
     private boolean enabled = DEFAULT_ENABLED;
 
@@ -68,6 +72,8 @@ public class MulticastConfig {
     private int multicastTimeToLive = DEFAULT_MULTICAST_TTL;
 
     private final Set<String> trustedInterfaces = new HashSet<String>();
+
+    private boolean loopbackModeEnabled = DEFAULT_LOOPBACK_MODE_ENABLED;
 
     /**
      * Check if the multicast discovery mechanism has been enabled.
@@ -239,6 +245,26 @@ public class MulticastConfig {
         return this;
     }
 
+    /**
+     * Check if the loopback mode is enabled in the multicast discovery mechanism.
+     *
+     * @return the enabled
+     */
+    public boolean isLoopbackModeEnabled() {
+        return loopbackModeEnabled;
+    }
+
+    /**
+     * Enables or disables the loopback mode in the multicast discovery mechanism.
+     *
+     * @param enabled the enabled to set true when disabled, false when disabled.
+     * @return the updated MulticastConfig
+     */
+    public MulticastConfig setLoopbackModeEnabled(boolean enabled) {
+        this.loopbackModeEnabled = enabled;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "MulticastConfig [enabled=" + enabled
@@ -247,6 +273,7 @@ public class MulticastConfig {
                 + ", multicastTimeToLive=" + multicastTimeToLive
                 + ", multicastTimeoutSeconds=" + multicastTimeoutSeconds
                 + ", trustedInterfaces=" + trustedInterfaces
+                + ", loopbackModeEnabled=" + loopbackModeEnabled
                 + "]";
     }
 }

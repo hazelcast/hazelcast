@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import java.util.EventListener;
 
 /**
- * DistributedObjectListener allows to get notified when a {@link DistributedObject}
+ * DistributedObjectListener notifies when a {@link DistributedObject}
  * is created or destroyed cluster-wide.
  *
  * @see DistributedObject
@@ -30,14 +30,14 @@ public interface DistributedObjectListener extends EventListener {
     /**
      * Invoked when a DistributedObject is created.
      *
-     * @param event event
+     * @param event the event for the created DistributedObject
      */
     void distributedObjectCreated(DistributedObjectEvent event);
 
     /**
      * Invoked when a DistributedObject is destroyed.
      *
-     * @param event event
+     * @param event the event for the destroyed DistributedObject
      */
     void distributedObjectDestroyed(DistributedObjectEvent event);
 }

@@ -17,11 +17,12 @@
 package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.client.impl.client.PartitionClientRequest;
-import com.hazelcast.executor.impl.CallableTaskOperation;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.SecurityContext;
@@ -57,7 +58,8 @@ public class PartitionCallableRequest extends PartitionClientRequest {
         if (securityContext != null) {
             callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
         }
-        return new CallableTaskOperation(name, uuid, callable);
+        Data callableData = serializationService.toData(callable);
+        return new CallableTaskOperation(name, uuid, callableData);
     }
 
     @Override

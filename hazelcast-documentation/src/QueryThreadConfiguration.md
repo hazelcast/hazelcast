@@ -1,7 +1,7 @@
 
 ### Query Thread Configuration
 
-Size of the thread pool dedicated to query operations can be changed using the `pool-size` property. Below is a sample declarative configuration.
+You can change the size of the thread pool dedicated to query operations using the `pool-size` property. Below is an example of that declarative configuration.
 
 ```xml
 <executor-service name="hz:query">
@@ -9,7 +9,7 @@ Size of the thread pool dedicated to query operations can be changed using the `
 </executor-service>
 ```
 
-And, below is the programmatic configuration equivalent to the sample above.
+Below is an example of the equivalent programmatic configuration.
 
 ```java
 Config cfg = new Config();

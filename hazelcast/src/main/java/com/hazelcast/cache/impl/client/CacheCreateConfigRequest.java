@@ -33,6 +33,11 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
+/**
+ * This client request  specifically calls {@link CacheCreateConfigOperation} on the server side.
+ *
+ * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
+ */
 public class CacheCreateConfigRequest
         extends ClientRequest {
 
@@ -57,7 +62,7 @@ public class CacheCreateConfigRequest
         final ClientEndpoint endpoint = getEndpoint();
         final Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        final InvocationBuilder builder  = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
+        final InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
         builder.setTryCount(TRY_COUNT).setResultDeserialized(false).setCallback(new Callback<Object>() {
             public void notify(Object object) {
                 endpoint.sendResponse(object, getCallId());

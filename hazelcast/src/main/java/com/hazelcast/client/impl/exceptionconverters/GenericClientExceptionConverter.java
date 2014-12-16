@@ -21,6 +21,9 @@ import com.hazelcast.client.impl.client.GenericError;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+/**
+ * A {@link ClientExceptionConverter} that converts a Throwable to a {@link GenericError}.
+ */
 public final class GenericClientExceptionConverter implements ClientExceptionConverter {
 
     @Override

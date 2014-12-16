@@ -1,9 +1,9 @@
 
 ### Sample Queue Code
 
-Below sample codes illustrate a producer and consumer connected by a distributed queue.
+The following sample code illustrates a producer and consumer connected by a distributed queue.
 
-Let's put one integer at each second on a queue, 100 integers in total.
+Let's put one integer on the queue every second, 100 integers total.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -25,7 +25,7 @@ public class ProducerMember {
 }
 ``` 
 
-`Producer` puts a **-1** on the queue to show that `put`'s are finished. Now, let's create a `Consumer` class that take a message from this queue, as shown below.
+`Producer` puts a **-1** on the queue to show that the `put`'s are finished. Now, let's create a `Consumer` class that take a message from this queue, as shown below.
 
 
 ```java
@@ -51,13 +51,13 @@ public class ConsumerMember {
 }
 ```
 
-As seen in the above sample code, `Consumer` waits 5 seconds before it consumes the next message. It stops once it receives **-1**. Also note that, `Consumer` puts **-1** back on the queue before the loop is ended. 
+As seen in the above sample code, `Consumer` waits 5 seconds before it consumes the next message. It stops once it receives **-1**. Also note that `Consumer` puts **-1** back on the queue before the loop is ended. 
 
-When you start first the `Producer` and then the `Consumer`, items produced on the queue will be consumed from that same queue.
+When you first start `Producer` and then start `Consumer`, items produced on the queue will be consumed from the same queue.
 
-From the above codes, you can see that item production is done at every second, and the consumption is performed at every 5 seconds. So, it can be realized that the consumer keeps growing. To balance the produce/consume operation, let's start another consumer. By this way, consumption is distributed to these two consumers, see the sample outputs below. 
+From the above sample code, you can see that an item is produced every second, and consumed every 5 seconds. Therefore, the consumer keeps growing. To balance the produce/consume operation, let's start another consumer. By this way, consumption is distributed to these two consumers, as seen in the sample outputs below. 
 
-Once the second consumer is started after a while, first consumer output:
+The second consumer is started. After a while, here is the first consumer output:
 
 ```plain
 ...
@@ -67,7 +67,7 @@ Consumer 17
 ...
 ```
 
-Second consumer output:
+Here is the second consumer output:
 
 ```plain
 ...
@@ -77,6 +77,6 @@ Consumer 18
 ...
 ```
 
-In the case of a lot of producers and consumers for the queue, using a list of queues may solve the queue bottlenecks. Of course, in this case, you should be aware that ordering of messages being sent to different queues is not guaranteed. But, since in most cases strict ordering is not important, list of queues would be a good solution.
+In the case of a lot of producers and consumers for the queue, using a list of queues may solve the queue bottlenecks. In this case, be aware that the order of the messages being sent to different queues is not guaranteed. Since in most cases strict ordering is not important, a list of queues is a good solution.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *The items are taken from the queue in the same order they were put. However, if there are more than one consumers, this ordering is not guaranteed.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *The items are taken from the queue in the same order they were put on the queue. However, if there is more than one consumer, this order is not guaranteed.*

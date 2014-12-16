@@ -33,7 +33,7 @@
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -167,7 +167,7 @@
            Possible values:
            BINARY (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms
-           OFFHEAP : values will be stored in non-heap region of JVM
+           NATIVE : values will be stored in non-heap region of JVM
         -->
         <in-memory-format>BINARY</in-memory-format>
         <!--
@@ -237,12 +237,12 @@
             the policy set here. Default policy is PutIfAbsentMapMergePolicy
 
             There are built-in merge policies such as
-            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no existing entry for the key.
+            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be overwritten if merging entry exists for the key.
             com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
             com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
             com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+        <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
 
         <!--
             Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
@@ -347,6 +347,11 @@
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
+
+    <native-memory allocator-type="POOLED" enabled="true">
+        <size unit="MEGABYTES" value="256" />
+        <metadata-space-percentage>12.5</metadata-space-percentage>
+    </native-memory>
 
     <services enable-defaults="false">
         <service enabled="true">

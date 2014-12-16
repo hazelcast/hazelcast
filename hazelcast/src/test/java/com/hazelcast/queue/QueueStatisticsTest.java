@@ -34,7 +34,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
 
     @Test
     public void testOfferOperationCount() throws InterruptedException {
-        final IQueue queue = newQueue();
+        IQueue queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -45,13 +45,14 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.put("item" + i);
         }
 
-        assertTrueEventually(new AssertTask() {
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
             @Override
             public void run() throws Exception {
-                LocalQueueStats stats = queue.getLocalQueueStats();
                 assertEquals(30, stats.getOfferOperationCount());
             }
-        });
+        };
+        assertTrueEventually(task);
     }
 
     @Test
@@ -65,8 +66,15 @@ public class QueueStatisticsTest extends AbstractQueueTest {
             queue.offer("item" + i);
         }
 
-        LocalQueueStats stats = queue.getLocalQueueStats();
-        assertEquals(10, stats.getRejectedOfferOperationCount());
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(10, stats.getRejectedOfferOperationCount());
+            }
+        };
+        assertTrueEventually(task);
+
     }
 
 
@@ -118,7 +126,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
 
     @Test
     public void testOtherOperationCount() {
-        final IQueue queue = newQueue();
+        IQueue queue = newQueue();
         for (int i = 0; i < 30; i++) {
             queue.offer("item" + i);
         }
@@ -127,13 +135,14 @@ public class QueueStatisticsTest extends AbstractQueueTest {
         queue.addAll(list);
         queue.removeAll(list);
 
-        assertTrueEventually(new AssertTask() {
+        final LocalQueueStats stats = queue.getLocalQueueStats();
+        AssertTask task = new AssertTask() {
             @Override
             public void run() throws Exception {
-                LocalQueueStats stats = queue.getLocalQueueStats();
                 assertEquals(3, stats.getOtherOperationsCount());
             }
-        });
+        };
+        assertTrueEventually(task);
     }
 
     @Test
@@ -152,7 +161,7 @@ public class QueueStatisticsTest extends AbstractQueueTest {
 
     @Test
     public void testEventOperationCount() {
-        final IQueue queue = newQueue();
+        IQueue queue = newQueue();
         TestListener listener = new TestListener(30);
         queue.addItemListener(listener, true);
         for (int i = 0; i < 30; i++) {
@@ -161,17 +170,10 @@ public class QueueStatisticsTest extends AbstractQueueTest {
         for (int i = 0; i < 30; i++) {
             queue.poll();
         }
+        LocalQueueStats stats = queue.getLocalQueueStats();
         assertOpenEventually(listener.addedLatch);
         assertOpenEventually(listener.removedLatch);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                LocalQueueStats stats = queue.getLocalQueueStats();
-                assertEquals(60, stats.getEventOperationCount());
-            }
-        });
-
+        assertEquals(60, stats.getEventOperationCount());
     }
 
     private static class TestListener implements ItemListener {

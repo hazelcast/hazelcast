@@ -17,13 +17,12 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ResponseHandler;
@@ -31,26 +30,24 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.closeResource;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends Operation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 
-    private byte[] data;
+    private List<Operation> tasks;
     private long[] replicaVersions;
-    private boolean compressed;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(byte[] data, long[] replicaVersions, boolean compressed) {
-        this.data = data;
+    public ReplicaSyncResponse(List<Operation> data, long[] replicaVersions) {
+        this.tasks = data;
         this.replicaVersions = replicaVersions;
-        this.compressed = compressed;
     }
 
     @Override
@@ -59,38 +56,56 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     public void run() throws Exception {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        SerializationService serializationService = nodeEngine.getSerializationService();
+        NodeEngine nodeEngine = getNodeEngine();
+        InternalPartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        BufferObjectDataInput in = null;
+
+        InternalPartitionImpl partition = partitionService.getPartition(partitionId, false);
+        boolean isBackup = partition.isOwnerOrBackup(nodeEngine.getThisAddress());
         try {
-            if (data != null && data.length > 0) {
-                logApplyReplicaSync(partitionId, replicaIndex);
-                byte[] taskData = compressed ? IOUtil.decompress(data) : data;
-                in = serializationService.createObjectDataInput(taskData);
-                int size = in.readInt();
-                for (int i = 0; i < size; i++) {
-                    Operation op = (Operation) serializationService.readObject(in);
-                    try {
-                        ErrorLoggingResponseHandler responseHandler
-                                = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
-                        op.setNodeEngine(nodeEngine)
-                                .setPartitionId(partitionId)
-                                .setReplicaIndex(replicaIndex)
-                                .setResponseHandler(responseHandler);
-                        op.beforeRun();
-                        op.run();
-                        op.afterRun();
-                    } catch (Throwable e) {
-                        logException(op, e);
-                    }
+            if (isBackup) {
+                executeTasks();
+            } else {
+                ILogger logger = getLogger();
+                if (logger.isFinestEnabled()) {
+                    logger.finest("This node is not backup replica of partition: " + partitionId
+                            + ", replica: " + replicaIndex + " anymore.");
                 }
             }
+            if (tasks != null) {
+                tasks.clear();
+            }
         } finally {
-            closeResource(in);
-            partitionService.finalizeReplicaSync(partitionId, replicaVersions);
+            if (isBackup) {
+                partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
+            } else {
+                partitionService.clearReplicaSync(partitionId, replicaIndex);
+            }
+        }
+    }
+
+    private void executeTasks() {
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+        if (tasks != null && tasks.size() > 0) {
+            NodeEngine nodeEngine = getNodeEngine();
+            logApplyReplicaSync(partitionId, replicaIndex);
+            for (Operation op : tasks) {
+                try {
+                    ErrorLoggingResponseHandler responseHandler
+                            = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
+                    op.setNodeEngine(nodeEngine)
+                            .setPartitionId(partitionId)
+                            .setReplicaIndex(replicaIndex)
+                            .setResponseHandler(responseHandler);
+                    op.beforeRun();
+                    op.run();
+                    op.afterRun();
+                } catch (Throwable e) {
+                    logException(op, e);
+                }
+            }
         }
     }
 
@@ -128,7 +143,12 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     public boolean validatesTarget() {
-        return true;
+        return false;
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override
@@ -138,16 +158,27 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        IOUtil.writeByteArray(out, data);
         out.writeLongArray(replicaVersions);
-        out.writeBoolean(compressed);
+        int size = tasks != null ? tasks.size() : 0;
+        out.writeInt(size);
+        if (size > 0) {
+            for (Operation task : tasks) {
+                out.writeObject(task);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        data = IOUtil.readByteArray(in);
         replicaVersions = in.readLongArray();
-        compressed = in.readBoolean();
+        int size = in.readInt();
+        if (size > 0) {
+            tasks = new ArrayList<Operation>(size);
+            for (int i = 0; i < size; i++) {
+                Operation op = in.readObject();
+                tasks.add(op);
+            }
+        }
     }
 
     @Override

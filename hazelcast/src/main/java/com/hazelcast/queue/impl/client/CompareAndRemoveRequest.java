@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.impl.CompareAndRemoveOperation;
+import com.hazelcast.queue.impl.operations.CompareAndRemoveOperation;
 import com.hazelcast.queue.impl.QueuePortableHook;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Provides the request service for {@link com.hazelcast.queue.impl.CompareAndRemoveOperation}
+ * Provides the request service for {@link com.hazelcast.queue.impl.operations.CompareAndRemoveOperation}
  */
 public class CompareAndRemoveRequest extends QueueRequest {
 
@@ -66,7 +66,7 @@ public class CompareAndRemoveRequest extends QueueRequest {
         writer.writeInt("s", dataList.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
         for (Data data : dataList) {
-            data.writeData(out);
+            out.writeData(data);
         }
     }
 
@@ -78,8 +78,7 @@ public class CompareAndRemoveRequest extends QueueRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         dataList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            Data data = new Data();
-            data.readData(in);
+            Data data = in.readData();
             dataList.add(data);
         }
     }
@@ -99,6 +98,6 @@ public class CompareAndRemoveRequest extends QueueRequest {
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{dataList};
+        return new Object[] {dataList};
     }
 }

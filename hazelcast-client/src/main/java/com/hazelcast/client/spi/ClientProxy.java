@@ -65,6 +65,7 @@ public abstract class ClientProxy implements DistributedObject {
         this.context = context;
     }
 
+
     @Deprecated
     public final Object getId() {
         return objectName;
@@ -98,9 +99,25 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
+    /**
+     * Called when proxy is created.
+     * Overriding implementations can add initialization specific logic into this method
+     * like registering a listener, creating a cleanup task etc.
+     */
+    protected void onInitialize() {
+    }
+
+    /**
+     * Called before proxy is destroyed.
+     * Overriding implementations should clean/release resources created during initialization.
+     */
     protected void onDestroy() {
     }
 
+    /**
+     * Called before client shutdown.
+     * Overriding implementations can add shutdown specific logic here.
+     */
     protected void onShutdown() {
     }
 

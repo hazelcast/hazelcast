@@ -2,9 +2,9 @@
 
 ### Sample JBoss AS 5 Web Application Configuration
 
-- Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into `JBOSS_HOME/server/deploy/default/lib` directory.
-- Place the `hazelcast-jca-rar-`*version*`.rar` into `JBOSS_HOME/server/deploy/default/deploy` directory
-- Create a `hazelcast-ds.xml` file at `JBOSS_HOME/server/deploy/default/deploy` directory containing below content. Make sure to set the `rar-name` element to `hazelcast-ra-`*version*`.rar`.
+- Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into the `JBOSS_HOME/server/deploy/default/lib` folder.
+- Place the `hazelcast-jca-rar-`*version*`.rar` into the `JBOSS_HOME/server/deploy/default/deploy` folder.
+- Create a `hazelcast-ds.xml` file containing the following content in the `JBOSS_HOME/server/deploy/default/deploy` folder. Make sure to set the `rar-name` element to `hazelcast-ra-`*version*`.rar`.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -44,7 +44,7 @@
 </resource-ref>
 ```
 
-If Hazelcast resource is used from EJBs, you should configure `ejb-jar.xml` and `jboss.xml` for resource reference and JNDI definitions.
+If the Hazelcast resource is used from EJBs, you should configure `ejb-jar.xml` and `jboss.xml` for resource reference and JNDI definitions.
 
 <br> </br>
 

@@ -18,31 +18,33 @@ package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapServiceContext;
-import com.hazelcast.map.RecordStore;
-import com.hazelcast.map.mapstore.MapDataStore;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
 
     /**
-     * {@link com.hazelcast.map.mapstore.writebehind.StoreWorker} delays processing of write-behind queues (wbq) by adding
+     * {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker} delays processing of write-behind queues (wbq) by adding
      * delay with {@link com.hazelcast.instance.GroupProperties#PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS} property.
      * This is used to provide some extra robustness against node disaster scenarios by trying to prevent lost of entries in wbq-s.
-     * Normally backup nodes don't store entries only remove them from wbq-s. Here, testing removal of entries occurred or not.
+     * Normally backup nodes don't store entries only remove them from wbq-s. Here, we are testing removal of entries occurred or not.
      */
     @Test
     public void testBackupRemovesEntries_afterProcessingDelay() throws Exception {
@@ -54,6 +56,7 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
                 .mapName(mapName)
                 .withMapStore(mapStore)
                 .withNodeCount(2)
+                .withNodeFactory(createHazelcastInstanceFactory(2))
                 .withWriteDelaySeconds(1)
                 .withBackupCount(1)
                 .withPartitionCount(1)

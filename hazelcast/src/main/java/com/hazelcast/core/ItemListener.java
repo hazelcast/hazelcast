@@ -28,14 +28,14 @@ public interface ItemListener<E> extends EventListener {
     /**
      * Invoked when an item is added.
      *
-     * @param item added item
+     * @param item the added item
      */
     void itemAdded(ItemEvent<E> item);
 
     /**
      * Invoked when an item is removed.
      *
-     * @param item removed item.
+     * @param item the removed item.
      */
     void itemRemoved(ItemEvent<E> item);
 }

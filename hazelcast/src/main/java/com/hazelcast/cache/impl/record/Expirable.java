@@ -17,13 +17,30 @@
 package com.hazelcast.cache.impl.record;
 
 /**
- * Expiring Data model interface
+ * Expiring Data model interface.
+ * <p>This interface provides a time variable to be compared against other time values
+ * to decide on "future" or "past".</p>
  */
 public interface Expirable {
-
+    /**
+     * Gets the expiration time in milliseconds.
+     * @return expiration time.
+     * @see System#currentTimeMillis()
+     */
     long getExpirationTime();
 
+    /**
+     * Sets the expiration time in milliseconds.
+     * @param expirationTime
+     * @see System#currentTimeMillis()
+     */
     void setExpirationTime(long expirationTime);
 
+    /**
+     * Checks whether the expiration time is passed with respect to the provided time.
+     * <p>Returns <tt>true</tt> if and only if {@code now > getExpirationTime()}</p>.
+     * @param now time in milliseconds.
+     * @return true if expired.
+     */
     boolean isExpiredAt(long now);
 }

@@ -29,7 +29,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Provides factory for {@link com.hazelcast.cache.impl.operation.CacheLoadAllOperation}
+ * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheLoadAllOperation}.
+ * @see com.hazelcast.spi.OperationFactory
  */
 public class CacheLoadAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
@@ -71,7 +72,7 @@ public class CacheLoadAllOperationFactory
         if (keys != null) {
             out.writeInt(keys.size());
             for (Data key : keys) {
-                key.writeData(out);
+                out.writeData(key);
             }
         }
     }
@@ -86,8 +87,7 @@ public class CacheLoadAllOperationFactory
             int size = in.readInt();
             keys = new HashSet<Data>(size);
             for (int i = 0; i < size; i++) {
-                Data key = new Data();
-                key.readData(in);
+                Data key = in.readData();
                 keys.add(key);
             }
         }

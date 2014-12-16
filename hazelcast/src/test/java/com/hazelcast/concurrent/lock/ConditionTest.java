@@ -571,7 +571,7 @@ public class ConditionTest extends HazelcastTestSupport {
 
     // See #3262
     @Test(timeout = 60000)
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/2272
+    @Ignore
     public void testAwait_whenNegativeTimeout() throws InterruptedException {
         HazelcastInstance instance = createHazelcastInstance();
 

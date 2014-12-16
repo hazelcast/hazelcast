@@ -26,9 +26,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.IOUtil.readNullableData;
-import static com.hazelcast.nio.IOUtil.writeNullableData;
-
 public class CompareAndSetRequest extends ModifyRequest {
 
     private Data expected;
@@ -55,14 +52,14 @@ public class CompareAndSetRequest extends ModifyRequest {
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        writeNullableData(out, expected);
+        out.writeData(expected);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        expected = readNullableData(in);
+        expected = in.readData();
     }
 
     @Override

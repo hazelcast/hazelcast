@@ -16,7 +16,24 @@
 
 package com.hazelcast.nio.serialization;
 
+/**
+ * This is a base interface for adapting non-Portable classes to Portable.
+ * <p/>
+ * In situations where it's not possible to modify an existing class
+ * to implement Portable and/or it's not allowed to import a Hazelcast
+ * class into a domain class, it will be possible to add Portable features
+ * to a non-Portable object over this adapter.
+ * <p/>
+ * Sample:
+ *
+ * --- SAMPLE GOES HERE ---
+ *
+ * @see com.hazelcast.nio.serialization.Portable
+ *
+ * @param <T> type of non-Portable object
+ */
+
+// TODO: INTERFACE IS NOT DEFINED YET!
 public interface PortableAdapter<T> extends Portable {
 
-    Object toObject();
 }

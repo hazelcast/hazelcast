@@ -37,9 +37,9 @@ public class Message<E> extends EventObject {
     }
 
     /**
-     * Returns published message
+     * Returns the published message
      *
-     * @return message object
+     * @return the published message object
      */
     public E getMessageObject() {
         return messageObject;
@@ -48,7 +48,7 @@ public class Message<E> extends EventObject {
     /**
      * Return the time when the message is published
      *
-     * @return publish time
+     * @return the time when the message is published
      */
     public long getPublishTime() {
         return publishTime;
@@ -57,7 +57,7 @@ public class Message<E> extends EventObject {
     /**
      * Returns the member that published the message
      *
-     * @return publishing member
+     * @return the member that published the message
      */
     public Member getPublishingMember() {
         return publishingMember;

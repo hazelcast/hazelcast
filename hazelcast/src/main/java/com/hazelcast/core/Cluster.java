@@ -19,42 +19,58 @@ package com.hazelcast.core;
 import java.util.Set;
 
 /**
- * Hazelcast cluster interface.
+ * Hazelcast cluster interface. It provides access to the members in the cluster and one can register for changes in the
+ * cluster members.
+ * <p/>
+ * All the methods on the Cluster are thread-safe.
  */
 public interface Cluster {
 
     /**
      * Adds MembershipListener to listen for membership updates.
-     *
+     * <p/>
+     * The addMembershipListener method returns a register-id. This id is needed to remove the MembershipListener using the
+     * {@link #removeMembershipListener(String)} method.
+     * <p/>
      * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
      * the {@link InitialMembershipEvent}.
+     * <p/>
+     * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      *
      * @param listener membership listener
-     * @return returns registration id.
+     * @return the registration id.
+     * @throws java.lang.NullPointerException if listener is null.
+     * @see #removeMembershipListener(String)
      */
     String addMembershipListener(MembershipListener listener);
 
     /**
-     * Removes the specified membership listener.
+     * Removes the specified MembershipListener.
+     * <p/>
+     * If the same MembershipListener is registered multiple times, it needs to be removed multiple times.
      *
-     * @param registrationId Id of listener registration.
+     * This method can safely be called multiple times for the same registration-id; subsequent calls are ignored.
      *
-     * @return true if registration is removed, false otherwise
+     * @param registrationId the registrationId of MembershipListener to remove.
+     * @return true if the registration is removed, false otherwise.
+     * @throws java.lang.NullPointerException if the registration id is null.
+     * @see #addMembershipListener(MembershipListener)
      */
     boolean removeMembershipListener(String registrationId);
 
     /**
-     * Set of current members of the cluster.
-     * Returning set instance is not modifiable.
-     * Every member in the cluster has the same member list in the same
-     * order. First member is the oldest member.
+     * Set of the current members in the cluster. The returned set is an immutable set; it can't be modified.
+     * <p/>
+     * The returned set is backed by an ordered set. Every member in the cluster returns the 'members' in the same order.
+     * To obtain the oldest member (the master) in the cluster, you can retrieve the first item in the set using
+     * 'getMembers().iterator().next()'.
      *
-     * @return current members of the cluster
+     * @return current members in the cluster
      */
     Set<Member> getMembers();
 
     /**
-     * Returns this Hazelcast instance member
+     * Returns this Hazelcast instance member.
      *
      * @return this Hazelcast instance member
      */
@@ -63,10 +79,8 @@ public interface Cluster {
     /**
      * Returns the cluster-wide time in milliseconds.
      * <p/>
-     * Cluster tries to keep a cluster-wide time which is
-     * might be different than the member's own system time.
-     * Cluster-wide time is -almost- the same on all members
-     * of the cluster.
+     * Cluster tries to keep a cluster-wide time which might be different than the member's own system time.
+     * Cluster-wide time is -almost- the same on all members of the cluster.
      *
      * @return cluster-wide time
      */

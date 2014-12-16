@@ -16,14 +16,12 @@
 
 package com.hazelcast.core;
 
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 /**
  * Distributed implementation of {@link Condition}.
  * An ICondition instance is created using {@link ILock#newCondition(String)}
- *
+ * <p/>
  * <pre>
  * HazelcastInstance instance = ...;
  * ILock lock = instance.getLock("lock");
@@ -35,40 +33,5 @@ import java.util.concurrent.locks.Condition;
  * @see ILock
  */
 public interface ICondition extends Condition {
-
-    /**
-     * {@inheritDoc}
-     */
-    void await() throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    void awaitUninterruptibly();
-
-    /**
-     * {@inheritDoc}
-     */
-    long awaitNanos(long nanosTimeout) throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean await(long time, TimeUnit unit) throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    boolean awaitUntil(Date deadline) throws InterruptedException;
-
-    /**
-     * {@inheritDoc}
-     */
-    void signal();
-
-    /**
-     * {@inheritDoc}
-     */
-    void signalAll();
 
 }

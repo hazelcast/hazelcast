@@ -36,7 +36,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Triggers cache store load of all given keys.
+ * Loads all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.
+ * <p>{@link com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory} creates this operation.</p>
+ * <p>Functionality: Filters out the partition keys and calls
+ * {@link com.hazelcast.cache.impl.ICacheRecordStore#loadAll(java.util.Set keys, boolean replaceExistingValues)}.</p>
  */
 public class CacheLoadAllOperation
         extends AbstractNamedOperation
@@ -120,10 +123,12 @@ public class CacheLoadAllOperation
         return CacheDataSerializerHook.F_ID;
     }
 
+    @Override
     public final int getSyncBackupCount() {
         return cache != null ? cache.getConfig().getBackupCount() : 0;
     }
 
+    @Override
     public final int getAsyncBackupCount() {
         return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
     }

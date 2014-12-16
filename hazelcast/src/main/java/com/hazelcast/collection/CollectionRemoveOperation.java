@@ -75,13 +75,12 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 }

@@ -16,21 +16,61 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.cache.impl.eviction.Evictable;
 
 /**
- * Record of the {@link com.hazelcast.cache.impl.ICacheRecordStore}
+ * <p>
+ * An expirable and evictable data object which represents a cache entry.
+ * </p>
+ * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
  *
- * @param <V>
+ * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V>
-        extends Expirable, DataSerializable {
+public interface CacheRecord<V> extends Expirable, Evictable {
 
-    Data getKey();
-
+    /**
+     * Gets the value of this {@link CacheRecord}.
+     *
+     * @return the value of this {@link CacheRecord}
+     */
     V getValue();
 
+    /**
+     * Sets the value of this {@link CacheRecord}.
+     *
+     * @param value the value for this {@link CacheRecord}
+     */
     void setValue(V value);
+
+    /**
+     * Sets the creation time of this {@link Evictable} in milliseconds.
+     *
+     * @param time the creation time for this {@link Evictable} in milliseconds
+     */
+    void setCreationTime(long time);
+
+    /**
+     * Sets the access time of this {@link Evictable} in milliseconds.
+     *
+     * @param time the latest access time of this {@link Evictable} in milliseconds
+     */
+    void setAccessTime(long time);
+
+    /**
+     * Sets the access hit count of this {@link Evictable}.
+     *
+     * @param hit the access hit count for this {@link Evictable}
+     */
+    void setAccessHit(int hit);
+
+    /**
+     * Increases the access hit count of this {@link Evictable} as <code>1</code>.
+     */
+    void incrementAccessHit();
+
+    /**
+     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
+     */
+    void resetAccessHit();
 
 }

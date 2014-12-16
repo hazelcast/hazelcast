@@ -85,7 +85,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         super.writeInternal(out);
         out.writeInt(valueList.size());
         for (Data value : valueList) {
-            value.writeData(out);
+            out.writeData(value);
         }
     }
 
@@ -95,8 +95,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         final int size = in.readInt();
         valueList = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
-            final Data value = new Data();
-            value.readData(in);
+            Data value = in.readData();
             valueList.add(value);
         }
     }

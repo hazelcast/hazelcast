@@ -1,9 +1,9 @@
 
 ### Abstract Entry Processor
 
-`AbstractEntryProcessor` class can be used when the same processing will be performed both on primary and backup map entries (i.e. same logic applies to them). If `EntryProcessor` is used, you need to apply the same logic to backup entries separately. `AbstractEntryProcessor` class brings an easiness on this primary/backup processing.
+You can use the `AbstractEntryProcessor` when the same processing will be performed both on the primary and backup map entries (i.e. the same logic applies to them). If you use `EntryProcessor`, you need to apply the same logic to the backup entries separately. The `AbstractEntryProcessor` class makes this primary/backup processing easier.
 
-Please see below sample code.
+Please see the example code below.
 
 ```java
 public abstract class AbstractEntryProcessor <K, V>
@@ -39,5 +39,5 @@ public abstract class AbstractEntryProcessor <K, V>
 }
 ```
 
-In the above sample, the method `getBackupProcessor` returns an `EntryBackupProcessor` instance. This means, the same processing will be applied to both primary and backup entries. If you want to apply the processing only on the primary entries, then `getBackupProcessor` method should return null. 
+In the above example, the method `getBackupProcessor` returns an `EntryBackupProcessor` instance. This means the same processing will be applied to both the primary and backup entries. If you want to apply the processing only upon the primary entries, then make the `getBackupProcessor` method return null. 
 

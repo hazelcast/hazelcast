@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
@@ -47,7 +46,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
         this.offset = out.position();
         // one additional for raw data
-        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4;
+        int fieldIndexesLength = (cd.getFieldCount() + 1) * 4;
         out.writeZeroBytes(fieldIndexesLength);
     }
 
@@ -128,7 +127,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
         setPosition(fieldName);
-        IOUtil.writeByteArray(out, values);
+        out.writeByteArray(values);
     }
 
     public void writeCharArray(String fieldName, char[] values) throws IOException {
@@ -169,9 +168,10 @@ public class DefaultPortableWriter implements PortableWriter {
             final int offset = out.position();
             out.writeZeroBytes(len * 4);
             for (int i = 0; i < portables.length; i++) {
-                out.writeInt(offset + i * 4, out.position());
                 Portable portable = portables[i];
                 checkPortableAttributes(fd, portable);
+                int position = out.position();
+                out.writeInt(offset + i * 4, position);
                 serializer.write(out, portable);
             }
         }
@@ -209,6 +209,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
     void end() throws IOException {
         // write final offset
-        out.writeInt(begin, out.position());
+        int position = out.position();
+        out.writeInt(begin, position);
     }
 }

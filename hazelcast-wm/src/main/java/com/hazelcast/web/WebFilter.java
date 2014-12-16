@@ -530,7 +530,16 @@ public class WebFilter implements Filter {
         }
 
         HttpSession getOriginalSession(boolean create) {
-            return super.getSession(create);
+            // Find the top non-wrapped Http Servlet request
+            HttpServletRequest req = (HttpServletRequest) getRequest();
+            while (req instanceof HttpServletRequestWrapper) {
+                req = (HttpServletRequest) ((HttpServletRequestWrapper) req).getRequest();
+            }
+            if (req != null) {
+                return req.getSession(create);
+            } else {
+                return super.getSession(create);
+            }
         }
 
         @Override
@@ -608,6 +617,11 @@ public class WebFilter implements Filter {
                 prepareReloadingSession(hazelcastSession);
             }
             return hazelcastSession;
+        }
+
+        public String changeSessionId() {
+            HazelcastHttpSession newSession = getSession(true);
+            return newSession.getOriginalSessionId();
         }
     } // END of RequestWrapper
 

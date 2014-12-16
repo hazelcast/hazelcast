@@ -80,14 +80,13 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
-        value.writeData(out);
+        out.writeData(value);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
-        value = new Data();
-        value.readData(in);
+        value = in.readData();
     }
 }

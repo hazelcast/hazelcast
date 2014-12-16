@@ -16,20 +16,26 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.WaitSupport;
 import java.io.IOException;
 
-public class ContainsEntryOperation extends MultiMapOperation {
+public class ContainsEntryOperation extends MultiMapOperation implements WaitSupport {
 
     Data key;
 
     Data value;
+
+    long threadId;
 
     public ContainsEntryOperation() {
     }
@@ -38,6 +44,13 @@ public class ContainsEntryOperation extends MultiMapOperation {
         super(name);
         this.key = key;
         this.value = value;
+    }
+
+    public ContainsEntryOperation(String name, Data key, Data value, long threadId) {
+        super(name);
+        this.key = key;
+        this.value = value;
+        this.threadId = threadId;
     }
 
     public void run() throws Exception {
@@ -52,19 +65,51 @@ public class ContainsEntryOperation extends MultiMapOperation {
         }
     }
 
+    public long getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(long threadId) {
+        this.threadId = threadId;
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, key);
-        IOUtil.writeNullableData(out, value);
+        out.writeLong(threadId);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        key = IOUtil.readNullableData(in);
-        value = IOUtil.readNullableData(in);
+        threadId = in.readLong();
+        key = in.readData();
+        value = in.readData();
     }
 
     public int getId() {
         return MultiMapDataSerializerHook.CONTAINS_ENTRY;
+    }
+
+    @Override
+    public WaitNotifyKey getWaitKey() {
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name), key);
+    }
+
+    @Override
+    public boolean shouldWait() {
+        if (key == null) {
+            return false;
+        }
+        MultiMapContainer container = getOrCreateContainer();
+        if (container.isTransactionallyLocked(key)) {
+            return !container.canAcquireLock(key, getCallerUuid(), threadId);
+        }
+        return false;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }

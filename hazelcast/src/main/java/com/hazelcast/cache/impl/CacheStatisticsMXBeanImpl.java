@@ -20,7 +20,11 @@ import javax.cache.management.CacheStatisticsMXBean;
 import java.io.Serializable;
 
 /**
- * Implementation of the {@link javax.cache.management.CacheStatisticsMXBean}
+ * Implementation of {@link javax.cache.management.CacheStatisticsMXBean}
+ * <p>
+ *     In a multi-node cluster, the total cluster statistics can be accumulated <br/>
+ *     into one by accessing each node's statistics through JMX.
+ * </p>
  */
 public class CacheStatisticsMXBeanImpl
         implements CacheStatisticsMXBean, Serializable {

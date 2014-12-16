@@ -33,8 +33,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
-        implements Portable {
+public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implements Portable {
 
     private Data key;
 
@@ -73,13 +72,12 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest
 
     public void write(PortableWriter writer) throws IOException {
         ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        out.writeData(key);
     }
 
     public void read(PortableReader reader) throws IOException {
         ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        key = in.readData();
     }
 
     public Permission getRequiredPermission() {

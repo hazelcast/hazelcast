@@ -24,31 +24,32 @@ import java.util.Collection;
  * @param <E> item
  */
 public interface ICollection<E> extends Collection<E>, DistributedObject {
+
     /**
-     * Returns the name of this collection
+     * Returns the name of this collection.
      *
-     * @return name of this collection
+     * @return the name of this collection
      */
     String getName();
 
     /**
-     * Adds an item listener for this collection. Listener will get notified
+     * Adds an item listener for this collection. Listener will be notified
      * for all collection add/remove events.
      *
-     * @param listener     item listener
-     * @param includeValue <tt>true</tt> updated item should be passed
+     * @param listener     the item listener
+     * @param includeValue <tt>true</tt> if the updated item should be passed
      *                     to the item listener, <tt>false</tt> otherwise.
-     * @return returns registration id.
+     * @return returns the registration id.
      */
     String addItemListener(ItemListener<E> listener, boolean includeValue);
 
     /**
      * Removes the specified item listener.
-     * Returns silently if the specified listener is not added before.
+     * Returns silently if the specified listener was not added before.
      *
-     * @param registrationId Id of listener registration.
+     * @param registrationId Id of the listener registration.
      *
-     * @return true if registration is removed, false otherwise
+     * @return true if the item listener is removed, false otherwise
      */
     boolean removeItemListener(String registrationId);
 }

@@ -26,6 +26,11 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
 
+/**
+ * The client Engine.
+ *
+ * todo: what is the purpose of the client engine.
+ */
 public interface ClientEngine {
 
     int getClientEndpointCount();
