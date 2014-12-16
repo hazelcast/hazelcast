@@ -60,9 +60,9 @@ public class NetworkConfig {
     }
 
     /**
-     * Returns the port the Hazelcast member is going to try to bind on.
+     * Returns the port the Hazelcast member will try to bind on.
      *
-     * @return the port the port to bind on.
+     * @return the port the Hazelcast member will try to bind on
      * @see #setPort(int)
      */
     public int getPort() {
@@ -70,9 +70,9 @@ public class NetworkConfig {
     }
 
     /**
-     * Sets the port the Hazelcast member is going to try to bind on.
+     * Sets the port the Hazelcast member will try to bind on.
      *
-     * @param port the port to bind on.
+     * @param port the port the Hazelcast member will try to bind on
      * @return NetworkConfig the updated NetworkConfig
      * @see #getPort()
      * @see #setPortAutoIncrement(boolean) for more information.
@@ -85,7 +85,7 @@ public class NetworkConfig {
     /**
      * Returns the maximum number of ports allowed to try to bind on.
      *
-     * @return the maximum number of ports allowed to try.
+     * @return the maximum number of ports allowed to try to bind on
      * @see #setPortCount(int)
      * @see #setPortAutoIncrement(boolean) for more information.
      */
@@ -94,7 +94,7 @@ public class NetworkConfig {
     }
 
     /**
-     * The maxmim number of ports to try.
+     * The maximum number of ports allowed to use.
      *
      * @param portCount the maximum number of ports allowed to use.
      * @see #setPortAutoIncrement(boolean) for more information.
@@ -121,8 +121,8 @@ public class NetworkConfig {
      * Sets if a Hazelcast member is allowed to find a free port by incrementing the port number when it encounters
      * an occupied port.
      * <p/>
-     * If you explicitly want to control the port the a Hazelcast member is going to use, you probably want to set
-     * portAutoincrement to false. In this case, the Hazelcast member is going to try to the port {@link #setPort(int)}
+     * If you explicitly want to control the port a Hazelcast member is going to use, you probably want to set
+     * portAutoincrement to false. In this case, the Hazelcast member is going to try the port {@link #setPort(int)}
      * and if the port is not free, the member will not start and throw an exception.
      * <p/>
      * If this value is set to true, Hazelcast will start at the port specified by {@link #setPort(int)} and will try
@@ -148,16 +148,16 @@ public class NetworkConfig {
      *
      * When should setReuseAddress(true) be used?
      *
-     * When the member is shutdown the server socket port will be in TIME_WAIT state for the next 2 minutes or so. If you
-     * start the member right after shutting it down you may not be able to bind to the same port because it is in TIME_WAIT
+     * When the member is shutdown, the server socket port will be in TIME_WAIT state for the next 2 minutes or so. If you
+     * start the member right after shutting it down, you may not be able to bind to the same port because it is in TIME_WAIT
      * state. if you set reuseAddress=true then TIME_WAIT will be ignored and you will be able to bind to the same port again.
      *
-     * This property should not be set to true on windows platform: see
+     * This property should not be set to true on the Windows platform: see
      * <ol>
      * <li>http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6421091</li>
      * <li>http://www.hsc.fr/ressources/articles/win_net_srv/multiple_bindings.html</li>
      * </ol>
-     * By default if the OS is Windows then reuseAddress will be false.
+     * By default, if the OS is Windows then reuseAddress will be false.
      */
     public NetworkConfig setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
@@ -252,7 +252,7 @@ public class NetworkConfig {
     /**
      * Sets the {@link SocketInterceptorConfig}. The value can be null if no socket interception is needed.
      *
-     * @param socketInterceptorConfig the SocketInterceptorConfig
+     * @param socketInterceptorConfig the SocketInterceptorConfig to set
      * @return the updated NetworkConfig
      */
     public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
@@ -274,7 +274,7 @@ public class NetworkConfig {
     /**
      * Sets the {@link SymmetricEncryptionConfig}. The value can be null if no symmetric encryption should be used.
      *
-     * @param symmetricEncryptionConfig the SymmetricEncryptionConfig
+     * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig.
      * @see #getSymmetricEncryptionConfig()
      */
