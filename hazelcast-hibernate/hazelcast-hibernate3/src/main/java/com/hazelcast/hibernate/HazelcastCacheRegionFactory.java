@@ -21,12 +21,12 @@ import com.hazelcast.hibernate.distributed.IMapRegionCache;
 import com.hazelcast.hibernate.region.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.region.HazelcastEntityRegion;
 import com.hazelcast.hibernate.region.HazelcastTimestampsRegion;
-import org.hibernate.cache.CollectionRegion;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
+import org.hibernate.cache.CollectionRegion;
 import org.hibernate.cache.EntityRegion;
-import org.hibernate.cache.TimestampsRegion;
 import org.hibernate.cache.RegionFactory;
+import org.hibernate.cache.TimestampsRegion;
 
 import java.util.Properties;
 

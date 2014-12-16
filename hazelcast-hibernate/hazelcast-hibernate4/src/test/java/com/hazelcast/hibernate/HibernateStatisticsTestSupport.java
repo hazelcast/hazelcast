@@ -16,21 +16,28 @@
 
 package com.hazelcast.hibernate;
 
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
+import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -203,6 +210,17 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         }
     }
 
+    protected DummyEntity executeQuery(SessionFactory factory, long id) {
+        Session session = factory.openSession();
+        try {
+            Query query = session.createQuery("from " + DummyEntity.class.getName() + " where id = " + id);
+            query.setCacheable(true);
+            return (DummyEntity) query.list().get(0);
+        } finally {
+            session.close();
+        }
+    }
+
     @Test
     public void testQuery2() {
         final int entityCount = 10;
@@ -238,5 +256,27 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
         assertEquals(entityCount - 1, executeQuery(sf).size());
         assertEquals(entityCount - 1, executeQuery(sf2).size());
+    }
+
+    @Test
+    public void testQueryCacheCleanup() {
+
+        MapConfig mapConfig = getHazelcastInstance(sf).getConfig().getMapConfig("org.hibernate.cache.*");
+        final float baseEvictionRate = 0.2f;
+        final int numberOfEntities = 100;
+        final int defaultCleanupPeriod = 60;
+        final int maxSize = mapConfig.getMaxSizeConfig().getSize();
+        final int evictedItemCount = numberOfEntities - maxSize + (int) (maxSize * baseEvictionRate);
+        insertDummyEntities(numberOfEntities);
+        sleep(1);
+        for (int i=0; i < numberOfEntities; i++) {
+            executeQuery(sf, i);
+        }
+
+        HazelcastQueryResultsRegion queryRegion = ((HazelcastQueryResultsRegion) (((SessionFactoryImpl) sf).getQueryCache()).getRegion());
+        assertEquals(numberOfEntities, queryRegion.getCache().size());
+        sleep(defaultCleanupPeriod);
+
+        assertEquals(numberOfEntities - evictedItemCount, queryRegion.getCache().size());
     }
 }
