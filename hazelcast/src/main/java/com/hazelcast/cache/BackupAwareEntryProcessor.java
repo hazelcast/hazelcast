@@ -20,15 +20,15 @@ import javax.cache.processor.EntryProcessor;
 
 /**
  * An invocable function that allows applications to perform compound operations
- * on a {@link javax.cache.Cache.Entry} atomically, according the defined
+ * on a {@link javax.cache.Cache.Entry} atomically, according to the defined
  * consistency of a {@link javax.cache.Cache}.
  * <p>
- * In difference to the normal {@link javax.cache.processor.EntryProcessor}
- * implementations where a backup is done using sending the complete changed resulting
- * object to the backup-partition, implementations of this sub-interface can create
- * an additional {@link javax.cache.processor.EntryProcessor} instances that are send
- * to the backup-partitions to apply logic which is either different from the owner
- * partition (e.g. not sending emails) or in the simple case similar to the main
+ * The difference from the normal {@link javax.cache.processor.EntryProcessor}
+ * implementations, where a backup is done sending the completely changed resulting
+ * object to the backup-partition, is that implementations of this sub-interface can create
+ * additional {@link javax.cache.processor.EntryProcessor} instances that are sent
+ * to the backup partitions to apply logic which is either different from the owner
+ * partition (e.g. not sending emails) or is the simple case of being similar to the main
  * operations. In the later case {@link #createBackupEntryProcessor()} can also return
  * <pre>this</pre>.
  *
@@ -43,11 +43,11 @@ public interface BackupAwareEntryProcessor<K, V, T>
 
     /**
      * Either creates a new, specialized {@link javax.cache.processor.EntryProcessor}
-     * to be executed on the backup-partition or returns <pre>this</pre> to execute
+     * to be executed on the backup-partition, or returns <pre>this</pre> to execute
      * the same processor remotely.
      * <p>
-     * If null is returned the value is backed up using the normal value backup
-     * mechanism, non exception is thrown and the update is applied as expected.
+     * If null is returned, the value is backed up using the normal value backup
+     * mechanism, no exception is thrown, and the update is applied as expected.
      *
      * @return the backup-partition EntryProcessor
      */
