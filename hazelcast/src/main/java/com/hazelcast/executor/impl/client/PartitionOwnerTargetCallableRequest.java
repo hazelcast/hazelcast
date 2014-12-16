@@ -18,7 +18,6 @@ package com.hazelcast.executor.impl.client;
 
 import com.hazelcast.executor.impl.ExecutorPortableHook;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
@@ -40,11 +39,6 @@ public class PartitionOwnerTargetCallableRequest extends AbstractTargetCallableR
     @Override
     public Operation getOperation(String name, String uuid, Data callableData) {
         return new CallableTaskOperation(name, uuid, callableData);
-    }
-
-    @Override
-    public Address getTarget() {
-        return null;
     }
 
     /**
