@@ -43,12 +43,12 @@ import java.util.Properties;
  * </p>
  * <p>
  * <h3>Provider Type Selection:</h3>
- * First step is to check whether a selection exists using the system property
- * <tt>hazelcast.jcache.provider.type</tt> with values <tt>client</tt> or <tt>server</tt>.
+ * The first step is to check whether a selection exists using the system property
+ * <tt>hazelcast.jcache.provider.type</tt> with values of <tt>client</tt> or <tt>server</tt>.
  * If no selection exists, then the default behavior for selecting the internal provider type is based on
- * which dependency found on classpath. Client and server provider classes are searched on classpath. If
+ * which dependency is found on the classpath. Client and server provider classes are searched on the classpath. If
  * both {@link javax.cache.spi.CachingProvider} implementations are found (client and server), the client
- * provider has precedence. To select the server provider use the above mentioned property.
+ * provider has precedence. To select the server provider, use the above mentioned property.
  * </p>
  *
  * @since 3.4
@@ -105,8 +105,7 @@ public final class HazelcastCachingProvider
     /**
      * Create the {@link java.util.Properties} with the provided config file location.
      *
-     * @param configFileLocation config file location to configure
-     *
+     * @param configFileLocation the location of the config file to configure
      * @return properties instance pre-configured with the configuration location
      */
     public static Properties propertiesByLocation(String configFileLocation) {
@@ -118,9 +117,8 @@ public final class HazelcastCachingProvider
     /**
      * Create the {@link java.util.Properties} with the provided instance name.
      *
-     * @param instanceName instance name to configure
-     *
-     * @return properties instance pre-configured with the instance name
+     * @param instanceName the instance name to configure
+     * @return the properties instance pre-configured with the instance name
      */
     public static Properties propertiesByInstanceName(String instanceName) {
         final Properties properties = new Properties();
