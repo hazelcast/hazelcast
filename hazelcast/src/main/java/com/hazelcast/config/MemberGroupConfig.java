@@ -62,7 +62,7 @@ public class MemberGroupConfig {
     /**
      * Gets an unmodifiable collection containing all interfaces.
      *
-     * @return the collection of interfaces.
+     * @return the unmodifiable collection containing all interfaces.
      * @see #setInterfaces(java.util.Collection)
      */
     public Collection<String> getInterfaces() {
@@ -74,7 +74,7 @@ public class MemberGroupConfig {
      * <p/>
      * If the interfaces is empty, it will have the same effect as calling {@link #clear()}.
      *
-     * @param interfaces the interfaces to set.
+     * @param interfaces the interfaces to set that are part of a group.
      * @return the updated MemberGroupConfig
      * @throws IllegalArgumentException if interfaces is null.
      * @see #getInterfaces()
