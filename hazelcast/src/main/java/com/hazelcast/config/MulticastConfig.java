@@ -28,7 +28,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * With the multicast discovery mechanism Hazelcast allows Hazelcast members to find each other using multicast. So
  * Hazelcast members do not need to know concrete addresses of members, they just multicast to everyone listening.
  * <p/>
- * It depends on your environment if multicast is possible or allowed; otherwise you need to have a look at the
+ * It depends on your environment if multicast is possible or allowed; you need to have a look at the
  * tcp/ip cluster: {@link TcpIpConfig}.
  */
 public class MulticastConfig {
@@ -78,7 +78,7 @@ public class MulticastConfig {
     /**
      * Check if the multicast discovery mechanism has been enabled.
      *
-     * @return the enabled
+     * @return true if the multicast discovery mechanism has been enabled
      */
     public boolean isEnabled() {
         return enabled;
@@ -87,7 +87,7 @@ public class MulticastConfig {
     /**
      * Enables or disables the multicast discovery mechanism
      *
-     * @param enabled the enabled to set true when disabled, false when disabled.
+     * @param enabled true to enable, false to disable.
      * @return the updated MulticastConfig
      */
     public MulticastConfig setEnabled(boolean enabled) {
@@ -105,7 +105,7 @@ public class MulticastConfig {
     }
 
     /**
-     * Sets the multicast-group.
+     * Sets the multicast group.
      *
      * @param multicastGroup the multicastGroup to set
      * @return the updated MulticastConfig
@@ -160,7 +160,7 @@ public class MulticastConfig {
      * in the network before declaring itself as master node and creating its own cluster. This applies only to the startup
      * of nodes where no master has been assigned yet. If you specify a high value, e.g. 60 seconds, it means until a master
      * is selected, each node is going to wait 60 seconds before continuing, so be careful with providing a high value. If
-     * the value is set too low, it might be that nodes are giving up too early and will create their own cluster.
+     * the value is set too low, nodes might give up too early and create their own cluster.
      *
      * @param multicastTimeoutSeconds the multicastTimeoutSeconds to set
      * @returns the updated MulticastConfig
@@ -174,7 +174,7 @@ public class MulticastConfig {
     /**
      * Gets the trusted interfaces.
      *
-     * @return the trusted interface.
+     * @return the trusted interfaces.
      * @see #setTrustedInterfaces(java.util.Set)
      */
     public Set<String> getTrustedInterfaces() {
@@ -184,8 +184,8 @@ public class MulticastConfig {
     /**
      * Sets the trusted interfaces.
      * <p/>
-     * By default, so when the set of trusted interfaces is empty, a Hazelcast member will accept join-requests
-     * from every member. With a trusted interface you can control the members you want to receive join request
+     * By default, when the set of trusted interfaces is empty, a Hazelcast member will accept join-requests
+     * from every member. With a trusted interface, you can control the members you want to receive join requests
      * from.
      * <p/>
      * The interface is an ip address where the last octet can be a wildcard '*' or a range '10-20'.
@@ -216,9 +216,9 @@ public class MulticastConfig {
     }
 
     /**
-     * Gets the time to live of the multicast package.
+     * Gets the time to live for the multicast package.
      *
-     * @return the time to live
+     * @return the time to live for the multicast package
      * @see java.net.MulticastSocket#setTimeToLive(int)
      * @see #setMulticastTimeToLive(int)
      */
@@ -231,7 +231,7 @@ public class MulticastConfig {
      * <p/>
      * See this <a href="http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html">link</a> for more information.
      *
-     * @param multicastTimeToLive the time to live.
+     * @param multicastTimeToLive the time to live for the multicast package.
      * @return the updated MulticastConfig.
      * @throws IllegalArgumentException if time to live is smaller than 0 or larger than 255.
      * @see #getMulticastTimeToLive()
@@ -248,7 +248,7 @@ public class MulticastConfig {
     /**
      * Check if the loopback mode is enabled in the multicast discovery mechanism.
      *
-     * @return the enabled
+     * @return true if the the loopback mode is enabled, false otherwise
      */
     public boolean isLoopbackModeEnabled() {
         return loopbackModeEnabled;
@@ -257,7 +257,7 @@ public class MulticastConfig {
     /**
      * Enables or disables the loopback mode in the multicast discovery mechanism.
      *
-     * @param enabled the enabled to set true when disabled, false when disabled.
+     * @param enabled true to enable the loopback mode, false to disable.
      * @return the updated MulticastConfig
      */
     public MulticastConfig setLoopbackModeEnabled(boolean enabled) {
