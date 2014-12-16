@@ -14,24 +14,31 @@ In Hazelcast Enterprise, the High-Density Memory Store is built around a pluggab
 
 This foundation includes, but is not limited to, storing keys and values next to the heap in a native memory region.
 
-***Configuring Hi-Density Memory Store***
+<br></br>
+***RELATED INFORMATION***
 
-To use Hi-Density memory storage, native memory usage must be enabled by programmatically or by XML file.
+*Please refer to the [Hazelcast JCache chapter](#hazelcast-jcache) chapter for the details of Hazelcast JCache implementation. As mentioned, High-Density Memory Store is used with Hazelcast JCache implementation.*
+<br></br>
+
+
+### Configuring Hi-Density Memory Store
+
+To use the Hi-Density memory storage, the native memory usage must be enabled using the programmatic or declarative configuration.
 Also, you can configure its size, memory allocator type, minimum block size, page size and metadata space percentage.
 
-- **size:** Size of total native memory to allocate. Default value is **512 MB**.
-- **allocator type:** Type of memory allocator. Valid values are:
-  * STANDARD: allocate/free memory using default OS memory manager
+- **size:** Size of the total native memory to allocate. Default value is **512 MB**.
+- **allocator type:** Type of the memory allocator. Available values are:
+  * STANDARD: allocate/free memory using default OS memory manager.
   * POOLED: manage memory blocks in thread local pools. 
 
   Default value is **POOLED**.
-- **minimum block size:** Minimum size of blocks in bytes to split and fragment a page block for assigning to an allocation request. Used only by **POOLED** memory allocator. Default value is **16**.
-- **page size:** Size of page in bytes to allocate memory as block. Used only by **POOLED** memory allocator. Default value is `1 << 22` = **4194304 Bytes**, about **4 MB**.
-- **metadata space percentage:** Percentage value about how many percentage of allocated native memory is used for metadata such as indexes, offsets, etc ... Used only by **POOLED** memory allocator. Default value is **12.5**.
+- **minimum block size:** Minimum size of the blocks in bytes to split and fragment a page block to assign to an allocation request. It is used only by the **POOLED** memory allocator. Default value is **16**.
+- **page size:** Size of the page in bytes to allocate memory as a block. It is used only by the **POOLED** memory allocator. Default value is `1 << 22` = **4194304 Bytes**, about **4 MB**.
+- **metadata space percentage:** Defines the percentage of the allocated native memory that is used for the metadata such as indexes, offsets, etc. It is used only by the **POOLED** memory allocator. Default value is **12.5**.
 
-Here is programmatic configuration sample:
+The following is the programmatic configuration example.
 
-~~~~ java
+```java
 MemorySize memorySize = new MemorySize(512, MemoryUnit.MEGABYTES);
 NativeMemoryConfig nativeMemoryConfig =
                 new NativeMemoryConfig()
@@ -40,21 +47,16 @@ NativeMemoryConfig nativeMemoryConfig =
                         .setEnabled(true)
                         .setMinBlockSize(16)
                         .setPageSize(1 << 20);
-~~~~
+```
 
-Here is XML configuration sample:
+The following is the declarative configuration example.
 
-~~~~ xml
+```xml
 <native-memory enabled="true" allocator-type="POOLED">
   <size value="512" unit="MEGABYTES"/>
 </native-memory>
-~~~~
+```
 
-<br></br>
-***RELATED INFORMATION***
-
-*Please refer to the [Hazelcast JCache chapter](#hazelcast-jcache) chapter for the details of Hazelcast JCache implementation. As mentioned, High-Density Memory Store is used with Hazelcast JCache implementation.*
-<br></br>
 
 
 
