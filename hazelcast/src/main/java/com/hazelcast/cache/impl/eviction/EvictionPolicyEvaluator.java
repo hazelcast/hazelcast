@@ -29,7 +29,7 @@ public interface EvictionPolicyEvaluator<A, E extends Evictable> {
      *
      * @param evictionCandidates Multiple {@link EvictionCandidate} to be evicted
      *
-     * @return multiple {@link EvictionCandidate} these are available to be evicted
+     * @return multiple {@link EvictionCandidate}s that are available to be evicted
      */
     <C extends EvictionCandidate<A, E>> Iterable<C> evaluate(Iterable<C> evictionCandidates);
 
