@@ -90,10 +90,21 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         return readOnly;
     }
 
+    /**
+     * Returns the size of the map.
+     *
+     * @return the size of the map
+     */
     public int getSize() {
         return size;
     }
 
+    /**
+     * Sets the maximum size of the map.
+     *
+     * @param size the maximum size of the map
+     * @return the map MaxSizeConfig
+     */
     public MaxSizeConfig setSize(int size) {
         if (size > 0) {
             this.size = size;
@@ -101,10 +112,21 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         return this;
     }
 
+    /**
+     * Returns the maximum size policy of the map.
+     *
+     * @return the MaxSizePolicy of the map
+     */
     public MaxSizePolicy getMaxSizePolicy() {
         return maxSizePolicy;
     }
 
+    /**
+     * Ses the maximum size policy of the map.
+     *
+     * @param maxSizePolicy the maximum size policy to set for the map
+     * @return this MaxSizeConfig
+     */
     public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;
