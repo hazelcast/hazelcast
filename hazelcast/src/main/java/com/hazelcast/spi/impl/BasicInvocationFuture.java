@@ -427,11 +427,12 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Operation createCheckOperation() {
-        if (invocation.op instanceof TraceableOperation) {
-            TraceableOperation traceable = (TraceableOperation) invocation.op;
+        Operation op = invocation.op;
+        if (op instanceof TraceableOperation) {
+            TraceableOperation traceable = (TraceableOperation) op;
             return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
         } else {
-            return new IsStillExecutingOperation(invocation.op.getCallId());
+            return new IsStillExecutingOperation(op.getCallId(), op.getPartitionId());
         }
     }
 

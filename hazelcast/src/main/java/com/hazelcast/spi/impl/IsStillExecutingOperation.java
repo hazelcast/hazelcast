@@ -17,15 +17,17 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     IsStillExecutingOperation() {
     }
 
-    IsStillExecutingOperation(long operationCallId) {
+    IsStillExecutingOperation(long operationCallId, int partitionId) {
         this.operationCallId = operationCallId;
+        setPartitionId(partitionId);
     }
 
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
+        BasicOperationScheduler scheduler = operationService.scheduler;
+        boolean executing = scheduler.isOperationExecuting(getCallerAddress(), getPartitionId(), operationCallId);
         getResponseHandler().sendResponse(executing);
     }
 
@@ -37,7 +39,7 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        operationCallId = in.readLong();
+        this.operationCallId = in.readLong();
     }
 
     @Override
