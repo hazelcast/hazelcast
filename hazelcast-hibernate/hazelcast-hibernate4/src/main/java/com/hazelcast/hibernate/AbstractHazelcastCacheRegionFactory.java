@@ -19,6 +19,7 @@ package com.hazelcast.hibernate;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.instance.HazelcastInstanceFactory;
 import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
+import com.hazelcast.hibernate.local.CleanupService;
 import com.hazelcast.hibernate.region.HazelcastNaturalIdRegion;
 import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import com.hazelcast.logging.ILogger;
@@ -39,6 +40,7 @@ import java.util.Properties;
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
     protected HazelcastInstance instance;
+    protected CleanupService cleanupService;
     private final ILogger log = Logger.getLogger(getClass());
 
     private IHazelcastInstanceLoader instanceLoader;
@@ -57,7 +59,9 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
 
     public final QueryResultsRegion buildQueryResultsRegion(final String regionName, final Properties properties)
             throws CacheException {
-        return new HazelcastQueryResultsRegion(instance, regionName, properties);
+        HazelcastQueryResultsRegion region = new HazelcastQueryResultsRegion(instance, regionName, properties);
+        cleanupService.registerCache(region.getCache());
+        return region;
     }
 
     public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties
@@ -83,6 +87,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
             instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
             instance = instanceLoader.loadInstance();
         }
+        cleanupService = new CleanupService(instance.getName());
     }
 
     public void stop() {
@@ -92,6 +97,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
             instance = null;
             instanceLoader = null;
         }
+        cleanupService.stop();
     }
 
     public HazelcastInstance getHazelcastInstance() {

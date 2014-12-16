@@ -35,6 +35,8 @@
         <property name="hibernate.cache.use_query_cache">true</property>
         <property name="hibernate.cache.use_minimal_puts">true</property>
 
+        <property name="hibernate.cache.hazelcast.configuration_file_path">hazelcast-custom.xml</property>
+
         <mapping resource="com/hazelcast/hibernate/entity/DummyEntity.hbm.xml"/>
         <mapping resource="com/hazelcast/hibernate/entity/DummyProperty.hbm.xml"/>
 
