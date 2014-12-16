@@ -50,8 +50,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     private volatile long lastHandle;
 
     WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
-        // We register for write, but this is only done to trigger the creation of the selection key.
-        // So we get one unwanted write-event even if we have nothing to write. After that things are back to normal
         super(connection, ioSelector, SelectionKey.OP_WRITE);
         this.outputBuffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
     }
