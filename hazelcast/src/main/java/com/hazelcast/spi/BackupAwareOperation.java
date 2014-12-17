@@ -34,7 +34,7 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
     boolean shouldBackup();
 
     /**
-     * The synchronous backup count. If no backups need to be made, 0  is returned.
+     * The synchronous backup count. If no backups need to be made, 0 is returned.
      *
      * @return the synchronous backup count.
      */
@@ -50,7 +50,7 @@ public interface BackupAwareOperation extends PartitionAwareOperation {
     /**
      * Creates the {@link com.hazelcast.spi.BackupOperation} responsible for making the backup.
      *
-     * @return the created BackupOperation.
+     * @return the created {@link com.hazelcast.spi.BackupOperation} responsible for making the backup.
      */
 
     //todo: should this not return a BackupOperation?
