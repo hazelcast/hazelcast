@@ -84,7 +84,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     /**
      * Gets the Service of this AbstractDistributedObject.
      *
-     * @return the service
+     * @return the Service of this AbstractDistributedObject
      * @throws HazelcastInstanceNotActiveException if object is destroyed or HazelcastInstance shutdown.
      */
     public final S getService() {
