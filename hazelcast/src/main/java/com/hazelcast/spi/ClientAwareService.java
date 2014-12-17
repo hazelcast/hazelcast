@@ -26,7 +26,9 @@ package com.hazelcast.spi;
 public interface ClientAwareService {
 
     /**
-     * Invoked when a client disconnected from a member.
+     * Invoked when a client disconnects from a member.
+     *
+     * @param clientUuid the Uuid of the client that disconnected from a member
      */
     void clientDisconnected(String clientUuid);
 
