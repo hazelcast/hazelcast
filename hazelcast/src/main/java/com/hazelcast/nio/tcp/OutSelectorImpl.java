@@ -45,7 +45,6 @@ public final class OutSelectorImpl extends AbstractIOSelector {
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isWritable()) {
             writeEvents++;
-            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }

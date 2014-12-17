@@ -348,7 +348,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
-        connection.getReadHandler().register();
+
+        connection.start();
 
         logConnectionEstablished(channel, remoteSocketAddress, index);
 
