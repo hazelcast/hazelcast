@@ -27,13 +27,18 @@ The following are the example configurations.
    <statistics-enabled>true</statistics-enabled>
    <backup-count>1</backup-count>
    <async-backup-count>0</async-backup-count>
-   <eviction>
-</set>
+   <eviction size="10000" max-size-policy="ENTRY_COUNT"></eviction>
+</cache>
 ```
 
 **Programmatic:**
 
 ```java
+Config config = new Config();
+CacheConfig cacheCfg = config.getCacheConfig();
+
+cacheCfg.setName( "default" );
+
 
 ```
    
