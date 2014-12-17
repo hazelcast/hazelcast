@@ -16,6 +16,9 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.IFunction;
+
+import java.util.Collections;
 import java.util.Iterator;
 
 /**
@@ -34,4 +37,38 @@ public final class IterableUtil {
         return iterator.hasNext() ? iterator.next() : defaultValue;
     }
 
+    /** Transform the Iterable by applying a function to each element  **/
+    public static <T, R> Iterable<R> map(final Iterable<T> iterable, final IFunction<T, R> mapper) {
+        return new Iterable<R>() {
+            @Override
+            public Iterator<R> iterator() {
+                return map(iterable.iterator(), mapper);
+            }
+        };
+    }
+
+    /** Transform the Iterator by applying a function to each element  **/
+    private static <T, R> Iterator<R> map(final Iterator<T> iterator, final IFunction<T, R> mapper) {
+        return new Iterator<R>() {
+            @Override
+            public boolean hasNext() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public R next() {
+                return mapper.apply(iterator.next());
+            }
+
+            @Override
+            public void remove() {
+                iterator.remove();
+            }
+        };
+    }
+
+    /** Return empty Iterable if argument is null **/
+    public static <T> Iterable<T> nullToEmpty(Iterable<T> iterable) {
+        return iterable == null ? Collections.<T>emptyList() : iterable;
+    }
 }

@@ -24,7 +24,6 @@ import com.hazelcast.core.PostProcessingMapStore;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class MapStoreWrapper implements MapStore {
@@ -98,7 +97,7 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
-    public Set loadAllKeys() {
+    public Iterable loadAllKeys() {
         if (isMapLoader()) {
             return mapLoader.loadAllKeys();
         }

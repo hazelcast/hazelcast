@@ -19,7 +19,6 @@ package com.hazelcast.core;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Adapter for MapStore.
@@ -84,7 +83,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
-    public Set<K> loadAllKeys() {
+    public Iterable<K> loadAllKeys() {
         return null;
     }
 }

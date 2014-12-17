@@ -56,10 +56,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -67,6 +63,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -90,6 +87,11 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 
 /**
@@ -1482,8 +1484,11 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapService mapService = (MapService) map.getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
         MapStoreWrapper mapStoreWrapper = mapContainer.getMapStoreContext().getMapStoreWrapper();
-        Set keys = mapStoreWrapper.loadAllKeys();
-        assertEquals(2, keys.size());
+        Iterator keys = mapStoreWrapper.loadAllKeys().iterator();
+
+        assertEquals("my-prop-1", keys.next());
+        assertEquals("my-prop-2", keys.next());
+
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));
         assertEquals("foo", mapStoreWrapper.load("my-prop-2"));
     }

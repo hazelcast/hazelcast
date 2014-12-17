@@ -102,7 +102,7 @@ public class MapStoreAdapterTest extends HazelcastTestSupport {
             loaded.add(new Object[]{key, value});
         }
 
-        public Set loadAllKeys() {
+        public Iterable loadAllKeys() {
             return super.loadAllKeys();
         }
 

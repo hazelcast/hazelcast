@@ -26,10 +26,11 @@ public final class ValidationUtil {
     private ValidationUtil() {
     }
 
-    public static void checkNotNull(Object argument, String message) {
+    public static <T> T checkNotNull(T argument, String message) {
         if (argument == null) {
             throw new NullPointerException(message);
         }
+        return argument;
     }
 
     public static String hasText(String argument, String argName) {
