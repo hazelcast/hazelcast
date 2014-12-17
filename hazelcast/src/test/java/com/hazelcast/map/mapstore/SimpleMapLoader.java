@@ -1,13 +1,13 @@
 package com.hazelcast.map.mapstore;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MapLoader;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoader;
 
 public class SimpleMapLoader implements MapLoader {
 
@@ -43,7 +43,7 @@ public class SimpleMapLoader implements MapLoader {
     }
 
     @Override
-    public Set loadAllKeys() {
+    public Iterable loadAllKeys() {
 
         Set keys = new HashSet();
         for (int i = 0; i < size; i++) {
