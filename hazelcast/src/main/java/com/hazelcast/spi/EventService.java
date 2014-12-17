@@ -24,25 +24,25 @@ import java.util.Collection;
 public interface EventService {
 
     /**
-     * Returns event thread count.
+     * Returns the event thread count.
      *
      * @see com.hazelcast.instance.GroupProperties#PROP_EVENT_THREAD_COUNT
-     * @return event thread count
+     * @return the event thread count
      */
     int getEventThreadCount();
 
     /**
-     * Returns queue capacity per event thread.
+     * Returns the queue capacity per event thread.
      *
      * @see com.hazelcast.instance.GroupProperties#PROP_EVENT_QUEUE_CAPACITY
-     * @return queue capacity per event thread
+     * @return the queue capacity per event thread
      */
     int getEventQueueCapacity();
 
     /**
-     * Returns current total event queue size.
+     * Returns the current total event queue size.
      *
-     * @return total event queue size
+     * @return the current total event queue size
      */
     int getEventQueueSize();
 
@@ -57,7 +57,7 @@ public interface EventService {
     EventRegistration registerLocalListener(String serviceName, String topic, Object listener);
 
     /**
-     * Registers a local only listener.
+     * Registers a local only listener with an event filter.
      *
      * @param serviceName service name
      * @param topic topic name
@@ -78,7 +78,7 @@ public interface EventService {
     EventRegistration registerListener(String serviceName, String topic, Object listener);
 
     /**
-     * Registers a listener on all cluster nodes.
+     * Registers a listener on all cluster nodes with an event filter.
      *
      * @param serviceName service name
      * @param topic topic name
@@ -89,7 +89,7 @@ public interface EventService {
     EventRegistration registerListener(String serviceName, String topic, EventFilter filter, Object listener);
 
     /**
-     * Deregisters a listener with given registration id.
+     * Deregisters a listener with the given registration id.
      *
      * @param serviceName service name
      * @param topic topic name
@@ -129,7 +129,7 @@ public interface EventService {
     EventRegistration[] getRegistrationsAsArray(String serviceName, String topic);
 
     /**
-     * Returns true if a listener is registered with specified service name and topic.
+     * Returns true if a listener is registered with the specified service name and topic.
      *
      * @param serviceName service name
      * @param topic topic name
@@ -139,7 +139,7 @@ public interface EventService {
     boolean hasEventRegistration(String serviceName, String topic);
 
     /**
-     * Publishes an event for all event registrations belonging to specified service name and topic.
+     * Publishes an event for all event registrations belonging to the specified service name and topic.
      *
      * @param serviceName service name
      * @param topic topic name
@@ -177,7 +177,7 @@ public interface EventService {
      * to pick event thread.
      * </p>
      *
-     * @param callback callback to execute
+     * @param callback the callback to execute on a random event thread
      * @see com.hazelcast.util.executor.StripedRunnable
      */
     void executeEventCallback(Runnable callback);
