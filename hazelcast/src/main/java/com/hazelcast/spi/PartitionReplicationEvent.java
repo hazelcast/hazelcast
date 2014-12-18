@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.EventObject;
 
 /**
- * An event send to {@link com.hazelcast.spi.MigrationAwareService} when partitions changes happen.
+ * An event send to {@link com.hazelcast.spi.MigrationAwareService} when partition changes happen.
  */
 public class PartitionReplicationEvent extends EventObject {
 
@@ -49,7 +49,7 @@ public class PartitionReplicationEvent extends EventObject {
     }
 
     /**
-     * The replica index. 0 is priimary, the rest is backup.
+     * The replica index. 0 is primary, the rest is backup.
      *
      * @return the replica index
      */
