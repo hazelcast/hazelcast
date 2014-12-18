@@ -26,17 +26,23 @@ public interface MembershipAwareService {
 
     /**
      * Invoked when a new member is added to the cluster.
+     *
+     * @param event the event for a new member added to the cluster
      */
     void memberAdded(MembershipServiceEvent event);
 
     /**
      * Invoked when an existing member leaves the cluster.
+     *
+     * @param event the event for an existing member leaving to the cluster
      */
     void memberRemoved(MembershipServiceEvent event);
 
 
     /**
      * Invoked when a member attribute is changed.
+     *
+     * @param event the event for a member attribute being changed
      */
     void memberAttributeChanged(MemberAttributeServiceEvent event);
 
