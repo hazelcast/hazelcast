@@ -38,22 +38,8 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
     }
 
     @Override
-    protected Predicate getPredicate() {
-        return predicate;
-    }
-
     public int getClassId() {
         return MapPortableHook.QUERY;
-    }
-
-    protected void writePortableInner(PortableWriter writer) throws IOException {
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(predicate);
-    }
-
-    protected void readPortableInner(PortableReader reader) throws IOException {
-        final ObjectDataInput in = reader.getRawDataInput();
-        predicate = in.readObject();
     }
 
     @Override
@@ -71,5 +57,22 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
     @Override
     public Object[] getParameters() {
         return new Object[]{predicate};
+    }
+
+    @Override
+    protected Predicate getPredicate() {
+        return predicate;
+    }
+
+    @Override
+    protected void writePortableInner(PortableWriter writer) throws IOException {
+        final ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeObject(predicate);
+    }
+
+    @Override
+    protected void readPortableInner(PortableReader reader) throws IOException {
+        final ObjectDataInput in = reader.getRawDataInput();
+        predicate = in.readObject();
     }
 }
