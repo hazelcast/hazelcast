@@ -21,8 +21,18 @@ package com.hazelcast.spi;
  */
 public interface WaitNotifyKey {
 
+    /**
+     * Returns the service name of the wait notify object for this key.
+     *
+     * @return the service name of the wait notify object for this key
+     */
     String getServiceName();
 
+    /**
+     * Returns the object name of the wait notify object for this key.
+     *
+     * @return the object name of the wait notify object for this key
+     */
     String getObjectName();
 
 }
