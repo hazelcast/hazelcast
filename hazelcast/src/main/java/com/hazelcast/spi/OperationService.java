@@ -26,9 +26,9 @@ import java.util.Map;
  * The OperationService is responsible for executing operations.
  * <p/>
  * A single operation can be executed locally using {@link #runOperationOnCallingThread(Operation)}
- * and {@link #executeOperation(Operation)}. Or it can executed remotely using the one of the send methods.
+ * and {@link #executeOperation(Operation)}. Or it can executed remotely using one of the send methods.
  * <p/>
- * It also is possible to execute multiple operation one multiple partitions using one of the invoke methods.
+ * It also is possible to execute multiple operation on multiple partitions using one of the invoke methods.
  *
  */
 public interface OperationService {
@@ -50,32 +50,32 @@ public interface OperationService {
     long getExecutedOperationCount();
 
     /**
-     * Dumps all kinds of metrics, e.g. performance. This can be used for performance analysis. In the future we'll have a
-     * more formal (e.g map with key/value pairs) information.
+     * Dumps all kinds of metrics: for example, performance. This can be used for performance analysis. In the future we'll have a
+     * more formal (such as map with key/value pairs) information.
      */
     void dumpPerformanceMetrics(StringBuffer sb);
 
     /**
-     * Runs operation in calling thread.
+     * Runs an operation in the calling thread.
      *
-     * @param op the operation to execute.
+     * @param op the operation to execute in the calling thread
      */
     void runOperationOnCallingThread(Operation op);
 
     /**
-     * Executes operation in operation executor pool.
+     * Executes an operation in the operation executor pool.
      *
-     * @param op the operation to execute.
+     * @param op the operation to execute in the operation executor pool.
      */
     void executeOperation(Operation op);
 
     /**
-     * Returns true if given operation is allowed to run on calling thread, false otherwise.
-     * If this method returns true, then operation can be executed using {@link #runOperationOnCallingThread(Operation)}
+     * Returns true if the given operation is allowed to run on the calling thread, false otherwise.
+     * If this method returns true, then the operation can be executed using {@link #runOperationOnCallingThread(Operation)}
      * method, otherwise {@link #executeOperation(Operation)} should be used.
      *
      * @param op the operation to check.
-     * @return true if operation is allowed to run on calling thread, false otherwise.
+     * @return true if the operation is allowed to run on the calling thread, false otherwise.
      */
     boolean isAllowedToRunOnCallingThread(Operation op);
 
@@ -93,8 +93,8 @@ public interface OperationService {
      * This method blocks until the operation completes.
      *
      * @param serviceName      the name of the service.
-     * @param operationFactory the factory responsible creating operations
-     * @return a Map with partitionId as key and outcome of the operation as value.
+     * @param operationFactory the factory responsible for creating operations
+     * @return a Map with partitionId as key and the outcome of the operation as value.
      * @throws Exception
      */
     Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
@@ -106,9 +106,9 @@ public interface OperationService {
      * This method blocks until all operations complete.
      *
      * @param serviceName      the name of the service
-     * @param operationFactory the factory responsible creating operations
+     * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
-     * @return a Map with partitionId as key and outcome of the operation as value.
+     * @return a Map with partitionId as key and the outcome of the operation as value.
      * @throws Exception
      */
     Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
@@ -121,7 +121,7 @@ public interface OperationService {
      *
      * @param op     the operation to send and execute.
      * @param target the address of that target member.
-     * @return true if send successfully, false otherwise.
+     * @return true if send is successful, false otherwise.
      */
     boolean send(Operation op, Address target);
 
@@ -130,7 +130,7 @@ public interface OperationService {
      *
      * @param response the response to send.
      * @param target   the address of the target machine
-     * @return true if send successfully, false otherwise.
+     * @return true if send is successful, false otherwise.
      */
     boolean send(Response response, Address target);
 }
