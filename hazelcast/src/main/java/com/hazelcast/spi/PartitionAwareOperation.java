@@ -24,6 +24,11 @@ package com.hazelcast.spi;
  */
 public interface PartitionAwareOperation {
 
+    /**
+     * Gets the partition id.
+     *
+     * @return the partition id
+     */
     int getPartitionId();
 
 }
