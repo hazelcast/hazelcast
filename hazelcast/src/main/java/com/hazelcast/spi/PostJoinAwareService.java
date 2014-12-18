@@ -27,6 +27,7 @@ public interface PostJoinAwareService {
      * no database interaction!
      * <p>
      * Post join operations should return response, at least a null response.
+     * @return a response from the post join operation. Can be null.
      */
     Operation getPostJoinOperation();
 
