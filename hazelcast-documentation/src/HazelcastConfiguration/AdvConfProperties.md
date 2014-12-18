@@ -36,7 +36,6 @@ Below table lists the advanced configuration properties with their descriptions 
 
 Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
-`hazelcast.application.validation.token`|
 `hazelcast.backpressure.enabled`|false|bool|Enable back pressure.
 `hazelcast.backpressure.syncwindow`|1000|string|Used when back pressure is enabled. The larger the sync window value, the less frequent a asynchronous backup is converted to a sync backup.
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
@@ -50,6 +49,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.connection.monitor.interval` | 100 | int  |   Minimum interval to consider a connection error as critical in milliseconds.
 `hazelcast.connection.monitor.max.faults` | 3 | int  |   Maximum IO error count before disconnecting from a node.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
+`hazelcast.enterprise.wanrep.queuesize`|100000|int| Queue size for the WAN replication.
 `hazelcast.event.queue.capacity` | 1000000 | int | Capacity of internal event queue.
 `hazelcast.event.queue.timeout.millis` | 250 | int | Timeout to enqueue events to event queue.
 `hazelcast.event.thread.count` | 5 | int | Number of event handler threads.
@@ -63,6 +63,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.initial.min.cluster.size` | 0 | int  |   Initial expected cluster size to wait before node to start completely.
 `hazelcast.initial.wait.seconds` | 0 | int  |   Initial time in seconds to wait before node to start completely.
 `hazelcast.io.thread.count` | 3 | int | Number of input and output threads.
+`hazelcast.jcache.provider.type`||string|Type of the JCache provider. Values can be `client` or `server`.
 `hazelcast.jmx` | false | bool  |   Enable [JMX](#monitoring-with-jmx) agent.
 `hazelcast.jmx.detailed` | false | bool  |   Enable detailed views on [JMX](#monitoring-with-jmx).
 `hazelcast.logging.type` | jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
@@ -91,6 +92,8 @@ Property Name | Default Value | Type | Description
 `hazelcast.partition.migration.zip.enabled`|true|bool|Enable compression during partition migration.
 `hazelcast.partition.table.send.interval`|15|int|Interval for publishing partition table periodically to all cluster members.
 `hazelcast.partitioning.strategy.class`|null|string|Class name implementing `com.hazelcast.core.PartitioningStrategy`, which defines key to partition mapping.
+`hazelcast.performance.monitoring.enabled`||bool|Enable the performance monitor which is a tool enabling you to see internal performance metrics. These metrics are written to the log file.
+`hazelcast.performance.monitoring.delay.seconds`||int| The delay in seconds between monitoring of the performance.
 `hazelcast.prefer.ipv4.stack` | true | bool  |   Prefer Ipv4 network interface when picking a local address.
 `hazelcast.rest.enabled` | true | bool |   Enable [REST](#rest-client) client request listener service.
 `hazelcast.shutdownhook.enabled` | true | bool  | Enable Hazelcast shutdownhook thread.
