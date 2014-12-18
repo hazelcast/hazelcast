@@ -44,12 +44,12 @@ public abstract class InvocationBuilder {
     public static final int DEFAULT_TRY_COUNT = 250;
 
     /**
-     * Default try pause in millis. So if a call is retried, then perhaps a delay is needed.
+     * Default try pause in milliseconds. If a call is retried, then perhaps a delay is needed.
      */
     public static final long DEFAULT_TRY_PAUSE_MILLIS = 500;
 
     /**
-     * If the result of an operation automatically should be deserialized to an object.
+     * True that the result of an operation automatically should be deserialized to an object.
      */
     public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
@@ -73,7 +73,7 @@ public abstract class InvocationBuilder {
      * @param nodeEngine  the nodeEngine
      * @param serviceName the name of the service
      * @param op          the operation to execute
-     * @param partitionId the id of the partition to execute the operation on
+     * @param partitionId the id of the partition upon which to execute the operation
      * @param target      the target machine. Either the partitionId or the target needs to be set.
      */
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
@@ -87,8 +87,8 @@ public abstract class InvocationBuilder {
 
     /**
      * Gets the name of the Executor to use. This functionality is useful if you want to customize which
-     * executor is going to run an operation. By default you don't need to configure anything, but in some
-     * case, for example map reduce logic, where you don't want to hog the partition threads, you could
+     * executor is going to run an operation. By default, you don't need to configure anything. But in some
+     * cases, such as map reduce logic where you don't want to hog the partition threads, you could
      * offload to another executor.
      *
      * @return the name of the executor. Returns null if no explicit executor has been configured.
@@ -109,9 +109,9 @@ public abstract class InvocationBuilder {
     }
 
     /**
-     * Sets the replicaIndex
+     * Sets the replicaIndex.
      *
-     * @param replicaIndex
+     * @param replicaIndex the replica index
      * @return the InvocationBuilder
      * @throws java.lang.IllegalArgumentException if replicaIndex smaller than 0 or larger than the max replica count.
      */
@@ -125,9 +125,9 @@ public abstract class InvocationBuilder {
     }
 
     /**
-     * Checks if the Future should automatically deserialize the result. In most cases you don't want get
+     * Checks if the Future should automatically deserialize the result. In most cases, you don't want
      * {@link com.hazelcast.nio.serialization.Data} to be returned, but the deserialized object. But in some
-     * cases you want to get the raw Data object.
+     * cases, you want to get the raw Data object.
      * <p/>
      * Defaults to true.
      *
@@ -152,7 +152,7 @@ public abstract class InvocationBuilder {
     /**
      * Sets the try count; the number of times this operation can be retried.
      *
-     * @param tryCount the try count.
+     * @param tryCount the try count; the number of times this operation can be retried
      * @return the InvocationBuilder
      */
     public InvocationBuilder setTryCount(int tryCount) {
@@ -161,9 +161,9 @@ public abstract class InvocationBuilder {
     }
 
     /**
-     * Sets the pause time in millis.
+     * Sets the pause time in milliseconds.
      *
-     * @param tryPauseMillis the pause time in millis.
+     * @param tryPauseMillis the pause time in milliseconds.
      * @return the InvocationBuilder
      */
     public InvocationBuilder setTryPauseMillis(long tryPauseMillis) {
@@ -176,30 +176,65 @@ public abstract class InvocationBuilder {
         return this;
     }
 
+    /**
+     * Gets the name of the service.
+     *
+     * @return the name of the service
+     */
     public String getServiceName() {
         return serviceName;
     }
 
+    /**
+     * Gets the operation to execute.
+     * @return the operation to execute
+     */
     public Operation getOp() {
         return op;
     }
+
+    /**
+     * Gets the replicaIndex.
+     *
+     * @return the replicaIndex
+      */
 
     public int getReplicaIndex() {
         return replicaIndex;
     }
 
+    /**
+     * Gets the try count; the number of times this operation can be retried.
+     *
+     * @return the try count; the number of times this operation can be retried
+     */
     public int getTryCount() {
         return tryCount;
     }
 
+    /**
+     * Gets the pause time in milliseconds.
+     *
+     * @return the pause time in milliseconds
+     */
     public long getTryPauseMillis() {
         return tryPauseMillis;
     }
 
+    /**
+     * Returns the target machine.
+     *
+     * @return  the target machine.
+     */
     public Address getTarget() {
         return target;
     }
 
+    /**
+     * Returns the partition id.
+     *
+     * @return  the partition id.
+     */
     public int getPartitionId() {
         return partitionId;
     }
