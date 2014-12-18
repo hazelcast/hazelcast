@@ -133,6 +133,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final long maxWaitMillisBeforeJoin;
 
+    private final long heartbeatInterval;
+
     private final long maxNoHeartbeatMillis;
 
     private final long maxNoMasterConfirmationMillis;
@@ -154,11 +156,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
-    private long heartbeatInterval;
-
     private volatile boolean joinInProgress = false;
 
-    private long lastHeartBeat = 0L;
+    private volatile long lastHeartBeat = 0L;
 
     private long timeToStartJoin = 0;
 
@@ -181,6 +181,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         setMembers(thisMember);
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitMillisBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
+        long heartbeatIntervalSeconds = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
+        heartbeatIntervalSeconds = heartbeatIntervalSeconds <= 0 ? 1 : heartbeatIntervalSeconds;
+        heartbeatInterval = heartbeatIntervalSeconds;
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         maxNoMasterConfirmationMillis = node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS.getInteger() * 1000L;
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
@@ -202,8 +205,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
-        heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
-        heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
                 heartBeater();
@@ -308,6 +309,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         sdf.format(new Date(now)) + " since last heartbeat (" + String.format("%+d", clockJump) + "ms).");
             }
             clockJump = Math.max(0L, clockJump);
+
+            if (clockJump >= maxNoMasterConfirmationMillis / 2) {
+                logger.warning(
+                        "Resetting master confirmation timestamps because of huge system clock jump! " + "Clock-Jump: "
+                                + clockJump + "ms, Master-Confirmation-Timeout: " + maxNoMasterConfirmationMillis
+                                + "ms.");
+                resetMemberMasterConfirmations();
+            }
         }
         lastHeartBeat = now;
 
@@ -1291,7 +1300,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public void setMasterTime(long masterTime) {
         long diff = masterTime - Clock.currentTimeMillis();
-        logger.finest("Setting cluster time diff to " + diff + "ms.");
+        if (logger.isFinestEnabled()) {
+            logger.finest("Setting cluster time diff to " + diff + "ms.");
+        }
         this.clusterTimeDiff = diff;
     }
 
