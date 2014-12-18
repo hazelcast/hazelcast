@@ -36,10 +36,20 @@ public class PartitionMigrationEvent extends EventObject {
         this.partitionId = partitionId;
     }
 
+    /**
+     * Gets the partition migration endpoint.
+     *
+     * @return the partition migration endpoint
+     */
     public MigrationEndpoint getMigrationEndpoint() {
         return migrationEndpoint;
     }
 
+    /**
+     * Gets the partition id.
+     *
+     * @return the partition id
+     */
     public int getPartitionId() {
         return partitionId;
     }
