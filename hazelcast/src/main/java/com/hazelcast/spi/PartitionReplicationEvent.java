@@ -40,7 +40,7 @@ public class PartitionReplicationEvent extends EventObject {
     }
 
     /**
-     * The id of the partition.
+     * Gets the id of the partition.
      *
      * @return the id of the partition
      */
@@ -49,7 +49,7 @@ public class PartitionReplicationEvent extends EventObject {
     }
 
     /**
-     * The replica index. 0 is primary, the rest is backup.
+     * Gets the replica index. 0 is primary, the rest is backup.
      *
      * @return the replica index
      */

@@ -26,6 +26,11 @@ import com.hazelcast.core.DistributedObject;
  */
 public interface RemoteService {
 
+    /**
+     * The id of the partition.
+     *
+     * @return the id of the partition
+     */
     DistributedObject createDistributedObject(String objectName);
 
     void destroyDistributedObject(String objectName);
