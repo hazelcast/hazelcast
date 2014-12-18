@@ -27,8 +27,8 @@ package com.hazelcast.spi;
 public interface SplitBrainHandlerService {
 
     /**
-     * when the 2 separate clusters merge (resolve a split brain), this method is called to return
-     * a Runnable that will merge the clusters
+     * When the 2 separate clusters merge (resolve a split brain), this method is called to return
+     * a Runnable that will merge the clusters.
      *
      * @return a Runnable that will merge the clusters
      */
