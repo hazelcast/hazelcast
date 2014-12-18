@@ -34,7 +34,7 @@ public interface MembershipAwareService {
     /**
      * Invoked when an existing member leaves the cluster.
      *
-     * @param event the event for an existing member leaving to the cluster
+     * @param event the event for an existing member leaving the cluster
      */
     void memberRemoved(MembershipServiceEvent event);
 
