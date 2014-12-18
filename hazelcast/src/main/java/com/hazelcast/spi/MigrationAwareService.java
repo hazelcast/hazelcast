@@ -17,8 +17,8 @@
 package com.hazelcast.spi;
 
 /**
- * An interface that can be implemented by SPI services to get notified of partition changes. E.g. if a
- * {@link com.hazelcast.map.impl.MapService} that start moving its data around because partitions are moving
+ * An interface that can be implemented by SPI services to get notified of partition changes; for example, if a
+ * {@link com.hazelcast.map.impl.MapService} starts moving its data around because partitions are moving
  * to a different machine.
  */
 public interface MigrationAwareService {
