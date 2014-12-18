@@ -39,6 +39,7 @@ public abstract class BinaryClassDefinition implements ClassDefinition {
         return version;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
     public final byte[] getBinary() {
         return binary;
     }

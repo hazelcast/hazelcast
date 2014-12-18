@@ -73,10 +73,12 @@ import com.hazelcast.util.executor.ExecutorType;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.ConnectException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -114,6 +116,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private static final String EXECUTOR_NAME = "hz:cluster";
     private static final int HEARTBEAT_INTERVAL = 500;
+    private static final long HEARTBEAT_LOG_THRESHOLD = 10000L;
     private static final int PING_INTERVAL = 5000;
 
     private final Node node;
@@ -151,7 +154,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final AtomicBoolean preparingToMerge = new AtomicBoolean(false);
 
+    private long heartbeatInterval;
+
     private volatile boolean joinInProgress = false;
+
+    private long lastHeartBeat = 0L;
 
     private long timeToStartJoin = 0;
 
@@ -195,7 +202,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node),
                 mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
 
-        long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
+        heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
@@ -287,25 +294,41 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
 
+        long now = Clock.currentTimeMillis();
+
+        /*
+         * Compensate for any abrupt jumps forward in the system clock.
+         */
+        long clockJump = 0L;
+        if (lastHeartBeat != 0L) {
+            clockJump = now - lastHeartBeat - TimeUnit.SECONDS.toMillis(heartbeatInterval);
+            if (Math.abs(clockJump) > HEARTBEAT_LOG_THRESHOLD) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+                logger.info("System clock apparently jumped from " + sdf.format(new Date(lastHeartBeat)) + " to " +
+                        sdf.format(new Date(now)) + " since last heartbeat (" + String.format("%+d", clockJump) + "ms).");
+            }
+            clockJump = Math.max(0L, clockJump);
+        }
+        lastHeartBeat = now;
+
         if (node.isMaster()) {
-            heartBeaterMaster();
+            heartBeaterMaster(now, clockJump);
         } else {
-            heartBeaterSlave();
+            heartBeaterSlave(now, clockJump);
         }
     }
 
-    private void heartBeaterMaster() {
-        long now = Clock.currentTimeMillis();
+    private void heartBeaterMaster(long now, long clockJump) {
         Collection<MemberImpl> members = getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
                     logIfConnectionToEndpointIsMissing(now, member);
-                    if (removeMemberIfNotHeartBeating(now, member)) {
+                    if (removeMemberIfNotHeartBeating(now - clockJump, member)) {
                         continue;
                     }
 
-                    if (removeMemberIfMasterConfirmationExpired(now, member)) {
+                    if (removeMemberIfMasterConfirmationExpired(now - clockJump, member)) {
                         continue;
                     }
 
@@ -340,8 +363,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return false;
     }
 
-    private void heartBeaterSlave() {
-        long now = Clock.currentTimeMillis();
+    private void heartBeaterSlave(long now, long clockJump) {
         Collection<MemberImpl> members = getMemberList();
 
         for (MemberImpl member : members) {
@@ -350,7 +372,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     logIfConnectionToEndpointIsMissing(now, member);
 
                     if (isMaster(member)) {
-                        if (removeMemberIfNotHeartBeating(now, member)) {
+                        if (removeMemberIfNotHeartBeating(now - clockJump, member)) {
                             continue;
                         }
                     }
@@ -1269,14 +1291,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public void setMasterTime(long masterTime) {
         long diff = masterTime - Clock.currentTimeMillis();
-        if (Math.abs(diff) < Math.abs(clusterTimeDiff)) {
-            this.clusterTimeDiff = diff;
-        }
+        logger.finest("Setting cluster time diff to " + diff + "ms.");
+        this.clusterTimeDiff = diff;
     }
 
-    //todo: remove since unused?
-    public long getClusterTimeFor(long localTime) {
-        return localTime + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
+    public long getClusterTimeDiff() {
+        return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;
     }
 
     public String addMembershipListener(MembershipListener listener) {
