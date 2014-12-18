@@ -42,7 +42,7 @@ cacheConfig.setReadThrough( true ).setWriteThrough( true );
            .setAsyncBackupCount( "0" );
            
 CacheEvictionConfig cacheEvictionConfig = cacheConfig.getEvictionConfig();
-cacheEvictionConfig.setSize( "10000" ).setMaxSizePolicy( "ENTRY_COUNT" );
+cacheEvictionConfig.setSize( "10000" ).setMaxSizePolicy( CacheMaxSizePolicy.ENTRY_COUNT );
 ```
    
 
