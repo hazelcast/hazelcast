@@ -21,5 +21,10 @@ package com.hazelcast.spi;
  */
 public interface TraceableOperation {
 
+    /**
+     * Returns the traceable identifier for this operation.
+     *
+     * @return the traceable identifier for this operation
+     */
     Object getTraceIdentifier();
 }
