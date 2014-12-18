@@ -56,6 +56,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -87,11 +91,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 
 /**
@@ -1486,11 +1485,29 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapStoreWrapper mapStoreWrapper = mapContainer.getMapStoreContext().getMapStoreWrapper();
         Iterator keys = mapStoreWrapper.loadAllKeys().iterator();
 
-        assertEquals("my-prop-1", keys.next());
-        assertEquals("my-prop-2", keys.next());
+        final Set<String> loadedKeySet = loadedKeySet(keys);
+        final Set<String> expectedKeySet = expectedKeySet();
+
+        assertEquals(expectedKeySet, loadedKeySet);
 
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));
         assertEquals("foo", mapStoreWrapper.load("my-prop-2"));
+    }
+
+    private Set<String> expectedKeySet() {
+        final Set<String> expectedKeySet = new HashSet<String>();
+        expectedKeySet.add("my-prop-1");
+        expectedKeySet.add("my-prop-2");
+        return expectedKeySet;
+    }
+
+    private Set<String> loadedKeySet(Iterator keys) {
+        final Set<String> keySet = new HashSet<String>();
+        while (keys != null && keys.hasNext()) {
+            final String key = (String) keys.next();
+            keySet.add(key);
+        }
+        return keySet;
     }
 
     @Test(timeout = 120000)
