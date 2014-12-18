@@ -23,14 +23,14 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
 
 /**
- * Provides a context to access transactional data-structures like the {@link TransactionalMap}.
+ * Provides a context to access transactional data-structures, like the {@link TransactionalMap}.
  */
 public interface TransactionalTaskContext {
 
     /**
      * Returns the transactional distributed map instance with the specified name.
      *
-     * @param name name of the distributed map
+     * @param name name of the distributed transactional map
      * @return transactional distributed map instance with the specified name
      */
     <K, V> TransactionalMap<K, V> getMap(String name);
@@ -38,7 +38,7 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional queue instance with the specified name.
      *
-     * @param name name of the queue
+     * @param name name of the transactional queue
      * @return transactional queue instance with the specified name
      */
     <E> TransactionalQueue<E> getQueue(String name);
@@ -46,7 +46,7 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional multimap instance with the specified name.
      *
-     * @param name name of the multimap
+     * @param name name of the transactional multimap
      * @return transactional multimap instance with the specified name
      */
     <K, V> TransactionalMultiMap<K, V> getMultiMap(String name);
@@ -54,7 +54,7 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional list instance with the specified name.
      *
-     * @param name name of the list
+     * @param name name of the transactional list
      * @return transactional list instance with the specified name
      */
     <E> TransactionalList<E> getList(String name);
@@ -62,11 +62,18 @@ public interface TransactionalTaskContext {
     /**
      * Returns the transactional set instance with the specified name.
      *
-     * @param name name of the set
+     * @param name name of the transactional set
      * @return transactional set instance with the specified name
      */
     <E> TransactionalSet<E> getSet(String name);
 
 
+    /**
+     * Returns the transactional object instance with the specified name and service name.
+     *
+     * @param serviceName service name for the transactional object instance
+     * @param name name of the transactional object instance
+     * @return transactional object instance with the specified name
+     */
     <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name);
 }
