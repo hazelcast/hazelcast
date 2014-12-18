@@ -33,7 +33,7 @@ public interface ManagedService {
     /**
      * Initializes this ManagedService
      *
-     * @param nodeEngine the NodeEngine this ManagedService belongs to.
+     * @param nodeEngine the NodeEngine that this ManagedService belongs to.
      * @param properties the Properties. Can be used to pass settings to the service.
      */
     void init(NodeEngine nodeEngine, Properties properties);
@@ -50,7 +50,7 @@ public interface ManagedService {
      *
      * todo: what is the purpose of the terminate variable.
      *
-     * @param terminate
+     * @param terminate true to shut down the ManagedService
      */
     void shutdown(boolean terminate);
 }
