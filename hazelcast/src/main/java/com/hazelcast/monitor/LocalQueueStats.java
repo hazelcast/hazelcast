@@ -24,35 +24,35 @@ public interface LocalQueueStats extends LocalInstanceStats {
     /**
      * Returns the number of owned items in this member.
      *
-     * @return number of owned items.
+     * @return number of owned items in this member.
      */
     long getOwnedItemCount();
 
     /**
      * Returns the number of backup items in this member.
      *
-     * @return number of backup items.
+     * @return number of backup items in this member.
      */
     long getBackupItemCount();
 
     /**
      * Returns the min age of the items in this member.
      *
-     * @return min age
+     * @return min age of the items in this member
      */
     long getMinAge();
 
     /**
      * Returns the max age of the items in this member.
      *
-     * @return max age
+     * @return max age of the items in this member
      */
     long getMaxAge();
 
     /**
      * Returns the average age of the items in this member.
      *
-     * @return average age
+     * @return average age of the items in this member
      */
     long getAvgAge();
 
@@ -62,7 +62,7 @@ public interface LocalQueueStats extends LocalInstanceStats {
      * #getRejectedOfferOperationCount can be used
      * to get the rejected offers.
      *
-     * @return number offer/put/add operations
+     * @return number of offer/put/add operations
      */
     long getOfferOperationCount();
 
