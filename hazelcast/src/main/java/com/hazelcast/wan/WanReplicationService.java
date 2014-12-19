@@ -34,8 +34,8 @@ public interface WanReplicationService
     String SERVICE_NAME = "hz:core:wanReplicationService";
 
     /**
-     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name, if
-     * already existing returns the previous instance.
+     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name. If
+     * the name already exists, returns the previous instance.
      *
      * @param name name of the WAN replication configuration
      * @return instance of the corresponding replication publisher
@@ -52,7 +52,7 @@ public interface WanReplicationService
     void handleEvent(Packet packet);
 
     /**
-     * Starts the shutdown process of the WAN replication service
+     * Starts the shutdown process of the WAN replication service.
      */
     void shutdown();
 }
