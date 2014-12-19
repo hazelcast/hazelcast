@@ -36,16 +36,16 @@ public interface LocalQueueStats extends LocalInstanceStats {
     long getBackupItemCount();
 
     /**
-     * Returns the min age of the items in this member.
+     * Returns the minimum age of the items in this member.
      *
-     * @return min age of the items in this member
+     * @return minimum age of the items in this member
      */
     long getMinAge();
 
     /**
-     * Returns the max age of the items in this member.
+     * Returns the maximum age of the items in this member.
      *
-     * @return max age of the items in this member
+     * @return maximum age of the items in this member
      */
     long getMaxAge();
 
