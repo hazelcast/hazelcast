@@ -92,15 +92,15 @@ public abstract class Combiner<ValueIn, ValueOut> {
      * This method is called to supply values to be combined into an intermediate result chunk.<br/>
      * The combine method might be called multiple times so the combined chunk needs to be hold
      * internally in a member state of the Combiner.<br/>
-     * After this method is called you need to reset the internal state to prepare combining of
+     * After this method is called you need to reset the internal state to prepare for combining of
      * the next chunk.
      *
-     * @param value value to be reduced
+     * @param value value to be reduced (combined into an intermediate result chunk)
      */
     public abstract void combine(ValueIn value);
 
     /**
-     * Creates a chunk of {@link ValueOut} to be send to the {@link Reducer} for the according
+     * Creates a chunk of {@link ValueOut} to be sent to the {@link Reducer} for the according
      * key.
      *
      * @return chunk of intermediate data
@@ -108,16 +108,16 @@ public abstract class Combiner<ValueIn, ValueOut> {
     public abstract ValueOut finalizeChunk();
 
     /**
-     * This method is called always after a chunk of data is retrieved. It is used to reset
+     * This method is always called after a chunk of data is retrieved. It resets
      * the internal state of the Combiner. It is equivalent to resetting the state inside of
-     * {@link #finalizeChunk()} as with the last version of the API.
+     * {@link #finalizeChunk()}, as with the last version of the API.
      */
     public void reset() {
     }
 
     /**
-     * This method is called after mapping phase is over. It is intended to be overridden
-     * to cleanup internal state and free possible resources.
+     * This method is called after the mapping phase is over. It is intended to be overridden
+     * to clean up internal state and free possible resources.
      */
     public void finalizeCombine() {
     }
