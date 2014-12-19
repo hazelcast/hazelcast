@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import java.util.List;
 
 /**
- * This exception class is used to show stacktraces of multiple failed
+ * This exception class is used to show stack traces of multiple failed
  * remote operations at once. This can happen if the {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation}
  * fails to retrieve values for some reason.
  */
