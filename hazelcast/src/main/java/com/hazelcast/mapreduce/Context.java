@@ -33,8 +33,8 @@ public interface Context<K, V> {
      * Emits a key-value pair to the intermediate working space. The same key can be used multiple
      * times to collect values under the same key.
      *
-     * @param key   emitted key.
-     * @param value emitted value.
+     * @param key   emitted key to the intermediate working space.
+     * @param value emitted value to the intermediate working space.
      */
     void emit(K key, V value);
 
