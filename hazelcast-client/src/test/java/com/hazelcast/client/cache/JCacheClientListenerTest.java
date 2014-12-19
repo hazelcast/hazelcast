@@ -21,13 +21,11 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -52,8 +50,8 @@ public class JCacheClientListenerTest extends JCacheListenerTest {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1");
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
 
-        return HazelcastClientCachingProvider.createCachingProvider(client);
+        return HazelcastClientCachingProvider.createCachingProvider(hazelcastInstance);
     }
 }
