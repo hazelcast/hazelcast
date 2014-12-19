@@ -39,7 +39,7 @@ public interface CombinerFactory<KeyIn, ValueIn, ValueOut>
     /**
      * Build a new {@link Combiner} instance specific to the supplied key.
      *
-     * @param key key the Combiner is build for
+     * @param key key that the new Combiner is build for
      * @return a Combiner instance specific for the given key
      */
     Combiner<ValueIn, ValueOut> newCombiner(KeyIn key);
