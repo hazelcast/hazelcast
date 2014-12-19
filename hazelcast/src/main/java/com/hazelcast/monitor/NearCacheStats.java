@@ -26,21 +26,21 @@ public interface NearCacheStats extends LocalInstanceStats {
     /**
      * Returns the number of hits (reads) of the locally owned entries.
      *
-     * @return number of hits (reads).
+     * @return number of hits (reads) of the locally owned entries.
      */
     long getHits();
 
     /**
-     * Returns the number of misses  of the locally owned entries.
+     * Returns the number of misses of the locally owned entries.
      *
-     * @return number of misses.
+     * @return number of misses of the locally owned entries.
      */
     long getMisses();
 
     /**
-     * Returns the hit/miss ratio  of the locally owned entries.
+     * Returns the hit/miss ratio of the locally owned entries.
      *
-     * @return hit/miss ratio.
+     * @return hit/miss ratio of the locally owned entries.
      */
     double getRatio();
 }
