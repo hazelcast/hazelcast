@@ -24,15 +24,15 @@ import com.hazelcast.spi.annotation.Beta;
  * Reducers may be distributed inside of the cluster but there is always only one Reducer
  * per key.
  * <p/>
- * Reducers are always called in a thread-safe way however they may be moved from one thread to
+ * Reducers are always called in a thread-safe way. However, they may be moved from one thread to
  * another in the internal thread pool. As of version 3.3.3 the internal state is automatically
  * ensured to be visible according to the Java memory model by the framework. The previous
  * requirement for making fields volatile is dropped.
  * </p>
  * <p>
- * Due to the fact that there is only one Reducer per key mapped values needs to be
+ * Due to the fact that there is only one Reducer per key, mapped values needs to be
  * transmitted to one of the cluster nodes. To reduce the traffic costs between the
- * nodes a {@link Combiner} implementation can be added to the call which runs alongside
+ * nodes, a {@link Combiner} implementation can be added to the call which runs alongside
  * the mapper to pre-reduce mapped values into intermediate results.
  * </p>
  * <p>
@@ -64,7 +64,7 @@ public abstract class Reducer<ValueIn, ValueOut> {
 
     /**
      * This method is called before the first value is submitted to this Reducer instance.
-     * It can be used to setup any internal needed state before starting to reduce the
+     * It can be used to set up any internal needed state before starting to reduce the
      * actual values.
      */
     public void beginReduce() {
@@ -72,15 +72,15 @@ public abstract class Reducer<ValueIn, ValueOut> {
 
     /**
      * This method is called to supply values to be reduced into a final reduced result.<br/>
-     * The reduce method might be called multiple times so the eventually reduces value
-     * needs to be hold internally in a member state of the Reducer.
+     * The reduce method might be called multiple times so the eventually reduced value
+     * needs to be held internally in a member state of the Reducer.
      *
      * @param value value to be reduced
      */
     public abstract void reduce(ValueIn value);
 
     /**
-     * finalizeReduce is called as last step for a reducing phase per key and retrieved the
+     * finalizeReduce is called as last step for a reducing phase per key. It retrieves the
      * final reduced result.
      *
      * @return the final reduced result
