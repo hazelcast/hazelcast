@@ -21,7 +21,7 @@ import com.hazelcast.management.JsonSerializable;
 public interface LocalInstanceStats extends JsonSerializable {
 
     /**
-     * Fill a stat value with this if it's not available
+     * Fill a stat value with this if it is not available
      */
     long STAT_NOT_AVAILABLE = -99L;
 
