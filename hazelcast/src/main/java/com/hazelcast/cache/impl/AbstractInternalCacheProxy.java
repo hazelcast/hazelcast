@@ -32,6 +32,7 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -242,7 +243,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         return regs.remove(cacheEntryListenerConfiguration);
     }
 
-    public void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         final ICacheService service = getService();
         for (String regId : listenerRegistrations) {
             service.deregisterListener(nameWithPrefix, regId);
@@ -256,6 +257,20 @@ abstract class AbstractInternalCacheProxy<K, V>
 
         syncListenerRegistrations.clear();
         asyncListenerRegistrations.clear();
+        notifyAndClearSyncListenerLatches();
+    }
+
+    private void notifyAndClearSyncListenerLatches() {
+        // notify waiting sync listeners
+        Collection<CountDownLatch> latches = syncLocks.values();
+        Iterator<CountDownLatch> iterator = latches.iterator();
+        while (iterator.hasNext())  {
+            CountDownLatch latch = iterator.next();
+            iterator.remove();
+            while (latch.getCount() > 0) {
+                latch.countDown();
+            }
+        }
     }
 
     public void countDownCompletionLatch(int id) {
