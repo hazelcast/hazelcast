@@ -21,14 +21,14 @@ import com.hazelcast.spi.annotation.Beta;
 /**
  * This enum class is used to define how a map reduce job behaves
  * if the job owner recognizes a topology changed event.<br/>
- * When members are leaving the cluster it might happen to loose
+ * When members are leaving the cluster, it might lose
  * processed data chunks that were already send to the reducers
  * on the leaving node.<br/>
- * In addition to that on any topology change there is a redistribution
- * of the member assigned partitions which means that a map job might
- * have a problem to finish it's currently processed partition.<br/>
- * The default behavior is immediately cancelling the running task and
- * throwing an {@link TopologyChangedException} but it is possible
+ * Also, on any topology change, there is a redistribution
+ * of the member assigned partitions, which means that a map job might
+ * have a problem finishing its currently processed partition.<br/>
+ * The default behavior is to immediately cancel the running task and
+ * throw an {@link TopologyChangedException}, but it is possible
  * to submit the same job configuration again if
  * {@link com.hazelcast.mapreduce.JobTracker#getTrackableJob(String)}
  * returns null for the requested job id.
@@ -39,7 +39,7 @@ import com.hazelcast.spi.annotation.Beta;
 public enum TopologyChangedStrategy {
 
     /**
-     * Default behavior, the currently running job is cancelled
+     * Default behavior. The currently running job is cancelled
      * immediately on recognizing the topology changed. An
      * {@link TopologyChangedException} is thrown on the job owning
      * node.
@@ -51,7 +51,7 @@ public enum TopologyChangedStrategy {
      * reserved for later usage!</b><br/>
      * Some or all processed data and intermediate results are
      * discarded and the job is automatically restarted.<br/>
-     * Depending on the implementation the job might start from
+     * Depending on the implementation, the job might start from
      * an earlier reached safepoint and is not restarted at the
      * beginning.
      */
