@@ -19,12 +19,12 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * <p>The LifecycleMapper interface is a more sophisticated version of {@link Mapper} normally used for complexer
- * algorithms with a need of initialization and finalization.</p>
- * <p>The behavior is the same as for {@link Mapper} but {@link #initialize(Context)} is called before calling
+ * <p>The LifecycleMapper interface is a more sophisticated version of {@link Mapper} normally used for more complex
+ * algorithms with a need for initialization and finalization.</p>
+ * <p>The behavior is the same as for {@link Mapper}, but {@link #initialize(Context)} is called before calling
  * {@link #map(Object, Object, Context)} for the first time to prepare the mapper instance and maybe already
- * emit some values. After all mapping calls are finished {@link #finalized(Context)} is called and here is
- * also the possibility given to emit additional key-value pairs.</p>
+ * emit some values. After all mapping calls are finished, {@link #finalized(Context)} is called and here is
+ * another possibility to emit additional key-value pairs.</p>
  *
  * @param <KeyIn>    type of key used in the {@link KeyValueSource}
  * @param <ValueIn>  type of value used in the {@link KeyValueSource}
