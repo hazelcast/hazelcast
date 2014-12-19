@@ -38,11 +38,13 @@ Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
 `hazelcast.backpressure.enabled`|false|bool|Enable back pressure.
 `hazelcast.backpressure.syncwindow`|1000|string|Used when back pressure is enabled. The larger the sync window value, the less frequent a asynchronous backup is converted to a sync backup.
+`hazelcast.clientengine.thread.count`||int|Maximum number of threads to process non-partition-aware client requests, like `map.size()`, query, executor tasks, etc. Default count is 20 times number of cores.
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
 `hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
 `hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is not any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
 `hazelcast.client.max.failed.heartbeat.count`|3|string|When the count of failed heartbeats sent to members reaches this value, the cluster is deemed as dead by the client.
+`hazelcast.client.max.no.heartbeat.seconds`|300|int|Heartbeat timeout for client connections in seconds. When a client connection does not send any heartbeats in this period, client connection is closed explicitly. This is required to detect unalive/unresponsive clients and release their resources (locks, transactions, etc).
 `hazelcast.client.request.retry.count`|20|string|The retry count of the connection requests by the client to the members.
 `hazelcast.client.request.retry.wait.time`|250|string|The frequency of the connection retries.
 `hazelcast.connect.all.wait.seconds` | 120 | int | Timeout to connect all other cluster members when a member is joining to a cluster.
@@ -82,11 +84,13 @@ Property Name | Default Value | Type | Description
 `hazelcast.merge.first.run.delay.seconds` | 300 | int |   Initial run delay of [split brain/merge process](#network-partitioning-split-brain-syndrome) in seconds.
 `hazelcast.merge.next.run.delay.seconds` | 120 | int |   Run interval of [split brain/merge process](#network-partitioning-split-brain-syndrome) in seconds.
 `hazelcast.migration.min.delay.on.member.removed.seconds`|5|int|Minimum delay (in seconds) between detection of a member that has left and start of the rebalancing process.
+`hazelcast.operation.backup.timeout.millis`|5|int|Maximum time a caller to wait for backup responses of an operation. After this timeout, operation response will be returned to the caller even no backup response is received.
 `hazelcast.operation.call.timeout.millis`| 60000 | int | Timeout to wait for a response when a remote call is sent, in milliseconds.
 `hazelcast.operation.generic.thread.count` | -1 | int | Number of generic operation handler threads. `-1` means CPU core count x 2.
 `hazelcast.operation.thread.count` | -1 | int | Number of partition based operation handler threads. `-1` means CPU core count x 2.
 `hazelcast.partition.backup.sync.interval`|30|int|Interval for syncing backup replicas.
 `hazelcast.partition.count` | 271 | int  |   Total partition count.
+`hazelcast.partition.max.parallel.replications`|5|int|Maximum number of parallel partition backup replication operations per node. When a partition backup ownership changes or a backup inconsistency is detected, the nodes start to sync their backup partitions. This parameter limits the maximum running replication operations in parallel.
 `hazelcast.partition.migration.interval` | 0 | int |   Interval to run partition migration tasks in seconds.
 `hazelcast.partition.migration.timeout` | 300 | int  |   Timeout for partition migration tasks in seconds.
 `hazelcast.partition.migration.zip.enabled`|true|bool|Enable compression during partition migration.
@@ -100,6 +104,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.socket.bind.any` | true | bool | Bind both server-socket and client-sockets to any local interface.
 `hazelcast.socket.client.bind`|true|bool|Bind client socket to an interface when connecting to a remote server socket. When set to `false`, client socket is not bound to any interface.
 `hazelcast.socket.client.bind.any` | true | bool |   Bind client-sockets to any local interface. If not set, `hazelcast.socket.bind.any` will be used as default.
+`hazelcast.socket.connect.timeout.seconds`|0|int|Socket connection timeout in seconds. `Socket.connect()` will be blocked until either connection is established or connection is refused or this timeout passes. Default is 0, means infinite. 
 `hazelcast.socket.keep.alive` | true | bool  | Socket set keep alive (`SO_KEEPALIVE`).
 `hazelcast.socket.linger.seconds`|0|int|Set socket `SO_LINGER` option.
 `hazelcast.socket.no.delay` | true | bool  |   Socket set TCP no delay.
