@@ -20,7 +20,7 @@ package com.hazelcast.monitor;
  * Local map statistics. As everything is partitioned in Hazelcast,
  * each member owns 1/N (N being the number of members in the cluster)
  * entries of a distributed map. Each member also holds backup entries
- * of another member. LocalMapStats tells you the count of owned and backup
+ * of other members. LocalMapStats tells you the count of owned and backup
  * entries besides their size in memory.
  */
 public interface LocalMapStats extends LocalInstanceStats {
@@ -70,7 +70,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Returns the last access (read) time of the locally owned entries.
      *
-     * @return last access time.
+     * @return last access (read) time of the locally owned entries.
      */
     long getLastAccessTime();
 
@@ -78,14 +78,14 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Returns the last update time of the locally owned entries.
      *
-     * @return last update time.
+     * @return last update time of the locally owned entries.
      */
     long getLastUpdateTime();
 
     /**
      * Returns the number of hits (reads) of the locally owned entries.
      *
-     * @return number of hits (reads).
+     * @return number of hits (reads) of the locally owned entries.
      */
     long getHits();
 
@@ -100,7 +100,7 @@ public interface LocalMapStats extends LocalInstanceStats {
      * Returns the number of entries that the member owns and are dirty (updated but not persisted yet).
      * dirty entry count is meaningful when there is a persistence defined.
      *
-     * @return
+     * @return the number of dirty entries that the member owns
      */
     long getDirtyEntryCount();
 
@@ -128,44 +128,44 @@ public interface LocalMapStats extends LocalInstanceStats {
 
 
     /**
-     * Returns the total latency of put operations. To get the average latency, divide to number of puts
+     * Returns the total latency of put operations. To get the average latency, divide by the number of puts
      *
-     * @return
+     * @return the total latency of put operations
      */
     long getTotalPutLatency();
 
     /**
-     * Returns the total latency of get operations. To get the average latency, divide to number of gets
+     * Returns the total latency of get operations. To get the average latency, divide by the number of gets
      *
-     * @return
+     * @return the total latency of get operations
      */
     long getTotalGetLatency();
 
     /**
-     * Returns the total latency of remove operations. To get the average latency, divide to number of gets
+     * Returns the total latency of remove operations. To get the average latency, divide by the number of gets
      *
-     * @return
+     * @return the total latency of remove operations
      */
     long getTotalRemoveLatency();
 
     /**
      * Returns the maximum latency of put operations.
      *
-     * @return
+     * @return the maximum latency of put operations
      */
     long getMaxPutLatency();
 
     /**
      * Returns the maximum latency of get operations.
      *
-     * @return
+     * @return the maximum latency of get operations
      */
     long getMaxGetLatency();
 
     /**
      * Returns the maximum latency of remove operations.
      *
-     * @return
+     * @return the maximum latency of remove operations
      */
     long getMaxRemoveLatency();
 
