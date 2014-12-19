@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -32,11 +33,13 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
@@ -59,11 +62,15 @@ abstract class AbstractInternalCacheProxy<K, V>
         extends AbstractCacheProxyBase<K, V>
         implements ICache<K, V>, CacheSyncListenerCompleter {
 
+    private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
+    private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
+
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
 
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
     private final AtomicInteger completionIdCounter = new AtomicInteger();
+
 
     protected AbstractInternalCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
@@ -242,7 +249,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         return regs.remove(cacheEntryListenerConfiguration);
     }
 
-    public void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         final ICacheService service = getService();
         for (String regId : listenerRegistrations) {
             service.deregisterListener(nameWithPrefix, regId);
@@ -256,6 +263,20 @@ abstract class AbstractInternalCacheProxy<K, V>
 
         syncListenerRegistrations.clear();
         asyncListenerRegistrations.clear();
+        notifyAndClearSyncListenerLatches();
+    }
+
+    private void notifyAndClearSyncListenerLatches() {
+        // notify waiting sync listeners
+        Collection<CountDownLatch> latches = syncLocks.values();
+        Iterator<CountDownLatch> iterator = latches.iterator();
+        while (iterator.hasNext())  {
+            CountDownLatch latch = iterator.next();
+            iterator.remove();
+            while (latch.getCount() > 0) {
+                latch.countDown();
+            }
+        }
     }
 
     public void countDownCompletionLatch(int id) {
@@ -287,11 +308,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     protected void waitCompletionLatch(Integer countDownLatchId) {
         final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
         if (countDownLatch != null) {
-            try {
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
+            awaitLatch(countDownLatch);
         }
     }
 
@@ -302,14 +319,28 @@ abstract class AbstractInternalCacheProxy<K, V>
             for (int i = 0; i < offset; i++) {
                 countDownLatch.countDown();
             }
-            try {
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
+            awaitLatch(countDownLatch);
         }
     }
 
-
+    private void awaitLatch(CountDownLatch countDownLatch) {
+        try {
+            long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
+            // Call latch await in small steps to be able to check if node is still active.
+            // If not active then throw HazelcastInstanceNotActiveException,
+            // otherwise continue to wait until `MAX_COMPLETION_LATCH_WAIT_TIME` passes.
+            //
+            // Warning: Silently ignoring if latch does not countDown in time.
+            while (currentTimeoutMs > 0
+                    && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
+                currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
+                if (!getNodeEngine().isActive()) {
+                    throw new HazelcastInstanceNotActiveException();
+                }
+            }
+        } catch (InterruptedException e) {
+            ExceptionUtil.sneakyThrow(e);
+        }
+    }
     //endregion Listener operations
 }

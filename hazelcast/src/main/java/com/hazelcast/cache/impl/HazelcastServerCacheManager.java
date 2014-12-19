@@ -54,9 +54,8 @@ public class HazelcastServerCacheManager
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
-        super(cachingProvider, uri, classLoader, properties);
-        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
-        this.hazelcastInstance = hazelcastInstance;
+        super(cachingProvider, hazelcastInstance, uri, classLoader, properties);
+
         //just to get a reference to nodeEngine and cacheService
         final CacheDistributedObject setupRef = hazelcastInstance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         nodeEngine = (NodeEngineImpl) setupRef.getNodeEngine();
