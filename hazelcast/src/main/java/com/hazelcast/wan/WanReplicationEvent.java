@@ -39,18 +39,38 @@ public class WanReplicationEvent
         this.eventObject = eventObject;
     }
 
+    /**
+     * Returns the service name for this event object.
+     *
+     * @return the service name for this event object.
+     */
     public String getServiceName() {
         return serviceName;
     }
 
+    /**
+     * Sets the service name for this event object.
+     *
+     * @param serviceName the service name for this event object.
+     */
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
 
+    /**
+     * Gets the event object.
+     *
+     * @return the event object.
+     */
     public Object getEventObject() {
         return eventObject;
     }
 
+    /**
+     * Sets the event object.
+     *
+     * @param eventObject the event object.
+     */
     public void setEventObject(ReplicationEventObject eventObject) {
         this.eventObject = eventObject;
     }
