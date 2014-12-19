@@ -29,14 +29,14 @@ public interface Credentials extends Serializable {
     /**
      * Returns IP address of endpoint.
      *
-     * @return endpoint address
+     * @return IP address of endpoint
      */
     String getEndpoint();
 
     /**
      * Sets IP address of endpoint.
      *
-     * @param endpoint address
+     * @param endpoint IP address of endpoint
      */
     void setEndpoint(String endpoint);
 
