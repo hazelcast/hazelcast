@@ -28,7 +28,7 @@ import com.hazelcast.spi.annotation.Beta;
 public interface PartitionIdAware {
 
     /**
-     * Sets the partition id the implementing instance is executed against
+     * Sets the partition id to the implementing instance it is executed against
      *
      * @param partitionId current partitionId
      */
