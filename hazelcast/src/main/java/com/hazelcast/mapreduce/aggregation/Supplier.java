@@ -34,7 +34,7 @@ import java.util.Map;
  * {@link com.hazelcast.query.Predicate}s.<br/>
  * Additionally you can provide a {@link com.hazelcast.mapreduce.aggregation.PropertyExtractor}
  * implementation to extract or transform selected values to another value type. This is necessary
- * if you don't want to aggregate the actual value type of the maps but an attribute of it.
+ * if you don't want to aggregate the actual value type of the maps, but an attribute of it.
  * <p/>
  * The following examples using Java 8 Lambda syntax but everything is fully Java 6 or 7 compatible
  * using implementations of the interfaces.
@@ -76,7 +76,7 @@ public abstract class Supplier<KeyIn, ValueIn, ValueOut>
      * to the input entry.<br/>
      * If the input value should be ignored by the aggregation, the Supplier has to return
      * <pre>null</pre> as the supplied value, therefor <pre>null</pre> is not a legal value itself!<br/>
-     * All custom suppliers have to be serializable, if they hold internal state remember that
+     * All custom suppliers have to be serializable: if they hold internal state, remember that
      * the same supplier instance might be used from multiple threads concurrently.
      *
      * @param entry the entry key-value pair to supply to the aggregation
@@ -101,7 +101,7 @@ public abstract class Supplier<KeyIn, ValueIn, ValueOut>
     /**
      * The predefined Supplier selects all values and performs the given
      * {@link com.hazelcast.mapreduce.aggregation.PropertyExtractor}s transformation to the
-     * input data. The returned value's type of the transformation needs to match the expected
+     * input data. The returned value type of the transformation needs to match the expected
      * value type of the aggregation.
      *
      * @param <KeyIn>    the input key type
