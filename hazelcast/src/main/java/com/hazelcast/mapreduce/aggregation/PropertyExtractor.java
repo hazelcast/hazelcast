@@ -53,7 +53,7 @@ public interface PropertyExtractor<ValueIn, ValueOut>
      * This method is called for every value that is about to be supplied to
      * an aggregation (maybe filtered through an {@link com.hazelcast.query.Predicate}
      * or {@link com.hazelcast.mapreduce.KeyPredicate}). It is responsible to either
-     * transform the input value to an type of {@link ValueOut} or to extract an
+     * transform the input value to a type of {@link ValueOut} or to extract an
      * attribute of this type.
      *
      * @param value the input value
