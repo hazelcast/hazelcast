@@ -37,7 +37,7 @@ public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
-     * the task setting them can improve execution speed.
+     * the task, setting them can improve execution speed.
      *
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
@@ -46,7 +46,7 @@ public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
-     * the task setting them can improve execution speed.
+     * the task, setting them can improve execution speed.
      *
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
@@ -66,9 +66,9 @@ public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines the number of elements per chunk. Whenever the chunk size is reached and a
-     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined the chunk will be send to the nodes that
-     * is responsible for the emitted keys.<br/>
-     * <b>Please note, that chunks are deactivated when no ReducerFactory is defined</b>
+     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined, the chunk will be sent to the nodes that
+     * are responsible for the emitted keys.<br/>
+     * <b>Please note that chunks are deactivated when no ReducerFactory is defined.</b>
      *
      * @param chunkSize the number of elements per chunk
      * @return instance of this Job with generics changed on usage
@@ -77,15 +77,15 @@ public interface ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines the strategy to handle topology changes while executing the map reduce job. For further
-     * information see {@link com.hazelcast.mapreduce.TopologyChangedStrategy}.
+     * information, see {@link com.hazelcast.mapreduce.TopologyChangedStrategy}.
      *
-     * @param topologyChangedStrategy strategy to use
+     * @param topologyChangedStrategy strategy to handle topology changes while executing the map reduce job
      * @return instance of this Job with generics changed on usage
      */
     ReducingSubmittableJob<EntryKey, KeyIn, ValueIn> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy);
 
     /**
-     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes
+     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes.
      *
      * @return JobCompletableFuture to wait for mapped and possibly reduced result
      */
