@@ -38,6 +38,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
@@ -56,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -72,6 +74,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  */
 abstract class AbstractClientInternalCacheProxy<K, V>
         extends AbstractClientCacheProxyBase<K, V> implements CacheSyncListenerCompleter {
+
+    private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
+    private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
 
     protected final ClientNearCache<Data, Object> nearCache;
 
@@ -388,11 +393,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected void waitCompletionLatch(Integer countDownLatchId) {
         final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
         if (countDownLatch != null) {
-            try {
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
+            awaitLatch(countDownLatch);
         }
     }
 
@@ -403,11 +404,27 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             for (int i = 0; i < offset; i++) {
                 countDownLatch.countDown();
             }
-            try {
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                ExceptionUtil.sneakyThrow(e);
+            awaitLatch(countDownLatch);
+        }
+    }
+
+    private void awaitLatch(CountDownLatch countDownLatch) {
+        try {
+            long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
+            // Call latch await in small steps to be able to check if node is still active.
+            // If not active then throw HazelcastInstanceNotActiveException,
+            // otherwise continue to wait until `MAX_COMPLETION_LATCH_WAIT_TIME` passes.
+            //
+            // Warning: Silently ignoring if latch does not countDown in time.
+            while (currentTimeoutMs > 0
+                    && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
+                currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
+                if (!clientContext.isActive()) {
+                    throw new HazelcastInstanceNotActiveException();
+                }
             }
+        } catch (InterruptedException e) {
+            ExceptionUtil.sneakyThrow(e);
         }
     }
 
