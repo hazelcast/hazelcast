@@ -55,9 +55,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     public HazelcastClientCacheManager(HazelcastClientCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
-        super(cachingProvider, uri, classLoader, properties);
-        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
-        this.hazelcastInstance = hazelcastInstance;
+        super(cachingProvider, hazelcastInstance, uri, classLoader, properties);
+
         final ClientCacheDistributedObject setupRef = hazelcastInstance
                 .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         this.clientContext = setupRef.getClientContext();

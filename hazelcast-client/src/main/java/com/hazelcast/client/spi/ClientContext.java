@@ -78,4 +78,8 @@ public final class ClientContext {
     public ClientConfig getClientConfig() {
         return clientConfig;
     }
+
+    public boolean isActive() {
+        return getHazelcastInstance().getLifecycleService().isRunning();
+    }
 }
