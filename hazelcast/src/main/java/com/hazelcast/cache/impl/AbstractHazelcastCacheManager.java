@@ -3,6 +3,8 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -45,16 +47,19 @@ public abstract class AbstractHazelcastCacheManager
     protected final boolean isDefaultURI;
     protected final boolean isDefaultClassLoader;
 
-    protected CachingProvider cachingProvider;
-    protected HazelcastInstance hazelcastInstance;
+    protected final CachingProvider cachingProvider;
+    protected final HazelcastInstance hazelcastInstance;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    public AbstractHazelcastCacheManager(CachingProvider cachingProvider, URI uri,
-                                         ClassLoader classLoader, Properties properties) {
+    public AbstractHazelcastCacheManager(CachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri,
+            ClassLoader classLoader, Properties properties) {
         checkIfNotNull(cachingProvider, "CachingProvider missing");
         this.cachingProvider = cachingProvider;
+
+        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
+        this.hazelcastInstance = hazelcastInstance;
 
         isDefaultURI = uri == null || cachingProvider.getDefaultURI().equals(uri);
         this.uri = isDefaultURI ? cachingProvider.getDefaultURI() : uri;
@@ -66,6 +71,15 @@ public abstract class AbstractHazelcastCacheManager
         this.properties = properties == null ? new Properties() : new Properties(properties);
 
         this.cacheNamePrefix = cacheNamePrefix();
+
+        hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
+                    close();
+                }
+            }
+        });
     }
 
     @Override

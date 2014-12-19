@@ -49,12 +49,14 @@ import java.util.concurrent.locks.LockSupport;
 @Category(QuickTest.class)
 public class JCacheListenerTest extends HazelcastTestSupport {
 
+    protected HazelcastInstance hazelcastInstance;
+
     protected CachingProvider getCachingProvider() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+        hazelcastInstance = factory.newHazelcastInstance();
 
-        return HazelcastServerCachingProvider.createCachingProvider(hz2);
+        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
     }
 
     @Test
@@ -233,6 +235,80 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         Cache<String, String> cache = cacheManager.createCache(randomString(), config);
         // there should not be any hanging due to sync listener
         cache.getAndRemove(randomString());
+    }
+
+    @Test
+    public void testSyncListener_shouldNotHang_whenHazelcastInstanceShutdown() {
+        CachingProvider provider = getCachingProvider();
+        testSyncListener_shouldNotHang_AfterAction(randomMapName(), provider, new Runnable() {
+            @Override
+            public void run() {
+                hazelcastInstance.shutdown();
+            }
+        });
+    }
+
+    @Test
+    public void testSyncListener_shouldNotHang_whenCacheClosed() {
+        final CachingProvider provider = getCachingProvider();
+        final String cacheName = randomMapName();
+
+        testSyncListener_shouldNotHang_AfterAction(cacheName, provider, new Runnable() {
+            @Override
+            public void run() {
+                Cache cache = provider.getCacheManager().getCache(cacheName);
+                cache.close();
+            }
+        });
+    }
+
+    @Test
+    public void testSyncListener_shouldNotHang_whenCacheDestroyed() {
+        final CachingProvider provider = getCachingProvider();
+        final String cacheName = randomMapName();
+
+        testSyncListener_shouldNotHang_AfterAction(cacheName, provider, new Runnable() {
+            @Override
+            public void run() {
+                provider.getCacheManager().destroyCache(cacheName);
+            }
+        });
+    }
+
+    private void testSyncListener_shouldNotHang_AfterAction(String cacheName, CachingProvider provider, Runnable action) {
+        CacheManager cacheManager = provider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                        .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<String, String>(
+                                        FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true,
+                                        true));
+
+        final Cache<String, String> cache = cacheManager.createCache(cacheName, config);
+
+        int threads = 4;
+        final CountDownLatch latch = new CountDownLatch(threads);
+        for (int i = 0; i < threads; i++) {
+            new Thread() {
+                public void run() {
+                    Random rand = new Random();
+                    while (true) {
+                        try {
+                            cache.put(String.valueOf(rand.nextInt(100)), "value");
+                        } catch (Throwable e) {
+                            break;
+                        }
+                    }
+                    latch.countDown();
+                }
+            }.start();
+        }
+
+        // wait a little for putting threads to start
+        sleepSeconds(3);
+
+        action.run();
+
+        assertOpenEventually("Cache operations should not hang when sync listener is present!", latch);
     }
 
     public static class TestListener

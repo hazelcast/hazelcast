@@ -49,6 +49,7 @@ import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -328,7 +329,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         return regs.remove(cacheEntryListenerConfiguration);
     }
 
-    public void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+    private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         for (String regId : listenerRegistrations) {
             CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
             clientContext.getListenerService().stopListening(removeReq, regId);
@@ -342,6 +343,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         syncListenerRegistrations.clear();
         asyncListenerRegistrations.clear();
+        notifyAndClearSyncListenerLatches();
+    }
+
+    private void notifyAndClearSyncListenerLatches() {
+        // notify waiting sync listeners
+        Collection<CountDownLatch> latches = syncLocks.values();
+        Iterator<CountDownLatch> iterator = latches.iterator();
+        while (iterator.hasNext())  {
+            CountDownLatch latch = iterator.next();
+            iterator.remove();
+            while (latch.getCount() > 0) {
+                latch.countDown();
+            }
+        }
     }
 
     public void countDownCompletionLatch(int id) {
