@@ -34,7 +34,7 @@ public interface JobCompletableFuture<V>
      * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same
      * job on all cluster nodes and is unique in the cluster.
      *
-     * @return jobId for this job
+     * @return jobId, the unique identifier for this mapreduce job
      */
     String getJobId();
 
