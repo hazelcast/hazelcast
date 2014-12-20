@@ -17,7 +17,7 @@
 package com.hazelcast.security;
 
 /**
- * This interface used to pass parameters of a method call to a {@link SecurityInterceptor}
+ * This interface is used to pass parameters of a method call to a {@link SecurityInterceptor}.
  */
 public interface Parameters extends Iterable {
 
