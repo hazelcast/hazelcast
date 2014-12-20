@@ -44,10 +44,20 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
         this.password = stringToBytes(password);
     }
 
+    /**
+     * Gets the user name.
+     *
+     * @return the user name
+     */
     public String getUsername() {
         return getPrincipal();
     }
 
+    /**
+     * Gets the password.
+     *
+     * @return the password
+     */
     public String getPassword() {
         if (password == null) {
             return "";
@@ -56,10 +66,20 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
         }
     }
 
+    /**
+     * Sets the user name.
+     *
+     * @param username the user name to set
+     */
     public void setUsername(String username) {
         setPrincipal(username);
     }
 
+    /**
+     * Sets the password.
+     *
+     * @param password the password to set
+     */
     public void setPassword(String password) {
         this.password = stringToBytes(password);
     }
