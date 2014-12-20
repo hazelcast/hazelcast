@@ -22,7 +22,7 @@ import java.util.Properties;
 
 /**
  * ICredentialsFactory is used to create {@link Credentials} objects to be used
- * during node authentication before connection accepted by master node.
+ * during node authentication before connection is accepted by the master node.
  */
 public interface ICredentialsFactory {
 
@@ -37,7 +37,7 @@ public interface ICredentialsFactory {
     /**
      * Creates new {@link Credentials} object.
      *
-     * @return Credentials
+     * @return the new Credentials object
      */
     Credentials newCredentials();
 
