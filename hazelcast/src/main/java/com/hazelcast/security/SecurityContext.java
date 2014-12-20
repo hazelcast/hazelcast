@@ -58,7 +58,8 @@ public interface SecurityContext {
     /**
      * Checks whether current {@link Subject} has been granted specified permission or not.
      *
-     * @param permission
+     * @param subject the current subject
+     * @param permission the specified permission for the subject
      * @throws AccessControlException
      */
     void checkPermission(Subject subject, Permission permission) throws AccessControlException;
