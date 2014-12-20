@@ -40,7 +40,7 @@ public interface IPermissionPolicy {
     /**
      * Determines permissions of subject.
      *
-     * @param subject
+     * @param subject the {@link Subject}
      * @param type    of permissions in PermissionCollection
      * @return PermissionCollection containing subject's permissions
      */
