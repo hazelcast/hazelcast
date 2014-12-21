@@ -27,8 +27,8 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * Contains the configuration for the Tcp/Ip join mechanism.
  * <p/>
  * The Tcp/Ip join mechanism relies on one or more well known members. So when a new member wants to join
- * a cluster, it will try to connect to one of the well known members. If it is able to connect, it will now
- * about all members in the cluster and doesn't rely on these well known members anymore.
+ * a cluster, it will try to connect to one of the well known members. If it is able to connect, it will know
+ * about all members in the cluster and won't rely on these well known members anymore.
  */
 public class TcpIpConfig {
 
