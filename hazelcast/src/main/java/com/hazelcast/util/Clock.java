@@ -20,22 +20,21 @@ import com.hazelcast.nio.ClassLoaderUtil;
 
 /**
  *  Utility class to be able to simulate different time zones.
- *  Time offset can be configured with following property
- *  "com.hazelcast.clock.offset"
+ *  Time offset can be configured with the property <code>com.hazelcast.clock.offset</code>
  */
 public final class Clock {
 
     /**
-     * Clock offset property in milliseconds. When it's set to a non-zero value,
+     * Clock offset property in milliseconds. When it is set to a non-zero value,
      * {@link Clock#currentTimeMillis()} will return a shifted {@link System#currentTimeMillis()}
-     * time by given offset value.
+     * time by the given offset value.
      */
     public static final String HAZELCAST_CLOCK_OFFSET = "com.hazelcast.clock.offset";
 
     /**
      * Classname of a {@link com.hazelcast.util.Clock.ClockImpl} implementation.
      * When this property is set, {@link Clock#currentTimeMillis()}
-     * will call <code>currentTimeMillis()</code> method of given <code>ClockImpl</code>.
+     * will call the <code>currentTimeMillis()</code> method of given <code>ClockImpl</code>.
      */
     public static final String HAZELCAST_CLOCK_IMPL = "com.hazelcast.clock.impl";
 
