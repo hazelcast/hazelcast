@@ -117,6 +117,7 @@ src/JCache.md
 	src/JCache-BackupAwareEP.md
 	src/JCache-SpecCompliance.md
 src/IntegratedClustering.md
+	src/Hibernate.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
 		src/JettySessionReplication.md
