@@ -17,14 +17,14 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 /**
- * Entry which holds key and value to be stored in a write-behind {@link com.hazelcast.core.MapStore}.
+ * Immutable store entry for delayed store operations.
  *
  * @param <K> the key type.
  * @param <V> the value type.
  */
 public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
 
-    private volatile V value;
+    private final V value;
 
     private DelayedEntry(K key, V value, long storeTime, int partitionId) {
         super(key, storeTime, partitionId);
@@ -33,10 +33,6 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
 
     public V getValue() {
         return value;
-    }
-
-    public void setValue(V value) {
-        this.value = value;
     }
 
     public static <K, V> DelayedEntry<K, V> create(K key, V value, long storeTime, int partitionId) {

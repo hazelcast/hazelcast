@@ -32,12 +32,13 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             return false;
         }
         final Data key = (Data) delayedEntry.getKey();
-        // if key exists in this queue before, only reset value;
-        // this is because we do not want to shift store time of the key.
+        // if key exists in this queue before, use previous store time;
+        // this is because we do not want to shift store time of any key.
         final DelayedEntry existingDelayedEntry = queue.get(key);
         if (existingDelayedEntry != null) {
-            Object value = delayedEntry.getValue();
-            existingDelayedEntry.setValue(value);
+            final long storeTime = existingDelayedEntry.getStoreTime();
+            delayedEntry.setStoreTime(storeTime);
+            queue.replace(key, delayedEntry);
         } else {
             queue.put(key, delayedEntry);
         }
