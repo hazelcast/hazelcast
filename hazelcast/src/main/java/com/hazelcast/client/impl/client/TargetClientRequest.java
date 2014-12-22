@@ -31,7 +31,7 @@ public abstract class TargetClientRequest extends ClientRequest {
         final ClientEndpoint endpoint = getEndpoint();
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getTarget())
+        InvocationBuilder builder = getInvocationBuilder(op)
                 .setTryCount(TRY_COUNT)
                 .setResultDeserialized(false)
                 .setCallback(new Callback<Object>() {
@@ -40,6 +40,10 @@ public abstract class TargetClientRequest extends ClientRequest {
                     }
                 });
         builder.invoke();
+    }
+
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return operationService.createInvocationBuilder(getServiceName(), op, getTarget());
     }
 
     protected abstract Operation prepareOperation();

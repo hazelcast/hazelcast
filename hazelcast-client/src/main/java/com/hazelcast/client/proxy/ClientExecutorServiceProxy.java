@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.client.TargetClientRequest;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.util.ClientCancellableDelegatingFuture;
@@ -29,9 +31,10 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.executor.impl.client.IsShutdownRequest;
-import com.hazelcast.executor.impl.client.PartitionCallableRequest;
+import com.hazelcast.executor.impl.client.PartitionOwnerTargetCallableRequest;
+import com.hazelcast.executor.impl.client.RandomTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
-import com.hazelcast.executor.impl.client.TargetCallableRequest;
+import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
@@ -56,6 +59,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 /**
  * @author ali 5/24/13
@@ -348,12 +353,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
         ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
         for (Future<T> future : futures) {
-            Object value;
-            try {
-                value = future.get();
-            } catch (ExecutionException e) {
-                value = e;
-            }
+            Object value = retrieveResult(future);
             result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, asyncExecutor));
         }
         return result;
@@ -389,38 +389,35 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private <T> Future<T> submitToKeyOwnerInternal(Callable<T> task, Object key, T defaultValue, boolean preventSync) {
-        checkIfNotNull(task);
+        checkNotNull(task, "task should not be null");
+
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
+        final PartitionOwnerTargetCallableRequest request
+                = new PartitionOwnerTargetCallableRequest(name, uuid, task, partitionId);
         final ICompletableFuture<T> f = invokeFuture(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
 
     private <T> void submitToKeyOwnerInternal(Callable<T> task, Object key, ExecutionCallback<T> callback) {
-        checkIfNotNull(task);
+        checkNotNull(task, "task should not be null");
+
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionCallableRequest request = new PartitionCallableRequest(name, uuid, task, partitionId);
+        final PartitionOwnerTargetCallableRequest request
+                = new PartitionOwnerTargetCallableRequest(name, uuid, task, partitionId);
         final ICompletableFuture<T> f = invokeFuture(request, partitionId);
         f.andThen(callback);
     }
 
     private <T> Future<T> submitToRandomInternal(Callable<T> task, T defaultValue, boolean preventSync) {
-        checkIfNotNull(task);
+        checkNotNull(task, "task should not be null");
+
         final String uuid = getUUID();
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, newTargetCreator());
+        final ConstructorFunction<Object, Address> targetCreator = newTargetCreator();
+        final RandomTargetCallableRequest request = new RandomTargetCallableRequest(name, uuid, task, targetCreator);
         final ICompletableFuture<T> f = invokeFuture(request);
         return checkSync(f, uuid, request.getTarget(), -1, preventSync, defaultValue);
-    }
-
-    private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
-        checkIfNotNull(task);
-
-        final String uuid = getUUID();
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, newTargetCreator());
-        final ICompletableFuture<T> f = invokeFuture(request);
-        f.andThen(callback);
     }
 
     private ConstructorFunction<Object, Address> newTargetCreator() {
@@ -433,26 +430,32 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         };
     }
 
-    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address, T defaultValue,
-                                                 boolean preventSync) {
-        checkIfNotNull(task);
+    private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
+        checkNotNull(task, "task should not be null");
+
         final String uuid = getUUID();
-        final TargetCallableRequest request = new TargetCallableRequest(name, uuid, task, address);
+        final ConstructorFunction<Object, Address> targetCreator = newTargetCreator();
+        final RandomTargetCallableRequest request = new RandomTargetCallableRequest(name, uuid, task, targetCreator);
+        final ICompletableFuture<T> f = invokeFuture(request);
+        f.andThen(callback);
+    }
+
+
+    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address, T defaultValue, boolean preventSync) {
+        checkNotNull(task, "task should not be null");
+
+        final String uuid = getUUID();
+        final SpecificTargetCallableRequest request = new SpecificTargetCallableRequest(name, uuid, task, address);
         ICompletableFuture<T> f = invokeFuture(request);
         return checkSync(f, uuid, address, -1, preventSync, defaultValue);
     }
 
     private <T> void submitToTargetInternal(Callable<T> task, final Address address, final ExecutionCallback<T> callback) {
-        checkIfNotNull(task);
-        final TargetCallableRequest request = new TargetCallableRequest(name, null, task, address);
+        checkNotNull(task, "task should not be null");
+
+        final SpecificTargetCallableRequest request = new SpecificTargetCallableRequest(name, null, task, address);
         ICompletableFuture<T> f = invokeFuture(request);
         f.andThen(callback);
-    }
-
-    private void checkIfNotNull(Callable task) {
-        if (task == null) {
-            throw new NullPointerException();
-        }
     }
 
     @Override
@@ -462,30 +465,41 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> Future<T> checkSync(ICompletableFuture<T> f, String uuid,
                                     Address address, int partitionId, boolean preventSync, T defaultValue) {
-        boolean sync = false;
-        final long last = lastSubmitTime;
-        final long now = Clock.currentTimeMillis();
-        if (last + MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS < now) {
-            consecutiveSubmits.set(0);
-        } else if (consecutiveSubmits.incrementAndGet() % MAX_CONSECUTIVE_SUBMITS == 0) {
-            sync = true;
-        }
-        lastSubmitTime = now;
-
-        if (sync && !preventSync) {
-            Object response;
-            try {
-                response = f.get();
-            } catch (Exception e) {
-                response = e;
-            }
+        final boolean sync = isSyncComputation(preventSync);
+        if (sync) {
+            Object response = retrieveResult(f);
             ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
             return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
-        }
-        if (defaultValue != null) {
+        } else {
             return new ClientCancellableDelegatingFuture<T>(f, getContext(), uuid, address, partitionId, defaultValue);
         }
-        return new ClientCancellableDelegatingFuture<T>(f, getContext(), uuid, address, partitionId);
+    }
+
+    private <T> Object retrieveResult(Future<T> f) {
+        Object response;
+        try {
+            response = f.get();
+        } catch (Exception e) {
+            response = e;
+        }
+        return response;
+    }
+
+    private boolean isSyncComputation(boolean preventSync) {
+        final long now = Clock.currentTimeMillis();
+
+        final long last = lastSubmitTime;
+        lastSubmitTime = now;
+
+        final AtomicInteger consecutiveSubmits = this.consecutiveSubmits;
+
+        if (last + MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS < now) {
+            consecutiveSubmits.set(0);
+            return false;
+        }
+
+        return !preventSync
+                && consecutiveSubmits.incrementAndGet() % MAX_CONSECUTIVE_SUBMITS == 0;
     }
 
     private List<Member> selectMembers(MemberSelector memberSelector) {
@@ -550,20 +564,15 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> ICompletableFuture<T> invokeFuture(PartitionCallableRequest request, int partitionId) {
-        final Address partitionOwner = getPartitionOwner(partitionId);
-        return invokeFuture(request, partitionOwner);
-    }
-
-    private <T> ICompletableFuture<T> invokeFuture(PartitionCallableRequest request, Address target) {
+    private <T> ICompletableFuture<T> invokeFuture(ClientRequest request, int partitionId) {
         try {
-            return getContext().getInvocationService().invokeOnTarget(request, target);
+            return getContext().getInvocationService().invokeOnPartitionOwner(request, partitionId);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private <T> ICompletableFuture<T> invokeFuture(TargetCallableRequest request) {
+    private <T> ICompletableFuture<T> invokeFuture(TargetClientRequest request) {
         try {
             return getContext().getInvocationService().invokeOnTarget(request, request.getTarget());
         } catch (Exception e) {
