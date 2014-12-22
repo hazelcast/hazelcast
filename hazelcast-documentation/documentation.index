@@ -168,7 +168,10 @@ src/Performance.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 #src/Config.md
-src/HazelcastConfiguration/ConfigurationOverview.md
+src/HazelcastConfiguration/HazelcastConfiguration.md
+	src/HazelcastConfiguration/ConfigurationOverview.md
+	src/HazelcastConfiguration/UsingWildcard.md
+	src/HazelcastConfiguration/ComposingXML.md
 #	src/NetworkConfig.md
 	src/HazelcastConfiguration/NetworkConfiguration.md
 	src/HazelcastConfiguration/GroupConfiguration.md
