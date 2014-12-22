@@ -77,6 +77,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
+    public void loadAllFromStore(boolean replaceExisting) {
+        if(replaceExisting) {
+            clear();
+        }
+        recordStoreLoader.setLoaded(false);
+        recordStoreLoader.loadInitialKeys();
+    }
+
+    @Override
     public void checkIfLoaded() {
         Throwable throwable = null;
         final RecordStoreLoader recordStoreLoader = this.recordStoreLoader;

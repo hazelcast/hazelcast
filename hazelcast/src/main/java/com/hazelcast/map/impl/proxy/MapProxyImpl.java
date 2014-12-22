@@ -24,7 +24,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
@@ -58,7 +57,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
@@ -499,11 +497,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public void loadAll(boolean replaceExistingValues) {
-        MapStore<K, V> store = checkNotNull(getMapStore(), "First you should configure a map store");
+        checkNotNull(getMapStore(), "First you should configure a map store");
 
-        Iterable<K> keys = nullToEmpty(store.loadAllKeys());
-
-        loadAllInternal(keys, replaceExistingValues);
+        loadAllInternal(replaceExistingValues);
     }
 
     @Override
@@ -511,7 +507,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(getMapStore(), "First you should configure a map store");
         checkNotNull(keys, "Parameter keys should not be null.");
 
-        loadAllInternal(keys, replaceExistingValues);
+        loadInternal(keys, replaceExistingValues);
     }
 
     /**

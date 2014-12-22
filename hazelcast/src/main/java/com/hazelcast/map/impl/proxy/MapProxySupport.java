@@ -63,6 +63,7 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
+import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperation;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
@@ -488,6 +489,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
+    protected void loadAllInternal(boolean replaceExistingValues) {
+        NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+
+        for (MemberImpl member : members) {
+            Operation operation = new LoadMapOperation(name, replaceExistingValues);
+            operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, member.getAddress());
+        }
+
+        waitUntilLoaded();
+    }
 
     /**
      * Maps keys to corresponding partitions and sends operations to them.
@@ -495,7 +508,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * @param keys
      * @param replaceExistingValues
      */
-    protected void loadAllInternal(Iterable keys, boolean replaceExistingValues) {
+    protected void loadInternal(Iterable keys, boolean replaceExistingValues) {
 
         Iterable<Data> dataKeys = convertToData(keys);
         NodeEngine nodeEngine = getNodeEngine();

@@ -81,6 +81,11 @@ final class BasicMapStoreContext implements MapStoreContext {
     public void start() {
         mapStoreManager.start();
 
+        triggerInitialKeyLoad();
+    }
+
+    @Override
+    public void triggerInitialKeyLoad() {
         final Callable<Boolean> task = new TriggerInitialKeyLoad();
         initialKeyLoader = executeTask(INITIAL_KEY_LOAD_EXECUTOR, task);
     }

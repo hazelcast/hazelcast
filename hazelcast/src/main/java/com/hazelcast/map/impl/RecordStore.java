@@ -250,7 +250,14 @@ public interface RecordStore {
     boolean isExpirable();
 
     /**
-     * Loads all keys from defined map store.
+     * Loads all keys from the map store.
+     *
+     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     */
+    void loadAllFromStore(boolean replaceExistingValues);
+
+    /**
+     * Loads all given keys from defined map store.
      *
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>

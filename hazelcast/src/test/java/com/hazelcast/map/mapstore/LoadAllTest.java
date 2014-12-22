@@ -83,6 +83,22 @@ public class LoadAllTest extends HazelcastTestSupport {
         assertEquals(itemCount, map.size());
     }
 
+    @Test
+    public void testAllItemsLoaded_whenLoadingAllOnMultipleInstances() throws Exception {
+        String mapName = randomMapName();
+        Config config = createNewConfig(mapName);
+
+        HazelcastInstance[] nodes = createHazelcastInstanceFactory(3).newInstances(config);
+        HazelcastInstance node = nodes[0];
+        IMap<Object, Object> map = node.getMap(mapName);
+
+        int itemCount = 1000;
+        populateMap(map, itemCount);
+        map.evictAll();
+        map.loadAll(true);
+
+        assertEquals(itemCount, map.size());
+    }
 
     @Test
     public void load_allKeys_preserveExistingKeys_firesEvent() throws Exception {
