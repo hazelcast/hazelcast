@@ -2,7 +2,7 @@
 ## Network Configuration
 
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Most of the sections below use the tags used in declarative configuration when explaining configuration items. We are assuming that the reader is familiar with their programmatic equivalents, since both approaches have the similar tag/method names (e.g. `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *When explaining configuration elements and attributes, most of the sections below use the tags used in the declarative configurations. We assume that the reader is familiar with these tags' programmatic equivalents, since declarative and programmatic approaches have the similar tag/method names (e.g. `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration).*
 
 
 All network related configuration is performed via `network` element in the Hazelcast XML configuration file or the class `NetworkConfig` when using programmatic configuration. Let's first give the examples for these two approaches. Then we will look at its sub-elements and attributes.
