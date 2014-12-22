@@ -32,7 +32,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
  * <p/>
  * This implementation does not encode/decode streaming
  * data. You need the data that you will encode/decode
- * already on a byte arrray.
+ * already on a byte array.
  *
  * @author Jeffrey Rodriguez
  * @author Sandy Gao
@@ -99,6 +99,11 @@ public final class Base64 {
         return (base64Alphabet[octect] != -1);
     }
 
+    /**
+     * Tests a string to see if it is valid Base64
+     *
+     * @return true if string is valid Base64, false otherwise
+     */
     public static boolean isBase64(String isValidString) {
         if (isValidString == null) {
             return false;
@@ -117,8 +122,8 @@ public final class Base64 {
      * "   sdffferererrereresfsdfsdfsdff\n\r
      * iiiiiiiiierejrlkwjerklwjerwerwr==\n\r"
      *
-     * @param data
-     * @return
+     * @param data MIME containing encoded Base64 data
+     * @return data with no whitespace
      */
     public static synchronized byte[] removeWhiteSpace(byte[] data) {
         if (data == null) {
@@ -244,7 +249,7 @@ public final class Base64 {
      * Decodes Base64 data into octects
      *
      * @param base64Data Byte array containing Base64 data
-     * @return Array containind decoded data.
+     * @return Array containing decoded data.
      */
     public static synchronized byte[] decode(byte[] base64Data) {
         if (base64Data == null) {
@@ -347,8 +352,8 @@ public final class Base64 {
      * WhiteSpace removing is done if data array not
      * valid.
      *
-     * @param base64Data
-     * @return a -1 would be return if not
+     * @param base64Data an array containing encoded data
+     * @return length of decoded data, -1 if not decoded
      */
     public static synchronized int getDecodedDataLength(byte[] base64Data) {
         if (base64Data == null) {
