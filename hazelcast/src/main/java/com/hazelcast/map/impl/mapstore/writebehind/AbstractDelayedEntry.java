@@ -23,7 +23,7 @@ abstract class AbstractDelayedEntry<K> {
 
     protected final K key;
 
-    protected final long storeTime;
+    protected long storeTime;
 
     private final int partitionId;
 
@@ -39,6 +39,10 @@ abstract class AbstractDelayedEntry<K> {
 
     public long getStoreTime() {
         return storeTime;
+    }
+
+    public void setStoreTime(long storeTime) {
+        this.storeTime = storeTime;
     }
 
     public int getPartitionId() {
