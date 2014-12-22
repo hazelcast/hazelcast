@@ -37,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 /**
  * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of
@@ -68,7 +69,7 @@ public class HazelcastServerCacheManager
     @Override
     public void enableManagement(String cacheName, boolean enabled) {
         checkIfManagerNotClosed();
-        checkIfNotNull(cacheName, "cacheName cannot be null");
+        checkNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setManagementEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
@@ -78,7 +79,7 @@ public class HazelcastServerCacheManager
     @Override
     public void enableStatistics(String cacheName, boolean enabled) {
         checkIfManagerNotClosed();
-        checkIfNotNull(cacheName, "cacheName cannot be null");
+        checkNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         cacheService.setStatisticsEnabled(null, cacheNameWithPrefix, enabled);
         //ENABLE OTHER NODES
