@@ -52,9 +52,12 @@ public class WriteBehindWriteDelaySecondsTest extends HazelcastTestSupport {
             sleepMillis(100);
         }
 
-        // min expected 1 --> due to the timing between store thread and this thread. Store thread works in every second.
+        // min expected 2 --> Expect to observe at least 2 store operations in every write-delay-seconds window.
+        // Currently it is 2 seconds. We don't want to see 1 store operation in the course of this 60 * 100 millis test period.
+        // It should be bigger than 1.
+        //
         // max expected 3 --> 60 * 100 millis / 2 * 1000 millis
-        assertMinMaxStoreOperationsCount(1, 3, mapStore);
+        assertMinMaxStoreOperationsCount(2, 3, mapStore);
     }
 
     private void assertMinMaxStoreOperationsCount(final int minimumExpectedStoreOperationCount,
