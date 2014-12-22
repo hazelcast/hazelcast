@@ -3,8 +3,11 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -23,6 +26,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 /**
  * Abstract {@link CacheManager} implementation provides shared functionality to server and client cache managers.
@@ -53,12 +58,14 @@ public abstract class AbstractHazelcastCacheManager
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
+    private final String lifecycleListenerRegistrationId;
+
     public AbstractHazelcastCacheManager(CachingProvider cachingProvider, HazelcastInstance hazelcastInstance, URI uri,
             ClassLoader classLoader, Properties properties) {
-        checkIfNotNull(cachingProvider, "CachingProvider missing");
+        checkNotNull(cachingProvider, "CachingProvider missing");
         this.cachingProvider = cachingProvider;
 
-        checkIfNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
+        checkNotNull(hazelcastInstance, "hazelcastInstance cannot be null");
         this.hazelcastInstance = hazelcastInstance;
 
         isDefaultURI = uri == null || cachingProvider.getDefaultURI().equals(uri);
@@ -72,22 +79,15 @@ public abstract class AbstractHazelcastCacheManager
 
         this.cacheNamePrefix = cacheNamePrefix();
 
-        hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
-                    close();
-                }
-            }
-        });
+        lifecycleListenerRegistrationId = registerLifecycleListener();
     }
 
     @Override
     public <K, V, C extends Configuration<K, V>> ICache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
         checkIfManagerNotClosed();
-        checkIfNotNull(cacheName, "cacheName must not be null");
-        checkIfNotNull(configuration, "configuration must not be null");
+        checkNotNull(cacheName, "cacheName must not be null");
+        checkNotNull(configuration, "configuration must not be null");
 
         final CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
         if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
@@ -147,8 +147,8 @@ public abstract class AbstractHazelcastCacheManager
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType) {
         checkIfManagerNotClosed();
-        checkIfNotNull(keyType, "keyType can not be null");
-        checkIfNotNull(valueType, "valueType can not be null");
+        checkNotNull(keyType, "keyType can not be null");
+        checkNotNull(valueType, "valueType can not be null");
         final ICache<?, ?> cache = getCacheUnchecked(cacheName);
         if (cache != null) {
             Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
@@ -229,7 +229,7 @@ public abstract class AbstractHazelcastCacheManager
     @Override
     public void destroyCache(String cacheName) {
         checkIfManagerNotClosed();
-        checkIfNotNull(cacheName, "cacheName cannot be null");
+        checkNotNull(cacheName, "cacheName cannot be null");
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final ICache<?, ?> cache = caches.remove(cacheNameWithPrefix);
         if (cache != null) {
@@ -248,11 +248,36 @@ public abstract class AbstractHazelcastCacheManager
     protected void removeCacheConfigFromLocal(String cacheName) {
     }
 
+    private String registerLifecycleListener() {
+        return hazelcastInstance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
+                    close();
+                }
+            }
+        });
+    }
+
+    private void deregisterLifecycleListener() {
+        LifecycleService lifecycleService = hazelcastInstance.getLifecycleService();
+        try {
+            lifecycleService.removeLifecycleListener(lifecycleListenerRegistrationId);
+        } catch (HazelcastInstanceNotActiveException e) {
+            // if hazelcastInstance is terminated already,
+            // `lifecycleService.removeLifecycleListener` will throw HazelcastInstanceNotActiveException.
+            // We can safely ignore this exception. See TerminatedLifecycleService.
+            EmptyStatement.ignore(e);
+        }
+    }
+
     @Override
     public void close() {
         if (isDestroyed.get() || !isClosed.compareAndSet(false, true)) {
             return;
         }
+
+        deregisterLifecycleListener();
         for (ICache cache : caches.values()) {
             cache.close();
         }
@@ -270,6 +295,8 @@ public abstract class AbstractHazelcastCacheManager
         if (!isDestroyed.compareAndSet(false, true)) {
             return;
         }
+
+        deregisterLifecycleListener();
         isClosed.set(true);
         for (ICache cache : caches.values()) {
             cache.destroy();
@@ -285,12 +312,6 @@ public abstract class AbstractHazelcastCacheManager
     protected void checkIfManagerNotClosed() {
         if (isClosed()) {
             throw new IllegalStateException();
-        }
-    }
-
-    protected void checkIfNotNull(Object o, String message) {
-        if (o == null) {
-            throw new NullPointerException(message);
         }
     }
 

@@ -43,6 +43,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
+
 /**
  * CacheManager implementation for client side
  *
@@ -74,7 +76,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
         checkIfManagerNotClosed();
-        checkIfNotNull(cacheName, "cacheName cannot be null");
+        checkNotNull(cacheName, "cacheName cannot be null");
         final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         final Collection<Future> futures = new ArrayList<Future>();
