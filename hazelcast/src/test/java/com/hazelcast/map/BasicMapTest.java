@@ -1120,7 +1120,8 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
-        MapConfig mapConfig = getInstance().getConfig().getMapConfig("testMapLoaderLoadUpdatingIndex");
+        final String mapName = randomString();
+        MapConfig mapConfig = getInstance().getConfig().getMapConfig(mapName);
         List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
         indexConfigs.add(new MapIndexConfig("name", true));
 
@@ -1129,34 +1130,44 @@ public class BasicMapTest extends HazelcastTestSupport {
         storeConfig.setFactoryImplementation(loader);
         mapConfig.setMapStoreConfig(storeConfig);
 
-        IMap<Integer, SampleIndexableObject> map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
+        IMap<Integer, SampleIndexableObject> map = getInstance().getMap(mapName);
         for (int i = 0; i < 10; i++) {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
         final SqlPredicate predicate = new SqlPredicate("name='My-5'");
-        Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
 
-        assertEquals(1, result.size());
-        assertEquals(5, (int) result.iterator().next().getValue().value);
+        assertPredicateResultCorrect(map, predicate);
 
         map.destroy();
         loader.preloadValues = true;
-        map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
+        map = getInstance().getMap(mapName);
 
-        final IMap<Integer, SampleIndexableObject> mapFinal = map;
+        assertLoadAllKeysCount(loader);
+        assertPredicateResultCorrect(map, predicate);
+    }
+
+    private void assertLoadAllKeysCount(final SampleIndexableObjectMapLoader loader) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final int mapSize = mapFinal.size();
+                assertEquals("call-count of loadAllKeys method is problematic", instanceCount, loader.loadAllKeysCallCount.get());
+            }
+        });
+    }
+
+    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final SqlPredicate predicate) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final int mapSize = map.size();
                 final String message = format("Map size is %d", mapSize);
 
-                Set<Entry<Integer, SampleIndexableObject>> result = mapFinal.entrySet(predicate);
+                Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
                 assertEquals(message, 1, result.size());
                 assertEquals(message, 5, (int) result.iterator().next().getValue().value);
             }
         }, 300);
-
     }
 
     @Test
@@ -1613,6 +1624,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         private SampleIndexableObject[] values = new SampleIndexableObject[10];
         private Set<Integer> keys = new HashSet<Integer>();
+        private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
 
         volatile boolean preloadValues = false;
 
@@ -1642,6 +1654,8 @@ public class BasicMapTest extends HazelcastTestSupport {
         @Override
         public Set<Integer> loadAllKeys() {
             if (!preloadValues) return Collections.emptySet();
+
+            loadAllKeysCallCount.incrementAndGet();
             return Collections.unmodifiableSet(keys);
         }
 
