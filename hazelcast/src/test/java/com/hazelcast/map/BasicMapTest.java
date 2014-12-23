@@ -17,9 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -27,11 +24,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,14 +37,10 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -63,7 +52,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1119,58 +1107,6 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapLoaderLoadUpdatingIndex() throws Exception {
-        final String mapName = randomString();
-        MapConfig mapConfig = getInstance().getConfig().getMapConfig(mapName);
-        List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
-        indexConfigs.add(new MapIndexConfig("name", true));
-
-        SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
-        MapStoreConfig storeConfig = new MapStoreConfig();
-        storeConfig.setFactoryImplementation(loader);
-        mapConfig.setMapStoreConfig(storeConfig);
-
-        IMap<Integer, SampleIndexableObject> map = getInstance().getMap(mapName);
-        for (int i = 0; i < 10; i++) {
-            map.put(i, new SampleIndexableObject("My-" + i, i));
-        }
-
-        final SqlPredicate predicate = new SqlPredicate("name='My-5'");
-
-        assertPredicateResultCorrect(map, predicate);
-
-        map.destroy();
-        loader.preloadValues = true;
-        map = getInstance().getMap(mapName);
-
-        assertLoadAllKeysCount(loader);
-        assertPredicateResultCorrect(map, predicate);
-    }
-
-    private void assertLoadAllKeysCount(final SampleIndexableObjectMapLoader loader) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("call-count of loadAllKeys method is problematic", instanceCount, loader.loadAllKeysCallCount.get());
-            }
-        });
-    }
-
-    private void assertPredicateResultCorrect(final IMap<Integer, SampleIndexableObject> map, final SqlPredicate predicate) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final int mapSize = map.size();
-                final String message = format("Map size is %d", mapSize);
-
-                Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
-                assertEquals(message, 1, result.size());
-                assertEquals(message, 5, (int) result.iterator().next().getValue().value);
-            }
-        }, 300);
-    }
-
-    @Test
     public void testIfWeCarryRecordVersionInfoToReplicas() {
         final String mapName = randomMapName();
         final int mapSize = 1000;
@@ -1587,81 +1523,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         public void processBackup(Map.Entry entry) {
             entry.setValue((Integer) entry.getValue() + 1);
-        }
-    }
-
-    public static class SampleIndexableObject implements Serializable {
-        String name;
-        Integer value;
-
-        public SampleIndexableObject() {
-        }
-
-        public SampleIndexableObject(String name, Integer value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Integer getValue() {
-            return value;
-        }
-
-        public void setValue(Integer value) {
-            this.value = value;
-        }
-    }
-
-    public static class SampleIndexableObjectMapLoader
-            implements MapLoader<Integer, SampleIndexableObject>, MapStoreFactory<Integer, SampleIndexableObject> {
-
-        private SampleIndexableObject[] values = new SampleIndexableObject[10];
-        private Set<Integer> keys = new HashSet<Integer>();
-        private AtomicInteger loadAllKeysCallCount = new AtomicInteger(0);
-
-        volatile boolean preloadValues = false;
-
-        public SampleIndexableObjectMapLoader() {
-            for (int i = 0; i < 10; i++) {
-                keys.add(i);
-                values[i] = new SampleIndexableObject("My-" + i, i);
-            }
-        }
-
-        @Override
-        public SampleIndexableObject load(Integer key) {
-            if (!preloadValues) return null;
-            return values[key];
-        }
-
-        @Override
-        public Map<Integer, SampleIndexableObject> loadAll(Collection<Integer> keys) {
-            if (!preloadValues) return Collections.emptyMap();
-            Map<Integer, SampleIndexableObject> data = new HashMap<Integer, SampleIndexableObject>();
-            for (Integer key : keys) {
-                data.put(key, values[key]);
-            }
-            return data;
-        }
-
-        @Override
-        public Set<Integer> loadAllKeys() {
-            if (!preloadValues) return Collections.emptySet();
-
-            loadAllKeysCallCount.incrementAndGet();
-            return Collections.unmodifiableSet(keys);
-        }
-
-        @Override
-        public MapLoader<Integer, SampleIndexableObject> newMapStore(String mapName, Properties properties) {
-            return this;
         }
     }
 
