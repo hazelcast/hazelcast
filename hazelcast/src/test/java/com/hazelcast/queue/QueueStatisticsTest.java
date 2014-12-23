@@ -170,10 +170,15 @@ public class QueueStatisticsTest extends AbstractQueueTest {
         for (int i = 0; i < 30; i++) {
             queue.poll();
         }
-        LocalQueueStats stats = queue.getLocalQueueStats();
+        final LocalQueueStats stats = queue.getLocalQueueStats();
         assertOpenEventually(listener.addedLatch);
         assertOpenEventually(listener.removedLatch);
-        assertEquals(60, stats.getEventOperationCount());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(60, stats.getEventOperationCount());
+            }
+        });
     }
 
     private static class TestListener implements ItemListener {
