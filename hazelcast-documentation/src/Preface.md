@@ -28,6 +28,14 @@ Support for Hazelcast is provided via [GitHub](https://github.com/hazelcast/haze
 
 For information on support for Hazelcast Enterprise, please see [hazelcast.com/pricing](http://hazelcast.com/pricing/).
 
+##### Contributing to Hazelcast
+
+You can contribute to the Hazelcast code, report a bug or request an enhancement. Please see the following resources.
+
+- [Developing with Git](https://hazelcast.atlassian.net/wiki/display/COM/Developing+with+Git): Document that explains the branch mechanism of Hazelcast and how to request changes.
+- [Hazelcast Contributor Agreement form](https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement): Form that each contributing developer needs to fill and send back to Hazelcast.
+- [Hazelcast on GitHub](https://github.com/hazelcast/hazelcast): Hazelcast repository where the code is developed, issues and pull requests are managed.
+
 ##### Typographical Conventions
 
 Below table shows the conventions used in this manual.
