@@ -21,6 +21,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -98,6 +100,25 @@ public class LoadAllTest extends HazelcastTestSupport {
         map.loadAll(true);
 
         assertEquals(itemCount, map.size());
+    }
+
+    @Test
+    public void testItemsNotOverwritten_whenLoadingWithoutReplacing() throws Exception {
+        String mapName = randomMapName();
+        Config config = createNewConfig(mapName);
+
+        HazelcastInstance[] nodes = createHazelcastInstanceFactory(3).newInstances(config);
+        HazelcastInstance node = nodes[0];
+        IMap<Object, Object> map = node.getMap(mapName);
+
+        int itemCount = 100;
+        populateMap(map, itemCount);
+        map.evictAll();
+        map.putTransient(0, -1, 0, SECONDS);
+        map.loadAll(false);
+
+        assertEquals(itemCount, map.size());
+        assertEquals(-1, map.get(0));
     }
 
     @Test

@@ -63,7 +63,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
 
         this.recordStoreLoader = createRecordStoreLoader();
-        this.recordStoreLoader.loadInitialKeys();
+        this.recordStoreLoader.loadInitialKeys(true);
     }
 
     @Override
@@ -78,11 +78,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void loadAllFromStore(boolean replaceExisting) {
-        if (replaceExisting) {
-            clear();
-        }
         recordStoreLoader.setLoaded(false);
-        recordStoreLoader.loadInitialKeys();
+        recordStoreLoader.loadInitialKeys(replaceExisting);
     }
 
     @Override
