@@ -17,6 +17,62 @@ This section provides the new features introduced with Hazelcast 3.3 release.
 
 ### Fixes
 
+**3.3.4 Fixes**
+
+This section lists issues solved for **Hazelcast 3.3.4** release.
+
+
+- Predicate with short values is not working [[#4293]](https://github.com/hazelcast/hazelcast/issues/4293).
+- Hits statistics copy and paste error in the method `ReplicatedRecord` [[#4254]](https://github.com/hazelcast/hazelcast/issues/4254).
+- Serialization error on the ReplicatedMap when in-memory format is set to `BINARY` [[#4205]](https://github.com/hazelcast/hazelcast/issues/4205).
+- Too long exception stacktraces if the Hazelcast client fails to receive data, and this leads to a failure on the client [[#4192]](https://github.com/hazelcast/hazelcast/issues/4192).
+- Hazelcast client registers the translated public address instead of its own private address to the list of connections. This causes the client not to be able to remove the connection correctly [[#4190]](https://github.com/hazelcast/hazelcast/issues/4190).
+- `TransactionType:Local` emits exceptions while committing. The normal behavior should be throwing the exceptions to the user [[#4160]](https://github.com/hazelcast/hazelcast/issues/4160).
+- Map replication should mark expirable recordstore. Otherwise, in some situations, if one does not set the map wide expiration or map wide TTL, the key based TTL expiration may not work [[#4144]](https://github.com/hazelcast/hazelcast/issues/4144).
+- The method `BasicInvocationFuture.response` should be cleared when `BasicInvocation.WAIT_RESPONSE` is read by the waiter thread. Otherwise, when the retry operation takes too much time, the waiting thread sees the same wait response multiple times and the operation may not timeout forever [[#4123]](https://github.com/hazelcast/hazelcast/issues/4123).
+- Topic listeners should be unregistered when topic is destroyed [[#4117]](https://github.com/hazelcast/hazelcast/issues/4117).
+- Invocations (and their operations) remain in the invocations map forever if the operation timeouts without a response [[#4113]](https://github.com/hazelcast/hazelcast/issues/4113).
+- Timeout is needed for parallel query operations [[#4074]](https://github.com/hazelcast/hazelcast/issues/4074).
+- Initial map load and `max-size-policy` conflict [[#4066]](https://github.com/hazelcast/hazelcast/issues/4066).
+- MapStore operations should be retried and performed eventually after a temporary failure [[#4061]](https://github.com/hazelcast/hazelcast/issues/4061).
+-  The class `SynchronizedWriteBehindQueue` (from `com.hazelcast.map.mapstore.writebehind`
+package) is declared threadsafe in JavaDocs, but it is not [[#4039]](https://github.com/hazelcast/hazelcast/issues/4039).
+- The method `RemoveIfSameOperation` does not set `dataOldValue` for the `entryRemoved` event  [[#4037]](https://github.com/hazelcast/hazelcast/issues/4037).
+- When a new node with a new field is added to a cluster and when a query over this node is attempted, the old nodes throw an exception (`com.hazelcast.query.QueryException: Unknown Portable field: newFieldName`) and the query fails by throwing the same exception. [[#3927]](https://github.com/hazelcast/hazelcast/issues/3927).
+- At the moment, the internal state fields of a `Reducer` are required to be volatile to ensure the memory visibility effects after the suspension and continuation of a reducer. This requirement should be moved to be handled by the framework itself since it is tend to be forgotten [[#3866]](https://github.com/hazelcast/hazelcast/issues/3866).
+- The method `executeOnKey` hangs when the server fails to handle a query [[#3842]](https://github.com/hazelcast/hazelcast/issues/3842).
+- The `GlobalSerializerConfig#setImplementation()` parameter should be compatible with the implementation field [[#3569]](https://github.com/hazelcast/hazelcast/issues/3569).
+- `ClientConsoleApp` should not define the file `hazelcast-client.xml` [[#3554]](https://github.com/hazelcast/hazelcast/issues/3554).
+- When using a custom partitioning strategy and the configured backup count of a map cannot be fulfilled since a node defined in the custom partition group is down, a JMX service call is blocked in the while-loop at `com.hazelcast.map.MapService.createLocalMapStats` [[#3526]](https://github.com/hazelcast/hazelcast/issues/3526).
+
+
+**3.3.3 Fixes**
+
+This section lists issues solved for **Hazelcast 3.3.3** release.
+
+
+- JCache average put time statistic is not calculated correctly [[#4029]](https://github.com/hazelcast/hazelcast/issues/4029).
+- When sending backup, the replica address can be seen as null [[#4001]](https://github.com/hazelcast/hazelcast/issues/4001).
+- Evicted events are sent before the added events to EntryListeners [[#3992]](https://github.com/hazelcast/hazelcast/issues/3992).
+- In Management Center, the default login credentials cannot be deleted [[#3990]](https://github.com/hazelcast/hazelcast/issues/3990).
+- Logger for `NodeMulticastListener` does not belong to `com.hazelcast` hierarchy [[#3941]](https://github.com/hazelcast/hazelcast/issues/3941).
+- MapInterceptors are not removed when a node leaves the cluster [[#3932]](https://github.com/hazelcast/hazelcast/issues/3932).
+- MapInterceptors of same type (`Class`) are chained [[#3931]](https://github.com/hazelcast/hazelcast/issues/3931).
+- Expiration Time should not be updated. Its value is updated on every set operation on a map, but Hazelcast uses only the first value set for ExpirationTime. So a `getExpirationTime()` operation returns a wrong and misleading value. [[#3923]](https://github.com/hazelcast/hazelcast/issues/3923).
+- When using the XML file to configure a Queue to use a `QueueStoreFactory`, a null pointer exception is thrown at `QueueStoreWrapper` [[#3907]](https://github.com/hazelcast/hazelcast/issues/3907).
+- Excess logging on startup [[#3869]](https://github.com/hazelcast/hazelcast/issues/3869).
+- `LifecycleService` should be terminated after the node cannot join to the cluster [[#3843]](https://github.com/hazelcast/hazelcast/issues/3843).
+- The method `MapProxyImpl.aggregate` hangs sporadically [[#3824]](https://github.com/hazelcast/hazelcast/issues/3824).
+- Currently, there is no class named `com.hazelcast.nio.utf8.EnterpriseStringCreator` in Hazelcast. So the class and its log messages should be removed from the code [[#3819]](https://github.com/hazelcast/hazelcast/issues/3819).
+- Bad user interface experience in the management center. Maps menu item that contains maps with longer names cannot be expanded [[#3815]](https://github.com/hazelcast/hazelcast/issues/3815).
+- When the shutdown button in the management center is hit multiple times, the nodes are shutdown again, after they are shutdown at the first place and restarted [[#3718]](https://github.com/hazelcast/hazelcast/issues/3718).
+- Alert e-mails from the management center are not sent to the e-mail address [[#3693]](https://github.com/hazelcast/hazelcast/issues/3693).
+- Instances with private IPs cannot be discovered on Amazon EC2 [[#3666]](https://github.com/hazelcast/hazelcast/issues/3666).
+- Null pointer exception in the method `Records.buildRecordInfo` from the stabilizer `MapStoreTest` [[#2956]](https://github.com/hazelcast/hazelcast/issues/2956).
+
+- 
+
+
 **3.3.2 Fixes**
 
 This section lists issues solved for **Hazelcast 3.3.2** release.
