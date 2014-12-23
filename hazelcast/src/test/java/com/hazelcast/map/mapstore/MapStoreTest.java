@@ -1267,32 +1267,72 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test(timeout = 120000)
-    public void testIssue1110() throws InterruptedException {
-        final int mapSize = 10;
-        final String mapName = "testIssue1110";
+    /**
+     * Test for issue https://github.com/hazelcast/hazelcast/issues/1110
+     */
+    @Test(timeout = 300000)
+    public void testMapLoader_withMapLoadChunkSize() throws InterruptedException {
+        final int chunkSize = 5;
+        final int numberOfEntriesToLoad = 100;
+        final String mapName = randomString();
+
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, "5");
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new SimpleMapLoader(mapSize, false));
-        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance1.getMap(mapName);
-        final CountDownLatch latch = new CountDownLatch(mapSize);
+
+        ChunkedLoader chunkedLoader = new ChunkedLoader(numberOfEntriesToLoad, false);
+        Config cfg = createChunkedMapLoaderConfig(mapName, chunkSize, chunkedLoader);
+
+        HazelcastInstance node = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap map = node.getMap(mapName);
+
+        final CountDownLatch latch = new CountDownLatch(numberOfEntriesToLoad);
         map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
         }, true);
-        // create all partition recordstores.
+        // force creation of all partition record-stores.
         map.size();
-        //wait map load.
-        latch.await();
-        assertEquals(mapSize, map.size());
+
+        //await finish of map load.
+        assertOpenEventually(latch, 240);
+
+        final int expectedChunkCount = numberOfEntriesToLoad / chunkSize;
+        final int actualChunkCount = chunkedLoader.numberOfChunks.get();
+        assertEquals(expectedChunkCount, actualChunkCount);
+
+        assertEquals(numberOfEntriesToLoad, map.size());
+    }
+
+    private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
+        Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
+
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(chunkedLoader);
+
+        MapConfig mapConfig = cfg.getMapConfig(mapName);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        return cfg;
+    }
+
+    private static class ChunkedLoader extends SimpleMapLoader {
+
+        private AtomicInteger numberOfChunks = new AtomicInteger(0);
+
+        ChunkedLoader(int size, boolean slow) {
+            super(size, slow);
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            numberOfChunks.incrementAndGet();
+            return super.loadAll(keys);
+        }
     }
 
     @Test(timeout = 120000)
