@@ -5,6 +5,10 @@
 
 This section lists issues solved for **Hazelcast 3.4** release.
 
+
+- In JCache, there is a memory leak on the backups since the method `BackupPutOperation` does not trigger the eviction [[#4297]](https://github.com/hazelcast/hazelcast/issues/4297).
+- In JCache, the methods `putIfAbsent`, `remove`, `replace` are broken with the sync listener. The missing completion event, if the condition fails for these methods, should be added [[#4251]](https://github.com/hazelcast/hazelcast/issues/4251).
+- QueueStore in `BINARY` mode is not working. The problem seems to be in the `loadAll` method of `com.hazelcast.queue.impl.QueueStoreWrapper` [[#4244]](https://github.com/hazelcast/hazelcast/issues/4244).
 - Deadlock happens in MapReduce implementation when there is a high load on the system. The issue has been solved by offloading Distributed MapReduce result collection to the async executor [[#4238]](https://github.com/hazelcast/hazelcast/issues/4238).
 - When the class `ClientExecutorServiceSubmitTest.java` is compiled using the Eclipse compiler, it gives a compile error: "*The method submit(Runnable, ExecutionCallback) is ambiguous for the type IExecutorService*". The reason is that the `IExecutorService.java` class does not have some generics. The issue has been solved by adding these missing generics to the `IExecutorService.java` class [[#4234]](https://github.com/hazelcast/hazelcast/issues/4234).
 - JCache declarative listener registration does not work [[#4215]](https://github.com/hazelcast/hazelcast/issues/4215).
