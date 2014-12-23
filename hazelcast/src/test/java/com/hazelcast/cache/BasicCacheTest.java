@@ -397,25 +397,33 @@ public class BasicCacheTest
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            created.incrementAndGet();
+            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+                created.incrementAndGet();
+            }
         }
 
         @Override
         public void onExpired(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            expired.incrementAndGet();
+            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+                expired.incrementAndGet();
+            }
         }
 
         @Override
         public void onRemoved(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            removed.incrementAndGet();
+            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+                removed.incrementAndGet();
+            }
         }
 
         @Override
         public void onUpdated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            updated.incrementAndGet();
+            for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
+                updated.incrementAndGet();
+            }
         }
     }
 
