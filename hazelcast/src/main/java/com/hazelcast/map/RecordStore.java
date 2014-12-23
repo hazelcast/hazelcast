@@ -217,7 +217,7 @@ public interface RecordStore {
 
     void clearPartition();
 
-    void reset();
+    void reset(boolean loadCheck);
 
     boolean forceUnlock(Data dataKey);
 
