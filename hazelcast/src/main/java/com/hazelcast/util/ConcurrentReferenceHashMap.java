@@ -940,10 +940,10 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Creates a new, empty map with the specified initial
-     * capacity, load factor and concurrency level.
+     * capacity, load factor, and concurrency level.
      *
      * @param initialCapacity  the initial capacity. The implementation
-     *                         performs internal sizing to accommodate this many elements.
+     *                         performs internal sizing to accommodate this number of elements.
      * @param loadFactor       the load factor threshold, used to control resizing.
      *                         Resizing may be performed when the average number of elements per
      *                         bin exceeds this threshold.
@@ -966,7 +966,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * strong values), and concurrencyLevel (16).
      *
      * @param initialCapacity The implementation performs internal
-     *                        sizing to accommodate this many elements.
+     *                        sizing to accommodate this number of elements.
      * @param loadFactor      the load factor threshold, used to control resizing.
      *                        Resizing may be performed when the average number of elements per
      *                        bin exceeds this threshold.
@@ -981,7 +981,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Creates a new, empty map with the specified initial capacity,
-     * reference types and with default load factor (0.75) and concurrencyLevel (16).
+     * reference types, and with a default load factor (0.75) and concurrencyLevel (16).
      *
      * @param initialCapacity the initial capacity. The implementation
      *                        performs internal sizing to accommodate this many elements.
@@ -1154,7 +1154,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
      * <p/>
-     * <p>More formally, if this map contains a mapping from a key
+     * <p>If this map contains a mapping from a key
      * {@code k} to a value {@code v} such that {@code key.equals(k)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
@@ -1183,7 +1183,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value. Note: This method requires a full internal
-     * traversal of the hash table, and so is much slower than
+     * traversal of the hash table, therefore it is much slower than the
      * method <tt>containsKey</tt>.
      *
      * @param value value whose presence in this map is to be tested
@@ -1374,8 +1374,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * as cleaning up old references to a ClassLoader in a multi-classloader
      * environment.
      * <p/>
-     * Note: this method will acquire locks, one at a time, across all segments
-     * of this table, so if it is to be used, it should be used sparingly.
+     * Note: this method will acquire locks one at a time across all segments
+     * of this table, so this method should be used sparingly.
      */
     public void purgeStaleEntries() {
         for (int i = 0; i < segments.length; ++i)
@@ -1437,7 +1437,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * <p/>
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator
      * that will never throw {@link ConcurrentModificationException},
-     * and guarantees to traverse elements as they existed upon
+     * and is guaranteed to traverse elements as they existed upon
      * construction of the iterator, and may (but is not guaranteed to)
      * reflect any modifications subsequent to construction.
      */
@@ -1633,8 +1633,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
         /**
-         * Set our entry's value and write through to the map. The
-         * value to return is somewhat arbitrary here. Since a
+         * Set our entry's value and writes it through to the map. The
+         * value to return is somewhat arbitrary: since a
          * WriteThroughEntry does not necessarily track asynchronous
          * changes, the most recent "previous" value could be
          * different from what we return (or could even have been
