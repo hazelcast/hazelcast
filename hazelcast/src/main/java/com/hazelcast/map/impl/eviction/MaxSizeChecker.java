@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -211,10 +212,22 @@ public class MaxSizeChecker {
     /**
      * used when deciding evictable or not.
      */
-    public static int getApproximateMaxSize(int maxSizeFromConfig) {
+    private static int getApproximateMaxSize(int maxSizeFromConfig) {
         // because not to exceed the max size much we start eviction early.
         // so decrease the max size with ratio .95 below
         return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
+    }
+
+    /**
+     * Get max size setting form config for given policy
+     *
+     * @return max size or -1 if policy is different or not set
+     */
+    public static int getApproximateMaxSize(MaxSizeConfig maxSizeConfig, MaxSizePolicy policy) {
+        if (maxSizeConfig.getMaxSizePolicy() == policy) {
+            return getApproximateMaxSize(maxSizeConfig.getSize());
+        }
+        return -1;
     }
 
     private List<Integer> findPartitionIds() {

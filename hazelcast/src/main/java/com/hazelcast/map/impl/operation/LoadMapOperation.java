@@ -46,7 +46,7 @@ public class LoadMapOperation extends AbstractMapOperation {
 
         mapStoreContext.triggerInitialKeyLoad();
 
-        for(int partition :  mapServiceContext.getOwnedPartitions()) {
+        for (int partition :  mapServiceContext.getOwnedPartitions()) {
             RecordStore recordStore = mapServiceContext.getRecordStore(partition, name);
             recordStore.loadAllFromStore(replaceExistingValues);
         }

@@ -247,7 +247,7 @@ final class BasicMapStoreContext implements MapStoreContext {
     private void selectOwnedKeys(Iterable loadedKeys, MapServiceContext mapServiceContext) {
 
         initialKeys.clear();
-        int maxSizePerNode = getApproximateMaxSize(getMaxSizePerNode()) - 1;
+        int maxSizePerNode = getApproximateMaxSize(maxSizeConfig, PER_NODE) - 1;
 
         for (Object key : loadedKeys) {
             Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
@@ -261,22 +261,6 @@ final class BasicMapStoreContext implements MapStoreContext {
                 }
             }
         }
-    }
-
-    /**
-     * Get max size per node setting form config
-     *
-     * @return max size or -1 if policy is not set
-     */
-    private int getMaxSizePerNode() {
-        final MaxSizeConfig maxSizeConfig = this.maxSizeConfig;
-        int maxSize = -1;
-
-        if (maxSizeConfig.getMaxSizePolicy() == PER_NODE) {
-            maxSize = maxSizeConfig.getSize();
-        }
-
-        return maxSize;
     }
 
     /**
