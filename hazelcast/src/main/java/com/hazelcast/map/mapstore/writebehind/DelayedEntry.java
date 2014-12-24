@@ -17,7 +17,7 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 /**
- * Immutable store entry for delayed store operations.
+ * Store entry for delayed store operations.
  *
  * @param <K> the key type.
  * @param <V> the value type.
