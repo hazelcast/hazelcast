@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
@@ -37,7 +36,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ThreadUtil;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,15 +52,9 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
-
-    @After
-    public void setUp() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
     @Test
     public void testMapRemoveFailingBackupShouldNotLeadToStaleDataWhenReadBackupIsEnabled() throws Exception {
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final String mapName = randomMapName();
         final String key = "2";
         final String value = "value2";
