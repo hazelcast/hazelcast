@@ -393,8 +393,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void reset() {
-        checkIfLoaded();
-
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
