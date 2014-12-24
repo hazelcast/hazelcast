@@ -17,15 +17,14 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.impl.operation.BaseRemoveOperation;
-import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.operation.BaseRemoveOperation;
+import com.hazelcast.map.operation.KeyBasedMapOperation;
+import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
@@ -37,14 +36,13 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ThreadUtil;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.spy;
@@ -54,15 +52,9 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
-
-    @After
-    public void setUp() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
     @Test
     public void testMapRemoveFailingBackupShouldNotLeadToStaleDataWhenReadBackupIsEnabled() throws Exception {
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final String mapName = randomMapName();
         final String key = "2";
         final String value = "value2";

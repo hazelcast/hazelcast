@@ -392,11 +392,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public void reset(boolean loadCheck) {
-        if (loadCheck) {
-            checkIfLoaded();
-        }
-
+    public void reset() {
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
