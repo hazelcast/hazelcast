@@ -14,6 +14,10 @@ src/GettingStarted.md
 	src/UseCases.md
 	src/Resources.md
 src/HazelcastClusters.md
+	src/HazelcastClustersMulticast.md
+	src/HazelcastClustersTCP.md
+	src/HazelcastClustersEC2.md
+	src/CreateClusterGroups.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md

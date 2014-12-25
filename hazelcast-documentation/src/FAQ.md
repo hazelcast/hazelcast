@@ -150,33 +150,6 @@ public void cleanup() throws Exception {
 
 For more information please [check our existing tests.](https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster)
 
-## How do I create separate clusters
-
-By specifying group name and group password, you can separate your clusters in a simple way. Groupings can be by *dev*, *production*, *test*, *app*, etc. Here is a declarative configuration.
-
-```xml
-<hazelcast>
-  <group>
-    <name>dev</name>
-    <password>dev-pass</password>
-  </group>
-  ...
-</hazelcast>
-```
-
-You can also set the `groupName` with programmatic configuration. JVM can host multiple Hazelcast instances. Each node can only participate in one group and it only joins to its own group, it does not mess with others. The following code example creates 3 separate Hazelcast nodes: `h1` belongs to the `app1` cluster, while `h2` and `h3` belong to the `app2` cluster.
-
-```java
-Config configApp1 = new Config();
-configApp1.getGroupConfig().setName( "app1" );
-
-Config configApp2 = new Config();
-configApp2.getGroupConfig().setName( "app2" );
-
-HazelcastInstance h1 = Hazelcast.newHazelcastInstance( configApp1 );
-HazelcastInstance h2 = Hazelcast.newHazelcastInstance( configApp2 );
-HazelcastInstance h3 = Hazelcast.newHazelcastInstance( configApp2 );
-```
 
 ## Does Hazelcast support hundreds of nodes
 
