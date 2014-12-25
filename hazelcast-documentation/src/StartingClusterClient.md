@@ -5,7 +5,7 @@
 
 Having installed Hazelcast, you can get started. 
 
-In this short tutorial, we will:
+In this short tutorial, we:
 
 1. Create a simple Java application using the Hazelcast distributed map and queue. 
 2. Run our application twice to have a cluster with two nodes (JVMs). 
@@ -14,7 +14,7 @@ In this short tutorial, we will:
 Let's begin.
 
 
--	The following code will start the first node, and will create and use the `customers` map and queue.
+-	The following code starts the first node, and creates and uses the `customers` map and queue.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -44,7 +44,8 @@ public class GettingStarted {
   }
 }
 ```
--   Run this GettingStarted class a second time to get the second node started. The nodes will form a cluster, so you should see something like this:
+
+-   Run this `GettingStarted` class a second time to get the second node started. The nodes form a cluster. You should see something like the following.
 
 ```
 Members [2] {
@@ -53,9 +54,9 @@ Members [2] {
 }                              
 ```
 
--   Now, add `hazelcast-client-`*`<version>`*`.jar` to your classpath. This is required to use a Hazelcast client. 
+-   Now, add the `hazelcast-client-`*`<version>`*`.jar` library to your classpath. This is required to use a Hazelcast client.
 
--   The following code will start a Hazelcast Client, connect to our two node cluster, and print the size of our `customers` map.
+-   The following code starts a Hazelcast Client, connects to our two node cluster, and prints the size of the `customers` map.
 
 ```java    
 package com.hazelcast.test;
@@ -74,7 +75,7 @@ public class GettingStartedClient {
     }
 }
 ```
--   When you run it, you will see the client properly connecting to the cluster and printing the map size as **3**.
+-   When you run it, you see the client properly connecting to the cluster and printing the map size as **3**.
 
 Hazelcast also offers a tool, **Management Center**, that enables you to monitor your cluster. To use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, and other distributed data structures and nodes. Please see the [Management Center section](#management-center) for usage explanations.
 
