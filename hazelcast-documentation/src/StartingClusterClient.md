@@ -3,12 +3,12 @@
 ## Starting the Cluster and Client
 
 
-Having installed hazelcast, you can get started. 
+Having installed Hazelcast, you can get started. 
 
 In this short tutorial, we will:
 
-1. Create a simple Java application using Hazelcast distributed map and queue. 
-2. Run our application twice to have two nodes (JVMs) clustered. 
+1. Create a simple Java application using the Hazelcast distributed map and queue. 
+2. Run our application twice to have a cluster with two nodes (JVMs). 
 3. Connect to our cluster from another Java application by using the Hazelcast Native Java Client API.
 
 Let's begin.
