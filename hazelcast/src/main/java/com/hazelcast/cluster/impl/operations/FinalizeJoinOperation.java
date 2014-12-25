@@ -106,5 +106,13 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             postJoinOp.readData(in);
         }
     }
+
+    @Override
+    public String toString() {
+        return "FinalizeJoinOperation{"
+                + "postJoinOp=" + postJoinOp
+                + "} "
+                + super.toString();
+    }
 }
 
