@@ -477,9 +477,28 @@ If you want SSL enabled for the client-cluster connection, you should set `SSLCo
 
 You can declare the Hazelcast Java client declaratively or programmatically.
 
+#### Java Client Configuration Overview
+
+Hazelcast Java Client can be configured declaratively (XML) or programmatically (API). 
+
+For declarative configuration, the Hazelcast client looks into the following places for the client configuration file
+
+- **System property**: The client first checks if `hazelcast.client.config` system property is set to a file path, e.g. `-Dhazelcast.client.config=C:/myhazelcast.xml`.
+
+- **Classpath**: If config file is not set as a system property, the client checks the classpath for `hazelcast-client.xml` file.
+
+If the client does not find any configuration file, it starts with the default configuration (`hazelcast-client-default.xml`) located in the `hazelcast-client.jar` library. Before configuring the client, please try to work with the default configuration to see if it works for you. Default should be just fine for most of the users. If not, then consider custom configuration for your environment.
+
+If you want to specify your own configuration file to create a `Config` object, the Hazelcast client supports the following.
+
+- `Config cfg = new XmlClientConfigBuilder(xmlFileName).build();`
+
+- `Config cfg = new XmlClientConfigBuilder(inputStream).build();`
+
+
+
 #### Java Client Declarative Configuration
 
-You can configure the Java client using an XML configuration file.
 Below is a generic template for a declarative configuration.
 
 ```xml
