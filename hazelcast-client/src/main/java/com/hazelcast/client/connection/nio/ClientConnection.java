@@ -17,32 +17,27 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
-import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.client.RemoveAllListeners;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.Closeable;
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -53,6 +48,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -61,7 +57,7 @@ public class ClientConnection implements Connection, Closeable {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
 
-    private volatile boolean live = true;
+    private final AtomicBoolean live = new AtomicBoolean(true);
 
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
 
@@ -81,18 +77,16 @@ public class ClientConnection implements Connection, Closeable {
             = new ConcurrentHashMap<Integer, ClientCallFuture>();
     private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap
             = new ConcurrentHashMap<Integer, ClientCallFuture>();
-    private final ByteBuffer readBuffer;
     private final SerializationService serializationService;
     private final ClientExecutionService executionService;
-    private final ClientInvocationServiceImpl invocationService;
-    private boolean readFromSocket = true;
+    private final ClientInvocationService invocationService;
     private final AtomicInteger packetCount = new AtomicInteger(0);
     private volatile boolean heartBeating = true;
 
     public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
-                            ClientInvocationServiceImpl invocationService,
+                            ClientInvocationService invocationService,
                             SerializationService serializationService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
@@ -103,7 +97,6 @@ public class ClientConnection implements Connection, Closeable {
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
-        this.readBuffer = ByteBuffer.allocate(socket.getReceiveBufferSize());
     }
 
     public void incrementPacketCount() {
@@ -145,7 +138,7 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public boolean write(SocketWritable packet) {
-        if (!live) {
+        if (!live.get()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
@@ -163,49 +156,6 @@ public class ClientConnection implements Connection, Closeable {
         socketChannelWrapper.write(buffer);
     }
 
-    public void write(Data data) throws IOException {
-        final Packet packet = new Packet(data, serializationService.getPortableContext());
-        final int totalSize = packet.size();
-        final int bufferSize = SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
-        final ByteBuffer buffer = ByteBuffer.allocate(totalSize > bufferSize ? bufferSize : totalSize);
-        boolean complete = false;
-        while (!complete) {
-            complete = packet.writeTo(buffer);
-            buffer.flip();
-            try {
-                socketChannelWrapper.write(buffer);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-            buffer.clear();
-        }
-    }
-
-    public Data read() throws IOException {
-        Packet packet = new Packet(serializationService.getPortableContext());
-        while (true) {
-            if (readFromSocket) {
-                int readBytes = socketChannelWrapper.read(readBuffer);
-                if (readBytes == -1) {
-                    throw new EOFException("Remote socket closed!");
-                }
-                readBuffer.flip();
-            }
-            boolean complete = packet.readFrom(readBuffer);
-            if (complete) {
-                if (readBuffer.hasRemaining()) {
-                    readFromSocket = false;
-                } else {
-                    readBuffer.compact();
-                    readFromSocket = true;
-                }
-                return packet.getData();
-            }
-            readFromSocket = true;
-            readBuffer.clear();
-        }
-    }
-
     @Override
     public Address getEndPoint() {
         return remoteEndpoint;
@@ -213,7 +163,7 @@ public class ClientConnection implements Connection, Closeable {
 
     @Override
     public boolean isAlive() {
-        return live;
+        return live.get();
     }
 
     @Override
@@ -281,18 +231,12 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     private void innerClose() throws IOException {
-        if (!live) {
-            return;
-        }
-        live = false;
+
         if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
         readHandler.shutdown();
         writeHandler.shutdown();
-        if (socketChannelWrapper.isBlocking()) {
-            return;
-        }
         if (connectionManager.isAlive()) {
             try {
                 executionService.execute(new CleanResourcesTask());
@@ -358,7 +302,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void close(Throwable t) {
-        if (!live) {
+        if (!live.compareAndSet(true, false)) {
             return;
         }
         try {
@@ -374,9 +318,7 @@ public class ClientConnection implements Connection, Closeable {
         }
 
         logger.warning(message);
-        if (!socketChannelWrapper.isBlocking()) {
-            connectionManager.onConnectionClose(this);
-        }
+        connectionManager.destroyConnection(this);
     }
 
     //failedHeartBeat is incremented in single thread.
@@ -386,9 +328,9 @@ public class ClientConnection implements Connection, Closeable {
             return;
         }
         final RemoveAllListeners request = new RemoveAllListeners();
-        invocationService.send(request, ClientConnection.this);
+        invocationService.invokeOnConnection(request, ClientConnection.this);
         heartBeating = false;
-        connectionManager.onDetectingUnresponsiveConnection(this);
+        close();
         final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
         final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 

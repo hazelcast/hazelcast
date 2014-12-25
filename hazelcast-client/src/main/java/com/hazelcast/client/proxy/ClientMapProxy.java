@@ -1182,7 +1182,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }
             };
 
-            String registrationId = getContext().getListenerService().listen(request, null, handler);
+            String registrationId = getContext().getListenerService().startListening(request, null, handler);
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(

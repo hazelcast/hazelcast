@@ -16,13 +16,24 @@
 
 package com.hazelcast.client.txn;
 
+import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.impl.client.AuthenticationRequest;
+import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -35,21 +46,31 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.Xid;
+import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 
 public class ClientTransactionManager {
 
+    private static final int RETRY_COUNT = 20;
     final HazelcastClientInstanceImpl client;
 
     final ConcurrentMap<SerializableXID, TransactionProxy> managedTransactions =
             new ConcurrentHashMap<SerializableXID, TransactionProxy>();
     final ConcurrentMap<SerializableXID, ClientConnection> recoveredTransactions =
             new ConcurrentHashMap<SerializableXID, ClientConnection>();
+    private final LoadBalancer loadBalancer;
+    private final Credentials credentials;
+    private final ClusterAuthenticator authenticator;
 
-    public ClientTransactionManager(HazelcastClientInstanceImpl client) {
+    public ClientTransactionManager(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         this.client = client;
+        this.loadBalancer = loadBalancer;
+        credentials = client.getCredentials();
+        authenticator = new ClusterAuthenticator();
     }
 
     public HazelcastClientInstanceImpl getClient() {
@@ -117,26 +138,37 @@ public class ClientTransactionManager {
         managedTransactions.remove(sXid);
     }
 
-    ClientConnection connect() {
-        try {
-            return client.getConnectionManager().tryToConnect(null);
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
+    ClientConnection connect() throws Exception {
+        Exception lastError = null;
+        int count = 0;
+        while (count < RETRY_COUNT) {
+            try {
+                final Address randomAddress = getRandomAddress();
+                return (ClientConnection) client.getConnectionManager().getOrConnect(randomAddress, authenticator);
+            } catch (IOException e) {
+                lastError = e;
+            } catch (HazelcastInstanceNotActiveException e) {
+                lastError = e;
+            }
+            count++;
         }
-        return null;
+        throw lastError;
     }
 
     public Xid[] recover() {
         final SerializationService serializationService = client.getSerializationService();
-        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        final ClientInvocationService invocationService = client.getInvocationService();
         final Xid[] empty = new Xid[0];
         try {
-            final ClientConnection connection = connect();
-            if (connection == null) {
+            final ClientConnection connection;
+            try {
+                connection = connect();
+            } catch (Exception ignored) {
+                EmptyStatement.ignore(ignored);
                 return empty;
             }
             final RecoverAllTransactionsRequest request = new RecoverAllTransactionsRequest();
-            final ICompletableFuture<SerializableCollection> future = invocationService.send(request, connection);
+            final Future<SerializableCollection> future = invocationService.invokeOnConnection(request, connection);
             final SerializableCollection collectionWrapper = serializationService.toObject(future.get());
 
             for (Data data : collectionWrapper) {
@@ -159,10 +191,10 @@ public class ClientTransactionManager {
         if (connection == null) {
             return false;
         }
-        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        final com.hazelcast.client.spi.ClientInvocationService invocationService = client.getInvocationService();
         final RecoverTransactionRequest request = new RecoverTransactionRequest(sXid, commit);
         try {
-            final ICompletableFuture future = invocationService.send(request, connection);
+            final ICompletableFuture future = invocationService.invokeOnConnection(request, connection);
             future.get();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
@@ -173,6 +205,47 @@ public class ClientTransactionManager {
     public void shutdown() {
         managedTransactions.clear();
         recoveredTransactions.clear();
+    }
+
+    private Address getRandomAddress() {
+
+        MemberImpl member = (MemberImpl) loadBalancer.next();
+        if (member == null) {
+            Set<Member> members = client.getCluster().getMembers();
+            String msg;
+            if (members.isEmpty()) {
+                msg = "No address was return by the LoadBalancer since there are no members in the cluster";
+            } else {
+                msg = "No address was return by the LoadBalancer. "
+                        + "But the cluster contains the following members:" + members;
+            }
+            throw new IllegalStateException(msg);
+        }
+
+        return member.getAddress();
+    }
+
+    private class ClusterAuthenticator implements Authenticator {
+        @Override
+        public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
+            final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
+            final ClientPrincipal principal = clusterService.getClusterListenerSupport().getPrincipal();
+            final SerializationService ss = client.getSerializationService();
+            AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
+            connection.init();
+            //contains remoteAddress and principal
+            SerializableCollection collectionWrapper;
+            final Future future = client.getInvocationService().invokeOnConnection(auth, connection);
+            try {
+                collectionWrapper = ss.toObject(future.get());
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e, IOException.class);
+            }
+            final Iterator<Data> iter = collectionWrapper.iterator();
+            final Data addressData = iter.next();
+            final Address address = ss.toObject(addressData);
+            connection.setRemoteEndpoint(address);
+        }
     }
 
 }

@@ -30,6 +30,7 @@ import java.io.IOException;
 public abstract class ClientRequest implements SecureRequest, VersionedPortable {
 
     protected volatile int callId = -1;
+    protected transient int partitionId = -1;
     protected transient ClientEngineImpl clientEngine;
     protected transient OperationService operationService;
     protected transient SerializationService serializationService;
@@ -63,6 +64,14 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
 
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    public void setPartitionId(int partitionId) {
+        this.partitionId = partitionId;
     }
 
     public abstract void process() throws Exception;

@@ -18,13 +18,13 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.impl.client.ClientDestroyRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
-import com.hazelcast.transaction.client.BaseTransactionRequest;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -44,11 +44,10 @@ abstract class ClientTxnProxy implements TransactionalObject {
             ((BaseTransactionRequest) request).setTxnId(proxy.getTxnId());
             ((BaseTransactionRequest) request).setClientThreadId(Thread.currentThread().getId());
         }
-        final ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl)
-                proxy.getClient().getInvocationService();
+        final ClientInvocationService invocationService = proxy.getClient().getInvocationService();
         final SerializationService ss = proxy.getClient().getSerializationService();
         try {
-            final Future f = invocationService.send(request, proxy.getConnection());
+            final Future f = invocationService.invokeOnConnection(request, proxy.getConnection());
             return ss.toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

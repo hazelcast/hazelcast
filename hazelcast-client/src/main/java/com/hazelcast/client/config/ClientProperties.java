@@ -85,6 +85,16 @@ public class ClientProperties {
      */
     public static final String PROP_EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
 
+    /**
+     * Time to give up on invocation when a member in member list is not reachable
+     */
+    public static final String PROP_INVOCATION_TIMEOUT_SECONDS = "hazelcast.client.invocation.timeout.seconds";
+
+    /**
+     * Default value of invocation timeout seconds
+     */
+    public static final String PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT = "120";
+
 
     private final ClientProperty heartbeatTimeout;
     private final ClientProperty heartbeatInterval;
@@ -92,6 +102,7 @@ public class ClientProperties {
     private final ClientProperty retryWaitTime;
     private final ClientProperty eventThreadCount;
     private final ClientProperty eventQueueCapacity;
+    private final ClientProperty invocationTimeout;
 
 
     public ClientProperties(ClientConfig clientConfig) {
@@ -101,6 +112,8 @@ public class ClientProperties {
         retryWaitTime = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
         eventThreadCount = new ClientProperty(clientConfig, PROP_EVENT_THREAD_COUNT, PROP_EVENT_THREAD_COUNT_DEFAULT);
         eventQueueCapacity = new ClientProperty(clientConfig, PROP_EVENT_QUEUE_CAPACITY, PROP_EVENT_QUEUE_CAPACITY_DEFAULT);
+        invocationTimeout = new ClientProperty(clientConfig, PROP_INVOCATION_TIMEOUT_SECONDS,
+                PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
     }
 
     public ClientProperty getHeartbeatTimeout() {
@@ -125,6 +138,10 @@ public class ClientProperties {
 
     public ClientProperty getEventThreadCount() {
         return eventThreadCount;
+    }
+
+    public ClientProperty getInvocationTimeoutSeconds() {
+        return invocationTimeout;
     }
 
     /**

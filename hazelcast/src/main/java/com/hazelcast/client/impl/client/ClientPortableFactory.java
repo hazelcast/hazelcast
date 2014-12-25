@@ -70,6 +70,9 @@ public class ClientPortableFactory implements PortableFactory {
             case ClientPortableHook.REMOVE_ALL_LISTENERS:
                 portable = new RemoveAllListeners();
                 break;
+            case ClientPortableHook.GET_MEMBER_LIST:
+                portable = new GetMemberListRequest();
+                break;
             default:
                 portable = null;
         }

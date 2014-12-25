@@ -21,6 +21,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -64,7 +65,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final ClientExecutionServiceImpl executionService;
 
-    private final ClientInvocationServiceImpl invocationService;
+    private final ClientInvocationService invocationService;
 
     private final ClientListenerServiceImpl clientListenerService;
 
@@ -89,7 +90,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         int waitTime = clientProperties.getRetryWaitTime().getInteger();
         this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
 
-        this.invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
+        this.invocationService = client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();

@@ -302,7 +302,7 @@ public class ClientCacheProxy<K, V>
                 clientContext.getSerializationService());
         final EventHandler<Object> handler = createHandler(adaptor);
         final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().listen(registrationRequest, null, handler);
+        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);

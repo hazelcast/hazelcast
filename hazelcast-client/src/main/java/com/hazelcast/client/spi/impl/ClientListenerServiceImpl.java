@@ -49,7 +49,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     }
 
     @Override
-    public String listen(ClientRequest request, Object key, EventHandler handler) {
+    public String startListening(ClientRequest request, Object key, EventHandler handler) {
         final Future future;
         try {
             handler.beforeListenerRegister();

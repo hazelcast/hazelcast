@@ -5,28 +5,30 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
-import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.spi.impl.ClientDummyInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
-import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
+import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
@@ -69,10 +71,13 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.TransactionContext;
@@ -105,7 +110,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
-    private final ClientInvocationServiceImpl invocationService;
+    private final com.hazelcast.client.spi.ClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManager transactionManager;
@@ -113,6 +118,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
     private final ClientExtension clientExtension;
+    private final Credentials credentials;
 
     public HazelcastClientInstanceImpl(ClientConfig config) {
         this.config = config;
@@ -121,25 +127,61 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 
+        credentials = initCredentials(config);
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
         serializationService = clientExtension.createSerializationService();
         proxyManager = new ProxyManager(this);
         executionService = initExecutorService();
-        transactionManager = new ClientTransactionManager(this);
+        loadBalancer = initLoadBalancer(config);
+        transactionManager = new ClientTransactionManager(this, loadBalancer);
+        partitionService = new ClientPartitionServiceImpl(this);
+        connectionManager = initClientConnectionManager();
+        clusterService = new ClientClusterServiceImpl(this);
+        invocationService = initInvocationService();
+        listenerService = initListenerService();
+        userContext = new ConcurrentHashMap<String, Object>();
+        proxyManager.init(config);
+
+    }
+
+    private LoadBalancer initLoadBalancer(ClientConfig config) {
         LoadBalancer lb = config.getLoadBalancer();
         if (lb == null) {
             lb = new RoundRobinLB();
         }
-        loadBalancer = lb;
-        connectionManager = createClientConnectionManager();
-        clusterService = new ClientClusterServiceImpl(this);
-        invocationService = new ClientInvocationServiceImpl(this);
-        listenerService = initListenerService();
-        userContext = new ConcurrentHashMap<String, Object>();
-        proxyManager.init(config);
-        partitionService = new ClientPartitionServiceImpl(this);
+        return lb;
+    }
+
+    private Credentials initCredentials(ClientConfig config) {
+        final GroupConfig groupConfig = config.getGroupConfig();
+        final ClientSecurityConfig securityConfig = config.getSecurityConfig();
+        Credentials c = securityConfig.getCredentials();
+        if (c == null) {
+            final String credentialsClassname = securityConfig.getCredentialsClassname();
+            if (credentialsClassname != null) {
+                try {
+                    c = ClassLoaderUtil.newInstance(config.getClassLoader(), credentialsClassname);
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+        }
+        if (c == null) {
+            c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
+        }
+        return c;
+    }
+
+    private com.hazelcast.client.spi.ClientInvocationService initInvocationService() {
+        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        if (networkConfig.isSmartRouting()) {
+            return new ClientSmartInvocationServiceImpl(this, loadBalancer);
+
+        } else {
+            return new ClientDummyInvocationServiceImpl(this);
+        }
     }
 
     public int getId() {
@@ -180,8 +222,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         try {
             clusterService.start();
         } catch (IllegalStateException e) {
-            //there was an authentication failure
-            // (todo: perhaps use an AuthenticationException ??)
             lifecycleService.shutdown();
             throw e;
         }
@@ -190,7 +230,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         clientExtension.afterStart(this);
     }
 
-    ClientConnectionManager createClientConnectionManager() {
+    ClientConnectionManager initClientConnectionManager() {
         final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
         AddressTranslator addressTranslator;
         if (awsConfig != null && awsConfig.isEnabled()) {
@@ -203,7 +243,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         } else {
             addressTranslator = new DefaultAddressTranslator();
         }
-        return new ClientConnectionManagerImpl(this, loadBalancer, addressTranslator);
+        return new ClientConnectionManagerImpl(this, addressTranslator);
     }
 
     public Config getConfig() {
@@ -420,7 +460,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return partitionService;
     }
 
-    public ClientInvocationService getInvocationService() {
+    public com.hazelcast.client.spi.ClientInvocationService getInvocationService() {
         return invocationService;
     }
 
@@ -436,6 +476,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return clientExtension;
     }
 
+    public Credentials getCredentials() {
+        return credentials;
+    }
+
     @Override
     public void shutdown() {
         getLifecycleService().shutdown();
@@ -445,7 +489,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         proxyManager.destroy();
         executionService.shutdown();
         partitionService.stop();
-        clusterService.stop();
         transactionManager.shutdown();
         connectionManager.shutdown();
         invocationService.shutdown();

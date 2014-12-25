@@ -245,7 +245,7 @@ public final class ProxyManager {
 
             }
         };
-        return client.getListenerService().listen(request, null, eventHandler);
+        return client.getListenerService().startListening(request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {
