@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.AttributeAccessible;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.util.EmptyStatement;
 
@@ -99,70 +100,88 @@ public final class ReflectionHelper {
         }
 
         try {
-            Getter parent = null;
-            List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
-            for (final String name : attribute.split("\\.")) {
-                Getter localGetter = null;
-                possibleMethodNames.clear();
-                possibleMethodNames.add(name);
-                final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-                possibleMethodNames.add("get" + camelName);
-                possibleMethodNames.add("is" + camelName);
-                if (name.equals(THIS_ATTRIBUTE_NAME)) {
-                    localGetter = new ThisGetter(parent, obj);
-                } else {
-                    for (String methodName : possibleMethodNames) {
-                        try {
-                            final Method method = clazz.getMethod(methodName);
-                            method.setAccessible(true);
-                            localGetter = new MethodGetter(parent, method);
-                            clazz = method.getReturnType();
-                            break;
-                        } catch (NoSuchMethodException ignored) {
-                            EmptyStatement.ignore(ignored);
-                        }
-                    }
-                    if (localGetter == null) {
-                        try {
-                            final Field field = clazz.getField(name);
-                            localGetter = new FieldGetter(parent, field);
-                            clazz = field.getType();
-                        } catch (NoSuchFieldException ignored) {
-                            EmptyStatement.ignore(ignored);
-                        }
-                    }
-                    if (localGetter == null) {
-                        Class c = clazz;
-                        while (!Object.class.equals(c)) {
-                            try {
-                                final Field field = c.getDeclaredField(name);
-                                field.setAccessible(true);
-                                localGetter = new FieldGetter(parent, field);
-                                clazz = field.getType();
-                                break;
-                            } catch (NoSuchFieldException ignored) {
-                                c = c.getSuperclass();
-                            }
-                        }
-                    }
-                }
-                if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '"
-                            + name + "' on class '" + clazz + "'");
-                }
-                parent = localGetter;
+            if (obj instanceof AttributeAccessible) {
+                getter = new AttributeAccessibleGetter(null, attribute, obj);
+            } else {
+                getter = createReflectiveGetter(obj, attribute);
             }
-            getter = parent;
             if (getter.isCacheable()) {
                 Getter foundGetter = GETTER_CACHE.putIfAbsent(cacheKey, getter);
                 if (foundGetter != null) {
                     getter = foundGetter;
                 }
             }
+
             return getter;
         } catch (Throwable e) {
             throw new QueryException(e);
         }
+    }
+
+    /**
+     * Create getter via reflection. This method first tries to create the getter from accessors, then from fields.
+     * Also creates getters for contained objects.
+     *
+     * @param obj       Object to analyze
+     * @param attribute Attribute of obj or attribute of child of obj (e.g. customer.address.street)
+     * @return Getter for the specified attribute
+     */
+    private static Getter createReflectiveGetter(Object obj, String attribute) {
+        Class<?> clazz = obj.getClass();
+        Getter parent = null;
+        List<String> possibleMethodNames = new ArrayList<String>(INITIAL_CAPACITY);
+        for (final String name : attribute.split("\\.")) {
+            Getter localGetter = null;
+            possibleMethodNames.clear();
+            possibleMethodNames.add(name);
+            final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            possibleMethodNames.add("get" + camelName);
+            possibleMethodNames.add("is" + camelName);
+            if (name.equals(THIS_ATTRIBUTE_NAME)) {
+                localGetter = new ThisGetter(parent, obj);
+            } else {
+                for (String methodName : possibleMethodNames) {
+                    try {
+                        final Method method = clazz.getMethod(methodName);
+                        method.setAccessible(true);
+                        localGetter = new MethodGetter(parent, method);
+                        clazz = method.getReturnType();
+                        break;
+                    } catch (NoSuchMethodException ignored) {
+                        EmptyStatement.ignore(ignored);
+                    }
+                }
+                if (localGetter == null) {
+                    try {
+                        final Field field = clazz.getField(name);
+                        localGetter = new FieldGetter(parent, field);
+                        clazz = field.getType();
+                    } catch (NoSuchFieldException ignored) {
+                        EmptyStatement.ignore(ignored);
+                    }
+                }
+                if (localGetter == null) {
+                    Class c = clazz;
+                    while (!Object.class.equals(c)) {
+                        try {
+                            final Field field = c.getDeclaredField(name);
+                            field.setAccessible(true);
+                            localGetter = new FieldGetter(parent, field);
+                            clazz = field.getType();
+                            break;
+                        } catch (NoSuchFieldException ignored) {
+                            c = c.getSuperclass();
+                        }
+                    }
+                }
+            }
+            if (localGetter == null) {
+                throw new IllegalArgumentException("There is no suitable accessor for '"
+                        + name + "' on class '" + clazz + "'");
+            }
+            parent = localGetter;
+        }
+        return parent;
     }
 
     public static Comparable extractValue(Object object, String attributeName) throws Exception {
@@ -176,10 +195,25 @@ public final class ReflectionHelper {
             this.parent = parent;
         }
 
+        /**
+         * Use the getter information to read the desired attribute value from the object
+         *
+         * @param obj Object to analyze
+         * @return Value or null if the attribute or one of its parents is null
+         */
         abstract Object getValue(Object obj) throws Exception;
 
+        /**
+         * Return the type of the desired attribute. The type has to be stored during construction of the getter.
+         *
+         * @return Type or null if obj is null
+         */
         abstract Class getReturnType();
 
+        /**
+         * @return True if this getter may be reused. True if this class' classloader is the same as the returned
+         * objects class loader.
+         */
         abstract boolean isCacheable();
     }
 
@@ -244,11 +278,11 @@ public final class ReflectionHelper {
     }
 
     static class ThisGetter extends Getter {
-        final Object object;
+        private final Class<?> clazz;
 
-        public ThisGetter(final Getter parent, Object object) {
+        public ThisGetter(final Getter parent, final Object obj) {
             super(parent);
-            this.object = object;
+            this.clazz = (obj == null ? null : obj.getClass());
         }
 
         @Override
@@ -258,12 +292,56 @@ public final class ReflectionHelper {
 
         @Override
         Class getReturnType() {
-            return this.object.getClass();
+            return clazz;
         }
 
         @Override
         boolean isCacheable() {
-            return false;
+            return THIS_CL.equals(clazz.getClassLoader());
+        }
+    }
+
+    static class AttributeAccessibleGetter extends Getter {
+        private final String attribute;
+        private final Class<?> clazz;
+
+        public AttributeAccessibleGetter(final Getter parent, String attribute, Object obj) {
+            super(parent);
+            this.attribute = attribute;
+            if (obj != null) {
+                final AttributeAccessible accessible = (AttributeAccessible) obj;
+                clazz = accessible.getType(attribute);
+                if (clazz == null) {
+                    final String err = String.format("Attribute type of attribute '%s' is null on object %s",
+                            attribute,
+                            obj.toString());
+                    throw new IllegalArgumentException(err);
+                }
+            } else {
+                clazz = null;
+            }
+        }
+
+        @Override
+        Object getValue(Object obj) throws Exception {
+            Object paramObj = obj;
+            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
+            return paramObj != null ? ((AttributeAccessible) obj).getValue(attribute) : null;
+        }
+
+        @Override
+        Class getReturnType() {
+            return clazz;
+        }
+
+        @Override
+        boolean isCacheable() {
+            return clazz != null && THIS_CL.equals(clazz.getClassLoader());
+        }
+
+        @Override
+        public String toString() {
+            return "AttributeAccessibleGetter [parent=" + parent + ", attribute=" + attribute + ", clazz=" + clazz + "]";
         }
     }
 }
