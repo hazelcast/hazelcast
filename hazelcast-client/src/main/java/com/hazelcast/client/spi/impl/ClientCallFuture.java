@@ -59,8 +59,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
     private final int retryCount;
     private final int retryWaitTime;
 
-    private volatile Object response;
-
     private final ClientRequest request;
 
     private final ClientExecutionServiceImpl executionService;
@@ -73,11 +71,13 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final EventHandler handler;
 
-    private AtomicInteger reSendCount = new AtomicInteger();
+    private final AtomicInteger reSendCount = new AtomicInteger();
+
+    private final List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
+
+    private volatile Object response;
 
     private volatile ClientConnection connection;
-
-    private List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
 
     public ClientCallFuture(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler) {
         final ClientProperties clientProperties = client.getClientProperties();
@@ -190,11 +190,11 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
             }
             this.response = response;
             this.notifyAll();
+            for (ExecutionCallbackNode node : callbackNodeList) {
+                runAsynchronous(node.callback, node.executor, node.deserialized);
+            }
+            callbackNodeList.clear();
         }
-        for (ExecutionCallbackNode node : callbackNodeList) {
-            runAsynchronous(node.callback, node.executor, node.deserialized);
-        }
-        callbackNodeList.clear();
     }
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
