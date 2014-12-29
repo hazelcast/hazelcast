@@ -118,13 +118,13 @@ public final class ExceptionUtil {
     }
 
     /**
-     * This method changes the given remote cause and adds the also given local stacktrace.<br/>
-     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non null inner
+     * This method changes the given remote cause, and it adds the also given local stacktrace.<br/>
+     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given remoteCause itself.
      *
      * @param remoteCause the remotely generated exception
-     * @param localSideStackTrace the local stacktrace to add to the exceptions stacktrace
+     * @param localSideStackTrace the local stacktrace to add to the exception stacktrace
      */
     public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace) {
         Throwable throwable = remoteCause;
@@ -141,9 +141,9 @@ public final class ExceptionUtil {
     }
 
     /**
-     * This method changes the given remote cause and adds the also given local stacktrace separated by the
+     * This method changes the given remote cause, and it adds the also given local stacktrace separated by the
      * supplied exception message.<br/>
-     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non null inner
+     * If the remoteCause is an {@link java.util.concurrent.ExecutionException} and it has a non-null inner
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given remoteCause itself.
      *
