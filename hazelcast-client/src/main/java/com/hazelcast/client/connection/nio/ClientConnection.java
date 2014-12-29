@@ -56,6 +56,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 public class ClientConnection implements Connection, Closeable {
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
+    private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
 
     private final AtomicBoolean live = new AtomicBoolean(true);
 
@@ -276,7 +277,7 @@ public class ClientConnection implements Connection, Closeable {
                     break;
                 }
                 long elapsed = System.currentTimeMillis() - begin;
-                if (elapsed > WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED / 2) {
+                if (elapsed > WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD) {
                     logger.warning("There are packets which are not processed " + count);
                     break;
                 }
