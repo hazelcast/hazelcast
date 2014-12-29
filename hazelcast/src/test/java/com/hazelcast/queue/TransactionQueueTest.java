@@ -271,7 +271,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
                     assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
                     assertTrue(instance1.getQueue(inQueueName).isEmpty());
                 }
-            }, 20);
+            });
         } finally {
             moveMessage1.active = false;
         }
