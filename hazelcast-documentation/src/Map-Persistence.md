@@ -228,7 +228,7 @@ The `InitialLoadMode` configuration parameter in the class [`MapStoreConfig`](ht
 
 Here is the `MapLoader` initialization flow:
 
-1. When `getMap()` is first called from any node, initialization will start depending on the the value of `InitialLoadMode`. If it is set to `EAGER`, initialization starts.  If it is set to `LAZY`, initialization does not start but data is loaded each time a partition loading completes.
+1. When `getMap()` is first called from any node, initialization will start depending on the value of `InitialLoadMode`. If it is set to `EAGER`, initialization starts.  If it is set to `LAZY`, initialization does not start but data is loaded each time a partition loading completes.
 2. Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node.
 3. Each node will figure out the list of keys it owns.
 4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`.
