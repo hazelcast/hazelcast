@@ -16,19 +16,15 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
-    private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
-    private final Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
-            FieldDefinition>();
+    private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
 
     public ClassDefinitionImpl() {
     }
@@ -40,7 +36,6 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     void addFieldDef(FieldDefinitionImpl fd) {
-        fieldDefinitions.add(fd);
         fieldDefinitionsMap.put(fd.getName(), fd);
     }
 
@@ -49,7 +44,14 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public FieldDefinition getField(int fieldIndex) {
-        return fieldDefinitions.get(fieldIndex);
+        int count = 0;
+        for (FieldDefinition fieldDefinition : fieldDefinitionsMap.values()) {
+            if (fieldIndex == count) {
+                return fieldDefinition;
+            }
+            count++;
+        }
+        throw new IndexOutOfBoundsException();
     }
 
     public boolean hasField(String fieldName) {
@@ -77,12 +79,12 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     Collection<FieldDefinition> getFieldDefinitions() {
-        return fieldDefinitions;
+        return fieldDefinitionsMap.values();
     }
 
     @Override
     public int getFieldCount() {
-        return fieldDefinitions.size();
+        return fieldDefinitionsMap.size();
     }
 
     void setVersionIfNotSet(int version) {
@@ -113,7 +115,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         if (getFieldCount() != that.getFieldCount()) {
             return false;
         }
-        for (FieldDefinition fd : fieldDefinitions) {
+        for (FieldDefinition fd : fieldDefinitionsMap.values()) {
             FieldDefinition fd2 = that.getField(fd.getName());
             if (fd2 == null) {
                 return false;
@@ -141,7 +143,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         sb.append("{factoryId=").append(factoryId);
         sb.append(", classId=").append(classId);
         sb.append(", version=").append(version);
-        sb.append(", fieldDefinitions=").append(fieldDefinitions);
+        sb.append(", fieldDefinitions=").append(fieldDefinitionsMap.values());
         sb.append('}');
         return sb.toString();
     }
