@@ -191,7 +191,7 @@ public class ClientTransactionManager {
         if (connection == null) {
             return false;
         }
-        final com.hazelcast.client.spi.ClientInvocationService invocationService = client.getInvocationService();
+        final ClientInvocationService invocationService = client.getInvocationService();
         final RecoverTransactionRequest request = new RecoverTransactionRequest(sXid, commit);
         try {
             final ICompletableFuture future = invocationService.invokeOnConnection(request, connection);

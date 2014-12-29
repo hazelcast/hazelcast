@@ -17,14 +17,15 @@ import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
-import com.hazelcast.client.spi.impl.ClientDummyInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
@@ -110,7 +111,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
-    private final com.hazelcast.client.spi.ClientInvocationService invocationService;
+    private final ClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManager transactionManager;
@@ -174,13 +175,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return c;
     }
 
-    private com.hazelcast.client.spi.ClientInvocationService initInvocationService() {
+    private ClientInvocationService initInvocationService() {
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.isSmartRouting()) {
             return new ClientSmartInvocationServiceImpl(this, loadBalancer);
 
         } else {
-            return new ClientDummyInvocationServiceImpl(this);
+            return new ClientNonSmartInvocationServiceImpl(this);
         }
     }
 
@@ -460,7 +461,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return partitionService;
     }
 
-    public com.hazelcast.client.spi.ClientInvocationService getInvocationService() {
+    public ClientInvocationService getInvocationService() {
         return invocationService;
     }
 

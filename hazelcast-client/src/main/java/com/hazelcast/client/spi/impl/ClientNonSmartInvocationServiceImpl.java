@@ -12,11 +12,11 @@ import com.hazelcast.nio.Connection;
 
 import java.util.concurrent.TimeUnit;
 
-public class ClientDummyInvocationServiceImpl extends ClientInvocationServiceSupport {
+public class ClientNonSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
 
     private final ClusterListenerSupport clusterListenerSupport;
 
-    public ClientDummyInvocationServiceImpl(HazelcastClientInstanceImpl client) {
+    public ClientNonSmartInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         super(client);
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         clusterListenerSupport = clusterService.getClusterListenerSupport();
