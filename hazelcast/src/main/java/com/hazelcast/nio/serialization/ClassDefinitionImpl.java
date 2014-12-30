@@ -44,6 +44,9 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public FieldDefinition getField(int fieldIndex) {
+        if (fieldIndex < 0 || fieldIndex >= fieldDefinitionsMap.size()) {
+            throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
+        }
         int count = 0;
         for (FieldDefinition fieldDefinition : fieldDefinitionsMap.values()) {
             if (fieldIndex == count) {
@@ -51,7 +54,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
             }
             count++;
         }
-        throw new IndexOutOfBoundsException();
+        throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
     }
 
     public boolean hasField(String fieldName) {
