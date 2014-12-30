@@ -280,6 +280,12 @@ public class HealthMonitor extends Thread {
         }
     }
 
+    /**
+     * Given a number, returns that number as a percentage string.
+     *
+     * @param p the given number
+     * @return a string of the given number as a format float with two decimal places and a period
+     */
     public static String percentageString(double p) {
         return format("%.2f", p) + "%";
     }
