@@ -34,9 +34,9 @@ public final class OperatingSystemMXBeanSupport {
     /**
      * Reads a long attribute from OperatingSystemMXBean.
      *
-     * @param attributeName name
-     * @param defaultValue default value
-     * @return value of attribute
+     * @param attributeName name of the attribute
+     * @param defaultValue default value if the attribute value is null
+     * @return value of the attribute
      */
     public static long readLongAttribute(String attributeName, long defaultValue) {
         try {
