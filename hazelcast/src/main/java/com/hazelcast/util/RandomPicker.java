@@ -36,6 +36,14 @@ public final class RandomPicker {
         }
     }
 
+    /**
+     * Returns a pseudorandom, uniformly distributed int value between 0 (inclusive)
+     * and the specified value (exclusive), drawn from this random number generator's sequence.
+     * Starts the random number generator sequence if it has not been initialized.
+     *
+     * @param n the specified value
+     * @return a value between 0 (inclusive) and the specified value (exclusive).
+     */
     public static int getInt(int n) {
         if (randomNumberGenerator == null) {
             initRNG();
