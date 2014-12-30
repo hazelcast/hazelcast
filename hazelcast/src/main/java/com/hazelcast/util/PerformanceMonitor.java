@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * shows the read/write events per selector and the operations executed per operation-thread, but new kinds of behavior
  * will be added.
  * <p/>
- * This tool is currently mostly used internally or unless you are an expert. In the future it will become more useful
+ * This tool is currently used internally. External users should be experts. In the future it will become more useful
  * for regular developers. It is also likely that most of the metrics we collect will be exposed through JMX at some
  * point in time.
  */
