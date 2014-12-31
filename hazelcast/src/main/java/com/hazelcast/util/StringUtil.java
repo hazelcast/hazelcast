@@ -30,18 +30,45 @@ public final class StringUtil {
     private StringUtil() {
     }
 
+    /**
+     * Creates a UTF8_CHARSET string from a byte array.
+     *
+     * @param bytes the byte array.
+     * @param offset the index of the first byte to decode
+     * @param length the number of bytes to decode
+     * @return the string created from the byte array.
+     */
     public static String bytesToString(byte[] bytes, int offset, int length) {
         return new String(bytes, offset, length, UTF8_CHARSET);
     }
 
+    /**
+     * Creates a UTF8_CHARSET string from a byte array.
+     *
+     * @param bytes the byte array.
+     * @return the string created from the byte array.
+     */
     public static String bytesToString(byte[] bytes) {
 
         return new String(bytes, UTF8_CHARSET);
     }
 
+    /**
+     * Creates a byte array from a string.
+     *
+     * @param s the string.
+     * @return the byte array created from the string.
+     */
     public static byte[] stringToBytes(String s) {
         return s.getBytes(UTF8_CHARSET);
     }
+
+    /**
+     * Checks if a string is empty or not.
+     *
+     * @param s the string to check.
+     * @return true if the string is null or empty, false otherwise
+     */
 
     public static boolean isNullOrEmpty(String s) {
         if (s == null) {
@@ -52,6 +79,10 @@ public final class StringUtil {
 
     /**
      * HC specific settings, operands etc. use this method.
+     * Creates an uppercase string from the given string.
+     *
+     * @param s the given string
+     * @return an uppercase string, or null/empty if the string is null/empty
      */
     public static String upperCaseInternal(String s) {
         if (isNullOrEmpty(s)) {
@@ -62,6 +93,10 @@ public final class StringUtil {
 
     /**
      * HC specific settings, operands etc. use this method.
+     * Creates a lowercase string from the given string.
+     *
+     * @param s the given string
+     * @return a lowercase string, or null/empty if the string is null/empty
      */
     public static String lowerCaseInternal(String s) {
         if (isNullOrEmpty(s)) {
