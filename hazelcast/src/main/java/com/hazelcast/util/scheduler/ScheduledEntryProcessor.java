@@ -21,18 +21,18 @@ import java.util.Collection;
 /**
  *
  * @param <K> key type of related entries
- * @param <V> value type  of related entries
+ * @param <V> value type of related entries
  */
 public interface ScheduledEntryProcessor<K, V> {
 
     /**
      * Processes all entries. Implementation has to
-     * handle the failures and can possibly reschedule it for a future time.
-     * Imagine you are implementing this for a dirty records. If mapStore.storeAll
-     * throws exception, you might want to reschedule the failed records.
+     * handle the failures and can possibly reschedule for a future time.
+     * Imagine you are implementing this for dirty records: if mapStore.storeAll
+     * throws an exception, you might want to reschedule the failed records.
      *
-     * @param scheduler
-     * @param entries
+     * @param scheduler the EntryTskScheduler
+     * @param entries the entries (key and value) to process
      */
     void process(EntryTaskScheduler<K, V> scheduler, Collection<ScheduledEntry<K, V>> entries);
 }
