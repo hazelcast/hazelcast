@@ -33,16 +33,16 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Schedule execution of an entry for seconds later.
- * This is kind of like a scheduled executor service but instead of scheduling
+ * This is similar to a scheduled executor service, but instead of scheduling
  * a execution for a specific millisecond, this service will
- * schedule it with second proximity. If delayMillis is 600 ms for example,
- * then the entry will be scheduled to execute in 1 second. If delayMillis is 2400
- * this the entry will be scheduled to execute in 3 seconds. So delayMillis is
- * ceil-ed to the next second. It gives up from exact time scheduling to gain
- * the power of
+ * schedule it with second proximity. For example, if delayMillis is 600 ms,
+ * then the entry will be scheduled to execute in 1 second. If delayMillis is 2400,
+ * then the entry will be scheduled to execute in 3 seconds. Therefore, delayMillis is
+ * ceil-ed to the next second. It gives up exact time scheduling to gain
+ * the power of:
  * a) bulk execution of all operations within the same second
  * or
- * b) being able to reschedule (postpone) execution
+ * b) being able to reschedule (postpone) execution.
  *
  * @param <K> entry key type
  * @param <V> entry value type
@@ -298,9 +298,9 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
 
 
     /**
-     * Removes entry from being scheduled to be evicted.
+     * Removes the entry from being scheduled to be evicted.
      *
-     * Cleans up parent container (second -> entries map) if it doesn't hold anymore items more this second.
+     * Cleans up parent container (second -> entries map) if it doesn't hold anymore items this second.
      *
      * Cancels associated scheduler (second -> scheduler map ) if there are no more items to remove for this second.
      *
@@ -309,6 +309,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
      * @param key entry key
      * @param second second at which this entry was scheduled to be evicted
      * @param entries entries which were already scheduled to be evicted for this second
+     * @return associated scheduled entry
      */
     private ScheduledEntry<K, V> cleanUpOnCancel(Object key, Integer second, ConcurrentMap<Object, ScheduledEntry<K,
             V>> entries) {
