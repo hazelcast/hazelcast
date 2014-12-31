@@ -26,6 +26,11 @@ public final class ThreadUtil {
     private ThreadUtil() {
     }
 
+    /**
+     * Get the thread id
+     *
+     * @return the thread id
+     */
     public static long getThreadId() {
         final Long threadId = THREAD_LOCAL.get();
         if (threadId != null) {
@@ -34,10 +39,19 @@ public final class ThreadUtil {
         return Thread.currentThread().getId();
     }
 
+    /**
+     * Set the thread id
+     *
+     * @param threadId thread id to set
+     */
+
     public static void setThreadId(long threadId) {
         THREAD_LOCAL.set(threadId);
     }
 
+    /**
+     * Remove the thread id
+     */
     public static void removeThreadId() {
         THREAD_LOCAL.remove();
     }
