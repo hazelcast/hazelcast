@@ -44,7 +44,6 @@ public final class ThreadUtil {
      *
      * @param threadId thread id to set
      */
-
     public static void setThreadId(long threadId) {
         THREAD_LOCAL.set(threadId);
     }
