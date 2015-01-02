@@ -646,7 +646,7 @@ You can add three types of event listeners.
 <br></br>
 
 ##### NearCacheConfig
-You can configure a Near Cache on the client side by providing a configuration per map name, as shown below.
+You can create Near Cache on the client side by providing a configuration per map name, as shown below.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -655,12 +655,33 @@ nearCacheConfig.setName("mapName");
 clientConfig.addNearCacheConfig(nearCacheConfig);
 ```
 
-You can use wildcards can be used for the map name, as shown below.
+Wildcards can be used for the map name, see below:
 
 ```java
 nearCacheConfig.setName("map*");
 nearCacheConfig.setName("*map");
 ```
+
+or 
+
+```xml
+</hazelcast-client>
+	----
+	----
+	<near-cache name="MENU">
+		<max-size>2000</max-size>
+		<time-to-live-seconds>0</time-to-live-seconds>
+		<max-idle-seconds>0</max-idle-seconds>
+		<eviction-policy>LFU</eviction-policy>
+		<invalidate-on-change>true</invalidate-on-change>
+		<in-memory-format>OBJECT</in-memory-format>
+	</near-cache>
+	
+</hazelcast-client>
+```
+Name of Near Cache on client side must be same as the name of the IMap on server for which this Near Cache is being created. 
+
+Near Cache can have its own in-memory-format which is independent of in-memory-format of Servers.
 
 ##### ClassLoader
 You can configure a custom `classLoader`. It will be used by the serialization service and to load any class configured in configuration, such as event listeners or ProxyFactories.
