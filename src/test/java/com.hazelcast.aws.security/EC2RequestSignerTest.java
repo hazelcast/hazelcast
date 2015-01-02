@@ -43,7 +43,7 @@ public class EC2RequestSignerTest {
     private final static String TEST_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY";
     private final static String TEST_REQUEST_DATE = "20141106T111126Z";
     private final static String TEST_DERIVED_EXPECTED = "7038265e40236063ebcd2e201908ad6e9f64e533439bfa7a5faa07ba419329bc";
-    private final static String TEST_SIGNATURE_EXPECTED = "c9347599958aab0ea079c296b8fe3355553bac767c5957dff7e7a1fce72ce132";
+    private final static String TEST_SIGNATURE_EXPECTED = "793701c568b756885bfd6a2642c63aa96e9ae9c1ae454041ed8c5a63040a8e56";
 
 
     @Test
@@ -74,6 +74,11 @@ public class EC2RequestSignerTest {
         EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE);
         byte[] derivedKey = null;
         try {
+            Field field = null;
+            field = rs.getClass().getDeclaredField("service");
+            field.setAccessible(true);
+            field.set(rs, "ec2");
+
             Method method = null;
             method = rs.getClass().getDeclaredMethod("deriveSigningKey", null);
             method.setAccessible(true);
@@ -97,7 +102,6 @@ public class EC2RequestSignerTest {
         Field field = di.getClass().getDeclaredField("attributes");
         field.setAccessible(true);
         Map<String, String> attributes = (Map<String, String>) field.get(di);
-        attributes.put("X-Amz-Date", TEST_REQUEST_DATE);
         field.set(di, attributes);
 
         EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE);

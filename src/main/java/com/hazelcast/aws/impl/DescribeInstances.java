@@ -50,11 +50,6 @@ public class DescribeInstances {
         rs = new EC2RequestSigner(awsConfig, getFormattedTimestamp());
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
-        attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
-        attributes.put("X-Amz-Date", getFormattedTimestamp());
-        attributes.put("X-Amz-Credential", String.format("%s/%s", awsConfig.getAccessKey(), rs.getCredentialScope()));
-        attributes.put("X-Amz-Expires", "30");
-        attributes.put("X-Amz-SignedHeaders", rs.getSignedHeaders());
     }
 
     private String getFormattedTimestamp() {
