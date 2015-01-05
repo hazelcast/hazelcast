@@ -52,21 +52,37 @@ import java.util.concurrent.ConcurrentMap;
  */
 final class MBeans {
 
-    private static final ConcurrentMap<String, MBeanType> MBEAN_TYPES_REGISTRY
-            = new ConcurrentHashMap<String, MBeanType>(MBeanType.values().length);
+    private static final ConcurrentMap<String, MBeanFactory> MBEAN_FACTORY_TYPES_REGISTRY
+            = new ConcurrentHashMap<String, MBeanFactory>(MBeanFactory.values().length);
 
     static {
-        MBeanType[] mBeanTypes = MBeanType.values();
-        for (MBeanType mBeanType : mBeanTypes) {
-            MBEAN_TYPES_REGISTRY.put(mBeanType.getServiceName(), mBeanType);
+        MBeanFactory[] mBeanFactories = MBeanFactory.values();
+        for (MBeanFactory mBeanFactory : mBeanFactories) {
+            MBEAN_FACTORY_TYPES_REGISTRY.put(mBeanFactory.getServiceName(), mBeanFactory);
         }
     }
 
     private MBeans() {
     }
 
+    static HazelcastMBean createHazelcastMBeanOrNull(DistributedObject distributedObject,
+                                                     ManagementService managementService) {
+        MBeanFactory mBeanFactory = getMBeanFactory(distributedObject);
+        return mBeanFactory == null ? null : mBeanFactory.createNew(distributedObject, managementService);
+    }
 
-    enum MBeanType {
+    static String getObjectTypeOrNull(DistributedObject distributedObject) {
+        MBeanFactory mBeanFactory = getMBeanFactory(distributedObject);
+        return mBeanFactory == null ? null : mBeanFactory.getObjectType();
+    }
+
+
+    private static MBeanFactory getMBeanFactory(DistributedObject distributedObject) {
+        String serviceName = distributedObject.getServiceName();
+        return MBEAN_FACTORY_TYPES_REGISTRY.get(serviceName);
+    }
+
+    enum MBeanFactory {
 
         MAP {
             @Override
@@ -294,9 +310,5 @@ final class MBeans {
         abstract String getObjectType();
 
         abstract String getServiceName();
-    }
-
-    static MBeanType getMBeanType(String serviceName) {
-        return MBEAN_TYPES_REGISTRY.get(serviceName);
     }
 }

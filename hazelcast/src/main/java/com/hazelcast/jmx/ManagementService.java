@@ -32,7 +32,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.jmx.MBeans.getMBeanType;
+import static com.hazelcast.jmx.MBeans.createHazelcastMBeanOrNull;
+import static com.hazelcast.jmx.MBeans.getObjectTypeOrNull;
 
 /**
  * Service responsible for registering hazelcast management beans to the platform management bean server.
@@ -125,47 +126,44 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     private void registerDistributedObject(DistributedObject distributedObject) {
-        String serviceName = distributedObject.getServiceName();
-        MBeans.MBeanType mBeanType = getMBeanType(serviceName);
-        HazelcastMBean bean = mBeanType.createNew(distributedObject, this);
-        if (bean != null) {
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            if (!mbs.isRegistered(bean.objectName)) {
-                try {
-                    mbs.registerMBean(bean, bean.objectName);
-                } catch (Exception e) {
-                    logger.warning("Error while registering " + bean.objectName, e);
-                }
-            } else {
-                try {
-                    bean.preDeregister();
-                    bean.postDeregister();
-                } catch (Exception e) {
-                    logger.finest(e);
-                }
+        HazelcastMBean bean = createHazelcastMBeanOrNull(distributedObject, this);
+        if (bean == null) {
+            return;
+        }
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        if (!mbs.isRegistered(bean.objectName)) {
+            try {
+                mbs.registerMBean(bean, bean.objectName);
+            } catch (Exception e) {
+                logger.warning("Error while registering " + bean.objectName, e);
+            }
+        } else {
+            try {
+                bean.preDeregister();
+                bean.postDeregister();
+            } catch (Exception e) {
+                logger.finest(e);
             }
         }
+
     }
 
     private void unregisterDistributedObject(DistributedObject distributedObject) {
-        final String objectType = getObjectType(distributedObject);
-        if (objectType != null) {
-            ObjectName objectName = createObjectName(objectType, distributedObject.getName());
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            if (mbs.isRegistered(objectName)) {
-                try {
-                    mbs.unregisterMBean(objectName);
-                } catch (Exception e) {
-                    logger.warning("Error while un-registering " + objectName, e);
-                }
+        final String objectType = getObjectTypeOrNull(distributedObject);
+        if (objectType == null) {
+            return;
+        }
+
+        ObjectName objectName = createObjectName(objectType, distributedObject.getName());
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        if (mbs.isRegistered(objectName)) {
+            try {
+                mbs.unregisterMBean(objectName);
+            } catch (Exception e) {
+                logger.warning("Error while un-registering " + objectName, e);
             }
         }
-    }
-
-    private String getObjectType(DistributedObject distributedObject) {
-        String serviceName = distributedObject.getServiceName();
-        final MBeans.MBeanType mBeanType = getMBeanType(serviceName);
-        return mBeanType.getObjectType();
     }
 
     protected ObjectName createObjectName(String type, String name) {
