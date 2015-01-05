@@ -11,16 +11,16 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-
-import java.io.Serializable;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.Serializable;
 
 /**
  * This is the test that just tests if the mbeans get created. Tests in this class only exist for types that don't have
@@ -122,6 +122,15 @@ public class MBeanTest extends HazelcastTestSupport {
         executor.submit(new DummyRunnable()).get();
 
         holder.assertMBeanExistEventually("IExecutorService", executor.getName());
+    }
+
+    @Test
+    public void testReplicatedMap() throws Exception {
+        String replicatedMapName = randomString();
+        ReplicatedMap replicatedMap = holder.getHz().getReplicatedMap(replicatedMapName);
+        replicatedMap.size();
+
+        holder.assertMBeanExistEventually("ReplicatedMap", replicatedMap.getName());
     }
 
     private static class DummyRunnable implements Runnable, Serializable {
