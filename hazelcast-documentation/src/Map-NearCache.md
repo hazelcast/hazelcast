@@ -70,3 +70,5 @@ Near Cache is highly recommended for the maps that are read-mostly. Here is a Ne
 ```
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Programmatically, near cache configuration is done by using the class [NearCacheConfig](https://github.com/hazelcast/hazelcast/blob/607aa5484958af706ee18a1eb15d89afd12ee7af/hazelcast/src/main/java/com/hazelcast/config/NearCacheConfig.java). And this class is used both in nodes and clients. To create a Near Cache in a client (native Java client), use the method `addNearCacheConfig` in the class `ClientConfig` (please see the [Java Client section](#java-client)). Please note that Near Cache configuration is specific to the node or client itself, a map in a node may not have near cache configured while the same map in a client may have.*
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *If you are using NearCache, you should take into account that your hits to keys in NearCache are not reflected as hits to original keys on remote nodes; this has an impact on `IMaps max idle seconds or time-to-live seconds expiration`, so even there is a hit on a key in NearCache, your original key on remote node may expire.
