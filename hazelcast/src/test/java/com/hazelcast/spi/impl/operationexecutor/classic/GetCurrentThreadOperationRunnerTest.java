@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.test.AssertTask;
 import org.junit.Test;
@@ -45,7 +46,7 @@ public class GetCurrentThreadOperationRunnerTest extends AbstractClassicOperatio
         initExecutor();
 
         final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation();
-        op.setPartitionId(-1);
+        op.setPartitionId(Operation.GENERIC_PARTITION_ID);
 
         executor.execute(op);
 

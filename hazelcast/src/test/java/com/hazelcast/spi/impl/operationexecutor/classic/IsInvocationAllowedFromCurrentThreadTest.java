@@ -60,7 +60,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 return executor.isInvocationAllowedFromCurrentThread(genericOperation);
@@ -109,7 +109,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 return executor.isInvocationAllowedFromCurrentThread(partitionOperation);

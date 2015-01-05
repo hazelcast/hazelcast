@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
+import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,8 +33,8 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     public void test_getRunningOperationCount() {
         initExecutor();
 
-        executor.execute(new DummyOperation(-1).durationMs(2000));
-        executor.execute(new DummyOperation(-1).durationMs(2000));
+        executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
+        executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
 
         executor.execute(new DummyOperation(0).durationMs(2000));
 
@@ -53,7 +54,7 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
 
         // first we need to set the threads to work so the queues are going to be left alone.
         for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
-            executor.execute(new DummyOperation(-1).durationMs(2000));
+            executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
         }
         for (int k = 0; k < executor.getPartitionOperationThreadCount(); k++) {
             executor.execute(new DummyOperation(k).durationMs(2000));
@@ -63,7 +64,7 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
         int count = 0;
         for (int l = 0; l < 3; l++) {
             for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
-                executor.execute(new DummyOperation(-1).durationMs(2000));
+                executor.execute(new DummyOperation(Operation.GENERIC_PARTITION_ID).durationMs(2000));
                 count++;
             }
         }

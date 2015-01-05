@@ -35,11 +35,13 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
+import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -66,17 +68,20 @@ public class TimedMemberStateFactory {
     private static final int INITIAL_PARTITION_SAFETY_CHECK_DELAY = 15;
     private static final int PARTITION_SAFETY_CHECK_PERIOD = 60;
 
-    private final ILogger logger;
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
+    private final ILogger logger;
+
     private volatile boolean memberStateSafe = true;
 
-    public TimedMemberStateFactory(final HazelcastInstanceImpl instance) {
+    public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
-        maxVisibleInstanceCount = instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
-        cacheServiceEnabled = instance.node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
-        logger = instance.node.getLogger(TimedMemberStateFactory.class);
+
+        Node node = instance.node;
+        maxVisibleInstanceCount = node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
+        cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
+        logger = node.getLogger(TimedMemberStateFactory.class);
     }
 
     public void init() {
@@ -92,7 +97,7 @@ public class TimedMemberStateFactory {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
         createMemberState(memberState, services);
-        GroupConfig groupConfig = instance.getConfig().getGroupConfig();
+
         TimedMemberState timedMemberState = new TimedMemberState();
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
@@ -105,8 +110,10 @@ public class TimedMemberStateFactory {
             }
         }
         timedMemberState.setMemberState(memberState);
+        GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         timedMemberState.setClusterName(groupConfig.getName());
         timedMemberState.setInstanceNames(getLongInstanceNames(services));
+
         return timedMemberState;
     }
 
@@ -114,19 +121,27 @@ public class TimedMemberStateFactory {
         return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
+    protected LocalOperationStats getOperationStats() {
+        return new LocalOperationStatsImpl(instance.node);
+    }
+
     private void createMemberState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
-        final Node node = instance.node;
-        Address thisAddress = node.getThisAddress();
-        InternalPartitionService partitionService = node.getPartitionService();
-        InternalPartition[] partitions = partitionService.getPartitions();
-        final HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
+        Node node = instance.node;
+
+        HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
         for (Client client : instance.node.clientEngine.getClients()) {
             serializableClientEndPoints.add(new SerializableClientEndPoint(client));
         }
         memberState.setClients(serializableClientEndPoints);
+
+        Address thisAddress = node.getThisAddress();
         memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
         TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
+
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();
+        InternalPartitionService partitionService = node.getPartitionService();
+        InternalPartition[] partitions = partitionService.getPartitions();
+
         List<Integer> partitionList = memberPartitionState.getPartitions();
         for (InternalPartition partition : partitions) {
             if (partition.isLocal()) {
@@ -137,14 +152,14 @@ public class TimedMemberStateFactory {
         memberPartitionState.setMemberStateSafe(memberStateSafe);
 
         memberState.setLocalMemoryStats(getMemoryStats());
+        memberState.setOperationStats(getOperationStats());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
         createMemState(memberState, services);
     }
 
-    private void createMemState(MemberStateImpl memberState,
-                                Collection<StatisticsAwareService> services) {
+    private void createMemState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
         int count = 0;
-        final Config config = instance.getConfig();
+        Config config = instance.getConfig();
 
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
@@ -163,7 +178,7 @@ public class TimedMemberStateFactory {
         }
 
         if (cacheServiceEnabled) {
-            final ICacheService cacheService = getCacheService();
+            ICacheService cacheService = getCacheService();
             for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
                 if (cacheConfig.isStatisticsEnabled()) {
                     CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
@@ -258,7 +273,7 @@ public class TimedMemberStateFactory {
 
     private void collectInstanceNames(Set<String> setLongInstanceNames, Collection<StatisticsAwareService> services) {
         int count = 0;
-        final Config config = instance.getConfig();
+        Config config = instance.getConfig();
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {
@@ -350,7 +365,7 @@ public class TimedMemberStateFactory {
     }
 
     private ICacheService getCacheService() {
-        final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         return setupRef.getService();
     }
 }

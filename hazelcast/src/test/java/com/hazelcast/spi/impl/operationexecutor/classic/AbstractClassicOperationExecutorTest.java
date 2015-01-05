@@ -115,7 +115,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
     protected static class DummyGenericOperation extends DummyOperation {
         public DummyGenericOperation() {
-            super(-1);
+            super(GENERIC_PARTITION_ID);
         }
     }
 
@@ -134,9 +134,6 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
         public DummyOperation(int partitionId) {
             setPartitionId(partitionId);
-        }
-
-        public DummyOperation() {
         }
 
         public DummyOperation durationMs(int durationMs) {
@@ -180,7 +177,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
         @Override
         public OperationRunner createGenericRunner() {
-            DummyOperationRunner operationHandler = new DummyOperationRunner(-1);
+            DummyOperationRunner operationHandler = new DummyOperationRunner(Operation.GENERIC_PARTITION_ID);
             genericOperationHandlers.add(operationHandler);
             return operationHandler;
         }

@@ -48,8 +48,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class BasicOperationServiceTest extends HazelcastTestSupport {
 
-
-    //there was a memory leak caused by the invocation not releasing the backup registration
+    // there was a memory leak caused by the invocation not releasing the backup registration
     // when Future.get() is not called.
     @Test
     public void testAsyncOpsSingleMember() {
@@ -65,7 +64,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         assertNoLitterInOpService(hz);
     }
 
-    //there was a memory leak caused by the invocation not releasing the backup registration
+    // there was a memory leak caused by the invocation not releasing the backup registration
     // when Future.get() is not called.
     @Test
     public void testAsyncOpsMultiMember() throws InterruptedException {
@@ -184,8 +183,8 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
     public static void assertNoLitterInOpService(HazelcastInstance hz) {
         final BasicOperationService operationService = (BasicOperationService) getNode(hz).nodeEngine.getOperationService();
 
-        //we need to do this with an assertTrueEventually because it can happen that system calls are being send
-        //and this leads to the maps not being empty. But eventually they will be empty at some moment in time.
+        // we need to do this with an assertTrueEventually because it can happen that system calls are being send
+        // and this leads to the maps not being empty. But eventually they will be empty at some moment in time.
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {

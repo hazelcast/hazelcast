@@ -218,7 +218,7 @@ public class ManagementCenterService {
 
         urlChanged = true;
         logger.info("Management Center URL has changed. "
-                + "Hazelcast will connect to Management Center on address: \n" + managementCenterUrl);
+                + "Hazelcast will connect to Management Center on address:\n" + managementCenterUrl);
     }
 
     private void interruptThread(Thread t) {
@@ -311,27 +311,26 @@ public class ManagementCenterService {
 
         private void sendState() throws InterruptedException, MalformedURLException {
             URL url = newCollectorUrl();
+            OutputStream outputStream = null;
+            OutputStreamWriter writer = null;
             try {
                 HttpURLConnection connection = openConnection(url);
-                OutputStream outputStream = connection.getOutputStream();
-                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
-                try {
-                    JsonObject root = new JsonObject();
-                    root.add("identifier", identifier.toJson());
-                    TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
-                    root.add("timedMemberState", timedMemberState.toJson());
-                    root.writeTo(writer);
-                    writer.flush();
-                    outputStream.flush();
-                    post(connection);
-                    if (manCenterConnectionLost) {
-                        logger.info("Connection to management center restored.");
-                    }
-                    manCenterConnectionLost = false;
-                } finally {
-                    closeResource(writer);
-                    closeResource(outputStream);
+                outputStream = connection.getOutputStream();
+                writer = new OutputStreamWriter(outputStream, "UTF-8");
+
+                JsonObject root = new JsonObject();
+                root.add("identifier", identifier.toJson());
+                TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
+                root.add("timedMemberState", timedMemberState.toJson());
+                root.writeTo(writer);
+
+                writer.flush();
+                outputStream.flush();
+                post(connection);
+                if (manCenterConnectionLost) {
+                    logger.info("Connection to management center restored.");
                 }
+                manCenterConnectionLost = false;
             } catch (ConnectException e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
@@ -339,6 +338,9 @@ public class ManagementCenterService {
                 }
             } catch (Exception e) {
                 logger.warning(e);
+            } finally {
+                closeResource(writer);
+                closeResource(outputStream);
             }
         }
 
@@ -364,11 +366,11 @@ public class ManagementCenterService {
     }
 
     /**
-     * Thread for polling tasks/requests from  Management Center.
+     * Thread for polling tasks/requests from Management Center.
      */
     private final class TaskPollThread extends Thread {
-        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests =
-                new HashMap<Integer, Class<? extends ConsoleRequest>>();
+        private final Map<Integer, Class<? extends ConsoleRequest>> consoleRequests
+                = new HashMap<Integer, Class<? extends ConsoleRequest>>();
 
         TaskPollThread() {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.Task.Poller"));
@@ -389,7 +391,6 @@ public class ManagementCenterService {
         public void register(ConsoleRequest consoleRequest) {
             consoleRequests.put(consoleRequest.getType(), consoleRequest.getClass());
         }
-
 
         private HttpURLConnection openPostResponseConnection() throws IOException {
             URL url = newPostResponseUrl();
@@ -489,12 +490,10 @@ public class ManagementCenterService {
             }
         }
 
-
         private InputStream openTaskInputStream() throws IOException {
             URLConnection connection = openGetTaskConnection();
             return connection.getInputStream();
         }
-
 
         private URLConnection openGetTaskConnection() throws IOException {
             URL url = newGetTaskUrl();
@@ -515,7 +514,6 @@ public class ManagementCenterService {
                     + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
             return new URL(urlString);
         }
-
     }
 
     private void log(String msg, Throwable t) {

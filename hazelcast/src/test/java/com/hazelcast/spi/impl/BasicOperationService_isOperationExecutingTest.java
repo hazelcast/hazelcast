@@ -6,7 +6,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,7 +38,7 @@ public class BasicOperationService_isOperationExecutingTest extends HazelcastTes
         final Address remoteAddress = getAddress(remoteHz);
 
         final DummyOperation operation = new DummyOperation(5000);
-        operation.setPartitionId(-1);
+        operation.setPartitionId(Operation.GENERIC_PARTITION_ID);
 
         InternalCompletableFuture f = operationService.invokeOnTarget(null, operation, remoteAddress);
 
