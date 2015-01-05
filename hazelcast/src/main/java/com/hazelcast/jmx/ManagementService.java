@@ -32,17 +32,20 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
+
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
@@ -199,6 +202,8 @@ public class ManagementService implements DistributedObjectListener {
                 bean = new SetMBean((ISet) distributedObject, this);
             } else if (distributedObject instanceof ITopic) {
                 bean = new TopicMBean((ITopic) distributedObject, this);
+            } else if (distributedObject instanceof ReplicatedMap) {
+                bean = new ReplicatedMapMBean((ReplicatedMapProxy) distributedObject, this);
             }
             return bean;
         } catch (HazelcastInstanceNotActiveException ignored) {
@@ -233,6 +238,8 @@ public class ManagementService implements DistributedObjectListener {
             result = "ITopic";
         } else if (distributedObject instanceof IExecutorService) {
             result = "IExecutorService";
+        } else if (distributedObject instanceof ReplicatedMap) {
+            result = "ReplicatedMap";
         }
         return result;
     }
