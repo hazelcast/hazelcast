@@ -19,23 +19,8 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.core.IAtomicReference;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -47,7 +32,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.jmx.MBeans.getMBeanType;
 
 /**
  * Service responsible for registering hazelcast management beans to the platform management bean server.
@@ -140,7 +125,9 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     private void registerDistributedObject(DistributedObject distributedObject) {
-        HazelcastMBean bean = createHazelcastBean(distributedObject);
+        String serviceName = distributedObject.getServiceName();
+        MBeans.MBeanType mBeanType = getMBeanType(serviceName);
+        HazelcastMBean bean = mBeanType.createNew(distributedObject, this);
         if (bean != null) {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             if (!mbs.isRegistered(bean.objectName)) {
@@ -175,73 +162,10 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    private HazelcastMBean createHazelcastBean(DistributedObject distributedObject) {
-        try {
-            HazelcastMBean bean = null;
-            if (distributedObject instanceof IList) {
-                bean = new ListMBean((IList) distributedObject, this);
-            } else if (distributedObject instanceof IAtomicLong) {
-                bean = new AtomicLongMBean((IAtomicLong) distributedObject, this);
-            } else if (distributedObject instanceof IAtomicReference) {
-                bean = new AtomicReferenceMBean((IAtomicReference) distributedObject, this);
-            } else if (distributedObject instanceof ICountDownLatch) {
-                bean = new CountDownLatchMBean((ICountDownLatch) distributedObject, this);
-            } else if (distributedObject instanceof ILock) {
-                bean = new LockMBean((ILock) distributedObject, this);
-            } else if (distributedObject instanceof IMap) {
-                bean = new MapMBean((IMap) distributedObject, this);
-            } else if (distributedObject instanceof MultiMap) {
-                bean = new MultiMapMBean((MultiMap) distributedObject, this);
-            } else if (distributedObject instanceof IQueue) {
-                bean = new QueueMBean((IQueue) distributedObject, this);
-            } else if (distributedObject instanceof ISemaphore) {
-                bean = new SemaphoreMBean((ISemaphore) distributedObject, this);
-            } else if (distributedObject instanceof IExecutorService) {
-                bean = new ExecutorServiceMBean((IExecutorService) distributedObject, this);
-            } else if (distributedObject instanceof ISet) {
-                bean = new SetMBean((ISet) distributedObject, this);
-            } else if (distributedObject instanceof ITopic) {
-                bean = new TopicMBean((ITopic) distributedObject, this);
-            } else if (distributedObject instanceof ReplicatedMap) {
-                bean = new ReplicatedMapMBean((ReplicatedMapProxy) distributedObject, this);
-            }
-            return bean;
-        } catch (HazelcastInstanceNotActiveException ignored) {
-            ignore(ignored);
-        }
-        return null;
-    }
-
     private String getObjectType(DistributedObject distributedObject) {
-        String result = null;
-        if (distributedObject instanceof IList) {
-            result = "IList";
-        } else if (distributedObject instanceof IAtomicLong) {
-            result = "IAtomicLong";
-        } else if (distributedObject instanceof IAtomicReference) {
-            result = "IAtomicReference";
-        } else if (distributedObject instanceof ICountDownLatch) {
-            result = "ICountDownLatch";
-        } else if (distributedObject instanceof ILock) {
-            result = "ILock";
-        } else if (distributedObject instanceof IMap) {
-            result = "IMap";
-        } else if (distributedObject instanceof MultiMap) {
-            result = "MultiMap";
-        } else if (distributedObject instanceof IQueue) {
-            result = "IQueue";
-        } else if (distributedObject instanceof ISemaphore) {
-            result = "ISemaphore";
-        } else if (distributedObject instanceof ISet) {
-            result = "ISet";
-        } else if (distributedObject instanceof ITopic) {
-            result = "ITopic";
-        } else if (distributedObject instanceof IExecutorService) {
-            result = "IExecutorService";
-        } else if (distributedObject instanceof ReplicatedMap) {
-            result = "ReplicatedMap";
-        }
-        return result;
+        String serviceName = distributedObject.getServiceName();
+        final MBeans.MBeanType mBeanType = getMBeanType(serviceName);
+        return mBeanType.getObjectType();
     }
 
     protected ObjectName createObjectName(String type, String name) {
