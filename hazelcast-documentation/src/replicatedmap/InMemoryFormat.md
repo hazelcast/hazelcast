@@ -1,7 +1,7 @@
 
-### In Memory Format on ReplicatedMap
+### In Memory Format on Replicated Map
 
-Currently two `in-memory-format` values are usable with the ReplicatedMap.
+Currently two `in-memory-format` values are usable with the Replicated Map.
 
 - `OBJECT` (default): The data will be stored in deserialized form. This configuration is the default choice since
 data replication is mostly used for high speed access. Please be aware that changing values without a `Map::put` is

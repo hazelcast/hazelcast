@@ -1,5 +1,5 @@
 
-### Technical design
+### Technical Design
 
 There are several technical design decisions for configurable behavior.
 
