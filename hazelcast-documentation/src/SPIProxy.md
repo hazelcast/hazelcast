@@ -1,5 +1,5 @@
 
-### Place a Remote Call - Proxy
+### Placing a Remote Call - Proxy
 
 In the previous sections for the `CounterService` example, we started `CounterService` as part of a HazelcastInstance startup.
 

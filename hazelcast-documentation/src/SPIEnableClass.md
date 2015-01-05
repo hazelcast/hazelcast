@@ -1,7 +1,7 @@
 
 
 
-### Enable the Class
+### Enabling Class
 
 Now, we need to enable the class `CounterService`. The declarative way of doing this is shown below.
 
