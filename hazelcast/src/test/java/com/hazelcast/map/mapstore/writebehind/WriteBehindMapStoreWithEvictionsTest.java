@@ -161,7 +161,7 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWriteBehindFlush_persistAllRecords_afterHazelcastShutdownall() throws Exception {
+    public void testWriteBehindFlushPersistsAllRecords_afterShutdownAll() throws Exception {
         int nodeCount = 2;
         final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
@@ -175,12 +175,12 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
                 .build();
         final int numberOfItems = 1000;
 
+        // add some expiration logic by setting a 10 seconds ttl to puts.
         populateMap(map, numberOfItems, 10);
 
         factory.shutdownAll();
 
         assertEquals(numberOfItems, mapStore.countStore.get());
-
     }
 
     private void assertFinalValueEquals(final int expected, final int actual) {
