@@ -669,10 +669,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Collection<V> values() {
         MapValuesRequest request = new MapValuesRequest(name);
         MapValueCollection mapValueCollection = invoke(request);
+
         Collection<Data> collectionData = mapValueCollection.getValues();
         Collection<V> collection = new ArrayList<V>(collectionData.size());
         for (Data data : collectionData) {
-            final V value = toObject(data);
+            V value = toObject(data);
             collection.add(value);
         }
         return collection;
@@ -774,33 +775,37 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Collection<V> values(Predicate predicate) {
-        PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
-            pagingPredicate.setIterationType(IterationType.VALUE);
-
-            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-                pagingPredicate.previousPage();
-                values(pagingPredicate);
-                pagingPredicate.nextPage();
-            }
+            return valuesForPagingPredicate((PagingPredicate) predicate);
         }
+
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
         QueryResultSet result = invoke(request);
 
-        if (pagingPredicate == null) {
-            final ArrayList<V> values = new ArrayList<V>(result.size());
-            for (Object data : result) {
-                V value = toObject(data);
-                values.add(value);
-            }
-            return values;
+        List<V> values = new ArrayList<V>(result.size());
+        for (Object data : result) {
+            V value = toObject(data);
+            values.add(value);
+        }
+        return values;
+    }
+
+    private Collection<V> valuesForPagingPredicate(PagingPredicate pagingPredicate) {
+        pagingPredicate.setIterationType(IterationType.VALUE);
+
+        if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
+            pagingPredicate.previousPage();
+            values(pagingPredicate);
+            pagingPredicate.nextPage();
         }
 
+        MapQueryRequest request = new MapQueryRequest(name, pagingPredicate, IterationType.VALUE);
+        QueryResultSet result = invoke(request);
+
         List<Entry<Object, V>> valueEntryList = new ArrayList<Entry<Object, V>>(result.size());
-        final Iterator<Entry> iterator = result.rawIterator();
+        Iterator<Entry> iterator = result.rawIterator();
         while (iterator.hasNext()) {
-            final Entry entry = iterator.next();
+            Entry entry = iterator.next();
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             valueEntryList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
@@ -810,16 +815,18 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (valueEntryList.size() > pagingPredicate.getPageSize()) {
             valueEntryList = valueEntryList.subList(0, pagingPredicate.getPageSize());
         }
+
         Entry anchor = null;
         if (valueEntryList.size() != 0) {
             anchor = valueEntryList.get(valueEntryList.size() - 1);
         }
         PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, anchor);
 
-        final ArrayList<V> values = new ArrayList<V>(valueEntryList.size());
-        for (Entry<Object, V> objectVEntry : valueEntryList) {
-            values.add(objectVEntry.getValue());
+        ArrayList<V> values = new ArrayList<V>(valueEntryList.size());
+        for (Entry<Object, V> entry : valueEntryList) {
+            values.add(entry.getValue());
         }
+
         return values;
     }
 

@@ -24,9 +24,9 @@ import java.io.IOException;
 
 public class MapValuesOperationFactory implements OperationFactory {
 
-    String name;
+    private String name;
 
-
+    @SuppressWarnings("unused")
     public MapValuesOperationFactory() {
     }
 
