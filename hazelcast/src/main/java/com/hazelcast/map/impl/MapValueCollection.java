@@ -26,8 +26,7 @@ import java.util.Collection;
 
 public class MapValueCollection implements IdentifiedDataSerializable {
 
-    Collection<Data> values;
-
+    private Collection<Data> values;
 
     public MapValueCollection(Collection<Data> values) {
         this.values = values;

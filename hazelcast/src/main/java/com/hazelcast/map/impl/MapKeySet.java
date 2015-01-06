@@ -26,8 +26,7 @@ import java.util.Set;
 
 public class MapKeySet implements IdentifiedDataSerializable {
 
-    Set<Data> keySet;
-
+    private Set<Data> keySet;
 
     public MapKeySet(Set<Data> keySet) {
         this.keySet = keySet;

@@ -48,12 +48,12 @@ import java.util.concurrent.TimeUnit;
  *
  * // you can enlist more resources here like a database XAResource
  * try {
- *      final TransactionalMap m = context.getMap("map");
- *      m.put("key", "value");
+ *      final TransactionalMap map = context.getMap("map");
+ *      map.put("key", "value");
  *      final TransactionalQueue queue = context.getQueue("queue");
- *       queue.offer("item");
+ *      queue.offer("item");
  *
- *       //you can do other resource operations like store/delete to a database
+ *      // you can do other resource operations like store/delete to a database
  *
  *      transaction.delistResource(xaResource, XAResource.TMSUCCESS);
  *      tm.commit();
@@ -73,14 +73,14 @@ import java.util.concurrent.TimeUnit;
 public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, V> {
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#containsKey(Object)}.
+     * Transactional implementation of {@link IMap#containsKey(Object)}.
      *
      * @see IMap#containsKey(Object)
      */
     boolean containsKey(Object key);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#get(Object)}.
+     * Transactional implementation of {@link IMap#get(Object)}.
      *
      * @see IMap#get(Object)
      */
@@ -95,21 +95,21 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V getForUpdate(Object key);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#size()}.
+     * Transactional implementation of {@link IMap#size()}.
      *
-     * @see com.hazelcast.core.IMap#size()
+     * @see IMap#size()
      */
     int size();
 
     /**
      * Transactional implementation of {@link IMap#isEmpty()}.
      *
-     * @see com.hazelcast.core.IMap#isEmpty()
+     * @see IMap#isEmpty()
      */
     boolean isEmpty();
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#put(Object, Object)}.
+     * Transactional implementation of {@link IMap#put(Object, Object)}.
      * <p/>
      * The object to be put will be accessible only in the current transaction context till transaction is committed.
      *
@@ -118,7 +118,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V put(K key, V value);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#put(Object, Object, long, java.util.concurrent.TimeUnit)}.
+     * Transactional implementation of {@link IMap#put(Object, Object, long, java.util.concurrent.TimeUnit)}.
      * <p/>
      * The object to be put will be accessible only in the current transaction context till transaction is committed.
      *
@@ -127,7 +127,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#set(Object, Object)}.
+     * Transactional implementation of {@link IMap#set(Object, Object)}.
      * <p/>
      * The object to be set will be accessible only in the current transaction context till transaction is committed.
      *
@@ -136,7 +136,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     void set(K key, V value);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#putIfAbsent(Object, Object)}.
+     * Transactional implementation of {@link IMap#putIfAbsent(Object, Object)}.
      * <p/>
      * The object to be put will be accessible only in the current transaction context until the transaction is committed.
      *
@@ -145,7 +145,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V putIfAbsent(K key, V value);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#replace(Object, Object)}.
+     * Transactional implementation of {@link IMap#replace(Object, Object)}.
      * <p/>
      * The object to be replaced will be accessible only in the current transaction context until the transaction is committed.
      *
@@ -154,7 +154,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V replace(K key, V value);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#replace(Object, Object, Object)}.
+     * Transactional implementation of {@link IMap#replace(Object, Object, Object)}.
      * <p/>
      * The object to be replaced will be accessible only in the current transaction context until the transaction is committed.
      *
@@ -163,7 +163,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     boolean replace(K key, V oldValue, V newValue);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#remove(Object)}.
+     * Transactional implementation of {@link IMap#remove(Object)}.
      * <p/>
      * The object to be removed will be removed from only the current transaction context until the transaction is committed.
      *
@@ -172,7 +172,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V remove(Object key);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#delete(Object)}.
+     * Transactional implementation of {@link IMap#delete(Object)}.
      * <p/>
      * The object to be deleted will be removed from only the current transaction context until the transaction is committed.
      *
@@ -181,7 +181,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     void delete(Object key);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#remove(Object, Object)}.
+     * Transactional implementation of {@link IMap#remove(Object, Object)}.
      * <p/>
      * The object to be removed will be removed from only the current transaction context until the transaction is committed.
      *
@@ -191,31 +191,27 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
 
     /**
      * Transactional implementation of {@link IMap#keySet()}.
-     * <p/>
      *
-     * @see com.hazelcast.core.IMap#keySet()
+     * @see IMap#keySet()
      */
     Set<K> keySet();
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)} .
-     * <p/>
+     * Transactional implementation of {@link IMap#keySet(com.hazelcast.query.Predicate)}.
      *
      * @see IMap#keySet(com.hazelcast.query.Predicate)
      */
     Set<K> keySet(Predicate predicate);
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#values()}.
-     * <p/>
+     * Transactional implementation of {@link IMap#values()}.
      *
      * @see IMap#values()
      */
     Collection<V> values();
 
     /**
-     * Transactional implementation of {@link com.hazelcast.core.IMap#values(com.hazelcast.query.Predicate)} .
-     * <p/>
+     * Transactional implementation of {@link IMap#values(com.hazelcast.query.Predicate)}.
      *
      * @see IMap#values(com.hazelcast.query.Predicate)
      */

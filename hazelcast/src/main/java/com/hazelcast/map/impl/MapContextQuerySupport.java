@@ -85,4 +85,19 @@ public interface MapContextQuerySupport {
      */
     Set query(String mapName, Predicate predicate,
               IterationType iterationType, boolean dataResult);
+
+    /**
+     * Checks if the query result limit feature is enabled.
+     *
+     * @return <tt>true</tt> if the query result size limitation is enabled, <tt>false</tt> otherwise
+     */
+    boolean isQueryResultLimitEnabled();
+
+    /**
+     * Calculates the query result limit for a node.
+     *
+     * @param ownedPartitions number of owned partitions by the node
+     * @return result size limit
+     */
+    long getNodeResultLimit(int ownedPartitions);
 }

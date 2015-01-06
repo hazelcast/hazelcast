@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
@@ -40,19 +41,29 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
         this.predicate = predicate;
     }
 
+    @SuppressWarnings("unused")
     public QueryPartitionOperation() {
     }
 
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        Collection<QueryableEntry> queryableEntries = mapServiceContext.getMapContextQuerySupport()
-                .queryOnPartition(name, predicate, getPartitionId());
+        MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
+
+        boolean resultLimitEnabled = mapQuerySupport.isQueryResultLimitEnabled();
+        long resultLimit = resultLimitEnabled ? mapQuerySupport.getNodeResultLimit(1) : 0;
+
+        Collection<QueryableEntry> queryableEntries = mapQuerySupport.queryOnPartition(name, predicate, getPartitionId());
         result = new QueryResult();
+        long resultSize = 0;
         for (QueryableEntry entry : queryableEntries) {
+            if (resultLimitEnabled && ++resultSize > resultLimit) {
+                result.setResultLimitExceeded();
+                break;
+            }
             result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getIndexKey(), entry.getValueData()));
         }
-        final List<Integer> partitions = Collections.singletonList(getPartitionId());
+        List<Integer> partitions = Collections.singletonList(getPartitionId());
         result.setPartitionIds(partitions);
     }
 

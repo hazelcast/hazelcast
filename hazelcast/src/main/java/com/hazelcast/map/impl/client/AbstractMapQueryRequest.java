@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.QueryResult;
@@ -50,6 +51,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         RetryableRequest {
 
     protected IterationType iterationType;
+
     private String name;
 
     public AbstractMapQueryRequest() {
@@ -94,12 +96,18 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void collectResults(QueryResultSet result, List<Future> futures, Set<Integer> finishedPartitions)
             throws InterruptedException, java.util.concurrent.ExecutionException {
 
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
+
+                if (queryResult.isResultLimitExceeded()) {
+                    throw new QueryResultSizeExceededException();
+                }
+
                 Collection<Integer> partitionIds = queryResult.getPartitionIds();
                 if (partitionIds != null) {
                     finishedPartitions.addAll(partitionIds);
@@ -137,10 +145,16 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
+
+            if (queryResult.isResultLimitExceeded()) {
+                throw new QueryResultSizeExceededException();
+            }
+
             result.addAll(queryResult.getResult());
         }
     }

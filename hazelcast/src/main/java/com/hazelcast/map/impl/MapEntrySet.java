@@ -65,7 +65,7 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             Data value = in.readData();
-            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value);
+            Map.Entry<Data, Data> entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value);
             entrySet.add(entry);
         }
     }
@@ -83,5 +83,4 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
     public int getId() {
         return MapDataSerializerHook.ENTRY_SET;
     }
-
 }

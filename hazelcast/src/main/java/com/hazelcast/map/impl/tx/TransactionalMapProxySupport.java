@@ -20,6 +20,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
@@ -43,6 +44,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -251,7 +253,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     );
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
-                Set keys = ((MapKeySet) getService().getMapServiceContext().toObject(result)).getKeySet();
+                Set<Data> keys = ((MapKeySet) getService().getMapServiceContext().toObject(result)).getKeySet();
                 keySet.addAll(keys);
             }
             return keySet;
@@ -280,40 +282,74 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     protected Set queryInternal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
-        final NodeEngine nodeEngine = getNodeEngine();
+        NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> partitions = new HashSet<Integer>(partitionCount);
         QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
-        List<Integer> missingList = new ArrayList<Integer>();
+
         try {
             List<Future> futures = new ArrayList<Future>();
-            invokeQueryOperaration(predicate, operationService, members, futures);
+            invokeQueryOperation(predicate, operationService, members, futures);
             collectResults(partitions, result, futures);
             if (partitions.size() == partitionCount) {
                 return result;
             }
-            findMissingPartitions(partitionCount, partitions, missingList);
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
-            missingList.clear();
-            findMissingPartitions(partitionCount, partitions, missingList);
+            EmptyStatement.ignore(t);
         }
+
+        List<Integer> missingList = new ArrayList<Integer>();
+        findMissingPartitions(partitionCount, partitions, missingList);
         try {
             List<Future> missingFutures = new ArrayList<Future>(missingList.size());
             invokeOperationOnMissingPartitions(predicate, operationService, missingList, missingFutures);
             collectResultsFromMissingPartitions(result, missingFutures);
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         return result;
     }
 
-    private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
+    private void invokeQueryOperation(Predicate predicate, OperationService operationService,
+                                      Collection<MemberImpl> members, List<Future> futures) {
+        for (MemberImpl member : members) {
+            Future future = operationService
+                    .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
+            futures.add(future);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void collectResults(Set<Integer> plist, QueryResultSet result, List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            result.addAll(queryResult.getResult());
+            if (queryResult != null) {
+
+                if (queryResult.isResultLimitExceeded()) {
+                    throw new QueryResultSizeExceededException();
+                }
+
+                Collection<Integer> partitionIds = queryResult.getPartitionIds();
+                if (partitionIds != null) {
+                    plist.addAll(partitionIds);
+                    result.addAll(queryResult.getResult());
+                }
+            }
+        }
+    }
+
+    private void findMissingPartitions(int partitionCount, Set<Integer> plist, List<Integer> missingList) {
+        for (int i = 0; i < partitionCount; i++) {
+            if (!plist.contains(i)) {
+                missingList.add(i);
+            }
         }
     }
 
@@ -331,34 +367,17 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
     }
 
-    private void findMissingPartitions(int partitionCount, Set<Integer> plist, List<Integer> missingList) {
-        for (int i = 0; i < partitionCount; i++) {
-            if (!plist.contains(i)) {
-                missingList.add(i);
-            }
-        }
-    }
-
-    private void collectResults(Set<Integer> plist, QueryResultSet result, List<Future> futures)
+    @SuppressWarnings("unchecked")
+    private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            if (queryResult != null) {
-                final Collection<Integer> partitionIds = queryResult.getPartitionIds();
-                if (partitionIds != null) {
-                    plist.addAll(partitionIds);
-                    result.addAll(queryResult.getResult());
-                }
-            }
-        }
-    }
 
-    private void invokeQueryOperaration(Predicate predicate, OperationService operationService,
-                                        Collection<MemberImpl> members, List<Future> futures) {
-        for (MemberImpl member : members) {
-            Future future = operationService
-                    .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
-            futures.add(future);
+            if (queryResult.isResultLimitExceeded()) {
+                throw new QueryResultSizeExceededException();
+            }
+
+            result.addAll(queryResult.getResult());
         }
     }
 
