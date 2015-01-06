@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 
+import java.util.Collections;
 import java.util.Set;
 
 public final class LockStoreProxy implements LockStore {
@@ -33,83 +34,95 @@ public final class LockStoreProxy implements LockStore {
 
     @Override
     public boolean lock(Data key, String caller, long threadId, long ttl) {
-        LockStore lockStore = getLockStore();
-        return lockStore.lock(key, caller, threadId, ttl);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
     }
 
     @Override
     public boolean txnLock(Data key, String caller, long threadId, long ttl) {
-        LockStore lockStore = getLockStore();
-        return lockStore.txnLock(key, caller, threadId, ttl);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
     @Override
     public boolean extendLeaseTime(Data key, String caller, long threadId, long ttl) {
-        LockStore lockStore = getLockStore();
-        return lockStore.extendLeaseTime(key, caller, threadId, ttl);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     @Override
     public boolean unlock(Data key, String caller, long threadId) {
-        LockStore lockStore = getLockStore();
-        return lockStore.unlock(key, caller, threadId);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
     @Override
     public boolean isLocked(Data key) {
-        LockStore lockStore = getLockStore();
-        return lockStore.isLocked(key);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.isLocked(key);
     }
 
     @Override
     public boolean isLockedBy(Data key, String caller, long threadId) {
-        LockStore lockStore = getLockStore();
-        return lockStore.isLockedBy(key, caller, threadId);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
     }
 
     @Override
     public int getLockCount(Data key) {
-        LockStore lockStore = getLockStore();
+        LockStore lockStore = getLockStoreOrNull();
+        if (lockStore == null) {
+            return 0;
+        }
         return lockStore.getLockCount(key);
     }
 
     @Override
     public long getRemainingLeaseTime(Data key) {
-        LockStore lockStore = getLockStore();
+        LockStore lockStore = getLockStoreOrNull();
+        if (lockStore == null) {
+            return 0;
+        }
         return lockStore.getRemainingLeaseTime(key);
     }
 
     @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
-        LockStore lockStore = getLockStore();
-        return lockStore.canAcquireLock(key, caller, threadId);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.canAcquireLock(key, caller, threadId);
     }
 
     @Override
     public boolean isTransactionallyLocked(Data key) {
-        LockStore lockStore = getLockStore();
-        return lockStore.isTransactionallyLocked(key);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.isTransactionallyLocked(key);
     }
 
     @Override
     public Set<Data> getLockedKeys() {
-        LockStore lockStore = getLockStore();
+        LockStore lockStore = getLockStoreOrNull();
+        if (lockStore == null) {
+            return Collections.emptySet();
+        }
         return lockStore.getLockedKeys();
     }
 
     @Override
     public boolean forceUnlock(Data key) {
-        LockStore lockStore = getLockStore();
-        return lockStore.forceUnlock(key);
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.forceUnlock(key);
     }
 
     @Override
     public String getOwnerInfo(Data dataKey) {
-        LockStore lockStore = getLockStore();
+        LockStore lockStore = getLockStoreOrNull();
+        if (lockStore == null) {
+            return "<not-locked>";
+        }
         return lockStore.getOwnerInfo(dataKey);
     }
 
-    private LockStore getLockStore() {
+    private LockStore getLockStoreOrNull() {
         return container.getLockStore(namespace);
     }
 }
