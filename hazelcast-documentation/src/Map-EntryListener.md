@@ -84,3 +84,17 @@ entryRemoved:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
 
 Entry Listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause other event listeners to starve.
 
+In these instances you might consider executing these reactionary tasks inside an Executor
+
+```java
+public class MyEntryListener implements EntryListener{
+
+    private Executor executor = Executors.newFixedThreadPool(5);
+
+    @Override
+    public void entryAdded(EntryEvent event) {
+        executor.execute(new DoSomethingWithEvent(event));
+    }
+...
+```
+
