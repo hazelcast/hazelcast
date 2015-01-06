@@ -20,6 +20,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.query.impl.ReflectionHelper;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +100,8 @@ public class MapStoreWrapper implements MapStore {
 
     public Iterable loadAllKeys() {
         if (isMapLoader()) {
-            return mapLoader.loadAllKeys();
+            // Invoke reflectively to preserve backwards binary compatibility
+            return ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
         }
         return null;
     }
