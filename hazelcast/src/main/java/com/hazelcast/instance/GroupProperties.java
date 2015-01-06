@@ -17,7 +17,11 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
+import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.QueryResultSizeLimiter;
+import com.hazelcast.query.TruePredicate;
 
 /**
  * The GroupProperties contain the Hazelcast properties. They can be set as an environmental variable, or
@@ -276,6 +280,41 @@ public class GroupProperties {
      */
     public static final String PROP_JCACHE_PROVIDER_TYPE = "hazelcast.jcache.provider.type";
 
+    /**
+     * Result size limit for query operations on maps.
+     * <p/>
+     * This value defines the maximum number of returned elements for a single query result. If a query exceeds this number of
+     * elements a {@link QueryResultSizeExceededException} will be thrown.
+     * <p/>
+     * This feature is in place to prevent an OOME if a single node is requesting the whole data set of the cluster, e.g. by
+     * executing a query with {@link TruePredicate}. This applies internally for the {@link IMap#values()}, {@link IMap#keySet()}
+     * and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
+     * <p/>
+     * This feature depends on an equal distribution of the data on the cluster nodes to calculate the result size limit per node.
+     * Therefore there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
+     * {@link QueryResultSizeLimiter}. Configured values below the minimum will be increased to the minimum.
+     * <p/>
+     * The feature can be disabled by setting a value of <tt>-1</tt> (which is the default value).
+     */
+    public static final String PROP_QUERY_RESULT_SIZE_LIMIT = "hazelcast.query.result.size.limit";
+
+    /**
+     * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
+     * <p/>
+     * To limit the result size of a query ({@see PROP_QUERY_RESULT_SIZE_LIMIT}) a local pre-check on the requesting node can be
+     * done, before the query is sent to the cluster. Since this may increase the latency the pre-check is limited to a maximum
+     * number of local partitions.
+     * <p/>
+     * By increasing this parameter you can prevent the execution of the query on the cluster by increasing the latency due to the
+     * prolonged local pre-check.
+     * <p/>
+     * The pre-check can be disabled by setting a value of <tt>-1</tt>.
+     *
+     * @see #PROP_QUERY_RESULT_SIZE_LIMIT
+     */
+    public static final String PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
+            = "hazelcast.query.max.local.partition.limit.for.precheck";
+
     public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
 
     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
@@ -450,9 +489,10 @@ public class GroupProperties {
     public final GroupProperty BACKPRESSURE_SYNCWINDOW;
     public final GroupProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
     public final GroupProperty BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-    /**
-     * @param config
-     */
+
+    public final GroupProperty QUERY_RESULT_SIZE_LIMIT;
+    public final GroupProperty QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+
     public GroupProperties(Config config) {
         HEALTH_MONITORING_LEVEL
                 = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
@@ -565,6 +605,10 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION, "100");
         BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
                 = new GroupProperty(config, PROP_BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS, "60000");
+
+        QUERY_RESULT_SIZE_LIMIT = new GroupProperty(config, PROP_QUERY_RESULT_SIZE_LIMIT, "-1");
+        QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
+                = new GroupProperty(config, PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, "3");
     }
 
     public static class GroupProperty {

@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.operation.QueryOperation;
 import com.hazelcast.map.impl.operation.QueryPartitionOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -59,10 +61,14 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
+    private final ILogger logger;
+    private final QueryResultSizeLimiter queryResultSizeLimiter;
 
     public BasicMapContextQuerySupport(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.logger = nodeEngine.getLogger(getClass());
+        this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
     }
 
     @Override
@@ -136,8 +142,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (partitionIds.isEmpty()) {
                 return result;
             }
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
-            getLogger().warning("Could not get results", t);
+            logger.warning("Could not get results", t);
         }
 
         try {
@@ -174,8 +182,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
                 return result;
             }
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
-            getLogger().warning("Could not get results", t);
+            logger.warning("Could not get results", t);
         }
 
         try {
@@ -209,8 +219,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
                 return result;
             }
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
-            getLogger().warning("Could not get results", t);
+            logger.warning("Could not get results", t);
         }
 
         try {
@@ -237,6 +249,9 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     @Override
     public Set query(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult) {
         checkIfNotPagingPredicate(predicate);
+        if (predicate == TruePredicate.INSTANCE) {
+            queryResultSizeLimiter.checkMaxResultLimitOnLocalPartitions(mapName);
+        }
 
         SerializationService serializationService = nodeEngine.getSerializationService();
         Set result = new QueryResultSet(serializationService, iterationType, dataResult);
@@ -248,8 +263,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (partitionIds.isEmpty()) {
                 return result;
             }
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
-            getLogger().warning("Could not get results", t);
+            logger.warning("Could not get results", t);
         }
 
         try {
@@ -262,6 +279,11 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         return result;
     }
 
+    @Override
+    public QueryResult newQueryResult(int numberOfPartitions) {
+        return new QueryResult(queryResultSizeLimiter.getNodeResultLimit(numberOfPartitions));
+    }
+
     private void checkIfNotPagingPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Predicate should not be a type of paging predicate");
@@ -269,8 +291,8 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     }
 
     private Future<QueryResult> queryOnLocalMember(String mapName, Predicate predicate) {
-        return nodeEngine.getOperationService().invokeOnTarget(MapService.SERVICE_NAME,
-                new QueryOperation(mapName, predicate), nodeEngine.getThisAddress());
+        QueryOperation operation = new QueryOperation(mapName, predicate);
+        return nodeEngine.getOperationService().invokeOnTarget(MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
     }
 
     private List<Future<QueryResult>> queryOnMembers(String mapName, Predicate predicate) {
@@ -278,8 +300,8 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
         for (MemberImpl member : members) {
-            Future<QueryResult> future = operationService.invokeOnTarget(MapService.SERVICE_NAME,
-                    new QueryOperation(mapName, predicate), member.getAddress());
+            QueryOperation operation = new QueryOperation(mapName, predicate);
+            Future<QueryResult> future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);
         }
         return futures;
@@ -317,7 +339,6 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (queryResult == null) {
                 continue;
             }
-
             Collection<Integer> tmpPartitionIds = queryResult.getPartitionIds();
             if (tmpPartitionIds != null) {
                 partitionIds.removeAll(tmpPartitionIds);
@@ -341,7 +362,6 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (queryResult == null) {
                 continue;
             }
-
             Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
                 partitionIds.removeAll(queriedPartitionIds);
@@ -403,9 +423,5 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
 
     private long getNow() {
         return Clock.currentTimeMillis();
-    }
-
-    private ILogger getLogger() {
-        return nodeEngine.getLogger(getClass());
     }
 }

@@ -641,6 +641,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet(final Predicate predicate) {
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
@@ -657,6 +658,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Collection<V> values(final Predicate predicate) {
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
@@ -670,6 +672,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<K> localKeySet(final Predicate predicate) {
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");

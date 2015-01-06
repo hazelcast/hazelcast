@@ -16,8 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
@@ -1079,8 +1081,14 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p/>
+     * On the server side this method is executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys contained in this map.
+     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet();
 
@@ -1090,8 +1098,14 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * <p/>
+     * On the server side this method is executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a collection clone of the values contained in this map
+     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values();
 
@@ -1101,8 +1115,14 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p/>
+     * On the server side this method is executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return a set clone of the keys mappings in this map
+     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet();
 
@@ -1115,9 +1135,15 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p/>
+     * This method is always executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result key set of the query.
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> keySet(Predicate predicate);
 
@@ -1130,9 +1156,15 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p/>
+     * This method is always executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result entry set of the query.
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
@@ -1145,9 +1177,15 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
+     * <p/>
+     * This method is always executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return result value collection of the query.
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Collection<V> values(Predicate predicate);
 
@@ -1164,8 +1202,14 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p/>
+     * On the server side this method is executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @return locally owned keys.
+     * @throws QueryResultSizeExceededException on server side if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet();
 
@@ -1182,9 +1226,15 @@ public interface IMap<K, V>
      * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     * <p/>
+     * This method is always executed by a distributed query
+     * so it may throw a {@link QueryResultSizeExceededException}
+     * if {@link GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT} is configured.
      *
      * @param predicate specified query criteria.
      * @return keys of matching locally owned entries.
+     * @throws QueryResultSizeExceededException if query result size limit is exceeded
+     * @see GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(Predicate predicate);
 

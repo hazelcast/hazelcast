@@ -20,6 +20,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
@@ -295,6 +296,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             if (partitions.size() == partitionCount) {
                 return result;
             }
+        } catch (QueryResultSizeExceededException e) {
+            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
             EmptyStatement.ignore(t);
         }
