@@ -20,7 +20,7 @@ public interface Counter extends DistributedObject {
 }
 ```
 
-#### Making the CounterService Implement ManagedService and RemoteService
+#### Implementing ManagedService and RemoteService
 
 Now, we need to make the `CounterService` class implement not only the `ManagedService` interface, but also the interface `com.hazelcast.spi.RemoteService`. This way, a client will be able to get a handle of a counter proxy.
 

@@ -5,7 +5,7 @@ Growing to an infinite size is in general not the expected behavior of caches. I
 prevent the infinite growth but sometimes it is hard to define a meaningful expiration timeout. Therefore, Hazelcast JCache provides the eviction feature. Eviction offers the possibility to remove entries based on the cache size or amount of used memory
 (Hazelcast Enterprise Only) and not based on timeouts.
 
-#### General information
+#### General Information
 
 Since a cache is designed for high throughput and fast reads, a lot of effort went into designing the eviction system as
 predictable as possible. All built-in implementations provide an amortized O(1) runtime. The default operation runtime is
@@ -147,7 +147,7 @@ balance themselves. Therefore, the formula is as easy as the following:
 MaxPartitionSize := BalancedPartitionSize
 ```
 
-##### Cache size estimation
+##### Cache Size Estimation
 
 As mentioned earlier, Hazelcast JCache provides an estimation algorithm to prevent cluster-wide network operations, concurrent
 access to other partitions and background tasks. It also offers a highly predictable operation runtime when the eviction is necessary.

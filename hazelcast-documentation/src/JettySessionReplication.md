@@ -44,7 +44,7 @@ Latest tested versions are **7.6.16.v20140903**, **8.1.16.v20140903** and **9.2.
  - Hazelcast Jetty-based Web Session Replication is built on top of the `jetty-nosql` module. This module (`jetty-nosql-<*jettyversion*>.jar`) needs to be added to `$JETTY_HOME/lib/ext`.
    This module can be found [here](http://mvnrepository.com/artifact/org.eclipse.jetty/jetty-nosql).
 
-#### How Jetty Session Replication works
+#### How Jetty Session Replication Works
 
 Jetty Session Replication in Hazelcast Enterprise is a Hazelcast Module where each created `HttpSession` Object's state is kept in Hazelcast Distributed Map. 
 
