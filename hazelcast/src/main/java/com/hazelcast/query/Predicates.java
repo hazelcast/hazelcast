@@ -841,7 +841,8 @@ public final class Predicates {
                 } else if (type != null) {
                     return type.getConverter().convert(attributeValue);
                 } else {
-                    throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
+                    throw new QueryException("Unknown attribute type: " + attributeValue.getClass().getName()
+                            + " for attribute: " + attribute);
                 }
             }
         }
