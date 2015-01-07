@@ -222,9 +222,6 @@ public final class ReflectionHelper {
 
         Object getValue(Object obj) throws Exception {
             Object paramObj = obj;
-            if (parent != null) {
-                System.out.println("unexpected parent");
-            }
             paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
             return paramObj != null ? method.invoke(paramObj) : null;
         }
