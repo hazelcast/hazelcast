@@ -17,6 +17,8 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.query.QueryException;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 
 import java.lang.reflect.Field;
@@ -38,10 +40,23 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
  */
 public final class ReflectionHelper {
 
-    private static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
-    private static final ConcurrentMap<String, Getter> GETTER_CACHE = new ConcurrentHashMap<String, Getter>(1000);
     private static final int INITIAL_CAPACITY = 3;
 
+    private static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
+
+    private static final ConcurrentMap<Class, ConcurrentMap<String, Getter>> GETTER_CACHE
+            = new ConcurrentHashMap<Class, ConcurrentMap<String, Getter>>(1000);
+
+    private static final ConstructorFunction<Class, ConcurrentMap<String, Getter>> GETTER_CACHE_CONSTRUCTOR
+            = new ConstructorFunction<Class, ConcurrentMap<String, Getter>>() {
+        @Override
+        public ConcurrentMap<String, Getter> createNew(Class arg) {
+            return new ConcurrentHashMap<String, Getter>();
+        }
+    };
+
+
+    // we don't want instances
     private ReflectionHelper() {
     }
 
@@ -50,6 +65,8 @@ public final class ReflectionHelper {
             return AttributeType.STRING;
         } else if (klass == int.class || klass == Integer.class) {
             return AttributeType.INTEGER;
+        } else if (klass == short.class || klass == Short.class) {
+            return AttributeType.SHORT;
         } else if (klass == long.class || klass == Long.class) {
             return AttributeType.LONG;
         } else if (klass == boolean.class || klass == Boolean.class) {
@@ -62,8 +79,6 @@ public final class ReflectionHelper {
             return AttributeType.BIG_INTEGER;
         } else if (klass == float.class || klass == Float.class) {
             return AttributeType.FLOAT;
-        } else if (klass == short.class || klass == Short.class) {
-            return AttributeType.SHORT;
         } else if (klass == byte.class || klass == Byte.class) {
             return AttributeType.BYTE;
         } else if (klass == char.class || klass == Character.class) {
@@ -82,6 +97,22 @@ public final class ReflectionHelper {
         return null;
     }
 
+
+    private static Getter get(Class clazz, String attribute) {
+        ConcurrentMap<String, Getter> cache = GETTER_CACHE.get(clazz);
+        if (cache == null) {
+            return null;
+        }
+
+        return cache.get(attribute);
+    }
+
+    private static Getter set(Class clazz, String attribute, Getter getter) {
+        ConcurrentMap<String, Getter> cache = ConcurrencyUtil.getOrPutIfAbsent(GETTER_CACHE, clazz, GETTER_CACHE_CONSTRUCTOR);
+        Getter foundGetter = cache.putIfAbsent(attribute, getter);
+        return foundGetter == null ? getter : foundGetter;
+    }
+
     public static void reset() {
         GETTER_CACHE.clear();
     }
@@ -91,9 +122,9 @@ public final class ReflectionHelper {
     }
 
     private static Getter createGetter(Object obj, String attribute) {
-        Class clazz = obj.getClass();
-        final String cacheKey = clazz.getName() + ":" + attribute;
-        Getter getter = GETTER_CACHE.get(cacheKey);
+        final Class targetClazz = obj.getClass();
+        Class clazz = targetClazz;
+        Getter getter = get(clazz, attribute);
         if (getter != null) {
             return getter;
         }
@@ -153,11 +184,9 @@ public final class ReflectionHelper {
                 parent = localGetter;
             }
             getter = parent;
+
             if (getter.isCacheable()) {
-                Getter foundGetter = GETTER_CACHE.putIfAbsent(cacheKey, getter);
-                if (foundGetter != null) {
-                    getter = foundGetter;
-                }
+                getter = set(targetClazz, attribute, getter);
             }
             return getter;
         } catch (Throwable e) {
@@ -183,7 +212,7 @@ public final class ReflectionHelper {
         abstract boolean isCacheable();
     }
 
-    static class MethodGetter extends Getter {
+    private static class MethodGetter extends Getter {
         final Method method;
 
         MethodGetter(Getter parent, Method method) {
@@ -197,6 +226,7 @@ public final class ReflectionHelper {
             return paramObj != null ? method.invoke(paramObj) : null;
         }
 
+        @Override
         Class getReturnType() {
             return this.method.getReturnType();
         }
@@ -212,10 +242,10 @@ public final class ReflectionHelper {
         }
     }
 
-    static class FieldGetter extends Getter {
-        final Field field;
+    private static final class FieldGetter extends Getter {
+        private final Field field;
 
-        FieldGetter(Getter parent, Field field) {
+        private FieldGetter(Getter parent, Field field) {
             super(parent);
             this.field = field;
         }
@@ -243,8 +273,8 @@ public final class ReflectionHelper {
         }
     }
 
-    static class ThisGetter extends Getter {
-        final Object object;
+    private static final class ThisGetter extends Getter {
+        private final Object object;
 
         public ThisGetter(final Getter parent, Object object) {
             super(parent);
