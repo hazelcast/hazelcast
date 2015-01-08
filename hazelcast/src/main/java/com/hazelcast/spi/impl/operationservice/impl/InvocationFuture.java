@@ -36,7 +36,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> RESPONSE_FIELD_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "response");
     private static final AtomicIntegerFieldUpdater<InvocationFuture> WAITER_COUNT_FIELD_UPDATER
-            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class,  "waiterCount");
+            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class, "waiterCount");
 
     volatile boolean interrupted;
     // Contains the number of threads waiting for a result from this future.
@@ -196,7 +196,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
-        if (response != null && response != Invocation.WAIT_RESPONSE) {
+        if (response != null && response != Invocation.WAIT_RESPONSE && response != Invocation.BACKPRESSURE_RESPONSE) {
             return response;
         }
 
@@ -204,7 +204,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         try {
             long timeoutMs = toTimeoutMs(time, unit);
             long maxCallTimeoutMs = getMaxCallTimeout();
-            boolean longPolling = timeoutMs > maxCallTimeoutMs;
+            boolean longRunning = timeoutMs > maxCallTimeoutMs;
 
             int pollCount = 0;
             while (timeoutMs >= 0) {
@@ -217,23 +217,26 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     pollResponse(pollTimeoutMs);
                     lastPollTime = Clock.currentTimeMillis() - startMs;
                     timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
-
-                    if (response == Invocation.WAIT_RESPONSE) {
-                        RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
-                        continue;
-                    } else if (response != null) {
-                        //if the thread is interrupted, but the response was not an interrupted-response,
-                        //we need to restore the interrupt flag.
-                        if (response != Invocation.INTERRUPTED_RESPONSE && interrupted) {
-                            Thread.currentThread().interrupt();
-                        }
-                        return response;
-                    }
                 } catch (InterruptedException e) {
                     interrupted = true;
                 }
 
-                if (!interrupted && longPolling) {
+                if (response == Invocation.BACKPRESSURE_RESPONSE) {
+                    RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
+                    continue;
+                } else if (response == Invocation.WAIT_RESPONSE) {
+                    RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
+                    continue;
+                } else if (response != null) {
+                    //if the thread is interrupted, but the response was not an interrupted-response,
+                    //we need to restore the interrupt flag.
+                    if (response != Invocation.INTERRUPTED_RESPONSE && interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return response;
+                }
+
+                if (!interrupted && longRunning) {
                     // no response!
                     Address target = invocation.getTarget();
                     if (invocation.remote && invocation.nodeEngine.getThisAddress().equals(target)) {
@@ -256,16 +259,51 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
+    public void waitForFakeResponse(long time, TimeUnit unit) {
+        if (response != null) {
+            return;
+        }
+
+        long timeoutMs = toTimeoutMs(time, unit);
+        long maxCallTimeoutMs = getMaxCallTimeout();
+
+        //todo: we should decrea
+
+        while (timeoutMs >= 0) {
+            long pollTimeoutMs = min(maxCallTimeoutMs, timeoutMs);
+            long startMs = Clock.currentTimeMillis();
+
+            try {
+                pollResponse(pollTimeoutMs);
+                long lastPollTime = Clock.currentTimeMillis() - startMs;
+                timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+
+            if (response != null) {
+                //if the thread is interrupted, but the response was not an interrupted-response,
+                //we need to restore the interrupt flag.
+                if (response != Invocation.INTERRUPTED_RESPONSE && interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+                return;
+            }
+        }
+    }
+
     private void pollResponse(final long pollTimeoutMs) throws InterruptedException {
         //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
-        if (pollTimeoutMs > 0 && response == null) {
-            long currentTimeoutMs = pollTimeoutMs;
-            final long waitStart = Clock.currentTimeMillis();
-            synchronized (this) {
-                while (currentTimeoutMs > 0 && response == null) {
-                    wait(currentTimeoutMs);
-                    currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
-                }
+        if (pollTimeoutMs <= 0 || response != null) {
+            return;
+        }
+
+        long currentTimeoutMs = pollTimeoutMs;
+        final long waitStart = Clock.currentTimeMillis();
+        synchronized (this) {
+            while (currentTimeoutMs > 0 && response == null) {
+                wait(currentTimeoutMs);
+                currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
             }
         }
     }
@@ -403,6 +441,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
+    // TODO: this is broken. A future can have a response set like Invocation.WAIT_RESPONSE that indicates that the invocation
+    // is not ready.
     @Override
     public boolean isDone() {
         return response != null;

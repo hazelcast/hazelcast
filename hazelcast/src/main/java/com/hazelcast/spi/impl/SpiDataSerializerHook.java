@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.eventservice.impl.EventPacket;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ForcedSyncResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -41,6 +42,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_PACKET = 6;
     public static final int COLLECTION = 7;
     public static final int CALL_TIMEOUT_RESPONSE = 8;
+    public static final int FORCED_SYNC_RESPONSE = 9;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -66,6 +68,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new SerializableCollection();
                     case CALL_TIMEOUT_RESPONSE:
                         return new CallTimeoutResponse();
+                    case FORCED_SYNC_RESPONSE:
+                        return new ForcedSyncResponse();
                     default:
                         return null;
                 }

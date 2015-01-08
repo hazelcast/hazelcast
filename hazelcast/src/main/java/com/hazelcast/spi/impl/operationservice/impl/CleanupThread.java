@@ -1,13 +1,12 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.EmptyStatement;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 
 /**
- * The CleanupThread does 2 things:
- * - deals with operations that need to be re-invoked.
- * - deals with cleanup of the BackPressureService.
+ * The CleanupThread deals with operations that need to be re-invoked.
  * <p/>
  * It periodically iterates over all invocations in this BasicOperationService and calls the
  * {@link Invocation#handleOperationTimeout()}
@@ -28,11 +27,12 @@ final class CleanupThread extends Thread {
     public static final int DELAY_MILLIS = 1000;
 
     private volatile boolean shutdown;
-
-    private OperationServiceImpl operationService;
+    private final OperationServiceImpl operationService;
+    private final ILogger logger;
 
     CleanupThread(OperationServiceImpl operationService) {
         super(operationService.node.getHazelcastThreadGroup().getThreadNamePrefix("CleanupThread"));
+        this.logger = operationService.logger;
         this.operationService = operationService;
     }
 
@@ -47,15 +47,12 @@ final class CleanupThread extends Thread {
             while (!shutdown) {
                 scanHandleOperationTimeout();
                 if (!shutdown) {
-                    operationService.backPressureService.cleanup();
-                }
-                if (!shutdown) {
                     sleep();
                 }
             }
         } catch (Throwable t) {
             inspectOutputMemoryError(t);
-            operationService.logger.severe("Failed to run", t);
+            logger.severe("Failed to run", t);
         }
     }
 
@@ -81,13 +78,13 @@ final class CleanupThread extends Thread {
                 invocation.handleOperationTimeout();
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
-                operationService.logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
+                logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
             }
             try {
                 invocation.handleBackupTimeout(operationService.backupOperationTimeoutMillis);
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
-                operationService.logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
+                logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
             }
         }
     }

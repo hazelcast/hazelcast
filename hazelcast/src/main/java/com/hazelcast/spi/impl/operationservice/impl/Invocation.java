@@ -33,11 +33,11 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -49,6 +49,7 @@ import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
+import static com.hazelcast.spi.OperationAccessor.setForceSync;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 
 /**
@@ -57,6 +58,9 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
 abstract class Invocation implements ResponseHandler, Runnable {
+
+    private final static boolean SYCN = false;
+    private final static boolean ASYNC = true;
 
     /**
      * A response indicating the 'null' value.
@@ -86,12 +90,16 @@ abstract class Invocation implements ResponseHandler, Runnable {
      */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
+    /**
+     * A response indicating that the operation execution was interrupted
+     */
+    static final Object BACKPRESSURE_RESPONSE = new InternalResponse("Invocation::FORCED_SYNC_RESPONSE");
+
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
 
     private static final AtomicIntegerFieldUpdater<Invocation> BACKUPS_COMPLETED_FIELD_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsCompleted");
-
 
     static final class InternalResponse {
 
@@ -139,7 +147,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
 
-     //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
     private Address invTarget;
@@ -164,10 +172,6 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
     abstract ExceptionAction onException(Throwable t);
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
     InternalPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
@@ -178,27 +182,37 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         final long defaultCallTimeout = operationService.getDefaultCallTimeoutMillis();
-        if (op instanceof WaitSupport) {
-            final long waitTimeoutMillis = op.getWaitTimeout();
-            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
-                /*
-                 * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
-                 * long callTimeout = Math.min(waitTimeoutMillis, defaultCallTimeout);
-                 * callTimeout = Math.max(a, minTimeout);
-                 * return callTimeout;
-                 *
-                 * Below two lines are shortened version of above*
-                 * using min(max(x,y),z)=max(min(x,z),min(y,z))
-                 */
-                final long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
-                return Math.min(max, defaultCallTimeout);
-            }
+        if (!(op instanceof WaitSupport)) {
+            return defaultCallTimeout;
+        }
+
+        final long waitTimeoutMillis = op.getWaitTimeout();
+        if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE) {
+            /*
+             * final long minTimeout = Math.min(defaultCallTimeout, MIN_TIMEOUT);
+             * long callTimeout = Math.min(waitTimeoutMillis, defaultCallTimeout);
+             * callTimeout = Math.max(a, minTimeout);
+             * return callTimeout;
+             *
+             * Below two lines are shortened version of above*
+             * using min(max(x,y),z)=max(min(x,z),min(y,z))
+             */
+            final long max = Math.max(waitTimeoutMillis, MIN_TIMEOUT);
+            return Math.min(max, defaultCallTimeout);
         }
         return defaultCallTimeout;
     }
 
+    public final InvocationFuture invoke() {
+        invoke(SYCN);
+        return invocationFuture;
+    }
 
-    private void invokeInternal(boolean isAsync) {
+    public final void asyncInvoke() {
+        invoke(ASYNC);
+    }
+
+    private void invoke(boolean isAsync) {
         if (invokeCount > 0) {
             // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
@@ -209,6 +223,9 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         try {
+            boolean forceSync = operationService.backPressureService.requiresBackPressure(op);
+            setForceSync(op, forceSync);
+
             setCallTimeout(op, callTimeout);
             setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine)
@@ -220,19 +237,15 @@ abstract class Invocation implements ResponseHandler, Runnable {
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
+
             doInvoke();
+
+            if(forceSync){
+                invocationFuture.waitForFakeResponse(callTimeout, TimeUnit.MILLISECONDS);
+            }
         } catch (Exception e) {
             handleInvocationException(e);
         }
-    }
-
-    public final InvocationFuture invoke() {
-        invokeInternal(false);
-        return invocationFuture;
-    }
-
-    public final void invokeAsync() {
-        invokeInternal(true);
     }
 
     private void handleInvocationException(Exception e) {
@@ -367,7 +380,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     public void sendResponse(Object obj) {
         if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + obj);
+                    + ", current-response: : " + obj + " found response: " + pendingResponse);
         }
         notify(obj);
     }
@@ -397,6 +410,11 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
         if (response == WAIT_RESPONSE) {
             handleWaitResponse();
+            return;
+        }
+
+        if (response == BACKPRESSURE_RESPONSE) {
+            handleBackPressureResponse();
             return;
         }
 
@@ -445,6 +463,10 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
     private void handleWaitResponse() {
         invocationFuture.set(WAIT_RESPONSE);
+    }
+
+    private void handleBackPressureResponse() {
+        invocationFuture.set(BACKPRESSURE_RESPONSE);
     }
 
     private void handleRetryResponse() {
@@ -615,7 +637,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("BasicInvocation");
+        sb.append("Invocation");
         sb.append("{ serviceName='").append(serviceName).append('\'');
         sb.append(", op=").append(op);
         sb.append(", partitionId=").append(partitionId);

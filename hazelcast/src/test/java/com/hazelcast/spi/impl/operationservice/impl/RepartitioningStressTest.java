@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -134,6 +135,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         restartThread.stop = true;
     }
 
+    @Ignore
     @Test
     public void callWithoutBackups() throws InterruptedException {
         final Map<Integer, Integer> map = hz.getMap("map");

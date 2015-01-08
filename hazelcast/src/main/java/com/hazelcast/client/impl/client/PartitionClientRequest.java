@@ -72,7 +72,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
         return response;
     }
 
-    private class CallbackImpl implements Callback<Object> {
+    public class CallbackImpl implements Callback<Object> {
         private final ClientEndpoint endpoint;
 
         public CallbackImpl(ClientEndpoint endpoint) {

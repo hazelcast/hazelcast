@@ -720,7 +720,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         }
     }
 
-    private static FirewallingTcpIpConnectionManager getConnectionManager(HazelcastInstance hz) {
+    public static FirewallingTcpIpConnectionManager getConnectionManager(HazelcastInstance hz) {
         Node node = TestUtil.getNode(hz);
         return (FirewallingTcpIpConnectionManager) node.getConnectionManager();
     }

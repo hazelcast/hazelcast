@@ -36,6 +36,30 @@ public class OperationSerializationTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void test_syncForced(){
+        DummyOperation op = new DummyOperation();
+        assertFalse(op.isSyncForced());
+
+        OperationAccessor.setForceSync(op, true);
+        assertTrue(op.isSyncForced());
+
+        OperationAccessor.setForceSync(op, false);
+        assertFalse(op.isSyncForced());
+    }
+
+    @Test
+    public void test_validateTarget(){
+        DummyOperation op = new DummyOperation();
+        assertTrue(op.validatesTarget());
+
+        op.setValidateTarget(true);
+        assertTrue(op.validatesTarget());
+
+        op.setValidateTarget(false);
+        assertFalse(op.validatesTarget());
+    }
+
+    @Test
     public void test_partitionId() throws IOException {
         test_partitionId(0, false);
         test_partitionId(100, false);
@@ -217,7 +241,6 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
         }
     }
-
 
     private static class OperationWithServiceNameOverride extends AbstractOperation {
         public OperationWithServiceNameOverride(){}

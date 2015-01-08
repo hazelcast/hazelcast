@@ -4,6 +4,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ForcedSyncResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -33,12 +34,26 @@ final class ResponsePacketHandlerImpl implements ResponsePacketHandler {
                 notifyRemoteCall(response);
             } else if (response instanceof BackupResponse) {
                 operationService.notifyBackupCall(response.getCallId());
+            } else if (response instanceof ForcedSyncResponse) {
+                notifyBackPressure(response.getCallId());
             } else {
                 throw new IllegalStateException("Unrecognized response type: " + response);
             }
         } catch (Throwable e) {
             operationService.logger.severe("While processing response...", e);
         }
+    }
+
+    private void notifyBackPressure(long callId) {
+        Invocation invocation = operationService.invocations.get(callId);
+        if (invocation == null) {
+            if (operationService.nodeEngine.isActive()) {
+                throw new HazelcastException("No invocation for response: " + callId);
+            }
+            return;
+        }
+
+        invocation.notify(Invocation.BACKPRESSURE_RESPONSE);
     }
 
     // TODO: @mm - operations those do not return response can cause memory leaks! Call->Invocation->Operation->Data

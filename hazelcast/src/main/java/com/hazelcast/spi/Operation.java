@@ -49,6 +49,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
+    static final int BITMASK_SYNC_FORCED = 1 << 7;
 
     // serialized
     private String serviceName;
@@ -115,13 +116,13 @@ public abstract class Operation implements DataSerializable {
 
     /**
      * Returns the id of the partition this Operation is going to be executed on.
-     *
+     * <p/>
      * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition, for example
      * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
-     *
+     * <p/>
      * The partitionId should never be equal or larger than the total number of partitions. For example if there are 271
      * partitions, the maximum partitionId is 270.
-     *
+     * <p/>
      * The partitionId is used by the OperationService to figure out which member owns a specific partition and will send
      * the operation to that member.
      *
@@ -158,6 +159,14 @@ public abstract class Operation implements DataSerializable {
         setFlag(replicaIndex != 0, BITMASK_REPLICA_INDEX_SET);
         this.replicaIndex = replicaIndex;
         return this;
+    }
+
+    public boolean isSyncForced() {
+        return isFlagSet(BITMASK_SYNC_FORCED);
+    }
+
+    public void setSyncForced(boolean syncForced) {
+        setFlag(syncForced, BITMASK_SYNC_FORCED);
     }
 
     public final long getCallId() {

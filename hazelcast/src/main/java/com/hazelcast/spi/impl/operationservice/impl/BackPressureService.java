@@ -1,15 +1,13 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 /**
@@ -38,32 +36,43 @@ public class BackPressureService {
         }
     };
 
-    // The key is either a connection instance (remote executed operations) or 'this'. This is needed because there is
-    // no local connection.
-    // The value is an array of AtomicInteger with a length of partitioncount+1. The last item is for generic-operations.
-    private final ConcurrentMap<Object, AtomicInteger[]> syncDelaysPerConnection
-            = new ConcurrentHashMap<Object, AtomicInteger[]>();
+    private final AtomicInteger[] syncDelays;
     private final boolean backPressureEnabled;
     private final int syncWindow;
     private final int partitionCount;
 
+    // Although this counter is shared between all threads, it isn't very contended because only 1 in every 'syncWindow' this
+    // counter is being incremented.
+    private final AtomicLong backPressureCounter = new AtomicLong();
+
     public BackPressureService(GroupProperties properties, ILogger logger) {
         this.backPressureEnabled = properties.BACKPRESSURE_ENABLED.getBoolean();
-        this.partitionCount = properties.PARTITION_COUNT.getInteger();
         this.syncWindow = getSyncWindow(properties);
+        this.partitionCount = properties.PARTITION_COUNT.getInteger();
 
         if (backPressureEnabled) {
             logger.info("Backpressure is enabled, syncWindow is " + syncWindow);
+            this.syncDelays = newSyncDelays();
         } else {
             logger.info("Backpressure is disabled");
+            this.syncDelays = null;
         }
+    }
+
+    private AtomicInteger[] newSyncDelays() {
+        int length = partitionCount + 1;
+        AtomicInteger[] syncDelays = new AtomicInteger[length];
+        for (int k = 0; k < length; k++) {
+            syncDelays[k] = new AtomicInteger();
+        }
+        return syncDelays;
     }
 
     private int getSyncWindow(GroupProperties properties) {
         int syncWindow = properties.BACKPRESSURE_SYNCWINDOW.getInteger();
         if (backPressureEnabled && syncWindow < 1) {
-            throw new IllegalArgumentException("Can't have '"
-                    + properties.BACKPRESSURE_SYNCWINDOW.getName() + "' with a value smaller than 1");
+            throw new IllegalArgumentException(""
+                    + properties.BACKPRESSURE_SYNCWINDOW.getName() + " can't be smaller than 1. Found " + syncWindow);
         }
         return syncWindow;
     }
@@ -78,13 +87,12 @@ public class BackPressureService {
     }
 
     /**
-     * Gets the array of sync-delays for every partition.
-     * <p/>
-     * This method is only used for testing.
+     * Returns the number of times back pressure has been applied.
+     *
+     * @return number of times backpressure is applied.
      */
-    AtomicInteger[] getSyncDelays(Connection connection) {
-        Object key = connection == null ? this : connection;
-        return syncDelaysPerConnection.get(key);
+    public long backPressureCount() {
+        return backPressureCounter.get();
     }
 
     /**
@@ -92,24 +100,50 @@ public class BackPressureService {
      * <p/>
      * This method is only used for testing.
      */
-    AtomicInteger getSyncDelay(Connection connection, int partitionId) {
-        Object key = connection == null ? this : connection;
-        AtomicInteger[] syncDelays = syncDelaysPerConnection.get(key);
-        if (syncDelays == null) {
+    AtomicInteger getSyncDelay(int partitionId) {
+        if (!backPressureEnabled) {
             return null;
         }
-        partitionId = (partitionId == Operation.GENERIC_PARTITION_ID) ? partitionCount : partitionId;
+        partitionId = partitionId == -1 ? partitionCount : partitionId;
         return syncDelays[partitionId];
     }
 
     /**
-     * Checks if back pressure is needed.
+     * Checks if back pressure is required.
      *
-     * @param op
-     * @return
+     * @param op the Operation to check
+     * @return true of back-pressure is required.
      */
-    public boolean isBackPressureNeeded(Operation op) {
+    public boolean requiresBackPressure(Operation op) {
+        if (!backPressureAllowed(op)) {
+            return false;
+        }
+
+        AtomicInteger syncDelay = getSyncDelay(op);
+        for (; ; ) {
+            int prev = syncDelay.get();
+            if (prev > 0) {
+                int next = prev - 1;
+                if (syncDelay.compareAndSet(prev, next)) {
+                    return false;
+                }
+            }
+
+            int next = calcSyncDelay();
+            if (syncDelay.compareAndSet(prev, next)) {
+                backPressureCounter.incrementAndGet();
+                return true;
+            }
+        }
+    }
+
+    private boolean backPressureAllowed(Operation op) {
         if (!backPressureEnabled) {
+            return false;
+        }
+
+        // Clients can't deal with back pressure, so lets disable it when we see the operation is send by a client.
+        if (op.getResponseHandler() instanceof PartitionClientRequest.CallbackImpl) {
             return false;
         }
 
@@ -117,66 +151,15 @@ public class BackPressureService {
         if (op.isUrgent()) {
             return false;
         }
-
-        AtomicInteger syncDelay = getSyncDelay(op);
-
-        int currentSyncDelay = syncDelay.get();
-
-        if (currentSyncDelay > 0) {
-            syncDelay.decrementAndGet();
-            return false;
-        }
-
-        syncDelay.set(calcSyncDelay());
         return true;
     }
 
     private AtomicInteger getSyncDelay(Operation op) {
-        Object key = getConnectionKey(op);
-
-        AtomicInteger[] syncDelayPerPartition;
-        syncDelayPerPartition = syncDelaysPerConnection.get(key);
-        if (syncDelayPerPartition == null) {
-            AtomicInteger[] newSyncDelayPerPartition = new AtomicInteger[partitionCount + 1];
-            for (int k = 0; k < newSyncDelayPerPartition.length; k++) {
-                newSyncDelayPerPartition[k] = new AtomicInteger(syncWindow);
-            }
-            AtomicInteger[] found = syncDelaysPerConnection.putIfAbsent(key, newSyncDelayPerPartition);
-            syncDelayPerPartition = found != null ? found : newSyncDelayPerPartition;
-        }
-
         int partitionId = op.getPartitionId();
         if (partitionId < 0) {
-            return syncDelayPerPartition[partitionCount];
+            return syncDelays[partitionCount];
         } else {
-            return syncDelayPerPartition[partitionId];
-        }
-    }
-
-    private Object getConnectionKey(Operation op) {
-        Connection connection = op.getConnection();
-        return connection == null ? this : connection;
-    }
-
-    /**
-     * Cleans up all sync delay administration for dead connections. Without this cleanup, eventually the system could
-     * run into an OOME.
-     */
-    public void cleanup() {
-        if (!backPressureEnabled) {
-            return;
-        }
-
-        for (Map.Entry<Object, AtomicInteger[]> entry : syncDelaysPerConnection.entrySet()) {
-            Object key = entry.getKey();
-            if (!(key instanceof Connection)) {
-                continue;
-            }
-
-            Connection connection = (Connection) key;
-            if (!connection.isAlive()) {
-                syncDelaysPerConnection.remove(key);
-            }
+            return syncDelays[partitionId];
         }
     }
 
@@ -184,5 +167,4 @@ public class BackPressureService {
         Random random = THREAD_LOCAL_RANDOM.get();
         return Math.round((1 - RANGE) * syncWindow + random.nextInt(Math.round(2 * RANGE * syncWindow)));
     }
-
 }

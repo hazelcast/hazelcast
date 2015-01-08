@@ -3,10 +3,8 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -18,13 +16,10 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -44,6 +39,7 @@ public class BackPressureServiceTest {
         Config config = new Config();
         GroupProperties groupProperties = new GroupProperties(config);
         BackPressureService service = new BackPressureService(groupProperties, logger);
+
         assertFalse(service.isBackPressureEnabled());
     }
 
@@ -56,54 +52,12 @@ public class BackPressureServiceTest {
         new BackPressureService(groupProperties, logger);
     }
 
-    // ========================== clean =================
-
-    @Test
-    public void cleanup_whenDisabled() {
-        BackPressureService service = newDisabledBackPressureService();
-        service.cleanup();
-    }
-
-    @Test
-    public void cleanup_whenConnectionIsAlive() {
-        BackPressureService service = newEnabledBackPressureService();
-        GenericOperation op = new GenericOperation();
-
-        Connection connection = mock(Connection.class);
-        when(connection.isAlive()).thenReturn(true);
-        OperationAccessor.setConnection(op, connection);
-
-        service.isBackPressureNeeded(op);
-
-        service.cleanup();
-
-        assertNotNull(service.getSyncDelays(connection));
-    }
-
-    @Test
-    public void cleanup_whenConnectionIsNotAlive() {
-        BackPressureService service = newEnabledBackPressureService();
-        GenericOperation op = new GenericOperation();
-
-        Connection connection = mock(Connection.class);
-        when(connection.isAlive()).thenReturn(false);
-        OperationAccessor.setConnection(op, connection);
-
-        service.isBackPressureNeeded(op);
-
-        service.cleanup();
-
-        assertNull(service.getSyncDelays(connection));
-    }
-
-    // ========================== isBackPressureNeeded =================
-
     @Test
     public void whenUrgentOperation_thenFalse() {
         BackPressureService service = newEnabledBackPressureService();
         Operation operation = new UrgentOperation();
 
-        boolean result = service.isBackPressureNeeded(operation);
+        boolean result = service.requiresBackPressure(operation);
 
         assertFalse(result);
     }
@@ -113,26 +67,21 @@ public class BackPressureServiceTest {
         BackPressureService service = newDisabledBackPressureService();
         PartitionSpecificOperation op = new PartitionSpecificOperation();
 
-        boolean result = service.isBackPressureNeeded(op);
+        boolean result = service.requiresBackPressure(op);
 
         assertFalse(result);
 
         // verify that no sync-delays have been created
-        AtomicInteger syncDelay = service.getSyncDelay(null, op.getPartitionId());
+        AtomicInteger syncDelay = service.getSyncDelay(op.getPartitionId());
         assertNull(syncDelay);
     }
 
     @Test
-    public void partitionSpecific_localCall_() {
-        whenNormalOperation(true, false);
+    public void partitionSpecific() {
+        whenNormalOperation(true);
     }
 
-    @Test
-    public void partitionSpecific_remoteCall() {
-        whenNormalOperation(true, true);
-    }
-
-    public void whenNormalOperation(boolean partitionSpecific, boolean remoteCall) {
+    public void whenNormalOperation(boolean partitionSpecific) {
         BackPressureService service = newEnabledBackPressureService();
 
         Operation op;
@@ -145,32 +94,17 @@ public class BackPressureServiceTest {
             op.setPartitionId(Operation.GENERIC_PARTITION_ID);
         }
 
-        Connection connection = null;
-        if (remoteCall) {
-            connection = mock(Connection.class);
-            OperationAccessor.setConnection(op, connection);
+        int backPressureCount = 0;
+        int rounds = 10;
+        for (int k = 0; k < SYNC_WINDOW * rounds; k++) {
+            boolean result = service.requiresBackPressure(op);
+            if (result) {
+                backPressureCount++;
+            }
         }
 
-        int expected = SYNC_WINDOW - 1;
-        for (int k = 0; k < SYNC_WINDOW; k++) {
-            boolean result = service.isBackPressureNeeded(op);
-            assertFalse("no back pressure expected", result);
-
-            AtomicInteger syncDelay = service.getSyncDelay(connection, op.getPartitionId());
-            assertEquals(expected, syncDelay.get());
-            expected--;
-        }
-
-        boolean result = service.isBackPressureNeeded(op);
-        assertTrue("back pressure expected", result);
-
-        AtomicInteger syncDelay = service.getSyncDelay(connection, op.getPartitionId());
-        assertValidSyncDelay(syncDelay);
-    }
-
-    private void assertValidSyncDelay(AtomicInteger synDelay) {
-        assertTrue("syncDelay is " + synDelay, synDelay.get() >= (1 - BackPressureService.RANGE) * SYNC_WINDOW);
-        assertTrue("syncDelay is " + synDelay, synDelay.get() <= (1 + BackPressureService.RANGE) * SYNC_WINDOW);
+        assertTrue(backPressureCount >= rounds - 1);
+        assertTrue(backPressureCount <= rounds + 1);
     }
 
     private class UrgentOperation extends AbstractOperation implements UrgentSystemOperation {
