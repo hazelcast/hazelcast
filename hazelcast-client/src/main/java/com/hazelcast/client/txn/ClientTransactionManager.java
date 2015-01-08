@@ -23,11 +23,10 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -157,7 +156,6 @@ public class ClientTransactionManager {
 
     public Xid[] recover() {
         final SerializationService serializationService = client.getSerializationService();
-        final ClientInvocationService invocationService = client.getInvocationService();
         final Xid[] empty = new Xid[0];
         try {
             final ClientConnection connection;
@@ -168,7 +166,8 @@ public class ClientTransactionManager {
                 return empty;
             }
             final RecoverAllTransactionsRequest request = new RecoverAllTransactionsRequest();
-            final Future<SerializableCollection> future = invocationService.invokeOnConnection(request, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             final SerializableCollection collectionWrapper = serializationService.toObject(future.get());
 
             for (Data data : collectionWrapper) {
@@ -191,10 +190,10 @@ public class ClientTransactionManager {
         if (connection == null) {
             return false;
         }
-        final ClientInvocationService invocationService = client.getInvocationService();
         final RecoverTransactionRequest request = new RecoverTransactionRequest(sXid, commit);
         try {
-            final ICompletableFuture future = invocationService.invokeOnConnection(request, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);
@@ -235,7 +234,8 @@ public class ClientTransactionManager {
             connection.init();
             //contains remoteAddress and principal
             SerializableCollection collectionWrapper;
-            final Future future = client.getInvocationService().invokeOnConnection(auth, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, null, connection);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             try {
                 collectionWrapper = ss.toObject(future.get());
             } catch (Exception e) {

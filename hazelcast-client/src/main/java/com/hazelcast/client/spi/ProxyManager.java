@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -25,7 +26,6 @@ import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
-import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
@@ -39,6 +39,7 @@ import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -197,8 +198,9 @@ public final class ProxyManager {
 
     private void initialize(ClientProxy clientProxy) throws Exception {
         ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
-        client.getInvocationService().invokeOnRandomTarget(request).get();
-        clientProxy.setContext(new ClientContext(client, this));
+        final ClientContext context = new ClientContext(client, this);
+        new ClientInvocation(context, request, null).invoke().get();
+        clientProxy.setContext(context);
         clientProxy.onInitialize();
     }
 

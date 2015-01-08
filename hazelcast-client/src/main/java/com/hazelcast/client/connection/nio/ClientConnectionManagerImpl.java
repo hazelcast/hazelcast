@@ -27,7 +27,9 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
@@ -38,7 +40,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.InSelectorImpl;
@@ -87,7 +88,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final IOSelector inSelector;
     private final IOSelector outSelector;
 
-    private final AtomicInteger callIdIncrementer = new AtomicInteger();
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
@@ -95,6 +95,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             = new ConcurrentHashMap<Address, ClientConnection>();
 
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+    private final Set<ConnectionHeartbeatListener> heartbeatListeners =
+            new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
 
     private ClientInvocationService invocationService;
 
@@ -150,10 +152,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return alive;
     }
 
-    private SerializationService getSerializationService() {
-        return client.getSerializationService();
-    }
-
     @Override
     public synchronized void start() {
         if (alive) {
@@ -180,6 +178,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         outSelector.shutdown();
         connectionLockMap.clear();
         connectionListeners.clear();
+        heartbeatListeners.clear();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -240,9 +239,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             socketChannel.socket().connect(address.getInetSocketAddress(), connectionTimeout);
             SocketChannelWrapper socketChannelWrapper =
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
-            final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
-                    outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper,
-                    executionService, invocationService, client.getSerializationService());
+            final ClientConnection clientConnection = new ClientConnection(client, inSelector,
+                    outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
@@ -272,18 +270,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public boolean removeEventHandler(Integer callId) {
-        if (callId != null) {
-            for (ClientConnection clientConnection : connections.values()) {
-                if (clientConnection.deRegisterEventHandler(callId) != null) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    @Override
     public void handlePacket(Packet packet) {
         final ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
@@ -293,11 +279,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         } else {
             invocationService.handlePacket(packet);
         }
-    }
-
-    @Override
-    public int newCallId() {
-        return callIdIncrementer.incrementAndGet();
     }
 
     private Object getLock(Address address) {
@@ -322,16 +303,35 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final long now = Clock.currentTimeMillis();
             for (ClientConnection connection : connections.values()) {
                 if (now - connection.lastReadTime() > heartBeatTimeout) {
-                    connection.heartBeatingFailed();
+                    if (connection.isHeartBeating()) {
+                        connection.heartBeatingFailed();
+                        fireHeartBeatStopped(connection);
+                    }
                 }
                 if (now - connection.lastReadTime() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
-                    invocationService.invokeOnConnection(request, connection);
+                    new ClientInvocation(client, request, null, connection).invoke();
                 } else {
-                    connection.heartBeatingSucceed();
+                    if (!connection.isHeartBeating()) {
+                        connection.heartBeatingSucceed();
+                        fireHeartBeatStarted(connection);
+                    }
                 }
             }
         }
+
+        private void fireHeartBeatStarted(ClientConnection connection) {
+            for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
+                heartbeatListener.heartBeatStarted(connection);
+            }
+        }
+
+        private void fireHeartBeatStopped(ClientConnection connection) {
+            for (ConnectionHeartbeatListener heartbeatListener : heartbeatListeners) {
+                heartbeatListener.heartBeatStopped(connection);
+            }
+        }
+
     }
 
     @Override
@@ -339,4 +339,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
+    @Override
+    public void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener) {
+        heartbeatListeners.add(connectionHeartbeatListener);
+    }
 }

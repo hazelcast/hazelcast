@@ -10,7 +10,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.client.GetMemberListRequest;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
@@ -49,7 +48,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-public class ClusterListenerSupport implements ConnectionListener {
+public class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
 
@@ -61,7 +60,6 @@ public class ClusterListenerSupport implements ConnectionListener {
     private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
-    private ClientInvocationService clientInvocationService;
     private volatile Address ownerConnectionAddress;
 
 
@@ -78,8 +76,8 @@ public class ClusterListenerSupport implements ConnectionListener {
         this.connectionManager = client.getConnectionManager();
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
-        this.clientInvocationService = client.getInvocationService();
         connectionManager.addConnectionListener(this);
+        connectionManager.addConnectionHeartbeatListener(this);
         credentials = client.getCredentials();
     }
 
@@ -97,7 +95,8 @@ public class ClusterListenerSupport implements ConnectionListener {
             auth.setOwnerConnection(true);
             //contains remoteAddress and principal
             SerializableCollection collectionWrapper;
-            final Future future = client.getInvocationService().invokeOnConnection(auth, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, null, connection);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             try {
                 collectionWrapper = ss.toObject(future.get());
             } catch (Exception e) {
@@ -160,7 +159,8 @@ public class ClusterListenerSupport implements ConnectionListener {
             throw new IllegalStateException("Can not load initial members list because owner connection is null. "
                     + "Address " + ownerConnectionAddress);
         }
-        final Future future = clientInvocationService.invokeOnConnection(request, (ClientConnection) connection);
+        final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+        final Future<SerializableCollection> future = clientInvocation.invoke();
         final SerializableCollection coll = serializationService.toObject(future.get());
 
         Map<String, MemberImpl> prevMembers = Collections.emptyMap();
@@ -205,7 +205,8 @@ public class ClusterListenerSupport implements ConnectionListener {
     private void listenMembershipEvents() throws Exception {
         final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
         final EventHandler<ClientMembershipEvent> handler = createEventHandler();
-        final Future future = clientInvocationService.invokeOnTarget(request, ownerConnectionAddress, handler);
+        final ClientInvocation invocation = new ClientInvocation(client, request, handler, ownerConnectionAddress);
+        final Future<SerializableCollection> future = invocation.invoke();
         final SerializationService serializationService = clusterService.getSerializationService();
         final Object response = serializationService.toObject(future.get());
         if (response instanceof Exception) {
@@ -273,8 +274,8 @@ public class ClusterListenerSupport implements ConnectionListener {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
-                + triedAddresses, lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! "
+                + "The following addresses were tried:" + triedAddresses, lastError);
     }
 
     @Override
@@ -289,11 +290,27 @@ public class ClusterListenerSupport implements ConnectionListener {
                 client.getClientExecutionService().execute(new Runnable() {
                     @Override
                     public void run() {
-                        clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
-                        clusterService.getClusterListenerSupport().connectToCluster();
+                        try {
+                            clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                            clusterService.getClusterListenerSupport().connectToCluster();
+                        } catch (Exception e) {
+                            LOGGER.warning("Could not re-connect to cluster", e);
+                        }
                     }
                 });
             }
+        }
+    }
+
+    @Override
+    public void heartBeatStarted(Connection connection) {
+
+    }
+
+    @Override
+    public void heartBeatStopped(Connection connection) {
+        if (connection.getEndPoint().equals(ownerConnectionAddress)) {
+            connectionManager.destroyConnection(connection);
         }
     }
 

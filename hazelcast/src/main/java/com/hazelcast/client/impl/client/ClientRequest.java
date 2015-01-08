@@ -30,33 +30,11 @@ import java.io.IOException;
 public abstract class ClientRequest implements SecureRequest, VersionedPortable {
 
     protected volatile int callId = -1;
-    protected transient int partitionId = -1;
     protected transient ClientEngineImpl clientEngine;
     protected transient OperationService operationService;
     protected transient SerializationService serializationService;
     protected transient Object service;
     protected transient ClientEndpoint endpoint;
-
-    /**
-     * Some request needs to use a single connection like transaction request and
-     * {@link com.hazelcast.cluster.client.ClientPingRequest}
-     * if true then request will not be retried
-     */
-    private transient boolean singleConnection;
-
-    /**
-     * mark this request as SingleConnection
-     */
-    public void setSingleConnection() {
-        this.singleConnection = true;
-    }
-
-    /**
-     * @return true if this request is SingleConnection false otherwise
-     */
-    public boolean isSingleConnection() {
-        return singleConnection;
-    }
 
     public void setOperationService(OperationService operationService) {
         this.operationService = operationService;
@@ -64,14 +42,6 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
 
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    public void setPartitionId(int partitionId) {
-        this.partitionId = partitionId;
     }
 
     public abstract void process() throws Exception;

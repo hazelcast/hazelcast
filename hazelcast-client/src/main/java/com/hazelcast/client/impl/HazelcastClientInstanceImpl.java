@@ -24,6 +24,7 @@ import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
@@ -376,7 +377,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     public Collection<DistributedObject> getDistributedObjects() {
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
-            final Future<SerializableCollection> future = invocationService.invokeOnRandomTarget(request);
+
+            final Future<SerializableCollection> future = new ClientInvocation(this, request, null).invoke();
             final SerializableCollection serializableCollection = serializationService.toObject(future.get());
             for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = serializationService.toObject(data);

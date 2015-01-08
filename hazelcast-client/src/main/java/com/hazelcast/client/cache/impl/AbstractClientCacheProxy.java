@@ -23,7 +23,8 @@ import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -77,10 +78,11 @@ abstract class AbstractClientCacheProxy<K, V>
             return createCompletedFuture(cached);
         }
         CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
-        ClientCallFuture future;
-        final ClientContext context = clientContext;
+        ClientInvocationFuture future;
         try {
-            future = (ClientCallFuture) context.getInvocationService().invokeOnKeyOwner(request, keyData);
+            final int partitionId = clientContext.getPartitionService().getPartitionId(key);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, null, partitionId);
+            future = clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

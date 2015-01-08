@@ -18,12 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.impl.client.RemoveAllListeners;
-import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -34,8 +29,6 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.util.ConstructorFunction;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -43,11 +36,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,45 +43,25 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ClientConnection implements Connection, Closeable {
 
-    private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED = 10;
-    private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
-
-    private final AtomicBoolean live = new AtomicBoolean(true);
-
     private final ILogger logger = Logger.getLogger(ClientConnection.class);
+    private final AtomicBoolean live = new AtomicBoolean(true);
+    private final AtomicInteger packetCount = new AtomicInteger(0);
 
     private final ClientWriteHandler writeHandler;
-
     private final ClientReadHandler readHandler;
-
-    private final ClientConnectionManager connectionManager;
-
     private final int connectionId;
-
     private final SocketChannelWrapper socketChannelWrapper;
+    private final ClientConnectionManager connectionManager;
+    private final SerializationService serializationService;
 
     private volatile Address remoteEndpoint;
-
-    private final ConcurrentMap<Integer, ClientCallFuture> callIdMap
-            = new ConcurrentHashMap<Integer, ClientCallFuture>();
-    private final ConcurrentMap<Integer, ClientCallFuture> eventHandlerMap
-            = new ConcurrentHashMap<Integer, ClientCallFuture>();
-    private final SerializationService serializationService;
-    private final ClientExecutionService executionService;
-    private final ClientInvocationService invocationService;
-    private final AtomicInteger packetCount = new AtomicInteger(0);
     private volatile boolean heartBeating = true;
 
-    public ClientConnection(ClientConnectionManager connectionManager, IOSelector in, IOSelector out,
-                            int connectionId, SocketChannelWrapper socketChannelWrapper,
-                            ClientExecutionService executionService,
-                            ClientInvocationService invocationService,
-                            SerializationService serializationService) throws IOException {
+    public ClientConnection(HazelcastClientInstanceImpl client, IOSelector in, IOSelector out,
+                            int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
-        this.connectionManager = connectionManager;
-        this.serializationService = serializationService;
-        this.executionService = executionService;
-        this.invocationService = invocationService;
+        this.connectionManager = client.getConnectionManager();
+        this.serializationService = client.getSerializationService();
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
@@ -108,29 +76,8 @@ public class ClientConnection implements Connection, Closeable {
         packetCount.decrementAndGet();
     }
 
-    public void registerCallId(ClientCallFuture future) {
-        final int callId = connectionManager.newCallId();
-        future.getRequest().setCallId(callId);
-        callIdMap.put(callId, future);
-        if (future.getHandler() != null) {
-            eventHandlerMap.put(callId, future);
-        }
-    }
-
-    public ClientCallFuture deRegisterCallId(int callId) {
-        return callIdMap.remove(callId);
-    }
-
-    public ClientCallFuture deRegisterEventHandler(int callId) {
-        return eventHandlerMap.remove(callId);
-    }
-
-    public EventHandler getEventHandler(int callId) {
-        final ClientCallFuture future = eventHandlerMap.get(callId);
-        if (future == null) {
-            return null;
-        }
-        return future.getHandler();
+    public int getPacketCount() {
+        return packetCount.get();
     }
 
     public SerializationService getSerializationService() {
@@ -238,69 +185,9 @@ public class ClientConnection implements Connection, Closeable {
         }
         readHandler.shutdown();
         writeHandler.shutdown();
-        if (connectionManager.isAlive()) {
-            try {
-                executionService.execute(new CleanResourcesTask());
-            } catch (RejectedExecutionException e) {
-                logger.warning("Execution rejected ", e);
-            }
-        } else {
-            cleanResources(new ConstructorFunction<Object, Throwable>() {
-                @Override
-                public Throwable createNew(Object arg) {
-                    return new HazelcastException("Client is shutting down!");
-                }
-            });
-        }
+
     }
 
-    private class CleanResourcesTask implements Runnable {
-        @Override
-        public void run() {
-            waitForPacketsProcessed();
-            cleanResources(new ConstructorFunction<Object, Throwable>() {
-                @Override
-                public Throwable createNew(Object arg) {
-                    return new TargetDisconnectedException(remoteEndpoint);
-                }
-            });
-        }
-
-        private void waitForPacketsProcessed() {
-            final long begin = System.currentTimeMillis();
-            int count = packetCount.get();
-            while (count != 0) {
-                try {
-                    Thread.sleep(WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED);
-                } catch (InterruptedException e) {
-                    logger.warning(e);
-                    break;
-                }
-                long elapsed = System.currentTimeMillis() - begin;
-                if (elapsed > WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD) {
-                    logger.warning("There are packets which are not processed " + count);
-                    break;
-                }
-                count = packetCount.get();
-            }
-        }
-    }
-
-    private void cleanResources(ConstructorFunction<Object, Throwable> responseCtor) {
-        final Iterator<Map.Entry<Integer, ClientCallFuture>> iter = callIdMap.entrySet().iterator();
-        while (iter.hasNext()) {
-            final Map.Entry<Integer, ClientCallFuture> entry = iter.next();
-            iter.remove();
-            entry.getValue().notify(responseCtor.createNew(null));
-            eventHandlerMap.remove(entry.getKey());
-        }
-        final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
-        while (iterator.hasNext()) {
-            final ClientCallFuture future = iterator.next();
-            iterator.remove();
-            future.notify(responseCtor.createNew(null));
-        }
-    }
 
     public void close(Throwable t) {
         if (!live.compareAndSet(true, false)) {
@@ -319,27 +206,12 @@ public class ClientConnection implements Connection, Closeable {
         }
 
         logger.warning(message);
-        connectionManager.destroyConnection(this);
     }
 
     //failedHeartBeat is incremented in single thread.
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
-        if (!heartBeating) {
-            return;
-        }
-        final RemoveAllListeners request = new RemoveAllListeners();
-        invocationService.invokeOnConnection(request, ClientConnection.this);
         heartBeating = false;
-        close();
-        final Iterator<ClientCallFuture> iterator = eventHandlerMap.values().iterator();
-        final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
-
-        while (iterator.hasNext()) {
-            final ClientCallFuture future = iterator.next();
-            iterator.remove();
-            future.notify(response);
-        }
     }
 
     void heartBeatingSucceed() {
@@ -385,5 +257,4 @@ public class ClientConnection implements Connection, Closeable {
         sb.append('}');
         return sb.toString();
     }
-
 }

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.TargetClientRequest;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.util.ClientCancellableDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
@@ -316,7 +317,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     // end
 
-
     public LocalExecutorStats getLocalExecutorStats() {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
@@ -566,7 +566,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> ICompletableFuture<T> invokeFuture(ClientRequest request, int partitionId) {
         try {
-            return getContext().getInvocationService().invokeOnPartitionOwner(request, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(getContext(), request, null, partitionId);
+            return clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -574,7 +575,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> ICompletableFuture<T> invokeFuture(TargetClientRequest request) {
         try {
-            return getContext().getInvocationService().invokeOnTarget(request, request.getTarget());
+            final ClientInvocation invocation = new ClientInvocation(getContext(), request, null, request.getTarget());
+            return invocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

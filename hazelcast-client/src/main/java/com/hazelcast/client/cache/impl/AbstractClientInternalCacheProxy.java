@@ -16,10 +16,10 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
@@ -35,6 +35,7 @@ import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -113,7 +114,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             }
         }
         try {
-            final ICompletableFuture<T> f = clientContext.getInvocationService().invokeOnKeyOwner(req, keyData);
+            int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, req, null, partitionId);
+            final ICompletableFuture<T> f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
@@ -355,7 +358,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         // notify waiting sync listeners
         Collection<CountDownLatch> latches = syncLocks.values();
         Iterator<CountDownLatch> iterator = latches.iterator();
-        while (iterator.hasNext())  {
+        while (iterator.hasNext()) {
             CountDownLatch latch = iterator.next();
             iterator.remove();
             while (latch.getCount() > 0) {

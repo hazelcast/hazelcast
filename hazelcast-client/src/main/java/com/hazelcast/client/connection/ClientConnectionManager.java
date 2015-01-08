@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -69,27 +70,14 @@ public interface ClientConnectionManager {
     void destroyConnection(Connection connection);
 
     /**
-     * Removes event handler corresponding to callId from responsible ClientConnection
-     *
-     * @param callId of event handler registration request
-     * @return true if found and removed, false otherwise
-     */
-    boolean removeEventHandler(Integer callId);
-
-    /**
      * Handles incoming network package
      *
      * @param packet to be processed
      */
     void handlePacket(Packet packet);
 
-    /**
-     * Next unique call id for request
-     *
-     * @return new unique callId
-     */
-    int newCallId();
-
     void addConnectionListener(ConnectionListener connectionListener);
+
+    void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
 }

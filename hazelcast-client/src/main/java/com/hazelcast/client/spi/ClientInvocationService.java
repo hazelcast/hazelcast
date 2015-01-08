@@ -17,42 +17,38 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
+
+import java.io.IOException;
 
 /**
  * @author mdogan 5/16/13
  */
 public interface ClientInvocationService {
 
-    <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request) throws Exception;
+    void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException;
 
-    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
+    void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException;
 
-    <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception;
+    void invokeOnRandomTarget(ClientInvocation invocation) throws IOException;
 
-    <T> ICompletableFuture<T> invokeOnConnection(ClientRequest request, ClientConnection connection);
-
-    <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) throws Exception;
-
-    <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request, EventHandler handler) throws Exception;
-
-    <T> ICompletableFuture<T> invokeOnConnection(ClientRequest request, ClientConnection connection,
-                                                 EventHandler handler);
-
-    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target,
-                                             EventHandler handler) throws Exception;
-
-    <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler) throws Exception;
+    void invokeOnTarget(ClientInvocation invocation, Address target) throws IOException;
 
     boolean isRedoOperation();
+
+    /**
+     * Removes event handler corresponding to callId
+     *
+     * @param callId of event handler registration request
+     * @return true if found and removed, false otherwise
+     */
+    boolean removeEventHandler(Integer callId);
 
     void shutdown();
 
     void handlePacket(Packet packet);
 
-    <T> ICompletableFuture<T> reSend(ClientCallFuture future) throws Exception;
+    EventHandler getEventHandler(int callId);
 }

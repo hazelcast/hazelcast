@@ -19,7 +19,6 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
@@ -91,8 +90,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private PartitionsResponse getPartitionsFrom(Address address) {
         try {
-            ClientInvocationService invocationService = client.getInvocationService();
-            Future<PartitionsResponse> future = invocationService.invokeOnTarget(new GetPartitionsRequest(), address);
+            final GetPartitionsRequest request = new GetPartitionsRequest();
+            Future<PartitionsResponse> future = new ClientInvocation(client, request, null, address).invoke();
             return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {

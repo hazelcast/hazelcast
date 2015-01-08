@@ -19,7 +19,8 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.executor.impl.client.RandomTargetCallableRequest;
@@ -89,7 +90,8 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
             request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
         }
         try {
-            return context.getInvocationService().invokeOnTarget(request, address);
+            final ClientInvocation clientInvocation = new ClientInvocation(context, request, null, address);
+            return clientInvocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -103,11 +105,11 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     private Address findTargetOrNull() {
         //0. Check preconditions.
         final ICompletableFuture future = getFuture();
-        if (!(future instanceof ClientCallFuture)) {
+        if (!(future instanceof ClientInvocationFuture)) {
             return null;
         }
 
-        final ClientCallFuture clientCallFuture = (ClientCallFuture) future;
+        final ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
         final ClientRequest request = clientCallFuture.getRequest();
 
         if (!(request instanceof RefreshableRequest)) {

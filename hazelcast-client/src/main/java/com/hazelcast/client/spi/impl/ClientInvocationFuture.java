@@ -16,24 +16,16 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.config.ClientProperties;
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.executor.impl.client.RefreshableRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -45,25 +37,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_COUNT_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT;
+public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
-public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
-
-    static final ILogger LOGGER = Logger.getLogger(ClientCallFuture.class);
-
-    private final int heartBeatInterval;
-    private final int retryCount;
-    private final int retryWaitTime;
+    static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
 
     private final ClientRequest request;
 
     private final ClientExecutionServiceImpl executionService;
-
-    private final ClientInvocationService invocationService;
 
     private final ClientListenerServiceImpl clientListenerService;
 
@@ -71,31 +52,22 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private final EventHandler handler;
 
-    private final AtomicInteger reSendCount = new AtomicInteger();
-
     private final List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
+
+    private final ClientInvocation invocation;
 
     private volatile Object response;
 
-    private volatile ClientConnection connection;
 
-    public ClientCallFuture(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler) {
-        final ClientProperties clientProperties = client.getClientProperties();
-        int interval = clientProperties.getHeartbeatInterval().getInteger();
-        this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+    public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
+                                  ClientRequest request, EventHandler handler) {
 
-        int retry = clientProperties.getRetryCount().getInteger();
-        this.retryCount = retry > 0 ? retry : Integer.parseInt(PROP_REQUEST_RETRY_COUNT_DEFAULT);
-
-        int waitTime = clientProperties.getRetryWaitTime().getInteger();
-        this.retryWaitTime = waitTime > 0 ? waitTime : Integer.parseInt(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
-
-        this.invocationService = client.getInvocationService();
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();
         this.request = request;
         this.handler = handler;
+        this.invocation = invocation;
     }
 
     @Override
@@ -124,6 +96,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        final int heartBeatInterval = invocation.getHeartBeatInterval();
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
             if (waitMillis > 0) {
@@ -133,8 +106,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                         this.wait(Math.min(heartBeatInterval, waitMillis));
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
-                        if (!isConnectionHealthy(elapsed)) {
-                            notify(new TargetDisconnectedException());
+                        if (!invocation.isConnectionHealthy(elapsed)) {
+                            invocation.notify(new TargetDisconnectedException());
                         }
                     }
                 }
@@ -143,34 +116,8 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return resolveResponse();
     }
 
-    private boolean isConnectionHealthy(long elapsed) {
-        if (elapsed >= heartBeatInterval) {
-            return connection.isHeartBeating();
-        }
-        return true;
-    }
 
-    @Override
-    public void notify(Object response) {
-        if (response == null) {
-            throw new IllegalArgumentException("response can't be null");
-        }
-        if (response instanceof TargetNotMemberException) {
-            if (resend()) {
-                return;
-            }
-        }
-        if (response instanceof TargetDisconnectedException || response instanceof HazelcastInstanceNotActiveException) {
-            if (request instanceof RetryableRequest || invocationService.isRedoOperation()) {
-                if (resend()) {
-                    return;
-                }
-            }
-        }
-        setResponse(response);
-    }
-
-    private void setResponse(Object response) {
+    void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
                 LOGGER.warning("The Future.set() method can only be called once. Request: " + request
@@ -255,27 +202,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         return handler;
     }
 
-    public ClientConnection getConnection() {
-        return connection;
-    }
-
-    public boolean resend() {
-        if (request.isSingleConnection()) {
-            return false;
-        }
-        if (handler == null && reSendCount.incrementAndGet() > retryCount) {
-            return false;
-        }
-        if (handler != null) {
-            handler.beforeListenerRegister();
-        }
-        if (request instanceof RefreshableRequest) {
-            ((RefreshableRequest) request).refresh();
-        }
-        executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
-        return true;
-    }
-
     private void runAsynchronous(final ExecutionCallback callback, Executor executor, final boolean deserialized) {
         try {
             executor.execute(new Runnable() {
@@ -302,26 +228,6 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         } catch (RejectedExecutionException e) {
             LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
         }
-    }
-
-    public void setConnection(ClientConnection connection) {
-        this.connection = connection;
-    }
-
-    class ReSendTask implements Runnable {
-        @Override
-        public void run() {
-            try {
-                invocationService.reSend(ClientCallFuture.this);
-            } catch (Exception e) {
-                if (handler != null) {
-                    clientListenerService.registerFailedListener(ClientCallFuture.this);
-                } else {
-                    setResponse(e);
-                }
-            }
-        }
-
     }
 
     class ExecutionCallbackNode {

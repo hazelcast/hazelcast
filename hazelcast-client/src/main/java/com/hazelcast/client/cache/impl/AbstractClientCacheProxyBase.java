@@ -21,11 +21,13 @@ import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -75,6 +77,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             cacheLoader = null;
         }
     }
+
     //region close&destroy
     protected void ensureOpen() {
         if (isClosed()) {
@@ -108,7 +111,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, nameWithPrefix);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, null, partitionId);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -137,7 +141,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     protected <T> T invoke(ClientRequest req) {
         try {
-            final Future future = clientContext.getInvocationService().invokeOnRandomTarget(req);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, req, null);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             Object result = future.get();
             return toObject(result);
         } catch (Exception e) {

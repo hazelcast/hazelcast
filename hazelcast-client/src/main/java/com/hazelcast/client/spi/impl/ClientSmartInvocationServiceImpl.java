@@ -23,11 +23,6 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -39,8 +34,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
 
@@ -55,155 +48,44 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         authenticator = new ClusterAuthenticator();
     }
 
-    @Override
-    public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request) throws Exception {
-        return invokeOnRandomTarget(request, null);
-    }
-
-    @Override
-    public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
-        return invokeOnTarget(request, target, null);
-    }
-
-    @Override
-    public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key) throws Exception {
-        return invokeOnKeyOwner(request, key, null);
-    }
-
-    @Override
-    public <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) throws Exception {
-        return invokeOnPartitionOwner(request, partitionId, null);
-    }
-
-    @Override
-    public <T> ICompletableFuture<T> invokeOnKeyOwner(ClientRequest request, Object key, EventHandler handler)
-            throws Exception {
-        int partitionId = partitionService.getPartitionId(key);
-        return invokeOnPartitionOwner(request, partitionId, handler);
-    }
-
-    @Override
-    public <T> ICompletableFuture<T> invokeOnConnection(ClientRequest request, ClientConnection connection) {
-        return invokeOnConnection(request, connection, null);
-    }
-
-    private <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId
-            , EventHandler handler) throws Exception {
-        Exception lastError = null;
-        int count = 0;
-        long retryCount = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
-        while (count++ < retryCount) {
-            try {
-                final Address owner = partitionService.getPartitionOwner(partitionId);
-                if (owner != null) {
-                    request.setPartitionId(partitionId);
-                    ClientConnection connection =
-                            (ClientConnection) connectionManager.getOrConnect(owner, authenticator);
-                    return send(request, connection, handler);
-                }
-            } catch (IOException e) {
-                lastError = e;
-            } catch (HazelcastInstanceNotActiveException e) {
-                lastError = e;
-            }
-            if (!client.getLifecycleService().isRunning()) {
-                throw new HazelcastInstanceNotActiveException();
-            }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+    public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
+        final Address owner = partitionService.getPartitionOwner(partitionId);
+        if (owner == null) {
+            throw new IOException("Partition does not have owner. partitionId : " + partitionId);
         }
-        if (lastError == null) {
-            throw new OperationTimeoutException("Could not invoke request on partition(" + partitionId + ") owner in "
-                    + retryTimeoutInSeconds + " seconds");
-        }
-        throw lastError;
+        ClientConnection connection =
+                (ClientConnection) connectionManager.getOrConnect(owner, authenticator);
+        send(invocation, connection);
     }
 
     @Override
-    public <T> ICompletableFuture<T> invokeOnRandomTarget(ClientRequest request,
-                                                          EventHandler handler) throws Exception {
-        Exception lastError = null;
-        int count = 0;
-        long retryCount = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
-        while (count++ < retryCount) {
-            try {
-                final Address randomAddress = getRandomAddress();
-                if (randomAddress != null) {
-                    final Connection connection = connectionManager.getOrConnect(randomAddress, authenticator);
-                    return send(request, (ClientConnection) connection, handler);
-                }
-            } catch (IOException e) {
-                lastError = e;
-            } catch (HazelcastInstanceNotActiveException e) {
-                lastError = e;
-            }
-            if (!client.getLifecycleService().isRunning()) {
-                throw new HazelcastInstanceNotActiveException();
-            }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
-
+    public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
+        final Address randomAddress = getRandomAddress();
+        if (randomAddress == null) {
+            throw new IOException("Not address found to invoke ");
         }
-        if (lastError == null) {
-            throw new OperationTimeoutException("Could not invoke request on any target in "
-                    + retryTimeoutInSeconds + " seconds");
-        }
-        throw lastError;
+        final Connection connection = connectionManager.getOrConnect(randomAddress, authenticator);
+        send(invocation, (ClientConnection) connection);
     }
 
     @Override
-    public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target, EventHandler handler)
-            throws Exception {
+    public void invokeOnTarget(ClientInvocation invocation, Address target)
+            throws IOException {
         if (target == null) {
             throw new NullPointerException("Target can not be null");
         }
-        int count = 0;
-        Exception lastError = null;
-        long retryCount = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
-        while (count++ < retryCount) {
-            try {
-                if (isMember(target)) {
-                    final Connection connection = connectionManager.getOrConnect(target, authenticator);
-                    return invokeOnConnection(request, (ClientConnection) connection, handler);
-                }
-            } catch (IOException e) {
-                lastError = e;
-            } catch (HazelcastInstanceNotActiveException e) {
-                lastError = e;
-            }
-            if (!client.getLifecycleService().isRunning()) {
-                throw new HazelcastInstanceNotActiveException();
-            }
-            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+        if (!isMember(target)) {
+            throw new IOException("Target :  " + target + " is not member. ");
         }
-        if (lastError == null) {
-            throw new OperationTimeoutException("Could not invoke request on the target(" + target + ") in "
-                    + retryTimeoutInSeconds + " seconds");
-        }
-        throw lastError;
+        final Connection connection = connectionManager.getOrConnect(target, authenticator);
+        invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
 
     @Override
-    public <T> ICompletableFuture<T> invokeOnConnection(ClientRequest request, ClientConnection connection,
-                                                        EventHandler handler) {
-        request.setSingleConnection();
-        return send(request, connection, handler);
+    public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {
+        send(invocation, connection);
     }
-
-    // NIO public
-    public <T> ICompletableFuture<T> reSend(ClientCallFuture future) throws Exception {
-        final Address randomAddress = getRandomAddress();
-        if (randomAddress != null) {
-            final Connection connection = connectionManager.getOrConnect(randomAddress, authenticator);
-            sendInternal(future, (ClientConnection) connection);
-            return future;
-        }
-        if (!client.getLifecycleService().isRunning()) {
-            throw new HazelcastInstanceNotActiveException();
-        } else {
-            throw new IllegalStateException("Noa address found to retry! ");
-        }
-    }
-
 
     private Address getRandomAddress() {
         MemberImpl member = (MemberImpl) loadBalancer.next();
@@ -218,7 +100,6 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         return member != null;
     }
 
-
     private class ClusterAuthenticator implements Authenticator {
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
@@ -229,7 +110,8 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
             connection.init();
             //contains remoteAddress and principal
             SerializableCollection collectionWrapper;
-            final Future future = client.getInvocationService().invokeOnConnection(auth, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, null, connection);
+            final ClientInvocationFuture future = clientInvocation.invoke();
             try {
                 collectionWrapper = ss.toObject(future.get());
             } catch (Exception e) {
