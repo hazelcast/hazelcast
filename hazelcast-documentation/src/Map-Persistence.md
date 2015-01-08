@@ -129,6 +129,8 @@ In this mode, when the `map.put(key,value)` call returns:
 
 -   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted with `MapStore.store(key,value)` call.
 
+-   For fault tolerance dirty entries are stored in a queue on the primary member and also on a back-up member.
+
 The same behavior goes for the `map.remove(key)`, the only difference is that  `MapStore.delete(key)` is called when the entry will be deleted.
 
 If `MapStore` throws an exception, then Hazelcast tries to store the entry again. If the entry still cannot be stored, a log message is printed and the entry is re-queued. 
