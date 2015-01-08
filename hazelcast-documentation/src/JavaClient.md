@@ -190,10 +190,10 @@ After getting an instance of `IExecutorService`, you can use the instance as the
 
 #### Client Service
 
-If you need to track clients and you want to listen to their connection events, see the example code below.
+If you need to track clients and you want to listen to their connection events, you can use the `clientConnected` and `clientDisconnected` methods of the `ClientService` class. This class must be run on the **node** side. The following is an example code.
 
 ```java
-final ClientService clientService = client.getClientService();
+final ClientService clientService = hazelcastInstance.getClientService();
 final Collection<Client> connectedClients = clientService.getConnectedClients();
 
 clientService.addClientListener(new ClientListener() {

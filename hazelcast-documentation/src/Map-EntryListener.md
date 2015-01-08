@@ -5,7 +5,7 @@
 
 You can listen to map entry events. Hazelcast distributed map offers the method `addEntryListener` to add an entry listener to the map. 
 
-Let's take a look at the below sample code.
+Let's take a look at the following example code.
 
 ```java
 public class Listen {
@@ -52,7 +52,7 @@ public class Listen {
 }
 ```
 
-And, now let's perform some modifications on the map entries using the below sample code.
+And, now let's perform some modifications on the map entries using the following example code.
 
 ```java
 public class Modify {
@@ -69,7 +69,7 @@ public class Modify {
 }
 ```
 
-If you execute the class `Listen` and then execute `Modify`, you might get the below output produced by `Listen`. 
+If you execute the class `Listen` and then execute `Modify`, you get the following output produced by the `Listen` class. 
 
 ```
 entryAdded:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
@@ -82,9 +82,7 @@ entryRemoved:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
     oldValue=2, value=2, event=REMOVED, by Member [192.168.1.100]:5702
 ```
 
-Entry Listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause other event listeners to starve.
-
-In these instances you might consider executing these reactionary tasks inside an Executor
+Entry Listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access to other partitions. Consider this when you run long tasks, since listening to those tasks may cause other event listeners to starve. In these cases, you might consider executing these reactionary tasks inside an Executor. The following shows an example usage.
 
 ```java
 public class MyEntryListener implements EntryListener{

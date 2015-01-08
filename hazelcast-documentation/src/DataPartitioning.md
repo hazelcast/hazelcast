@@ -1,11 +1,11 @@
 
 ## Data Partitioning
 
-As you read in the [Sharding in Hazelcast section](#sharding-in-hazelcast), Hazelcast shards are called Partitions.
+As you read in the [Sharding in Hazelcast section](#sharding-in-hazelcast), Hazelcast shards are called Partitions. Partitions are memory segments each of which can contain hundreds or thousands of data entries depending on your memory capacity. 
 
+By default, Hazelcast offers 271 partitions. Given a key, we serialize, hash and mode it with the number of partitions to find the partition the key belongs to. The partitions themselves are distributed equally among the members of the cluster. Hazelcast also creates the backups of partitions and distributes them among nodes for redundancy.
 
-
-Hazelcast shards are called Partitions. By default, Hazelcast has 271 partitions. Given a key, we serialize, hash and mode it with the number of partitions to find the partition the key belongs to. The partitions themselves are distributed equally among the members of the cluster. Hazelcast also creates the backups of partitions and distributes them among nodes for redundancy.
+Hazelcast distributes data entries into the partitions using a hashing algorithm. The key of data is put through this algorithm and the resulted value is mod by 271. After the mod operation, the value we have addresses the place of the data in a partition. Each node in a cluster will know where the key is. 
 
 Partitions in a 1 node Hazelcast cluster.
 
