@@ -4,9 +4,9 @@
 
 Hazelcast supports entry processing. An entry processor is a function that executes your code on a map entry in an atomic way. 
 
-Entry Processor's are a good option if you find you are performing bulk processing on an `IMap`.  Usually you might consider to perform a loop of keys executing `IMap.get(key)`, then mutating the value and finally putting the entry back in the map using `IMap.put(key,value)`.  If you are performing this processing from a client or from a member where the keys do not exist, you will effectively be performing 2 network hops for each update.  The first to retrieve the data and the second to update the mutated value.
+Entry Processor is a good option if you perform bulk processing on an `IMap`.  Usually, you might consider to perform a loop of keys executing `IMap.get(key)`, then mutating the value and finally putting the entry back in the map using `IMap.put(key,value)`.  If you are performing this process from a client or from a member where the keys do not exist, you effectively perform 2 network hops for each update. The first to retrieve the data and the second to update the mutated value.
 
-If you are doing the above you should consider Entry Processors.  An Entry Processor will execute a read and update upon the member where the data resides.  This eliminates the costly network hops as described previously.
+If you are doing the above, you should consider Entry Processors. An Entry Processor executes a read and update upon the member where the data resides.  This eliminates the costly network hops as described previously.
 
 ### Entry Processor Overview
 
