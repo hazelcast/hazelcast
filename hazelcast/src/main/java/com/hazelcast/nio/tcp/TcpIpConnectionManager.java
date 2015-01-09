@@ -523,6 +523,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         closeServerSocket();
         stop();
         connectionListeners.clear();
+        ioService.shutdown();
     }
 
     private void closeServerSocket() {

@@ -47,6 +47,7 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Tracing;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -1303,6 +1304,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (logger.isFinestEnabled()) {
             logger.finest("Setting cluster time diff to " + diff + "ms.");
         }
+        traceSetMasterTime(diff);
         this.clusterTimeDiff = diff;
     }
 
@@ -1385,5 +1387,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         sb.append("{address=").append(thisAddress);
         sb.append('}');
         return sb.toString();
+    }
+
+    private void traceSetMasterTime(long diff) {
+        if (Tracing.CLUSTER_TIME_ENABLED) {
+            if (diff > Tracing.CLUSTER_TIME_THRESHOLD_MS) {
+                logger.info(Tracing.CLUSTER_TIME_CODE + " Setting cluster time diff to " + diff + " ms.");
+            }
+        }
     }
 }

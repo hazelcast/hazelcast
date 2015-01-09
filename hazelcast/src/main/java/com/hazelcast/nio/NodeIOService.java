@@ -25,6 +25,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Tracing;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -40,15 +41,37 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NodeIOService implements IOService {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
+    private final AtomicInteger operationPacketsReceived;
+    private final AtomicInteger eventPacketsReceived;
+    private final AtomicInteger wanPacketsReceived;
+    private final AtomicInteger clientPacketsReceived;
+    private final ThroughputMonitor throughputMonitor;
+
     public NodeIOService(Node node) {
         this.node = node;
         this.nodeEngine = node.nodeEngine;
+
+        if (Tracing.PACKET_THROUGHPUT_ENABLED) {
+            operationPacketsReceived = new AtomicInteger();
+            eventPacketsReceived = new AtomicInteger();
+            wanPacketsReceived = new AtomicInteger();
+            clientPacketsReceived = new AtomicInteger();
+            throughputMonitor = new ThroughputMonitor();
+            throughputMonitor.start();
+        } else {
+            operationPacketsReceived = null;
+            eventPacketsReceived = null;
+            wanPacketsReceived = null;
+            clientPacketsReceived = null;
+            throughputMonitor = null;
+        }
     }
 
     @Override
@@ -104,11 +127,13 @@ public class NodeIOService implements IOService {
                 member.didRead();
             }
         }
+        traceMemberPacket(packet);
         nodeEngine.handlePacket(packet);
     }
 
     @Override
     public void handleClientPacket(Packet p) {
+        traceClientPacket();
         node.clientEngine.handlePacket(p);
     }
 
@@ -283,6 +308,13 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public void shutdown() {
+        if (Tracing.PACKET_THROUGHPUT_ENABLED) {
+            throughputMonitor.interrupt();
+        }
+    }
+
+    @Override
     public Collection<Integer> getOutboundPorts() {
         final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
         final Collection<String> portDefinitions = getPortDefinitions(networkConfig);
@@ -301,6 +333,24 @@ public class NodeIOService implements IOService {
             return Collections.emptySet();
         }
         return ports;
+    }
+
+    private void traceMemberPacket(Packet packet) {
+        if (Tracing.PACKET_THROUGHPUT_ENABLED) {
+            if (packet.isHeaderSet(Packet.HEADER_OP)) {
+                operationPacketsReceived.incrementAndGet();
+            } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+                eventPacketsReceived.incrementAndGet();
+            } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
+                wanPacketsReceived.incrementAndGet();
+            }
+        }
+    }
+
+    private void traceClientPacket() {
+        if (Tracing.PACKET_THROUGHPUT_ENABLED) {
+            clientPacketsReceived.incrementAndGet();
+        }
     }
 
     private void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
@@ -332,5 +382,39 @@ public class NodeIOService implements IOService {
         return networkConfig.getOutboundPortDefinitions() == null
                 ? Collections.<String>emptySet() : networkConfig.getOutboundPortDefinitions();
     }
+
+    private class ThroughputMonitor extends Thread {
+        @Override
+        public void run() {
+            while (!interrupted()) {
+                int operationPackets = operationPacketsReceived.getAndSet(0);
+                int eventPackets = eventPacketsReceived.getAndSet(0);
+                int wantPackets = wanPacketsReceived.getAndSet(0);
+                int clientPackets = clientPacketsReceived.getAndSet(0);
+
+                ILogger logger = node.loggingService.getLogger(ThroughputMonitor.class);
+                if (logger != null) {
+                    StringBuilder sb = new StringBuilder(Tracing.PACKET_THROUGHPUT_CODE)
+                            .append(" Operational Packets: ")
+                            .append(operationPackets)
+                            .append(" Event Packets: ")
+                            .append(eventPackets)
+                            .append(" WAN Packets: ")
+                            .append(wantPackets)
+                            .append("Client Packets: ")
+                            .append(clientPackets);
+                    logger.info(sb.toString());
+                }
+
+                try {
+                    Thread.sleep(Tracing.PACKET_THROUGHPUT_SLEEP_MS);
+                } catch (InterruptedException e) {
+                    interrupt();
+                }
+            }
+        }
+    }
+
+
 }
 
