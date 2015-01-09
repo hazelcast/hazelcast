@@ -1,4 +1,4 @@
-package com.hazelcast.client.spi.impl;
+package com.hazelcast.client;
 
 /**
  * Thrown when Hazelcast client is not active during an invocation.
