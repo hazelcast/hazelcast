@@ -67,6 +67,12 @@ public abstract class ClusterLoginModule implements LoginModule {
 ```
 <br></br>
 
+## Enterprise Integration
+
+Using the above API it should be possible to implement a `LoginModule` that performs authentication against the Security System of your choice, possibly an LDAP store like [Apache Directory](https://directory.apache.org/) or some other corporate standard you have.  For example you may wish to have your clients send an identification token in the `Credentials` object.  This token can then be sent to your back-end security system via the `LoginModule` that runs on the cluster side.
+
+Additionally the same system may authenticate the user and also then return the roles that are attributed to the user.  These roles can then be used for data structure authorization. 
+
 ***RELATED INFORMATION***
 
 *Please refer to [JAAS Reference Guide](http://docs.oracle.com/javase/7/docs/technotes/guides/security/jaas/JAASRefGuide.html) for further information.*
