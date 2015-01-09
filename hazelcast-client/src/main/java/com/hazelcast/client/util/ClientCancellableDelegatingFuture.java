@@ -90,7 +90,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
             request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
         }
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(context, request, null, address);
+            final ClientInvocation clientInvocation = new ClientInvocation(context, request, address);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);

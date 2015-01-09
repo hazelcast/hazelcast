@@ -342,7 +342,7 @@ public class ClientCacheProxy<K, V>
                 final Address address = member.getAddress();
                 final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
                         cacheEntryListenerConfiguration, isRegister, address);
-                final ClientInvocation invocation = new ClientInvocation(clientContext, request, null, address);
+                final ClientInvocation invocation = new ClientInvocation(clientContext, request, address);
                 final Future<SerializableCollection> future = invocation.invoke();
                 futures.add(future);
             } catch (Exception e) {

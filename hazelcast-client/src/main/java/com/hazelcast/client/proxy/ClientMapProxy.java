@@ -282,7 +282,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     private ICompletableFuture invokeOnKeyOwner(ClientRequest request, Data keyData) {
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-        final ClientInvocation clientInvocation = new ClientInvocation(getContext(), request, null, partitionId);
+        final ClientInvocation clientInvocation = new ClientInvocation(getContext(), request, partitionId);
         return clientInvocation.invoke();
     }
 

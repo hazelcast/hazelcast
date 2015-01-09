@@ -16,24 +16,16 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.Iterator;
 
 public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
 
@@ -45,7 +37,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         super(client);
         this.loadBalancer = loadBalancer;
         credentials = client.getCredentials();
-        authenticator = new ClusterAuthenticator();
+        authenticator = new ClusterAuthenticator(client, credentials);
     }
 
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
@@ -98,30 +90,6 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     private boolean isMember(Address target) {
         final MemberImpl member = client.getClientClusterService().getMember(target);
         return member != null;
-    }
-
-    private class ClusterAuthenticator implements Authenticator {
-        @Override
-        public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
-            final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-            final ClientPrincipal principal = clusterService.getClusterListenerSupport().getPrincipal();
-            final SerializationService ss = client.getSerializationService();
-            AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
-            connection.init();
-            //contains remoteAddress and principal
-            SerializableCollection collectionWrapper;
-            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, null, connection);
-            final ClientInvocationFuture future = clientInvocation.invoke();
-            try {
-                collectionWrapper = ss.toObject(future.get());
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e, IOException.class);
-            }
-            final Iterator<Data> iter = collectionWrapper.iterator();
-            final Data addressData = iter.next();
-            final Address address = ss.toObject(addressData);
-            connection.setRemoteEndpoint(address);
-        }
     }
 
 }

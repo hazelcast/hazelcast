@@ -1,5 +1,6 @@
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -43,7 +44,7 @@ public class ClientInvocation implements Runnable {
     private int partitionId = -1;
     private volatile ClientConnection connection;
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler) {
+    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientRequest request) {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
@@ -66,37 +67,54 @@ public class ClientInvocation implements Runnable {
 
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler,
+    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
+                            ClientRequest request, int partitionId) {
+        this(client, handler, request);
+        this.partitionId = partitionId;
+    }
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
+                            ClientRequest request, Address address) {
+        this(client, handler, request);
+        this.address = address;
+    }
+
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request) {
+        this(client, null, request);
+    }
+
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
                             Connection connection) {
-        this(client, request, handler);
+        this(client, request);
         isBindToSingleConnection = true;
         this.connection = (ClientConnection) connection;
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
                             int partitionId) {
-        this(client, request, handler);
+        this(client, request);
         this.partitionId = partitionId;
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request, EventHandler handler,
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
                             Address address) {
-        this(client, request, handler);
+        this(client, request);
         this.address = address;
     }
 
-    public ClientInvocation(ClientContext clientContext, ClientRequest request, EventHandler handler, Address address) {
-        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, handler);
+    public ClientInvocation(ClientContext clientContext, ClientRequest request, Address address) {
+        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request);
         this.address = address;
     }
 
-    public ClientInvocation(ClientContext clientContext, ClientRequest request, EventHandler handler, int partitionId) {
-        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, handler);
+    public ClientInvocation(ClientContext clientContext, ClientRequest request, int partitionId) {
+        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request);
         this.partitionId = partitionId;
     }
 
-    public ClientInvocation(ClientContext clientContext, ClientRequest request, EventHandler handler) {
-        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, handler);
+    public ClientInvocation(ClientContext clientContext, ClientRequest request) {
+        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request);
     }
 
     public int getPartitionId() {

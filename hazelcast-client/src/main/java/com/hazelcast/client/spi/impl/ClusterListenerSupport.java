@@ -95,7 +95,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
             auth.setOwnerConnection(true);
             //contains remoteAddress and principal
             SerializableCollection collectionWrapper;
-            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, null, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             try {
                 collectionWrapper = ss.toObject(future.get());
@@ -159,7 +159,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
             throw new IllegalStateException("Can not load initial members list because owner connection is null. "
                     + "Address " + ownerConnectionAddress);
         }
-        final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+        final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
         final Future<SerializableCollection> future = clientInvocation.invoke();
         final SerializableCollection coll = serializationService.toObject(future.get());
 
@@ -205,7 +205,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
     private void listenMembershipEvents() throws Exception {
         final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
         final EventHandler<ClientMembershipEvent> handler = createEventHandler();
-        final ClientInvocation invocation = new ClientInvocation(client, request, handler, ownerConnectionAddress);
+        final ClientInvocation invocation = new ClientInvocation(client, handler, request, ownerConnectionAddress);
         final Future<SerializableCollection> future = invocation.invoke();
         final SerializationService serializationService = clusterService.getSerializationService();
         final Object response = serializationService.toObject(future.get());

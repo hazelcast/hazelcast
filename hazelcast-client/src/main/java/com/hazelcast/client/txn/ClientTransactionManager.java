@@ -16,14 +16,10 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -46,7 +42,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.Xid;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,7 +64,7 @@ public class ClientTransactionManager {
         this.client = client;
         this.loadBalancer = loadBalancer;
         credentials = client.getCredentials();
-        authenticator = new ClusterAuthenticator();
+        authenticator = new ClusterAuthenticator(client, credentials);
     }
 
     public HazelcastClientInstanceImpl getClient() {
@@ -166,7 +161,7 @@ public class ClientTransactionManager {
                 return empty;
             }
             final RecoverAllTransactionsRequest request = new RecoverAllTransactionsRequest();
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             final SerializableCollection collectionWrapper = serializationService.toObject(future.get());
 
@@ -192,7 +187,7 @@ public class ClientTransactionManager {
         }
         final RecoverTransactionRequest request = new RecoverTransactionRequest(sXid, commit);
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -224,28 +219,5 @@ public class ClientTransactionManager {
         return member.getAddress();
     }
 
-    private class ClusterAuthenticator implements Authenticator {
-        @Override
-        public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
-            final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-            final ClientPrincipal principal = clusterService.getClusterListenerSupport().getPrincipal();
-            final SerializationService ss = client.getSerializationService();
-            AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
-            connection.init();
-            //contains remoteAddress and principal
-            SerializableCollection collectionWrapper;
-            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, null, connection);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
-            try {
-                collectionWrapper = ss.toObject(future.get());
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e, IOException.class);
-            }
-            final Iterator<Data> iter = collectionWrapper.iterator();
-            final Data addressData = iter.next();
-            final Address address = ss.toObject(addressData);
-            connection.setRemoteEndpoint(address);
-        }
-    }
 
 }

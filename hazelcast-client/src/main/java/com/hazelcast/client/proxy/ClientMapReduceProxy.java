@@ -96,7 +96,7 @@ public class ClientMapReduceProxy
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
-            final ClientInvocation clientInvocation = new ClientInvocation(context, request, null, runningMember);
+            final ClientInvocation clientInvocation = new ClientInvocation(context, request, runningMember);
             final ICompletableFuture<T> future = clientInvocation.invoke();
             return future.get();
         }

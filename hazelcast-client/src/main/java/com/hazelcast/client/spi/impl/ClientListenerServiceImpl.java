@@ -55,10 +55,10 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
             handler.beforeListenerRegister();
 
             if (key == null) {
-                future = new ClientInvocation(client, request, handler).invoke();
+                future = new ClientInvocation(client, handler, request).invoke();
             } else {
                 final int partitionId = client.getClientPartitionService().getPartitionId(key);
-                future = new ClientInvocation(client, request, handler, partitionId).invoke();
+                future = new ClientInvocation(client, handler, request, partitionId).invoke();
             }
             String registrationId = serializationService.toObject(future.get());
             registerListener(registrationId, request.getCallId());
@@ -76,7 +76,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return false;
             }
             request.setRegistrationId(realRegistrationId);
-            final Future<Boolean> future = new ClientInvocation(client, request, null).invoke();
+            final Future<Boolean> future = new ClientInvocation(client, request).invoke();
             return (Boolean) serializationService.toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

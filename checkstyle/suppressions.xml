@@ -55,7 +55,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cache.impl[\\/]"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxy"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
+    <suppress checks="ClassDataAbstractionCoupling"
+              files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
@@ -69,9 +70,11 @@
     <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.HazelcastServerCachingProvider"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.client.cache.impl.HazelcastClientCachingProvider"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
-    <suppress checks="MethodCount|ParameterNumber|ClassFanOutComplexity|ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
+    <suppress checks="MethodCount|ParameterNumber|ClassFanOutComplexity|ClassDataAbstractionCoupling"
+              files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
+    <suppress checks="NPathComplexity"
+              files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
@@ -171,12 +174,12 @@
     <suppress checks="" files="com.hazelcast.client.proxy.ClientQueueProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
-    <suppress checks="" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
     <suppress checks="Javadoc" files="com.hazelcast.client.impl.operations[\\/]"/>
     <suppress checks="Javadoc" files="com.hazelcast.client.impl.client[\\/]"/>
     <suppress checks="" files="com.hazelcast.client.impl.HazelcastClientInstance"/>
     <suppress checks="" files="com.hazelcast.client.impl.HazelcastClientProxy"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.HazelcastClientProxy"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.impl.client.ClientPortableFactory"/>

@@ -47,7 +47,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
         }
         final SerializationService ss = proxy.getClient().getSerializationService();
         try {
-            ClientInvocation invocation = new ClientInvocation(proxy.getClient(), request, null, proxy.getConnection());
+            ClientInvocation invocation = new ClientInvocation(proxy.getClient(), request, proxy.getConnection());
             Future<SerializableCollection> future = invocation.invoke();
             return ss.toObject(future.get());
         } catch (Exception e) {

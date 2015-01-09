@@ -1,5 +1,6 @@
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -169,7 +170,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     @Override
     public void heartBeatStopped(Connection connection) {
         final RemoveAllListeners request = new RemoveAllListeners();
-        new ClientInvocation(client, request, null, connection).invoke();
+        new ClientInvocation(client, request, connection).invoke();
 
         final Address remoteEndpoint = connection.getEndPoint();
         final Iterator<ClientInvocation> iterator = eventHandlerMap.values().iterator();

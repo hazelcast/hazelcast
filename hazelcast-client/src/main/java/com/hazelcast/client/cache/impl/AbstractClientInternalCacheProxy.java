@@ -115,7 +115,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, req, null, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, req, partitionId);
             final ICompletableFuture<T> f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId);

@@ -81,7 +81,7 @@ abstract class AbstractClientCacheProxy<K, V>
         ClientInvocationFuture future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, null, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, partitionId);
             future = clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

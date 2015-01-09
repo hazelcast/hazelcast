@@ -111,7 +111,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, null, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, partitionId);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {

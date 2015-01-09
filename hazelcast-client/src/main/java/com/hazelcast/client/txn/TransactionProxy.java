@@ -198,7 +198,7 @@ final class TransactionProxy {
         }
         final SerializationService ss = client.getSerializationService();
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             return ss.toObject(future.get());
         } catch (Exception e) {

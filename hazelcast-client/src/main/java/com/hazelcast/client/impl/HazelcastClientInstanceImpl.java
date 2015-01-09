@@ -378,7 +378,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
 
-            final Future<SerializableCollection> future = new ClientInvocation(this, request, null).invoke();
+            final Future<SerializableCollection> future = new ClientInvocation(this, request).invoke();
             final SerializableCollection serializableCollection = serializationService.toObject(future.get());
             for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = serializationService.toObject(data);

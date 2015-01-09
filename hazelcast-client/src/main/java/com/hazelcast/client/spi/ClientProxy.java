@@ -125,7 +125,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected <T> T invoke(ClientRequest req, Object key) {
         try {
             final int partitionId = context.getPartitionService().getPartitionId(key);
-            final Future future = new ClientInvocation(context, req, null, partitionId).invoke();
+            final Future future = new ClientInvocation(context, req, partitionId).invoke();
             Object result = future.get();
             return toObject(result);
         } catch (Exception e) {
@@ -136,7 +136,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected <T> T invokeInterruptibly(ClientRequest req, Object key) throws InterruptedException {
         try {
             final int partitionId = context.getPartitionService().getPartitionId(key);
-            final Future future = new ClientInvocation(context, req, null, partitionId).invoke();
+            final Future future = new ClientInvocation(context, req, partitionId).invoke();
             Object result = future.get();
             return toObject(result);
         } catch (Exception e) {
@@ -156,7 +156,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T invoke(ClientRequest req, Address address) {
         try {
-            final Future future = new ClientInvocation(context, req, null, address).invoke();
+            final Future future = new ClientInvocation(context, req, address).invoke();
             Object result = future.get();
             return toObject(result);
         } catch (Exception e) {

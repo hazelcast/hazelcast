@@ -91,7 +91,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private PartitionsResponse getPartitionsFrom(Address address) {
         try {
             final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, null, address).invoke();
+            Future<PartitionsResponse> future = new ClientInvocation(client, request, address).invoke();
             return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
