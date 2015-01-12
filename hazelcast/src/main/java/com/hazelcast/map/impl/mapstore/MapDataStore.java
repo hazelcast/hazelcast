@@ -39,6 +39,8 @@ public interface MapDataStore<K, V> {
 
     int notFinishedOperationsCount();
 
+    boolean isPostProcessingMapStore();
+
     Collection flush();
 
     /**
