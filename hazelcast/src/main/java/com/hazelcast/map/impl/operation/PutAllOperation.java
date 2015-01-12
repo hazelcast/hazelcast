@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
@@ -37,6 +38,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -101,6 +103,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                     final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
                     mapEventPublisher.publishWanReplicationUpdate(name, entryView);
                 }
+                entry = getProcessedValue(entry, record);
                 backupEntrySet.add(entry);
                 RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
                 backupRecordInfos.add(replicationInfo);
@@ -108,6 +111,16 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
             }
         }
         invalidateNearCaches(keysToInvalidate);
+    }
+
+    public Map.Entry<Data, Data> getProcessedValue(Map.Entry<Data, Data> entry, Record record) {
+        MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
+        if (!mapDataStore.isPostProcessingMapStore()) {
+            return entry;
+        }
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        Data dataForBackup = mapServiceContext.toData(record.getValue());
+        return new AbstractMap.SimpleImmutableEntry<Data, Data>(entry.getKey(), dataForBackup);
     }
 
     protected final void invalidateNearCaches(Set<Data> keys) {
