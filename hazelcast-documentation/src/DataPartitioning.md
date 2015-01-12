@@ -17,7 +17,9 @@ As you add more nodes, Hazelcast moves one by one some of the primary and replic
 
 ![](images/4NodeCluster.jpg)
 
-As you see, the partitions themselves are distributed equally among the members of the cluster. Hazelcast creates the backups of partitions and distributes them among nodes for redundancy, too.
+As you see, the partitions themselves are distributed equally among the members of the cluster. Hazelcast creates the backups of partitions and distributes them among nodes for redundancy.
+
+### How the Data is Partitioned
 
 Hazelcast distributes data entries into the partitions using a hashing algorithm. Given an object key (e.g. for map) or an object name (e.g. for topic or list):
 
@@ -25,6 +27,22 @@ Hazelcast distributes data entries into the partitions using a hashing algorithm
 - this byte array is hashed, and
 - the result of the hash is mod by the number of partitions.
 
-The result of this modulo - *MOD(hash result, partition count)* -  gives the partition in which the data will be stored.
+The result of this modulo - *MOD(hash result, partition count)* -  gives the partition in which the data will be stored. 
 
-Each node in a cluster will know where the key is. 
+### Partition Table
+
+When you start a node, a partition table is created within it. Purpose of this table is to let all nodes in the cluster know partition ownerships. The oldest node in the cluster (the one which was started first) sends the partition table to all nodes periodically. You can configure the sending frequency using the `hazelcast.partition.table.send.interval` system property. It is set to 15 seconds by default. 
+
+This table stores the information of which partition belongs to which node.  and it is shared with all the nodes in the cluster 
+
+
+
+......
+
+.......
+
+......
+
+
+The oldest node (the one which was started first) updates this table when a node joins to or leaves the cluster. 
+And this is how each node in the cluster knows where the data is.
