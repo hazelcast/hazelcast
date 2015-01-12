@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryViews;
 import com.hazelcast.map.MapEventPublisher;
 import com.hazelcast.map.MapServiceContext;
+import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
@@ -87,7 +88,14 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
         final RecordInfo replicationInfo = buildRecordInfo(record);
-        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
+        MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
+        Data dataValueForBackup = dataValue;
+        // if data-store is post processing, then we need to retrieve the 'processed' value from record
+        // not the value initially provided
+        if (mapDataStore.isPostProcessingMapStore()) {
+            dataValueForBackup = mapService.getMapServiceContext().toData(record.getValue());
+        }
+        return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo);
     }
 
     public final int getAsyncBackupCount() {

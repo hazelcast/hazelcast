@@ -81,4 +81,8 @@ public abstract class AbstractMapDataStore<K, V> implements MapDataStore<K, V> {
         return objectKeys;
     }
 
+    @Override
+    public boolean isPostProcessingMapStore() {
+        return store.isPostProcessingMapStore();
+    }
 }
