@@ -279,7 +279,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(size, map2Size);
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 240000)
     public void testMapInitialLoad() throws InterruptedException {
         int size = 10000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
