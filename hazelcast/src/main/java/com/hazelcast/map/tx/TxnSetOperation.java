@@ -19,6 +19,7 @@ package com.hazelcast.map.tx;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapServiceContext;
+import com.hazelcast.map.mapstore.MapDataStore;
 import com.hazelcast.map.operation.BasePutOperation;
 import com.hazelcast.map.operation.PutBackupOperation;
 import com.hazelcast.map.record.Record;
@@ -112,7 +113,14 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
         final RecordInfo replicationInfo = Records.buildRecordInfo(record);
-        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true);
+        MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
+        Data dataValueForBackup = dataValue;
+        // if data-store is post processing, then we need to retrieve the 'processed' value from record
+        // not the value initially provided
+        if (mapDataStore.isPostProcessingMapStore()) {
+            dataValueForBackup = mapService.getMapServiceContext().toData(record.getValue());
+        }
+        return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo, true);
     }
 
     public void onWaitExpire() {

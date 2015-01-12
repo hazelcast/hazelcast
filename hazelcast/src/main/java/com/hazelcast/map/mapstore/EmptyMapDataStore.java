@@ -73,4 +73,9 @@ class EmptyMapDataStore implements MapDataStore {
     public int notFinishedOperationsCount() {
         return 0;
     }
+
+    @Override
+    public boolean isPostProcessingMapStore() {
+        return false;
+    }
 }
