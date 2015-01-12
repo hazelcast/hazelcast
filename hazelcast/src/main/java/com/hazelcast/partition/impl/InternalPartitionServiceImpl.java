@@ -1765,7 +1765,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private void doRun() throws InterruptedException {
-            for (; ; ) {
+            for (;;) {
                 if (!isMigrationActive()) {
                     break;
                 }
