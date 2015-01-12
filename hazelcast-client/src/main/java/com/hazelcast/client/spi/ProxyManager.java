@@ -199,7 +199,7 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) throws Exception {
         ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
         final ClientContext context = new ClientContext(client, this);
-        new ClientInvocation(context, request, null).invoke().get();
+        new ClientInvocation(client, request).invoke().get();
         clientProxy.setContext(context);
         clientProxy.onInitialize();
     }

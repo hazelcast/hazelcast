@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -89,8 +90,10 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
             address = partitionService.getPartitionOwner(partitionId);
             request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
         }
+
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(context, request, address);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);

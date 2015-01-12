@@ -566,7 +566,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> ICompletableFuture<T> invokeFuture(ClientRequest request, int partitionId) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(getContext(), request, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -575,7 +575,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private <T> ICompletableFuture<T> invokeFuture(TargetClientRequest request) {
         try {
-            final ClientInvocation invocation = new ClientInvocation(getContext(), request, request.getTarget());
+            final ClientInvocation invocation = new ClientInvocation(getClient(), request, request.getTarget());
             return invocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

@@ -26,6 +26,7 @@ import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
@@ -336,13 +337,14 @@ public class ClientCacheProxy<K, V>
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
                 final Address address = member.getAddress();
                 final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
                         cacheEntryListenerConfiguration, isRegister, address);
-                final ClientInvocation invocation = new ClientInvocation(clientContext, request, address);
+                final ClientInvocation invocation = new ClientInvocation(client, request, address);
                 final Future<SerializableCollection> future = invocation.invoke();
                 futures.add(future);
             } catch (Exception e) {

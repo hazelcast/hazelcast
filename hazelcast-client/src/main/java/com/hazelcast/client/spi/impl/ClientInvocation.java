@@ -6,7 +6,6 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
@@ -26,7 +25,8 @@ import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERV
 
 public class ClientInvocation implements Runnable {
 
-    protected static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
+    private static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
+    private static final int UNASSIGNED_PARTITION = -1;
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
@@ -39,18 +39,25 @@ public class ClientInvocation implements Runnable {
     private final int heartBeatInterval;
     private final AtomicInteger reSendCount = new AtomicInteger();
 
-    private boolean isBindToSingleConnection;
-    private Address address;
-    private int partitionId = -1;
+    private final boolean isBindToSingleConnection;
+    private final Address address;
+    private final int partitionId;
     private volatile ClientConnection connection;
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientRequest request) {
+
+    private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
+                             ClientRequest request, int partitionId, Address address,
+                             Connection connection) {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
         this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        this.request = request;
         this.handler = handler;
+        this.request = request;
+        this.partitionId = partitionId;
+        this.address = address;
+        this.connection = (ClientConnection) connection;
+        this.isBindToSingleConnection = connection != null;
 
         final ClientProperties clientProperties = client.getClientProperties();
 
@@ -63,59 +70,42 @@ public class ClientInvocation implements Runnable {
 
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+    }
 
+    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientRequest request) {
+        this(client, handler, request, UNASSIGNED_PARTITION, null, null);
 
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
                             ClientRequest request, int partitionId) {
-        this(client, handler, request);
-        this.partitionId = partitionId;
+        this(client, handler, request, partitionId, null, null);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
                             ClientRequest request, Address address) {
-        this(client, handler, request);
-        this.address = address;
+        this(client, handler, request, UNASSIGNED_PARTITION, address, null);
     }
-
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request) {
         this(client, null, request);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
-                            Connection connection) {
-        this(client, request);
-        isBindToSingleConnection = true;
-        this.connection = (ClientConnection) connection;
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
                             int partitionId) {
-        this(client, request);
-        this.partitionId = partitionId;
+        this(client, null, request, partitionId);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
                             Address address) {
-        this(client, request);
-        this.address = address;
+        this(client, null, request, address);
     }
 
-    public ClientInvocation(ClientContext clientContext, ClientRequest request, Address address) {
-        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request);
-        this.address = address;
+    public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
+                            Connection connection) {
+        this(client, null, request, UNASSIGNED_PARTITION, null, connection);
     }
 
-    public ClientInvocation(ClientContext clientContext, ClientRequest request, int partitionId) {
-        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request);
-        this.partitionId = partitionId;
-    }
-
-    public ClientInvocation(ClientContext clientContext, ClientRequest request) {
-        this((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request);
-    }
 
     public int getPartitionId() {
         return partitionId;

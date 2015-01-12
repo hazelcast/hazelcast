@@ -30,6 +30,7 @@ import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.operation.MutableOperation;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
@@ -115,7 +116,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, req, partitionId);
+            HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+            final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
             final ICompletableFuture<T> f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId);

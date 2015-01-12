@@ -92,11 +92,10 @@ public class ClientMapReduceProxy
     }*/
 
     private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
-        ClientContext context = getContext();
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
-            final ClientInvocation clientInvocation = new ClientInvocation(context, request, runningMember);
+            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
             final ICompletableFuture<T> future = clientInvocation.invoke();
             return future.get();
         }
@@ -121,7 +120,7 @@ public class ClientMapReduceProxy
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
 
-                final ClientInvocation clientInvocation = new ClientInvocation(context, request, null);
+                final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request);
                 final ClientInvocationFuture future = clientInvocation.invoke();
 
                 future.andThen(new ExecutionCallback() {

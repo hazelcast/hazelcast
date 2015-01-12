@@ -21,6 +21,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -81,7 +82,8 @@ abstract class AbstractClientCacheProxy<K, V>
         ClientInvocationFuture future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, partitionId);
+            final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             future = clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

@@ -18,6 +18,7 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
@@ -111,7 +112,9 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, request, partitionId);
+            final ClientInvocation clientInvocation =
+                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+                            request, partitionId);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -141,7 +144,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     protected <T> T invoke(ClientRequest req) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(clientContext, req, null);
+            final ClientInvocation clientInvocation =
+                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             Object result = future.get();
             return toObject(result);
