@@ -9,10 +9,13 @@
 
 The partition count of 271, being a prime number, is a good choice because it will be distributed to the nodes almost evenly. For a small to medium sized cluster, the count of 271 gives an almost even partition distribution and optimal-sized partitions.  As your cluster becomes bigger, you should make this count bigger to have evenly distributed partitions.
 
+<br></br>
+
 ## Is Hazelcast thread safe
 
 Yes. All Hazelcast data structures are thread safe.
 
+<br></br>
 ## How do nodes discover each other
 
 
@@ -23,6 +26,12 @@ When a node is started in a cluster, it will dynamically and automatically be di
 -	If your application is placed on Amazon EC2, Hazelcast has an automatic discovery mechanism. You will give your Amazon credentials and the joining node will be discovered automatically.
 
 Once nodes are discovered, all the communication between them will be via TCP/IP.
+<br></br>
+***RELATED INFORMATION***
+
+*Please refer to the [Hazelcast Cluster Discovery section](#hazelcast-cluster-discovery) for detailed information.*
+
+<br></br>
 
 ## What happens when a node goes down
 
@@ -33,6 +42,8 @@ Once a node is gone (e.g. crashes) and since data in each node has a backup in o
 -	And finally, backups for these recovered data are formed.
 
 So eventually, no data is lost.
+
+<br></br>
 
 ## How do I test the connectivity
 
@@ -46,6 +57,8 @@ And you can execute the below command on the other node.
 
 The output should include connection information such as the IP addresses, transfer speed, and bandwidth. Otherwise, if the output says `No route to host`, it means a network connection problem exists.
 
+<br></br>
+
 
 ## How do I choose keys properly
 
@@ -53,6 +66,7 @@ When you store a key & value in a distributed Map, Hazelcast serializes the key 
 
 Implementing `equals` and `hashCode` is not enough, it is also important that the object is always serialized into the same byte array. All primitive types like String, Long, Integer, etc. are good candidates for keys to be used in Hazelcast. An unsorted Set is an example of a very bad candidate because Java Serialization may serialize the same unsorted set in two different byte arrays.
 
+<br></br>
 
 ## How do I reflect value modifications
 
@@ -65,6 +79,8 @@ map.put( key, value );
 ```
 
 Collections which return values of methods —such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`— contain cloned values. These collections are NOT backed up by related Hazelcast objects. Therefore, changes to them are **NOT** reflected in the originals, and vice-versa.
+
+<br></br>
 
 ## How do I test my Hazelcast cluster
 
@@ -150,10 +166,14 @@ public void cleanup() throws Exception {
 
 For more information please [check our existing tests.](https://github.com/hazelcast/hazelcast/tree/master/hazelcast/src/test/java/com/hazelcast/cluster)
 
+<br></br>
+
 
 ## Does Hazelcast support hundreds of nodes
 
 Yes. Hazelcast performed a successful test on Amazon EC2 with 200 nodes.
+
+<br></br>
 
 
 ## Does Hazelcast support thousands of clients
@@ -162,27 +182,39 @@ Yes. However, there are some points you should consider. The environment should 
 
 Also, you should configure the clients attentively. Please refer to the [Java Client section](#java-client) section for configuration notes.
 
+<br></br>
+
 ## What is the difference between old LiteMember and new Smart Client
 
 LiteMember supports task execution (distributed executor service), smart client does not. Also LiteMember is highly coupled with cluster, smart client is not.
+
+<br></br>
 
 ## How do you give support
 
 Support services are divided into two: community and commercial support. Community support is provided through our [Mail Group](https://groups.google.com/forum/#!forum/hazelcast) and StackOverflow web site. For information on support subscriptions, please see [Hazelcast.com](http://hazelcast.com/support/commercial/).
 
+<br></br>
+
 ## Does Hazelcast persist
 
 No. However, Hazelcast provides `MapStore` and `MapLoader` interfaces. For example, when you implement the `MapStore` interface, Hazelcast calls your store and load methods whenever needed.
 
+<br></br>
+
 ## Can I use Hazelcast in a single server
 
 Yes. But please note that Hazelcast's main design focus is multi-node clusters to be used as a distribution platform. 
+
+<br></br>
 
 ## How can I monitor Hazelcast
 
 [Hazelcast Management Center](#management-center) is what you use to monitor and manage the nodes running Hazelcast. In addition to monitoring the overall state of a cluster, you can analyze and browse data structures in detail, you can update map configurations, and you can take thread dumps from nodes. 
 
 Moreover, JMX monitoring is also provided. Please see the [Monitoring with JMX section](#monitoring-with-jmx) for details.
+
+<br></br>
 
 ## How can I see debug level logs
 
@@ -227,6 +259,8 @@ Then set the log level to "Debug" in the properties file. Below is example conte
 
 The line `log4j.logger.com.hazelcast=debug` is used to see debug logs for all Hazelcast operations. Below this line, you can select to see specific logs (cluster, partition, hibernate, etc.).
 
+<br></br>
+
 ## What is the difference between client-server and embedded topologies
 
 In the embedded topology, nodes include both the data and application. This type of topology is the most useful if your application focuses on high performance computing and many task executions. Since application is close to data, this topology supports data locality. 
@@ -234,6 +268,8 @@ In the embedded topology, nodes include both the data and application. This type
 In the client-server topology, you create a cluster of nodes and scale the cluster independently. Your applications are hosted on the clients, and the clients communicate with the nodes in the cluster to reach data. 
 
 Client-server topology fits better if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (e.g. 500 application servers vs. 10 node cluster).
+
+<br></br>
 
 ## How do I know it is safe to kill the second node
 
@@ -255,6 +291,7 @@ if (partitionService().isLocalMemberSafe()) {
 }
 ```
 
+<br></br>
 
 ## When do I need Native Memory solutions
 
@@ -263,20 +300,26 @@ Native Memory solutions can be preferred;
 - When the amount of data per node is large enough to create significant garbage collection pauses,
 - When your application requires predictable latency.
 
+<br></br>
 
 ## Is there any disadvantage of using near-cache
 
 The only disadvantage when using Near Cache is that it may cause stale reads.
 
+<br></br>
+
 ## Is Hazelcast secure
 
 Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see the [Security chapter](#security) for more information.
 
+<br></br>
 
 
 ## How can I set socket options
 
 Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at the [Advanced Configuration Properties section](#advanced-configuration-properties).
+
+<br></br>
 
 ## I periodically see client disconnections during idle time
 
@@ -286,6 +329,8 @@ For additional information please see:
 
  - [Using TCP keepalive under Linux](http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html)
  - [Microsoft TechNet](http://technet.microsoft.com/en-us/library/cc957549.aspx)
+ 
+ <br></br>
 
 ## How to get rid of "java.lang.OutOfMemoryError: unable to create new native thread"
 
@@ -319,6 +364,8 @@ testuser hard nofile 10240<br>
 The default number of process per users is 1024. Adding the following to your `$HOME/.profile` could solve the issue:
 
 `# ulimit -u 4096`
+
+<br></br>
 
 
 
