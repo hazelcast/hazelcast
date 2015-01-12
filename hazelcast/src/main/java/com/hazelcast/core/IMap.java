@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
@@ -763,7 +764,7 @@ public interface IMap<K, V>
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @see #localKeySet()
      */
-    String addLocalEntryListener(EntryListener<K, V> listener);
+    String addLocalEntryListener(MapListener listener);
 
     /**
      * Adds a local entry listener for this map. The added listener will be only
@@ -776,7 +777,7 @@ public interface IMap<K, V>
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
-    String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
+    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
 
     /**
      * Adds a local entry listener for this map. The added listener will be only
@@ -790,7 +791,7 @@ public interface IMap<K, V>
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
-    String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Adds an interceptor for this map. Added interceptor will intercept operations
@@ -819,7 +820,7 @@ public interface IMap<K, V>
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
-    String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
+    String addEntryListener(MapListener listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener
@@ -847,7 +848,7 @@ public interface IMap<K, V>
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified key is null
      */
-    String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
+    String addEntryListener(MapListener listener, K key, boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified
@@ -859,7 +860,7 @@ public interface IMap<K, V>
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
-    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified
@@ -872,7 +873,7 @@ public interface IMap<K, V>
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
-    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Returns the <tt>EntryView</tt> for the specified key.

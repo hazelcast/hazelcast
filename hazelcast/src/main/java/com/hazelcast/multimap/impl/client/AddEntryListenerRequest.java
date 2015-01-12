@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
@@ -57,7 +56,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final MultiMapService service = getService();
-        EntryListener listener = new EntryAdapter() {
+        EntryAdapter listener = new EntryAdapter() {
             @Override
             public void onEntryEvent(EntryEvent event) {
                 if (endpoint.isAlive()) {

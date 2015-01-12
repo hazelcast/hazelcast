@@ -22,7 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -81,6 +80,7 @@ import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -174,7 +174,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         List<EntryListenerConfig> listenerConfigs = getMapConfig().getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            EntryListener listener = null;
+            MapListener listener = null;
             if (listenerConfig.getImplementation() != null) {
                 listener = listenerConfig.getImplementation();
             } else if (listenerConfig.getClassName() != null) {
@@ -895,12 +895,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    public String addLocalEntryListener(final EntryListener listener) {
+    public String addLocalEntryListener(final MapListener listener) {
         final MapService mapService = getService();
         return mapService.getMapServiceContext().addLocalEventListener(listener, name);
     }
 
-    public String addLocalEntryListenerInternal(EntryListener listener, Predicate predicate,
+    public String addLocalEntryListenerInternal(MapListener listener, Predicate predicate,
                                                 final Data key, boolean includeValue) {
 
         final MapService mapService = getService();
@@ -909,14 +909,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected String addEntryListenerInternal(
-            final EntryListener listener, final Data key, final boolean includeValue) {
+            final MapListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         final MapService mapService = getService();
         return mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
     }
 
     protected String addEntryListenerInternal(
-            EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+            MapListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         final MapService mapService = getService();
         return mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);

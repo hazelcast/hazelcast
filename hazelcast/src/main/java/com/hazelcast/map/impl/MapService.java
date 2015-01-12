@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -49,7 +48,7 @@ import java.util.Properties;
  * @see MapReplicationSupportingService
  */
 public final class MapService implements ManagedService, MigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
+        TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
         PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
     /**
@@ -72,7 +71,7 @@ public final class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
-    public void dispatchEvent(EventData event, EntryListener listener) {
+    public void dispatchEvent(EventData event, ListenerAdapter listener) {
         eventPublishingService.dispatchEvent(event, listener);
     }
 
