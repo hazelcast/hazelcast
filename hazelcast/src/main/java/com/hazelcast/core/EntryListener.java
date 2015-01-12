@@ -16,60 +16,29 @@
 
 package com.hazelcast.core;
 
-import java.util.EventListener;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.map.listener.MapClearedListener;
+import com.hazelcast.map.listener.MapEvictedListener;
 
 /**
  * Map Entry listener to get notified when a map entry
  * is added, removed, updated or evicted.  Events will fire as a result
  * of operations carried out via the {@link com.hazelcast.core.IMap} interface.  Events will not fire, for example,
  * for an entry that comes into the Map via the {@link MapLoader} lifecycle.
+ * <p/>
+ * This interface is here for backward compatibility reasons. For a most appropriate alternative
+ * please use/check {@link com.hazelcast.map.listener.MapListener} interface.
  *
- * @param <K> key of the map entry
- * @param <V> value of the map entry.
- * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
+ * @param <K> the type of key.
+ * @param <V> the type of value.
+ * @see com.hazelcast.core.IMap#addEntryListener
+ * @see com.hazelcast.map.listener.MapListener
  */
-public interface EntryListener<K, V> extends EventListener {
+public interface EntryListener<K, V>
+        extends EntryAddedListener<K, V>, EntryUpdatedListener<K, V>, EntryRemovedListener<K, V>,
+        EntryEvictedListener<K, V>, MapClearedListener, MapEvictedListener {
 
-    /**
-     * Invoked when an entry is added.
-     *
-     * @param event the event invoked when an entry is added
-     */
-    void entryAdded(EntryEvent<K, V> event);
-
-    /**
-     * Invoked when an entry is removed.
-     *
-     * @param event the event invoked when an entry is removed
-     */
-    void entryRemoved(EntryEvent<K, V> event);
-
-    /**
-     * Invoked when an entry is updated.
-     *
-     * @param event the event invoked when an entry is updated
-     */
-    void entryUpdated(EntryEvent<K, V> event);
-
-    /**
-     * Invoked when an entry is evicted.
-     *
-     * @param event the event invoked when an entry is evicted
-     */
-    void entryEvicted(EntryEvent<K, V> event);
-
-    /**
-     * Invoked when all entries are evicted by {@link IMap#evictAll()}.
-     *
-     * @param event the map event invoked when all entries are evicted by {@link IMap#evictAll()}
-     */
-    void mapEvicted(MapEvent event);
-
-    /**
-     * Invoked when all entries are removed by {@link IMap#clear()}.
-     *
-     * @param event the map event invoked when all entries are removed by {@link IMap#clear()}
-
-     */
-    void mapCleared(MapEvent event);
 }

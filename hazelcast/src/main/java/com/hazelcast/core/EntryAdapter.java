@@ -17,10 +17,11 @@
 package com.hazelcast.core;
 
 /**
- * Adapter for EntryListener.
+ * Adapter for {@link com.hazelcast.map.listener.MapListener}.
  *
  * @param <K> key of the map entry
  * @param <V> value of the map entry.
+ * @see com.hazelcast.map.listener.MapListener
  * @see com.hazelcast.core.EntryListener
  */
 public class EntryAdapter<K, V> implements EntryListener<K, V> {

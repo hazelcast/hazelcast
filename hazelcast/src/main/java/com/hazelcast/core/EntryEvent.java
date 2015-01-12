@@ -22,7 +22,8 @@ package com.hazelcast.core;
  * @param <K> key of the map entry
  * @param <V> value of the map entry
  * @see com.hazelcast.core.EntryListener
- * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
+ * @see com.hazelcast.map.listener.MapListener
+ * @see com.hazelcast.core.IMap#addEntryListener(com.hazelcast.map.listener.MapListener, boolean)
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class EntryEvent<K, V> extends AbstractIMapEvent {

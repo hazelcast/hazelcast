@@ -1,7 +1,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
@@ -14,7 +13,7 @@ import com.hazelcast.spi.NodeEngine;
  *
  * @see com.hazelcast.spi.EventPublishingService
  */
-class MapEventPublishingService implements EventPublishingService<EventData, EntryListener> {
+class MapEventPublishingService implements EventPublishingService<EventData, ListenerAdapter> {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
@@ -22,6 +21,17 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
     protected MapEventPublishingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+    }
+
+    @Override
+    public void dispatchEvent(EventData eventData, ListenerAdapter listener) {
+        if (eventData instanceof EntryEventData) {
+            dispatchEntryEventData(eventData, listener);
+        } else if (eventData instanceof MapEventData) {
+            dispatchMapEventData(eventData, listener);
+        } else {
+            throw new IllegalArgumentException("Unknown map event data");
+        }
     }
 
     private void incrementEventStats(IMapEvent event) {
@@ -33,22 +43,15 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
         }
     }
 
-    @Override
-    public void dispatchEvent(EventData eventData, EntryListener listener) {
-        if (eventData instanceof EntryEventData) {
-            dispatchEntryEventData(eventData, listener);
-        } else if (eventData instanceof MapEventData) {
-            dispatchMapEventData(eventData, listener);
-        } else {
-            throw new IllegalArgumentException("Unknown map event data");
-        }
-    }
-
-    private void dispatchMapEventData(EventData eventData, EntryListener listener) {
+    private void dispatchMapEventData(EventData eventData, ListenerAdapter listener) {
         final MapEventData mapEventData = (MapEventData) eventData;
         final Member member = getMember(eventData);
         final MapEvent event = createMapEvent(mapEventData, member);
-        dispatch0(event, listener);
+        callListener(listener, event);
+    }
+
+    private void callListener(ListenerAdapter listener, IMapEvent event) {
+        listener.onEvent(event);
         incrementEventStats(event);
     }
 
@@ -57,12 +60,11 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
                 mapEventData.getEventType(), mapEventData.getNumberOfEntries());
     }
 
-    private void dispatchEntryEventData(EventData eventData, EntryListener listener) {
+    private void dispatchEntryEventData(EventData eventData, ListenerAdapter listener) {
         final EntryEventData entryEventData = (EntryEventData) eventData;
         final Member member = getMember(eventData);
         final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
-        dispatch0(event, listener);
-        incrementEventStats(event);
+        callListener(listener, event);
     }
 
     private Member getMember(EventData eventData) {
@@ -79,28 +81,5 @@ class MapEventPublishingService implements EventPublishingService<EventData, Ent
                 nodeEngine.getSerializationService());
     }
 
-    private void dispatch0(IMapEvent event, EntryListener listener) {
-        switch (event.getEventType()) {
-            case ADDED:
-                listener.entryAdded((EntryEvent) event);
-                break;
-            case EVICTED:
-                listener.entryEvicted((EntryEvent) event);
-                break;
-            case UPDATED:
-                listener.entryUpdated((EntryEvent) event);
-                break;
-            case REMOVED:
-                listener.entryRemoved((EntryEvent) event);
-                break;
-            case EVICT_ALL:
-                listener.mapEvicted((MapEvent) event);
-                break;
-            case CLEAR_ALL:
-                listener.mapCleared((MapEvent) event);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid event type: " + event.getEventType());
-        }
-    }
+
 }

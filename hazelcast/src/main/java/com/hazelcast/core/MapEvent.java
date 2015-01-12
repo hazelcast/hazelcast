@@ -3,6 +3,9 @@ package com.hazelcast.core;
 /**
  * Used for map-wide events like {@link com.hazelcast.core.EntryEventType#EVICT_ALL}
  * and {@link  com.hazelcast.core.EntryEventType#CLEAR_ALL}.
+ *
+ * @see com.hazelcast.map.listener.MapListener
+ * @see com.hazelcast.core.EntryListener
  */
 public class MapEvent extends AbstractIMapEvent {
 

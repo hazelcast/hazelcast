@@ -17,7 +17,6 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
@@ -29,6 +28,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -398,7 +398,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
+    public String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -409,7 +409,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addLocalEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key,
+    public String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key,
                                         boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
@@ -422,7 +422,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addEntryListener(final EntryListener listener, final boolean includeValue) {
+    public String addEntryListener(final MapListener listener, final boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -430,7 +430,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+    public String addEntryListener(final MapListener listener, final K key, final boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -439,7 +439,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public String addEntryListener(
-            EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+            MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -450,7 +450,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
+    public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }

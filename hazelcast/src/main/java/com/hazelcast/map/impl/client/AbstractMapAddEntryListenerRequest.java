@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -67,7 +66,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
 
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
 
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
