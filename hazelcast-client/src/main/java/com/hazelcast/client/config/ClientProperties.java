@@ -42,30 +42,6 @@ public class ClientProperties {
     public static final String PROP_HEARTBEAT_INTERVAL_DEFAULT = "5000";
 
     /**
-     * Client will retry requests which either inherently retryable(idempotent client)
-     * or {@link ClientNetworkConfig#redoOperation} is set to true.
-     * <p/>
-     * This property is to configure retry count before client give up retrying.
-     */
-    public static final String PROP_REQUEST_RETRY_COUNT = "hazelcast.client.request.retry.count";
-    /**
-     * Default value of PROP_REQUEST_RETRY_COUNT when user not set it explicitly
-     */
-    public static final String PROP_REQUEST_RETRY_COUNT_DEFAULT = "20";
-
-    /**
-     * Client will retry requests which either inherently retryable(idempotent client)
-     * or {@link ClientNetworkConfig#redoOperation} is set to true.
-     * <p/>
-     * Time delay in milisecond between retries.
-     */
-    public static final String PROP_REQUEST_RETRY_WAIT_TIME = "hazelcast.client.request.retry.wait.time";
-    /**
-     * Default value of PROP_REQUEST_RETRY_WAIT_TIME when user not set it explicitly
-     */
-    public static final String PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT = "250";
-
-    /**
      * Number of threads to handle incoming event packets
      */
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.client.event.thread.count";
@@ -98,8 +74,6 @@ public class ClientProperties {
 
     private final ClientProperty heartbeatTimeout;
     private final ClientProperty heartbeatInterval;
-    private final ClientProperty retryCount;
-    private final ClientProperty retryWaitTime;
     private final ClientProperty eventThreadCount;
     private final ClientProperty eventQueueCapacity;
     private final ClientProperty invocationTimeout;
@@ -108,8 +82,6 @@ public class ClientProperties {
     public ClientProperties(ClientConfig clientConfig) {
         heartbeatTimeout = new ClientProperty(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT);
         heartbeatInterval = new ClientProperty(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT);
-        retryCount = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_COUNT, PROP_REQUEST_RETRY_COUNT_DEFAULT);
-        retryWaitTime = new ClientProperty(clientConfig, PROP_REQUEST_RETRY_WAIT_TIME, PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
         eventThreadCount = new ClientProperty(clientConfig, PROP_EVENT_THREAD_COUNT, PROP_EVENT_THREAD_COUNT_DEFAULT);
         eventQueueCapacity = new ClientProperty(clientConfig, PROP_EVENT_QUEUE_CAPACITY, PROP_EVENT_QUEUE_CAPACITY_DEFAULT);
         invocationTimeout = new ClientProperty(clientConfig, PROP_INVOCATION_TIMEOUT_SECONDS,
@@ -122,14 +94,6 @@ public class ClientProperties {
 
     public ClientProperty getHeartbeatInterval() {
         return heartbeatInterval;
-    }
-
-    public ClientProperty getRetryCount() {
-        return retryCount;
-    }
-
-    public ClientProperty getRetryWaitTime() {
-        return retryWaitTime;
     }
 
     public ClientProperty getEventQueueCapacity() {
