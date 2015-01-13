@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -28,11 +29,14 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.StatisticsService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.wan.WanReplicationEvent;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -48,8 +52,10 @@ import java.util.Properties;
  * @see MapReplicationSupportingService
  */
 public final class MapService implements ManagedService, MigrationAwareService,
+
         TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsService {
+
 
     /**
      * Service name of map service used
@@ -224,4 +230,13 @@ public final class MapService implements ManagedService, MigrationAwareService,
         this.replicationSupportingService = replicationSupportingService;
     }
 
+    @Override
+    public Map<String, LocalMapStats> getStats() {
+        Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
+        Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
+        for (String mapName : mapContainers.keySet()) {
+            mapStats.put(mapName, mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(mapName));
+        }
+        return mapStats;
+    }
 }

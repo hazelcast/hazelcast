@@ -44,6 +44,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -68,7 +69,7 @@ import java.util.logging.Level;
  * such as {@link com.hazelcast.queue.impl.QueueEvictionProcessor }
  */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
-        RemoteService, EventPublishingService<QueueEvent, ItemListener> {
+        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsService {
     /**
      * Service name.
      */
@@ -298,5 +299,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                     .setNodeEngine(nodeEngine);
             operationService.executeOperation(operation);
         }
+    }
+
+    @Override
+    public Map<String, LocalQueueStats> getStats() {
+        Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
+        for (Entry<String, QueueContainer> queueStat : containerMap.entrySet()) {
+            queueStats.put(queueStat.getKey(), createLocalQueueStats(queueStat.getKey(),
+                    nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(
+                            queueStat.getKey(), StringPartitioningStrategy.INSTANCE))));
+        }
+        return queueStats;
     }
 }

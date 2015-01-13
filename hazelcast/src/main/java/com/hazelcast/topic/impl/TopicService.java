@@ -22,6 +22,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -29,9 +30,12 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsService;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,7 +45,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class TopicService implements ManagedService, RemoteService, EventPublishingService {
+public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
     public static final int ORDERING_LOCKS_LENGTH = 1000;
@@ -160,5 +164,14 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public boolean removeMessageListener(String name, String registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
+    }
+
+    @Override
+    public Map<String, LocalTopicStats> getStats() {
+        Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
+        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
+            topicStats.put(queueStat.getKey(), queueStat.getValue());
+        }
+        return topicStats;
     }
 }

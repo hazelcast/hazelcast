@@ -24,37 +24,37 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
+import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
-import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
-import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
-import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.topic.impl.TopicService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -90,7 +90,8 @@ public class TimedMemberStateFactory {
 
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
-        createMemberState(memberState);
+        Collection<StatisticsService> services = instance.node.nodeEngine.getServices(StatisticsService.class);
+        createMemberState(memberState, services);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         TimedMemberState timedMemberState = new TimedMemberState();
         timedMemberState.setMaster(instance.node.isMaster());
@@ -105,7 +106,7 @@ public class TimedMemberStateFactory {
         }
         timedMemberState.setMemberState(memberState);
         timedMemberState.setClusterName(groupConfig.getName());
-        timedMemberState.setInstanceNames(getLongInstanceNames());
+        timedMemberState.setInstanceNames(getLongInstanceNames(services));
         return timedMemberState;
     }
 
@@ -113,7 +114,7 @@ public class TimedMemberStateFactory {
          return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
-    private void createMemberState(MemberStateImpl memberState) {
+    private void createMemberState(MemberStateImpl memberState, Collection<StatisticsService> services) {
         final Node node = instance.node;
         Address thisAddress = node.getThisAddress();
         InternalPartitionService partitionService = node.getPartitionService();
@@ -137,30 +138,28 @@ public class TimedMemberStateFactory {
         memberPartitionState.setMemberStateSafe(memberStateSafe);
 
         memberState.setLocalMemoryStats(getMemoryStats());
-        Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
-        createMemState(memberState, proxyObjects);
+        createMemState(memberState, services);
     }
 
     private void createMemState(MemberStateImpl memberState,
-                                Collection<DistributedObject> distributedObjects) {
+                                Collection<StatisticsService> services) {
         int count = 0;
         final Config config = instance.getConfig();
-        final Iterator<DistributedObject> iterator = distributedObjects.iterator();
-        while (iterator.hasNext() && count < maxVisibleInstanceCount) {
-            DistributedObject distributedObject = iterator.next();
-            if (distributedObject instanceof IMap) {
-                count = handleMap(memberState, count, config, (IMap) distributedObject);
-            } else if (distributedObject instanceof IQueue) {
-                count = handleQueue(memberState, count, config, (IQueue) distributedObject);
-            } else if (distributedObject instanceof ITopic) {
-                count = handleTopic(memberState, count, config, (ITopic) distributedObject);
-            } else if (distributedObject instanceof MultiMap) {
-                count = handleMultimap(memberState, count, config, (MultiMap) distributedObject);
-            } else if (distributedObject instanceof IExecutorService) {
-                count = handleExecutorService(memberState, count, config, (IExecutorService) distributedObject);
-            } else {
-                logger.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
+
+        for (StatisticsService service : services) {
+            if (count < maxVisibleInstanceCount) {
+                if (service instanceof MapService) {
+                    count = handleMap(memberState, count, config, ((MapService) service).getStats());
+                } else if (service instanceof MultiMapService) {
+                    count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats());
+                } else if (service instanceof QueueService) {
+                    count = handleQueue(memberState, count, config, ((QueueService) service).getStats());
+                } else if (service instanceof TopicService) {
+                    count = handleTopic(memberState, count, config, ((TopicService) service).getStats());
+                } else if (service instanceof DistributedExecutorService) {
+                    count = handleExecutorService(memberState, count, config, ((DistributedExecutorService) service).getStats());
+                }
             }
         }
 
@@ -175,46 +174,53 @@ public class TimedMemberStateFactory {
         }
     }
 
-    private int handleExecutorService(MemberStateImpl memberState, int count, Config config, IExecutorService executorService) {
-        if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
-            LocalExecutorStatsImpl stats = (LocalExecutorStatsImpl) executorService.getLocalExecutorStats();
-            memberState.putLocalExecutorStats(executorService.getName(), stats);
-            return count + 1;
+    private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
+                                      Map<String, LocalExecutorStats> executorServices) {
+        for (String name : executorServices.keySet()) {
+            if (config.findExecutorConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                memberState.putLocalExecutorStats(name, executorServices.get(name));
+                ++count;
+            }
         }
         return count;
     }
 
-    private int handleMultimap(MemberStateImpl memberState, int count, Config config, MultiMap multiMap) {
-        if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
-            LocalMultiMapStatsImpl stats = (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats();
-            memberState.putLocalMultiMapStats(multiMap.getName(), stats);
-            return count + 1;
+    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
+        for (String name : multiMaps.keySet()) {
+            if (config.findMultiMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                memberState.putLocalMultiMapStats(name, multiMaps.get(name));
+                ++count;
+            }
         }
         return count;
     }
 
-    private int handleTopic(MemberStateImpl memberState, int count, Config config, ITopic topic) {
-        if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
-            LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
-            memberState.putLocalTopicStats(topic.getName(), stats);
-            return count + 1;
+    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
+        for (String name : topics.keySet()) {
+            if (config.findTopicConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                memberState.putLocalTopicStats(name, topics.get(name));
+                ++count;
+            }
         }
         return count;
     }
 
-    private int handleQueue(MemberStateImpl memberState, int count, Config config, IQueue queue) {
-        if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
-            LocalQueueStatsImpl stats = (LocalQueueStatsImpl) queue.getLocalQueueStats();
-            memberState.putLocalQueueStats(queue.getName(), stats);
-            return count + 1;
+    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
+        for (String name : queues.keySet()) {
+            if (config.findQueueConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                memberState.putLocalQueueStats(name, queues.get(name));
+                ++count;
+            }
         }
         return count;
     }
 
-    private int handleMap(MemberStateImpl memberState, int count, Config config, IMap map) {
-        if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
-            memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
-            return count + 1;
+    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
+        for (String mapName : maps.keySet()) {
+            if (config.findMapConfig(mapName).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                memberState.putLocalMapStats(mapName, maps.get(mapName));
+                count = count + 1;
+            }
         }
         return count;
     }
@@ -224,31 +230,29 @@ public class TimedMemberStateFactory {
         return count + 1;
     }
 
-    private Set<String> getLongInstanceNames() {
+    private Set<String> getLongInstanceNames(Collection<StatisticsService> services) {
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
-        Collection<DistributedObject> proxyObjects = new ArrayList<DistributedObject>(instance.getDistributedObjects());
-        collectInstanceNames(setLongInstanceNames, proxyObjects);
+        collectInstanceNames(setLongInstanceNames, services);
         return setLongInstanceNames;
     }
 
-    private void collectInstanceNames(Set<String> setLongInstanceNames,
-                                      Collection<DistributedObject> distributedObjects) {
+    private void collectInstanceNames(Set<String> setLongInstanceNames, Collection<StatisticsService> services) {
         int count = 0;
         final Config config = instance.getConfig();
-        for (DistributedObject distributedObject : distributedObjects) {
+        for (StatisticsService service : services) {
             if (count < maxVisibleInstanceCount) {
-                if (distributedObject instanceof MultiMap) {
-                    count = collectMultiMapName(setLongInstanceNames, count, config, (MultiMap) distributedObject);
-                } else if (distributedObject instanceof IMap) {
-                    count = collectMapName(setLongInstanceNames, count, config, (IMap) distributedObject);
-                } else if (distributedObject instanceof IQueue) {
-                    count = collectQueueName(setLongInstanceNames, count, config, (IQueue) distributedObject);
-                } else if (distributedObject instanceof ITopic) {
-                    count = collectTopicName(setLongInstanceNames, count, config, (ITopic) distributedObject);
-                } else if (distributedObject instanceof IExecutorService) {
-                    count = collectExecutorServiceName(setLongInstanceNames, count, config, (IExecutorService) distributedObject);
+                if (service instanceof MapService) {
+                    count = collectMapName(setLongInstanceNames, count, config, service.getStats().keySet());
+                } else if (service instanceof MultiMapService) {
+                    count = collectMultiMapName(setLongInstanceNames, count, config, service.getStats().keySet());
+                } else if (service instanceof QueueService) {
+                    count = collectQueueName(setLongInstanceNames, count, config, service.getStats().keySet());
+                } else if (service instanceof TopicService) {
+                    count = collectTopicName(setLongInstanceNames, count, config, service.getStats().keySet());
+                } else if (service instanceof DistributedExecutorService) {
+                    count = collectExecutorServiceName(setLongInstanceNames, count, config, service.getStats().keySet());
                 } else {
-                    logger.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
+                    logger.finest("Statistics service ignored for monitoring: " + service.getClass().getName());
                 }
             }
         }
@@ -264,35 +268,43 @@ public class TimedMemberStateFactory {
     }
 
     private int collectExecutorServiceName(Set<String> setLongInstanceNames, int count, Config config,
-                                           IExecutorService executorService) {
-        if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
-            setLongInstanceNames.add("e:" + executorService.getName());
-            return count + 1;
+                                           Set<String> executorServiceNames) {
+        for (String name : executorServiceNames) {
+            if (config.findExecutorConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                setLongInstanceNames.add("e:" + name);
+                ++count;
+            }
         }
         return count;
 
     }
 
-    private int collectTopicName(Set<String> setLongInstanceNames, int count, Config config, ITopic topic) {
-        if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
-            setLongInstanceNames.add("t:" + topic.getName());
-            return count + 1;
+    private int collectTopicName(Set<String> setLongInstanceNames, int count, Config config, Set<String> topicNames) {
+        for (String name : topicNames) {
+            if (config.findTopicConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                setLongInstanceNames.add("t:" + name);
+                ++count;
+            }
         }
         return count;
     }
 
-    private int collectQueueName(Set<String> setLongInstanceNames, int count, Config config, IQueue queue) {
-        if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
-            setLongInstanceNames.add("q:" + queue.getName());
-            return count + 1;
+    private int collectQueueName(Set<String> setLongInstanceNames, int count, Config config, Set<String> queueNames) {
+        for (String name : queueNames) {
+            if (config.findQueueConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                setLongInstanceNames.add("q:" + name);
+                ++count;
+            }
         }
         return count;
     }
 
-    private int collectMapName(Set<String> setLongInstanceNames, int count, Config config, IMap map) {
-        if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
-            setLongInstanceNames.add("c:" + map.getName());
-            return count + 1;
+    private int collectMapName(Set<String> setLongInstanceNames, int count, Config config, Set<String> mapNames) {
+        for (String name : mapNames) {
+            if (config.findMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                setLongInstanceNames.add("c:" + name);
+                ++count;
+            }
         }
         return count;
     }
@@ -305,10 +317,12 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int collectMultiMapName(Set<String> setLongInstanceNames, int count, Config config, MultiMap multiMap) {
-        if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
-            setLongInstanceNames.add("m:" + multiMap.getName());
-            return count + 1;
+    private int collectMultiMapName(Set<String> setLongInstanceNames, int count, Config config, Set<String> multiMapNames) {
+        for (String name : multiMapNames) {
+            if (config.findMultiMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+                setLongInstanceNames.add("m:" + name);
+                ++count;
+            }
         }
         return count;
     }
