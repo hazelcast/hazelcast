@@ -329,7 +329,7 @@ public class Node {
             multicastServiceThread.start();
         }
         setActive(true);
-        if (!completelyShutdown) {
+        if (!completelyShutdown && groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
             logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
@@ -381,7 +381,8 @@ public class Node {
             setActive(false);
             setMasterAddress(null);
             try {
-                Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+            	if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean())
+            		Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
             versionCheck.shutdown();
@@ -481,9 +482,7 @@ public class Node {
             try {
                 if (isActive() && !completelyShutdown) {
                     completelyShutdown = true;
-                    if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
-                        hazelcastInstance.getLifecycleService().terminate();
-                    }
+                    hazelcastInstance.getLifecycleService().terminate();
                 } else {
                     logger.finest(
                             "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
