@@ -74,6 +74,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
@@ -332,6 +333,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     final ICompletableFuture<ClientConnection> future = executionService.submitInternal(connectionProcessor);
                     try {
                         clientConnection = future.get(connectionTimeout, TimeUnit.MILLISECONDS);
+                    } catch (TimeoutException e) {
+                        throw new IOException(e);
                     } catch (Exception e) {
                         future.cancel(true);
                         throw ExceptionUtil.rethrow(e, IOException.class);
