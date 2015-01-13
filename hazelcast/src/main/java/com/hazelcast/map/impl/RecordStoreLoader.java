@@ -28,7 +28,7 @@ interface RecordStoreLoader {
         }
 
         @Override
-        public void loadInitialKeys() {
+        public void loadInitialKeys(boolean replaceExisting) {
 
         }
 
@@ -58,8 +58,9 @@ interface RecordStoreLoader {
 
     /**
      * Loads initial keys.
+     * @param replaceExisting keys
      */
-    void loadInitialKeys();
+    void loadInitialKeys(boolean replaceExisting);
 
     /**
      * Picks and returns any one of throwables during load all process.

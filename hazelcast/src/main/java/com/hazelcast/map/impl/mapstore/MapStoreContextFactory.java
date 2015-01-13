@@ -84,6 +84,10 @@ public final class MapStoreContextFactory {
         }
 
         @Override
+        public void triggerInitialKeyLoad() {
+        }
+
+        @Override
         public SerializationService getSerializationService() {
             throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
         }

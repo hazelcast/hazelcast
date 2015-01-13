@@ -43,4 +43,6 @@ public interface MapStoreContext {
     MapStoreConfig getMapStoreConfig();
 
     void waitInitialLoadFinish() throws Exception;
+
+    void triggerInitialKeyLoad();
 }
