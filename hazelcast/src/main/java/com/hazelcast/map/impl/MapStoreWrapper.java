@@ -57,6 +57,7 @@ public class MapStoreWrapper implements MapStore {
         return mapStore;
     }
 
+
     public void destroy() {
         if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).destroy();
@@ -71,6 +72,7 @@ public class MapStoreWrapper implements MapStore {
         return (mapLoader != null);
     }
 
+    @Override
     public void delete(Object key) {
         if (isMapStore()) {
             mapStore.delete(key);
@@ -83,12 +85,14 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
+    @Override
     public void storeAll(Map map) {
         if (isMapStore()) {
             mapStore.storeAll(map);
         }
     }
 
+    @Override
     public void deleteAll(Collection keys) {
         if (keys == null || keys.isEmpty()) {
             return;
@@ -98,14 +102,22 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
+    @Override
     public Iterable loadAllKeys() {
         if (isMapLoader()) {
-            // Invoke reflectively to preserve backwards binary compatibility
-            return ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
+            Iterable allKeys;
+            try {
+                allKeys = mapLoader.loadAllKeys();
+            } catch (AbstractMethodError e) {
+                // Invoke reflectively to preserve backwards binary compatibility. Removable in v4.x
+                allKeys = ReflectionHelper.invokeMethod(mapLoader, "loadAllKeys");
+            }
+            return allKeys;
         }
         return null;
     }
 
+    @Override
     public Object load(Object key) {
         if (isMapLoader()) {
             return mapLoader.load(key);
@@ -113,6 +125,7 @@ public class MapStoreWrapper implements MapStore {
         return null;
     }
 
+    @Override
     public Map loadAll(Collection keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.EMPTY_MAP;
