@@ -19,6 +19,7 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.MigrationCycleOperation;
@@ -40,6 +41,12 @@ import static com.hazelcast.partition.InternalPartitionService.SERVICE_NAME;
 // runs locally...
 final class PromoteFromBackupOperation extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
+
+    private Address deadAddress;
+
+    public PromoteFromBackupOperation(Address deadAddress) {
+        this.deadAddress = deadAddress;
+    }
 
     @Override
     public void beforeRun() throws Exception {
@@ -66,7 +73,8 @@ final class PromoteFromBackupOperation extends AbstractOperation
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
         MemberImpl localMember = nodeEngine.getLocalMember();
-        MigrationEvent event = new MigrationEvent(partitionId, null, localMember, status);
+        MemberImpl deadMember = new MemberImpl(deadAddress, false);
+        MigrationEvent event = new MigrationEvent(partitionId, deadMember, localMember, status);
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
         eventService.publishEvent(SERVICE_NAME, registrations, event, partitionId);
