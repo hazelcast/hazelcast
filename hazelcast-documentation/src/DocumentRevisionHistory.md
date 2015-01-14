@@ -11,6 +11,7 @@
 |[Chapter 12 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 |[Chapter 14 - Clients](#clients)||Added introduction paragraphs.|
 |[Chapter 18 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
+|[Chapter 17 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
 |[Chapter 20 - Hazelcast Configuration](#hazelcast-configuration)||Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
 |[Chapter 22 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
 |[Chapter 23 - Glossary](#glossary)||Added new glossary items.|
