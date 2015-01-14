@@ -33,9 +33,9 @@ import com.hazelcast.spi.StatisticsService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -233,7 +233,7 @@ public final class MapService implements ManagedService, MigrationAwareService,
     @Override
     public Map<String, LocalMapStats> getStats() {
         Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>(mapContainers.size());
+        Map<String, LocalMapStats> mapStats = MapUtil.createHashMap(mapContainers.size());
         for (String mapName : mapContainers.keySet()) {
             mapStats.put(mapName, mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(mapName));
         }

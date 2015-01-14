@@ -30,9 +30,9 @@ import com.hazelcast.spi.StatisticsService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -165,7 +165,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     @Override
     public Map<String, LocalExecutorStats> getStats() {
-        Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
+        Map<String, LocalExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
         for (Map.Entry<String, LocalExecutorStatsImpl> queueStat : statsMap.entrySet()) {
             executorStats.put(queueStat.getKey(), queueStat.getValue());
         }

@@ -32,9 +32,9 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsService;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -168,7 +168,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     @Override
     public Map<String, LocalTopicStats> getStats() {
-        Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
+        Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
         for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
             topicStats.put(queueStat.getKey(), queueStat.getValue());
         }
