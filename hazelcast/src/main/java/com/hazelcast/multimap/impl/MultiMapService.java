@@ -342,13 +342,15 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
 
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
-        Map<String, LocalMultiMapStats> mapStats = new HashMap<String, LocalMultiMapStats>();
+        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
             for (String name : partitionContainer.containerMap.keySet()) {
-                mapStats.put(name, createStats(name));
+                if (!multiMapStats.containsKey(name)) {
+                    multiMapStats.put(name, createStats(name));
+                }
             }
         }
-        return mapStats;
+        return multiMapStats;
     }
 }

@@ -232,8 +232,8 @@ public final class MapService implements ManagedService, MigrationAwareService,
 
     @Override
     public Map<String, LocalMapStats> getStats() {
-        Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
         Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
+        Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>(mapContainers.size());
         for (String mapName : mapContainers.keySet()) {
             mapStats.put(mapName, mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(mapName));
         }
