@@ -17,7 +17,7 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
-        int initialCapacity = (int) (expectedMapSize * HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
         return new HashMap<K, V>(initialCapacity);
     }
 
