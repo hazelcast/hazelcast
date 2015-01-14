@@ -7,15 +7,10 @@ You can listen to map-wide or entry-based events by implementing a `MapListener`
 A map-wide event is fired as a result of a map-wide operation e.g. `IMap#clear` or `IMap#evictAll`.
 An entry-based event is fired after the operations that affects a specific entry e.g.`IMap#remove` or `IMap#evict`.
 
-<<<<<<< Updated upstream:hazelcast-documentation/src/Map-EntryListener.md
-Let's take a look at the following example code.
-=======
-Hazelcast distributed map offers the method `addEntryListener` to add a map listener to the map. 
 
 Let's take a look at the below sample code. As you will see, to catch an event you should explicitly implement a corresponding sub-interface of a `MapListener` e.g. `EntryAddedListener` or `MapClearedListener`.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** * `EntryListener` interface still can be implemented, we kept it as is due to the backward compatibility reasons but if you need to listen a different event which is not available in the `EntryListener` interface you should also implement a relevant `MapListener` sub-interface. 
->>>>>>> Stashed changes:hazelcast-documentation/src/Map-MapListener.md
 
 ```java
 public class Listen {
@@ -92,8 +87,6 @@ entryRemoved:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
     oldValue=2, value=2, event=REMOVED, by Member [192.168.1.100]:5702
 ```
 
-<<<<<<< Updated upstream:hazelcast-documentation/src/Map-EntryListener.md
-Entry Listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access to other partitions. Consider this when you run long tasks, since listening to those tasks may cause other event listeners to starve. In these cases, you might consider executing these reactionary tasks inside an Executor. The following shows an example usage.
 
 ```java
 public class MyEntryListener implements EntryListener{
@@ -106,7 +99,5 @@ public class MyEntryListener implements EntryListener{
     }
 ...
 ```
-
-=======
 A map listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause other map/event listeners to starve.
->>>>>>> Stashed changes:hazelcast-documentation/src/Map-MapListener.md
+
