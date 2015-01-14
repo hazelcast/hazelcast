@@ -132,9 +132,18 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         }
 
         session = sf2.openSession();
-        session.beginTransaction();
         e1 = (DummyEntity) session.get(DummyEntity.class, (long) 1);
-        e1.getProperties().clear();
+        Transaction tx2 = session.beginTransaction();
+        try {
+            e1.getProperties().clear();
+            tx2.commit();
+        } catch (Exception e) {
+            tx2.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+
 
         Statistics stats = sf.getStatistics();
         stats.logSummary();
