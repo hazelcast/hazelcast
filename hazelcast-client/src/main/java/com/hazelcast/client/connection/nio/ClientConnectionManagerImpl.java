@@ -231,7 +231,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 socket.setSoLinger(true, socketOptions.getLingerSeconds());
             }
             int bufferSize = socketOptions.getBufferSize() * KILO_BYTE;
-            if (bufferSize < 0) {
+            if (bufferSize <= 0) {
                 bufferSize = DEFAULT_BUFFER_SIZE_BYTE;
             }
             socket.setSendBufferSize(bufferSize);
