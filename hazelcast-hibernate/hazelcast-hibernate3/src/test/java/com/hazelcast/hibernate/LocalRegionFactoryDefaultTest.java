@@ -19,6 +19,7 @@ package com.hazelcast.hibernate;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Session;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -98,6 +100,51 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         assertEquals(count, stats.getSecondLevelCacheHitCount());
         // collection cache miss
         assertEquals(count, stats.getSecondLevelCacheMissCount());
+        stats.logSummary();
+    }
+
+    @Test
+    public void testEntityPropertyUpdate() {
+        final int count = 100;
+        final int childCount = 3;
+        insertDummyEntities(count, childCount);
+        sleep(1);
+        Session session = sf.openSession();
+
+        DummyEntity e1 = (DummyEntity) session.get(DummyEntity.class, (long) 1);
+        e1.setDate(new Date());
+        Set<DummyProperty> dummyProperties = e1.getProperties();
+
+
+        Transaction tx = session.beginTransaction();
+        try {
+            for (DummyProperty property : dummyProperties) {
+                property.setKey("test");
+                session.update(property);
+            }
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+
+        session = sf2.openSession();
+        e1 = (DummyEntity) session.get(DummyEntity.class, (long) 1);
+        Transaction tx2 = session.beginTransaction();
+        try {
+            e1.getProperties().clear();
+            tx2.commit();
+        } catch (Exception e) {
+            tx2.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+
+
+        Statistics stats = sf.getStatistics();
         stats.logSummary();
     }
 }
