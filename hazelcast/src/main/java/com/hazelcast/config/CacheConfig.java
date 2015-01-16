@@ -96,10 +96,10 @@ public class CacheConfig<K, V>
             this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheLoaderFactory());
         }
         if (simpleConfig.getCacheWriterFactory() != null) {
-            this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
+            this.cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
         }
         if (simpleConfig.getExpiryPolicyFactory() != null) {
-            this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getExpiryPolicyFactory());
+            this.expiryPolicyFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getExpiryPolicyFactory());
         }
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
