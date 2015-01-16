@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
@@ -75,13 +76,13 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cacheConfigXmlTest() throws IOException {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
-        assertEquals("test-group1",config1.getGroupConfig().getName());
-        assertEquals("test-pass1",config1.getGroupConfig().getPassword());
+        assertEquals("test-group1", config1.getGroupConfig().getName());
+        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
-        assertEquals("com.hazelcast.cache.MyCacheLoaderFactory", cacheConfig1.getCacheLoaderFactory());
-        assertEquals("com.hazelcast.cache.MyCacheWriterFactory", cacheConfig1.getCacheWriterFactory());
-        assertEquals("com.hazelcast.cache.MyExpirePolicyFactory", cacheConfig1.getExpiryPolicyFactory());
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyCacheLoaderFactory", cacheConfig1.getCacheLoaderFactory());
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyCacheWriterFactory", cacheConfig1.getCacheWriterFactory());
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyExpirePolicyFactory", cacheConfig1.getExpiryPolicyFactory());
         assertTrue(cacheConfig1.isReadThrough());
         assertTrue(cacheConfig1.isWriteThrough());
         assertTrue(cacheConfig1.isStatisticsEnabled());
@@ -98,18 +99,42 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheSimpleEntryListenerConfig listenerConfig0 = cacheEntryListeners.get(0);
         assertFalse(listenerConfig0.isSynchronous());
         assertFalse(listenerConfig0.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.MyEntryListenerFactory",
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyEntryListenerFactory",
                 listenerConfig0.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.MyEntryEventFilterFactory",
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyEntryEventFilterFactory",
                 listenerConfig0.getCacheEntryEventFilterFactory());
 
         CacheSimpleEntryListenerConfig listenerConfig1 = cacheEntryListeners.get(1);
         assertTrue(listenerConfig1.isSynchronous());
         assertTrue(listenerConfig1.isOldValueRequired());
-        assertEquals("com.hazelcast.cache.MySyncEntryListenerFactory",
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MySyncEntryListenerFactory",
                 listenerConfig1.getCacheEntryListenerFactory());
-        assertEquals("com.hazelcast.cache.MySyncEntryEventFilterFactory",
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MySyncEntryEventFilterFactory",
                 listenerConfig1.getCacheEntryEventFilterFactory());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_constructingToCacheConfig() throws Exception {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        assertEquals("test-group1", config1.getGroupConfig().getName());
+        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
+
+        CacheSimpleConfig cacheSimpleConfig1 = config1.getCacheConfig("cache1");
+        CacheConfig cacheConfig1 = new CacheConfig(cacheSimpleConfig1);
+        assertTrue(cacheConfig1.getCacheLoaderFactory() instanceof MyCacheLoaderFactory);
+        assertTrue(cacheConfig1.getCacheWriterFactory() instanceof MyCacheWriterFactory);
+        assertTrue(cacheConfig1.getExpiryPolicyFactory() instanceof MyExpirePolicyFactory);
+        assertTrue(cacheConfig1.isReadThrough());
+        assertTrue(cacheConfig1.isWriteThrough());
+        assertTrue(cacheConfig1.isStatisticsEnabled());
+        assertTrue(cacheConfig1.isManagementEnabled());
+
+        assertNotNull(cacheConfig1.getEvictionConfig());
+        assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
+        assertEquals(CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT,
+                cacheConfig1.getEvictionConfig().getMaxSizePolicy());
+
     }
 
     @Test
@@ -138,7 +163,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         URI uri2 = new URI("MY-SCOPE-OTHER");
         String urlStr2 = configUrl2.toString();
-        assertEquals("file", urlStr2.substring(0,4));
+        assertEquals("file", urlStr2.substring(0, 4));
         Properties properties2 = new Properties();
         properties2.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, urlStr2);
         CacheManager cacheManager2 = Caching.getCachingProvider().getCacheManager(uri2, null, properties2);
@@ -149,7 +174,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
     @Test
     public void cacheManagerByInstanceNameTest() throws URISyntaxException {
-        final String instanceName= "instanceName66";
+        final String instanceName = "instanceName66";
         Config config = new Config();
         config.setInstanceName(instanceName);
         Hazelcast.newHazelcastInstance(config);
@@ -190,7 +215,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryListenerFactoryFromSimpleCacheConfig(){
+    public void testEntryListenerFactoryFromSimpleCacheConfig() {
         String cacheName = randomString();
         Config config = createConfig(cacheName);
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -202,7 +227,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertOpenEventually(EntryListener.latch);
     }
 
-    Config createConfig(String cacheName){
+    Config createConfig(String cacheName) {
         Config config = new Config();
         CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
         cacheSimpleConfig.setName(cacheName);
@@ -229,4 +254,54 @@ public class CacheConfigTest extends HazelcastTestSupport {
             latch.countDown();
         }
     }
+
+    public static class MyCacheLoaderFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
+    public static class MyCacheWriterFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
+    public static class MyExpirePolicyFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
+    public static class MyEntryListenerFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
+    public static class MyEntryEventFilterFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
+    public static class MySyncEntryListenerFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
+    public static class MySyncEntryEventFilterFactory implements Factory {
+        @Override
+        public Object create() {
+            return null;
+        }
+    }
+
 }
