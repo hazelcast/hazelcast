@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
-import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 
 public class DescribeInstances {
     private EC2RequestSigner rs;

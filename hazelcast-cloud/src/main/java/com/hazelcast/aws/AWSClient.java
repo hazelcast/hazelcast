@@ -53,4 +53,8 @@ public class AWSClient {
     public void setEndpoint(String s) {
         this.endpoint = s;
     }
+
+    public String getEndpoint() {
+        return this.endpoint;
+    }
 }
