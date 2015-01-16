@@ -250,22 +250,22 @@ class ClusterListenerThread extends Thread {
 
         int attempt = 0;
         Throwable lastError = null;
-        Set<Address> triedAddresses = new HashSet<Address>();
+        Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
         while (true) {
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
             final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
             for (InetSocketAddress isa : socketAddresses) {
-                Address address = new Address(isa);
-                triedAddresses.add(address);
-                LOGGER.finest("Trying to connect to " + address);
                 try {
+                    triedAddresses.add(isa);
+                    Address address = new Address(isa);
+                    LOGGER.finest("Trying to connect to " + address);
                     final ClientConnection connection = connectionManager.ownerConnection(address);
                     clusterService.fireConnectionEvent(false);
                     return connection;
                 } catch (Exception e) {
                     lastError = e;
                     Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
-                    LOGGER.log(level, "Exception during initial connection to " + address, e);
+                    LOGGER.log(level, "Exception during initial connection to " + isa, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
