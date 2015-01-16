@@ -16,7 +16,7 @@
 
 package com.hazelcast.security.permission;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 
 import java.security.Permission;
 
@@ -31,6 +31,8 @@ public abstract class InstancePermission extends ClusterPermission {
 
     protected final int mask;
     protected final String actions;
+
+    private final WildcardConfigPatternMatcher configPatternMatcher = new WildcardConfigPatternMatcher();
 
     public InstancePermission(String name, String... actions) {
         super(name);
@@ -64,7 +66,7 @@ public abstract class InstancePermission extends ClusterPermission {
             return false;
         }
 
-        if (!Config.nameMatches(that.getName(), this.getName())) {
+        if (!configPatternMatcher.matches(that.getName(), this.getName())) {
             return false;
         }
 

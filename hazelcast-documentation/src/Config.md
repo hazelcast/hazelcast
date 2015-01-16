@@ -92,7 +92,7 @@ Hazelcast supports wildcard configuration for all distributed data structures th
 
 Note that with a limitation of a single usage, an asterisk (\*) can be placed anywhere inside the configuration name.
 
-For instance, a map named '`com.hazelcast.test.mymap`' can be configured using one of these configurations:
+For instance, a map named '`com.hazelcast.test.myMap`' can be configured using one of these configurations:
 
 ```xml
 <map name="com.hazelcast.test.*">
@@ -105,26 +105,39 @@ For instance, a map named '`com.hazelcast.test.mymap`' can be configured using o
 </map>
 ```
 ```xml
-<map name="*.test.mymap">
+<map name="*.test.myMap">
 ...
 </map>
 ```
 ```xml
-<map name="com.*test.mymap">
+<map name="com.*test.myMap">
 ...
 </map>
 ```
-Or a queue '`com.hazelcast.test.myqueue`':
+Or a queue '`com.hazelcast.test.myQueue`':
 
 ```xml
-<queue name="*hazelcast.test.myqueue">
+<queue name="*hazelcast.test.myQueue">
 ...
 </queue>
 ```
 ```xml
-<queue name="com.hazelcast.*.myqueue">
+<queue name="com.hazelcast.*.myQueue">
 ...
 </queue>
+```
+
+You can also implement your own `ConfigPatternMatcher` if the actual wildcard implementation is not sufficient for you. There is already a `RegexConfigPatternMatcher` which supports full Java regular expressions.
+```java
+MapConfig mapConfig = new MapConfig().setName("^someMap");
+
+Config config = new Config();
+config.setConfigPatternMatcher(new RegexConfigPatternMatcher());
+config.addMapConfig(mapConfig);
+
+config.getMapConfig("someMap"); // will match
+config.getMapConfig("someMap1"); // will also match
+config.getMapConfig("_someMap"); // will not match
 ```
 
 ## Composing XML Configuration

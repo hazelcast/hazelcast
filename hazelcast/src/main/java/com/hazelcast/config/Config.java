@@ -16,8 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.File;
 import java.net.URL;
@@ -44,6 +47,8 @@ import static java.text.MessageFormat.format;
  */
 public class Config {
 
+    private static final ILogger LOGGER = Logger.getLogger(Config.class);
+
     private URL configurationUrl;
 
     private File configurationFile;
@@ -57,6 +62,8 @@ public class Config {
     private GroupConfig groupConfig = new GroupConfig();
 
     private NetworkConfig networkConfig = new NetworkConfig();
+
+    private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
@@ -138,6 +145,13 @@ public class Config {
     public Config setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
+    }
+
+    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+        if (configPatternMatcher == null) {
+            throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
+        }
+        this.configPatternMatcher = configPatternMatcher;
     }
 
     public String getProperty(String name) {
@@ -880,34 +894,17 @@ public class Config {
         return this;
     }
 
-    private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        T t = map.get(name);
-        if (t == null) {
-            for (Map.Entry<String, T> entry : map.entrySet()) {
-                String pattern = entry.getKey();
-                T value = entry.getValue();
-                if (nameMatches(name, pattern)) {
-                    return value;
-                }
-            }
+    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
+        T candidate = configPatterns.get(itemName);
+        if (candidate != null) {
+            return candidate;
         }
-        return t;
-    }
-
-    public static boolean nameMatches(final String name, final String pattern) {
-        final int index = pattern.indexOf('*');
-        if (index == -1) {
-            return name.equals(pattern);
-        } else {
-            final String firstPart = pattern.substring(0, index);
-            final int indexFirstPart = name.indexOf(firstPart, 0);
-            if (indexFirstPart == -1) {
-                return false;
-            }
-            final String secondPart = pattern.substring(index + 1);
-            final int indexSecondPart = name.indexOf(secondPart, index + 1);
-            return indexSecondPart != -1;
+        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
+        if (configPatternKey != null) {
+            return configPatterns.get(configPatternKey);
         }
+        LOGGER.warning("No configuration found for " + itemName + ", using default config!");
+        return null;
     }
 
     // TODO: This mechanism isn't used anymore to determine if 2 HZ configurations are compatible.
