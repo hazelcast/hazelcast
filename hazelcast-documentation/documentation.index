@@ -11,6 +11,7 @@ src/GettingStarted.md
 		src/InstallingHZEnterprise.md
 	src/StartingClusterClient.md
 	src/ConfiguringHazelcast.md
+	src/DataPartitioning.md
 	src/UseCases.md
 	src/Resources.md
 src/HazelcastClusters.md

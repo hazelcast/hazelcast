@@ -7,7 +7,7 @@ By default, Hazelcast offers 271 partitions. When you start a node, these 271 pa
 
 ![](images/NodePartition.jpg)
 
-When you start a second node, i.e. there will be 2 node Hazelcast cluster, the partitions will be distributed as shown in the following illlustration. 
+When you start a second node, i.e. there will be a 2 node Hazelcast cluster, the partitions are distributed as shown in the following illustration. 
 
 ![](images/BackupPartitions.jpg)
 
@@ -31,18 +31,9 @@ The result of this modulo - *MOD(hash result, partition count)* -  gives the par
 
 ### Partition Table
 
-When you start a node, a partition table is created within it. Purpose of this table is to let all nodes in the cluster know partition ownerships. The oldest node in the cluster (the one which was started first) sends the partition table to all nodes periodically. You can configure the sending frequency using the `hazelcast.partition.table.send.interval` system property. It is set to 15 seconds by default. 
+When you start a node, a partition table is created within it. This table stores the information of which partitions belong to which nodes. Purpose of this table is to make all nodes in the cluster aware of this information. As a result, each node knows where the data is.
 
-This table stores the information of which partition belongs to which node.  and it is shared with all the nodes in the cluster 
+The oldest node in the cluster (the one which was started first) sends the partition table to all nodes periodically. By this way, each node in the cluster is informed about the partition ownership changes, if any. The ownerships may be changed when, for example, a new node joins to the cluster, or when a node leaves. 
 
+You can configure the partition table sending frequency using the `hazelcast.partition.table.send.interval` system property. It is set to 15 seconds by default. 
 
-
-......
-
-.......
-
-......
-
-
-The oldest node (the one which was started first) updates this table when a node joins to or leaves the cluster. 
-And this is how each node in the cluster knows where the data is.
