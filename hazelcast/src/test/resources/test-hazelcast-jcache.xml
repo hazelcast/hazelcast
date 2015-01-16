@@ -31,18 +31,18 @@
         <management-enabled>true</management-enabled>
         <read-through>true</read-through>
         <write-through>true</write-through>
-        <cache-loader-factory class-name="com.hazelcast.cache.MyCacheLoaderFactory"/>
-        <cache-writer-factory class-name="com.hazelcast.cache.MyCacheWriterFactory"/>
-        <expiry-policy-factory class-name="com.hazelcast.cache.MyExpirePolicyFactory"/>
+        <cache-loader-factory class-name="com.hazelcast.cache.CacheConfigTest$MyCacheLoaderFactory"/>
+        <cache-writer-factory class-name="com.hazelcast.cache.CacheConfigTest$MyCacheWriterFactory"/>
+        <expiry-policy-factory class-name="com.hazelcast.cache.CacheConfigTest$MyExpirePolicyFactory"/>
         <eviction size="50" max-size-policy="ENTRY_COUNT" eviction-policy="LRU"/>
         <cache-entry-listeners>
             <cache-entry-listener old-value-required="false" synchronous="false">
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.MyEntryListenerFactory"/>
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.MyEntryEventFilterFactory"/>
+                <cache-entry-listener-factory class-name="com.hazelcast.cache.CacheConfigTest$MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.CacheConfigTest$MyEntryEventFilterFactory"/>
             </cache-entry-listener>
            <cache-entry-listener old-value-required="true" synchronous="true">
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.MySyncEntryListenerFactory"/>
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.MySyncEntryEventFilterFactory"/>
+                <cache-entry-listener-factory class-name="com.hazelcast.cache.CacheConfigTest$MySyncEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.CacheConfigTest$MySyncEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
         <backup-count>3</backup-count>
