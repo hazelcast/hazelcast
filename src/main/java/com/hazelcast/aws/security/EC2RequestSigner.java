@@ -135,29 +135,31 @@ public class EC2RequestSigner {
         try {
             final String key = "AWS4" + signKey;
             final Mac mDate = Mac.getInstance("HmacSHA256");
-            final SecretKeySpec skDate = new SecretKeySpec(key.getBytes(), "HmacSHA256");
+            final SecretKeySpec skDate = new SecretKeySpec(key.getBytes("UTF-8"), "HmacSHA256");
             mDate.init(skDate);
-            final byte[] kDate = mDate.doFinal(dateStamp.getBytes());
+            final byte[] kDate = mDate.doFinal(dateStamp.getBytes("UTF-8"));
 
             final Mac mRegion = Mac.getInstance("HmacSHA256");
             final SecretKeySpec skRegion = new SecretKeySpec(kDate, "HmacSHA256");
             mRegion.init(skRegion);
-            final byte[] kRegion = mRegion.doFinal(config.getRegion().getBytes());
+            final byte[] kRegion = mRegion.doFinal(config.getRegion().getBytes("UTF-8"));
 
             final Mac mService = Mac.getInstance("HmacSHA256");
             final SecretKeySpec skService = new SecretKeySpec(kRegion, "HmacSHA256");
             mService.init(skService);
-            final byte[] kService = mService.doFinal(this.service.getBytes());
+            final byte[] kService = mService.doFinal(this.service.getBytes("UTF-8"));
 
             final Mac mSigning = Mac.getInstance("HmacSHA256");
             final SecretKeySpec skSigning = new SecretKeySpec(kService, "HmacSHA256");
             mSigning.init(skSigning);
-            final byte[] kSigning = mSigning.doFinal("aws4_request".getBytes());
+            final byte[] kSigning = mSigning.doFinal("aws4_request".getBytes("UTF-8"));
 
             return kSigning;
         } catch (NoSuchAlgorithmException e) {
             return null;
         } catch (InvalidKeyException e) {
+            return null;
+        } catch (UnsupportedEncodingException e) {
             return null;
         }
     }
@@ -168,10 +170,12 @@ public class EC2RequestSigner {
             final Mac signMac = Mac.getInstance("HmacSHA256");
             final SecretKeySpec signKS = new SecretKeySpec(signingKey, "HmacSHA256");
             signMac.init(signKS);
-            signature = signMac.doFinal(stringToSign.getBytes());
+            signature = signMac.doFinal(stringToSign.getBytes("UTF-8"));
         } catch (NoSuchAlgorithmException e) {
             return null;
         } catch (InvalidKeyException e) {
+            return null;
+        } catch (UnsupportedEncodingException e) {
             return null;
         }
 
@@ -180,7 +184,7 @@ public class EC2RequestSigner {
 
 
     protected String getCanonicalHeaders() {
-        return String.format("host:%s\n", config.getHostHeader());
+        return String.format("host:%s", config.getHostHeader()) + "\n";
     }
 
     public String getCanonicalizedQueryString(Map<String, String> attributes) {
