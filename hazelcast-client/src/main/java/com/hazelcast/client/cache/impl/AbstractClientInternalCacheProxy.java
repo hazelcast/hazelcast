@@ -35,7 +35,6 @@ import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.nearcache.NearCacheManagerProvider;
 import com.hazelcast.cache.impl.nearcache.NearCacheType;
-import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCache;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
@@ -85,7 +84,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
 
     protected final NearCacheManager nearCacheManager = NearCacheManagerProvider.getNearCacheManager();
-    protected final NearCache<Data, Object> nearCache; // Object => Data or <V>
+    // Object => Data or <V>
+    protected final NearCache<Data, Object> nearCache;
 
     private final boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
