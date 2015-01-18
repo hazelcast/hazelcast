@@ -15,13 +15,18 @@ public class NearCacheStatsImpl
             .newUpdater(NearCacheStatsImpl.class, "hits");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(NearCacheStatsImpl.class, "misses");
-    private long ownedEntryCount;
-    private long ownedEntryMemoryCost;
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> OWNED_ENTRY_COUNT_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(NearCacheStatsImpl.class, "ownedEntryCount");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> OWNED_ENTRY_MEMORY_COST_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(NearCacheStatsImpl.class, "ownedEntryMemoryCost");
+
     private long creationTime;
 
     // These fields are only accessed through the updaters
     private volatile long hits;
     private volatile long misses;
+    private volatile long ownedEntryCount;
+    private volatile long ownedEntryMemoryCost;
 
     public NearCacheStatsImpl() {
         this.creationTime = Clock.currentTimeMillis();
@@ -33,22 +38,16 @@ public class NearCacheStatsImpl
     }
 
     @Override
-    public long getOwnedEntryCount() {
-        return ownedEntryCount;
-    }
-
-    public void setOwnedEntryCount(long ownedEntryCount) {
-        this.ownedEntryCount = ownedEntryCount;
-    }
-
-    @Override
-    public long getOwnedEntryMemoryCost() {
-        return ownedEntryMemoryCost;
-    }
-
-    @Override
     public long getHits() {
         return hits;
+    }
+
+    public void setHits(long hits) {
+        HITS_UPDATER.set(this, hits);
+    }
+
+    public void incrementHits() {
+        HITS_UPDATER.incrementAndGet(this);
     }
 
     @Override
@@ -56,26 +55,51 @@ public class NearCacheStatsImpl
         return misses;
     }
 
-    public void setHits(long hits) {
-        HITS_UPDATER.set(this, hits);
-    }
-
-    @Override
-    public double getRatio() {
-        return (double) hits / misses;
-    }
-
-    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+    public void setMisses(long misses) {
+        MISSES_UPDATER.set(this, misses);
     }
 
     public void incrementMisses() {
         MISSES_UPDATER.incrementAndGet(this);
     }
 
-    public void incrementHits() {
-        HITS_UPDATER.incrementAndGet(this);
+    @Override
+    public long getOwnedEntryCount() {
+        return ownedEntryCount;
+    }
+
+    public void setOwnedEntryCount(long ownedEntryCount) {
+        OWNED_ENTRY_COUNT_UPDATER.set(this, ownedEntryCount);
+    }
+
+    public void incrementOwnedEntryCount() {
+        OWNED_ENTRY_COUNT_UPDATER.incrementAndGet(this);
+    }
+
+    public void decrementOwnedEntryCount() {
+        OWNED_ENTRY_COUNT_UPDATER.decrementAndGet(this);
+    }
+
+    @Override
+    public long getOwnedEntryMemoryCost() {
+        return ownedEntryMemoryCost;
+    }
+
+    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST_UPDATER.set(this, ownedEntryMemoryCost);
+    }
+
+    public void incrementOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST_UPDATER.addAndGet(this, ownedEntryMemoryCost);
+    }
+
+    public void decrementOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST_UPDATER.addAndGet(this, -ownedEntryMemoryCost);
+    }
+
+    @Override
+    public double getRatio() {
+        return (double) hits / misses;
     }
 
     @Override

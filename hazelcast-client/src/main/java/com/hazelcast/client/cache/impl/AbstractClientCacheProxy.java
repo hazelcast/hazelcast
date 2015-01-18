@@ -21,7 +21,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
-import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.config.CacheConfig;
@@ -73,7 +73,7 @@ abstract class AbstractClientCacheProxy<K, V>
         validateNotNull(key);
         final Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
         CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
@@ -219,7 +219,7 @@ abstract class AbstractClientCacheProxy<K, V>
             while (iterator.hasNext()) {
                 Data key = iterator.next();
                 Object cached = nearCache.get(key);
-                if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+                if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
                     result.put((K) toObject(key), (V) cached);
                     iterator.remove();
                 }

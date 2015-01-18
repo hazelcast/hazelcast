@@ -29,11 +29,17 @@ import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
+import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.cache.impl.nearcache.NearCacheContext;
+import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.cache.impl.nearcache.NearCacheManagerProvider;
+import com.hazelcast.cache.impl.nearcache.NearCacheType;
+import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCache;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.nearcache.ClientHeapNearCache;
-import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -78,7 +84,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
 
-    protected final ClientNearCache<Data, Object> nearCache;
+    protected final NearCacheManager nearCacheManager = NearCacheManagerProvider.getNearCacheManager();
+    protected final NearCache<Data, Object> nearCache; // Object => Data or <V>
 
     private final boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
@@ -95,12 +102,39 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
         if (nearCacheConfig != null) {
-            nearCache = new ClientHeapNearCache<Data>(nameWithPrefix, clientContext, nearCacheConfig);
+            NearCacheContext nearCacheContext =
+                    new NearCacheContext(clientContext.getSerializationService(),
+                                         new ClientNearCacheExecutor(clientContext.getExecutionService()));
+            nearCache = nearCacheManager.createNearCacheIfAbsent(nameWithPrefix, nearCacheConfig,
+                    nearCacheContext, NearCacheType.DEFAULT);
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
         } else {
             nearCache = null;
             cacheOnUpdate = false;
         }
+    }
+
+    protected class ClientNearCacheExecutor implements NearCacheExecutor {
+
+        protected ClientExecutionService clientExecutionService;
+
+        protected ClientNearCacheExecutor(ClientExecutionService clientExecutionService) {
+            this.clientExecutionService = clientExecutionService;
+        }
+
+        @Override
+        public void execute(Runnable runnable) {
+            clientExecutionService.execute(runnable);
+        }
+
+    }
+
+    @Override
+    public void destroy() {
+        if (nearCache != null) {
+            nearCacheManager.destroyNearCache(nearCache.getName());
+        }
+        super.destroy();
     }
 
     protected <T> ICompletableFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
@@ -299,19 +333,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected void storeInNearCache(Data key, Data valueData, V value) {
         if (nearCache != null) {
-            final Object valueToStore;
-            if (nearCache.getInMemoryFormat() == InMemoryFormat.OBJECT) {
-                valueToStore = value != null ? value : valueData;
-            } else {
-                valueToStore = valueData != null ? valueData : value;
-            }
+            final Object valueToStore = nearCache.selectToSave(value, valueData);
             nearCache.put(key, valueToStore);
         }
     }
 
     protected void invalidateNearCache(Data key) {
         if (nearCache != null) {
-            nearCache.remove(key);
+            nearCache.invalidate(key);
         }
     }
     //endregion internal base operations

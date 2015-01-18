@@ -26,7 +26,7 @@ import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
-import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
@@ -98,7 +98,7 @@ public class ClientCacheProxy<K, V>
         validateNotNull(key);
         final Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
         CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
