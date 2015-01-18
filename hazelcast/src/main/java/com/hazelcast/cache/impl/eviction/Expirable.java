@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.record;
+package com.hazelcast.cache.impl.eviction;
 
 /**
  * Expiring Data model interface.
@@ -22,6 +22,7 @@ package com.hazelcast.cache.impl.record;
  * to decide on "future" or "past".</p>
  */
 public interface Expirable {
+
     /**
      * Gets the expiration time in milliseconds.
      * @return expiration time.
@@ -43,4 +44,5 @@ public interface Expirable {
      * @return true if expired.
      */
     boolean isExpiredAt(long now);
+
 }
