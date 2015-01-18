@@ -82,7 +82,7 @@ public final class BasicOperationScheduler {
     private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
 
     private final ResponseThread responseThread;
-    private final BasicResponseHandler responseHandler;
+    private final BasicResponsePacketHandler responsePacketHandler;
 
     private volatile boolean shutdown;
 
@@ -102,12 +102,12 @@ public final class BasicOperationScheduler {
 
     public BasicOperationScheduler(Node node,
                                    ExecutionService executionService,
-                                   BasicOperationHandler operationHandler, BasicResponseHandler responseHandler) {
+                                   BasicOperationHandler operationHandler, BasicResponsePacketHandler responsePacketHandler) {
         this.executionService = executionService;
         this.logger = node.getLogger(BasicOperationScheduler.class);
         this.node = node;
         this.operationHandler = operationHandler;
-        this.responseHandler = responseHandler;
+        this.responsePacketHandler = responsePacketHandler;
 
         this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
         initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
@@ -607,9 +607,9 @@ public final class BasicOperationScheduler {
 
         private void doRun() {
             for (;;) {
-                Object task;
+                Packet responsePacket;
                 try {
-                    task = workQueue.take();
+                    responsePacket = workQueue.take();
                 } catch (InterruptedException e) {
                     if (shutdown) {
                         return;
@@ -621,25 +621,19 @@ public final class BasicOperationScheduler {
                     return;
                 }
 
-                process(task);
+                process(responsePacket);
             }
         }
 
         @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
-        private void process(Object task) {
+        private void process(Packet responsePacket) {
             processedResponses++;
             try {
-                Response response;
-                if (task instanceof Packet) {
-                    response = responseHandler.deserialize((Packet) task);
-                } else {
-                    response = (Response) task;
-                }
-
-                responseHandler.process(response);
+                Response response = responsePacketHandler.deserialize(responsePacket);
+                responsePacketHandler.process(response);
             } catch (Throwable e) {
                 inspectOutputMemoryError(e);
-                logger.severe("Failed to process response: " + task + " on response thread:" + getName());
+                logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName());
             }
         }
     }
