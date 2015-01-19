@@ -1,5 +1,6 @@
 package com.hazelcast.map.mapstore;
 
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.MapContainer;
 import com.hazelcast.map.MapServiceContext;
 import com.hazelcast.map.MapStoreWrapper;
@@ -39,10 +40,10 @@ public final class MapDataStores {
         final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final MapStoreWrapper store = mapContainer.getStore();
         final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
-        final int writeDelaySeconds = mapContainer.getMapConfig().getMapStoreConfig().getWriteDelaySeconds();
+        final MapStoreConfig mapStoreConfig = mapContainer.getMapConfig().getMapStoreConfig();
+        final int writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
-        // TODO writeCoalescing should be configurable.
-        boolean writeCoalescing = true;
+        final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
         final WriteBehindStore mapDataStore
                 = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, writeCoalescing);
         final WriteBehindQueue writeBehindQueue = pickWriteBehindQueue(mapServiceContext, writeCoalescing);

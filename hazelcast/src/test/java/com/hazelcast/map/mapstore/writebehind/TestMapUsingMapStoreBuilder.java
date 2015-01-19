@@ -29,9 +29,13 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     private int writeBatchSize = 1;
 
+    private boolean writeCoalescing = MapStoreConfig.DEFAULT_WRITE_COALESCING;
+
     private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
 
     private int backupDelaySeconds = 10;
+
+    private long writeBehindQueueCapacity;
 
     private TestMapUsingMapStoreBuilder() {
     }
@@ -95,6 +99,11 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         return this;
     }
 
+    public TestMapUsingMapStoreBuilder<K, V> withWriteCoalescing(boolean writeCoalescing) {
+        this.writeCoalescing = writeCoalescing;
+        return this;
+    }
+
     public TestMapUsingMapStoreBuilder<K, V> withInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = inMemoryFormat;
         return this;
@@ -103,6 +112,14 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     public TestMapUsingMapStoreBuilder<K, V> withWriteBatchSize(int writeBatchSize) {
         this.writeBatchSize = writeBatchSize;
+        return this;
+    }
+
+    public TestMapUsingMapStoreBuilder<K, V> withWriteBehindQueueCapacity(long writeBehindQueueCapacity) {
+        if (writeBehindQueueCapacity < 0) {
+            throw new IllegalArgumentException("writeBehindQueueCapacity < 0");
+        }
+        this.writeBehindQueueCapacity = writeBehindQueueCapacity;
         return this;
     }
 
@@ -115,12 +132,18 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         mapStoreConfig
                 .setImplementation(mapStore)
                 .setWriteDelaySeconds(writeDelaySeconds)
-                .setWriteBatchSize(writeBatchSize);
+                .setWriteBatchSize(writeBatchSize)
+                .setWriteCoalescing(writeCoalescing);
 
         final Config config = new Config();
         config.getMapConfig(mapName)
                 .setBackupCount(backupCount)
                 .setMapStoreConfig(mapStoreConfig).setInMemoryFormat(inMemoryFormat);
+
+        if (writeBehindQueueCapacity > 0) {
+            config.setProperty(GroupProperties.PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY,
+                    String.valueOf(writeBehindQueueCapacity));
+        }
 
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
         if (backupDelaySeconds > 0) {

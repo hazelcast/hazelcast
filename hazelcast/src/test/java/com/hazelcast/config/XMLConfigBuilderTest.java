@@ -72,7 +72,7 @@ public class XMLConfigBuilderTest {
     }
 
     @Test(expected = HazelcastException.class)
-    public void testJoinValidation(){
+    public void testJoinValidation() {
         String xml = "<hazelcast>\n" +
                 "    <network>\n" +
                 "        <join>\n" +
@@ -259,7 +259,7 @@ public class XMLConfigBuilderTest {
 
     @Test
     public void networkReuseAddress() {
-       Config config = buildConfig("<hazelcast>\n" +
+        Config config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <reuse-address>true</reuse-address>\n" +
                 "    </network>\n" +
@@ -509,6 +509,49 @@ public class XMLConfigBuilderTest {
         System.out.println("config = " + config);
         final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
         assertEquals(23, mapStoreConfig.getWriteBatchSize());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenDefault() {
+        boolean writeCoalescingEnabled = MapStoreConfig.DEFAULT_WRITE_COALESCING;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, true);
+
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenSetFalse() {
+        boolean writeCoalescingEnabled = false;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, false);
+
+        assertFalse(mapStoreConfig.isWriteCoalescing());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenSetTrue() {
+        boolean writeCoalescingEnabled = true;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, false);
+
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+    }
+
+    private MapStoreConfig getWriteCoalescingMapStoreConfig(boolean writeCoalescing, boolean useDefault) {
+        String xml = getWriteCoalescingConfigXml(writeCoalescing, useDefault);
+        final Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+
+    private String getWriteCoalescingConfigXml(boolean value, boolean useDefault) {
+        String writeCoalescingConfigPart = useDefault ? ""
+                : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>";
+        return "<hazelcast>\n" +
+                "<map name=\"mymap\">" +
+                "<map-store >" +
+                writeCoalescingConfigPart +
+                "</map-store>" +
+                "</map>" +
+                "</hazelcast>";
     }
 
     @Test
