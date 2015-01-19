@@ -28,17 +28,17 @@ public class GroupProperties {
     /**
      * This property can be used to verify that Hazelcast nodes only join when their 'application' level configuration is the
      * same.
-     *
+     * <p/>
      * So imagine that you have multiple machines, but you want to make sure that each machine that is going to join the cluster
      * has exactly the same 'application level' settings, so settings that are not part of the Hazelcast configuration, but
      * maybe some filepath. To prevent these machines, with potential different application level configuration, to form
      * a cluster, this property can be set.
-     *
+     * <p/>
      * You could use actual values, e.g. string paths, but you can also use e.g. an md5 hash. We'll give the give the guarantee
      * that only nodes are going to form a cluster where the token is an exact match. If this token is different, the member
      * can't be started and therefor you will get the guarantee that all members in the cluster, will have exactly the same
      * application validation token.
-     *
+     * <p/>
      * This validation-token will be checked before member join the cluster.
      */
     public static final String PROP_APPLICATION_VALIDATION_TOKEN = "hazelcast.application.validation.token";
@@ -50,7 +50,7 @@ public class GroupProperties {
      * The performance monitor is a tool useful to see all kinds of internal performance metrics. Currently it is quite
      * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
      * the future all kinds of new metrics will be added.
-     *
+     * <p/>
      * The performance monitor logs all metrics into the log file.
      */
     public static final String PROP_PERFORMANCE_MONITORING_ENABLED = "hazelcast.performance.monitoring.enabled";
@@ -158,15 +158,15 @@ public class GroupProperties {
      * Using back pressure one can prevent an overload of pending asynchronous backups. Imagine there is a map with a
      * single asynchronous backup, it could happen that producing asynchronous backups happens at a higher rate than
      * the consumption of the backup and this can eventually lead to an OOME (especially of the backups are slow).
-     *
+     * <p/>
      * With back-pressure enabled this can't happen.
-     *
+     * <p/>
      * It is implemented by making asynchronous backups operations synchronous. This prevent the internal queues to overflow
      * because the invoker will wait for the primary and the backups to complete. The frequency of this is determined by the
      * sync-window.
-     *
+     * <p/>
      * In Hazelcast 3.4.1 we'll provide back pressure for any async operation; not only for sync operations with async backups.
-     *
+     * <p/>
      * In the future we'll replace this approach by relying on TCP/IP congestion control; but for this to work we need to
      * create multiple connections between members because currently a member can't stop consuming from a connection
      * when that member is overloaded because it could also stop to read important packets like heartbeats and other system
@@ -328,6 +328,10 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    /**
+     * Per node max write-behind queue capacity. Total of all configured write-behind queue capacities in a node
+     * including backup and owner partitions.
+     */
     public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
     public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;

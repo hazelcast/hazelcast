@@ -19,7 +19,7 @@ package com.hazelcast.map.mapstore.writebehind;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
@@ -49,6 +49,30 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
                 .build();
 
         map.put(1, 2);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, mapStore.size());
+            }
+        });
+    }
+
+    @Test
+    public void testStoreOperationDone_afterTemporaryMapStoreFailure_whenNonWriteCoalescingModeOn() throws Exception {
+        final SelfHealingMapStore mapStore = new SelfHealingMapStore<Integer, Integer>();
+        final IMap map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withWriteCoalescing(false)
+                .withPartitionCount(1)
+                .build();
+
+        map.put(1, 2);
+        map.put(1, 3);
+        map.put(1, 4);
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -119,7 +119,10 @@ If `MapStore` throws an exception, then the exception will be propagated back to
 
 You can configure `MapStore` as write-behind by setting the `write-delay-seconds` property to a value bigger than **0**. This means the modified entries will be put to the data store asynchronously after a configured delay. 
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *In write-behind mode, Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it.* 
+![image](images/NoteSmall.jpg) ***NOTE:*** *In write-behind mode, by default Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it. But you can also set `MapStoreConfig#setWriteCoalescing` to `FALSE` and you can store all updates on a key to the store.*
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *When you set `MapStoreConfig#setWriteCoalescing` to `FALSE`, after you reached per-node max write-behind-queue capacity, subsequent put operations will fail with `ReachedMaxSizeException`. This exception will be thrown to prevent uncontrolled grow of write-behind queues. You can set per node max capacity with `GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY` *
+
 
 In this mode, when the `map.put(key,value)` call returns:
 
