@@ -47,9 +47,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         extends AbstractBaseReplicatedRecordStore<K, V> {
     static final String CLEAR_REPLICATION_MAGIC_KEY = ReplicatedMapService.SERVICE_NAME + "$CLEAR$MESSAGE$";
 
-//    entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
-//    order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
-//    keep the tombstone alive. if there is no event in this period then the tombstone is removed.
+    // entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
+    // order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
+    // keep the tombstone alive. if there is no event in this period then the tombstone is removed.
     static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
 
     public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
@@ -206,7 +206,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         ValidationUtil.isNotNull(key, "key");
         storage.checkState();
         mapStats.incrementOtherOperations();
-        return storage.containsKey(marshallKey(key));
+
+        return containsKeyInternal(key);
+    }
+
+    private boolean containsKeyInternal(Object key) {
+        ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
+        return replicatedRecord != null && replicatedRecord.getValue() != null;
     }
 
     @Override
@@ -228,7 +234,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         storage.checkState();
         Set keySet = new HashSet(storage.size());
         for (K key : storage.keySet()) {
-            keySet.add(unmarshallKey(key));
+            if (containsKeyInternal(key)) {
+                keySet.add(unmarshallKey(key));
+            }
         }
         mapStats.incrementOtherOperations();
         return keySet;
@@ -257,7 +265,11 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         storage.checkState();
         Set entrySet = new HashSet(storage.size());
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
-            Object key = unmarshallKey(entry.getKey());
+            K keyOfEntry = entry.getKey();
+            if (!containsKeyInternal(keyOfEntry)) {
+                continue;
+            }
+            Object key = unmarshallKey(keyOfEntry);
             Object value = unmarshallValue(entry.getValue().getValue());
             entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
