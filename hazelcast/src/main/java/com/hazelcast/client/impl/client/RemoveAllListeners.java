@@ -5,6 +5,7 @@ import java.security.Permission;
 /**
  * When a connection does not respond to heart-beat we switch the listeners to another endpoint
  * If somehow connection starts to respond heart-beat we need to signal the endpoint to remove the listeners
+ * An internal request should not be used for user calls.
  */
 public class RemoveAllListeners extends CallableClientRequest {
 

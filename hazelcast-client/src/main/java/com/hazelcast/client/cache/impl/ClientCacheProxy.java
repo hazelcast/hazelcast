@@ -26,16 +26,19 @@ import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -302,7 +305,7 @@ public class ClientCacheProxy<K, V>
                 clientContext.getSerializationService());
         final EventHandler<Object> handler = createHandler(adaptor);
         final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().listen(registrationRequest, null, handler);
+        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
@@ -333,14 +336,16 @@ public class ClientCacheProxy<K, V>
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
-        final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
+                final Address address = member.getAddress();
                 final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
-                        cacheEntryListenerConfiguration, isRegister, member.getAddress());
-                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                        cacheEntryListenerConfiguration, isRegister, address);
+                final ClientInvocation invocation = new ClientInvocation(client, request, address);
+                final Future<SerializableCollection> future = invocation.invoke();
                 futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);

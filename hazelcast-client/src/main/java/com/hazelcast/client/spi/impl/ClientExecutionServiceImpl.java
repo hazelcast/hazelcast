@@ -77,7 +77,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public <T> ICompletableFuture<T> submitInternal(final Callable<T> command) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(command, internalExecutor);
+        CompletableFutureTask futureTask = new CompletableFutureTask<T>(command, internalExecutor);
         internalExecutor.submit(futureTask);
         return futureTask;
     }

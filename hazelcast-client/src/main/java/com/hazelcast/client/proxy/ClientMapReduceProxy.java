@@ -18,9 +18,9 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
@@ -92,12 +92,11 @@ public class ClientMapReduceProxy
     }*/
 
     private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
-        ClientContext context = getContext();
-        ClientInvocationService cis = context.getInvocationService();
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
-            ICompletableFuture<T> future = cis.invokeOnTarget(request, runningMember);
+            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
+            final ICompletableFuture<T> future = clientInvocation.invoke();
             return future.get();
         }
         return null;
@@ -115,13 +114,15 @@ public class ClientMapReduceProxy
                 final String jobId = UuidUtil.buildRandomUuidString();
 
                 ClientContext context = getContext();
-                ClientInvocationService cis = context.getInvocationService();
                 ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
                         predicate, mapper, combinerFactory, reducerFactory, keyValueSource,
                         chunkSize, topologyChangedStrategy);
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
-                ClientCallFuture future = (ClientCallFuture) cis.invokeOnRandomTarget(request, null);
+
+                final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request);
+                final ClientInvocationFuture future = clientInvocation.invoke();
+
                 future.andThen(new ExecutionCallback() {
                     @Override
                     public void onResponse(Object res) {
@@ -151,7 +152,7 @@ public class ClientMapReduceProxy
                     }
                 });
 
-                Address runningMember = future.getConnection().getRemoteEndpoint();
+                Address runningMember = clientInvocation.getConnection().getRemoteEndpoint();
                 trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, runningMember, completableFuture));
                 return completableFuture;
             } catch (Exception e) {

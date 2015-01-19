@@ -26,25 +26,25 @@ import com.hazelcast.client.txn.proxy.ClientTxnSetProxy;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalList;
-import com.hazelcast.core.TransactionalSet;
+import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 
-import java.util.concurrent.TimeUnit;
 import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class TransactionContextProxy implements TransactionContext {
 
@@ -60,7 +60,7 @@ public class TransactionContextProxy implements TransactionContext {
         this.transactionManager = transactionManager;
         this.client = transactionManager.getClient();
         try {
-            this.connection = client.getConnectionManager().tryToConnect(null);
+            connection = transactionManager.connect();
         } catch (Exception e) {
             throw new HazelcastException("Could not obtain Connection!!!", e);
         }

@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 
 import java.io.IOException;
@@ -46,58 +47,27 @@ public interface ClientConnectionManager {
      */
     void start();
 
-    ClientConnection connectToAddress(Address target) throws Exception;
+    /**
+     * @param address to be connected
+     * @return connection if available, null otherwise
+     */
+    Connection getConnection(Address address);
 
     /**
-     * Tries to connect to an address in member list.
-     * Gets an address a hint first tries that if not successful, tries connections from LoadBalancer
+     * @param address       to be connected
+     * @param authenticator Authenticator implementation to send appropriate Authentication Request after connection
+     * @return associated connection if available, creates new connection otherwise
+     * @throws IOException if connection is not established
+     */
+    Connection getOrConnect(Address address, Authenticator authenticator) throws IOException;
+
+    /**
+     * Destroys the connection
+     * Clears related resources of given connection.
      *
-     * @param address hintAddress
-     * @return authenticated connection
-     * @throws Exception authentication failed or no connection found
+     * @param connection to be closed
      */
-    ClientConnection tryToConnect(Address address) throws Exception;
-
-    /**
-     * Creates a new owner connection to given address
-     *
-     * @param address to be connection to established
-     * @return ownerConnection
-     * @throws java.io.IOException
-     */
-    ClientConnection ownerConnection(Address address) throws IOException;
-
-    /**
-     * Called when an owner connection is closed
-     */
-    void onCloseOwnerConnection();
-
-    /**
-     * @return unique uuid of local client if available, null otherwise
-     */
-    String getUuid();
-
-    /**
-     * Called when an connection is closed.
-     * Clears related resources of given clientConnection.
-     *
-     * @param clientConnection closed connection
-     */
-    void onConnectionClose(ClientConnection clientConnection);
-
-    /**
-     * Called when a member left the cluster
-     * @param address address of the member
-     */
-    void removeEndpoint(Address address);
-
-    /**
-     * Removes event handler corresponding to callId from responsible ClientConnection
-     *
-     * @param callId of event handler registration request
-     * @return true if found and removed, false otherwise
-     */
-    boolean removeEventHandler(Integer callId);
+    void destroyConnection(Connection connection);
 
     /**
      * Handles incoming network package
@@ -106,28 +76,8 @@ public interface ClientConnectionManager {
      */
     void handlePacket(Packet packet);
 
-    /**
-     * Next unique call id for request
-     *
-     * @return new unique callId
-     */
-    int newCallId();
+    void addConnectionListener(ConnectionListener connectionListener);
 
-    /**
-     * Sends request and waits for response
-     *
-     * @param request    to be send
-     * @param connection to send the request over
-     * @return response of request
-     * @throws Exception if a network connection occurs or response is an exception
-     */
-    Object sendAndReceive(ClientRequest request, ClientConnection connection) throws Exception;
-
-    /**
-     * Called heartbeat timeout is detected on a connection.
-     *
-     * @param connection to be marked.
-     */
-    void onDetectingUnresponsiveConnection(ClientConnection connection);
+    void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
 }

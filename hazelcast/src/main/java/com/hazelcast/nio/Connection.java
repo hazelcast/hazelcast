@@ -62,7 +62,7 @@ public interface Connection {
     /**
      * Closes this connection.
      * <p/>
-     * todo: what happens with all pending SocketWritables? Are they flushed, discarded or undefined behavior?
+     * Pending packets on this connection are discarded
      * <p/>
      * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
      */

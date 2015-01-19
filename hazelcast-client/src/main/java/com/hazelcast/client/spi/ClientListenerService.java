@@ -8,7 +8,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
  */
 public interface ClientListenerService {
 
-    String listen(ClientRequest request, Object key, EventHandler handler);
+    String startListening(ClientRequest request, Object key, EventHandler handler);
 
     boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId);
 
