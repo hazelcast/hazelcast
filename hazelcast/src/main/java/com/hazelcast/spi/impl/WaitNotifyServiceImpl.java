@@ -88,7 +88,9 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         nodeEngine.getOperationService().executeOperation(waitingOp);
     }
 
-    // runs after queue lock
+    // Runs in operation thread, we can assume that
+    // here we have an implicit lock for specific WaitNotifyKey.
+    // see javadoc
     @Override
     public void await(WaitSupport waitSupport) {
         final WaitNotifyKey key = waitSupport.getWaitKey();
@@ -102,7 +104,9 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         }
     }
 
-    // runs after queue lock
+    // Runs in operation thread, we can assume that
+    // here we have an implicit lock for specific WaitNotifyKey.
+    // see javadoc
     @Override
     public void notify(Notifier notifier) {
         WaitNotifyKey key = notifier.getNotifiedKey();
@@ -128,10 +132,24 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 }
                 waitingOp.setValid(false);
             }
-            q.poll();
             // consume
+            q.poll();
+
             waitingOp = q.peek();
+
+            // If q.peek() returns null, we should deregister this specific
+            // key to avoid memory leak. By contract we know that await() and notify()
+            // cannot be called in parallel.
+            // We can safely remove this queue from registration map here.
+            if (waitingOp == null) {
+                mapWaitingOps.remove(key);
+            }
         }
+    }
+
+    // for testing purposes only
+    int getAwaitQueueCount() {
+        return mapWaitingOps.size();
     }
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
