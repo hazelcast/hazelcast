@@ -33,7 +33,19 @@ The result of this modulo - *MOD(hash result, partition count)* -  gives the par
 
 When you start a node, a partition table is created within it. This table stores the information of which partitions belong to which nodes. Purpose of this table is to make all nodes in the cluster aware of this information. As a result, each node knows where the data is.
 
-The oldest node in the cluster (the one which was started first) sends the partition table to all nodes periodically. By this way, each node in the cluster is informed about the partition ownership changes, if any. The ownerships may be changed when, for example, a new node joins to the cluster, or when a node leaves. 
+The oldest node in the cluster (the one which was started first) sends the partition table to all nodes periodically. By this way, each node in the cluster is informed about the partition ownership changes, if any. The ownerships may be changed when, for example, a new node joins to the cluster, or when a node leaves.
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *If the oldest node goes down, the next oldest node starts to send the partition table information to the other nodes.*
 
 You can configure the partition table sending frequency using the `hazelcast.partition.table.send.interval` system property. It is set to 15 seconds by default. 
+
+### Repartitioning
+
+Repartitioning is the process of redistribution of partition ownerships. Hazelcast performs the repartitioning in the following cases:
+
+- When a node joins to the cluster.
+- When a node leaves the cluster.
+
+In these cases, the partition table in the oldest node is updated with the new partition ownerships. 
+
 
