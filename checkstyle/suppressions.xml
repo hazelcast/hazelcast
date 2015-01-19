@@ -202,6 +202,8 @@
     <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
 
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
+
 
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
