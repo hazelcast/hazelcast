@@ -630,7 +630,9 @@ public class ClientConfig {
         if (configPatternKey != null) {
             return configPatterns.get(configPatternKey);
         }
-        LOGGER.warning("No configuration found for " + itemName + ", using default config!");
+        if (!"default".equals(itemName)) {
+            LOGGER.warning("No configuration found for " + itemName + ", using default config!");
+        }
         return null;
     }
 }
