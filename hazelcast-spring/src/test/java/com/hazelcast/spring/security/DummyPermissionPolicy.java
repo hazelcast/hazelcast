@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring.security;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.security.IPermissionPolicy;
 
@@ -26,7 +27,7 @@ import java.util.Properties;
 
 public class DummyPermissionPolicy implements IPermissionPolicy {
 
-    public void configure(SecurityConfig securityConfig, Properties properties) {
+    public void configure(Config config, Properties properties) {
     }
 
     public PermissionCollection getPermissions(Subject subject,
