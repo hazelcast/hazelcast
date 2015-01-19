@@ -98,8 +98,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
 
-    private ClientInvocationService invocationService;
-
     private volatile boolean alive;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
@@ -162,7 +160,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         outSelector.start();
         HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
-        invocationService = client.getInvocationService();
     }
 
     @Override
@@ -277,6 +274,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
             listenerService.handleEventPacket(packet);
         } else {
+            ClientInvocationService invocationService = client.getInvocationService();
             invocationService.handlePacket(packet);
         }
     }
