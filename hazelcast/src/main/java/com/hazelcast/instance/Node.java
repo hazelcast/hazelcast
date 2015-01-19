@@ -32,6 +32,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleListener;
@@ -250,6 +251,11 @@ public class Node {
             }
             if (listener instanceof LifecycleListener) {
                 hazelcastInstance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
+                known = true;
+            }
+            if (listener instanceof ClientListener) {
+                String serviceName = ClientEngineImpl.SERVICE_NAME;
+                nodeEngine.getEventService().registerLocalListener(serviceName, serviceName, listener);
                 known = true;
             }
             if (listener != null && !known) {
