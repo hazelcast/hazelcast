@@ -40,9 +40,9 @@ explained below.
 - `like`: checks if the result of an expression matches some string pattern. % (percentage sign) is placeholder for many
 characters,  (underscore) is placeholder for only one character.
 - `greaterThan`: checks if the result of an expression is greater than a certain value.
-- `greaterEqual`: checks if the result of an expression is greater or equal than a certain value.
+- `greaterEqual`: checks if the result of an expression is greater than or equal to a certain value.
 - `lessThan`: checks if the result of an expression is less than a certain value.
-- `lessEqual`: checks if the result of an expression is than than or equal to a certain value.
+- `lessEqual`: checks if the result of an expression is less than or equal to a certain value.
 - `between`: checks if the result of an expression is between 2 values (this is inclusive).
 - `in`: checks if the result of an expression is an element of a certain collection.
 - `isNot`: checks if the result of an expression is false.
