@@ -4,13 +4,13 @@
 ### Map Listener
 
 You can listen to map-wide or entry-based events by implementing a `MapListener` sub-interface. 
-A map-wide event is fired as a result of a map-wide operation e.g. `IMap#clear` or `IMap#evictAll`.
-An entry-based event is fired after the operations that affects a specific entry e.g.`IMap#remove` or `IMap#evict`.
+A map-wide event is fired as a result of a map-wide operation, e.g. `IMap#clear` or `IMap#evictAll`.
+An entry-based event is fired after the operations that affect a specific entry, e.g.`IMap#remove` or `IMap#evict`.
 
 
-Let's take a look at the below sample code. As you will see, to catch an event you should explicitly implement a corresponding sub-interface of a `MapListener` e.g. `EntryAddedListener` or `MapClearedListener`.
+Let's take a look at the following code sample. As you see, to catch an event you should explicitly implement a corresponding sub-interface of a `MapListener`, e.g. `EntryAddedListener` or `MapClearedListener`.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** * `EntryListener` interface still can be implemented, we kept it as is due to the backward compatibility reasons but if you need to listen a different event which is not available in the `EntryListener` interface you should also implement a relevant `MapListener` sub-interface. 
+![image](images/NoteSmall.jpg) ***NOTE:*** *`EntryListener` interface still can be implemented, we kept it as is due to the backward compatibility reasons. However, if you need to listen a different event which is not available in the `EntryListener` interface, you should also implement a relevant `MapListener` sub-interface.*
 
 ```java
 public class Listen {
@@ -57,7 +57,7 @@ public class Listen {
 }
 ```
 
-And, now let's perform some modifications on the map entries using the following example code.
+Now, let's perform some modifications on the map entries using the following example code.
 
 ```java
 public class Modify {
@@ -74,7 +74,7 @@ public class Modify {
 }
 ```
 
-If you execute the class `Listen` and then execute `Modify`, you get the following output produced by the `Listen` class. 
+If you execute the `Listen` class and then the `Modify` class, you get the following output produced by the `Listen` class. 
 
 ```
 entryAdded:EntryEvent {Address[192.168.1.100]:5702} key=251359212222282,
@@ -99,5 +99,5 @@ public class MyEntryListener implements EntryListener{
     }
 ...
 ```
-A map listener runs on event threads which are also used by other listeners (e.g. collection listeners, pub/sub message listeners, etc.). This means entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause other map/event listeners to starve.
+A map listener runs on the event threads which are also used by the other listeners, e.g. the collection listeners and pub/sub message listeners. This means, the entry listeners can access to other partitions. Consider this when you run long tasks since listening to those tasks may cause the other map/event listeners to starve.
 

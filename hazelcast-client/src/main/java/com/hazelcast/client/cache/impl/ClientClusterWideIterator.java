@@ -19,13 +19,16 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.AbstractClusterWideIterator;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.client.CacheIterateRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.Cache;
 import java.util.Iterator;
+import java.util.concurrent.Future;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
@@ -33,6 +36,7 @@ import java.util.Iterator;
  * This implementation is used by client implementation of jcache.
  * </p>
  * Note: For more information on the iterator details, see {@link AbstractClusterWideIterator}.
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  */
@@ -53,8 +57,10 @@ public class ClientClusterWideIterator<K, V>
     protected CacheKeyIteratorResult fetch() {
         CacheIterateRequest request = new CacheIterateRequest(cacheProxy.getNameWithPrefix(), partitionIndex, lastTableIndex,
                 fetchSize, cacheProxy.cacheConfig.getInMemoryFormat());
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         try {
-            final ICompletableFuture<Object> f = context.getInvocationService().invokeOnRandomTarget(request);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request);
+            final Future<SerializableCollection> f = clientInvocation.invoke();
             return toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

@@ -24,13 +24,16 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -47,7 +50,7 @@ import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 /**
  * CacheManager implementation for client side
- *
+ * <p/>
  * Provides client side cacheManager functionality
  */
 public final class HazelcastClientCacheManager extends AbstractHazelcastCacheManager {
@@ -77,14 +80,16 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
         checkIfManagerNotClosed();
         checkNotNull(cacheName, "cacheName cannot be null");
-        final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         final Collection<Future> futures = new ArrayList<Future>();
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         for (MemberImpl member : members) {
             try {
+                final Address address = member.getAddress();
                 CacheManagementConfigRequest request = new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName),
-                        statOrMan, enabled, member.getAddress());
-                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                        statOrMan, enabled, address);
+                final ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
+                final Future<SerializableCollection> future = clientInvocation.invoke();
                 futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);
@@ -112,10 +117,12 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
             CacheCreateConfigRequest request = new CacheCreateConfigRequest(cacheConfig, true, partitionId);
-            final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheConfig.getNameWithPrefix());
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             return (CacheConfig<K, V>) clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -130,8 +137,11 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName) {
         ClientRequest request = new CacheGetConfigRequest(cacheName, simpleCacheName, InMemoryFormat.BINARY);
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         try {
-            final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
+            int partitionId = clientContext.getPartitionService().getPartitionId(cacheName);
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             return clientContext.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

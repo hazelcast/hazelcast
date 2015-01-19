@@ -28,22 +28,66 @@ import java.util.Collection;
  */
 public interface ClientClusterService {
 
+    /**
+     * @return Client interface representing local client
+     */
     Client getLocalClient();
 
+    /**
+     * Gets the member for the given address.
+     *
+     * @param address the address of the member to lookup.
+     * @return the found member, or null if not found. If address is null, null is returned.
+     */
     MemberImpl getMember(Address address);
 
+    /**
+     * Gets the member with the given uuid.
+     *
+     * @param uuid the uuid of the member
+     * @return the found member, or null if not found. If uuid is null, null is returned.
+     */
     MemberImpl getMember(String uuid);
 
+    /**
+     * Gets the collection of members.
+     *
+     * @return the collection of member. Null will never be returned.
+     */
     Collection<MemberImpl> getMemberList();
 
+    /**
+     * Returns the address of the master member.
+     *
+     * @return the address of the master member. Could be null if the master is not yet known.
+     */
     Address getMasterAddress();
 
+    /**
+     * Gets the current number of members.
+     *
+     * @return the current number of members.
+     */
     int getSize();
 
+    /**
+     * Returns the cluster-time.
+     * <p/>
+     *
+     * @return the cluster-time.
+     */
     long getClusterTime();
 
+    /**
+     * @param listener to be registered
+     * @return registration id
+     */
     String addMembershipListener(MembershipListener listener);
 
+    /**
+     * @param registrationId of listener
+     * @return true if successfully removed, false otherwise
+     */
     boolean removeMembershipListener(String registrationId);
 
 }
