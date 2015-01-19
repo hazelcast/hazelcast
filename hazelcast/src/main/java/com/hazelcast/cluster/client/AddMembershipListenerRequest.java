@@ -26,12 +26,8 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collection;
 
 public final class AddMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
 
@@ -45,13 +41,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
         String name = ClusterServiceImpl.SERVICE_NAME;
         endpoint.setListenerRegistration(name, name, registrationId);
-
-        Collection<MemberImpl> memberList = service.getMemberList();
-        Collection<Data> response = new ArrayList<Data>(memberList.size());
-        for (MemberImpl member : memberList) {
-            response.add(serializationService.toData(member));
-        }
-        return new SerializableCollection(response);
+        return registrationId;
     }
 
     @Override

@@ -54,7 +54,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
         if (sk != null) {
             sk.cancel();
         }
-        connection.close(e);
+        connectionManager.destroyConnection(connection);
         StringBuilder sb = new StringBuilder();
         sb.append(Thread.currentThread().getName());
         sb.append(" Closing socket to endpoint ");

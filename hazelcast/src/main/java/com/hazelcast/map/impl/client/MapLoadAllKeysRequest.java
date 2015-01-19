@@ -33,7 +33,6 @@ public class MapLoadAllKeysRequest extends InvocationClientRequest {
 
     @Override
     public void invoke() {
-        setSingleConnection();
         final MapService mapService = getService();
         final DistributedObject distributedObject
                 = mapService.getMapServiceContext().getNodeEngine().getProxyService()

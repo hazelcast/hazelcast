@@ -22,7 +22,7 @@ import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
@@ -259,7 +259,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final MapGetRequest request = new MapGetRequest(name, keyData, ThreadUtil.getThreadId());
         request.setAsAsync();
         try {
-            final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             final DelegatingFuture<V> delegatingFuture = new DelegatingFuture<V>(future, getContext().getSerializationService());
             delegatingFuture.andThen(new ExecutionCallback<V>() {
                 @Override
@@ -280,6 +280,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
     }
 
+    private ICompletableFuture invokeOnKeyOwner(ClientRequest request, Data keyData) {
+        int partitionId = getContext().getPartitionService().getPartitionId(keyData);
+        final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+        return clientInvocation.invoke();
+    }
+
     @Override
     public Future<V> putAsync(final K key, final V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
@@ -297,7 +303,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         request.setAsAsync();
         try {
-            final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture<V>(future, getContext().getSerializationService());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -312,7 +318,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
         request.setAsAsync();
         try {
-            final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture<V>(future, getContext().getSerializationService());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -873,8 +879,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         request.setAsSubmitToKey();
         try {
-            final ClientCallFuture future = (ClientCallFuture) getContext().getInvocationService().
-                    invokeOnKeyOwner(request, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             future.andThen(callback);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -887,7 +892,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
         request.setAsSubmitToKey();
         try {
-            final ICompletableFuture future = getContext().getInvocationService().invokeOnKeyOwner(request, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture(future, getContext().getSerializationService());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -1182,7 +1187,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }
             };
 
-            String registrationId = getContext().getListenerService().listen(request, null, handler);
+            String registrationId = getContext().getListenerService().startListening(request, null, handler);
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(

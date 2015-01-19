@@ -18,6 +18,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -92,6 +93,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "10");
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final IMap<String, String> m = client.getMap("m");
 

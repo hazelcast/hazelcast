@@ -229,11 +229,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     void sendClientEvent(ClientEndpoint endpoint) {
-        if (!endpoint.isFirstConnection()) {
-            final EventService eventService = nodeEngine.getEventService();
-            final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-            eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
-        }
+        final EventService eventService = nodeEngine.getEventService();
+        final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
     }
 
     @Override
@@ -274,9 +272,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            if (!endpoint.isFirstConnection()) {
-                clients.add((Client) endpoint);
-            }
+            clients.add((Client) endpoint);
         }
         return clients;
     }
