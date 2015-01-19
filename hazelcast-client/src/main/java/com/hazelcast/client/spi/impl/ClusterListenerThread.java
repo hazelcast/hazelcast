@@ -83,7 +83,7 @@ class ClusterListenerThread extends Thread {
             try {
                 if (conn == null) {
                     try {
-                        conn = connectToOne();
+                        connectToOne();
                     } catch (Exception e) {
                         if (client.getLifecycleService().isRunning()) {
                             LOGGER.severe("Error while connecting to cluster!", e);
@@ -121,7 +121,7 @@ class ClusterListenerThread extends Thread {
         }
     }
 
-    private Collection<InetSocketAddress> getSocketAddresses() throws Exception {
+    private Collection<InetSocketAddress> getSocketAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
         if (!members.isEmpty()) {
             for (MemberImpl member : members) {
@@ -241,7 +241,7 @@ class ClusterListenerThread extends Thread {
         }
     }
 
-    private ClientConnection connectToOne() throws Exception {
+    private void connectToOne() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
@@ -251,26 +251,18 @@ class ClusterListenerThread extends Thread {
         int attempt = 0;
         Throwable lastError = null;
         Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
-        while (true) {
+        while (attempt < connectionAttemptLimit) {
+            attempt++;
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
-            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
-            for (InetSocketAddress isa : socketAddresses) {
-                try {
-                    triedAddresses.add(isa);
-                    Address address = new Address(isa);
-                    LOGGER.finest("Trying to connect to " + address);
-                    final ClientConnection connection = connectionManager.ownerConnection(address);
-                    clusterService.fireConnectionEvent(false);
-                    return connection;
-                } catch (Exception e) {
-                    lastError = e;
-                    Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
-                    LOGGER.log(level, "Exception during initial connection to " + isa, e);
-                }
+
+            final Throwable throwable = connect(triedAddresses);
+
+            if (throwable == null) {
+                return;
             }
-            if (attempt++ >= connectionAttemptLimit) {
-                break;
-            }
+
+            lastError = throwable;
+
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
@@ -285,8 +277,31 @@ class ClusterListenerThread extends Thread {
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config! The following addresses were tried:"
-                + triedAddresses, lastError);
+        throw new IllegalStateException("Unable to connect to any address in the config! "
+                + "The following addresses were tried:" + triedAddresses, lastError);
+    }
+
+    private Throwable connect(Set<InetSocketAddress> triedAddresses) {
+        final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+        Throwable lastError = null;
+        for (InetSocketAddress inetSocketAddress : socketAddresses) {
+            try {
+                triedAddresses.add(inetSocketAddress);
+                Address address = new Address(inetSocketAddress);
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Trying to connect to " + address);
+                }
+                final ClientConnection connection = connectionManager.ownerConnection(address);
+                clusterService.fireConnectionEvent(false);
+                conn = connection;
+                return null;
+            } catch (Exception e) {
+                lastError = e;
+                Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
+                LOGGER.log(level, "Exception during initial connection to " + inetSocketAddress, e);
+            }
+        }
+        return lastError;
     }
 }
 
