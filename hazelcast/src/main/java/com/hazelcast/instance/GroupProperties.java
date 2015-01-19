@@ -28,17 +28,17 @@ public class GroupProperties {
     /**
      * This property can be used to verify that Hazelcast nodes only join when their 'application' level configuration is the
      * same.
-     *
+     * <p/>
      * So imagine that you have multiple machines, but you want to make sure that each machine that is going to join the cluster
      * has exactly the same 'application level' settings, so settings that are not part of the Hazelcast configuration, but
      * maybe some filepath. To prevent these machines, with potential different application level configuration, to form
      * a cluster, this property can be set.
-     *
+     * <p/>
      * You could use actual values, e.g. string paths, but you can also use e.g. an md5 hash. We'll give the give the guarantee
      * that only nodes are going to form a cluster where the token is an exact match. If this token is different, the member
      * can't be started and therefor you will get the guarantee that all members in the cluster, will have exactly the same
      * application validation token.
-     *
+     * <p/>
      * This validation-token will be checked before member join the cluster.
      */
     public static final String PROP_APPLICATION_VALIDATION_TOKEN = "hazelcast.application.validation.token";
@@ -263,6 +263,9 @@ public class GroupProperties {
 
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
+    /**
+     * Per node max write-behind queue capacity. Total of all configured write-behind queue capacities.
+     */
     public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
     public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;

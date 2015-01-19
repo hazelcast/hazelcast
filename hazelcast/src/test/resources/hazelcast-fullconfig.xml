@@ -256,6 +256,7 @@
             <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
             <write-delay-seconds>0</write-delay-seconds>
             <write-batch-size>1</write-batch-size>
+            <write-coalescing>true</write-coalescing>
             <properties>
                 <property name="dummy.property">value</property>
             </properties>
@@ -343,7 +344,8 @@
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType" class-name="com.hazelcast.examples.SerializerFactory"/>
+            <serializer type-class="com.hazelcast.examples.DummyType"
+                        class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>

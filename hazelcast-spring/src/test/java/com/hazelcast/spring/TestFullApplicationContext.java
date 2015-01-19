@@ -73,7 +73,6 @@ import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -84,7 +83,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -95,7 +93,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
@@ -218,7 +221,8 @@ public class TestFullApplicationContext {
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
-        assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
+        assertTrue(testMapStoreConfig.isWriteCoalescing());
+        assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
@@ -526,7 +530,7 @@ public class TestFullApplicationContext {
         assertEquals("myserver:80", managementCenterConfig.getUrl());
         assertEquals(4, managementCenterConfig.getUpdateInterval());
     }
-    
+
     @Test
     public void testMemberAttributesConfig() {
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();

@@ -58,6 +58,30 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
     }
 
 
+    @Test
+    public void testStoreOperationDone_afterTemporaryMapStoreFailure_whenNonWriteCoalescingModeOn() throws Exception {
+        final SelfHealingMapStore mapStore = new SelfHealingMapStore<Integer, Integer>();
+        final IMap map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withWriteDelaySeconds(1)
+                .withWriteCoalescing(false)
+                .withPartitionCount(1)
+                .build();
+
+        map.put(1, 2);
+        map.put(1, 3);
+        map.put(1, 4);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, mapStore.size());
+            }
+        });
+    }
+
+
     static class SelfHealingMapStore<K, V> extends MapStoreAdapter<K, V> {
 
         private final ConcurrentMap<K, V> store = new ConcurrentHashMap<K, V>();

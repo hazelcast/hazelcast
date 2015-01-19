@@ -47,6 +47,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -960,6 +961,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("write-batch-size".equals(nodeName)) {
                 mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim(),
                         MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE));
+            } else if ("write-coalescing".equals(nodeName)) {
+                final String writeCoalescing = getTextContent(n).trim();
+                if (isNullOrEmpty(writeCoalescing)) {
+                    mapStoreConfig.setWriteCoalescing(MapStoreConfig.DEFAULT_WRITE_COALESCING);
+                } else {
+                    mapStoreConfig.setWriteCoalescing(checkTrue(writeCoalescing));
+                }
+
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
