@@ -22,7 +22,19 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -31,27 +43,12 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
 
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import org.xml.sax.SAXException;
 
 //it needs to run serial because some tests are relying on System properties they are setting themselves.
 @RunWith(HazelcastSerialClassRunner.class)
@@ -73,7 +70,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastException.class)
-    public void testJoinValidation(){
+    public void testJoinValidation() {
         String xml = "<hazelcast>\n" +
                 "    <network>\n" +
                 "        <join>\n" +
@@ -233,7 +230,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void networkReuseAddress() {
-       Config config = buildConfig("<hazelcast>\n" +
+        Config config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <reuse-address>true</reuse-address>\n" +
                 "    </network>\n" +
@@ -428,20 +425,20 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testMapConfig_optimizeQueries() {
         String xml1 =
                 "<hazelcast>" +
-                    "<map name=\"mymap1\">" +
+                        "<map name=\"mymap1\">" +
                         "<optimize-queries>true</optimize-queries>" +
-                    "</map>" +
-                "</hazelcast>";
+                        "</map>" +
+                        "</hazelcast>";
         final Config config1 = buildConfig(xml1);
         final MapConfig mapConfig1 = config1.getMapConfig("mymap1");
         assertTrue(mapConfig1.isOptimizeQueries());
 
         String xml2 =
                 "<hazelcast>" +
-                    "<map name=\"mymap2\">" +
+                        "<map name=\"mymap2\">" +
                         "<optimize-queries>false</optimize-queries>" +
-                    "</map>" +
-                "</hazelcast>";
+                        "</map>" +
+                        "</hazelcast>";
         final Config config2 = buildConfig(xml2);
         final MapConfig mapConfig2 = config2.getMapConfig("mymap2");
         assertFalse(mapConfig2.isOptimizeQueries());
@@ -451,9 +448,9 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testMapConfig_optimizeQueries_defaultValue() {
         String xml =
                 "<hazelcast>" +
-                    "<map name=\"mymap\">" +
-                    "</map>" +
-                "</hazelcast>";
+                        "<map name=\"mymap\">" +
+                        "</map>" +
+                        "</hazelcast>";
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("mymap");
         assertFalse(mapConfig.isOptimizeQueries());
@@ -488,6 +485,49 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         System.out.println("config = " + config);
         final MapStoreConfig mapStoreConfig = config.getMapConfig("mymap").getMapStoreConfig();
         assertEquals(23, mapStoreConfig.getWriteBatchSize());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenDefault() {
+        boolean writeCoalescingEnabled = MapStoreConfig.DEFAULT_WRITE_COALESCING;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, true);
+
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenSetFalse() {
+        boolean writeCoalescingEnabled = false;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, false);
+
+        assertFalse(mapStoreConfig.isWriteCoalescing());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenSetTrue() {
+        boolean writeCoalescingEnabled = true;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, false);
+
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+    }
+
+    private MapStoreConfig getWriteCoalescingMapStoreConfig(boolean writeCoalescing, boolean useDefault) {
+        String xml = getWriteCoalescingConfigXml(writeCoalescing, useDefault);
+        final Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+
+    private String getWriteCoalescingConfigXml(boolean value, boolean useDefault) {
+        String writeCoalescingConfigPart = useDefault ? ""
+                : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>";
+        return "<hazelcast>\n" +
+                "<map name=\"mymap\">" +
+                "<map-store >" +
+                writeCoalescingConfigPart +
+                "</map-store>" +
+                "</map>" +
+                "</hazelcast>";
     }
 
     @Test

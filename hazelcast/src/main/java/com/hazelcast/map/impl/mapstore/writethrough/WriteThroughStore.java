@@ -64,7 +64,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void reset() {
+    public void clear() {
 
     }
 

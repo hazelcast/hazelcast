@@ -32,8 +32,13 @@ public class MapStoreConfig {
      * Default batch size for writing
      */
     public static final int DEFAULT_WRITE_BATCH_SIZE = 1;
+    /**
+     * Default write coalescing behavior
+     */
+    public static final boolean DEFAULT_WRITE_COALESCING = true;
 
     private boolean enabled = true;
+    private boolean writeCoalescing = DEFAULT_WRITE_COALESCING;
     private String className;
     private String factoryClassName;
     private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
@@ -71,6 +76,7 @@ public class MapStoreConfig {
         writeDelaySeconds = config.getWriteDelaySeconds();
         writeBatchSize = config.getWriteBatchSize();
         initialLoadMode = config.getInitialLoadMode();
+        writeCoalescing = config.isWriteCoalescing();
         properties.putAll(config.getProperties());
     }
 
@@ -264,6 +270,33 @@ public class MapStoreConfig {
         return this;
     }
 
+
+    /**
+     * Returns {@code true} if write-coalescing is enabled.
+     *
+     * @return {@code true} if coalescing enabled, {@code false} otherwise.
+     * @see #setWriteCoalescing(boolean)
+     */
+    public boolean isWriteCoalescing() {
+        return writeCoalescing;
+    }
+
+    /**
+     * Setting {@link #writeCoalescing} is meaningful if you are using write-behind {@link com.hazelcast.core.MapStore}.
+     * <p/>
+     * When {@link #writeCoalescing} is {@code true}, only the latest store operation on a key in the {@link #writeDelaySeconds}
+     * time-window will be reflected to {@link com.hazelcast.core.MapStore}.
+     * <p/>
+     * Default value is {@value #DEFAULT_WRITE_COALESCING}.
+     *
+     * @param writeCoalescing {@code true} to enable write-coalescing, {@code false} otherwise.
+     * @see com.hazelcast.instance.GroupProperties.GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY
+     */
+    public void setWriteCoalescing(boolean writeCoalescing) {
+        this.writeCoalescing = writeCoalescing;
+    }
+
+
     @Override
     public String toString() {
         return "MapStoreConfig{"
@@ -277,6 +310,7 @@ public class MapStoreConfig {
                 + ", properties=" + properties
                 + ", readOnly=" + readOnly
                 + ", initialLoadMode=" + initialLoadMode
+                + ", writeCoalescing=" + writeCoalescing
                 + '}';
     }
 }
