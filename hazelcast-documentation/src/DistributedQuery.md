@@ -61,7 +61,7 @@ public boolean isActive() {
 }
 ```
 
-Now, let's look for the employees who are active and with age less than 30 using the aforementioned APIs (Criteria API and Distributed SQL Query). Below subsections describes each query mechanism for this sample.
+Now, let's look for the employees who are active and with age less than 30 using the aforementioned APIs (Criteria API and Distributed SQL Query). The following subsections describe each query mechanism for this example.
 
 ![image](images/NoteSmall.jpg)***NOTE:*** *When using Portable objects, if one field of an object exists on one node but does not exist on another one, Hazelcast does not throw an unknown field exception.
 Instead, Hazelcast treats that predicate, which tries to perform a query on an unknown field, as an always false predicate.*

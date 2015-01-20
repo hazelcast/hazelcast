@@ -15,7 +15,7 @@ Here is how it works. Let's say that we have three nodes (node1, node2 and node3
 	
 In this example, *node1* publishes two messages: `a1` and `a2`. And, *node3* publishes two messages: `c1` and `c2`. When *node1* and *node3* publishes a message, they will check their local list for registered nodes. They discover that *node1* and *node2* are in the list. Then, it fires messages to those nodes. One of the possible order of messages received can be following.
 
-Node1 -> c1, b1, a2, c2
+Node1 -> c1, a1, a2, c2
 
 Node2 -> c1, c2, a1, a2
 
