@@ -12,6 +12,7 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -66,6 +67,11 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
+    }
+
+    @Override
+    public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
+        return new ClientInvocation(client, request, target).invoke();
     }
 
     @Override
