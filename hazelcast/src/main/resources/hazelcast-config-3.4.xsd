@@ -350,26 +350,26 @@
                         When maximum size is reached, cache is evicted based on the eviction policy
 
                         size:
-                            Size can be any integer between 0 and Integer.MAX_VALUE.
+                        Size can be any integer between 0 and Integer.MAX_VALUE.
 
-                            Default value is 0.
+                        Default value is 0.
 
                         max-size-policy:
-                            Max-Size policy has these valid values:
-                                ENTRY_COUNT (Maximum number of cache entries in the cache),
-                                USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes for each JVM),
-                                USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage for each JVM),
-                                FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each JVM),
-                                FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each JVM).
+                        Max-Size policy has these valid values:
+                        ENTRY_COUNT (Maximum number of cache entries in the cache),
+                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes for each JVM),
+                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage for each JVM),
+                        FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each JVM),
+                        FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each JVM).
 
-                            Default value is "ENTRY_COUNT".
+                        Default value is "ENTRY_COUNT".
 
                         eviction-policy:
-                            Eviction policy has these valid values:
-                                LRU (Least Recently Used),
-                                LFU (Least Frequently Used).
+                        Eviction policy has these valid values:
+                        LRU (Least Recently Used),
+                        LFU (Least Frequently Used).
 
-                            Default value is "LRU".
+                        Default value is "LRU".
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -796,6 +796,7 @@
             </xs:choice>
             <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="write-batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="write-coalescing" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" default="true" type="xs:boolean"/>
@@ -1197,26 +1198,26 @@
             <xs:element name="metadata-space-percentage" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="xs:decimal">
-                        <xs:totalDigits value="3" />
+                        <xs:totalDigits value="3"/>
                         <xs:fractionDigits value="1"/>
-                        <xs:minInclusive value="5" />
+                        <xs:minInclusive value="5"/>
                         <xs:maxInclusive value="95"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type" />
+        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
 
     <xs:complexType name="memory-size">
-            <xs:attribute name="value" type="xs:int" default="128"/>
-            <xs:attribute name="unit" type="memory-unit" default="MEGABYTES" />
+        <xs:attribute name="value" type="xs:int" default="128"/>
+        <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="BYTES" />
+            <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
             <xs:enumeration value="MEGABYTES"/>
             <xs:enumeration value="GIGABYTES"/>
@@ -1225,7 +1226,7 @@
 
     <xs:simpleType name="memory-allocator-type">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="STANDARD" />
+            <xs:enumeration value="STANDARD"/>
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>
@@ -1293,18 +1294,18 @@
 
     <xs:simpleType name="cache-max-size-policy">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="ENTRY_COUNT" />
-            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE" />
-            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE" />
-            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE" />
-            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE" />
+            <xs:enumeration value="ENTRY_COUNT"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:complexType name="cache-eviction">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional" />
-        <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional" />
-        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional" />
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
+        <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
     </xs:complexType>
 
 </xs:schema>

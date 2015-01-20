@@ -1,5 +1,7 @@
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -35,7 +37,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public void reset() {
+    public void clear() {
 
     }
 
@@ -60,7 +62,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public Collection flush() {
+    public Collection<Data> flush() {
         return Collections.emptyList();
     }
 
