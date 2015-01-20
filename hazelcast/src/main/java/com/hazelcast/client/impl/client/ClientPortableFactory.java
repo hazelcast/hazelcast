@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.client;
 
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.partition.client.GetPartitionsRequest;
@@ -72,6 +73,9 @@ public class ClientPortableFactory implements PortableFactory {
                 break;
             case ClientPortableHook.GET_MEMBER_LIST:
                 portable = new GetMemberListRequest();
+                break;
+            case ClientPortableHook.REGISTER_MEMBERSHIP_LISTENER:
+                portable = new RegisterMembershipListenerRequest();
                 break;
             default:
                 portable = null;
