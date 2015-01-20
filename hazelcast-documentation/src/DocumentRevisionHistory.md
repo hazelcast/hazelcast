@@ -4,7 +4,7 @@
 
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
-|[Chapter 1 - Preface](#preface)||Added as a new chapter.|
+|[Chapter 1 - Preface](#preface)||Added information on how to contribute to Hazelcast.|
 |[Chapter 4 - Distributed Data Structures](#distributed-data-structures)|[IdGenerator](#idgenerator), [ICountDownLatch](#icountdownlatch), [IAtomicReference](#iatomic-reference)| Added as new sections.|
 ||[MultiMap](#multimap)| Section improved by adding information about how it is implemented and by providing configuration information.|
 ||[Map](#map)|Eviction section improved by adding the detailed policy and parameter explanations. A subsection on how to evict particular map entries added ([Evicting Specific Entries](#evicting-specific-entries)). Also [Map Overview](#map-overview) and [Backups](#backups) sections enhanced with "how it works" information. Added [Entry Listener](#entry-listener) and [Map Locks](#map-locks) as new sections. Added [Evicting All Entries](#evicting-all-entries) section to explain the method `evictAll`. [Interceptors](#interceptors) section updated by mentioning that the `hashCode` method can be used to prevent map interceptor duplication.|
