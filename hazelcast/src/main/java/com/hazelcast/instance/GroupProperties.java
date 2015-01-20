@@ -329,8 +329,14 @@ public class GroupProperties {
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
     /**
-     * Per node max write-behind queue capacity. Total of all configured write-behind queue capacities in a node
-     * including backup and owner partitions.
+     * Setting this capacity is valid if you set
+     * {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} to {@code false}. Otherwise
+     * its value will not be taken into account.
+     * <p/>
+     * Per node max write-behind queue capacity is the total of all write-behind queue sizes in a node
+     * including backups.
+     * <p/>
+     * The maximum value which can be set is {@link Integer#MAX_VALUE}
      */
     public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
