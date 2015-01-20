@@ -227,15 +227,14 @@ class MapEventPublisherSupport implements MapEventPublisher {
                                            final Data dataKey, Data dataOldValue, Data dataValue) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final SerializationService serializationService = nodeEngine.getSerializationService();
-        Object testValue;
+        Data testValue;
         if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
-            testValue = serializationService.toObject(dataOldValue);
+            testValue = dataOldValue;
         } else {
-            testValue = serializationService.toObject(dataValue);
+            testValue = dataValue;
         }
-        final Object key = serializationService.toObject(dataKey);
         final QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-        final QueryEntry entry = new QueryEntry(serializationService, dataKey, key, testValue);
+        final QueryEntry entry = new QueryEntry(serializationService, dataKey, dataKey, testValue);
         if (queryEventFilter.eval(entry)) {
             return queryEventFilter.isIncludeValue() ? Result.VALUE_INCLUDED : Result.NO_VALUE_INCLUDED;
         }
