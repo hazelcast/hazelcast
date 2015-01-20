@@ -187,7 +187,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
     }
 
     /**
@@ -397,7 +397,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
         return numOfClearedEntries;
     }
 
@@ -406,7 +406,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
     }
 
     @Override

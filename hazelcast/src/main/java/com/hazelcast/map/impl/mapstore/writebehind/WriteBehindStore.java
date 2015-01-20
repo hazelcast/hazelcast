@@ -15,15 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * TODO Holds current write behind state and should be included in migrations.
  * Write behind map data store implementation.
- * Created per every record-store.
+ * Created per every record-store. So only called from one-thread.
  */
 public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     private final long writeDelayTime;
+
+    private final boolean writeCoalescing;
 
     private final int partitionId;
 
@@ -35,9 +38,10 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * A temporary living space for evicted data if we are using a write-behind map store.
      * Because every eviction triggers a map store flush and in write-behind mode this flush operation
      * should not cause any inconsistencies like reading a stale value from map store.
-     * To prevent this kind of inconsistencies, first we are searching an evicted entry in this space and if it is not there,
+     * To prevent reading stale value, when the time of a non-existent key requested, before loading it from map-store
+     * first we are searching for an evicted entry in this space and if it is not there,
      * we are asking map store to load it. All read operations will use this staging area
-     * to return last set value on a specific key, since there is a possibility that WBQ
+     * to return last set value on a specific key, since there is a possibility that
      * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
      * on a specific key.
      * <p/>
@@ -47,12 +51,12 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      *
      * @see #cleanupStagingArea for how staging area is going to be evicted.
      */
-    private final Map<Data, DelayedEntry> stagingArea;
+    private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
     /**
      * To check if a key has a delayed delete operation or not.
      */
-    private final Set<Data> writeBehindWaitingDeletions = new HashSet<Data>();
+    private final Set<Data> writeBehindWaitingDeletions;
 
     /**
      * Iterates over a pre-set entry count/percentage in one round.
@@ -62,8 +66,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     private long lastCleanupTime;
 
-    private final boolean writeCoalescing;
-
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
                             long writeDelayTime, int partitionId, boolean writeCoalescing) {
         super(store, serializationService);
@@ -71,6 +73,15 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.partitionId = partitionId;
         this.stagingArea = createStagingArea();
         this.writeCoalescing = writeCoalescing;
+        this.writeBehindWaitingDeletions = new HashSet<Data>();
+    }
+
+    private ConcurrentHashMap<Data, DelayedEntry> createStagingArea() {
+        final int initialCapacity = 1000;
+        final float loadFactor = 0.75f;
+        // At most one thread can write, but multiple readers may exist.
+        final int concurrencyLevel = 1;
+        return new ConcurrentHashMap<Data, DelayedEntry>(initialCapacity, loadFactor, concurrencyLevel);
     }
 
     public void setWriteBehindQueue(WriteBehindQueue<DelayedEntry> writeBehindQueue) {
@@ -122,7 +133,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public void reset() {
+    public void clear() {
         writeBehindQueue.clear();
         writeBehindWaitingDeletions.clear();
         stagingArea.clear();
@@ -207,7 +218,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public Collection flush() {
+    public Collection<Data> flush() {
         return writeBehindProcessor.flush(writeBehindQueue);
     }
 
@@ -230,10 +241,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private boolean hasAnyWaitingOperationInWriteBehindQueue(long lastUpdateTime, long now) {
         final long scheduledStoreTime = lastUpdateTime + writeDelayTime;
         return now < scheduledStoreTime;
-    }
-
-    private Map<Data, DelayedEntry> createStagingArea() {
-        return new ConcurrentHashMap<Data, DelayedEntry>();
     }
 
     private void initStagingAreaIterator() {
