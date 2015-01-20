@@ -16,35 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.ExecutorConfig;
-import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.ItemListenerConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.config.MemberGroupConfig;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.config.TopicConfig;
-import com.hazelcast.config.WanReplicationConfig;
-import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -222,7 +194,7 @@ public class TestFullApplicationContext {
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
-        assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
+        assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
@@ -333,6 +305,19 @@ public class TestFullApplicationContext {
         assertEquals(false, testTopicConfig.isStatisticsEnabled());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
+    }
+
+    @Test
+    public void testServiceConfig() {
+        ServiceConfig serviceConfig = config.getServicesConfig().getServiceConfig("my-service");
+        assertEquals("com.hazelcast.examples.MyService", serviceConfig.getClassName());
+        assertEquals("prop1-value", serviceConfig.getProperties().getProperty("prop1"));
+        assertEquals("prop2-value", serviceConfig.getProperties().getProperty("prop2"));
+        MyServiceConfig configObject = (MyServiceConfig) serviceConfig.getConfigObject();
+        assertNotNull(configObject);
+        assertEquals("prop1", configObject.stringProp);
+        assertEquals(123, configObject.intProp);
+        assertTrue(configObject.boolProp);
     }
 
     @Test
@@ -530,7 +515,7 @@ public class TestFullApplicationContext {
         assertEquals("myserver:80", managementCenterConfig.getUrl());
         assertEquals(4, managementCenterConfig.getUpdateInterval());
     }
-    
+
     @Test
     public void testMemberAttributesConfig() {
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();

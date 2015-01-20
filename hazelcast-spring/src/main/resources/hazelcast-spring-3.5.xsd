@@ -376,29 +376,34 @@
                                     <xs:element name="eviction" type="cache-eviction" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
-                                                When maximum size is reached, cache is evicted based on the eviction policy
+                                                When maximum size is reached, cache is evicted based on the eviction
+                                                policy
 
                                                 size:
-                                                    Size can be any integer between 0 and Integer.MAX_VALUE.
+                                                Size can be any integer between 0 and Integer.MAX_VALUE.
 
-                                                    Default value is 0.
+                                                Default value is 0.
 
                                                 max-size-policy:
-                                                    Max-Size policy has these valid values:
-                                                        ENTRY_COUNT (Maximum number of cache entries in the cache),
-                                                        USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes for each JVM),
-                                                        USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size percentage for each JVM),
-                                                        FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes for each JVM),
-                                                        FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size percentage for each JVM).
+                                                Max-Size policy has these valid values:
+                                                ENTRY_COUNT (Maximum number of cache entries in the cache),
+                                                USED_NATIVE_MEMORY_SIZE (Maximum used native memory size in megabytes
+                                                for each JVM),
+                                                USED_NATIVE_MEMORY_PERCENTAGE (Maximum used native memory size
+                                                percentage for each JVM),
+                                                FREE_NATIVE_MEMORY_SIZE (Maximum free native memory size in megabytes
+                                                for each JVM),
+                                                FREE_NATIVE_MEMORY_PERCENTAGE (Maximum free native memory size
+                                                percentage for each JVM).
 
-                                                    Default value is "ENTRY_COUNT".
+                                                Default value is "ENTRY_COUNT".
 
                                                 eviction-policy:
-                                                    Eviction policy has these valid values:
-                                                        LRU (Least Recently Used),
-                                                        LFU (Least Frequently Used).
+                                                Eviction policy has these valid values:
+                                                LRU (Least Recently Used),
+                                                LFU (Least Frequently Used).
 
-                                                    Default value is "LRU".
+                                                Default value is "LRU".
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -749,10 +754,13 @@
                         <xs:element name="replicatedmap" minOccurs="0" maxOccurs="unbounded">
                             <xs:annotation>
                                 <xs:documentation>
-                                    A replicated map is a fully vector clock based, eventually consistent implementation of the map
-                                    interface. In difference to all other Hazelcast data structures this implementation is not
+                                    A replicated map is a fully vector clock based, eventually consistent implementation
+                                    of the map
+                                    interface. In difference to all other Hazelcast data structures this implementation
+                                    is not
                                     partitioned but fully replicates all data to all members.
-                                    Due to the nature of eventually consistency there is a chance of reading staled data and no
+                                    Due to the nature of eventually consistency there is a chance of reading staled data
+                                    and no
                                     guarantee is given to retrieve the same value on multiple get calls.
                                     ReplicatedMap was added in Hazelcast 3.2.
                                 </xs:documentation>
@@ -769,23 +777,32 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
-                                <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="OBJECT"/>
-                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional" default="32">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Number of parallel mutexes to minimize contention on keys. The default value is 32 which
-                                        is a good number for lots of applications. If higher contention is seen on writes to values
-                                        inside of the replicated map this value can be adjusted to the needs.
-                                    </xs:documentation>
-                                </xs:annotation>
-                                </xs:attribute>
-                                <xs:attribute name="replication-delay-millis" type="xs:unsignedInt" use="optional" default="100">
+                                <xs:attribute name="in-memory-format" type="in-memory-format" use="optional"
+                                              default="OBJECT"/>
+                                <xs:attribute name="concurrency-level" type="concurrency-level" use="optional"
+                                              default="32">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            Defines a number of milliseconds after a put is executed before the value is replicated
-                                            to other nodes. In this time multiple puts can be operated and are cached up to be send
-                                            at once. This highers the latency for eventually consistency but lowers IO operations.
-                                            Default value is 100ms before a replication is operated, if set to 0 no delay is used and
+                                            Number of parallel mutexes to minimize contention on keys. The default value
+                                            is 32 which
+                                            is a good number for lots of applications. If higher contention is seen on
+                                            writes to values
+                                            inside of the replicated map this value can be adjusted to the needs.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="replication-delay-millis" type="xs:unsignedInt" use="optional"
+                                              default="100">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines a number of milliseconds after a put is executed before the value is
+                                            replicated
+                                            to other nodes. In this time multiple puts can be operated and are cached up
+                                            to be send
+                                            at once. This highers the latency for eventually consistency but lowers IO
+                                            operations.
+                                            Default value is 100ms before a replication is operated, if set to 0 no
+                                            delay is used and
                                             all values are replicated one by one.
                                         </xs:documentation>
                                     </xs:annotation>
@@ -793,13 +810,17 @@
                                 <xs:attribute name="async-fillup" type="xs:boolean" use="optional" default="true">
                                     <xs:annotation>
                                         <xs:documentation>
-                                            This value defines it the replicated map is available for reads before the initial
-                                            replication is completed. Default is true. If set to false no Exception will be
-                                            thrown when replicated map is not yet ready but call will block until finished.
+                                            This value defines it the replicated map is available for reads before the
+                                            initial
+                                            replication is completed. Default is true. If set to false no Exception will
+                                            be
+                                            thrown when replicated map is not yet ready but call will block until
+                                            finished.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional" default="true"/>
+                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional"
+                                              default="true"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
@@ -822,6 +843,7 @@
                                 <xs:field xpath="@name"/>
                             </xs:unique>
                         </xs:element>
+                        <xs:element name="services" type="services" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -1591,6 +1613,28 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="services">
+        <xs:sequence>
+            <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="enable-defaults" type="xs:boolean" default="true"/>
+    </xs:complexType>
+    <xs:complexType name="service">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="configuration" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:any minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                    <xs:attribute name="parser" type="xs:string" use="required"/>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+    </xs:complexType>
 
     <xs:simpleType name="parameterizedValueType">
         <xs:restriction base="xs:string">
@@ -1718,18 +1762,18 @@
 
     <xs:simpleType name="cache-max-size-policy">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="ENTRY_COUNT" />
-            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE" />
-            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE" />
-            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE" />
-            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE" />
+            <xs:enumeration value="ENTRY_COUNT"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
         </xs:restriction>
     </xs:simpleType>
 
     <xs:complexType name="cache-eviction">
-        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional" />
-        <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional" />
-        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional" />
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
+        <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
     </xs:complexType>
 
 </xs:schema>
