@@ -907,7 +907,7 @@ public class Config {
         if (configPatternKey != null) {
             return configPatterns.get(configPatternKey);
         }
-        if (!"default".equals(itemName)) {
+        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
             LOGGER.warning("No configuration found for " + itemName + ", using default config!");
         }
         return null;
