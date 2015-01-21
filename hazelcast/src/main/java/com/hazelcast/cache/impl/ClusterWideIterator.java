@@ -55,7 +55,7 @@ public class ClusterWideIterator<K, V>
         Operation operation = cacheProxy.operationProvider.createKeyIteratorOperation(lastTableIndex, fetchSize);
         final OperationService operationService = cacheProxy.getNodeEngine().getOperationService();
         final InternalCompletableFuture<CacheKeyIteratorResult> f = operationService
-                .invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionIndex);
+                .invokeOnPartition(operation, partitionIndex);
         return f.getSafely();
     }
 

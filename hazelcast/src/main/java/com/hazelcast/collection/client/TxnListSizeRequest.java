@@ -16,10 +16,13 @@
 
 package com.hazelcast.collection.client;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
+import com.hazelcast.core.TransactionalList;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
+import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
 
@@ -34,7 +37,10 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
 
     @Override
     public Object innerCall() throws Exception {
-        return getEndpoint().getTransactionContext(txnId).getList(name).size();
+        ClientEndpoint endpoint = getEndpoint();
+        TransactionContext transactionContext = endpoint.getTransactionContext(txnId);
+        TransactionalList<Object> list = transactionContext.getList(name);
+        return list.size();
     }
 
     @Override

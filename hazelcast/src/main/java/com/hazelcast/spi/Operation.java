@@ -94,6 +94,13 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         return serviceName;
     }
 
+    /**
+     * Don't use this method. If your operation needs a service name, implement {@link #getServiceName()}.
+     *
+     * @param serviceName
+     * @return this operation.
+     */
+    @Deprecated
     public final Operation setServiceName(String serviceName) {
         this.serviceName = serviceName;
         setFlag(serviceName != null, BITMASK_SERVICE_NAME_SET);
@@ -395,8 +402,8 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Operation{");
-        sb.append("serviceName='").append(serviceName).append('\'');
+        final StringBuilder sb = new StringBuilder(getClass().getName()).append("+{");
+        sb.append("serviceName='").append(getServiceName()).append('\'');
         sb.append(", callId=").append(callId);
         sb.append(", invocationTime=").append(invocationTime);
         sb.append(", waitTimeout=").append(waitTimeout);
@@ -404,5 +411,4 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         sb.append('}');
         return sb.toString();
     }
-
 }

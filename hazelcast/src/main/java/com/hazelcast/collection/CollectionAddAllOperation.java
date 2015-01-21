@@ -35,8 +35,8 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
     public CollectionAddAllOperation() {
     }
 
-    public CollectionAddAllOperation(String name, List<Data> valueList) {
-        super(name);
+    public CollectionAddAllOperation(CollectionType collectionType, String name, List<Data> valueList) {
+        super(collectionType, name);
         this.valueList = valueList;
     }
 
@@ -47,7 +47,7 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionAddAllBackupOperation(name, valueMap);
+        return new CollectionAddAllBackupOperation(getCollectionType(), name, valueMap);
     }
 
     @Override

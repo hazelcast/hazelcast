@@ -64,7 +64,7 @@ public class InvocationTest extends HazelcastTestSupport {
         Operation op = new PartitionTargetOperation();
         String partitionKey = generateKeyOwnedBy(remote);
         int partitionId = localNode.nodeEngine.getPartitionService().getPartitionId(partitionKey);
-        Future f = service.createInvocationBuilder(null, op, partitionId).setCallTimeout(30000).invoke();
+        Future f = service.createInvocationBuilder(op, partitionId).setCallTimeout(30000).invoke();
         sleepSeconds(1);
 
         remote.shutdown();
@@ -84,7 +84,7 @@ public class InvocationTest extends HazelcastTestSupport {
         OperationService service = getNode(local).nodeEngine.getOperationService();
         Operation op = new TargetOperation();
         Address address = new Address(remote.getCluster().getLocalMember().getSocketAddress());
-        Future f = service.createInvocationBuilder(null, op, address).invoke();
+        Future f = service.createInvocationBuilder(op, address).invoke();
         sleepSeconds(1);
 
         remote.getLifecycleService().terminate();
@@ -101,8 +101,14 @@ public class InvocationTest extends HazelcastTestSupport {
      * Operation send to a specific member.
      */
     private static class TargetOperation extends AbstractOperation {
+        @Override
         public void run() throws InterruptedException {
             Thread.sleep(10000);
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
     }
 
@@ -111,8 +117,14 @@ public class InvocationTest extends HazelcastTestSupport {
      */
     private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
 
+        @Override
         public void run() throws InterruptedException {
             Thread.sleep(5000);
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
     }
 

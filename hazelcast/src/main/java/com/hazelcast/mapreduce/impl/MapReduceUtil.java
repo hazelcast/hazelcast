@@ -261,7 +261,7 @@ public final class MapReduceUtil {
                     }
                 } else {
                     if (returnsResponse) {
-                        InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress());
+                        InvocationBuilder ib = os.createInvocationBuilder(operation, member.getAddress());
 
                         V response = (V) ib.invoke().getSafely();
                         if (response != null) {
@@ -302,7 +302,7 @@ public final class MapReduceUtil {
                 }
             } else {
                 if (returnsResponse) {
-                    InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, address);
+                    InvocationBuilder ib = os.createInvocationBuilder(operation, address);
                     return (V) ib.invoke().get();
                 } else {
                     os.send(operation, address);

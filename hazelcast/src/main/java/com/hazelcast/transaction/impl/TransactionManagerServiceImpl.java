@@ -65,9 +65,8 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
 
-    public static final String SERVICE_NAME = "hz:core:txManagerService";
-
     public static final int RECOVER_TIMEOUT = 5000;
+    public static final String SERVICE_NAME = "hz:core:txManagerService";
 
     private final ExceptionHandler finalizeExceptionHandler;
 
@@ -219,7 +218,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             Collection<Future> futures = new ArrayList<Future>(memberList.size());
             for (MemberImpl member : memberList) {
                 Operation op = new BroadcastTxRollbackOperation(txnId);
-                Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
+                Future f = operationService.invokeOnTarget(op, member.getAddress());
                 futures.add(f);
             }
 
@@ -366,8 +365,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             if (member.localMember()) {
                 continue;
             }
-            final Future f = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                    new RecoverTxnOperation(), member.getAddress()).invoke();
+            final Future f = operationService.createInvocationBuilder(new RecoverTxnOperation(), member.getAddress()).invoke();
             futures.add(f);
         }
         return futures;

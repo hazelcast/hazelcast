@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,8 +32,8 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
     public CollectionAddAllBackupOperation() {
     }
 
-    public CollectionAddAllBackupOperation(String name, Map<Long, Data> valueMap) {
-        super(name);
+    public CollectionAddAllBackupOperation(CollectionType collectionType, String name, Map<Long, Data> valueMap) {
+        super(collectionType, name);
         this.valueMap = valueMap;
     }
 

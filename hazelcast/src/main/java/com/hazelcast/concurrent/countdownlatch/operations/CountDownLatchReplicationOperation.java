@@ -40,6 +40,11 @@ public class CountDownLatchReplicationOperation extends AbstractOperation implem
     }
 
     @Override
+    public String getServiceName() {
+        return CountDownLatchService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         if (data != null) {
             CountDownLatchService service = getService();

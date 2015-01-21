@@ -43,11 +43,18 @@ public class MultiMapMigrationOperation extends AbstractOperation {
         this.map = map;
     }
 
+    @Override
+    public String getServiceName() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         MultiMapService service = getService();
         service.insertMigratedData(getPartitionId(), map);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<String, Map> entry : map.entrySet()) {
@@ -74,6 +81,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         map = new HashMap<String, Map>(mapSize);

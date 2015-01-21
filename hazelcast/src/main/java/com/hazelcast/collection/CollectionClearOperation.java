@@ -19,6 +19,7 @@ package com.hazelcast.collection;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.util.Map;
 
 public class CollectionClearOperation extends CollectionBackupAwareOperation {
@@ -28,8 +29,8 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
     public CollectionClearOperation() {
     }
 
-    public CollectionClearOperation(String name) {
-        super(name);
+    public CollectionClearOperation(CollectionType collectionType, String name) {
+        super(collectionType, name);
     }
 
     @Override
@@ -39,7 +40,7 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionClearBackupOperation(name, itemIdMap.keySet());
+        return new CollectionClearBackupOperation(getCollectionType(), name, itemIdMap.keySet());
     }
 
     @Override

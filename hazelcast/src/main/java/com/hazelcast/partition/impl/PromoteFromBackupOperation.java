@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.AbstractOperation;
@@ -46,6 +47,11 @@ final class PromoteFromBackupOperation extends AbstractOperation
 
     public PromoteFromBackupOperation(Address deadAddress) {
         this.deadAddress = deadAddress;
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

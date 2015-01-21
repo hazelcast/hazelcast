@@ -22,13 +22,13 @@ import java.io.IOException;
 
 public class CollectionTransactionRollbackOperation extends CollectionOperation {
 
-    String transactionId;
+    private String transactionId;
 
     public CollectionTransactionRollbackOperation() {
     }
 
-    public CollectionTransactionRollbackOperation(String name, String transactionId) {
-        super(name);
+    public CollectionTransactionRollbackOperation(CollectionType collectionType, String name, String transactionId) {
+        super(collectionType, name);
         this.transactionId = transactionId;
     }
 

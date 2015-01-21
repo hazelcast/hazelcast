@@ -44,7 +44,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(name, valueList);
+        return new CollectionAddAllOperation(getCollectionType(), name, valueList);
     }
 
     @Override
@@ -52,6 +52,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         return CollectionPortableHook.COLLECTION_ADD_ALL;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -61,6 +62,7 @@ public class CollectionAddAllRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();

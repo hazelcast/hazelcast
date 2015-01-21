@@ -177,6 +177,11 @@ public class BasicBackPressureServiceTest {
         @Override
         public void run() throws Exception {
         }
+
+        @Override
+        public String getServiceName() {
+            return null;
+        }
     }
 
     private class PartitionSpecificOperation extends AbstractOperation implements PartitionAwareOperation {
@@ -184,12 +189,22 @@ public class BasicBackPressureServiceTest {
         @Override
         public void run() throws Exception {
         }
+
+        @Override
+        public String getServiceName() {
+            return null;
+        }
     }
 
     private class GenericOperation extends AbstractOperation {
 
         @Override
         public void run() throws Exception {
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
     }
 

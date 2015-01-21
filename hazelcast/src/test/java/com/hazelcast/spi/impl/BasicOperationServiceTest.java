@@ -175,8 +175,8 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         OperationService operationService = nodeEngine.getOperationService();
         int partitionId = (int) (Math.random() * node.getPartitionService().getPartitionCount());
 
-        InternalCompletableFuture<Object> future = operationService
-                .invokeOnPartition(null, new TimedOutBackupAwareOperation(), partitionId);
+        InternalCompletableFuture<Object> future = operationService.invokeOnPartition(
+                new TimedOutBackupAwareOperation(), partitionId);
 
         final CountDownLatch latch = new CountDownLatch(1);
         if (async) {
@@ -213,6 +213,11 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             LockSupport.parkNanos((long) (Math.random() * 1000 + 10));
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
 
         @Override
@@ -259,8 +264,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         Address address = ((MemberImpl) hz2.getCluster().getLocalMember()).getAddress();
 
         Operation operation = new GithubIssue2559Operation();
-        String serviceName = DistributedExecutorService.SERVICE_NAME;
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(serviceName, operation, address);
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(operation, address);
         invocationBuilder.invoke().get();
     }
 
@@ -272,6 +276,11 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         @Override
         public void beforeRun()
                 throws Exception {
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
 
         @Override

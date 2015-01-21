@@ -128,7 +128,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         Operation operation = new CacheDestroyOperation(cacheConfig.getNameWithPrefix());
         int partitionId = getNodeEngine().getPartitionService().getPartitionId(getDistributedObjectName());
         OperationService operationService = getNodeEngine().getOperationService();
-        InternalCompletableFuture f = operationService.invokeOnPartition(CacheService.SERVICE_NAME, operation, partitionId);
+        InternalCompletableFuture f = operationService.invokeOnPartition(operation, partitionId);
         //todo What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
 
@@ -212,8 +212,8 @@ abstract class AbstractCacheProxyBase<K, V> {
         @Override
         public void run() {
             try {
-                final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                        .invokeOnAllPartitions(getServiceName(), operationFactory);
+                OperationService operationService = getNodeEngine().getOperationService();
+                final Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
                 validateResults(results);
                 if (completionListener != null) {
                     completionListener.onCompletion();

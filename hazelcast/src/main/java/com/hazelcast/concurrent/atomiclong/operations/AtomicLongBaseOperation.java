@@ -39,6 +39,11 @@ public abstract class AtomicLongBaseOperation extends Operation
         this.name = name;
     }
 
+    @Override
+    public String getServiceName() {
+        return AtomicLongService.SERVICE_NAME;
+    }
+
     public LongWrapper getNumber() {
         AtomicLongService service = getService();
         return service.getNumber(name);

@@ -52,8 +52,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         try {
             OperationService operationService = getNodeEngine().getOperationService();
             //noinspection unchecked
-            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(
-                    AtomicLongService.SERVICE_NAME, operation, partitionId);
+            return (InternalCompletableFuture<E>) operationService.invokeOnPartition(operation, partitionId);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }

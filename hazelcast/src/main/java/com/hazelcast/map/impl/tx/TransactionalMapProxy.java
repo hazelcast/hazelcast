@@ -104,12 +104,14 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return wrapper == null || wrapper.type == TxnValueWrapper.Type.REMOVED ? null : wrapper.value;
     }
 
+    @Override
     public Object put(Object key, Object value) {
         checkTransactionState();
         MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        final Object valueBeforeTxn = mapServiceContext.toObject(putInternal(mapServiceContext.toData(key, partitionStrategy),
-                mapServiceContext.toData(value)));
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data valueData = mapServiceContext.toData(value);
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        Object valueBeforeTxn = mapServiceContext.toObject(putInternal(keyData, valueData));
         TxnValueWrapper currentValue = txMap.get(key);
         if (value != null) {
             TxnValueWrapper wrapper = valueBeforeTxn == null
@@ -121,6 +123,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
 
+    @Override
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
         checkTransactionState();
         MapService service = getService();

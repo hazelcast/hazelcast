@@ -18,6 +18,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionAddAllOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,7 +33,7 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     }
 
     public ListAddAllOperation(String name, int index, List<Data> valueList) {
-        super(name, valueList);
+        super(CollectionType.List, name, valueList);
         this.index = index;
     }
 

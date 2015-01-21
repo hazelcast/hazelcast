@@ -178,7 +178,7 @@ abstract class AbstractCacheProxy<K, V>
         try {
             OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
             OperationService operationService = getNodeEngine().getOperationService();
-            Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
+            Map<Integer, Object> responses = operationService.invokeOnPartitions(factory, partitions);
             for (Object response : responses.values()) {
                 final Object responseObject = serializationService.toObject(response);
                 final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
@@ -270,8 +270,8 @@ abstract class AbstractCacheProxy<K, V>
         try {
             final SerializationService serializationService = getNodeEngine().getSerializationService();
             OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
-            final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                    .invokeOnAllPartitions(getServiceName(), operationFactory);
+            OperationService operationService = getNodeEngine().getOperationService();
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
             int total = 0;
             for (Object result : results.values()) {
                 total += (Integer) serializationService.toObject(result);

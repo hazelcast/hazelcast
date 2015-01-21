@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.txn;
 
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
@@ -27,7 +28,8 @@ import java.util.concurrent.Future;
 
 public class CollectionTransactionLog implements KeyAwareTransactionLog {
 
-    String transactionId;
+    private CollectionType collectionType;
+    private String transactionId;
     private long itemId;
     private String name;
     private Operation op;
@@ -37,12 +39,14 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     public CollectionTransactionLog() {
     }
 
-    public CollectionTransactionLog(long itemId,
+    public CollectionTransactionLog(CollectionType collectionType,
+                                    long itemId,
                                     String name,
                                     int partitionId,
                                     String serviceName,
                                     String transactionId,
                                     Operation op) {
+        this.collectionType = collectionType;
         this.itemId = itemId;
         this.name = name;
         this.op = op;
@@ -59,9 +63,10 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     @Override
     public Future prepare(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        CollectionPrepareOperation operation = new CollectionPrepareOperation(name, itemId, transactionId, removeOperation);
+        CollectionPrepareOperation operation = new CollectionPrepareOperation(
+                collectionType, name, itemId, transactionId, removeOperation);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -70,7 +75,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     @Override
     public Future commit(NodeEngine nodeEngine) {
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName, op, partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -79,9 +84,9 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     @Override
     public Future rollback(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
+        CollectionRollbackOperation operation = new CollectionRollbackOperation(collectionType, name, itemId, removeOperation);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -95,6 +100,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         out.writeUTF(serviceName);
         out.writeObject(op);
         out.writeUTF(transactionId);
+        out.writeByte(collectionType.asByte());
     }
 
     @Override
@@ -105,6 +111,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         serviceName = in.readUTF();
         op = in.readObject();
         transactionId = in.readUTF();
+        collectionType = CollectionType.fromByte(in.readByte());
     }
 
     @Override
@@ -113,6 +120,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
                 + "transactionId='" + transactionId + '\''
                 + ", itemId=" + itemId
                 + ", name='" + name + '\''
+                + ", collectionType='" + collectionType + '\''
                 + ", op=" + op
                 + ", partitionId=" + partitionId
                 + ", serviceName='" + serviceName + '\''

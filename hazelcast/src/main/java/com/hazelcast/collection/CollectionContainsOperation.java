@@ -30,8 +30,8 @@ public class CollectionContainsOperation extends CollectionOperation {
     public CollectionContainsOperation() {
     }
 
-    public CollectionContainsOperation(String name, Set<Data> valueSet) {
-        super(name);
+    public CollectionContainsOperation(CollectionType collectionType, String name, Set<Data> valueSet) {
+        super(collectionType, name);
         this.valueSet = valueSet;
     }
 

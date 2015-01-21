@@ -16,8 +16,10 @@
 
 package com.hazelcast.collection.txn;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -30,8 +32,8 @@ public class CollectionTxnRemoveBackupOperation extends CollectionOperation impl
     public CollectionTxnRemoveBackupOperation() {
     }
 
-    public CollectionTxnRemoveBackupOperation(String name, long itemId) {
-        super(name);
+    public CollectionTxnRemoveBackupOperation(CollectionType collectionType, String name, long itemId) {
+        super(collectionType, name);
         this.itemId = itemId;
     }
 
@@ -46,7 +48,8 @@ public class CollectionTxnRemoveBackupOperation extends CollectionOperation impl
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().commitRemoveBackup(itemId);
+        CollectionContainer container = getOrCreateContainer();
+        container.commitRemoveBackup(itemId);
     }
 
     @Override

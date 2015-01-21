@@ -16,8 +16,10 @@
 
 package com.hazelcast.collection.txn;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,14 +29,13 @@ import java.io.IOException;
 public class CollectionTxnAddBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long itemId;
-
     private Data value;
 
     public CollectionTxnAddBackupOperation() {
     }
 
-    public CollectionTxnAddBackupOperation(String name, long itemId, Data value) {
-        super(name);
+    public CollectionTxnAddBackupOperation(CollectionType collectionType, String name, long itemId, Data value) {
+        super(collectionType, name);
         this.itemId = itemId;
         this.value = value;
     }
@@ -50,7 +51,8 @@ public class CollectionTxnAddBackupOperation extends CollectionOperation impleme
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().commitAddBackup(itemId, value);
+        CollectionContainer container = getOrCreateContainer();
+        container.commitAddBackup(itemId, value);
         response = true;
     }
 

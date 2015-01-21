@@ -18,6 +18,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,16 +27,20 @@ import java.io.IOException;
 public class ListIndexOfOperation extends CollectionOperation {
 
     private boolean last;
-
     private Data value;
 
     public ListIndexOfOperation() {
     }
 
     public ListIndexOfOperation(String name, boolean last, Data value) {
-        super(name);
+        super(CollectionType.List, name);
         this.last = last;
         this.value = value;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override

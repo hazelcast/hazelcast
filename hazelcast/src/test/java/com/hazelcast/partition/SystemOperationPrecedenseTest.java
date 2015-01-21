@@ -90,6 +90,11 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
         public void run() throws Exception {
             latch.countDown();
         }
+
+        @Override
+        public String getServiceName() {
+            return null;
+        }
     }
 
     public static class NormalPartitionAwareOperation extends AbstractOperation
@@ -97,6 +102,11 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
 
         public NormalPartitionAwareOperation(int partitionId) {
             setPartitionId(partitionId);
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
 
         @Override
@@ -115,6 +125,11 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
         }
 
         @Override
+        public String getServiceName() {
+            return null;
+        }
+
+        @Override
         public void run() throws Exception {
             latch.countDown();
         }
@@ -124,6 +139,11 @@ public class SystemOperationPrecedenseTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             Thread.sleep(1000);
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
     }
 }

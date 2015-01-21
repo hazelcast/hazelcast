@@ -172,11 +172,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 final OperationService operationService = getNodeEngine().getOperationService();
-                Future<MultiMapResponse> f = operationService.invokeOnPartition(
-                        MultiMapService.SERVICE_NAME,
-                        operation,
-                        partitionId
-                );
+                Future<MultiMapResponse> f = operationService.invokeOnPartition(operation, partitionId);
                 MultiMapResponse response = f.get();
                 coll = response.getRecordCollection(getNodeEngine());
             } catch (Throwable t) {
@@ -197,7 +193,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 final OperationService operationService = getNodeEngine().getOperationService();
                 Future<Integer> f = operationService
-                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                        .invokeOnPartition(operation, partitionId);
                 return f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -210,8 +206,9 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         checkTransactionState();
         try {
             final OperationService operationService = getNodeEngine().getOperationService();
-            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(MultiMapService.SERVICE_NAME,
-                    new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE));
+            MultiMapOperationFactory operationFactory
+                    = new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE);
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
             int size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -257,8 +254,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();
-            Future<MultiMapResponse> f = operationService.
-                    invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            Future<MultiMapResponse> f = operationService.invokeOnPartition(operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -271,7 +267,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();
-            Future<Long> f = operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            Future<Long> f = operationService.invokeOnPartition(operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

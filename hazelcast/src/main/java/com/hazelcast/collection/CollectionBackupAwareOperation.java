@@ -23,8 +23,8 @@ public abstract class CollectionBackupAwareOperation extends CollectionOperation
     protected CollectionBackupAwareOperation() {
     }
 
-    protected CollectionBackupAwareOperation(String name) {
-        super(name);
+    protected CollectionBackupAwareOperation(CollectionType collectionType, String name) {
+        super(collectionType, name);
     }
 
     @Override

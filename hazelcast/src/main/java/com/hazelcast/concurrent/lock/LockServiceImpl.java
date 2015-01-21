@@ -205,7 +205,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         UnlockOperation op = new LocalLockCleanupOperation(lockStore.getNamespace(), key, -1);
         op.setAsyncBackup(true);
         op.setNodeEngine(nodeEngine);
-        op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
         op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
         op.setPartitionId(container.getPartitionId());

@@ -48,10 +48,12 @@ public abstract class CollectionService implements ManagedService, RemoteService
     protected final NodeEngine nodeEngine;
 
     private final ILogger logger;
+    private final CollectionType collectionType;
 
-    protected CollectionService(NodeEngine nodeEngine) {
+    protected CollectionService(NodeEngine nodeEngine, CollectionType collectionType) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
+        this.collectionType = collectionType;
     }
 
     @Override
@@ -105,7 +107,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         OperationService operationService = nodeEngine.getOperationService();
         for (String name : collectionNames) {
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
-            Operation operation = new CollectionTransactionRollbackOperation(name, transactionId)
+            Operation operation = new CollectionTransactionRollbackOperation(collectionType, name, transactionId)
                     .setPartitionId(partitionId)
                     .setService(this)
                     .setNodeEngine(nodeEngine);

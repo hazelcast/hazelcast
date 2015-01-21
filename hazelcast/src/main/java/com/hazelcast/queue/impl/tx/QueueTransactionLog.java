@@ -18,7 +18,6 @@ package com.hazelcast.queue.impl.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -64,14 +63,14 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
 
     private InternalCompletableFuture invoke(NodeEngine nodeEngine, Operation operation) {
         OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+        return operationService.invokeOnPartition(operation, partitionId);
     }
 
     @Override
     public Future commit(NodeEngine nodeEngine) {
         try {
             OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId);
+            return operationService.invokeOnPartition(op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

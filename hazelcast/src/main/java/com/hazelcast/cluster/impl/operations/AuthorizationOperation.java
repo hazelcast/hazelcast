@@ -38,6 +38,11 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
     }
 
     @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void run() {
         GroupConfig groupConfig = getNodeEngine().getConfig().getGroupConfig();
         if (!groupName.equals(groupConfig.getName())) {

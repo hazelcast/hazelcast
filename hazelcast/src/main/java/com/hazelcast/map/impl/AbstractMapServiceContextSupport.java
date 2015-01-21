@@ -182,7 +182,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     public String addLocalEventListener(MapListener mapListener, String mapName) {
         ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(mapServiceContext.serviceName(), mapName, listenerAdaptor);
+                registerLocalListener(MapService.SERVICE_NAME, mapName, listenerAdaptor);
         return registration.getId();
     }
 
@@ -190,29 +190,30 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     public String addLocalEventListener(MapListener mapListener, EventFilter eventFilter, String mapName) {
         ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(mapServiceContext.serviceName(), mapName, eventFilter, listenerAdaptor);
+                registerLocalListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
     public String addEventListener(MapListener mapListener, EventFilter eventFilter, String mapName) {
         ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
-        EventRegistration registration = nodeEngine.getEventService().
-                registerListener(mapServiceContext.serviceName(), mapName, eventFilter, listenerAdaptor);
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration = eventService.registerListener(
+                MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(mapServiceContext.serviceName(), mapName, registrationId);
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(MapService.SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
     public boolean hasRegisteredListener(String name) {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
-        final String serviceName = mapServiceContext.serviceName();
-        return eventService.hasEventRegistration(serviceName, name);
+        return eventService.hasEventRegistration(MapService.SERVICE_NAME, name);
     }
 }
 

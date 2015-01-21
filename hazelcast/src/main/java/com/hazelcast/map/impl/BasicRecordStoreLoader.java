@@ -291,7 +291,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        operation.setServiceName(MapService.SERVICE_NAME);
         return operation;
     }
 
@@ -433,7 +432,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
                 PutAllOperation operation = new PutAllOperation(name, entrySet, true);
                 final OperationService operationService = nodeEngine.getOperationService();
-                operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId)
+                operationService.createInvocationBuilder(operation, partitionId)
                         .setCallback(new Callback<Object>() {
                             @Override
                             public void notify(Object obj) {

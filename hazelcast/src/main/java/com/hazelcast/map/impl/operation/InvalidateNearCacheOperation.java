@@ -47,6 +47,11 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public boolean returnsResponse() {
         return false;
     }

@@ -18,6 +18,7 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,14 +26,14 @@ import java.io.IOException;
 
 public class CollectionReserveAddOperation extends CollectionOperation {
 
-    String transactionId;
-    Data value;
+    private String transactionId;
+    private Data value;
 
     public CollectionReserveAddOperation() {
     }
 
-    public CollectionReserveAddOperation(String name, String transactionId, Data value) {
-        super(name);
+    public CollectionReserveAddOperation(CollectionType collectionType, String name, String transactionId, Data value) {
+        super(collectionType, name);
         this.transactionId = transactionId;
         this.value = value;
     }

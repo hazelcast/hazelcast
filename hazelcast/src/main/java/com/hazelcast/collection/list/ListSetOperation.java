@@ -19,6 +19,7 @@ package com.hazelcast.collection.list;
 import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,7 +38,7 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     }
 
     public ListSetOperation(String name, int index, Data value) {
-        super(name);
+        super(CollectionType.List, name);
         this.index = index;
         this.value = value;
     }

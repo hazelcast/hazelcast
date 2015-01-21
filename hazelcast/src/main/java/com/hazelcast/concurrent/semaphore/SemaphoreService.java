@@ -120,8 +120,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
                         .setPartitionId(partitionId)
                         .setResponseHandler(createEmptyResponseHandler())
                         .setService(this)
-                        .setNodeEngine(nodeEngine)
-                        .setServiceName(SERVICE_NAME);
+                        .setNodeEngine(nodeEngine);
                 operationService.executeOperation(op);
             }
         }

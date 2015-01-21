@@ -45,11 +45,13 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
 
     protected final String name;
     protected final int partitionId;
+    private final CollectionType collectionType;
 
-    protected AbstractCollectionProxyImpl(String name, NodeEngine nodeEngine, S service) {
+    protected AbstractCollectionProxyImpl(CollectionType collectionType, String name, NodeEngine nodeEngine, S service) {
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+        this.collectionType = collectionType;
     }
 
     @Override
@@ -85,7 +87,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean add(E e) {
         throwExceptionIfNull(e);
         final Data value = getNodeEngine().toData(e);
-        final CollectionAddOperation operation = new CollectionAddOperation(name, value);
+        final CollectionAddOperation operation = new CollectionAddOperation(collectionType, name, value);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -93,19 +95,19 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean remove(Object o) {
         throwExceptionIfNull(o);
         final Data value = getNodeEngine().toData(o);
-        final CollectionRemoveOperation operation = new CollectionRemoveOperation(name, value);
+        final CollectionRemoveOperation operation = new CollectionRemoveOperation(collectionType, name, value);
         final Boolean result = invoke(operation);
         return result;
     }
 
     public int size() {
-        final CollectionSizeOperation operation = new CollectionSizeOperation(name);
+        final CollectionSizeOperation operation = new CollectionSizeOperation(collectionType, name);
         final Integer result = invoke(operation);
         return result;
     }
 
     public boolean isEmpty() {
-        final CollectionIsEmptyOperation operation = new CollectionIsEmptyOperation(name);
+        final CollectionIsEmptyOperation operation = new CollectionIsEmptyOperation(collectionType, name);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -114,7 +116,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         throwExceptionIfNull(o);
         Set<Data> valueSet = new HashSet<Data>(1);
         valueSet.add(getNodeEngine().toData(o));
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
+        final CollectionContainsOperation operation = new CollectionContainsOperation(collectionType, name, valueSet);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -127,7 +129,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
             throwExceptionIfNull(o);
             valueSet.add(nodeEngine.toData(o));
         }
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
+        final CollectionContainsOperation operation = new CollectionContainsOperation(collectionType, name, valueSet);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -140,7 +142,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
             throwExceptionIfNull(e);
             valueList.add(nodeEngine.toData(e));
         }
-        final CollectionAddAllOperation operation = new CollectionAddAllOperation(name, valueList);
+        final CollectionAddAllOperation operation = new CollectionAddAllOperation(collectionType, name, valueList);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -161,13 +163,14 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
             throwExceptionIfNull(o);
             valueSet.add(nodeEngine.toData(o));
         }
-        final CollectionCompareAndRemoveOperation operation = new CollectionCompareAndRemoveOperation(name, retain, valueSet);
+        CollectionCompareAndRemoveOperation operation
+                = new CollectionCompareAndRemoveOperation(collectionType, name, retain, valueSet);
         final Boolean result = invoke(operation);
         return result;
     }
 
     public void clear() {
-        final CollectionClearOperation operation = new CollectionClearOperation(name);
+        final CollectionClearOperation operation = new CollectionClearOperation(collectionType, name);
         invoke(operation);
     }
 
@@ -184,7 +187,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     private Collection<E> getAll() {
-        final CollectionGetAllOperation operation = new CollectionGetAllOperation(name);
+        final CollectionGetAllOperation operation = new CollectionGetAllOperation(collectionType, name);
         final SerializableCollection result = invoke(operation);
         final Collection<Data> collection = result.getCollection();
         final List<E> list = new ArrayList<E>(collection.size());
@@ -210,7 +213,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     protected <T> T invoke(CollectionOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Future f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
             return nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

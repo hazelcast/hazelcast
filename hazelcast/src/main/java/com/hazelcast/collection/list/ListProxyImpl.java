@@ -17,6 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.AbstractCollectionProxyImpl;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +32,7 @@ import java.util.ListIterator;
 public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E> implements IList<E> {
 
     protected ListProxyImpl(String name, NodeEngine nodeEngine, ListService service) {
-        super(name, nodeEngine, service);
+        super(CollectionType.List, name, nodeEngine, service);
     }
 
     @Override

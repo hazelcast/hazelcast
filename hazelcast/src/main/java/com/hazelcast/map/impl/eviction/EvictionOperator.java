@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapEventPublisher;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
@@ -165,9 +166,8 @@ public final class EvictionOperator {
     }
 
     private boolean hasListener(String mapName) {
-        final String serviceName = mapServiceContext.serviceName();
         final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, mapName);
+        return eventService.hasEventRegistration(MapService.SERVICE_NAME, mapName);
     }
 
     private boolean evictIfNotLocked(Data key, RecordStore recordStore, boolean backup) {
@@ -177,7 +177,6 @@ public final class EvictionOperator {
         recordStore.evict(key, backup);
         return true;
     }
-
 
     public int evictableSize(int currentPartitionSize, MapConfig mapConfig) {
         final int maxSize = mapConfig.getMaxSizeConfig().getSize();

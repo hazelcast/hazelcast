@@ -32,8 +32,6 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.Collection;
 
-import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
-
 public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Integer> {
 
     private final NodeEngine nodeEngine;
@@ -44,8 +42,8 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
         this.namespace = namespace;
-        logger = nodeEngine.getLogger(getClass());
-        unlockResponseHandler = new UnlockResponseHandler();
+        this.logger = nodeEngine.getLogger(getClass());
+        this.unlockResponseHandler = new UnlockResponseHandler();
     }
 
     @Override
@@ -71,7 +69,6 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         OperationService operationService = nodeEngine.getOperationService();
         operation.setNodeEngine(nodeEngine);
-        operation.setServiceName(SERVICE_NAME);
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());

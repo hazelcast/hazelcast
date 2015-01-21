@@ -107,11 +107,6 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     }
 
     @Override
-    public String serviceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
     public MapService getService() {
         return mapService;
     }

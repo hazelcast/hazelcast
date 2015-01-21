@@ -46,6 +46,11 @@ public class ListReplicationOperation extends CollectionReplicationOperation {
     }
 
     @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_REPLICATION;
     }

@@ -32,7 +32,6 @@ import com.hazelcast.util.AddressUtil.AddressHolder;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -153,8 +152,7 @@ public class WanNoDelayReplication
     public boolean checkAuthorization(String groupName, String groupPassword, Address target) {
         Operation authorizationCall = new AuthorizationOperation(groupName, groupPassword);
         OperationService operationService = node.nodeEngine.getOperationService();
-        String serviceName = WanReplicationService.SERVICE_NAME;
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(serviceName, authorizationCall, target);
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(authorizationCall, target);
         Future<Boolean> future = invocationBuilder.setTryCount(1).invoke();
         try {
             return future.get();

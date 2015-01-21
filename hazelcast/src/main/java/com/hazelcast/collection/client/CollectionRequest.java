@@ -19,11 +19,13 @@ package com.hazelcast.collection.client;
 import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.SetPermission;
@@ -44,9 +46,14 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         this.name = name;
     }
 
+    public CollectionType getCollectionType() {
+        return CollectionType.fromServiceName(serviceName);
+    }
+
     @Override
     protected int getPartition() {
-        return getClientEngine().getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+        InternalPartitionService partitionService = getClientEngine().getPartitionService();
+        return partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
     }
 
     @Override
@@ -63,11 +70,13 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         return CollectionPortableHook.F_ID;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("s", serviceName);
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         serviceName = reader.readUTF("s");
         name = reader.readUTF("n");

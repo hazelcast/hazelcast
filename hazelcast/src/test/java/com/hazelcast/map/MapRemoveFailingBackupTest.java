@@ -77,7 +77,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
                 operation.setThreadId(ThreadUtil.getThreadId());
                 OperationService operationService = nodeEngine.getOperationService();
-                InternalCompletableFuture<Data> f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                InternalCompletableFuture<Data> f = operationService.createInvocationBuilder(operation, partitionId)
                         .setResultDeserialized(false).invoke();
                 Data result = f.get();
                 return nodeEngine.toObject(result);

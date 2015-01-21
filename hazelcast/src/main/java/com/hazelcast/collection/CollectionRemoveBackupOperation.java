@@ -28,8 +28,8 @@ public class CollectionRemoveBackupOperation extends CollectionOperation impleme
     public CollectionRemoveBackupOperation() {
     }
 
-    public CollectionRemoveBackupOperation(String name, long itemId) {
-        super(name);
+    public CollectionRemoveBackupOperation(CollectionType collectionType, String name, long itemId) {
+        super(collectionType, name);
         this.itemId = itemId;
     }
 

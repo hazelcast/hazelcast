@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -29,7 +28,6 @@ public class MapPutAllOperationFactory implements OperationFactory {
     String name;
     MapEntrySet entrySet = new MapEntrySet();
 
-
     public MapPutAllOperationFactory() {
     }
 
@@ -40,9 +38,7 @@ public class MapPutAllOperationFactory implements OperationFactory {
 
     @Override
     public Operation createOperation() {
-        PutAllOperation putAllOperation = new PutAllOperation(name, entrySet);
-        putAllOperation.setServiceName(MapService.SERVICE_NAME);
-        return putAllOperation;
+        return new PutAllOperation(name, entrySet);
     }
 
     @Override

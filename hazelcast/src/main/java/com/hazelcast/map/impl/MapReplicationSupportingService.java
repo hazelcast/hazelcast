@@ -37,7 +37,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
                 Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
+                        .invokeOnPartition(operation, partitionId);
                 f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -49,7 +49,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
                 Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
+                        .invokeOnPartition(operation, partitionId);
                 f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

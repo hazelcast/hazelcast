@@ -79,25 +79,40 @@ public interface OperationService {
      */
     boolean isAllowedToRunOnCallingThread(Operation op);
 
+    @Deprecated
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
 
+    <E> InternalCompletableFuture<E> invokeOnPartition(Operation op, int partitionId);
+
+    @Deprecated
     <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
+    <E> InternalCompletableFuture<E> invokeOnTarget(Operation op, Address target);
+
+    @Deprecated
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
+    InvocationBuilder createInvocationBuilder(Operation op, int partitionId);
+
+    @Deprecated
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
+
+    InvocationBuilder createInvocationBuilder(Operation op, Address target);
+
+    @Deprecated
+    Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
+            throws Exception;
 
     /**
      * Invokes a set of operation on each partition.
      * <p/>
      * This method blocks until the operation completes.
      *
-     * @param serviceName      the name of the service.
      * @param operationFactory the factory responsible for creating operations
      * @return a Map with partitionId as key and the outcome of the operation as value.
      * @throws Exception
      */
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
+    Map<Integer, Object> invokeOnAllPartitions(OperationFactory operationFactory)
             throws Exception;
 
     /**
@@ -105,12 +120,15 @@ public interface OperationService {
      * * <p/>
      * This method blocks until all operations complete.
      *
-     * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
      * @return a Map with partitionId as key and the outcome of the operation as value.
      * @throws Exception
      */
+    Map<Integer, Object> invokeOnPartitions(OperationFactory operationFactory,
+                                            Collection<Integer> partitions) throws Exception;
+
+    @Deprecated
     Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                             Collection<Integer> partitions) throws Exception;
 

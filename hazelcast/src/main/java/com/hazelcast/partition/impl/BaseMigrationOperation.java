@@ -19,6 +19,7 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.AbstractOperation;
@@ -39,6 +40,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     public BaseMigrationOperation(MigrationInfo migrationInfo) {
         this.migrationInfo = migrationInfo;
         setPartitionId(migrationInfo.getPartitionId());
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

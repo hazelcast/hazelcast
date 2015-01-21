@@ -38,28 +38,40 @@ public class ThreadDumpOperation extends Operation {
         this.dumpDeadlocks = dumpDeadlocks;
     }
 
+    @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         result = dumpDeadlocks ? ThreadDumpGenerator.dumpDeadlocks() : ThreadDumpGenerator.dumpAllThreads();
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return true;
     }
 
+    @Override
     public Object getResponse() {
         return result;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeBoolean(dumpDeadlocks);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         dumpDeadlocks = in.readBoolean();
     }

@@ -43,6 +43,11 @@ public class RemoveInterceptorOperation extends AbstractOperation {
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public Object getResponse() {
         return true;
     }

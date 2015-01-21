@@ -17,7 +17,9 @@
 package com.hazelcast.management.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -39,13 +41,20 @@ public class GetMapConfigOperation extends Operation {
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 
     @Override
     public void run() throws Exception {
         MapService service = getService();
-        mapConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapConfig = mapContainer.getMapConfig();
     }
 
     @Override

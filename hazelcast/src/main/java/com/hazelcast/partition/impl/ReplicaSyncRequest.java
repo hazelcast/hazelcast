@@ -49,6 +49,11 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
     }
 
     @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         int syncReplicaIndex = getReplicaIndex();
         if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
@@ -143,7 +148,8 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
             Operation op = service.prepareReplicationOperation(event);
             if (op != null) {
-                op.setServiceName(serviceInfo.getName());
+                //todo:
+                //op.setServiceName(serviceInfo.getName());
                 tasks.add(op);
             }
         }

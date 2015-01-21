@@ -18,6 +18,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +35,7 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
     }
 
     public ListSetBackupOperation(String name, long oldItemId, long itemId, Data value) {
-        super(name);
+        super(CollectionType.List, name);
         this.oldItemId = oldItemId;
         this.itemId = itemId;
         this.value = value;
@@ -43,6 +44,11 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
     @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_SET_BACKUP;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override

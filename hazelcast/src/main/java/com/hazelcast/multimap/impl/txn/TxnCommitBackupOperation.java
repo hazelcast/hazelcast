@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,9 +43,12 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         this.threadId = threadId;
     }
 
+    @Override
     public void run() throws Exception {
+        NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = getPartitionId();
         for (Operation op : opList) {
-            op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
+            op.setNodeEngine(nodeEngine).setPartitionId(partitionId);
             op.beforeRun();
             op.run();
             op.afterRun();
@@ -54,6 +58,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         getOrCreateContainer().forceUnlock(dataKey);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(opList.size());
@@ -63,6 +68,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         out.writeUTF(caller);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
@@ -73,6 +79,7 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
         caller = in.readUTF();
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.TXN_COMMIT_BACKUP;
     }

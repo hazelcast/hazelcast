@@ -152,7 +152,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     private <E> InternalCompletableFuture<E> invoke(Operation operation) {
         OperationService operationService = getNodeEngine().getOperationService();
-        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+        return operationService.invokeOnPartition(operation, partitionId);
     }
 
     public String getName() {

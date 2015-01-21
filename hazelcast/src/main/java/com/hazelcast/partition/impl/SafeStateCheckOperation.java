@@ -1,5 +1,6 @@
 package com.hazelcast.partition.impl;
 
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.AbstractOperation;
 
 /**
@@ -17,6 +18,11 @@ public class SafeStateCheckOperation extends AbstractOperation {
     public void run() throws Exception {
         final InternalPartitionServiceImpl service = getService();
         safe = service.getNode().getPartitionService().isMemberStateSafe();
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

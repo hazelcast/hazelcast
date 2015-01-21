@@ -18,6 +18,7 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,8 +35,8 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
     public CollectionTxnAddOperation() {
     }
 
-    public CollectionTxnAddOperation(String name, long itemId, Data value) {
-        super(name);
+    public CollectionTxnAddOperation(CollectionType collectionType, String name, long itemId, Data value) {
+        super(collectionType, name);
         this.itemId = itemId;
         this.value = value;
     }
@@ -47,7 +48,7 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionTxnAddBackupOperation(name, itemId, value);
+        return new CollectionTxnAddBackupOperation(getCollectionType(), name, itemId, value);
     }
 
     @Override

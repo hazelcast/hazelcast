@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.map.impl.MapEventPublisher;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -250,9 +251,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     private boolean hasRegisteredListenerForThisMap() {
-        final String serviceName = mapService.getMapServiceContext().serviceName();
         final EventService eventService = getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, name);
+        return eventService.hasEventRegistration(MapService.SERVICE_NAME, name);
     }
 
     /**

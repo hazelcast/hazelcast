@@ -21,8 +21,8 @@ public class CollectionIsEmptyOperation extends CollectionOperation {
     public CollectionIsEmptyOperation() {
     }
 
-    public CollectionIsEmptyOperation(String name) {
-        super(name);
+    public CollectionIsEmptyOperation(CollectionType collectionType, String name) {
+        super(collectionType, name);
     }
 
     @Override

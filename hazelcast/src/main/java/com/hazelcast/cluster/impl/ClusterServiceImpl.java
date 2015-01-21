@@ -242,9 +242,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public JoinRequest checkJoinInfo(Address target) {
-        Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new JoinCheckOperation(node.createJoinRequest()), target)
-                .setTryCount(1).invoke();
+        JoinCheckOperation op = new JoinCheckOperation(node.createJoinRequest());
+        OperationService operationService = nodeEngine.getOperationService();
+        Future f = operationService.createInvocationBuilder(op, target).setTryCount(1).invoke();
         try {
             return (JoinRequest) nodeEngine.toObject(f.get());
         } catch (Exception e) {
@@ -1079,8 +1079,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private Future invokeClusterOperation(Operation op, Address target) {
-        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
-                .setTryCount(100).invoke();
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.createInvocationBuilder(op, target).setTryCount(100).invoke();
     }
 
     public NodeEngineImpl getNodeEngine() {

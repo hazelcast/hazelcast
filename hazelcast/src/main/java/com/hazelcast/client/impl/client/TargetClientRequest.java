@@ -43,7 +43,7 @@ public abstract class TargetClientRequest extends ClientRequest {
     }
 
     protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return operationService.createInvocationBuilder(getServiceName(), op, getTarget());
+        return operationService.createInvocationBuilder(op, getTarget());
     }
 
     protected abstract Operation prepareOperation();

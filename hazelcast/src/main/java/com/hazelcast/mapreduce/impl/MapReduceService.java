@@ -35,6 +35,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -216,9 +217,8 @@ public class MapReduceService
     public <R> R processRequest(Address address, ProcessingOperation processingOperation)
             throws ExecutionException, InterruptedException {
 
-        InvocationBuilder invocation = nodeEngine.getOperationService()
-                                                 .createInvocationBuilder(SERVICE_NAME, processingOperation, address);
-
+        OperationService operationService = nodeEngine.getOperationService();
+        InvocationBuilder invocation = operationService.createInvocationBuilder(processingOperation, address);
         Future<R> future = invocation.invoke();
         return future.get();
     }

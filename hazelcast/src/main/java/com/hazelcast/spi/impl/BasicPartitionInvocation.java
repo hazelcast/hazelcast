@@ -27,17 +27,19 @@ import com.hazelcast.spi.Operation;
  */
 public final class BasicPartitionInvocation extends BasicInvocation {
 
-    public BasicPartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+    public BasicPartitionInvocation(NodeEngineImpl nodeEngine, Operation op, int partitionId,
                                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
                                     Callback<Object> callback, String executorName, boolean resultDeserialized) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
+        super(nodeEngine, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
                 callTimeout, callback, executorName, resultDeserialized);
     }
 
+    @Override
     public Address getTarget() {
         return getPartition().getReplicaAddress(getReplicaIndex());
     }
 
+    @Override
     ExceptionAction onException(Throwable t) {
         final ExceptionAction action = op.onException(t);
         return action != null ? action : ExceptionAction.THROW_EXCEPTION;

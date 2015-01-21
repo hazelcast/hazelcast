@@ -16,8 +16,10 @@
 
 package com.hazelcast.collection.txn;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -26,14 +28,13 @@ import java.io.IOException;
 public class CollectionRollbackBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long itemId;
-
     private boolean removeOperation;
 
     public CollectionRollbackBackupOperation() {
     }
 
-    public CollectionRollbackBackupOperation(String name, long itemId, boolean removeOperation) {
-        super(name);
+    public CollectionRollbackBackupOperation(CollectionType collectionType, String name, long itemId, boolean removeOperation) {
+        super(collectionType, name);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
     }
@@ -49,10 +50,11 @@ public class CollectionRollbackBackupOperation extends CollectionOperation imple
 
     @Override
     public void run() throws Exception {
+        CollectionContainer container = getOrCreateContainer();
         if (removeOperation) {
-            getOrCreateContainer().rollbackRemoveBackup(itemId);
+            container.rollbackRemoveBackup(itemId);
         } else {
-            getOrCreateContainer().rollbackAddBackup(itemId);
+            container.rollbackAddBackup(itemId);
         }
     }
 

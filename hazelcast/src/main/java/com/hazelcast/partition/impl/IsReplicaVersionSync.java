@@ -2,6 +2,7 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -16,12 +17,16 @@ public class IsReplicaVersionSync extends Operation implements PartitionAwareOpe
     private long version;
     private transient boolean result;
 
-
     public IsReplicaVersionSync() {
     }
 
     public IsReplicaVersionSync(long version) {
         this.version = version;
+    }
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

@@ -53,7 +53,7 @@ public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicRef
     private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation, NodeEngine nodeEngine) {
         try {
             OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(AtomicReferenceService.SERVICE_NAME, operation, partitionId);
+            return operationService.invokeOnPartition(operation, partitionId);
         } catch (Throwable throwable) {
             throw rethrow(throwable);
         }

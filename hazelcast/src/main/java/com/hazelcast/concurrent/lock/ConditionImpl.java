@@ -33,7 +33,6 @@ import java.util.Date;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 
 final class ConditionImpl implements ICondition {
@@ -101,7 +100,7 @@ final class ConditionImpl implements ICondition {
 
     private InternalCompletableFuture invoke(Operation op) {
         NodeEngine nodeEngine = lockProxy.getNodeEngine();
-        return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, op, partitionId);
+        return nodeEngine.getOperationService().invokeOnPartition(op, partitionId);
     }
 
     @Override

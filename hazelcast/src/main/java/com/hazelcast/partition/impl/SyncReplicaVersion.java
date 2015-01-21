@@ -80,7 +80,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
             NodeEngine nodeEngine = getNodeEngine();
             OperationService operationService = nodeEngine.getOperationService();
             if (sync) {
-                operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, target)
+                operationService.createInvocationBuilder(op, target)
                         .setCallback(callback)
                         .setTryCount(OPERATION_TRY_COUNT)
                         .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
@@ -101,7 +101,8 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     private CheckReplicaVersion createCheckReplicaVersion(int partitionId, int replicaIndex, long currentVersion) {
         CheckReplicaVersion op = new CheckReplicaVersion(currentVersion, sync);
-        op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(InternalPartitionService.SERVICE_NAME);
+        op.setPartitionId(partitionId)
+                .setReplicaIndex(replicaIndex);
         return op;
     }
 

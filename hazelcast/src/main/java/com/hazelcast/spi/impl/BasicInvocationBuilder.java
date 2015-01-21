@@ -26,26 +26,25 @@ import com.hazelcast.spi.Operation;
  */
 public class BasicInvocationBuilder extends InvocationBuilder {
 
-    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
-        this(nodeEngine, serviceName, op, partitionId, null);
+    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, Operation op, int partitionId) {
+        this(nodeEngine, op, partitionId, null);
     }
 
-    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this(nodeEngine, serviceName, op, -1, target);
+    public BasicInvocationBuilder(NodeEngineImpl nodeEngine, Operation op, Address target) {
+        this(nodeEngine, op, -1, target);
     }
 
-    private BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                   int partitionId, Address target) {
-        super(nodeEngine, serviceName, op, partitionId, target);
+    private BasicInvocationBuilder(NodeEngineImpl nodeEngine, Operation op, int partitionId, Address target) {
+        super(nodeEngine, op, partitionId, target);
     }
 
     @Override
     public InternalCompletableFuture invoke() {
         if (target == null) {
-            return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, callback, executorName, resultDeserialized).invoke();
+            return new BasicPartitionInvocation(nodeEngine, op, partitionId, replicaIndex, tryCount,
+                    tryPauseMillis, callTimeout, callback, executorName, resultDeserialized).invoke();
         } else {
-            return new BasicTargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
+            return new BasicTargetInvocation(nodeEngine, op, target, tryCount, tryPauseMillis,
                     callTimeout, callback, executorName, resultDeserialized).invoke();
         }
     }

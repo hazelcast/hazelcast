@@ -20,6 +20,7 @@ import com.hazelcast.collection.CollectionAddBackupOperation;
 import com.hazelcast.collection.CollectionAddOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +35,7 @@ public class ListAddOperation extends CollectionAddOperation {
     }
 
     public ListAddOperation(String name, int index, Data value) {
-        super(name, value);
+        super(CollectionType.List, name, value);
         this.index = index;
     }
 
@@ -54,7 +55,7 @@ public class ListAddOperation extends CollectionAddOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionAddBackupOperation(name, itemId, value);
+        return new CollectionAddBackupOperation(CollectionType.List, name, itemId, value);
     }
 
     @Override

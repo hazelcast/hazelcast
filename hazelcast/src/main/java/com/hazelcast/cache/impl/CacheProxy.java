@@ -100,7 +100,7 @@ public class CacheProxy<K, V>
         Operation operation = operationProvider.createContainsKeyOperation(k);
         OperationService operationService = getNodeEngine().getOperationService();
         int partitionId = getPartitionId(getNodeEngine(), k);
-        InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+        InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(operation, partitionId);
         return f.getSafely();
     }
 
@@ -234,7 +234,7 @@ public class CacheProxy<K, V>
         try {
             OperationService operationService = getNodeEngine().getOperationService();
             int partitionId = getPartitionId(getNodeEngine(), keyData);
-            final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
+            final InternalCompletableFuture<T> f = operationService.invokeOnPartition(op, partitionId);
             final T safely = f.getSafely();
             waitCompletionLatch(completionId);
             return safely;
@@ -336,7 +336,7 @@ public class CacheProxy<K, V>
                 final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
                         cacheEntryListenerConfiguration, isRegister);
                 final InternalCompletableFuture<Object> future = operationService
-                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                        .invokeOnTarget(op, member.getAddress());
                 futures.add(future);
             }
         }

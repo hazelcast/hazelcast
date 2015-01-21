@@ -17,6 +17,7 @@
 package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
@@ -24,6 +25,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.Future;
@@ -34,7 +36,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
     private final HashSet<CollectionItem> set = new HashSet<CollectionItem>();
 
     public TransactionalSetProxy(String name, TransactionSupport tx, NodeEngine nodeEngine, SetService service) {
-        super(name, tx, nodeEngine, service);
+        super(CollectionType.Set, name, tx, nodeEngine, service);
     }
 
     @Override
@@ -46,18 +48,21 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
         if (!getCollection().add(new CollectionItem(-1, value))) {
             return false;
         }
-        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), value);
+        CollectionReserveAddOperation operation
+                = new CollectionReserveAddOperation(CollectionType.Set, name, tx.getTxnId(), value);
         try {
-            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
+            Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
             Long itemId = f.get();
             if (itemId != null) {
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
-                CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
+                CollectionTxnAddOperation op = new CollectionTxnAddOperation(CollectionType.Set, name, itemId, value);
                 final String txnId = tx.getTxnId();
                 final String serviceName = getServiceName();
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, serviceName, txnId, op));
+                CollectionTransactionLog transactionLog = new CollectionTransactionLog(
+                        CollectionType.Set, itemId, name, partitionId, serviceName, txnId, op);
+                tx.addTransactionLog(transactionLog);
                 return true;
             }
         } catch (Throwable t) {

@@ -78,6 +78,11 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
             Thread.sleep(10);
             latch.countDown();
         }
+
+        @Override
+        public String getServiceName() {
+            return null;
+        }
     }
 
     public static class SlowPartitionUnawareSystemOperation extends AbstractOperation
@@ -93,6 +98,11 @@ public class InternalPartitionServiceStackOverflowTest extends HazelcastTestSupp
         public void run() throws Exception {
             Thread.sleep(10);
             latch.countDown();
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
     }
 

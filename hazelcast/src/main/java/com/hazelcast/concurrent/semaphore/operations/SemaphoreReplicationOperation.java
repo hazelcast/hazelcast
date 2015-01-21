@@ -40,6 +40,11 @@ public class SemaphoreReplicationOperation extends AbstractOperation implements 
     }
 
     @Override
+    public String getServiceName() {
+        return SemaphoreService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         SemaphoreService service = getService();
         for (Permit permit : migrationData.values()) {

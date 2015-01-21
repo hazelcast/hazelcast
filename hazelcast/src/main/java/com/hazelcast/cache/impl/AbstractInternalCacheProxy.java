@@ -90,7 +90,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         try {
             final int partitionId = getPartitionId(getNodeEngine(), keyData);
             final InternalCompletableFuture<T> f = getNodeEngine().getOperationService()
-                    .invokeOnPartition(getServiceName(), op, partitionId);
+                    .invokeOnPartition(op, partitionId);
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
@@ -180,7 +180,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final OperationService operationService = getNodeEngine().getOperationService();
         OperationFactory operationFactory = operationProvider.createClearOperationFactory();
         try {
-            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
             for (Object result : results.values()) {
                 if (result != null && result instanceof CacheClearResponse) {
                     final Object response = ((CacheClearResponse) result).getResponse();
@@ -209,7 +209,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final OperationService operationService = getNodeEngine().getOperationService();
         OperationFactory operationFactory = operationProvider.createRemoveAllOperationFactory(keysData, completionId);
         try {
-            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
             int completionCount = 0;
             for (Object result : results.values()) {
                 if (result != null && result instanceof CacheClearResponse) {

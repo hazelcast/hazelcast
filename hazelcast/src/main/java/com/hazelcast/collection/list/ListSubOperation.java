@@ -18,6 +18,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +35,7 @@ public class ListSubOperation extends CollectionOperation {
     }
 
     public ListSubOperation(String name, int from, int to) {
-        super(name);
+        super(CollectionType.List, name);
         this.from = from;
         this.to = to;
     }

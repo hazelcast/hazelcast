@@ -31,7 +31,7 @@ public abstract class AllPartitionsClientRequest extends ClientRequest {
     public final void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
-        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+        Map<Integer, Object> map = operationService.invokeOnAllPartitions(operationFactory);
         Object result = reduce(map);
         endpoint.sendResponse(result, getCallId());
     }

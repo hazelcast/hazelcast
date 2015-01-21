@@ -65,6 +65,11 @@ public class CacheLoadAllOperation
     }
 
     @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public void run()
             throws Exception {
         final int partitionId = getPartitionId();

@@ -37,7 +37,7 @@ class MapRemoteService implements RemoteService {
             mapContainer.getMapStoreContext().stop();
         }
         mapServiceContext.destroyMap(name);
-        nodeEngine.getEventService().deregisterAllListeners(mapServiceContext.serviceName(), name);
+        nodeEngine.getEventService().deregisterAllListeners(MapService.SERVICE_NAME, name);
     }
 
 }

@@ -220,7 +220,7 @@ public class ExecutorServiceProxy
     private InternalCompletableFuture invoke(int partitionId, CallableTaskOperation op) {
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(DistributedExecutorService.SERVICE_NAME, op, partitionId);
+        return operationService.invokeOnPartition(op, partitionId);
     }
 
     @Override
@@ -304,8 +304,8 @@ public class ExecutorServiceProxy
 
         boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
-        InternalCompletableFuture future = nodeEngine.getOperationService()
-                .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
+        OperationService operationService = nodeEngine.getOperationService();
+        InternalCompletableFuture future = operationService.invokeOnTarget(op, target);
         if (sync) {
             Object response;
             try {
@@ -371,7 +371,7 @@ public class ExecutorServiceProxy
         Data taskData = nodeEngine.toData(task);
         CallableTaskOperation op = new CallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
-        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
+        operationService.createInvocationBuilder(op, partitionId)
                 .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
@@ -396,7 +396,7 @@ public class ExecutorServiceProxy
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
-        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
+        operationService.createInvocationBuilder(op, address)
                 .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
@@ -580,7 +580,7 @@ public class ExecutorServiceProxy
 
     private InternalCompletableFuture submitShutdownOperation(OperationService operationService, MemberImpl member) {
         ShutdownOperation op = new ShutdownOperation(name);
-        return operationService.invokeOnTarget(getServiceName(), op, member.getAddress());
+        return operationService.invokeOnTarget(op, member.getAddress());
     }
 
     @Override

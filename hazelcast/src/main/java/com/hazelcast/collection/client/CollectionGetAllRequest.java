@@ -32,7 +32,7 @@ public class CollectionGetAllRequest extends CollectionRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionGetAllOperation(name);
+        return new CollectionGetAllOperation(getCollectionType(), name);
     }
 
     @Override
@@ -49,5 +49,4 @@ public class CollectionGetAllRequest extends CollectionRequest {
     public String getMethodName() {
         return "iterator";
     }
-
 }

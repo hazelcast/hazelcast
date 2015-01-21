@@ -32,7 +32,7 @@ public class CollectionSizeRequest extends CollectionRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionSizeOperation(name);
+        return new CollectionSizeOperation(getCollectionType(), name);
     }
 
     @Override

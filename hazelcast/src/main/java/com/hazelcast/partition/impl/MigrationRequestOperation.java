@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.Callback;
@@ -56,6 +55,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         super(migrationInfo);
     }
 
+    @Override
     public void run() {
         NodeEngine nodeEngine = getNodeEngine();
         verifyGoodMaster(nodeEngine);
@@ -145,7 +145,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         InternalPartitionServiceImpl partitionService = getService();
 
         nodeEngine.getOperationService()
-                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
+                .createInvocationBuilder(operation, destination)
                 .setCallback(new MigrationCallback(migrationInfo, getResponseHandler()))
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
@@ -201,7 +201,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             service.beforeMigration(migrationEvent);
             Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {
-                op.setServiceName(serviceInfo.getName());
+                //todo:
+                //op.setServiceName(serviceInfo.getName());
                 tasks.add(op);
             }
         }

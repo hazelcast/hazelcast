@@ -42,6 +42,11 @@ public class PublishOperation extends AbstractNamedOperation
     }
 
     @Override
+    public String getServiceName() {
+        return TopicService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         TopicService service = getService();
         service.incrementPublishes(name);

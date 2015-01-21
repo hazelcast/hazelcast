@@ -81,8 +81,7 @@ public class RecoverAllTransactionsRequest extends InvocationClientRequest {
         List<Future<SerializableCollection>> futures = new ArrayList<Future<SerializableCollection>>(memberList.size());
         for (MemberImpl member : memberList) {
             RecoverTxnOperation op = new RecoverTxnOperation();
-            Future<SerializableCollection> f = createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                    op, member.getAddress()).invoke();
+            Future<SerializableCollection> f = createInvocationBuilder(op, member.getAddress()).invoke();
             futures.add(f);
         }
         return futures;

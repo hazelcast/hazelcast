@@ -254,7 +254,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         if (lock.tryLock()) {
             try {
                 if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
-                    Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
+                    Future f = nodeEngine.getOperationService().createInvocationBuilder(new AssignPartitions(),
                             node.getMasterAddress()).setTryCount(1).invoke();
                     f.get(1, TimeUnit.SECONDS);
                 }
@@ -541,7 +541,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 try {
                     Address address = member.getAddress();
                     PartitionStateOperation operation = new PartitionStateOperation(partitionState, true);
-                    Future<Object> f = operationService.invokeOnTarget(SERVICE_NAME, operation, address);
+                    Future<Object> f = operationService.invokeOnTarget(operation, address);
                     calls.add(f);
                 } catch (Exception e) {
                     logger.finest(e);
@@ -1032,8 +1032,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
         Operation operation = new HasOngoingMigration();
         OperationService operationService = nodeEngine.getOperationService();
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(SERVICE_NAME, operation,
-                masterAddress);
+        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(operation, masterAddress);
         Future future = invocationBuilder.setTryCount(100).setTryPauseMillis(100).invoke();
         try {
             return (Boolean) future.get(1, TimeUnit.MINUTES);
@@ -1102,7 +1101,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private Future invoke(Operation operation, int replicaIndex, int partitionId) {
         final OperationService operationService = nodeEngine.getOperationService();
-        return operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, partitionId)
+        return operationService.createInvocationBuilder(operation, partitionId)
                 .setTryCount(3)
                 .setTryPauseMillis(250)
                 .setReplicaIndex(replicaIndex)
@@ -1685,7 +1684,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private Boolean executeMigrateOperation(MigrationRequestOperation migrationRequestOp, MemberImpl fromMember) {
-            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, migrationRequestOp,
+            Future future = nodeEngine.getOperationService().createInvocationBuilder(migrationRequestOp,
                     migrationInfo.getSource())
                     .setCallTimeout(partitionMigrationTimeout)
                     .setTryPauseMillis(DEFAULT_PAUSE_MILLIS).invoke();

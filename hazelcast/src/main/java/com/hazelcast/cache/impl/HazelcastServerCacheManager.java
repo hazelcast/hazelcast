@@ -90,17 +90,15 @@ public class HazelcastServerCacheManager
         final String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         final Collection<Future> futures = new ArrayList<Future>();
+        OperationService operationService = nodeEngine.getOperationService();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                final CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan,
-                        enabled);
-                final Future future = nodeEngine.getOperationService()
-                                                .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                CacheManagementConfigOperation op = new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);
+                Future future = operationService.invokeOnTarget(op, member.getAddress());
                 futures.add(future);
             }
         }
         waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
     }
 
     @Override
@@ -116,7 +114,7 @@ public class HazelcastServerCacheManager
 
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
         final InternalCompletableFuture<CacheConfig<K, V>> f = operationService
-                .invokeOnPartition(CacheService.SERVICE_NAME, cacheCreateConfigOperation, partitionId);
+                .invokeOnPartition(cacheCreateConfigOperation, partitionId);
         return f.getSafely();
     }
 
@@ -136,7 +134,7 @@ public class HazelcastServerCacheManager
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                                                                   .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                                                                   .invokeOnPartition(op, partitionId);
         return f.getSafely();
     }
 
