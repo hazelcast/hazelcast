@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -31,6 +32,7 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
 
     Set<Data> keys = new HashSet<Data>();
     MapEntrySet entrySet;
+    private transient RecordStore recordStore;
 
     public GetAllOperation(String name, Set<Data> keys) {
         super(name);
@@ -42,7 +44,7 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
 
     public void run() {
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
@@ -50,6 +52,22 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
             }
         }
         entrySet = recordStore.getAll(partitionKeySet);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        if (!entrySet.isEmpty()) {
+            evict(false);
+        }
+    }
+
+    protected void evict(boolean backup) {
+        if (recordStore == null) {
+            return;
+        }
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
     }
 
     @Override
