@@ -18,7 +18,6 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -26,6 +25,9 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.XmlConfigPreProcessor;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
@@ -40,13 +42,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Properties;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
-public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
+public class XmlClientConfigBuilder extends XmlConfigPreProcessor {
 
     private static final int DEFAULT_VALUE = 5;
+    private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
+
+
+    private Properties properties = System.getProperties();
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -92,6 +99,39 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         this.in = locator.getIn();
     }
 
+    @Override
+    protected Document parse(InputStream inputStream) throws Exception {
+
+        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc;
+        try {
+            doc = builder.parse(inputStream);
+        } catch (final Exception e) {
+            String msg = "Failed to parse Config Stream"
+                    + "\nException: " + e.getMessage()
+                    + "\nHazelcastClient startup interrupted.";
+            LOGGER.severe(msg);
+            throw e;
+        } finally {
+            IOUtil.closeResource(inputStream);
+        }
+        return doc;
+    }
+
+    @Override
+    protected Properties getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
+
+    @Override
+    protected ConfigType getXmlType() {
+        return ConfigType.CLIENT;
+    }
+
     public ClientConfig build() {
         return build(Thread.currentThread().getContextClassLoader());
     }
@@ -100,7 +140,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClassLoader(classLoader);
         try {
-            parse(clientConfig);
+            parseAndBuildConfig(clientConfig);
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -111,29 +151,24 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
     ClientConfig build(ClientConfig clientConfig) {
         try {
-            parse(clientConfig);
+            parseAndBuildConfig(clientConfig);
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private void parse(ClientConfig clientConfig) throws Exception {
+    private void parseAndBuildConfig(ClientConfig clientConfig) throws Exception {
         this.clientConfig = clientConfig;
-        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc;
+        Document doc = parse(in);
+        Element root = doc.getDocumentElement();
         try {
-            doc = builder.parse(in);
-        } catch (final Exception e) {
-            throw new IllegalStateException("Could not parse configuration file, giving up.");
-        }
-        Element element = doc.getDocumentElement();
-        try {
-            element.getTextContent();
+            root.getTextContent();
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-        handleConfig(element);
+        process(root);
+        handleConfig(root);
     }
 
     private void handleConfig(final Element docElement) throws Exception {

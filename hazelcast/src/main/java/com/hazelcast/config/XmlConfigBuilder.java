@@ -80,13 +80,12 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
-public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
+public class XmlConfigBuilder extends XmlConfigPreProcessor implements ConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
     private static final int DEFAULT_VALUE = 5;
     private static final int THOUSAND_FACTOR = 5;
-    private final XmlConfigPreProcessor xmlConfigPreProcessor = new XmlConfigPreProcessor(this);
 
     private Config config;
     private InputStream in;
@@ -167,6 +166,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     @Override
+    protected ConfigType getXmlType() {
+        return ConfigType.SERVER;
+    }
+
+    @Override
     public Config build() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -193,11 +197,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-        xmlConfigPreProcessor.process(root);
+        process(root);
         handleConfig(root);
     }
 
-    Document parse(InputStream is) throws Exception {
+    protected Document parse(InputStream is) throws Exception {
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc;
         try {
@@ -949,12 +953,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (maxSizePolicy != null) {
                     evictionConfig.setMaxSizePolicy(
                             CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
-                                    upperCaseInternal(getTextContent(maxSizePolicy))));
+                                    upperCaseInternal(getTextContent(maxSizePolicy)))
+                    );
                 }
                 if (evictionPolicy != null) {
                     evictionConfig.setEvictionPolicy(
                             EvictionPolicy.valueOf(
-                                    upperCaseInternal(getTextContent(evictionPolicy))));
+                                    upperCaseInternal(getTextContent(evictionPolicy)))
+                    );
                 }
                 cacheConfig.setEvictionConfig(evictionConfig);
             }
