@@ -33,6 +33,7 @@
         <property name="key" type="string" length="100"/>
 
         <many-to-one name="entity" class="com.hazelcast.hibernate.entity.DummyEntity"
-                     column="parent_uid"/>
+                     column="parent_uid"
+                />
     </class>
 </hibernate-mapping>

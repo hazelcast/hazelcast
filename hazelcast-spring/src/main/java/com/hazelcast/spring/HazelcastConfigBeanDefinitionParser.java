@@ -243,9 +243,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("configuration".equals(nodeName)) {
                     final Node parser = child.getAttributes().getNamedItem("parser");
                     final String name = getTextContent(parser);
-                    serviceConfigBuilder.addPropertyReference(xmlToJavaName("config-object"),name );
+//                    serviceConfigBuilder.addPropertyReference(xmlToJavaName("config-object"),name );
                 }
-
             }
             return beanDefinition;
         }
