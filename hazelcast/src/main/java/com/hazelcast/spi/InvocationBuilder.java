@@ -64,7 +64,6 @@ public abstract class InvocationBuilder {
     protected int replicaIndex;
     protected int tryCount = DEFAULT_TRY_COUNT;
     protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
-    protected String executorName;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
 
     /**
@@ -83,29 +82,6 @@ public abstract class InvocationBuilder {
         this.op = op;
         this.partitionId = partitionId;
         this.target = target;
-    }
-
-    /**
-     * Gets the name of the Executor to use. This functionality is useful if you want to customize which
-     * executor is going to run an operation. By default, you don't need to configure anything. But in some
-     * cases, such as map reduce logic where you don't want to hog the partition threads, you could
-     * offload to another executor.
-     *
-     * @return the name of the executor. Returns null if no explicit executor has been configured.
-     */
-    public String getExecutorName() {
-        return executorName;
-    }
-
-    /**
-     * Sets the executor name. Value can be null, meaning that no custom executor will be used.
-     *
-     * @param executorName the name of the executor.
-     * @return the InvocationBuilder
-     */
-    public InvocationBuilder setExecutorName(String executorName) {
-        this.executorName = executorName;
-        return this;
     }
 
     /**

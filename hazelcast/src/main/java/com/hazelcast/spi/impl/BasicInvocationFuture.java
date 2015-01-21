@@ -419,7 +419,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
             BasicInvocation inv = new BasicTargetInvocation(
                     invocation.nodeEngine, invocation.serviceName, isStillExecuting,
-                    target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, null, true);
+                    target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + toString());
             executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
