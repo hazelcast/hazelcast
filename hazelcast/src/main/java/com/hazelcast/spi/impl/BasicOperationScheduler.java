@@ -606,20 +606,4 @@ public final class BasicOperationScheduler {
             }
         }
     }
-
-    /**
-     * Process the operation that has been send locally to this OperationService.
-     */
-    private final class LocalOperationProcessor implements Runnable {
-        private final Operation op;
-
-        private LocalOperationProcessor(Operation op) {
-            this.op = op;
-        }
-
-        @Override
-        public void run() {
-            operationHandler.process(op);
-        }
-    }
 }
