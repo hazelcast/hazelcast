@@ -44,11 +44,6 @@ public final class HasOngoingMigration extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return response;
     }

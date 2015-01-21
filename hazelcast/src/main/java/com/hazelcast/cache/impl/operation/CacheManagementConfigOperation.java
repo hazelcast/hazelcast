@@ -61,16 +61,6 @@ public class CacheManagementConfigOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);

@@ -53,11 +53,6 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         groupPassword = in.readUTF();

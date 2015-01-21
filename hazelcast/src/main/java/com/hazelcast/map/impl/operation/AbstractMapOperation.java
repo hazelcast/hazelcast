@@ -46,10 +46,4 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     @Override
     public void afterRun() throws Exception {
     }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
 }

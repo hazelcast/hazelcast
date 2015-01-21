@@ -70,11 +70,6 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return responses;
     }

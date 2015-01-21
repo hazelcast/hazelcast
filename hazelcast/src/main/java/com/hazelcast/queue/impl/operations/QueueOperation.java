@@ -96,11 +96,6 @@ public abstract class QueueOperation extends Operation
     public void beforeRun() throws Exception {
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
     public boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);

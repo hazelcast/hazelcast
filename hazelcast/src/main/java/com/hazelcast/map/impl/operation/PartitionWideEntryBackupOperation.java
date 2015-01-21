@@ -71,11 +71,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
         }
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
     protected Predicate getPredicate() {
         return null;
     }

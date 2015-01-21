@@ -96,11 +96,6 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return true;
     }
