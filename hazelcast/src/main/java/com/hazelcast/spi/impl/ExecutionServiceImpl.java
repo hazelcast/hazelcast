@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
@@ -96,9 +97,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
         this.nodeEngine = nodeEngine;
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
-        final ClassLoader classLoader = node.getConfigClassLoader();
-        final ThreadFactory threadFactory = new PoolExecutorThreadFactory(node.threadGroup,
-                node.getThreadPoolNamePrefix("cached"), classLoader);
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        final ThreadFactory threadFactory = new PoolExecutorThreadFactory(threadGroup, "cached");
 
         cachedExecutorService = new ThreadPoolExecutor(
                 CORE_POOL_SIZE, Integer.MAX_VALUE, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -111,9 +111,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         }
         );
 
-        final String scheduledThreadName = node.getThreadNamePrefix("scheduled");
-        scheduledExecutorService = new ScheduledThreadPoolExecutor(1,
-                new SingleExecutorThreadFactory(node.threadGroup, classLoader, scheduledThreadName));
+        scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new SingleExecutorThreadFactory(threadGroup, "scheduled"));
         enableRemoveOnCancelIfAvailable();
 
         final int coreSize = Runtime.getRuntime().availableProcessors();
@@ -170,11 +168,13 @@ public final class ExecutionServiceImpl implements ExecutionService {
         } else if (type == ExecutorType.CONCRETE) {
             Node node = nodeEngine.getNode();
             String internalName = name.startsWith("hz:") ? name.substring(BEGIN_INDEX) : name;
+            HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
+            PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(hazelcastThreadGroup,
+                    hazelcastThreadGroup.getThreadPoolNamePrefix(internalName));
             NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(name, poolSize, poolSize,
                     KEEP_ALIVE_TIME, TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(queueCapacity),
-                    new PoolExecutorThreadFactory(node.threadGroup,
-                            node.getThreadPoolNamePrefix(internalName), node.getConfigClassLoader())
+                    threadFactory
             );
             pool.allowCoreThreadTimeOut(true);
             executor = pool;
