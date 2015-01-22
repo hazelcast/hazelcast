@@ -27,8 +27,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.RemotePropagatable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.RemotePropagatable;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -41,12 +41,19 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  */
 public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
 
+    static final int BITMASK_VALIDATE_TARGET = 1;
+    static final int BITMASK_CALLER_UUID_SET = 2;
+    static final int BITMASK_REPLICA_INDEX_SET = 4;
+    static final int BITMASK_WAIT_TIMEOUT_SET = 8;
+    static final int BITMASK_PARTITION_ID_32_BIT = 16;
+    static final int BITMASK_CALL_TIMEOUT_64_BIT = 32;
+
     // serialized
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
     private long callId;
-    private boolean validateTarget = true;
+    private byte flags;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
@@ -59,6 +66,10 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     private transient Address callerAddress;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
+
+    public Operation() {
+        setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
+    }
 
     public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
@@ -92,6 +103,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public final Operation setPartitionId(int partitionId) {
         this.partitionId = partitionId;
+        setFlag(partitionId > Short.MAX_VALUE, BITMASK_PARTITION_ID_32_BIT);
         return this;
     }
 
@@ -104,6 +116,8 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             throw new IllegalArgumentException("Replica index is out of range [0-"
                     + (InternalPartition.MAX_REPLICA_COUNT - 1) + "]");
         }
+
+        setFlag(replicaIndex != 0, BITMASK_REPLICA_INDEX_SET);
         this.replicaIndex = replicaIndex;
         return this;
     }
@@ -127,11 +141,11 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     }
 
     public boolean validatesTarget() {
-        return validateTarget;
+        return isFlagSet(BITMASK_VALIDATE_TARGET);
     }
 
     public final Operation setValidateTarget(boolean validateTarget) {
-        this.validateTarget = validateTarget;
+        setFlag(validateTarget, BITMASK_VALIDATE_TARGET);
         return this;
     }
 
@@ -212,6 +226,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     // Accessed using OperationAccessor
     final Operation setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
+        setFlag(callTimeout > Integer.MAX_VALUE, BITMASK_CALL_TIMEOUT_64_BIT);
         return this;
     }
 
@@ -221,6 +236,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public final void setWaitTimeout(long timeout) {
         this.waitTimeout = timeout;
+        setFlag(timeout != -1, BITMASK_WAIT_TIMEOUT_SET);
     }
 
     public ExceptionAction onException(Throwable throwable) {
@@ -234,12 +250,29 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public Operation setCallerUuid(String callerUuid) {
         this.callerUuid = callerUuid;
+        setFlag(callerUuid != null, BITMASK_CALLER_UUID_SET);
         return this;
     }
 
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
+    }
+
+    void setFlag(boolean value, int bitmask) {
+        if (value) {
+            flags |= bitmask;
+        } else {
+            flags &= ~bitmask;
+        }
+    }
+
+    boolean isFlagSet(int bitmask) {
+        return (flags & bitmask) != 0;
+    }
+
+    byte getFlags() {
+        return flags;
     }
 
     public void logError(Throwable e) {
@@ -269,14 +302,37 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         // It is used to return deserialization exceptions to the caller
         out.writeLong(callId);
 
+        // write state next, so that it is first available on reading.
+        out.writeByte(flags);
+
         out.writeUTF(serviceName);
-        out.writeInt(partitionId);
-        out.writeByte(replicaIndex);
-        out.writeBoolean(validateTarget);
+
+        if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
+            out.writeInt(partitionId);
+        } else {
+            out.writeShort(partitionId);
+        }
+
+        if (isFlagSet(BITMASK_REPLICA_INDEX_SET)) {
+            out.writeByte(replicaIndex);
+        }
+
         out.writeLong(invocationTime);
-        out.writeLong(callTimeout);
-        out.writeLong(waitTimeout);
-        out.writeUTF(callerUuid);
+
+        if (isFlagSet(BITMASK_CALL_TIMEOUT_64_BIT)) {
+            out.writeLong(callTimeout);
+        } else {
+            out.writeInt((int) callTimeout);
+        }
+
+        if (isFlagSet(BITMASK_WAIT_TIMEOUT_SET)) {
+            out.writeLong(waitTimeout);
+        }
+
+        if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
+            out.writeUTF(callerUuid);
+        }
+
         out.writeUTF(executorName);
         writeInternal(out);
     }
@@ -287,14 +343,36 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         // It is used to return deserialization exceptions to the caller
         callId = in.readLong();
 
+        flags = in.readByte();
+
         serviceName = in.readUTF();
-        partitionId = in.readInt();
-        replicaIndex = in.readByte();
-        validateTarget = in.readBoolean();
+
+        if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
+            partitionId = in.readInt();
+        } else {
+            partitionId = in.readShort();
+        }
+
+        if (isFlagSet(BITMASK_REPLICA_INDEX_SET)) {
+            replicaIndex = in.readByte();
+        }
+
         invocationTime = in.readLong();
-        callTimeout = in.readLong();
-        waitTimeout = in.readLong();
-        callerUuid = in.readUTF();
+
+        if (isFlagSet(BITMASK_CALL_TIMEOUT_64_BIT)) {
+            callTimeout = in.readLong();
+        } else {
+            callTimeout = in.readInt();
+        }
+
+        if (isFlagSet(BITMASK_WAIT_TIMEOUT_SET)) {
+            waitTimeout = in.readLong();
+        }
+
+        if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
+            callerUuid = in.readUTF();
+        }
+
         executorName = in.readUTF();
         readInternal(in);
     }
@@ -314,4 +392,5 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         sb.append('}');
         return sb.toString();
     }
+
 }
