@@ -122,8 +122,8 @@ public class MapLoaderTest extends HazelcastTestSupport {
     @Test
     public void testGetAll_putsLoadedItemsToIMap() throws Exception {
         Integer[] requestedKeys = {1, 2, 3};
-        AtomicInteger loadAllCounter = new AtomicInteger(0);
-        MapStore mapStore = createMapLoader(loadAllCounter);
+        AtomicInteger loadedKeysCounter = new AtomicInteger(0);
+        MapStore mapStore = createMapLoader(loadedKeysCounter);
 
         IMap map = TestMapUsingMapStoreBuilder.create()
                 .withMapStore(mapStore)
@@ -138,20 +138,26 @@ public class MapLoaderTest extends HazelcastTestSupport {
         map.getAll(keySet);
         map.getAll(keySet);
 
-        assertEquals(1, loadAllCounter.get());
+        assertEquals(requestedKeys.length, loadedKeysCounter.get());
     }
 
     private MapStore createMapLoader(final AtomicInteger loadAllCounter) {
         return new MapStoreAdapter<Integer, Integer>() {
             @Override
             public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
-                loadAllCounter.incrementAndGet();
+                loadAllCounter.addAndGet(keys.size());
 
                 Map<Integer, Integer> map = new HashMap<Integer, Integer>();
                 for (Integer key : keys) {
                     map.put(key, key);
                 }
                 return map;
+            }
+
+            @Override
+            public Integer load(Integer key) {
+                loadAllCounter.incrementAndGet();
+                return super.load(key);
             }
         };
     }
