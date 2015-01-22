@@ -30,8 +30,11 @@ ITransactionContext can be used to obtain:
 * `ITransactionalList<E>`, and
 * `ITransactionalSet<E>`.
 
+At present the following features are not available as in the Java Client:
 
-
+* Distributed Executor Service
+* Replicated Map
+* JCache
 
 A code example is shown below.
 

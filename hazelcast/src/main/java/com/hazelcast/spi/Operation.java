@@ -271,7 +271,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
         out.writeUTF(serviceName);
         out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
+        out.writeByte(replicaIndex);
         out.writeBoolean(validateTarget);
         out.writeLong(invocationTime);
         out.writeLong(callTimeout);
@@ -289,7 +289,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
         serviceName = in.readUTF();
         partitionId = in.readInt();
-        replicaIndex = in.readInt();
+        replicaIndex = in.readByte();
         validateTarget = in.readBoolean();
         invocationTime = in.readLong();
         callTimeout = in.readLong();

@@ -1,10 +1,13 @@
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.nio.serialization.Data;
+
 import java.util.Collection;
 import java.util.Map;
 
 /**
- * Map data store general contract.
+ * Map data stores general contract.
+ * Provides an extra abstraction layer over write-through and write-behind map-store implementations.
  *
  * @param <K> type of key to store.
  * @param <V> type of value to store.
@@ -21,7 +24,10 @@ public interface MapDataStore<K, V> {
 
     void removeBackup(K key, long now);
 
-    void reset();
+    /**
+     * Clears resources of this map-data-store.
+     */
+    void clear();
 
     V load(K key);
 
@@ -41,9 +47,16 @@ public interface MapDataStore<K, V> {
 
     boolean isPostProcessingMapStore();
 
-    Collection flush();
+    /**
+     * Flushes all keys in this map-store.
+     *
+     * @return flushed {@link com.hazelcast.nio.serialization.Data} keys list.
+     */
+    Collection<Data> flush();
 
     /**
+     * Flushes the supplied key to the map-store.
+     *
      * @param key    key to be flushed
      * @param value  value to be flushed
      * @param now    now in millis

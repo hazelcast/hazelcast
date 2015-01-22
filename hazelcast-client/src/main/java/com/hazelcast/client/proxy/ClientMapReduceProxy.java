@@ -17,7 +17,6 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.InvocationClientRequest;
-import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -113,7 +112,6 @@ public class ClientMapReduceProxy
             try {
                 final String jobId = UuidUtil.buildRandomUuidString();
 
-                ClientContext context = getContext();
                 ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
                         predicate, mapper, combinerFactory, reducerFactory, keyValueSource,
                         chunkSize, topologyChangedStrategy);

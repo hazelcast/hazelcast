@@ -80,3 +80,7 @@ public interface EntryBackupProcessor<K, V> extends Serializable {
 
 ![image](images/NoteSmall.jpg) ***NOTE***: *You should explicitly call `setValue` method of `Map.Entry` when modifying data in Entry Processor. Otherwise, Entry Processor will be accepted as read-only.*
 
+![image](images/NoteSmall.jpg) ***NOTE***: *An EntryProcessor instance is not thread safe. If you are storing partition specific state between invocations be sure to register this in a thread-local.  A EntryProcessor instance can be used by multiple partition threads.*
+
+![image](images/NoteSmall.jpg) ***NOTE***: *EntryProcessors run via Operation Threads that are dedicated to specific partitions.  Therefore with long running EntryProcessor executions other partition operations cannot be processed, such as a 'map.put(key)'.  With this is in mind it is good practice to make your EntryProcessor executions as quick as possible*
+

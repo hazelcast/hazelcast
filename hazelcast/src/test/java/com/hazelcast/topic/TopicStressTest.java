@@ -1,5 +1,7 @@
 package com.hazelcast.topic;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
@@ -42,7 +44,7 @@ public class TopicStressTest extends HazelcastTestSupport {
     public static final int NODE_COUNT = 10;
     public static final int TOPIC_COUNT = 10;
     public static final int RUNNING_TIME_SECONDS = 600;
-    //if we set this value very low, it could be that events are dropped due to overload of the event queue.
+    // if we set this value very low, it could be that events are dropped due to overload of the event queue
     public static final int MAX_PUBLISH_DELAY_MILLIS = 25;
 
     private HazelcastInstance[] instances;
@@ -52,14 +54,20 @@ public class TopicStressTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        instances = createHazelcastInstanceFactory(NODE_COUNT).newInstances();
+        TopicConfig topicConfig = new TopicConfig();
+        topicConfig.setName("topic*");
+
+        Config config = new Config();
+        config.addTopicConfig(topicConfig);
+
+        instances = createHazelcastInstanceFactory(NODE_COUNT).newInstances(config);
 
         startLatch = new CountDownLatch(1);
         publishThreads = new PublishThread[PUBLISH_THREAD_COUNT];
-        for (int k = 0; k < publishThreads.length; k++) {
+        for (int threadIndex = 0; threadIndex < publishThreads.length; threadIndex++) {
             PublishThread publishThread = new PublishThread(startLatch);
             publishThread.start();
-            publishThreads[k] = publishThread;
+            publishThreads[threadIndex] = publishThread;
         }
 
         listenerMap = new HashMap<String, List<MessageListenerImpl>>();
@@ -103,7 +111,7 @@ public class TopicStressTest extends HazelcastTestSupport {
             }
         }
 
-        //since each message is send to multiple nodes.. we need to multiply it
+        // since each message is send to multiple nodes, we need to multiply it
         return result * NODE_COUNT;
     }
 
@@ -170,7 +178,7 @@ public class TopicStressTest extends HazelcastTestSupport {
         private void randomSleep() {
             try {
                 Thread.sleep(random.nextInt(MAX_PUBLISH_DELAY_MILLIS));
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ignored) {
             }
         }
 

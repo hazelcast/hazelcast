@@ -42,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -56,240 +57,77 @@ public abstract class HazelcastTestSupport {
 
     @After
     public final void shutdownNodeFactory() {
-        final TestHazelcastInstanceFactory f = factory;
-        if (f != null) {
+        TestHazelcastInstanceFactory testHazelcastInstanceFactory = factory;
+        if (testHazelcastInstanceFactory != null) {
             factory = null;
-            f.terminateAll();
+            testHazelcastInstanceFactory.terminateAll();
         }
     }
 
-    public static String generateRandomString(int length) {
-        StringBuffer sb = new StringBuffer(length);
-        Random random = new Random();
-        for (int k = 0; k < length; k++) {
-            char c = (char) (random.nextInt(26) + 'a');
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
-    public static void assertStartsWith(String expected, String actual) {
-        if (actual != null && actual.startsWith(expected)) {
-            return;
-        } else if (expected instanceof String && actual instanceof String) {
-            throw new ComparisonFailure("", (String) expected, (String) actual);
-        } else {
-            fail(format0("", expected, actual));
-        }
-    }
-
-    public static void assertJoinable(Thread... threads) {
-        assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
-    }
-
-    public static void interruptCurrentThread(final int delaysMs) {
-        final Thread currentThread = Thread.currentThread();
-        new Thread() {
-            public void run() {
-                sleepMillis(delaysMs);
-                currentThread.interrupt();
-            }
-        }.start();
-    }
-
-    public static void assertIterableEquals(Iterable iter, Object... values) {
-        int counter = 0;
-        for (Object o : iter) {
-            if (values.length < counter + 1) {
-                throw new AssertionError("Iterator and values sizes are not equal");
-            }
-            assertEquals(values[counter], o);
-            counter++;
-        }
-
-        assertEquals("Iterator and values sizes are not equal", values.length, counter);
-    }
-
-    public static void assertSizeEventually(int expectedSize, Collection c) {
-        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the collection is not correct: found-content:" + c, expectedSize, c.size());
-            }
-        }, timeoutSeconds);
-    }
-
-    public static void assertSizeEventually(int expectedSize, Map<?, ?> m) {
-        assertSizeEventually(expectedSize, m, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertSizeEventually(final int expectedSize, final Map<?, ?> m, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("the size of the map is not correct", expectedSize, m.size());
-            }
-        }, timeoutSeconds);
-    }
-
-    public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
-        assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
-    }
-
-    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance) {
-        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
-            }
-        }, timeoutSeconds);
-    }
-
-    public static void assertJoinable(long timeoutSeconds, Thread... threads) {
+    public static void sleepMillis(int millis) {
         try {
-            long remainingTimeoutMs = TimeUnit.SECONDS.toMillis(timeoutSeconds);
-            for (Thread t : threads) {
-                long startMs = System.currentTimeMillis();
-                t.join(remainingTimeoutMs);
-
-                if (t.isAlive()) {
-                    fail("Timeout waiting for thread " + t.getName() + " to terminate");
-                }
-
-                long durationMs = System.currentTimeMillis() - startMs;
-                remainingTimeoutMs -= durationMs;
-                if (remainingTimeoutMs <= 0) {
-                    fail("Timeout waiting for thread " + t.getName() + " to terminate");
-                }
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void assertOpenEventually(CountDownLatch latch) {
-        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertOpenEventually(String message, CountDownLatch latch) {
-        assertOpenEventually(message, latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-    }
-
-    public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
-        assertOpenEventually(null, latch, timeoutSeconds);
-    }
-
-    public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
-        try {
-            boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
-            if (message == null) {
-                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", timeoutSeconds,
-                        latch.getCount()), completed);
-            } else {
-                assertTrue(format("%s, failed to complete within %d seconds , count left: %d", message, timeoutSeconds,
-                        latch.getCount()), completed);
-            }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            TimeUnit.MILLISECONDS.sleep(millis);
+        } catch (InterruptedException ignored) {
         }
     }
 
     public static void sleepSeconds(int seconds) {
         try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
+            TimeUnit.SECONDS.sleep(seconds);
+        } catch (InterruptedException ignored) {
         }
+    }
+
+    public static String generateRandomString(int length) {
+        StringBuilder sb = new StringBuilder(length);
+        Random random = new Random();
+        for (int i = 0; i < length; i++) {
+            char character = (char) (random.nextInt(26) + 'a');
+            sb.append(character);
+        }
+        return sb.toString();
     }
 
     public static String randomString() {
         return UUID.randomUUID().toString();
     }
 
-    public static String randomMapName(String mapNamePrefix) {
-        return mapNamePrefix + randomString();
-    }
-
     public static String randomMapName() {
         return randomString();
     }
 
-    public static void sleepMillis(int millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-        }
+    public static String randomMapName(String mapNamePrefix) {
+        return mapNamePrefix + randomString();
     }
 
-    public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
-        for (int k = 0; k < durationSeconds; k++) {
-            try {
-                task.run();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+    public static void printAllStackTraces() {
+        Map liveThreads = Thread.getAllStackTraces();
+        for (Object object : liveThreads.keySet()) {
+            Thread key = (Thread) object;
+            System.err.println("Thread " + key.getName());
+            StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
+            for (StackTraceElement aTrace : trace) {
+                System.err.println("\tat " + aTrace);
             }
-            sleepSeconds(1);
         }
     }
 
-    public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
-        AssertionError error = null;
-
-        //we are going to check 5 times a second.
-        long iterations = timeoutSeconds * 5;
-        int sleepMillis = 200;
-        for (int k = 0; k < iterations; k++) {
-            try {
-                try {
-                    task.run();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-                return;
-            } catch (AssertionError e) {
-                error = e;
+    public static void interruptCurrentThread(final int delayMillis) {
+        final Thread currentThread = Thread.currentThread();
+        new Thread() {
+            public void run() {
+                sleepMillis(delayMillis);
+                currentThread.interrupt();
             }
-            sleepMillis(sleepMillis);
-        }
-
-        printAllStackTraces();
-        throw error;
+        }.start();
     }
 
-    public static void assertTrueEventually(AssertTask task) {
-        assertTrueEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    public HazelcastInstance createHazelcastInstance() {
+        return createHazelcastInstance(new Config());
     }
 
-    public static void assertTrueDelayed5sec(AssertTask task) {
-        assertTrueDelayed(5, task);
-    }
-
-    public static void assertTrueDelayed(int delaySeconds, AssertTask task) {
-        sleepSeconds(delaySeconds);
-        try {
-            task.run();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * This method executes the normal assertEquals with expected and actual values.
-     * In addition it formats the given string with those values to provide a good assert message.
-     *
-     * @param message     assert message which is formatted with expected and actual values
-     * @param expected    expected value which is used for assert
-     * @param actual      actual value which is used for assert
-     */
-    public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
-        assertEquals(String.format(message, expected, actual), expected, actual);
+    public HazelcastInstance createHazelcastInstance(Config config) {
+        return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
@@ -299,20 +137,11 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(nodeCount);
     }
 
-
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(String... addresses) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
         }
         return factory = new TestHazelcastInstanceFactory(addresses);
-    }
-
-    public HazelcastInstance createHazelcastInstance(Config config) {
-        return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
-    }
-
-    public HazelcastInstance createHazelcastInstance() {
-        return createHazelcastInstance(new Config());
     }
 
     public static Node getNode(HazelcastInstance hz) {
@@ -344,14 +173,14 @@ public abstract class HazelcastTestSupport {
      * @return generated string.
      */
     private static String generateKeyInternal(HazelcastInstance instance, boolean generateOwnedKey) {
-        final Cluster cluster = instance.getCluster();
+        Cluster cluster = instance.getCluster();
         checkMemberCount(generateOwnedKey, cluster);
 
-        final Member localMember = cluster.getLocalMember();
-        final PartitionService partitionService = instance.getPartitionService();
-        for (; ; ) {
-            final String id = randomString();
-            final Partition partition = partitionService.getPartition(id);
+        Member localMember = cluster.getLocalMember();
+        PartitionService partitionService = instance.getPartitionService();
+        for (;;) {
+            String id = randomString();
+            Partition partition = partitionService.getPartition(id);
             if (comparePartitionOwnership(generateOwnedKey, localMember, partition)) {
                 return id;
             }
@@ -375,43 +204,6 @@ public abstract class HazelcastTestSupport {
         } else {
             return !member.equals(owner);
         }
-    }
-
-    public final class DummyUncheckedHazelcastTestException
-            extends RuntimeException {
-
-    }
-
-    public static void printAllStackTraces() {
-        Map liveThreads = Thread.getAllStackTraces();
-        for (Object o : liveThreads.keySet()) {
-            Thread key = (Thread) o;
-            System.err.println("Thread " + key.getName());
-            StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
-            for (StackTraceElement aTrace : trace) {
-                System.err.println("\tat " + aTrace);
-            }
-        }
-    }
-
-    private static String format0(String message, Object expected, Object actual) {
-        String formatted = "";
-        if (message != null && !message.equals("")) {
-            formatted = message + " ";
-        }
-        String expectedString = String.valueOf(expected);
-        String actualString = String.valueOf(actual);
-        if (expectedString.equals(actualString)) {
-            return formatted + "expected: " + formatClassAndValue(expected, expectedString) + " but was: " + formatClassAndValue(
-                    actual, actualString);
-        } else {
-            return formatted + "expected:<" + expectedString + "> but was:<" + actualString + ">";
-        }
-    }
-
-    private static String formatClassAndValue(Object value, String valueString) {
-        String className = value == null ? "null" : value.getClass().getName();
-        return className + "<" + valueString + ">";
     }
 
     public static boolean isInstanceInSafeState(final HazelcastInstance instance) {
@@ -476,4 +268,211 @@ public abstract class HazelcastTestSupport {
         });
     }
 
+    public static void assertStartsWith(String expected, String actual) {
+        if (actual != null && actual.startsWith(expected)) {
+            return;
+        }
+        if (expected != null && actual != null) {
+            throw new ComparisonFailure("", expected, actual);
+        }
+        fail(formatAssertMessage("", expected, null));
+    }
+
+    private static String formatAssertMessage(String message, Object expected, Object actual) {
+        StringBuilder assertMessage = new StringBuilder();
+        if (message != null && !message.isEmpty()) {
+            assertMessage.append(message).append(" ");
+        }
+        String expectedString = String.valueOf(expected);
+        String actualString = String.valueOf(actual);
+        if (expectedString.equals(actualString)) {
+            assertMessage.append("expected: ");
+            formatClassAndValue(assertMessage, expected, expectedString);
+            assertMessage.append(" but was: ");
+            formatClassAndValue(assertMessage, actual, actualString);
+        } else {
+            assertMessage.append("expected: <").append(expectedString).append("> but was: <").append(actualString).append(">");
+        }
+        return assertMessage.toString();
+    }
+
+    private static void formatClassAndValue(StringBuilder message, Object value, String valueString) {
+        message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
+    }
+
+    public static void assertJoinable(Thread... threads) {
+        assertJoinable(ASSERT_TRUE_EVENTUALLY_TIMEOUT, threads);
+    }
+
+    public static void assertIterableEquals(Iterable iterable, Object... values) {
+        int counter = 0;
+        for (Object object : iterable) {
+            if (values.length < counter + 1) {
+                throw new AssertionError("Iterator and values sizes are not equal");
+            }
+            assertEquals(values[counter], object);
+            counter++;
+        }
+
+        assertEquals("Iterator and values sizes are not equal", values.length, counter);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Collection c) {
+        assertSizeEventually(expectedSize, c, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(final int expectedSize, final Collection c, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("the size of the collection is not correct: found-content:" + c, expectedSize, c.size());
+            }
+        }, timeoutSeconds);
+    }
+
+    public static void assertSizeEventually(int expectedSize, Map<?, ?> m) {
+        assertSizeEventually(expectedSize, m, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertSizeEventually(final int expectedSize, final Map<?, ?> m, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals("the size of the map is not correct", expectedSize, m.size());
+            }
+        }, timeoutSeconds);
+    }
+
+    public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
+        assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
+    }
+
+    public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance instance) {
+        assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
+            }
+        }, timeoutSeconds);
+    }
+
+    public static void assertJoinable(long timeoutSeconds, Thread... threads) {
+        try {
+            long remainingTimeout = TimeUnit.SECONDS.toNanos(timeoutSeconds);
+            for (Thread thread : threads) {
+                long start = System.nanoTime();
+                thread.join(remainingTimeout);
+
+                if (thread.isAlive()) {
+                    fail("Timeout waiting for thread " + thread.getName() + " to terminate");
+                }
+
+                long duration = System.nanoTime() - start;
+                remainingTimeout -= duration;
+                if (remainingTimeout <= 0) {
+                    fail("Timeout waiting for thread " + thread.getName() + " to terminate");
+                }
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void assertOpenEventually(CountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpenEventually(String message, CountDownLatch latch) {
+        assertOpenEventually(message, latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(null, latch, timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
+        try {
+            boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
+            if (message == null) {
+                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", timeoutSeconds,
+                        latch.getCount()), completed);
+            } else {
+                assertTrue(format("%s, failed to complete within %d seconds , count left: %d", message, timeoutSeconds,
+                        latch.getCount()), completed);
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
+        for (int k = 0; k < durationSeconds; k++) {
+            try {
+                task.run();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            sleepSeconds(1);
+        }
+    }
+
+    public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
+        AssertionError error = null;
+        // we are going to check 5 times a second
+        long iterations = timeoutSeconds * 5;
+        int sleepMillis = 200;
+        for (int k = 0; k < iterations; k++) {
+            try {
+                try {
+                    task.run();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                return;
+            } catch (AssertionError e) {
+                error = e;
+            }
+            sleepMillis(sleepMillis);
+        }
+
+        printAllStackTraces();
+        throw error;
+    }
+
+    public static void assertTrueEventually(AssertTask task) {
+        assertTrueEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
+    public static void assertTrueDelayed5sec(AssertTask task) {
+        assertTrueDelayed(5, task);
+    }
+
+    public static void assertTrueDelayed(int delaySeconds, AssertTask task) {
+        sleepSeconds(delaySeconds);
+        try {
+            task.run();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * This method executes the normal assertEquals with expected and actual values.
+     * In addition it formats the given string with those values to provide a good assert message.
+     *
+     * @param message     assert message which is formatted with expected and actual values
+     * @param expected    expected value which is used for assert
+     * @param actual      actual value which is used for assert
+     */
+    public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
+        assertEquals(String.format(message, expected, actual), expected, actual);
+    }
+
+    public final class DummyUncheckedHazelcastTestException extends RuntimeException {
+    }
 }

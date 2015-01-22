@@ -48,6 +48,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -57,11 +58,10 @@ import static com.hazelcast.config.XmlElements.LIST;
 import static com.hazelcast.config.XmlElements.LISTENERS;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
-import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
 import static com.hazelcast.config.XmlElements.MULTIMAP;
-import static com.hazelcast.config.XmlElements.NETWORK;
 import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
+import static com.hazelcast.config.XmlElements.NETWORK;
 import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
@@ -74,6 +74,7 @@ import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -121,6 +122,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     /**
      * Constructs a XMLConfigBuilder that reads from the given URL.
+     *
      * @param url the given url that the XMLConfigBuilder reads from
      * @throws IOException
      */
@@ -1065,6 +1067,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("write-batch-size".equals(nodeName)) {
                 mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim(),
                         MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE));
+            } else if ("write-coalescing".equals(nodeName)) {
+                final String writeCoalescing = getTextContent(n).trim();
+                if (isNullOrEmpty(writeCoalescing)) {
+                    mapStoreConfig.setWriteCoalescing(MapStoreConfig.DEFAULT_WRITE_COALESCING);
+                } else {
+                    mapStoreConfig.setWriteCoalescing(checkTrue(writeCoalescing));
+                }
+
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
