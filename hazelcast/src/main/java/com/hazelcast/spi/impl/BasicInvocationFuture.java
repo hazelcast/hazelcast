@@ -18,7 +18,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
@@ -38,9 +38,13 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private static final AtomicReferenceFieldUpdater<BasicInvocationFuture, Object> RESPONSE_FIELD_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(BasicInvocationFuture.class, Object.class, "response");
+    private static final AtomicIntegerFieldUpdater<BasicInvocationFuture> WAITER_COUNT_FIELD_UPDATER
+            = AtomicIntegerFieldUpdater.newUpdater(BasicInvocationFuture.class,  "waiterCount");
 
     volatile boolean interrupted;
-    private final AtomicInteger waiterCount = new AtomicInteger();
+    // Contains the number of threads waiting for a result from this future.
+    // is updated through the WAITER_COUNT_FIELD_UPDATER.
+    private volatile int waiterCount;
     private final BasicOperationService operationService;
     private final BasicInvocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
@@ -199,7 +203,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             return response;
         }
 
-        waiterCount.incrementAndGet();
+        WAITER_COUNT_FIELD_UPDATER.incrementAndGet(this);
         try {
             long timeoutMs = toTimeoutMs(time, unit);
             long maxCallTimeoutMs = getMaxCallTimeout();
@@ -251,7 +255,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             }
             return BasicInvocation.TIMEOUT_RESPONSE;
         } finally {
-            waiterCount.decrementAndGet();
+            WAITER_COUNT_FIELD_UPDATER.decrementAndGet(this);
         }
     }
 
@@ -283,7 +287,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     int getWaitingThreadsCount() {
-        return waiterCount.get();
+        return waiterCount;
     }
 
     private static long toTimeoutMs(long time, TimeUnit unit) {
