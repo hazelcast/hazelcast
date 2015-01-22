@@ -17,7 +17,6 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
-import static com.hazelcast.nio.serialization.PortableTest.transferClassDefinition;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -81,10 +80,7 @@ public class PortableClassVersionTest {
         NamedPortableV2 p2 = new NamedPortableV2("named-portable", 123);
         Data data2 = serializationService2.toData(p2);
 
-        transferClassDefinition(data, serializationService, serializationService2);
         NamedPortableV2 o1 = serializationService2.toObject(data);
-
-        transferClassDefinition(data2, serializationService2, serializationService);
         NamedPortable o2 = serializationService.toObject(data2);
 
         assertEquals(o1.name, o2.name);
@@ -136,17 +132,12 @@ public class PortableClassVersionTest {
         NamedPortable p1 = new NamedPortable("portable-v1", 111);
         Data data = serializationService.toData(p1);
 
-        // register class def
-        transferClassDefinition(data, serializationService, serializationService2);
-
         // emulate socket write by writing data to stream
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
         out.writeData(data);
         byte[] bytes = out.toByteArray();
-        byte[] header = ((PortableDataOutput) out).getPortableHeader();
-
         // emulate socket read by reading data from stream
-        BufferObjectDataInput in = serializationService2.createObjectDataInput(new DefaultData(0, bytes, 0, header));
+        BufferObjectDataInput in = serializationService2.createObjectDataInput(new DefaultData(0, bytes, 0));
         data = in.readData();
 
         // read data
@@ -156,7 +147,6 @@ public class PortableClassVersionTest {
         NamedPortableV2 p2 = new NamedPortableV2("portable-v2", 123);
         Data data2 = serializationService2.toData(p2);
 
-        transferClassDefinition(data2, serializationService2, serializationService);
         // de-serialize back using old version
         Object object2 = serializationService.toObject(data2);
 
@@ -204,7 +194,6 @@ public class PortableClassVersionTest {
             SerializationService serializationService2, MainPortable mainPortable) {
         final Data data = serializationService.toData(mainPortable);
 
-        transferClassDefinition(data, serializationService, serializationService2);
         assertEquals(mainPortable, serializationService2.toObject(data));
     }
 
@@ -229,14 +218,14 @@ public class PortableClassVersionTest {
         ClientPrincipal principal = new ClientPrincipal("uuid", "uuid2");
         Data data = ss.toData(new AuthenticationRequest(credentials, principal));
 
-        Packet packet = new Packet(data, ss.getPortableContext());
+        Packet packet = new Packet(data);
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         assertTrue(packet.writeTo(buffer));
 
         SerializationService ss2 = createSerializationService(1);
 
         buffer.flip();
-        packet = new Packet(ss2.getPortableContext());
+        packet = new Packet();
         assertTrue(packet.readFrom(buffer));
 
         AuthenticationRequest request = ss2.toObject(packet.getData());

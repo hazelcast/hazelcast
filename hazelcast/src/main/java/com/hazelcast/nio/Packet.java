@@ -16,13 +16,8 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.BinaryClassDefinition;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.ClassDefinitionSerializer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
 
@@ -54,7 +49,6 @@ public final class Packet implements SocketWritable, SocketReadable {
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
 
     private Data data;
-    private PortableContext context;
     private short header;
     private int partitionId;
     private transient Connection conn;
@@ -65,19 +59,15 @@ public final class Packet implements SocketWritable, SocketReadable {
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
     private short persistStatus;
 
-    private ClassDefinitionSerializer classDefinitionSerializer;
-
-    public Packet(PortableContext context) {
-        this.context = context;
+    public Packet() {
     }
 
-    public Packet(Data data, PortableContext context) {
-        this(data, -1, context);
+    public Packet(Data data) {
+        this(data, -1);
     }
 
-    public Packet(Data data, int partitionId, PortableContext context) {
+    public Packet(Data data, int partitionId) {
         this.data = data;
-        this.context = context;
         this.partitionId = partitionId;
     }
 
@@ -152,10 +142,6 @@ public final class Packet implements SocketWritable, SocketReadable {
             return false;
         }
 
-        if (!writeClassDefinition(destination)) {
-            return false;
-        }
-
         if (!writeHash(destination)) {
             return false;
         }
@@ -191,10 +177,6 @@ public final class Packet implements SocketWritable, SocketReadable {
         }
 
         if (!readType(source)) {
-            return false;
-        }
-
-        if (!readClassDefinition(source)) {
             return false;
         }
 
@@ -295,57 +277,24 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean readType(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_TYPE)) {
-            if (source.remaining() < INT_SIZE_IN_BYTES + 1) {
+            if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
             int type = source.getInt();
             ((DefaultData) data).setType(type);
             setPersistStatus(PERSIST_TYPE);
-
-            boolean hasClassDefinition = source.get() != 0;
-            if (hasClassDefinition) {
-                classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
-            }
         }
         return true;
     }
 
     private boolean writeType(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_TYPE)) {
-            if (destination.remaining() < INT_SIZE_IN_BYTES + 1) {
+            if (destination.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
             int type = data.getType();
             destination.putInt(type);
-
-            boolean hasClassDefinition = context.hasClassDefinition(data);
-            destination.put((byte) (hasClassDefinition ? 1 : 0));
-
-            if (hasClassDefinition) {
-                classDefinitionSerializer = new ClassDefinitionSerializer(data, context);
-            }
-
             setPersistStatus(PERSIST_TYPE);
-        }
-        return true;
-    }
-
-    // ========================= class definition =================================================
-
-    private boolean readClassDefinition(ByteBuffer source) {
-        if (classDefinitionSerializer != null) {
-            if (!classDefinitionSerializer.read(source)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean writeClassDefinition(ByteBuffer destination) {
-        if (classDefinitionSerializer != null) {
-            if (!classDefinitionSerializer.write(destination)) {
-                return false;
-            }
         }
         return true;
     }
@@ -480,7 +429,7 @@ public final class Packet implements SocketWritable, SocketReadable {
      */
     public int size() {
         // 7 = byte(version) + short(header) + int(partitionId)
-        return (data != null ? getDataSize(data, context) : 0) + 7;
+        return (data != null ? getDataSize(data) : 0) + 7;
     }
 
     public Data getData() {
@@ -498,7 +447,6 @@ public final class Packet implements SocketWritable, SocketReadable {
     public void reset() {
         data = null;
         persistStatus = 0;
-        classDefinitionSerializer = null;
     }
 
     private void setPersistStatus(short persistStatus) {
@@ -509,34 +457,11 @@ public final class Packet implements SocketWritable, SocketReadable {
         return this.persistStatus >= status;
     }
 
-    public static int getDataSize(Data data, PortableContext context) {
+    private static int getDataSize(Data data) {
         // type
         int total = INT_SIZE_IN_BYTES;
         // class def flag
         total += 1;
-
-        if (context.hasClassDefinition(data)) {
-            ClassDefinition[] classDefinitions = context.getClassDefinitions(data);
-            if (classDefinitions == null || classDefinitions.length == 0) {
-                throw new HazelcastSerializationException("ClassDefinition could not be found!");
-            }
-            // class definitions count
-            total += INT_SIZE_IN_BYTES;
-
-            for (ClassDefinition classDef : classDefinitions) {
-                // classDefinition-classId
-                total += INT_SIZE_IN_BYTES;
-                // classDefinition-factory-id
-                total += INT_SIZE_IN_BYTES;
-                // classDefinition-version
-                total += INT_SIZE_IN_BYTES;
-                // classDefinition-binary-length
-                total += INT_SIZE_IN_BYTES;
-                byte[] bytes = ((BinaryClassDefinition) classDef).getBinary();
-                // classDefinition-binary
-                total += bytes.length;
-            }
-        }
 
         // partition-hash
         total += INT_SIZE_IN_BYTES;
