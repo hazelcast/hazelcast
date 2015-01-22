@@ -4,6 +4,7 @@ import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
 import com.hazelcast.cache.impl.eviction.EvictionConfig;
+import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
@@ -122,7 +123,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
         assertTrue(cacheRecordMap.containsValue(expectedEvictedRecord));
 
         int evictedCount = evictionStrategy.evict(cacheRecordMap, evictionPolicyEvaluator,
-                EvictionChecker.EVICT_ALWAYS);
+                EvictionChecker.EVICT_ALWAYS, EvictionListener.NO_LISTENER);
         assertEquals(EXPECTED_EVICTED_COUNT, evictedCount);
         assertEquals(RECORD_COUNT - EXPECTED_EVICTED_COUNT, cacheRecordMap.size());
         assertFalse(cacheRecordMap.containsKey(expectedData));

@@ -31,10 +31,11 @@ public interface EvictionStrategy<A, E extends Evictable, S extends EvictableSto
      * @param evictionChecker           {@link EvictionChecker} to make a decision about if eviction is
      *                                  required or not. If you want evict anyway,
      *                                  you can use {@link EvictionChecker#EVICT_ALWAYS}
+     * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
      * @return evicted entry count
      */
     int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
-            EvictionChecker evictionChecker);
+            EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener);
 
 }
