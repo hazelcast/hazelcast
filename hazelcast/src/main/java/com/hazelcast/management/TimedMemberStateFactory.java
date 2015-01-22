@@ -47,7 +47,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ public class TimedMemberStateFactory {
 
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
-        Collection<StatisticsService> services = instance.node.nodeEngine.getServices(StatisticsService.class);
+        Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
         createMemberState(memberState, services);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         TimedMemberState timedMemberState = new TimedMemberState();
@@ -114,7 +114,7 @@ public class TimedMemberStateFactory {
          return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
-    private void createMemberState(MemberStateImpl memberState, Collection<StatisticsService> services) {
+    private void createMemberState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
         final Node node = instance.node;
         Address thisAddress = node.getThisAddress();
         InternalPartitionService partitionService = node.getPartitionService();
@@ -143,11 +143,11 @@ public class TimedMemberStateFactory {
     }
 
     private void createMemState(MemberStateImpl memberState,
-                                Collection<StatisticsService> services) {
+                                Collection<StatisticsAwareService> services) {
         int count = 0;
         final Config config = instance.getConfig();
 
-        for (StatisticsService service : services) {
+        for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {
                     count = handleMap(memberState, count, config, ((MapService) service).getStats());
@@ -177,7 +177,9 @@ public class TimedMemberStateFactory {
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
                                       Map<String, LocalExecutorStats> executorServices) {
         for (String name : executorServices.keySet()) {
-            if (config.findExecutorConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findExecutorConfig(name).isStatisticsEnabled()) {
                 memberState.putLocalExecutorStats(name, executorServices.get(name));
                 ++count;
             }
@@ -187,7 +189,9 @@ public class TimedMemberStateFactory {
 
     private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
         for (String name : multiMaps.keySet()) {
-            if (config.findMultiMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
                 memberState.putLocalMultiMapStats(name, multiMaps.get(name));
                 ++count;
             }
@@ -197,7 +201,9 @@ public class TimedMemberStateFactory {
 
     private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
         for (String name : topics.keySet()) {
-            if (config.findTopicConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findTopicConfig(name).isStatisticsEnabled()) {
                 memberState.putLocalTopicStats(name, topics.get(name));
                 ++count;
             }
@@ -207,7 +213,9 @@ public class TimedMemberStateFactory {
 
     private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
         for (String name : queues.keySet()) {
-            if (config.findQueueConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findQueueConfig(name).isStatisticsEnabled()) {
                 memberState.putLocalQueueStats(name, queues.get(name));
                 ++count;
             }
@@ -217,7 +225,9 @@ public class TimedMemberStateFactory {
 
     private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
         for (String mapName : maps.keySet()) {
-            if (config.findMapConfig(mapName).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findMapConfig(mapName).isStatisticsEnabled()) {
                 memberState.putLocalMapStats(mapName, maps.get(mapName));
                 count = count + 1;
             }
@@ -230,16 +240,16 @@ public class TimedMemberStateFactory {
         return count + 1;
     }
 
-    private Set<String> getLongInstanceNames(Collection<StatisticsService> services) {
+    private Set<String> getLongInstanceNames(Collection<StatisticsAwareService> services) {
         Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         collectInstanceNames(setLongInstanceNames, services);
         return setLongInstanceNames;
     }
 
-    private void collectInstanceNames(Set<String> setLongInstanceNames, Collection<StatisticsService> services) {
+    private void collectInstanceNames(Set<String> setLongInstanceNames, Collection<StatisticsAwareService> services) {
         int count = 0;
         final Config config = instance.getConfig();
-        for (StatisticsService service : services) {
+        for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {
                     count = collectMapName(setLongInstanceNames, count, config, service.getStats().keySet());
@@ -254,6 +264,8 @@ public class TimedMemberStateFactory {
                 } else {
                     logger.finest("Statistics service ignored for monitoring: " + service.getClass().getName());
                 }
+            } else {
+                break;
             }
         }
 

@@ -45,7 +45,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -63,7 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiMapService implements ManagedService, RemoteService, MigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsService {
+        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
@@ -343,9 +343,8 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
     @Override
     public Map<String, LocalMultiMapStats> getStats() {
         Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
-            for (String name : partitionContainer.containerMap.keySet()) {
+        for (int i = 0; i < partitionContainers.length; i++) {
+            for (String name : partitionContainers[i].containerMap.keySet()) {
                 if (!multiMapStats.containsKey(name)) {
                     multiMapStats.put(name, createStats(name));
                 }

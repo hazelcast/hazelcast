@@ -26,7 +26,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -44,7 +44,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService, StatisticsService {
+public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService,
+        StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 

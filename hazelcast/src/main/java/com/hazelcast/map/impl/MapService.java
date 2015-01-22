@@ -29,7 +29,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -54,7 +54,7 @@ import java.util.Properties;
 public final class MapService implements ManagedService, MigrationAwareService,
 
         TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsService {
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService {
 
 
     /**

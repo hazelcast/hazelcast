@@ -25,6 +25,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -44,7 +46,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -70,7 +72,7 @@ import java.util.logging.Level;
  * such as {@link com.hazelcast.queue.impl.QueueEvictionProcessor }
  */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
-        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsService {
+        RemoteService, EventPublishingService<QueueEvent, ItemListener>, StatisticsAwareService {
     /**
      * Service name.
      */
@@ -278,6 +280,14 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return stats;
     }
 
+    public LocalQueueStats createLocalQueueStats(String name) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        Data keyData = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
+        int partitionId = partitionService.getPartitionId(keyData);
+        return createLocalQueueStats(name, partitionId);
+    }
+
     public LocalQueueStatsImpl getLocalQueueStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
@@ -305,10 +315,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public Map<String, LocalQueueStats> getStats() {
         Map<String, LocalQueueStats> queueStats = MapUtil.createHashMap(containerMap.size());
-        for (Entry<String, QueueContainer> queueStat : containerMap.entrySet()) {
-            queueStats.put(queueStat.getKey(), createLocalQueueStats(queueStat.getKey(),
-                    nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(
-                            queueStat.getKey(), StringPartitioningStrategy.INSTANCE))));
+        for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
+            String name = entry.getKey();
+            LocalQueueStats queueStat = createLocalQueueStats(name);
+            queueStats.put(name, queueStat);
         }
         return queueStats;
     }

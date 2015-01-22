@@ -30,7 +30,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.StatisticsService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.MapUtil;
 
@@ -45,7 +45,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsService {
+public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
     public static final int ORDERING_LOCKS_LENGTH = 1000;
