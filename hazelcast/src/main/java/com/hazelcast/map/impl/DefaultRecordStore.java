@@ -628,7 +628,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Map.Entry<Data, Data> entry : entrySet) {
             // correct TTL will be set in the put method below, when creating record.
-            put(entry.getKey(), entry.getValue(), DEFAULT_TTL);
+            // use putTransient since we already fetched entries from map-loader.
+            putTransient(entry.getKey(), entry.getValue(), DEFAULT_TTL);
         }
         return mapEntrySet;
     }
