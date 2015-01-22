@@ -69,6 +69,12 @@ public interface NearCache<K, V> {
     void invalidate(K key);
 
     /**
+     *
+     * @return
+     */
+    boolean isInvalidateOnChange();
+
+    /**
      * Removes all stored values.
      */
     void clear();

@@ -1,6 +1,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.cache.impl.nearcache.impl.NearCacheManagerImpl;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -54,6 +56,7 @@ public abstract class AbstractHazelcastCacheManager
 
     protected final CachingProvider cachingProvider;
     protected final HazelcastInstance hazelcastInstance;
+    protected final NearCacheManager nearCacheManager = new NearCacheManagerImpl();
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -142,6 +145,10 @@ public abstract class AbstractHazelcastCacheManager
     @Override
     public Properties getProperties() {
         return properties;
+    }
+
+    public NearCacheManager getNearCacheManager() {
+        return nearCacheManager;
     }
 
     @Override
@@ -235,6 +242,7 @@ public abstract class AbstractHazelcastCacheManager
         if (cache != null) {
             cache.destroy();
         }
+        nearCacheManager.destroyNearCache(cacheNameWithPrefix);
         removeCacheConfigFromLocal(cacheNameWithPrefix);
     }
 
@@ -281,6 +289,7 @@ public abstract class AbstractHazelcastCacheManager
         for (ICache cache : caches.values()) {
             cache.close();
         }
+        nearCacheManager.clearAllNearCaches();
         postClose();
         //TODO do we need to clear it
         //        caches.clear();
@@ -302,6 +311,7 @@ public abstract class AbstractHazelcastCacheManager
             cache.destroy();
         }
         caches.clear();
+        nearCacheManager.destroyAllNearCaches();
     }
 
     @Override

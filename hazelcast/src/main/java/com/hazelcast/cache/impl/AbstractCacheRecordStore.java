@@ -17,7 +17,9 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
+import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
+import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
@@ -68,9 +70,10 @@ import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
  * @author sozal 14/10/14
  */
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
-        implements ICacheRecordStore {
+        implements ICacheRecordStore, EvictionListener<Data, R> {
 
     protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
+    protected static final String CALLER_NOT_AVAILABLE = "<NA>";
 
     protected final String name;
     protected final int partitionId;
@@ -218,7 +221,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public int evictIfRequired() {
         int evictedCount = 0;
         if (isEvictionEnabled()) {
-            evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker);
+            evictedCount = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
             if (isStatisticsEnabled() && evictedCount > 0) {
                 statistics.increaseCacheEvictions(evictedCount);
             }
@@ -273,11 +276,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public boolean processExpiredEntry(Data key, R record, long now) {
+        return processExpiredEntry(key, record, now, CALLER_NOT_AVAILABLE);
+    }
+
+    public boolean processExpiredEntry(Data key, R record, long now, String caller) {
         final boolean isExpired = record != null && record.isExpiredAt(now);
         if (!isExpired) {
             return false;
         }
-        records.remove(key);
+        doRemoveRecord(key, caller);
         if (isEventsEnabled) {
             publishEvent(CacheEventType.EXPIRED, key, null,
                     toEventData(record), false, IGNORE_COMPLETION);
@@ -286,6 +293,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public R processExpiredEntry(Data key, R record, long expiryTime, long now) {
+        return processExpiredEntry(key, record, expiryTime, now, CALLER_NOT_AVAILABLE);
+    }
+
+    public R processExpiredEntry(Data key, R record, long expiryTime, long now, String caller) {
         final boolean isExpired = isExpiredAt(expiryTime, now);
         if (!isExpired) {
             return record;
@@ -293,7 +304,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (isStatisticsEnabled()) {
             statistics.increaseCacheExpiries(1);
         }
-        records.remove(key);
+        doRemoveRecord(key, caller);
         if (isEventsEnabled) {
             publishEvent(CacheEventType.EXPIRED, key, null,
                     toEventData(record), false, IGNORE_COMPLETION);
@@ -304,6 +315,27 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public R accessRecord(R record, ExpiryPolicy expiryPolicy, long now) {
         onRecordAccess(record, getExpiryPolicy(expiryPolicy), now);
         return record;
+    }
+
+    @Override
+    public <C extends EvictionCandidate<Data, R>> void onEvict(C candidate) {
+        invalidateEntry(candidate.getAccessor());
+    }
+
+    protected void invalidateEntry(Data key) {
+        invalidateEntry(key, CALLER_NOT_AVAILABLE);
+    }
+
+    protected void invalidateEntry(Data key, String source) {
+        cacheService.sendInvalidationEvent(name, key, source);
+    }
+
+    protected void invalidateAllEntries() {
+        invalidateAllEntries(CALLER_NOT_AVAILABLE);
+    }
+
+    protected void invalidateAllEntries(String source) {
+        cacheService.sendInvalidationEvent(name, null, source);
     }
 
     protected void updateGetAndPutStat(boolean isPutSucceed, boolean getValue,
@@ -458,8 +490,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         if (!isExpiredAt(expiryTime, now)) {
             R record = createRecord(key, value, expiryTime, completionId);
-            records.put(key, record);
-            return record;
+            return doPutRecord(key, record);
         }
         publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
         return null;
@@ -473,6 +504,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected R updateRecord(Data key, R record, Object value, int completionId) {
+        return updateRecord(key, record, value, completionId, CALLER_NOT_AVAILABLE);
+    }
+
+    protected R updateRecord(Data key, R record, Object value, int completionId, String caller) {
         Data dataOldValue = null;
         Data dataValue = null;
         Object recordValue = value;
@@ -512,6 +547,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
             updateHasExpiringEntry(record);
 
+            // Just be sure about key data is heap data
+            invalidateEntry(toHeapData(key), caller);
+
             if (isEventsEnabled) {
                 publishEvent(CacheEventType.UPDATED, eventDataKey,
                         eventDataOldValue, eventDataValue, true, completionId);
@@ -525,6 +563,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     public boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy,
             long now, boolean disableWriteThrough, int completionId) {
+        return updateRecordWithExpiry(key, value, record, expiryPolicy, now,
+                disableWriteThrough, completionId, CALLER_NOT_AVAILABLE);
+    }
+
+    public boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy,
+            long now, boolean disableWriteThrough, int completionId, String caller) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         long expiryTime = -1L;
@@ -553,7 +597,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean deleteRecord(Data key, int completionId) {
-        final R record = records.remove(key);
+        return deleteRecord(key, completionId, CALLER_NOT_AVAILABLE);
+    }
+
+    protected boolean deleteRecord(Data key, int completionId, String caller) {
+        final R record = doRemoveRecord(key, caller);
         Data dataValue = null;
         try {
             switch (cacheConfig.getInMemoryFormat()) {
@@ -719,7 +767,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public void setRecord(Data key, CacheRecord record) {
-        records.put(key, (R) record);
+        doPutRecord(key, (R) record);
     }
 
     @Override
@@ -727,12 +775,38 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (!records.containsKey(key)) {
             evictIfRequired();
         }
-        records.put(key, (R) record);
+        doPutRecord(key, (R) record);
+    }
+
+    protected final R doPutRecord(Data key, R record) {
+        return doPutRecord(key, record, CALLER_NOT_AVAILABLE);
+    }
+
+    protected final R doPutRecord(Data key, R record, String caller) {
+        R oldRecord = records.put(key, (R) record);
+        if (oldRecord != null) {
+            // Just be sure about key data is heap data
+            invalidateEntry(toHeapData(key), caller);
+        }
+        return oldRecord;
     }
 
     @Override
     public CacheRecord removeRecord(Data key) {
-        return records.remove(key);
+        return doRemoveRecord(key);
+    }
+
+    protected R doRemoveRecord(Data key) {
+        return doRemoveRecord(key, CALLER_NOT_AVAILABLE);
+    }
+
+    protected R doRemoveRecord(Data key, String caller) {
+        R removedRecord = records.remove(key);
+        if (removedRecord != null) {
+            // Just be sure about key data is heap data
+            invalidateEntry(toHeapData(key), caller);
+        }
+        return removedRecord;
     }
 
     protected void onGet(Data key, ExpiryPolicy expiryPolicy, Object value, R record) {
@@ -808,7 +882,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         boolean isSaveSucceed;
         Object oldValue = null;
         R record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
+        boolean isExpired = processExpiredEntry(key, record, now, caller);
 
         try {
             // check that new entry is not already expired, in which case it should
@@ -818,6 +892,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 record = createRecordWithExpiry(key, value, expiryPolicy, now,
                         disableWriteThrough, completionId);
                 isSaveSucceed = record != null;
+
             } else {
                 if (getValue) {
                     oldValue = toValue(record);
@@ -874,7 +949,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         boolean result;
         R record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
+        boolean isExpired = processExpiredEntry(key, record, now, caller);
 
         try {
             if (record == null || isExpired) {
@@ -1081,7 +1156,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 removed = false;
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
             } else {
-                removed = deleteRecord(key, completionId);
+                removed = deleteRecord(key, completionId, caller);
             }
 
             onRemove(key, null, caller, false, record, removed);
@@ -1122,10 +1197,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 hitCount++;
                 if (compare(toValue(record), toValue(value))) {
                     deleteCacheEntry(key);
-                    removed = deleteRecord(key, completionId);
+                    removed = deleteRecord(key, completionId, caller);
                 } else {
                     long expiryTime = onRecordAccess(record, defaultExpiryPolicy, now);
-                    processExpiredEntry(key, record, expiryTime, now);
+                    processExpiredEntry(key, record, expiryTime, now, caller);
                     removed = false;
                 }
             }
@@ -1180,7 +1255,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
             } else {
                 obj = toValue(record);
-                removed = deleteRecord(key, completionId);
+                removed = deleteRecord(key, completionId, caller);
             }
 
             onRemove(key, null, caller, false, record, removed);
@@ -1205,11 +1280,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onRemoveError(key, null, caller, false, record, removed, error);
             throw ExceptionUtil.rethrow(error);
         }
-    }
-
-    @Override
-    public void clear() {
-        records.clear();
     }
 
     @Override
@@ -1349,10 +1419,27 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
+    public void clear() {
+        records.clear();
+
+        onClear();
+    }
+
+    protected void onClear() {
+        invalidateAllEntries();
+    }
+
+    @Override
     public void destroy() {
         clear();
         closeResources();
         closeListeners();
+
+        onDestroy();
+    }
+
+    protected void onDestroy() {
+
     }
 
     protected void closeListeners() {

@@ -75,6 +75,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
     <suppress checks="NPathComplexity"
               files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractHazelcastCacheManager"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
@@ -202,7 +203,7 @@
     <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
 
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
+    <suppress checks="ClassFanOutComplexity|MethodCount" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
 
 
     <!-- Monitor -->

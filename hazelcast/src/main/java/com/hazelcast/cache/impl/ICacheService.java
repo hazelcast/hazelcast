@@ -78,4 +78,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
+
+    void sendInvalidationEvent(String name, Data key, String sourceUuid);
+
 }

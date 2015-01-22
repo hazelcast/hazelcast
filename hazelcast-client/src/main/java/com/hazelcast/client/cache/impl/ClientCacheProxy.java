@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -74,14 +73,12 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  */
 public class ClientCacheProxy<K, V>
         extends AbstractClientCacheProxy<K, V> {
-    protected final ILogger logger;
 
-    private AbstractHazelcastCacheManager cacheManager;
+    protected final ILogger logger;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext clientContext,
                             HazelcastClientCacheManager cacheManager) {
-        super(cacheConfig, clientContext);
-        this.cacheManager = cacheManager;
+        super(cacheConfig, clientContext, cacheManager);
         logger = Logger.getLogger(getClass());
     }
 

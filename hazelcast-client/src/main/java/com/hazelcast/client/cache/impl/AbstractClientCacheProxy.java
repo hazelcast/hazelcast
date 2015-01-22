@@ -59,8 +59,9 @@ abstract class AbstractClientCacheProxy<K, V>
         extends AbstractClientInternalCacheProxy<K, V>
         implements ICache<K, V> {
 
-    protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext) {
-        super(cacheConfig, clientContext);
+    protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
+                                       HazelcastClientCacheManager cacheManager) {
+        super(cacheConfig, clientContext, cacheManager);
     }
 
     //region ICACHE: JCACHE EXTENSION
