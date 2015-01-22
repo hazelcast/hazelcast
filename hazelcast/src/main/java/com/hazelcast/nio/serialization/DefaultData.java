@@ -19,13 +19,10 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.util.HashUtil;
 
-import java.nio.ByteOrder;
-
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class DefaultData implements MutableData {
 
     private int type = SerializationConstants.CONSTANT_TYPE_NULL;
-    private byte[] header;
     private byte[] data;
     private int partitionHash;
 
@@ -43,13 +40,6 @@ public final class DefaultData implements MutableData {
         this.type = type;
     }
 
-    public DefaultData(int type, byte[] data, int partitionHash, byte[] header) {
-        this.type = type;
-        this.data = data;
-        this.partitionHash = partitionHash;
-        this.header = header;
-    }
-
     @Override
     public int dataSize() {
         return data != null ? data.length : 0;
@@ -63,16 +53,6 @@ public final class DefaultData implements MutableData {
     @Override
     public boolean hasPartitionHash() {
         return partitionHash != 0;
-    }
-
-    @Override
-    public int headerSize() {
-        return header != null ? header.length : 0;
-    }
-
-    @Override
-    public byte[] getHeader() {
-        return header;
     }
 
     @Override
@@ -101,31 +81,12 @@ public final class DefaultData implements MutableData {
     }
 
     @Override
-    public void setHeader(byte[] header) {
-        this.header = header;
-    }
-
-    @Override
-    public int readIntHeader(int offset, ByteOrder order) {
-        return Bits.readInt(header, offset, order == ByteOrder.BIG_ENDIAN);
-    }
-
-    @Override
     public int getHeapCost() {
-        final int integerSizeInBytes = 4;
         final int arrayHeaderSizeInBytes = 16;
 
         int total = 0;
         // type
-        total += integerSizeInBytes;
-
-        if (header != null) {
-            // metadata array ref (12: array header, 4: length)
-            total += arrayHeaderSizeInBytes;
-            total += header.length;
-        } else {
-            total += integerSizeInBytes;
-        }
+        total += Bits.INT_SIZE_IN_BYTES;
 
         if (data != null) {
             // buffer array ref (12: array header, 4: length)
@@ -133,11 +94,11 @@ public final class DefaultData implements MutableData {
             // data itself
             total += data.length;
         } else {
-            total += integerSizeInBytes;
+            total += Bits.INT_SIZE_IN_BYTES;
         }
 
         // partition-hash
-        total += integerSizeInBytes;
+        total += Bits.INT_SIZE_IN_BYTES;
         return total;
     }
 

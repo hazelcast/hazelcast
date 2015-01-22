@@ -22,7 +22,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.DynamicByteBuffer;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -58,7 +57,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -85,7 +83,7 @@ public class SerializationServiceImpl implements SerializationService {
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
     protected final ManagedContext managedContext;
-    protected final PortableContext portableContext;
+    protected final PortableContextImpl portableContext;
     protected final InputOutputFactory inputOutputFactory;
     protected final PartitioningStrategy globalPartitioningStrategy;
 
@@ -327,7 +325,7 @@ public class SerializationServiceImpl implements SerializationService {
             }
             out.writeInt(data.getType());
             out.writeInt(data.hasPartitionHash() ? data.getPartitionHash() : 0);
-            writePortableHeader(out, data);
+//            writePortableHeader(out, data);
 
             int size = data.dataSize();
             out.writeInt(size);
@@ -339,23 +337,23 @@ public class SerializationServiceImpl implements SerializationService {
         }
     }
 
-    protected final void writePortableHeader(ObjectDataOutput out, Data data) throws IOException {
-        if (data.headerSize() == 0) {
-            out.writeInt(0);
-        } else {
-            if (!(out instanceof PortableDataOutput)) {
-                throw new HazelcastSerializationException("PortableDataOutput is required to be able "
-                        + "to write Portable header.");
-            }
-
-            byte[] header = data.getHeader();
-            PortableDataOutput output = (PortableDataOutput) out;
-            DynamicByteBuffer headerBuffer = output.getHeaderBuffer();
-            out.writeInt(header.length);
-            out.writeInt(headerBuffer.position());
-            headerBuffer.put(header);
-        }
-    }
+//    protected final void writePortableHeader(ObjectDataOutput out, Data data) throws IOException {
+//        if (data.headerSize() == 0) {
+//            out.writeInt(0);
+//        } else {
+//            if (!(out instanceof PortableDataOutput)) {
+//                throw new HazelcastSerializationException("PortableDataOutput is required to be able "
+//                        + "to write Portable header.");
+//            }
+//
+//            byte[] header = data.getHeader();
+//            PortableDataOutput output = (PortableDataOutput) out;
+//            DynamicByteBuffer headerBuffer = output.getHeaderBuffer();
+//            out.writeInt(header.length);
+//            out.writeInt(headerBuffer.position());
+//            headerBuffer.put(header);
+//        }
+//    }
 
     protected void writeDataInternal(ObjectDataOutput out, Data data) throws IOException {
         out.write(data.getData());
@@ -371,7 +369,6 @@ public class SerializationServiceImpl implements SerializationService {
 
             int typeId = in.readInt();
             int partitionHash = in.readInt();
-            byte[] header = readPortableHeader(in);
 
             int dataSize = in.readInt();
             byte[] data = null;
@@ -379,28 +376,10 @@ public class SerializationServiceImpl implements SerializationService {
                 data = new byte[dataSize];
                 in.readFully(data);
             }
-            return new DefaultData(typeId, data, partitionHash, header);
+            return new DefaultData(typeId, data, partitionHash);
         } catch (Throwable e) {
             throw handleException(e);
         }
-    }
-
-    protected final byte[] readPortableHeader(ObjectDataInput in) throws IOException {
-        byte[] header = null;
-        int len = in.readInt();
-        if (len > 0) {
-            if (!(in instanceof PortableDataInput)) {
-                throw new HazelcastSerializationException("PortableDataInput is required to be able "
-                        + "to read Portable header.");
-            }
-            PortableDataInput input = (PortableDataInput) in;
-            ByteBuffer headerBuffer = input.getHeaderBuffer();
-            int pos = in.readInt();
-            headerBuffer.position(pos);
-            header = new byte[len];
-            headerBuffer.get(header);
-        }
-        return header;
     }
 
     public void disposeData(Data data) {
@@ -603,7 +582,7 @@ public class SerializationServiceImpl implements SerializationService {
 
     public final PortableReader createPortableReader(Data data) throws IOException {
         if (!data.isPortable()) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
         }
         BufferObjectDataInput in = createObjectDataInput(data);
         return portableSerializer.createReader(in);
