@@ -18,10 +18,7 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheClearResponse;
-import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
-import com.hazelcast.cache.impl.CacheEventSet;
-import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
@@ -492,21 +489,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         return new EventHandler<Object>() {
             @Override
             public void handle(Object event) {
-                if (nearCache != null && event instanceof CacheEventSet) {
-                    CacheEventSet cacheEventSet = (CacheEventSet) event;
-                    if (cacheEventSet.getEventType().equals(CacheEventType.INVALIDATED)) {
-                        for (CacheEventData cacheEventData : cacheEventSet.getEvents()) {
-                            Data keyData = cacheEventData.getDataKey();
-                            if (keyData != null) {
-                                nearCache.invalidate(cacheEventData.getDataKey());
-                                // TODO Will we support to update invalidated entry on near cache ???
-                                // nearCache.put(keyData, cacheEventData.getDataValue());
-                            } else {
-                                nearCache.clear();
-                            }
-                        }
-                    }
-                }
                 adaptor.handleEvent(event);
             }
 
