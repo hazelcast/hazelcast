@@ -25,8 +25,4 @@ interface MutableData extends Data {
     void setType(int type);
 
     void setPartitionHash(int partitionHash);
-
-    byte[] getHeader();
-
-    void setHeader(byte[] header);
 }

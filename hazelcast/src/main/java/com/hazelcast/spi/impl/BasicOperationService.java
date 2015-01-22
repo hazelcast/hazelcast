@@ -346,7 +346,7 @@ final class BasicOperationService implements InternalOperationService {
         }
         Data data = nodeEngine.toData(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
+        Packet packet = new Packet(data, partitionId);
         packet.setHeader(Packet.HEADER_OP);
         if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
@@ -364,7 +364,7 @@ final class BasicOperationService implements InternalOperationService {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
         Data data = nodeEngine.toData(response);
-        Packet packet = new Packet(data, nodeEngine.getPortableContext());
+        Packet packet = new Packet(data);
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
         if (response.isUrgent()) {

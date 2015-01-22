@@ -18,7 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.DynamicByteBuffer;
 import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.IOException;
@@ -30,15 +29,13 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableDataOutput {
+class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput {
 
     final int initialSize;
 
     byte[] buffer;
 
     int pos;
-
-    DynamicByteBuffer header;
 
     final SerializationService service;
 
@@ -299,45 +296,15 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         if (buffer != null && buffer.length > initialSize * 8) {
             buffer = new byte[initialSize * 8];
         }
-        if (header != null) {
-            header.clear();
-        }
     }
 
     public void close() {
         pos = 0;
         buffer = null;
-        if (header != null) {
-            header.close();
-            header = null;
-        }
     }
 
     public ByteOrder getByteOrder() {
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
-    }
-
-    @Override
-    public DynamicByteBuffer getHeaderBuffer() {
-        if (header == null) {
-            header = new DynamicByteBuffer(new byte[64]).order(getByteOrder());
-        }
-        return header;
-    }
-
-    @Override
-    public byte[] getPortableHeader() {
-        if (header == null) {
-            return null;
-        }
-        header.flip();
-        if (!header.hasRemaining()) {
-            return null;
-        }
-        final byte[] buff = new byte[header.limit()];
-        header.get(buff);
-        header.clear();
-        return buff;
     }
 
     @Override

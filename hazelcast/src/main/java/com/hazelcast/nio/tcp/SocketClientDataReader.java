@@ -48,7 +48,7 @@ class SocketClientDataReader implements SocketReader {
                 connectionTypeSet = true;
             }
             if (packet == null) {
-                packet = new Packet(ioService.getPortableContext());
+                packet = new Packet();
             }
             boolean complete = packet.readFrom(inBuffer);
             if (complete) {
