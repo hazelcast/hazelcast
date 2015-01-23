@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Used to process store operations in another thread.
@@ -95,13 +96,13 @@ public class StoreWorker implements Runnable {
                 continue;
             }
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
-            final List<DelayedEntry> delayedEntries = filterItemsLessThanOrEqualToTime(queue, now);
+            final List<DelayedEntry> delayedEntries = filterEntries(queue, recordStore, now);
             if (delayedEntries.isEmpty()) {
                 continue;
             }
             if (!owner.equals(thisAddress)) {
                 if (now > lastRunTime + backupRunIntervalTime) {
-                    doInBackup(queue, delayedEntries, partitionId);
+                    doInBackup(delayedEntries, partitionId);
                 }
                 continue;
             }
@@ -116,10 +117,26 @@ public class StoreWorker implements Runnable {
             entries.addAll(delayedEntries);
         }
         if (!entries.isEmpty()) {
-            final Map<Integer, List<DelayedEntry>> failsPerPartition = writeBehindProcessor.process(entries);
+            Map<Integer, List<DelayedEntry>> failsPerPartition = writeBehindProcessor.process(entries);
             removeProcessed(mapName, getEntryPerPartitionMap(entries));
             addFailsToQueue(mapName, failsPerPartition);
             lastRunTime = now;
+        }
+    }
+
+    private List<DelayedEntry> filterEntries(WriteBehindQueue<DelayedEntry> queue,
+                                             RecordStore recordStore, long now) {
+        if (queue == null || queue.size() == 0) {
+            return Collections.emptyList();
+        }
+
+        AtomicInteger flushCounter = getFlushCounter(recordStore);
+        int flushCount = flushCounter.get();
+
+        if (flushCount > 0) {
+            return queue.get(flushCount);
+        } else {
+            return queue.filterItems(now);
         }
     }
 
@@ -133,6 +150,7 @@ public class StoreWorker implements Runnable {
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
             final List<DelayedEntry> entries = entry.getValue();
             queue.removeAll(entries);
+            getFlushCounter(recordStore).addAndGet(entries.size());
         }
     }
 
@@ -152,11 +170,13 @@ public class StoreWorker implements Runnable {
     }
 
     /**
-     * @param queue          write behind queue.
+     * Process write-behind queues on backup partitions. It is a fake processing and
+     * it only removes entries from queues and does not persist any of them.
+     *
      * @param delayedEntries entries to be processed.
      * @param partitionId    corresponding partition id.
      */
-    private void doInBackup(final WriteBehindQueue queue, final List<DelayedEntry> delayedEntries, final int partitionId) {
+    private void doInBackup(final List<DelayedEntry> delayedEntries, final int partitionId) {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final ClusterService clusterService = nodeEngine.getClusterService();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
@@ -191,20 +211,19 @@ public class StoreWorker implements Runnable {
             }
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
             queue.addFront(fails);
+            getFlushCounter(recordStore).addAndGet(fails.size());
         }
-    }
-
-    private static List<DelayedEntry> filterItemsLessThanOrEqualToTime(WriteBehindQueue<DelayedEntry> queue,
-                                                                       long now) {
-        if (queue == null || queue.size() == 0) {
-            return Collections.emptyList();
-        }
-
-        return queue.filterItems(now);
     }
 
     private WriteBehindQueue<DelayedEntry> getWriteBehindQueue(RecordStore recordStore) {
-        final WriteBehindStore storeManager = (WriteBehindStore) recordStore.getMapDataStore();
-        return storeManager.getWriteBehindQueue();
+        WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
+        return writeBehindStore.getWriteBehindQueue();
     }
+
+    private AtomicInteger getFlushCounter(RecordStore recordStore) {
+        WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
+        return writeBehindStore.getFlushCounter();
+    }
+
+
 }

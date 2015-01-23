@@ -114,5 +114,14 @@ public interface WriteBehindQueue<E> {
      */
     List<E> filterItems(long now);
 
+
+    /**
+     * Returns supplied number of entries from the start.
+     *
+     * @param count number of entries to return.
+     * @return list of entries
+     */
+    List<DelayedEntry> get(int count);
+
 }
 

@@ -1,6 +1,8 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -15,6 +17,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -181,6 +184,48 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         factory.shutdownAll();
 
         assertEquals(numberOfItems, mapStore.countStore.get());
+    }
+
+
+    @Test
+    public void testWriteBehind_shouldNotMakeDuplicateStoreOperationForAKey_uponEviction() throws Exception {
+        final AtomicInteger storeCount = new AtomicInteger(0);
+        MapStore store = createSlowMapStore(storeCount);
+
+        IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(store)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withBackupCount(0)
+                .withWriteDelaySeconds(1)
+                .build();
+
+        map.put(1, 1);
+        map.evict(1);
+
+        // give some time to process write-behind.
+        sleepSeconds(2);
+
+        assertStoreCount(1, storeCount);
+    }
+
+    private void assertStoreCount(final int expected, final AtomicInteger storeCount) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(expected, storeCount.get());
+            }
+        });
+    }
+
+    private MapStore createSlowMapStore(final AtomicInteger storeCount) {
+        return new MapStoreAdapter<Integer, Integer>() {
+            @Override
+            public void store(Integer key, Integer value) {
+                storeCount.incrementAndGet();
+                sleepSeconds(5);
+            }
+        };
     }
 
     private void assertFinalValueEquals(final int expected, final int actual) {
