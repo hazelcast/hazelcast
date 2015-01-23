@@ -11,12 +11,68 @@ As a rule of thumb, your event listener should not implement heavy processes in 
 
 ## Event Listeners
 
-- **MembershipListener** for cluster membership events
-- **DistributedObjectListener** for distributed object creation and destroy events
-- **MigrationListener** for partition migration start and complete events
-- **LifecycleListener** for HazelcastInstance lifecycle events
-- **EntryListener** for IMap and MultiMap entry events
-- **ItemListener** for IQueue, ISet and IList item events (please refer to the Event Registration and Configuration parts of the sections [Set](#set) and [List](#list)).
-- **MessageListener** for ITopic message events
-- **ClientListener** for client connection events
+Hazelcast offers the following event listeners:
 
+- **Membership Listener** for cluster membership events.
+- **Distributed Object Listener** for distributed object creation and destroy events.
+- **Migration Listener** for partition migration start and complete events.
+- **Lifecycle Listener** for HazelcastInstance lifecycle events.
+- **Entry Listener** for IMap and MultiMap entry events.
+- **Item Listener** for IQueue, ISet and IList item events (please refer to the Event Registration and Configuration parts of the sections [Set](#set) and [List](#list)).
+- **Message Listener** for ITopic message events.
+- **Client Listener** for client connection events.
+
+
+
+### Membership Listener
+
+The Membership Listener allows to get notified for the following events:
+
+- A new member is added to the cluster.
+- An existing member leaves the cluster.
+- An attribute of a member is changed. Please refer to the [Member Attributes section](#member-attributes) to learn about member attributes.
+
+The following is an example Membership Listener class.
+
+```java
+public class ClusterMembershipListener     implements MembershipListener {     
+public void memberAdded(MembershipEvent membershipEvent) {  System.err.println("Added: " + membershipEvent);}public void memberRemoved(MembershipEvent membershipEvent) {       System.err.println("Removed: " + membershipEvent);     }
+
+public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {       System.err.println("Member attribute changed: " + memberAttributeEvent);     }
+     }```
+
+The membership listener outputs the addresses of the members joined/left and which attribute is changed on which member, in the cases where the respective event is fired.
+
+### Distributed Object Listener
+
+The Distributed Object Listener allows to get notified when a distributed object is created or destroyed throughout the cluster.
+
+
+```java
+public class Sample implements DistributedObjectListener {
+  public static void main(String[] args) {
+    Sample sample = new Sample();
+
+    Config config = new Config();
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+    hazelcastInstance.addDistributedObjectListener(sample);
+
+    Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();
+    for (DistributedObject distributedObject : distributedObjects) {
+      System.out.println(distributedObject.getName() + "," + distributedObject.getId());
+    }
+  }
+
+  @Override
+  public void distributedObjectCreated(DistributedObjectEvent event) {
+    DistributedObject instance = event.getDistributedObject();
+    System.out.println("Created " + instance.getName() + "," + instance.getId());
+  }
+
+  @Override
+  public void distributedObjectDestroyed(DistributedObjectEvent event) {
+    DistributedObject instance = event.getDistributedObject();
+    System.out.println("Destroyed " + instance.getName() + "," + instance.getId());
+  }
+}
+```
