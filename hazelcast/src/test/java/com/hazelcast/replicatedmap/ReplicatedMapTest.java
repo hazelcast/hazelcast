@@ -51,6 +51,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -555,6 +557,64 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     @Test
     public void testRemoveBinaryDelayDefault() throws Exception {
         testRemove(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    }
+
+    @Test
+    public void testContainsKey_returnsFalse_onRemovedKeys() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        map.put(1, Integer.MAX_VALUE);
+        map.remove(1);
+
+        assertFalse(map.containsKey(1));
+    }
+
+    @Test
+    public void testContainsKey_returnsFalse_onNonexistentKeys() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+
+        assertFalse(map.containsKey(1));
+    }
+
+    @Test
+    public void testContainsKey_returnsTrue_onExistingKeys() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        map.put(1, Integer.MAX_VALUE);
+
+        assertTrue(map.containsKey(1));
+    }
+
+    @Test
+    public void testKeySet_notIncludes_removedKeys() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        map.put(1, Integer.MAX_VALUE);
+        map.put(2, Integer.MIN_VALUE);
+
+        map.remove(1);
+
+        Set<Integer> keys = map.keySet();
+
+        assertFalse(keys.contains(1));
+    }
+
+    @Test
+    public void testEntrySet_notIncludes_removedKeys() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        map.put(1, Integer.MAX_VALUE);
+        map.put(2, Integer.MIN_VALUE);
+
+        map.remove(1);
+
+        Set<Entry<Integer, Integer>> entries = map.entrySet();
+        for (Entry<Integer, Integer> entry : entries) {
+            if (entry.getKey().equals(1)) {
+                fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
+            }
+        }
     }
 
     private void testRemove(Config config) throws Exception {

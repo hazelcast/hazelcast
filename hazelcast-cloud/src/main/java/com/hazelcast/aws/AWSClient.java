@@ -42,15 +42,19 @@ public class AWSClient {
     }
 
     public Collection<String> getPrivateIpAddresses() throws Exception {
-        final Map<String, String> result = new DescribeInstances(awsConfig).execute(endpoint);
+        final Map<String, String> result = new DescribeInstances(awsConfig).execute();
         return result.keySet();
     }
 
     public Map<String, String> getAddresses() throws Exception {
-        return new DescribeInstances(awsConfig).execute(endpoint);
+        return new DescribeInstances(awsConfig).execute();
     }
 
     public void setEndpoint(String s) {
         this.endpoint = s;
+    }
+
+    public String getEndpoint() {
+        return this.endpoint;
     }
 }

@@ -29,10 +29,10 @@ public abstract class InstancePermission extends ClusterPermission {
     protected static final int CREATE = 1;
     protected static final int DESTROY = 2;
 
+    private static final WildcardConfigPatternMatcher CONFIG_PATTERN_MATCHER = new WildcardConfigPatternMatcher();
+
     protected final int mask;
     protected final String actions;
-
-    private final WildcardConfigPatternMatcher configPatternMatcher = new WildcardConfigPatternMatcher();
 
     public InstancePermission(String name, String... actions) {
         super(name);
@@ -66,7 +66,7 @@ public abstract class InstancePermission extends ClusterPermission {
             return false;
         }
 
-        if (!configPatternMatcher.matches(that.getName(), this.getName())) {
+        if (!CONFIG_PATTERN_MATCHER.matches(that.getName(), this.getName())) {
             return false;
         }
 

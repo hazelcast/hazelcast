@@ -19,28 +19,24 @@ import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class TopicDestroyTest extends HazelcastTestSupport {
 
     HazelcastInstance instance;
-    ITopic topic;
-    String name;
+    ITopic<Object> topic;
+    String topicName;
 
     @Before
     public void setup() {
         instance = createHazelcastInstance();
-        name = randomString();
-        topic = instance.getTopic(name);
-
+        topicName = randomString();
+        topic = instance.getTopic(topicName);
     }
 
     @Test
     public void testDestroyTopicRemovesListeners() {
-
         topic.addMessageListener(new EmptyListener());
-
         topic.destroy();
 
         assertRegistrationSize(0);
@@ -48,7 +44,6 @@ public class TopicDestroyTest extends HazelcastTestSupport {
 
     @Test
     public void testRemovingListenersRemovesRegistrations() {
-
         String registrationId = topic.addMessageListener(new EmptyListener());
         topic.removeMessageListener(registrationId);
 
@@ -56,12 +51,13 @@ public class TopicDestroyTest extends HazelcastTestSupport {
     }
 
     void assertRegistrationSize(int size) {
-        final EventService eventService = getNode(instance).getNodeEngine().getEventService();
-        Collection<EventRegistration> regs = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
+        EventService eventService = getNode(instance).getNodeEngine().getEventService();
+        Collection<EventRegistration> regs = eventService.getRegistrations(TopicService.SERVICE_NAME, topicName);
+
         assertEquals(size, regs.size());
     }
 
-    static class EmptyListener implements MessageListener {
+    static class EmptyListener implements MessageListener<Object> {
         @Override
         public void onMessage(Message message) {
         }

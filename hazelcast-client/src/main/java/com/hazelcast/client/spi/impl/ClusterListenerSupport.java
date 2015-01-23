@@ -12,9 +12,9 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.client.GetMemberListRequest;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.MemberAttributeChange;
+import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
@@ -203,7 +203,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
     }
 
     private void listenMembershipEvents() throws Exception {
-        final AddMembershipListenerRequest request = new AddMembershipListenerRequest();
+        final RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest();
         final EventHandler<ClientMembershipEvent> handler = createEventHandler();
         final ClientInvocation invocation = new ClientInvocation(client, handler, request, ownerConnectionAddress);
         final Future<SerializableCollection> future = invocation.invoke();

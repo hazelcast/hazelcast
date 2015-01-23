@@ -152,6 +152,18 @@
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:attribute>
+                                            <xs:attribute name="write-coalescing" use="optional" type="xs:boolean"
+                                                          default="true">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Setting write-coalescing is meaningful if you are using
+                                                        write-behind map-store. Otherwise it has no effect.
+                                                        When write-coalescing is true, only the latest
+                                                        store operation on a key in the write-delay-seconds
+                                                        time-window will be reflected to the map-store.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
                                             <xs:attribute name="initial-mode">
                                                 <xs:simpleType>
                                                     <xs:restriction base="non-space-string">

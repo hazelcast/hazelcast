@@ -42,6 +42,8 @@ The parameters `tag-key` and `tag-value` provides unique keys and values for mem
 
 You can use the parameter `security-group-name` to filter/group members.
 
+![image](images/NoteSmall.jpg) ***NOTE***: *When you create your EC2 security group ensure that you have the relevant TCP/IP ports open.  In Hazelcasts case the default ports are 5701 and upwards as you add more instances to a machine.*
+
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If you are using a cloud provider other than AWS, you can use the programmatic configuration to specify a TCP/IP cluster. The members will need to be retrieved from that provider (e.g. JClouds).*
 
 #### AWSClient

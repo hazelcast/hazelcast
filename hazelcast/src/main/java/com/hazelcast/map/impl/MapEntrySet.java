@@ -70,6 +70,10 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
         }
     }
 
+    public boolean isEmpty() {
+        return entrySet.isEmpty();
+    }
+
     @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;

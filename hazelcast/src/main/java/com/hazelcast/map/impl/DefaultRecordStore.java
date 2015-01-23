@@ -193,7 +193,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
     }
 
     /**
@@ -403,7 +403,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
         return numOfClearedEntries;
     }
 
@@ -412,7 +412,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
     }
 
     @Override
@@ -629,7 +629,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
         final Map entriesLoaded = mapDataStore.loadAll(keys);
         addMapEntrySet(entriesLoaded, mapEntrySet);
-        postReadCleanUp(now, false);
+
+        // add loaded key-value pairs to this record-store.
+        Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+        for (Map.Entry<Data, Data> entry : entrySet) {
+            // correct TTL will be set in the put method below, when creating record.
+            // use putTransient since we already fetched entries from map-loader.
+            putTransient(entry.getKey(), entry.getValue(), DEFAULT_TTL);
+        }
         return mapEntrySet;
     }
 

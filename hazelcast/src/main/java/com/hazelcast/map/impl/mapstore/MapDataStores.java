@@ -17,7 +17,7 @@ import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.crea
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
 
 /**
- * Factory class responsible for creating various daa store implementations.
+ * Factory class responsible for creating various data store implementations.
  *
  * @see com.hazelcast.map.impl.mapstore.MapDataStore
  */
@@ -31,7 +31,7 @@ public final class MapDataStores {
      *
      * @param mapStoreContext      context for map store operations.
      * @param partitionId          partition id of partition.
-     * @param writeBehindProcessor
+     * @param writeBehindProcessor the {@link WriteBehindProcessor}
      * @param <K>                  type of key to store.
      * @param <V>                  type of value to store.
      * @return new write behind store manager.
@@ -44,17 +44,16 @@ public final class MapDataStores {
         final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         final int writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
-        // TODO writeCoalescing should be configurable.
-        boolean writeCoalescing = true;
+        final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, writeCoalescing);
-        final WriteBehindQueue writeBehindQueue = pickWriteBehindQueue(mapServiceContext, writeCoalescing);
+                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId);
+        final WriteBehindQueue writeBehindQueue = newWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
     }
 
-    private static WriteBehindQueue pickWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
+    private static WriteBehindQueue newWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
         final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
         final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
         return writeCoalescing ? createDefaultWriteBehindQueue()

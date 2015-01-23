@@ -71,4 +71,5 @@ public final class IterableUtil {
     public static <T> Iterable<T> nullToEmpty(Iterable<T> iterable) {
         return iterable == null ? Collections.<T>emptyList() : iterable;
     }
+
 }

@@ -161,17 +161,17 @@ public class EvictionTest extends HazelcastTestSupport {
     */
     @Test
     public void testIssue585SetWithoutTTL() throws InterruptedException {
-        Config config = new Config();
-        config.getGroupConfig().setName("testIssue585ZeroTTLShouldPreventEvictionWithSet");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
-        int n = 1;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        HazelcastInstance h = factory.newHazelcastInstance(config);
-        final IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionWithSet");
-        map.set("key", "value", 1, TimeUnit.SECONDS);
-        map.set("key", "value2");
-        assertSizeEventually(0, map);
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<String, String> map = node.getMap(randomMapName());
+
+        String key = "key";
+
+        map.set(key, "value", 1, TimeUnit.SECONDS);
+        // this `set` operation should not affect existing ttl.
+        // so "key" should be expired after 1 seconds.
+        map.set(key, "value2");
+
+        assertSizeEventually(0, map, 300);
     }
 
     /*

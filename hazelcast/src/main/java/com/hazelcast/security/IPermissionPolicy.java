@@ -16,7 +16,7 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.config.SecurityConfig;
+import com.hazelcast.config.Config;
 
 import javax.security.auth.Subject;
 import java.security.Permission;
@@ -32,10 +32,10 @@ public interface IPermissionPolicy {
     /**
      * Configures {@link IPermissionPolicy}.
      *
-     * @param securityConfig Hazelcast {@link SecurityConfig}
+     * @param config Hazelcast {@link Config}
      * @param properties
      */
-    void configure(SecurityConfig securityConfig, Properties properties);
+    void configure(Config config, Properties properties);
 
     /**
      * Determines permissions of subject.

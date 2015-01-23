@@ -223,6 +223,7 @@ public class TestFullApplicationContext {
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
+        assertTrue(testMapStoreConfig.isWriteCoalescing());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // Test that the testMapConfig has a nearCacheConfig and it is correct

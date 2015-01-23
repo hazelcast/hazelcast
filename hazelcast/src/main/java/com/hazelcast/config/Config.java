@@ -147,6 +147,10 @@ public class Config {
         return this;
     }
 
+    public ConfigPatternMatcher getConfigPatternMatcher() {
+        return configPatternMatcher;
+    }
+
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
@@ -903,7 +907,9 @@ public class Config {
         if (configPatternKey != null) {
             return configPatterns.get(configPatternKey);
         }
-        LOGGER.warning("No configuration found for " + itemName + ", using default config!");
+        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
+            LOGGER.warning("No configuration found for " + itemName + ", using default config!");
+        }
         return null;
     }
 
