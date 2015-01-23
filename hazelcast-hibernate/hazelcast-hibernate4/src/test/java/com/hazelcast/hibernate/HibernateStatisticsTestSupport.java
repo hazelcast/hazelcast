@@ -104,7 +104,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         final int count = 100;
         final int childCount = 3;
         insertDummyEntities(count, childCount);
-        System.out.println(hz.getDistributedObjects());
         sleep(1);
         List<DummyEntity> list = new ArrayList<DummyEntity>(count);
         Session session = sf.openSession();
