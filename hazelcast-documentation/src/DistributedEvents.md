@@ -47,6 +47,8 @@ The membership listener outputs the addresses of the members joined/left and whi
 
 The Distributed Object Listener allows to get notified when a distributed object is created or destroyed throughout the cluster.
 
+The following is an example Distributed Object Listener class.
+
 
 ```java
 public class Sample implements DistributedObjectListener {
@@ -75,4 +77,43 @@ public class Sample implements DistributedObjectListener {
     System.out.println("Destroyed " + instance.getName() + "," + instance.getId());
   }
 }
-```
+```
+
+
+### Migration Listener
+
+The Migration Listener allows to get notified for the following events:
+
+- A partition migration is started.
+- A partition migration is completed.
+- A partition migration is failed.
+
+
+The following is an example Migration Listener class.
+
+
+```java
+...
+```
+
+### Lifecycle Listener
+
+The Lifecycle Listener allows to get notified for the following events:
+
+- A member is starting.
+- A member is started.
+- A member is shutting down.
+- A member's shutdown is completed.
+- A member is merging with the cluster.
+- A member's merge operation is completed.
+- A Hazelcast Client is connected to the cluster.
+- A Hazelcast Client is disconnected from the cluster.
+
+
+The following is an example Migration Listener class.
+
+
+```java
+...
+```
+
