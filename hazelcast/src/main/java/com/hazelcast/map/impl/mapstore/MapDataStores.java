@@ -46,7 +46,7 @@ public final class MapDataStores {
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
         final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, writeCoalescing);
+                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId);
         final WriteBehindQueue writeBehindQueue = newWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);

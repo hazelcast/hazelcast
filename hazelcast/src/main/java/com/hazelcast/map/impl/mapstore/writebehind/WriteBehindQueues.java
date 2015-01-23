@@ -132,6 +132,17 @@ public final class WriteBehindQueues {
         public List filterItems(long now) {
             return Collections.emptyList();
         }
+
+        /**
+         * Returns supplied number of entries from the start.
+         *
+         * @param count number of entries to return.
+         * @return list of entries
+         */
+        @Override
+        public List<DelayedEntry> get(int count) {
+            return Collections.emptyList();
+        }
     }
 
 }
