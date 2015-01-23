@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
@@ -134,6 +135,51 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         queue.removeAll();
 
         assertEquals(0, queue.size());
+    }
+
+
+    @Test
+    public void testGet_onCoalescedWBQ_whenCount_smallerThanQueueSize() throws Exception {
+        int queueSize = 100;
+        int fetchNumberOfEntries = 10;
+        WriteBehindQueue wbq = createWBQ();
+
+        testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
+    }
+
+    @Test
+    public void testGet_onBoundedWBQ_whenCount_smallerThanQueueSize() throws Exception {
+        int queueSize = 100;
+        int fetchNumberOfEntries = 10;
+        WriteBehindQueue wbq = createBoundedWBQ();
+
+        testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
+    }
+
+    @Test
+    public void testGet_onCoalescedWBQ_whenCount_higherThanQueueSize() throws Exception {
+        int queueSize = 100;
+        int fetchNumberOfEntries = 10000;
+        WriteBehindQueue wbq = createWBQ();
+
+        testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
+    }
+
+    @Test
+    public void testGet_onBoundedWBQ_whenCount_higherThanQueueSize() throws Exception {
+        int queueSize = 100;
+        int fetchNumberOfEntries = 10000;
+        WriteBehindQueue wbq = createBoundedWBQ();
+
+        testGetWithCount(wbq, queueSize, fetchNumberOfEntries);
+    }
+
+    private void testGetWithCount(WriteBehindQueue<DelayedEntry> queue, int queueSize, int fetchNumberOfEntries) {
+        fillQueue(queue, queueSize);
+        List<DelayedEntry> entries = queue.get(fetchNumberOfEntries);
+
+        int expectedFetchedEntryCount = Math.min(queueSize, fetchNumberOfEntries);
+        assertEquals(expectedFetchedEntryCount, entries.size());
     }
 
     private void fillQueue(WriteBehindQueue queue, int numberOfItems) {

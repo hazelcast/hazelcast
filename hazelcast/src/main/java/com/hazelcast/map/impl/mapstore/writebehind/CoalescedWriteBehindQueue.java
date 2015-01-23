@@ -167,4 +167,29 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         }
         return delayedEntries;
     }
+
+    /**
+     * Returns supplied number of entries from the start.
+     *
+     * @param count number of entries to return.
+     * @return list of entries
+     */
+    @Override
+    public List<DelayedEntry> get(int count) {
+        if (count <= 0) {
+            return Collections.emptyList();
+        }
+        Collection<DelayedEntry> values = queue.values();
+        if (values.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<DelayedEntry> delayedEntries = new ArrayList<DelayedEntry>(count);
+        for (DelayedEntry e : values) {
+            if (delayedEntries.size() == count) {
+                break;
+            }
+            delayedEntries.add(e);
+        }
+        return delayedEntries;
+    }
 }
