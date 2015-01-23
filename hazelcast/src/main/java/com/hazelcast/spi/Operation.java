@@ -53,7 +53,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     private int partitionId = -1;
     private int replicaIndex;
     private long callId;
-    private byte flags;
+    private short flags;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
@@ -271,7 +271,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         return (flags & bitmask) != 0;
     }
 
-    byte getFlags() {
+    short getFlags() {
         return flags;
     }
 
@@ -303,7 +303,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         out.writeLong(callId);
 
         // write state next, so that it is first available on reading.
-        out.writeByte(flags);
+        out.writeShort(flags);
 
         out.writeUTF(serviceName);
 
@@ -343,7 +343,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         // It is used to return deserialization exceptions to the caller
         callId = in.readLong();
 
-        flags = in.readByte();
+        flags = in.readShort();
 
         serviceName = in.readUTF();
 
