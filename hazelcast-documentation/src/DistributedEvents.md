@@ -41,7 +41,7 @@ public void memberAdded(MembershipEvent membershipEvent) {  System.err.println(
 public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {       System.err.println("Member attribute changed: " + memberAttributeEvent);     }
      }```
 
-The membership listener outputs the addresses of the members joined/left and which attribute is changed on which member, in the cases where the respective event is fired.
+When a respective event is fired, the membership listener outputs the addresses of the members joined/left and which attribute is changed on which member.
 
 ### Distributed Object Listener
 
@@ -79,6 +79,8 @@ public class Sample implements DistributedObjectListener {
 }
 ```
 
+When a respective event is fired, the distributed object listener outputs the name, service (e.g. if a Map service provides the distributed object, than it is a Map object) and ID of the object, along with the event type.
+
 
 ### Migration Listener
 
@@ -95,6 +97,14 @@ The following is an example Migration Listener class.
 ```java
 ...
 ```
+
+When a respective event is fired, the migration listener outputs the partition ID, status of the migration, the old member and the new member. The following is an example output:
+
+```
+Started: MigrationEvent{partitionId=98, oldOwner=Member [127.0.0.1]:5701,newOwner=Member [127.0.0.1]:5702 this} 
+```
+
+
 
 ### Lifecycle Listener
 
@@ -116,4 +126,24 @@ The following is an example Migration Listener class.
 ```java
 ...
 ```
-
+### Item Listener
+
+The Item Listener is used by the Hazelcast IQueue, ISet and IList interfaces. It allows to get notified when an item is added or removed.
+
+The following is an example Item Listener class.
+
+
+```java
+...
+```
+
+### Message Listener
+
+The Message Listener is used by the Hazelcast IQueue, ISet and IList interfaces. It allows to get notified when an item is added or removed.
+
+The following is an example Item Listener class.
+
+
+```java
+...
+```
