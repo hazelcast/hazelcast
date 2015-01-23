@@ -270,12 +270,12 @@
             <hz:services>
                 <hz:service>
                     <hz:name>my-service</hz:name>
-                    <hz:class-name>com.hazelcast.examples.MyService</hz:class-name>
+                    <hz:class-name>com.hazelcast.spring.MyService</hz:class-name>
                     <hz:properties>
                         <hz:property name="prop1">prop1-value</hz:property>
                         <hz:property name="prop2">prop2-value</hz:property>
                     </hz:properties>
-                    <hz:configuration parser="MyServiceConfigParser">
+                    <hz:configuration parser="com.hazelcast.spring.MyServiceConfigParser">
                         <s:my-service id="my-service">
                             <s:string-prop>prop1</s:string-prop>
                             <s:int-prop>123</s:int-prop>
@@ -287,7 +287,6 @@
         </hz:config>
     </hz:hazelcast>
 
-    <bean id="MyServiceConfigParser" class="com.hazelcast.spring.MyServiceConfigParser"/>
     <bean id="dummySerializer" class="com.hazelcast.spring.serialization.DummySerializer"/>
     <bean id="dummyDataSerializableFactory" class="com.hazelcast.spring.serialization.DummyDataSerializableFactory"/>
     <bean id="dummyPortableFactory" class="com.hazelcast.spring.serialization.DummyPortableFactory"/>

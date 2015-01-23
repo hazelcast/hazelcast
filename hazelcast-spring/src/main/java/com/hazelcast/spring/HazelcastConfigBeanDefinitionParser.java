@@ -63,11 +63,10 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.spring.context.SpringManagedContext;
-import static com.hazelcast.util.StringUtil.upperCaseInternal;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import com.hazelcast.util.ExceptionUtil;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -78,6 +77,12 @@ import org.springframework.util.Assert;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
  * BeanDefinitionParser for Hazelcast Config Configuration
@@ -243,7 +248,14 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("configuration".equals(nodeName)) {
                     final Node parser = child.getAttributes().getNamedItem("parser");
                     final String name = getTextContent(parser);
-//                    serviceConfigBuilder.addPropertyReference(xmlToJavaName("config-object"),name );
+                    try {
+                        ServiceConfigurationParser serviceConfigurationParser =
+                                ClassLoaderUtil.newInstance(getClass().getClassLoader(), name);
+                        Object obj = serviceConfigurationParser.parse((Element) child);
+                        serviceConfigBuilder.addPropertyValue(xmlToJavaName("config-object"), obj);
+                    } catch (Exception e) {
+                        ExceptionUtil.sneakyThrow(e);
+                    }
                 }
             }
             return beanDefinition;

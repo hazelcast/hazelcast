@@ -21,12 +21,12 @@ import com.hazelcast.spi.ConfigurableService;
 /**
 * @author mdogan 6/24/13
 */
-class MyService implements ConfigurableService<com.hazelcast.config.MyServiceConfig> {
+class MyService implements ConfigurableService<MyServiceConfig> {
 
-    com.hazelcast.config.MyServiceConfig config;
+    MyServiceConfig config;
 
     @Override
-    public void configure(com.hazelcast.config.MyServiceConfig configObject) {
+    public void configure(MyServiceConfig configObject) {
         config = configObject;
     }
 }
