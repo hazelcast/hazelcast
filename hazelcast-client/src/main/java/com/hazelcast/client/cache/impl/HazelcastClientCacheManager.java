@@ -97,7 +97,6 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         }
         //make sure all configs are created
         FutureUtil.waitWithDeadline(futures, CacheProxyUtil.AWAIT_COMPLETION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-
     }
 
     @Override

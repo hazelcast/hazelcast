@@ -48,17 +48,13 @@ public interface NearCacheManager {
      *                          {@link com.hazelcast.cache.impl.nearcache.NearCache} to be created
      * @param nearCacheContext  the {@link com.hazelcast.cache.impl.nearcache.NearCacheContext} of the
      *                          {@link com.hazelcast.cache.impl.nearcache.NearCache} to be created
-     * @param nearCacheType     the type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
-     *                          implementation as one of the
-     *                          {@link com.hazelcast.cache.impl.nearcache.NearCacheType} values.
      * @param <K> the key type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
      * @param <V> the value type of the {@link com.hazelcast.cache.impl.nearcache.NearCache}
      * @return the created or existing {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
      *         associated with given <code>name</code>
      */
     <K, V> NearCache<K, V> createNearCacheIfAbsent(String name, NearCacheConfig nearCacheConfig,
-                                                   NearCacheContext nearCacheContext,
-                                                   NearCacheType nearCacheType);
+                                                   NearCacheContext nearCacheContext);
 
     /**
      * Lists all existing {@link com.hazelcast.cache.impl.nearcache.NearCache} instances.

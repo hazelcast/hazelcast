@@ -132,7 +132,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         socketOptions = networkConfig.getSocketOptions();
         ClientExtension clientExtension = client.getClientExtension();
-        socketChannelWrapperFactory = clientExtension.getSocketChannelWrapperFactory();
+        socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
         socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
     }
 
@@ -140,7 +140,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         if (sic != null && sic.isEnabled()) {
             ClientExtension clientExtension = client.getClientExtension();
-            return clientExtension.getSocketInterceptor();
+            return clientExtension.createSocketInterceptor();
         }
         return null;
     }

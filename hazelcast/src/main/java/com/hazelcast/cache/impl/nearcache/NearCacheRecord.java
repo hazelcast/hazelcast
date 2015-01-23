@@ -28,52 +28,52 @@ import com.hazelcast.cache.impl.eviction.Expirable;
  * @see com.hazelcast.cache.impl.eviction.Expirable
  * @see com.hazelcast.cache.impl.eviction.Evictable
  *
- * @param <V> the type of the value stored by this {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord}
+ * @param <V> the type of the value stored by this {@link NearCacheRecord}
  */
 public interface NearCacheRecord<V> extends Expirable, Evictable {
 
     /**
-     * Gets the value of this {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord}.
+     * Gets the value of this {@link NearCacheRecord}.
      *
-     * @return the value of this {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord}
+     * @return the value of this {@link NearCacheRecord}
      */
     V getValue();
 
     /**
-     * Sets the value of this {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord}.
+     * Sets the value of this {@link NearCacheRecord}.
      *
-     * @param value the value for this {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord}
+     * @param value the value for this {@link NearCacheRecord}
      */
     void setValue(V value);
 
     /**
-     * Sets the creation time of this {@link com.hazelcast.cache.impl.eviction.Evictable} in milliseconds.
+     * Sets the creation time of this {@link Evictable} in milliseconds.
      *
-     * @param time the creation time for this {@link com.hazelcast.cache.impl.eviction.Evictable} in milliseconds
+     * @param time the creation time for this {@link Evictable} in milliseconds
      */
     void setCreationTime(long time);
 
     /**
-     * Sets the access time of this {@link com.hazelcast.cache.impl.eviction.Evictable} in milliseconds.
+     * Sets the access time of this {@link Evictable} in milliseconds.
      *
-     * @param time the latest access time of this {@link com.hazelcast.cache.impl.eviction.Evictable} in milliseconds
+     * @param time the latest access time of this {@link Evictable} in milliseconds
      */
     void setAccessTime(long time);
 
     /**
-     * Sets the access hit count of this {@link com.hazelcast.cache.impl.eviction.Evictable}.
+     * Sets the access hit count of this {@link Evictable}.
      *
-     * @param hit the access hit count for this {@link com.hazelcast.cache.impl.eviction.Evictable}
+     * @param hit the access hit count for this {@link Evictable}
      */
     void setAccessHit(int hit);
 
     /**
-     * Increases the access hit count of this {@link com.hazelcast.cache.impl.eviction.Evictable} as <code>1</code>.
+     * Increases the access hit count of this {@link Evictable} as <code>1</code>.
      */
     void incrementAccessHit();
 
     /**
-     * Resets the access hit count of this {@link com.hazelcast.cache.impl.eviction.Evictable} to <code>0</code>.
+     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
      */
     void resetAccessHit();
 

@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     Near cache store implementations.
+ *     Near cache record store implementations.
  * </p>
  */
 package com.hazelcast.cache.impl.nearcache.impl.store;

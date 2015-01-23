@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.nearcache.impl;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
-import com.hazelcast.cache.impl.nearcache.NearCacheType;
 import com.hazelcast.config.NearCacheConfig;
 
 import java.util.Collection;
@@ -27,9 +26,9 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class NearCacheManagerImpl implements NearCacheManager {
+public class DefaultNearCacheManager implements NearCacheManager {
 
-    private final ConcurrentMap<String, NearCache> nearCacheMap =
+    protected final ConcurrentMap<String, NearCache> nearCacheMap =
             new ConcurrentHashMap<String, NearCache>();
 
     @Override
@@ -39,32 +38,22 @@ public class NearCacheManagerImpl implements NearCacheManager {
 
     @Override
     public <K, V> NearCache<K, V> createNearCacheIfAbsent(String name, NearCacheConfig nearCacheConfig,
-                                                          NearCacheContext nearCacheContext,
-                                                          NearCacheType nearCacheType) {
+                                                          NearCacheContext nearCacheContext) {
         NearCache<K, V> nearCache = nearCacheMap.get(name);
         if (nearCache == null) {
             synchronized (nearCacheMap) {
                 nearCache = nearCacheMap.get(name);
                 if (nearCache == null) {
-                    nearCache = createNearCache(name, nearCacheConfig, nearCacheContext, nearCacheType);
+                    nearCache = createNearCache(name, nearCacheConfig, nearCacheContext);
                 }
             }
         }
         return nearCache;
     }
 
-    private <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig,
-                                                   NearCacheContext nearCacheContext,
-                                                   NearCacheType nearCacheType) {
-        if (nearCacheType == null) {
-            nearCacheType = NearCacheType.DEFAULT;
-        }
-        switch (nearCacheType) {
-            case DEFAULT:
-                return new DefaultNearCache<K, V>(name, nearCacheConfig, nearCacheContext);
-            default:
-                throw new IllegalArgumentException("Unsupported Near Cache type: " + nearCacheType);
-        }
+    protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig,
+                                                     NearCacheContext nearCacheContext) {
+        return new DefaultNearCache<K, V>(name, nearCacheConfig, nearCacheContext);
     }
 
     @Override

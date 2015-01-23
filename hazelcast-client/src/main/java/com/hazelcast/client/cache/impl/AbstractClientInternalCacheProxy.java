@@ -36,7 +36,6 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
-import com.hazelcast.cache.impl.nearcache.NearCacheType;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
@@ -97,7 +96,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected final AbstractHazelcastCacheManager cacheManager;
     protected final NearCacheManager nearCacheManager;
     // Object => Data or <V>
-    protected final NearCache<Data, Object> nearCache;
+    protected NearCache<Data, Object> nearCache;
+
     protected String nearCacheMembershipRegistrationId;
     protected final ConcurrentMap<Member, String> nearCacheInvalidationListeners =
             new ConcurrentHashMap<Member, String>();
@@ -113,7 +113,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                                                AbstractHazelcastCacheManager cacheManager) {
         super(cacheConfig, clientContext);
         this.cacheManager = cacheManager;
-        this.nearCacheManager = cacheManager.getNearCacheManager();
+        nearCacheManager = clientContext.getNearCacheManager();
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
@@ -125,8 +125,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     new NearCacheContext(clientContext.getSerializationService(),
                                          createNearCacheExecutor(clientContext.getExecutionService()));
             nearCache = nearCacheManager
-                            .createNearCacheIfAbsent(nameWithPrefix, nearCacheConfig,
-                                    nearCacheContext, NearCacheType.DEFAULT);
+                            .createNearCacheIfAbsent(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
         } else {
             nearCache = null;
@@ -154,10 +153,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     @Override
+    public void close() {
+        if (nearCache != null) {
+            removeInvalidationListener();
+            nearCacheManager.clearNearCache(nearCache.getName());
+        }
+        super.close();
+    }
+
+    @Override
     public void destroy() {
         if (nearCache != null) {
             removeInvalidationListener();
             nearCacheManager.destroyNearCache(nearCache.getName());
+            nearCache = null;
         }
         super.destroy();
     }
