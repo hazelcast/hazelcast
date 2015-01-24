@@ -47,6 +47,8 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     static final int BITMASK_WAIT_TIMEOUT_SET = 8;
     static final int BITMASK_PARTITION_ID_32_BIT = 16;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 32;
+    static final int BITMASK_EXECUTOR_NAME_SET = 64;
+    static final int BITMASK_SERVICE_NAME_SET = 128;
 
     // serialized
     private String serviceName;
@@ -94,6 +96,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public final Operation setServiceName(String serviceName) {
         this.serviceName = serviceName;
+        setFlag(serviceName!=null , BITMASK_SERVICE_NAME_SET);
         return this;
     }
 
@@ -128,6 +131,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public void setExecutorName(String executorName) {
         this.executorName = executorName;
+        setFlag(executorName!=null, BITMASK_EXECUTOR_NAME_SET);
     }
 
     public final long getCallId() {
@@ -305,7 +309,9 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         // write state next, so that it is first available on reading.
         out.writeShort(flags);
 
-        out.writeUTF(serviceName);
+        if(isFlagSet(BITMASK_SERVICE_NAME_SET)) {
+            out.writeUTF(serviceName);
+        }
 
         if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
             out.writeInt(partitionId);
@@ -333,7 +339,9 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             out.writeUTF(callerUuid);
         }
 
-        out.writeUTF(executorName);
+        if(isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
+            out.writeUTF(executorName);
+        }
         writeInternal(out);
     }
 
@@ -345,7 +353,9 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
         flags = in.readShort();
 
-        serviceName = in.readUTF();
+        if(isFlagSet(BITMASK_SERVICE_NAME_SET)) {
+            serviceName = in.readUTF();
+        }
 
         if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
             partitionId = in.readInt();
@@ -373,7 +383,9 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             callerUuid = in.readUTF();
         }
 
-        executorName = in.readUTF();
+        if(isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
+            executorName = in.readUTF();
+        }
         readInternal(in);
     }
 
