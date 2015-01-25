@@ -37,16 +37,35 @@ public class NearCacheDataRecordStore<K, V>
 
     @Override
     protected long getKeyStorageMemoryCost(K key) {
-        // TODO Calculate size of key data and consider also its reference size
-        // since it is pointed from internal map
-        return 0L;
+        if (key instanceof Data) {
+            return
+                // Reference to this key data inside map ("store" field)
+                REFERENCE_SIZE
+                // Heap cost of this key data
+                + ((Data) key).getHeapCost();
+        } else {
+            // Memory cost for non-data typed instance is not supported.
+            return 0L;
+        }
     }
 
+    // TODO We don't handle object header (mark, class definition) for heap memory cost
     @Override
     protected long getRecordStorageMemoryCost(NearCacheDataRecord record) {
-        // TODO Calculate size of record (with its attributes and references) and
-        // also consider its reference size since it is pointed from internal map
-        return 0L;
+        Data value = record.getValue();
+        return
+            // Reference to this record inside map ("store" field)
+            REFERENCE_SIZE
+            // Reference to "value" field
+            + REFERENCE_SIZE
+            // Heap cost of this value data
+            + (value != null ? value.getHeapCost() : 0)
+            // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
+            + (3 * (Long.SIZE / Byte.SIZE))
+            // Reference to "accessHit" field
+            + REFERENCE_SIZE
+            // Primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
+            + (Integer.SIZE / Byte.SIZE);
     }
 
     @Override

@@ -22,12 +22,26 @@ import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheRecord>
         implements NearCacheRecordStore<K, V> {
+
+    /*
+     * If Unsafe is available, Object array index scale (every index represents a reference)
+     * can be assumed as reference size.
+     *
+     * Otherwise, we assume reference size as integer size that means
+     * we assume 32 bit JVM or compressed-references enabled 64 bit JVM
+     * by ignoring compressed-references disable mode on 64 bit JVM.
+     */
+    protected static final int REFERENCE_SIZE =
+            UnsafeHelper.UNSAFE_AVAILABLE
+                    ? UnsafeHelper.UNSAFE.arrayIndexScale(Object[].class)
+                    : (Integer.SIZE / Byte.SIZE);
 
     private static final int MILLI_SECONDS_IN_A_SECOND = 1000;
 
