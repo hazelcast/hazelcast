@@ -42,13 +42,13 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
 
     static final int BITMASK_VALIDATE_TARGET = 1;
-    static final int BITMASK_CALLER_UUID_SET = 2;
-    static final int BITMASK_REPLICA_INDEX_SET = 4;
-    static final int BITMASK_WAIT_TIMEOUT_SET = 8;
-    static final int BITMASK_PARTITION_ID_32_BIT = 16;
-    static final int BITMASK_CALL_TIMEOUT_64_BIT = 32;
-    static final int BITMASK_EXECUTOR_NAME_SET = 64;
-    static final int BITMASK_SERVICE_NAME_SET = 128;
+    static final int BITMASK_CALLER_UUID_SET = 1 << 1;
+    static final int BITMASK_REPLICA_INDEX_SET = 1 << 2;
+    static final int BITMASK_WAIT_TIMEOUT_SET = 1 << 3;
+    static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
+    static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
+    static final int BITMASK_EXECUTOR_NAME_SET = 1 << 6;
+    static final int BITMASK_SERVICE_NAME_SET = 1 << 7;
 
     // serialized
     private String serviceName;
@@ -96,7 +96,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public final Operation setServiceName(String serviceName) {
         this.serviceName = serviceName;
-        setFlag(serviceName!=null , BITMASK_SERVICE_NAME_SET);
+        setFlag(serviceName != null, BITMASK_SERVICE_NAME_SET);
         return this;
     }
 
@@ -131,7 +131,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public void setExecutorName(String executorName) {
         this.executorName = executorName;
-        setFlag(executorName!=null, BITMASK_EXECUTOR_NAME_SET);
+        setFlag(executorName != null, BITMASK_EXECUTOR_NAME_SET);
     }
 
     public final long getCallId() {
@@ -309,7 +309,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         // write state next, so that it is first available on reading.
         out.writeShort(flags);
 
-        if(isFlagSet(BITMASK_SERVICE_NAME_SET)) {
+        if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
             out.writeUTF(serviceName);
         }
 
@@ -339,7 +339,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             out.writeUTF(callerUuid);
         }
 
-        if(isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
+        if (isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
             out.writeUTF(executorName);
         }
         writeInternal(out);
@@ -353,7 +353,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
         flags = in.readShort();
 
-        if(isFlagSet(BITMASK_SERVICE_NAME_SET)) {
+        if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
             serviceName = in.readUTF();
         }
 
@@ -383,7 +383,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             callerUuid = in.readUTF();
         }
 
-        if(isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
+        if (isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
             executorName = in.readUTF();
         }
         readInternal(in);

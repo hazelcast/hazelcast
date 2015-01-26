@@ -1,8 +1,8 @@
 package com.hazelcast.spi;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -24,8 +24,7 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        HazelcastInstance hz = createHazelcastInstance();
-        serializationService = getNode(hz).getSerializationService();
+        serializationService = new DefaultSerializationServiceBuilder().build();
     }
 
     @Test
