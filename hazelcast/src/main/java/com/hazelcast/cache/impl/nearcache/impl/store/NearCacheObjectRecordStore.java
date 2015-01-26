@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
+import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
@@ -36,6 +37,11 @@ public class NearCacheObjectRecordStore<K, V>
     }
 
     @Override
+    protected boolean isAvailable() {
+        return store != null;
+    }
+
+    @Override
     protected long getKeyStorageMemoryCost(K key) {
         // Memory cost for "OBJECT" in memory format is totally not supported.
         // So just return zero.
@@ -52,7 +58,11 @@ public class NearCacheObjectRecordStore<K, V>
     @Override
     protected NearCacheObjectRecord valueToRecord(V value) {
         long creationTime = Clock.currentTimeMillis();
-        return new NearCacheObjectRecord(value, creationTime, creationTime + timeToLiveMillis);
+        if (timeToLiveMillis > 0) {
+            return new NearCacheObjectRecord(value, creationTime, creationTime + timeToLiveMillis);
+        } else {
+            return new NearCacheObjectRecord(value, creationTime, NearCacheRecord.TIME_NOT_SET);
+        }
     }
 
     @Override

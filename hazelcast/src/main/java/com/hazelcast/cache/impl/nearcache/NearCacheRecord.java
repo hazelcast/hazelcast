@@ -32,6 +32,8 @@ import com.hazelcast.cache.impl.eviction.Expirable;
  */
 public interface NearCacheRecord<V> extends Expirable, Evictable {
 
+    int TIME_NOT_SET = -1;
+
     /**
      * Gets the value of this {@link NearCacheRecord}.
      *
@@ -76,5 +78,15 @@ public interface NearCacheRecord<V> extends Expirable, Evictable {
      * Resets the access hit count of this {@link Evictable} to <code>0</code>.
      */
     void resetAccessHit();
+
+    /**
+     * Checks whether the maximum idle time is passed with respect to the provided time
+     * without any access during this time period as <code>maxIdleSeconds</code>.
+     *
+     * @param maxIdleMilliSeconds   maximum idle time in milliseconds
+     * @param now                   current time in milliseconds
+     * @return <code>true</code> if exceeds max idle seconds, otherwise <code>false</code>
+     */
+    boolean isIdleAt(long maxIdleMilliSeconds, long now);
 
 }

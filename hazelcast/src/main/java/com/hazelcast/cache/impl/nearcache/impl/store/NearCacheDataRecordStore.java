@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
+import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
@@ -33,6 +34,11 @@ public class NearCacheDataRecordStore<K, V>
 
     public NearCacheDataRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         super(nearCacheConfig, nearCacheContext);
+    }
+
+    @Override
+    protected boolean isAvailable() {
+        return store != null;
     }
 
     @Override
@@ -72,7 +78,11 @@ public class NearCacheDataRecordStore<K, V>
     protected NearCacheDataRecord valueToRecord(V value) {
         Data data = valueToData(value);
         long creationTime = Clock.currentTimeMillis();
-        return new NearCacheDataRecord(data, creationTime, creationTime + timeToLiveMillis);
+        if (timeToLiveMillis > 0) {
+            return new NearCacheDataRecord(data, creationTime, creationTime + timeToLiveMillis);
+        } else {
+            return new NearCacheDataRecord(data, creationTime, NearCacheRecord.TIME_NOT_SET);
+        }
     }
 
     @Override

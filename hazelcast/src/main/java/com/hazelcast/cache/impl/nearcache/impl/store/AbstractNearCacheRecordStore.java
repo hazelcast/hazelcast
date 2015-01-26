@@ -48,14 +48,18 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     protected final long timeToLiveMillis;
     protected final long maxIdleMillis;
 
+    protected final NearCacheConfig nearCacheConfig;
     protected final SerializationService serializationService;
     protected final NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl();
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
+        this.nearCacheConfig = nearCacheConfig;
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.serializationService = nearCacheContext.getSerializationService();
     }
+
+    protected abstract boolean isAvailable();
 
     protected abstract long getKeyStorageMemoryCost(K key);
     protected abstract long getRecordStorageMemoryCost(R record);
@@ -68,6 +72,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     protected abstract R removeRecord(K key);
     protected abstract void clearRecords();
     protected abstract void destroyStore();
+
+    protected void checkAvailable() {
+        if (!isAvailable()) {
+            throw new IllegalStateException(nearCacheConfig.getName()
+                    + " named near cache record store is not available");
+        }
+    }
 
     protected Data valueToData(V value) {
         if (value instanceof Data) {
@@ -96,7 +107,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
         if (record.isExpiredAt(now)) {
             return true;
         } else {
-            return (record.getAccessTime() + maxIdleMillis) > now;
+            return record.isIdleAt(maxIdleMillis, now);
         }
     }
 
@@ -123,6 +134,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public V get(K key) {
+        checkAvailable();
+
         R record = getRecord(key);
         if (record != null) {
             if (isRecordExpired(record)) {
@@ -142,6 +155,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public void put(K key, V value) {
+        checkAvailable();
+
         R newRecord = valueToRecord(value);
         onRecordCreate(newRecord);
         R oldRecord = putRecord(key, newRecord);
@@ -158,6 +173,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public boolean remove(K key) {
+        checkAvailable();
+
         R record = removeRecord(key);
         if (record != null) {
             nearCacheStats.decrementOwnedEntryCount();
@@ -169,6 +186,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public void clear() {
+        checkAvailable();
+
         clearRecords();
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
@@ -176,6 +195,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public void destroy() {
+        checkAvailable();
+
         destroyStore();
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
@@ -183,6 +204,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     @Override
     public NearCacheStats getNearCacheStats() {
+        checkAvailable();
+
         return nearCacheStats;
     }
 

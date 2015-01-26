@@ -29,15 +29,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     protected V value;
-    protected long creationTime = -1;
-    protected volatile long expirationTime = -1;
-    protected volatile long accessTime = -1;
+    protected long creationTime = TIME_NOT_SET;
+    protected volatile long expirationTime = TIME_NOT_SET;
+    protected volatile long accessTime = TIME_NOT_SET;
     protected AtomicInteger accessHit = new AtomicInteger(0);
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
         this.value = value;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
+        this.accessTime = creationTime;
     }
 
     @Override
@@ -102,7 +103,16 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public boolean isExpiredAt(long now) {
-        return expirationTime > -1 && expirationTime <= now;
+        return (expirationTime > TIME_NOT_SET) && (expirationTime <= now);
+    }
+
+    @Override
+    public boolean isIdleAt(long maxIdleMilliSeconds, long now) {
+        if (accessTime > TIME_NOT_SET && maxIdleMilliSeconds > 0) {
+            return accessTime + maxIdleMilliSeconds < now;
+        } else {
+            return false;
+        }
     }
 
 }
