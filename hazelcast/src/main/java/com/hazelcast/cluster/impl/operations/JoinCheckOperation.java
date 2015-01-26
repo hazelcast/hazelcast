@@ -56,11 +56,6 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return response;
     }

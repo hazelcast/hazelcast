@@ -150,7 +150,12 @@ public class StoreWorker implements Runnable {
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
             final List<DelayedEntry> entries = entry.getValue();
             queue.removeAll(entries);
-            getFlushCounter(recordStore).addAndGet(entries.size());
+
+            final AtomicInteger flushCounter = getFlushCounter(recordStore);
+            if (flushCounter.get() > 0) {
+                flushCounter.addAndGet(-entries.size());
+            }
+
         }
     }
 
@@ -211,7 +216,6 @@ public class StoreWorker implements Runnable {
             }
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
             queue.addFront(fails);
-            getFlushCounter(recordStore).addAndGet(fails.size());
         }
     }
 

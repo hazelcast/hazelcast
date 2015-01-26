@@ -53,11 +53,6 @@ public class PrepareMergeOperation extends AbstractClusterOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }

@@ -47,11 +47,6 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public final boolean validatesTarget() {
         return false;
     }

@@ -50,11 +50,6 @@ public class MasterClaimOperation extends AbstractOperation implements JoinOpera
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return approvedAsMaster;
     }

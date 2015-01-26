@@ -49,11 +49,6 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(count);

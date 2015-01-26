@@ -35,11 +35,6 @@ public final class ShutdownOperation extends AbstractNamedOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }

@@ -126,7 +126,7 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
-    private final ResponseHandler responseHandler;
+    private final ResponsePacketHandler responsePacketHandler;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -144,9 +144,9 @@ final class BasicOperationService implements InternalOperationService {
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.operationHandler = new OperationHandler();
-        this.responseHandler = new ResponseHandler();
+        this.responsePacketHandler = new ResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
-        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler, responseHandler);
+        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler, responsePacketHandler);
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
@@ -535,7 +535,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling responses.
      */
-    private final class ResponseHandler implements BasicResponseHandler {
+    private final class ResponsePacketHandler implements BasicResponsePacketHandler {
 
         @Override
         public Response deserialize(Packet packet) throws Exception {

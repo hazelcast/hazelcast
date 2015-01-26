@@ -54,11 +54,6 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         backupProcessor = in.readObject();

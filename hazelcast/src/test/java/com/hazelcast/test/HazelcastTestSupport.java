@@ -26,6 +26,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.util.StringUtil;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 
@@ -48,7 +49,14 @@ public abstract class HazelcastTestSupport {
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     static {
+        // Activate logging if run from IntelliJ IDEA
+        String libPath = StringUtil.lowerCaseInternal(System.getProperty("java.library.path"));
+        if (libPath.contains("idea") || libPath.contains("intellij")) {
+            setLogLevelWarn();
+        }
+
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");
+
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout", "120"));
         System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -62,6 +70,55 @@ public abstract class HazelcastTestSupport {
             factory = null;
             testHazelcastInstanceFactory.terminateAll();
         }
+    }
+
+    public static void setLoggingNone() {
+        System.setProperty("hazelcast.logging.type", "none");
+    }
+
+    public static void setLoggingLog4j() {
+        System.setProperty("hazelcast.logging.type", "log4j");
+    }
+
+    public static void setLogLevelDebug() {
+        if (isLog4jLoaded()) {
+            org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.DEBUG);
+        }
+    }
+
+    public static void setLogLevelInfo() {
+        if (isLog4jLoaded()) {
+            org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.INFO);
+        }
+    }
+
+    public static void setLogLevelWarn() {
+        if (isLog4jLoaded()) {
+            org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.WARN);
+        }
+    }
+
+    public static void setLogLevelError() {
+        if (isLog4jLoaded()) {
+            org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.ERROR);
+        }
+    }
+
+    public static void setLogLevelFatal() {
+        if (isLog4jLoaded()) {
+            org.apache.log4j.Logger.getRootLogger().setLevel(org.apache.log4j.Level.FATAL);
+        }
+    }
+
+    private static boolean isLog4jLoaded() {
+        setLoggingLog4j();
+        try {
+            Class.forName("org.apache.log4j.Logger");
+            Class.forName("org.apache.log4j.Level");
+            return true;
+        } catch (Throwable ignored) {
+        }
+        return false;
     }
 
     public static void sleepMillis(int millis) {

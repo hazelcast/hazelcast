@@ -147,3 +147,14 @@ The following is an example Item Listener class.
 ```java
 ...
 ```
+
+### Client Listener
+
+The Message Listener is used by the Hazelcast IQueue, ISet and IList interfaces. It allows to get notified when an item is added or removed.
+
+The following is an example Item Listener class.
+
+
+```java
+...
+```

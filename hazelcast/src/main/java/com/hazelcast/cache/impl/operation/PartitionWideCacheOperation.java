@@ -43,11 +43,6 @@ abstract class PartitionWideCacheOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return response;
     }

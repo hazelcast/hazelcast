@@ -90,11 +90,6 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return responses;
     }

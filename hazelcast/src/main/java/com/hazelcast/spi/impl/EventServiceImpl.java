@@ -905,11 +905,6 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return true;
-        }
-
-        @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
             eventPacket.writeData(out);
@@ -949,11 +944,6 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
-        public boolean returnsResponse() {
-            return true;
-        }
-
-        @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             registration.writeData(out);
         }
@@ -989,11 +979,6 @@ public class EventServiceImpl implements EventService {
 
         @Override
         public Object getResponse() {
-            return true;
-        }
-
-        @Override
-        public boolean returnsResponse() {
             return true;
         }
 

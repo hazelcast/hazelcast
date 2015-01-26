@@ -20,13 +20,7 @@ public class SafeStateCheckOperation extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return safe;
     }
-
 }
