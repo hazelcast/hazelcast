@@ -28,7 +28,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.RemotePropagatable;
 
 import java.io.IOException;
 import java.util.logging.Level;
