@@ -24,6 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -63,7 +64,8 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
 }

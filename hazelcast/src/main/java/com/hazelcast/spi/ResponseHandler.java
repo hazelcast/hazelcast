@@ -22,7 +22,7 @@ package com.hazelcast.spi;
  */
 public interface ResponseHandler {
 
-    void sendResponse(Object obj);
+    void sendResponse(Operation op, Object obj);
 
     boolean isLocal();
 }

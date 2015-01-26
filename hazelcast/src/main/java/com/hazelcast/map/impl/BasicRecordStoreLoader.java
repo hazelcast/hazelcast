@@ -277,7 +277,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         operation.setNodeEngine(nodeEngine);
         operation.setResponseHandler(new ResponseHandler() {
             @Override
-            public void sendResponse(Object obj) {
+            public void sendResponse(Operation op, Object obj) {
                 if (finishedBatchCounter.decrementAndGet() == 0) {
                     loaded.set(true);
                 }

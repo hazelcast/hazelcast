@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.countdownlatch.operations;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -53,7 +54,8 @@ public class AwaitOperation extends BaseCountDownLatchOperation implements WaitS
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, false);
     }
 
     @Override

@@ -77,7 +77,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
     @Override
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(false);
+        responseHandler.sendResponse(this, false);
     }
 
     public long getVersion() {

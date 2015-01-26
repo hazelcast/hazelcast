@@ -102,7 +102,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
         @Override
-        public void sendResponse(Object obj) {
+        public void sendResponse(Operation op, Object obj) {
             if (!b.offer(obj)) {
                 throw new HazelcastException("Response could not be queued for transportation");
             }

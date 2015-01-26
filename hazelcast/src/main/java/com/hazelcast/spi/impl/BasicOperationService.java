@@ -42,6 +42,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -75,7 +76,6 @@ import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
 import static java.lang.Math.min;
 
 /**
@@ -578,6 +578,9 @@ final class BasicOperationService implements InternalOperationService {
      */
     private final class OperationHandler implements BasicOperationHandler {
 
+        private final ResponseHandler remoteResponseHandler = ResponseHandlerFactory.createRemoteResponseHandler();
+        private final ResponseHandler emptyResponseHandler = ResponseHandlerFactory.createEmptyResponseHandler();
+
         /**
          * Runs operation in calling thread.
          */
@@ -619,7 +622,8 @@ final class BasicOperationService implements InternalOperationService {
 
         private boolean timeout(Operation op) {
             if (isCallTimedOut(op)) {
-                op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
+                ResponseHandler responseHandler = op.getResponseHandler();
+                responseHandler.sendResponse(op, new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
                 return true;
             }
             return false;
@@ -647,7 +651,7 @@ final class BasicOperationService implements InternalOperationService {
                 if (responseHandler == null) {
                     throw new IllegalStateException("ResponseHandler should not be null!");
                 }
-                responseHandler.sendResponse(response);
+                responseHandler.sendResponse(op, response);
             }
         }
 
@@ -700,9 +704,9 @@ final class BasicOperationService implements InternalOperationService {
             if (operation.returnsResponse() && responseHandler != null) {
                 try {
                     if (node.isActive()) {
-                        responseHandler.sendResponse(e);
+                        responseHandler.sendResponse(operation, e);
                     } else if (responseHandler.isLocal()) {
-                        responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
+                        responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
                     }
                 } catch (Throwable t) {
                     logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
@@ -722,20 +726,9 @@ final class BasicOperationService implements InternalOperationService {
             Connection connection = packet.getConn();
             Address caller = connection.getEndPoint();
             Data data = packet.getData();
+            Operation op;
             try {
-                Object object = nodeEngine.toObject(data);
-                Operation op = (Operation) object;
-                op.setNodeEngine(nodeEngine);
-                setCallerAddress(op, caller);
-                setConnection(op, connection);
-                setCallerUuidIfNotSet(caller, op);
-                setRemoteResponseHandler(nodeEngine, op);
-
-                if (!ensureValidMember(op)) {
-                    return null;
-                }
-
-                return op;
+                op = (Operation) nodeEngine.toObject(data);
             } catch (Throwable throwable) {
                 // If exception happens we need to extract the callId from the bytes directly!
                 long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
@@ -743,6 +736,32 @@ final class BasicOperationService implements InternalOperationService {
                 logOperationDeserializationException(throwable, callId);
                 throw ExceptionUtil.rethrow(throwable);
             }
+
+            op.setNodeEngine(nodeEngine);
+            setCallerAddress(op, caller);
+            setConnection(op, connection);
+            setCallerUuidIfNotSet(caller, op);
+            setResponseHandler(op);
+
+            if (!ensureValidMember(op)) {
+                return null;
+            }
+
+            return op;
+        }
+
+        private void setResponseHandler(Operation op) {
+            ResponseHandler responseHandler;
+            if (op.getCallId() == 0) {
+                if (op.returnsResponse()) {
+                    throw new HazelcastException(
+                            "Op: " + op.getClass().getName() + " can not return response without call-id!");
+                }
+                responseHandler = emptyResponseHandler;
+            } else {
+                responseHandler = remoteResponseHandler;
+            }
+            op.setResponseHandler(responseHandler);
         }
 
         private boolean ensureValidMember(Operation op) {

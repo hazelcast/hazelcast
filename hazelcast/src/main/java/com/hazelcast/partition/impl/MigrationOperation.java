@@ -42,7 +42,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ResponseHandler() {
         @Override
-        public void sendResponse(Object obj) {
+        public void sendResponse(Operation op, Object obj) {
             throw new HazelcastException("Migration operations can not send response!");
         }
 

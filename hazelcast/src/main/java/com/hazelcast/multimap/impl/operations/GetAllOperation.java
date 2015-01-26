@@ -70,6 +70,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }

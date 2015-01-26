@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ResponseHandler;
 
 public class TryPutOperation extends BasePutOperation {
 
@@ -45,7 +46,8 @@ public class TryPutOperation extends BasePutOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, false);
     }
 
     public Object getResponse() {

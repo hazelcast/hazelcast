@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.transaction.TransactionException;
@@ -70,7 +71,8 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, null);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

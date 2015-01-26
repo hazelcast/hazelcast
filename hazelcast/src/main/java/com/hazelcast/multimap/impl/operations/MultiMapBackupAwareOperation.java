@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import java.io.IOException;
@@ -59,6 +60,7 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, null);
     }
 }

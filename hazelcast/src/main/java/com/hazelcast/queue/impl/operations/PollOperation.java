@@ -23,6 +23,7 @@ import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.queue.impl.QueueItem;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -92,7 +93,8 @@ public final class PollOperation extends QueueBackupAwareOperation
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, null);
     }
 
     @Override

@@ -26,6 +26,7 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -38,7 +39,6 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
@@ -82,12 +82,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
      */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
-    private static final AtomicReferenceFieldUpdater<BasicInvocation, Boolean> RESPONSE_RECEIVED_FIELD_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
-
     private static final AtomicIntegerFieldUpdater<BasicInvocation> BACKUPS_COMPLETED_FIELD_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(BasicInvocation.class, "backupsCompleted");
-
 
     static final class InternalResponse {
 
@@ -131,9 +127,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
     private final BasicInvocationFuture invocationFuture;
     private final BasicOperationService operationService;
-
-    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
-    private volatile Boolean responseReceived = Boolean.FALSE;
 
      //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
@@ -268,7 +261,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             operationService.registerInvocation(this);
         }
 
-        responseReceived = Boolean.FALSE;
+        OperationAccessor.resetResponseSend(op);
         op.setResponseHandler(this);
 
         //todo: should move to the operationService.
@@ -362,8 +355,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     @Override
-    public void sendResponse(Object obj) {
-        if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
+    public void sendResponse(Operation op, Object obj) {
+        if (!OperationAccessor.setResponseSend(op)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + obj);
         }

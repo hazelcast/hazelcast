@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ResponseHandler;
 
 public class PutTransientOperation extends BasePutOperation {
 
@@ -38,7 +39,8 @@ public class PutTransientOperation extends BasePutOperation {
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, null);
     }
 
     @Override
