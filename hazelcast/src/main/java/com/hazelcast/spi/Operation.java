@@ -39,7 +39,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
-public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
+public abstract class Operation implements DataSerializable {
 
     static final int BITMASK_VALIDATE_TARGET = 1;
     static final int BITMASK_CALLER_UUID_SET = 1 << 1;

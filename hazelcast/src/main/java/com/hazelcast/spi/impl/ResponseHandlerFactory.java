@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
@@ -33,19 +34,20 @@ public final class ResponseHandlerFactory {
     private ResponseHandlerFactory() {
     }
 
-    public static void setRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
-        remotePropagatable.setResponseHandler(createRemoteResponseHandler(nodeEngine, remotePropagatable));
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
+        ResponseHandler responseHandler = createRemoteResponseHandler(nodeEngine, operation);
+        operation.setResponseHandler(responseHandler);
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
-        if (remotePropagatable.getCallId() == 0) {
-            if (remotePropagatable.returnsResponse()) {
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
+        if (operation.getCallId() == 0) {
+            if (operation.returnsResponse()) {
                 throw new HazelcastException(
-                        "Op: " + remotePropagatable.getClass().getName() + " can not return response without call-id!");
+                        "Op: " + operation.getClass().getName() + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeEngine, remotePropagatable);
+        return new RemoteInvocationResponseHandler(nodeEngine, operation);
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
@@ -93,18 +95,18 @@ public final class ResponseHandlerFactory {
     private static final class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeEngine nodeEngine;
-        private final RemotePropagatable remotePropagatable;
+        private final Operation operation;
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation operation) {
             this.nodeEngine = nodeEngine;
-            this.remotePropagatable = remotePropagatable;
+            this.operation = operation;
         }
 
         @Override
         public void sendResponse(Object obj) {
-            long callId = remotePropagatable.getCallId();
-            Connection conn = remotePropagatable.getConnection();
+            long callId = operation.getCallId();
+            Connection conn = operation.getConnection();
             if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
@@ -112,13 +114,13 @@ public final class ResponseHandlerFactory {
 
             Response response;
             if (!(obj instanceof Response)) {
-                response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
+                response = new NormalResponse(obj, operation.getCallId(), 0, operation.isUrgent());
             } else {
                 response = (Response) obj;
             }
 
             OperationService operationService = nodeEngine.getOperationService();
-            if (!operationService.send(response, remotePropagatable.getCallerAddress())) {
+            if (!operationService.send(response, operation.getCallerAddress())) {
                 throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
             }
         }
