@@ -11,11 +11,6 @@ public class AssignPartitions extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return Boolean.TRUE;
     }

@@ -49,11 +49,6 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public int getSyncBackupCount() {
         return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
     }

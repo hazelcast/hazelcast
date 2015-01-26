@@ -98,11 +98,6 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public boolean validatesTarget() {
         return false;
     }

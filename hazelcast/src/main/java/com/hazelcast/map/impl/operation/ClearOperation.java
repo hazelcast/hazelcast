@@ -64,11 +64,6 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return numberOfClearedEntries;
     }

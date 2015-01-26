@@ -44,11 +44,6 @@ public abstract class ProcessingOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public String getServiceName() {
         return MapReduceService.SERVICE_NAME;
     }

@@ -36,15 +36,13 @@ public class RemoveInterceptorOperation extends AbstractOperation {
     public RemoveInterceptorOperation() {
     }
 
+    @Override
     public void run() {
         mapService = (MapService) getService();
         mapService.getMapServiceContext().getMapContainer(mapName).removeInterceptor(id);
     }
 
-    public boolean returnsResponse() {
-        return true;
-    }
-
+    @Override
     public Object getResponse() {
         return true;
     }
@@ -67,5 +65,4 @@ public class RemoveInterceptorOperation extends AbstractOperation {
     public String toString() {
         return "RemoveInterceptorOperation{}";
     }
-
 }

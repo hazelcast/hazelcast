@@ -45,11 +45,6 @@ public class AddInterceptorOperation extends AbstractOperation {
         mapService.getMapServiceContext().getMapContainer(mapName).addInterceptor(id, mapInterceptor);
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
     public Object getResponse() {
         return true;
     }

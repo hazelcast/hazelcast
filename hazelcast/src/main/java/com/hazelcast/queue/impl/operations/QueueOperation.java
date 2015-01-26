@@ -75,6 +75,11 @@ public abstract class QueueOperation extends Operation
     }
 
     @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
     public final Object getResponse() {
         return response;
     }
@@ -94,11 +99,6 @@ public abstract class QueueOperation extends Operation
 
     @Override
     public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     public boolean hasListener() {

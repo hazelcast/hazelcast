@@ -98,11 +98,6 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         return new PartitionResponse(results);
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
     private static class ResponseQueue implements ResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 

@@ -33,11 +33,6 @@ abstract class BaseCountDownLatchOperation extends AbstractNamedOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public final String getServiceName() {
         return CountDownLatchService.SERVICE_NAME;
     }

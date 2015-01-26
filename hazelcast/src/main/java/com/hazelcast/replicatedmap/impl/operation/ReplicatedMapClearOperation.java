@@ -61,11 +61,6 @@ public class ReplicatedMapClearOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public int getFactoryId() {
         return ReplicatedMapDataSerializerHook.F_ID;
     }

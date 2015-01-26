@@ -64,11 +64,6 @@ public class PublishOperation extends AbstractNamedOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public int getFactoryId() {
         return TopicDataSerializerHook.F_ID;
     }
