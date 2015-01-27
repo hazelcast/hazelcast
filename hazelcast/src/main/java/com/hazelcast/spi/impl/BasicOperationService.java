@@ -48,6 +48,7 @@ import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.EmptyStatement;
@@ -68,6 +69,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
@@ -694,13 +696,13 @@ final class BasicOperationService implements InternalOperationService {
             return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
         }
 
-        private void handleOperationError(RemotePropagatable remotePropagatable, Throwable e) {
+        private void handleOperationError(Operation operation, Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
             }
-            remotePropagatable.logError(e);
-            com.hazelcast.spi.ResponseHandler responseHandler = remotePropagatable.getResponseHandler();
-            if (remotePropagatable.returnsResponse() && responseHandler != null) {
+            operation.logError(e);
+            com.hazelcast.spi.ResponseHandler responseHandler = operation.getResponseHandler();
+            if (operation.returnsResponse() && responseHandler != null) {
                 try {
                     if (node.isActive()) {
                         responseHandler.sendResponse(e);
@@ -708,7 +710,7 @@ final class BasicOperationService implements InternalOperationService {
                         responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
                     }
                 } catch (Throwable t) {
-                    logger.warning("While sending op error... op: " + remotePropagatable + ", error: " + e, t);
+                    logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
                 }
             }
         }
@@ -719,7 +721,6 @@ final class BasicOperationService implements InternalOperationService {
             }
             op.logError(e);
         }
-
 
         @Override
         public Operation deserialize(Packet packet) throws Exception {
@@ -743,12 +744,8 @@ final class BasicOperationService implements InternalOperationService {
             } catch (Throwable throwable) {
                 // If exception happens we need to extract the callId from the bytes directly!
                 long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
-                RemoteOperationExceptionHandler exceptionHandler = new RemoteOperationExceptionHandler(callId);
-                exceptionHandler.setNodeEngine(nodeEngine);
-                exceptionHandler.setCallerAddress(caller);
-                exceptionHandler.setConnection(connection);
-                ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, exceptionHandler);
-                operationHandler.handleOperationError(exceptionHandler, throwable);
+                send(new NormalResponse(throwable, callId, 0, packet.isUrgent()), caller);
+                logOperationDeserializationException(throwable, callId);
                 throw ExceptionUtil.rethrow(throwable);
             }
         }
@@ -771,6 +768,28 @@ final class BasicOperationService implements InternalOperationService {
             MemberImpl callerMember = node.clusterService.getMember(caller);
             if (callerMember != null) {
                 op.setCallerUuid(callerMember.getUuid());
+            }
+        }
+
+        public void logOperationDeserializationException(Throwable t, long callId) {
+            boolean returnsResponse = callId != 0;
+
+            if (t instanceof RetryableException) {
+                final Level level = returnsResponse ? Level.FINEST : Level.WARNING;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, t.getClass().getName() + ": " + t.getMessage());
+                }
+            } else if (t instanceof OutOfMemoryError) {
+                try {
+                    logger.log(Level.SEVERE, t.getMessage(), t);
+                } catch (Throwable ignored) {
+                    logger.log(Level.SEVERE, ignored.getMessage(), t);
+                }
+            } else {
+                final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, t.getMessage(), t);
+                }
             }
         }
     }
