@@ -1459,7 +1459,8 @@
     </xs:complexType>
 
     <xs:complexType name="interceptor">
-        <xs:attribute name="class-name" type="non-space-string" use="required"/>
+        <xs:attribute name="class-name" type="non-space-string" use="optional"/>
+        <xs:attribute name="implementation" type="non-space-string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="login-modules">
