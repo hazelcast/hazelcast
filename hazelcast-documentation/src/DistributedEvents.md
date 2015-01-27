@@ -9,7 +9,7 @@ As a rule of thumb, your event listener should not implement heavy processes in 
 
 
 
-## Event Listeners
+## Event Listeners for Hazelcast Nodes
 
 Hazelcast offers the following event listeners:
 
@@ -203,3 +203,16 @@ The following is an example Client Listener class.
 ```java
 ...
 ```
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *You can also add event listeners to a Hazelcast client. Please refer to [Client Listenerconfig](#client-listenerconfig) for the related information.*
+
+## Event Listeners for Hazelcast Clients
+
+You can add event listeners also to a Hazelcast Java client. You can configure the following listeners to listen to the events on the client side:
+
+- **Lifecycle Listener**: 
+- **Membership Listener**:
+- **DistributedObject Listener**:
+
+Please refer to [Client Listenerconfig](#client-listenerconfig) for the related information.*
+
