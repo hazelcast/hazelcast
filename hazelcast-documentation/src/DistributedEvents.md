@@ -197,22 +197,21 @@ public class Sample implements MessageListener<MyEvent> {
 
 The Client Listener is used by the Hazelcast nodes. It notifies the nodes when a client is connected or disconnected to/from the cluster.
 
-The following is an example Client Listener class.
-
-
-```java
-...
-```
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *You can also add event listeners to a Hazelcast client. Please refer to [Client Listenerconfig](#client-listenerconfig) for the related information.*
 
 ## Event Listeners for Hazelcast Clients
 
-You can add event listeners also to a Hazelcast Java client. You can configure the following listeners to listen to the events on the client side:
+You can add event listeners also to a Hazelcast Java client. You can configure the following listeners to listen to the events on the client side. Please see the respective sections under the [Event Listeners for Hazelcast Nodes section](#event-listeners-for-hazelcast-nodes) for the example codes.
 
-- **Lifecycle Listener**: 
-- **Membership Listener**:
-- **DistributedObject Listener**:
 
-Please refer to [Client Listenerconfig](#client-listenerconfig) for the related information.*
+- **Lifecycle Listener**: It allows to get notified when the client is starting, started, shutting down and shutdown.
+- **Membership Listener**: It allows to get notified when a node joins to/leaves the cluster to which the client is connected, or when an attribute is changed in a node.
+- **DistributedObject Listener**: It allows to get notified when a distributed object is created or destroyed throughout the cluster to which the client is connected.
+
+<br></br>
+***RELATED INFORMATION***
+
+*Please refer to the [Client Listenerconfig section](#client-listenerconfig) for more information.*
+<br></br>
 
