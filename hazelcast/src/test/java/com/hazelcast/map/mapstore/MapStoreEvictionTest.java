@@ -13,21 +13,19 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.TimeConstants.MINUTE;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -54,7 +52,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         IMap<Object, Object> map = getMap(mapName, cfg);
 
-        assertEquals(MAP_STORE_ENTRY_COUNT, map.size());
+        assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertEquals(MAP_STORE_ENTRY_COUNT, loadedValueCount.get());
     }
 
