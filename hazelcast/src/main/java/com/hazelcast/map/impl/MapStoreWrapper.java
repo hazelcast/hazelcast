@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
@@ -25,9 +26,10 @@ import com.hazelcast.query.impl.ReflectionHelper;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 
 @SuppressWarnings("unchecked")
-public class MapStoreWrapper implements MapStore {
+public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     private final MapLoader mapLoader;
 
@@ -57,10 +59,17 @@ public class MapStoreWrapper implements MapStore {
         return mapStore;
     }
 
-
+    @Override
     public void destroy() {
         if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).destroy();
+        }
+    }
+
+    @Override
+    public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
+        if (impl instanceof MapLoaderLifecycleSupport) {
+            ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
         }
     }
 
