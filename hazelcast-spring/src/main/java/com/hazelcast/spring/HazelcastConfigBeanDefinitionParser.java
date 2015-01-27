@@ -806,9 +806,20 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
                 final String nodeName = cleanNodeName(child.getNodeName());
                 if ("interceptor".equals(nodeName)) {
-                    final BeanDefinitionBuilder lmConfigBuilder = createBeanBuilder(SecurityInterceptorConfig.class);
-                    final AbstractBeanDefinition beanDefinition = lmConfigBuilder.getBeanDefinition();
-                    fillAttributeValues(child, lmConfigBuilder);
+                    final BeanDefinitionBuilder siConfigBuilder = createBeanBuilder(SecurityInterceptorConfig.class);
+                    final AbstractBeanDefinition beanDefinition = siConfigBuilder.getBeanDefinition();
+                    final NamedNodeMap attrs = child.getAttributes();
+                    Node classNameNode = attrs.getNamedItem("class-name");
+                    String className = classNameNode != null ? getTextContent(classNameNode) : null;
+                    Node implNode = attrs.getNamedItem("implementation");
+                    String implementation = implNode != null ? getTextContent(implNode) : null;
+                    Assert.isTrue(className != null || implementation != null,
+                            "One of 'class-name' or 'implementation' attributes is required "
+                                    + "to create SecurityInterceptorConfig!");
+                    siConfigBuilder.addPropertyValue("className", className);
+                    if (implementation != null) {
+                        siConfigBuilder.addPropertyReference("implementation", implementation);
+                    }
                     lms.add(beanDefinition);
                 }
             }
