@@ -129,7 +129,7 @@ The following is an example Lifecycle Listener class.
 public class NodeLifecycleListener implements LifecycleListener {     @Override     public void stateChanged(LifecycleEvent event) {       System.err.println(event);     }}
 ```
 
-This listener is local to an individual node. It notifies the application that uses Hazelcast about the particular node state 
+This listener is local to an individual node. It notifies the application that uses Hazelcast about the events mentioned above for a particular node. 
 
 ### Item Listener
 
@@ -139,7 +139,27 @@ The following is an example Item Listener class.
 
 
 ```java
-...
+public class Sample implements ItemListener {
+
+  public static void main( String[] args ) { 
+    Sample sample = new Sample();
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    ISet<Price> set = hazelcastInstance.getSet( "default" );
+    set.addItemListener( sample, true ); 
+
+    Price price = new Price( 10, time1 )
+    set.add( price );
+    set.remove( price );
+  } 
+
+  public void itemAdded( Object item ) {
+    System.out.println( "Item added = " + item );
+  }
+
+  public void itemRemoved( Object item ) {
+    System.out.println( "Item removed = " + item );
+  }     
+}
 ```
 
 ### Message Listener
@@ -150,7 +170,27 @@ The following is an example Message Listener class.
 
 
 ```java
-...
+public class Sample implements MessageListener<MyEvent> {
+
+  public static void main( String[] args ) {
+    Sample sample = new Sample();
+    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    ITopic topic = hazelcastInstance.getTopic( "default" );
+    topic.addMessageListener( sample );
+    topic.publish( new MyEvent() );
+  }
+
+  public void onMessage( Message<MyEvent> message ) {
+    MyEvent myEvent = message.getMessageObject();
+    System.out.println( "Message received = " + myEvent.toString() );
+    if ( myEvent.isHeavyweight() ) {
+      messageExecutor.execute( new Runnable() {
+          public void run() {
+            doHeavyweightStuff( myEvent );
+          }
+      } );
+    }
+  }
 ```
 
 ### Client Listener
