@@ -1,6 +1,5 @@
 package com.hazelcast.map.mapstore;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 
 import java.util.Collection;
@@ -9,11 +8,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class SimpleMapLoader implements MapLoader {
+public class SimpleMapLoader implements MapLoader<Integer, Integer> {
 
     final int size;
     final boolean slow;
-    private HazelcastInstance hz;
 
     SimpleMapLoader(int size, boolean slow) {
         this.size = size;
@@ -21,12 +19,12 @@ public class SimpleMapLoader implements MapLoader {
     }
 
     @Override
-    public Object load(Object key) {
+    public Integer load(Integer key) {
         return null;
     }
 
     @Override
-    public Map loadAll(Collection keys) {
+    public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
 
         if (slow) {
             try {
@@ -35,17 +33,17 @@ public class SimpleMapLoader implements MapLoader {
                 e.printStackTrace();
             }
         }
-        Map result = new HashMap();
-        for (Object key : keys) {
+        Map<Integer, Integer> result = new HashMap<Integer, Integer>();
+        for (Integer key : keys) {
             result.put(key, key);
         }
         return result;
     }
 
     @Override
-    public Iterable loadAllKeys() {
+    public Iterable<Integer> loadAllKeys() {
 
-        Set keys = new HashSet();
+        Set<Integer> keys = new HashSet<Integer>();
         for (int i = 0; i < size; i++) {
             keys.add(i);
         }

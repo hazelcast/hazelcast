@@ -13,19 +13,17 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+
+import static com.hazelcast.test.TimeConstants.MINUTE;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.test.TimeConstants.MINUTE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -36,12 +34,12 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
     private static final int MAX_SIZE_PER_NODE = MAP_STORE_ENTRY_COUNT / 4;
     private static final int MAX_SIZE_PER_CLUSTER = MAX_SIZE_PER_NODE * NODE_COUNT;
 
-    private AtomicInteger loadedValueCount;
+    private CountingMapLoader loader;
     private TestHazelcastInstanceFactory nodeFactory;
 
     @Before
     public void setUp() throws Exception {
-        loadedValueCount = new AtomicInteger(0);
+        loader = new CountingMapLoader(MAP_STORE_ENTRY_COUNT);
         nodeFactory = createHazelcastInstanceFactory(NODE_COUNT);
     }
 
@@ -52,8 +50,9 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         IMap<Object, Object> map = getMap(mapName, cfg);
 
-        assertEquals(MAP_STORE_ENTRY_COUNT, map.size());
-        assertEquals(MAP_STORE_ENTRY_COUNT, loadedValueCount.get());
+        assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
+        assertEquals(MAP_STORE_ENTRY_COUNT, loader.getLoadedValueCount());
+        assertTrue(loader.isLoadAllKeysClosed());
     }
 
     private IMap<Object, Object> getMap(final String mapName, Config cfg) {
@@ -61,6 +60,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         assertClusterSizeEventually(NODE_COUNT, hz);
         IMap<Object, Object> map = hz.getMap(mapName);
         waitClusterForSafeState(hz);
+
         return map;
     }
 
@@ -73,7 +73,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         assertFalse(map.isEmpty());
         assertTrue(MAX_SIZE_PER_CLUSTER >= map.size());
-        assertTrue(MAX_SIZE_PER_CLUSTER >= loadedValueCount.get());
+        assertTrue(MAX_SIZE_PER_CLUSTER >= loader.getLoadedValueCount());
     }
 
     @Test(timeout = 2 * MINUTE)
@@ -83,12 +83,13 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         IMap<Object, Object> map = getMap(mapName, cfg);
         map.evictAll();
-        loadedValueCount.set(0);
+        loader.reset();
         map.loadAll(true);
 
         assertFalse(map.isEmpty());
         assertTrue(MAX_SIZE_PER_CLUSTER >= map.size());
-        assertTrue(MAX_SIZE_PER_CLUSTER >= loadedValueCount.get());
+        assertTrue(MAX_SIZE_PER_CLUSTER >= loader.getLoadedValueCount());
+        assertTrue(loader.isLoadAllKeysClosed());
     }
 
     private Config newConfig(String mapName, boolean sizeLimited) {
@@ -96,7 +97,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
-                .setImplementation(new CountingMapLoader(MAP_STORE_ENTRY_COUNT, loadedValueCount))
+                .setImplementation(loader)
                 .setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
 
         MapConfig mapConfig = cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
@@ -110,19 +111,4 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
         return cfg;
     }
 
-    private static class CountingMapLoader extends SimpleMapLoader {
-
-        private AtomicInteger loadedValueCount;
-
-        CountingMapLoader(int size, AtomicInteger loadedValueCount) {
-            super(size, false);
-            this.loadedValueCount = loadedValueCount;
-        }
-
-        @Override
-        public Map loadAll(Collection keys) {
-            loadedValueCount.addAndGet(keys.size());
-            return super.loadAll(keys);
-        }
-    }
 }
