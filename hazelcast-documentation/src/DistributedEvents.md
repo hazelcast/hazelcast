@@ -95,7 +95,9 @@ The following is an example Migration Listener class.
 
 
 ```java
-...
+public class ClusterMigrationListener implements MigrationListener {     @Override     public void migrationStarted(MigrationEvent migrationEvent) {       System.err.println("Started: " + migrationEvent);     }
+    @Override     public void migrationCompleted(MigrationEvent migrationEvent) {       System.err.println("Completed: " + migrationEvent);     }
+     @Override     public void migrationFailed(MigrationEvent migrationEvent) {       System.err.println("Failed: " + migrationEvent);     }}     
 ```
 
 When a respective event is fired, the migration listener outputs the partition ID, status of the migration, the old member and the new member. The following is an example output:
@@ -120,12 +122,15 @@ The Lifecycle Listener allows to get notified for the following events:
 - A Hazelcast Client is disconnected from the cluster.
 
 
-The following is an example Migration Listener class.
+The following is an example Lifecycle Listener class.
 
 
 ```java
-...
+public class NodeLifecycleListener implements LifecycleListener {     @Override     public void stateChanged(LifecycleEvent event) {       System.err.println(event);     }}
 ```
+
+This listener is local to an individual node. It notifies the application that uses Hazelcast about the particular node state 
+
 ### Item Listener
 
 The Item Listener is used by the Hazelcast IQueue, ISet and IList interfaces. It allows to get notified when an item is added or removed.
@@ -139,9 +144,9 @@ The following is an example Item Listener class.
 
 ### Message Listener
 
-The Message Listener is used by the Hazelcast IQueue, ISet and IList interfaces. It allows to get notified when an item is added or removed.
+The Message Listener is used by the ITopic interface. It allows to get notified when a message is received for the registered topic.
 
-The following is an example Item Listener class.
+The following is an example Message Listener class.
 
 
 ```java
@@ -150,9 +155,9 @@ The following is an example Item Listener class.
 
 ### Client Listener
 
-The Message Listener is used by the Hazelcast IQueue, ISet and IList interfaces. It allows to get notified when an item is added or removed.
+The Client Listener is used by the Hazelcast nodes. It notifies the nodes when a client is connected or disconnected to/from the cluster.
 
-The following is an example Item Listener class.
+The following is an example Client Listener class.
 
 
 ```java
