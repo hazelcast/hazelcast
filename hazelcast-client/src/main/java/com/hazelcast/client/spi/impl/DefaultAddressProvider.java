@@ -6,7 +6,6 @@ import com.hazelcast.client.util.AddressHelper;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class DefaultAddressProvider implements AddressProvider {
     public Collection<InetSocketAddress> loadAddresses() {
         final List<String> addresses = networkConfig.getAddresses();
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-        Collections.shuffle(addresses);
+
         for (String address : addresses) {
             socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
         }

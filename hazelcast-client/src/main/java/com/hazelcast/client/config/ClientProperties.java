@@ -22,6 +22,16 @@ package com.hazelcast.client.config;
 public class ClientProperties {
 
     /**
+     * Client shuffles the given member list to prevent all clients to connect to same node when
+     * this property is false. When set to true, client tries to connect to nodes in order as given.
+     */
+    public static final String PROP_SHUFFLE_MEMBER_LIST = "hazelcast.client.shuffle.member.list";
+    /**
+     * Default value of shuffle member list is true when user not set it explicitly
+     */
+    public static final String PROP_SHUFFLE_INITIAL_MEMBER_LIST_DEFAULT = "true";
+
+    /**
      * Client will be sending heartbeat messages to members and this is the timeout. If there is not any message
      * passing between client and member within the given time via this property in milliseconds the connection
      * will be closed.
@@ -77,6 +87,7 @@ public class ClientProperties {
     private final ClientProperty eventThreadCount;
     private final ClientProperty eventQueueCapacity;
     private final ClientProperty invocationTimeout;
+    private final ClientProperty shuffleMemberList;
 
 
     public ClientProperties(ClientConfig clientConfig) {
@@ -86,6 +97,8 @@ public class ClientProperties {
         eventQueueCapacity = new ClientProperty(clientConfig, PROP_EVENT_QUEUE_CAPACITY, PROP_EVENT_QUEUE_CAPACITY_DEFAULT);
         invocationTimeout = new ClientProperty(clientConfig, PROP_INVOCATION_TIMEOUT_SECONDS,
                 PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
+        shuffleMemberList = new ClientProperty(clientConfig, PROP_SHUFFLE_MEMBER_LIST,
+                PROP_SHUFFLE_INITIAL_MEMBER_LIST_DEFAULT);
     }
 
     public ClientProperty getHeartbeatTimeout() {
@@ -106,6 +119,10 @@ public class ClientProperties {
 
     public ClientProperty getInvocationTimeoutSeconds() {
         return invocationTimeout;
+    }
+
+    public ClientProperty getShuffleMemberList() {
+        return shuffleMemberList;
     }
 
     /**

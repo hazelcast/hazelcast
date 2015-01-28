@@ -110,7 +110,8 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 throw e;
             }
         }
-        return new ClusterListenerSupport(addressProvider);
+        final boolean shuffleMemberList = client.getClientProperties().getShuffleMemberList().getBoolean();
+        return new ClusterListenerSupport(addressProvider, shuffleMemberList);
     }
 
     @Override

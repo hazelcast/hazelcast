@@ -71,19 +71,19 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
     protected ClientClusterServiceImpl clusterService;
 
     private final Collection<AddressProvider> addressProviders;
-    private final ManagerAuthenticator managerAuthenticator;
+    private final ManagerAuthenticator managerAuthenticator = new ManagerAuthenticator();
+    private final boolean shuffleMemberList;
+
+    private Credentials credentials;
     private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
     private volatile Address ownerConnectionAddress;
-
-
-    private Credentials credentials;
     private volatile ClientPrincipal principal;
 
-    public ClusterListenerSupport(Collection<AddressProvider> addressProviders) {
+    public ClusterListenerSupport(Collection<AddressProvider> addressProviders, boolean shuffleMemberList) {
         this.addressProviders = addressProviders;
-        managerAuthenticator = new ManagerAuthenticator();
+        this.shuffleMemberList = shuffleMemberList;
     }
 
     public void init(HazelcastClientInstanceImpl client) {
@@ -156,11 +156,14 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
             for (MemberImpl member : members) {
                 socketAddresses.add(member.getInetSocketAddress());
             }
-            Collections.shuffle(socketAddresses);
         }
 
         for (AddressProvider addressProvider : addressProviders) {
             socketAddresses.addAll(addressProvider.loadAddresses());
+        }
+
+        if (shuffleMemberList) {
+            Collections.shuffle(socketAddresses);
         }
 
         return socketAddresses;
