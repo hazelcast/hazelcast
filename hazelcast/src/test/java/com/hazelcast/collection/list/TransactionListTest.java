@@ -26,21 +26,19 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class TransactionListTest extends HazelcastTestSupport {
 
     @Test
-    public void testAdd(){
+    public void testAdd() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
         String item = randomString();
@@ -60,7 +58,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove(){
+    public void testRemove() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
         String item = randomString();
@@ -80,7 +78,7 @@ public class TransactionListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove_withNotContainedItem(){
+    public void testRemove_withNotContainedItem() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
         String item = randomString();
@@ -108,12 +106,17 @@ public class TransactionListTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         String listName = randomString();
         TransactionContext tr = instance1.newTransactionContext();
-        tr.beginTransaction();
-        TransactionalList<Object> list = tr.getList(listName);
-        for (int i = 0; i < 10; i++) {
-            list.add(i);
+        try {
+            tr.beginTransaction();
+            TransactionalList<Object> list = tr.getList(listName);
+            for (int i = 0; i < 10; i++) {
+                list.add(i);
+            }
+            tr.commitTransaction();
+        } catch (TransactionException e) {
+            tr.rollbackTransaction();
+            throw e;
         }
-        tr.commitTransaction();
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         Member owner = instance1.getPartitionService().getPartition(listName).getOwner();
         HazelcastInstance aliveInstance;
@@ -124,10 +127,10 @@ public class TransactionListTest extends HazelcastTestSupport {
             instance2.shutdown();
             aliveInstance = instance1;
         }
+        waitClusterForSafeState(aliveInstance);
         IList<Object> l = aliveInstance.getList(listName);
-
         for (int i = 0; i < 10; i++) {
-            assertEquals(i,l.get(i));
+            assertEquals(i, l.get(i));
         }
     }
 
