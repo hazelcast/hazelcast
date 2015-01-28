@@ -99,10 +99,32 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    /**
+     * Returns the id of the partition this Operation is going to be executed on.
+     *
+     * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition, for example
+     * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
+     *
+     * The partitionId should never be equal or larger than the total number of partitions. For example if there are 271
+     * partitions, the maximum partitionId is 270.
+     *
+     * The partitionId is used by the OperationService to figure out which member owns a specific partition and will send
+     * the operation to that member.
+     *
+     * @return the id of the partition.
+     * @see #setPartitionId(int)
+     */
     public final int getPartitionId() {
         return partitionId;
     }
 
+    /**
+     * Sets the partition id.
+     *
+     * @param partitionId the id of the partition.
+     * @return the updated Operation.
+     * @see #getPartitionId()
+     */
     public final Operation setPartitionId(int partitionId) {
         this.partitionId = partitionId;
         setFlag(partitionId > Short.MAX_VALUE, BITMASK_PARTITION_ID_32_BIT);
