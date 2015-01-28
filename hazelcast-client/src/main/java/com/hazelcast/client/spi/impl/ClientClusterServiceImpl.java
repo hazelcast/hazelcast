@@ -16,14 +16,14 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.ClientImpl;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.ClientImpl;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.ListenerConfig;
@@ -109,8 +109,9 @@ public class ClientClusterServiceImpl implements ClientClusterService {
                 throw e;
             }
         }
+        final boolean shuffleMemberList = client.getClientProperties().getShuffleMemberList().getBoolean();
         return new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener",
-                addressProvider);
+                addressProvider, shuffleMemberList);
     }
 
     @Override

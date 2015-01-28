@@ -50,14 +50,17 @@ class ClusterListenerThread extends Thread {
     private volatile ClientConnection conn;
     private final CountDownLatch latch = new CountDownLatch(1);
     private final Collection<AddressProvider> addressProviders;
+    private final boolean shuffleMemberList;
     private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
     private Exception exception;
 
-    public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProviders) {
+    public ClusterListenerThread(ThreadGroup group, String name, Collection<AddressProvider> addressProvider
+            , boolean shuffleMemberList) {
         super(group, name);
-        this.addressProviders = addressProviders;
+        this.shuffleMemberList = shuffleMemberList;
+        this.addressProviders = addressProvider;
     }
 
     public void init(HazelcastClientInstanceImpl client) {
@@ -127,11 +130,14 @@ class ClusterListenerThread extends Thread {
             for (MemberImpl member : members) {
                 socketAddresses.add(member.getInetSocketAddress());
             }
-            Collections.shuffle(socketAddresses);
         }
 
         for (AddressProvider addressProvider : addressProviders) {
             socketAddresses.addAll(addressProvider.loadAddresses());
+        }
+
+        if (shuffleMemberList) {
+            Collections.shuffle(socketAddresses);
         }
 
         return socketAddresses;

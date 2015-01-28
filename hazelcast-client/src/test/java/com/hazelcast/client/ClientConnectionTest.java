@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
@@ -58,15 +60,42 @@ public class ClientConnectionTest extends HazelcastTestSupport {
     public void testWithLegalAndIllegalAddressTogether() {
         String illegalAddress = randomString();
 
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
+        config.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
         config.getNetworkConfig().addAddress(illegalAddress).addAddress("localhost");
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
 
-        final Collection<Client> connectedClients = server.getClientService().getConnectedClients();
+        Collection<Client> connectedClients = server.getClientService().getConnectedClients();
         assertEquals(connectedClients.size(), 1);
 
-        final Client serverSideClientInfo = connectedClients.iterator().next();
+        Client serverSideClientInfo = connectedClients.iterator().next();
         assertEquals(serverSideClientInfo.getUuid(), client.getLocalEndpoint().getUuid());
+    }
+
+    @Test
+    public void testMemberConnectionOrder() {
+
+        HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
+
+        ClientConfig config = new ClientConfig();
+        config.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
+        config.getNetworkConfig().setSmartRouting(false);
+
+        InetSocketAddress socketAddress1 = server1.getCluster().getLocalMember().getSocketAddress();
+        InetSocketAddress socketAddress2 = server2.getCluster().getLocalMember().getSocketAddress();
+
+        config.getNetworkConfig().
+                addAddress(socketAddress1.getHostName() + ":" + socketAddress1.getPort()).
+                addAddress(socketAddress2.getHostName() + ":" + socketAddress2.getPort());
+
+        HazelcastClient.newHazelcastClient(config);
+
+        Collection<Client> connectedClients1 = server1.getClientService().getConnectedClients();
+        assertEquals(connectedClients1.size(), 1);
+
+        Collection<Client> connectedClients2 = server2.getClientService().getConnectedClients();
+        assertEquals(connectedClients2.size(), 0);
     }
 }
