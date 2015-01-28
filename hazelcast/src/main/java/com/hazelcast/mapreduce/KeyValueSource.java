@@ -26,7 +26,6 @@ import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.Beta;
-
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,8 +57,12 @@ public abstract class KeyValueSource<K, V>
      * Called to request if at least one more key-value pair is available from this
      * data source. If so, this method returns true, otherwise it returns false.
      *
+     * Calls to this method will change the state, more specifically if an element is found,
+     * the index will be set to the found element. Subsequent calls to the key() and element()
+     * methods will return that element.
+     *
      * @return true if at least one more key-value pair is available from this
-     * data source, false otherwise
+     * data source, false otherwise.
      */
     public abstract boolean hasNext();
 
@@ -68,12 +71,16 @@ public abstract class KeyValueSource<K, V>
      * to prevent a possible deserialization of unneeded values because the key is not
      * interesting for the running mapreduce algorithm.
      *
+     * Calls to this method won't change state.
+     *
      * @return the current index key for {@link KeyPredicate} analysis
      */
     public abstract K key();
 
     /**
      * Returns the current index element
+     *
+     * Calls to this method won't change state.
      *
      * @return the current index element
      */
