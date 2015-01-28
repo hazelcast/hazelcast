@@ -21,7 +21,6 @@ import static org.junit.Assert.assertNotNull;
 public class NearCacheRecordStoreTest extends NearCacheTestSupport {
 
     private static final int DEFAULT_RECORD_COUNT = 100;
-    private static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
 
     private void putAndGetRecordSuccessfully(InMemoryFormat inMemoryFormat) {
         NearCacheRecordStore<Integer, String> nearCacheRecordStore =

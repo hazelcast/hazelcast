@@ -11,6 +11,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 abstract class NearCacheTestSupport extends HazelcastTestSupport {
 
+    protected static final String DEFAULT_NEAR_CACHE_NAME = "TestNearCache";
+
     protected NearCacheConfig createNearCacheConfig(String name, InMemoryFormat inMemoryFormat) {
         return
             new NearCacheConfig()
