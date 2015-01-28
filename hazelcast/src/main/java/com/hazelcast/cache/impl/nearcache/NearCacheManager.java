@@ -36,7 +36,7 @@ public interface NearCacheManager {
      * @return the {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
      *         associated with given <code>name</code>
      */
-    <K, V> NearCache<K, V> getNearCacheIfAbsent(String name);
+    <K, V> NearCache<K, V> getNearCache(String name);
 
     /**
      * Creates a new {@link com.hazelcast.cache.impl.nearcache.NearCache} with given configurations

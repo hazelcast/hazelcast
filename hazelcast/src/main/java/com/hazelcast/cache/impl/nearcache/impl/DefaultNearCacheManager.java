@@ -32,7 +32,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
             new ConcurrentHashMap<String, NearCache>();
 
     @Override
-    public <K, V> NearCache<K, V> getNearCacheIfAbsent(String name) {
+    public <K, V> NearCache<K, V> getNearCache(String name) {
         return nearCacheMap.get(name);
     }
 
@@ -45,6 +45,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
                 nearCache = nearCacheMap.get(name);
                 if (nearCache == null) {
                     nearCache = createNearCache(name, nearCacheConfig, nearCacheContext);
+                    nearCacheMap.put(name, nearCache);
                 }
             }
         }
@@ -79,7 +80,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     @Override
     public boolean destroyNearCache(String name) {
-        NearCache nearCache = nearCacheMap.get(name);
+        NearCache nearCache = nearCacheMap.remove(name);
         if (nearCache != null) {
             nearCache.destroy();
         }
