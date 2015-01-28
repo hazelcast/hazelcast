@@ -248,7 +248,7 @@ lifecycleService.shutdown();
 
 ### Client Listeners
 
-You can configure listeners to listen to various event types on the client side. You can configure global events not relating to any distributed object through [ListenerConfig](#listenerconfig). You should configure distributed object listeners like map entry listeners or list item listeners through their proxies. You can refer to the related sections under each distributed data structure in this reference manual.
+You can configure listeners to listen to various event types on the client side. You can configure global events not relating to any distributed object through [Client ListenerConfig](#client-listenerconfig). You should configure distributed object listeners like map entry listeners or list item listeners through their proxies. You can refer to the related sections under each distributed data structure in this reference manual.
 
 ### Client Transactions
 
@@ -612,12 +612,12 @@ clientConfig.setLoadBalancer(yourLoadBalancer);
 In the cases where the security established with `GroupConfig` is not enough and you want your clients connecting securely to the cluster, you can use `ClientSecurityConfig`. This configuration has a `credentials` parameter to set the IP address and UID. Please see `ClientSecurityConfig.java` in our code.
 
 
-##### SerializationConfig
+##### Client SerializationConfig
 
 For the client side serialization, use Hazelcast configuration. Please refer to the [Serialization chapter](#serialization).
 
 
-##### ListenerConfig
+##### Client ListenerConfig
 You can configure global event listeners using `ListenerConfig` as shown below.
 
 

@@ -8,6 +8,7 @@
 |[Chapter 3 - Getting Started](#getting-started)|[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 4 - Hazelcast Clusters](#hazelcast-clusters)|[Creating Cluster Groups](#creating-cluster-groups)|Added as a new section explaining how to separate a Hazelcast cluster.|
 |[Chapter 5 - Distributed Data Structures](#distributed-data-structures)|[Map](#map)|The content of the section, previously read as Entry Listener improved and its name changed to [Map Listener](#map-listener).|
+|[Chapter 6 - Distributed Events](#distributed-events)||The whole chapter improved by adding sections describing each listener.|
 |[Chapter 7 - Distributed Computing](#distributed-computing)|[Execution Member Selector](#execution-member-selector)|Added as a new section explaining how to select a cluster member on which an execution will be performed.|
 |[Chapter 12 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 |[Chapter 14 - Clients](#clients)||Added introduction paragraphs.|

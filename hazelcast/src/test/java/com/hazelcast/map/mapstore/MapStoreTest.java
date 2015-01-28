@@ -193,22 +193,22 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testInitialLoadModeEager() {
         int size = 10000;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
+        String mapName = randomMapName();
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
         Config cfg = new Config();
-        GroupConfig groupConfig = new GroupConfig("testEager");
-        cfg.setGroupConfig(groupConfig);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        cfg.getMapConfig("testMapInitialLoad").setMapStoreConfig(mapStoreConfig);
+        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        IMap map = instance1.getMap("testMapInitialLoad");
-        assertEquals(size, map.size());
+        IMap map = instance1.getMap(mapName);
 
+        assertSizeEventually(size, map);
     }
 
     @Test(timeout = 120000)
@@ -282,6 +282,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test(timeout = 240000)
     public void testMapInitialLoad() throws InterruptedException {
         int size = 10000;
+        String mapName = randomMapName();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         Config cfg = new Config();
@@ -289,13 +290,14 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
 
-        MapConfig mc = cfg.getMapConfig("default");
+        MapConfig mc = cfg.getMapConfig(mapName);
         mc.setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance1.getMap("testMapInitialLoad");
-        assertEquals(size, map.size());
+        IMap map = instance1.getMap(mapName);
+
+        assertSizeEventually(size, map);
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }

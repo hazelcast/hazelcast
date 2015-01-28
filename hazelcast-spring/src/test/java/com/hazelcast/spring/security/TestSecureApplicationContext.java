@@ -25,6 +25,7 @@ import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
+import com.hazelcast.security.SecurityInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -159,5 +160,7 @@ public class TestSecureApplicationContext {
         final SecurityInterceptorConfig interceptorConfig = interceptorConfigs.get(0);
         final String className = interceptorConfig.getClassName();
         assertEquals(DummySecurityInterceptor.class.getName(), className);
+        final SecurityInterceptor securityInterceptor = interceptorConfig.getImplementation();
+        assertTrue(securityInterceptor instanceof DummySecurityInterceptor);
     }
 }

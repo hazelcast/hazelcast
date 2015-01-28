@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spring;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.ResponseHandler;
+/**
+ * @author mdogan 6/24/13
+ */
 
-public interface RemotePropagatable<T extends RemotePropagatable> {
+class MyServiceConfig {
 
-    ResponseHandler getResponseHandler();
-
-    T setResponseHandler(ResponseHandler responseHandler);
-
-    long getCallId();
-
-    boolean returnsResponse();
-
-    Connection getConnection();
-
-    boolean isUrgent();
-
-    Address getCallerAddress();
-
-    void logError(Throwable t);
+    String stringProp;
+    int intProp;
+    boolean boolProp;
 }
