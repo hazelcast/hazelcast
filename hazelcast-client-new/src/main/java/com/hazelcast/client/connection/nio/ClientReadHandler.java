@@ -102,4 +102,9 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
         return lastHandle;
     }
 
+    @Override
+    public long getNoOfEvents() {
+        throw new UnsupportedOperationException("Not implemented on client side.");
+    }
+
 }

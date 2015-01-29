@@ -16,7 +16,23 @@
 
 package com.hazelcast.nio.tcp;
 
-public interface SelectionHandler {
-    void handle();
-    long getNoOfEvents();
+/**
+ * Read/Write handlers that supports migration between {@link com.hazelcast.nio.tcp.IOSelector}.
+ *
+ */
+public interface MigratableHandler {
+
+    /**
+     * Migrate to a new IOSelector.
+     *
+     * @param newOwner
+     */
+    void migrate(final IOSelector newOwner);
+
+    /**
+     * Get current IOSelector owning this handler
+     *
+     * @return current owner
+     */
+    IOSelector getOwner();
 }

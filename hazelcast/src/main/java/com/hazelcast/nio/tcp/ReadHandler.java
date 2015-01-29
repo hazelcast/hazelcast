@@ -31,15 +31,16 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-final class ReadHandler extends AbstractSelectionHandler {
+public final class ReadHandler extends AbstractSelectionHandler {
 
     private final ByteBuffer inputBuffer;
-
-    private final IOSelector ioSelector;
 
     private SocketReader socketReader;
 
     private volatile long lastHandle;
+
+    //This field will be incremented by a single thread. It can be read by multiple threads.
+    private volatile long noOfEvents;
 
     public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_READ);
@@ -60,7 +61,15 @@ final class ReadHandler extends AbstractSelectionHandler {
     }
 
     @Override
+    public long getNoOfEvents() {
+        return noOfEvents;
+    }
+
+    @Override
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "noOfEvents is accessed by a single thread only.")
     public void handle() {
+        noOfEvents++;
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             String message = "We are being asked to read, but connection is not live so we won't";
