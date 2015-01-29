@@ -67,6 +67,7 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_WITH_IDLE = "NEAR_CACHE_WITH_IDLE";
     private static final String NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME = "NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME";
     private static final String NEAR_CACHE_WITH_INVALIDATION = "NEAR_CACHE_WITH_INVALIDATION";
+    private static final String NEAR_CACHE_LFU_WITH_MAX_SIZE = "NEAR_CACHE_LFU_WITH_MAX_SIZE";
 
     private static HazelcastInstance h1;
     private static HazelcastInstance h2;
@@ -114,6 +115,13 @@ public class ClientMapNearCacheTest {
         invalidateConfig.setName(NEAR_CACHE_WITH_INVALIDATION + "*");
         invalidateConfig.setInvalidateOnChange(true);
         clientConfig.addNearCacheConfig(invalidateConfig);
+
+        NearCacheConfig lfuMaxSizeConfig = new NearCacheConfig();
+        lfuMaxSizeConfig.setName(NEAR_CACHE_LFU_WITH_MAX_SIZE + "*");
+        lfuMaxSizeConfig.setInvalidateOnChange(true);
+        lfuMaxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
+        lfuMaxSizeConfig.setEvictionPolicy("LFU");
+        clientConfig.addNearCacheConfig(lfuMaxSizeConfig);
 
         client = HazelcastClient.newHazelcastClient(clientConfig);
     }
@@ -531,6 +539,24 @@ public class ClientMapNearCacheTest {
                 final LocalMapStats localMapStats = clientMap.getLocalMapStats();
                 NearCacheStats stats = localMapStats.getNearCacheStats();
                 assertEquals(1, stats.getOwnedEntryCount());
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheInvalidationWithLFU() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
+        final IMap map = client.getMap(mapName);
+
+        final int mapSize = MAX_CACHE_SIZE * 2;
+
+        populateNearCache(map, mapSize);
+
+        final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(MAX_CACHE_SIZE > stats.getOwnedEntryCount());
             }
         });
     }

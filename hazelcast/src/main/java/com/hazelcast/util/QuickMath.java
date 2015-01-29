@@ -21,17 +21,16 @@ package com.hazelcast.util;
  * Methods are allowed to put additional constraints on the range of input values if required for efficiency.
  * Methods are <b>not</b> required to perform validation of input arguments, but they have to indicate the constraints
  * in theirs contract.
- *
- *
  */
 public final class QuickMath {
 
-    private QuickMath() { }
+    private QuickMath() {
+    }
 
     /**
      * Return true if input argument is power of two.
      * Input has to be a a positive integer.
-     *
+     * <p/>
      * Result is undefined for zero or negative integers.
      *
      * @param x
@@ -124,5 +123,39 @@ public final class QuickMath {
 
     public static long normalize(long value, int factor) {
         return divideByAndCeilToLong(value, factor) * factor;
+    }
+
+    /**
+     * Utility method to compare integers
+     *
+     * @param i1 compared value
+     * @param i2 compared value
+     * @return 0, 1 or -1
+     */
+    public static int compareIntegers(int i1, int i2) {
+        if (i1 > i2) {
+            return +1;
+        } else if (i2 > i1) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Utility method to compare longs
+     *
+     * @param l1 compared value
+     * @param l2 compared value
+     * @return 0, 1 or -1
+     */
+    public static int compareLongs(long l1, long l2) {
+        if (l1 > l2) {
+            return +1;
+        } else if (l2 > l1) {
+            return -1;
+        } else {
+            return 0;
+        }
     }
 }
