@@ -18,6 +18,7 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -137,7 +138,7 @@ public class PortableClassVersionTest {
         out.writeData(data);
         byte[] bytes = out.toByteArray();
         // emulate socket read by reading data from stream
-        BufferObjectDataInput in = serializationService2.createObjectDataInput(new DefaultData(0, bytes, 0));
+        BufferObjectDataInput in = serializationService2.createObjectDataInput(bytes);
         data = in.readData();
 
         // read data
@@ -150,8 +151,11 @@ public class PortableClassVersionTest {
         // de-serialize back using old version
         Object object2 = serializationService.toObject(data2);
 
-        assertTrue(object1 instanceof NamedPortableV2);
-        assertTrue(object2 instanceof NamedPortable);
+        assertNotNull("object1 should not be null!", object1);
+        assertNotNull("object2 should not be null!", object2);
+
+        assertTrue("Should be instance of NamedPortableV2: " + object1.getClass(), object1 instanceof NamedPortableV2);
+        assertTrue("Should be instance of NamedPortable: " + object2.getClass(), object2 instanceof NamedPortable);
     }
 
     @Test

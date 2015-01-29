@@ -28,7 +28,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // This means that repeated calls to packet.write/packet.read are needed.
     @Test
     public void largeValue() {
-        DefaultData originalData = new DefaultData(1, generateRandomString(100000).getBytes());
+        DefaultData originalData = new DefaultData(generateRandomString(100000).getBytes());
         Packet originalPacket = new Packet(originalData);
 
         Packet clonedPacket = new Packet();
@@ -54,15 +54,14 @@ public class PacketTransportTest extends HazelcastTestSupport {
         List<Packet> originalPackets = new LinkedList<Packet>();
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
-            byte[] bytes = generateRandomString(random.nextInt(1000)).getBytes();
-            DefaultData originalData = new DefaultData(1, bytes);
+            byte[] bytes = generateRandomString(random.nextInt(1000) + 5).getBytes();
+            DefaultData originalData = new DefaultData(bytes);
             Packet originalPacket = new Packet(originalData);
             originalPackets.add(originalPacket);
         }
 
         ByteBuffer bb = ByteBuffer.allocate(20);
 
-        int k = 0;
         for (Packet originalPacket : originalPackets) {
             Packet clonedPacket = new Packet();
             boolean writeCompleted;
@@ -75,9 +74,8 @@ public class PacketTransportTest extends HazelcastTestSupport {
             } while (!writeCompleted);
 
             assertTrue(readCompleted);
-            assertEquals("failed at:" + k, originalPacket.getHeader(), clonedPacket.getHeader());
-            assertEquals("failed at:" + k, originalPacket.getData(), clonedPacket.getData());
-            k++;
+            assertEquals(originalPacket.getHeader(), clonedPacket.getHeader());
+            assertEquals(originalPacket.getData(), clonedPacket.getData());
         }
     }
 
@@ -85,7 +83,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // same Packet (content).
     @Test
     public void cloningOfPacket() {
-        DefaultData originalData = new DefaultData(1, "foobar".getBytes());
+        DefaultData originalData = new DefaultData("foobar".getBytes());
         Packet originalPacket = new Packet(originalData);
 
         ByteBuffer bb = ByteBuffer.allocate(100);
