@@ -95,6 +95,11 @@ public interface IOService {
 
     int getConnectionMonitorMaxFaults();
 
+    /**
+     * @return Time interval between two I/O imbalance checks.
+     */
+    int getBalancerIntervalSeconds();
+
     void onDisconnect(Address endpoint);
 
     boolean isClient();

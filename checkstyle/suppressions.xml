@@ -431,7 +431,7 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
+    <suppress checks="ExecutableStatementCount|ClassDataAbstractionCoupling|ClassFanOutComplexity" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
 
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataOutput"/>
