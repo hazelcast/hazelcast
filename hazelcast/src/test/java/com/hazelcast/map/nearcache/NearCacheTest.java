@@ -498,6 +498,34 @@ public class NearCacheTest extends HazelcastTestSupport {
         );
     }
 
+    @Test
+    public void testNearCacheInvalidationWithLFU() throws Exception {
+        int mapSize = 2000;
+        final int maxSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = new Config();
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setCacheLocalEntries(true);
+        nearCacheConfig.setEvictionPolicy("LFU");
+        nearCacheConfig.setMaxSize(maxSize);
+        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
+
+        HazelcastInstance instance1 = createHazelcastInstance(config);
+
+        IMap<Integer, Integer> map = instance1.getMap(mapName);
+
+        populateNearCache(map, mapSize);
+
+        final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(maxSize > stats.getOwnedEntryCount());
+            }
+        });
+    }
+
     /**
      * Near-cache has its own eviction/expiration mechanism,
      * eviction/expiration on IMap should not force any near-cache eviction/expiration.

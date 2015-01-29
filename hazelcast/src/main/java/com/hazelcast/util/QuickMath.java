@@ -21,17 +21,16 @@ package com.hazelcast.util;
  * Methods are allowed to put additional constraints on the range of input values if required for efficiency.
  * Methods are <b>not</b> required to perform validation of input arguments, but they have to indicate the constraints
  * in theirs contract.
- *
- *
  */
 public final class QuickMath {
 
-    private QuickMath() { }
+    private QuickMath() {
+    }
 
     /**
      * Return true if input argument is power of two.
      * Input has to be a a positive integer.
-     *
+     * <p/>
      * Result is undefined for zero or negative integers.
      *
      * @param x test <code>x</code> to see if it is a power of two
@@ -85,6 +84,7 @@ public final class QuickMath {
         }
         return value;
     }
+
     /**
      * Returns the next power of two that is larger than the specified long value.
      *
@@ -173,7 +173,7 @@ public final class QuickMath {
      * Divide value by factor, take the smallest integer greater than or equal to the result,
      * multiply that integer by factor, and return it.
      *
-     * @param value normalize this value by factor
+     * @param value  normalize this value by factor
      * @param factor normalize this value by factor
      * @return the result of value being normalized by factor
      */
@@ -185,7 +185,7 @@ public final class QuickMath {
      * Divide value by factor, take the smallest integer greater than or equal to the result,
      * multiply that integer by factor, and return it.
      *
-     * @param value normalize this value by factor
+     * @param value  normalize this value by factor
      * @param factor normalize this value by factor
      * @return the result of value being normalized by factor
      */
@@ -204,4 +204,39 @@ public final class QuickMath {
         }
         return new String(hexChars);
     }
+
+    /**
+     * Utility method to compare integers
+     *
+     * @param i1 compared value
+     * @param i2 compared value
+     * @return 0, 1 or -1
+     */
+    public static int compareIntegers(int i1, int i2) {
+        if (i1 > i2) {
+            return +1;
+        } else if (i2 > i1) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Utility method to compare longs
+     *
+     * @param l1 compared value
+     * @param l2 compared value
+     * @return 0, 1 or -1
+     */
+    public static int compareLongs(long l1, long l2) {
+        if (l1 > l2) {
+            return +1;
+        } else if (l2 > l1) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
 }
