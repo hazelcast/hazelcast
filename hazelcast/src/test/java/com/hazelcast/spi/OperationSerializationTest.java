@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -131,6 +132,15 @@ public class OperationSerializationTest extends HazelcastTestSupport {
 
         assertEquals("wait timeout set", callerUuidSet, op.isFlagSet(Operation.BITMASK_CALLER_UUID_SET));
 
+        assertSerializationCloneEquals(op);
+    }
+
+
+    @Test
+    public void test_validateTarget_defaultValue() {
+        Operation op = new DummyOperation();
+
+        assertTrue("Default value of validate target should be TRUE", op.validatesTarget());
         assertSerializationCloneEquals(op);
     }
 
