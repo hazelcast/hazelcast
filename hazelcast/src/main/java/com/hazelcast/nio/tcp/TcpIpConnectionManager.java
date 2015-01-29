@@ -304,9 +304,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
                     log(Level.FINEST, existingConnection + " is already bound to " + remoteEndPoint
-                            + ", new one is " + connection);
+                            + ", destroying the new " + connection);
                 }
-                activeConnections.add(connection);
+                destroyConnection(connection);
             }
             return true;
         }
