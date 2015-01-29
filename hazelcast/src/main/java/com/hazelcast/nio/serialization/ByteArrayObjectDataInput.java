@@ -46,15 +46,16 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     private final boolean bigEndian;
 
-    ByteArrayObjectDataInput(Data data, SerializationService service, ByteOrder byteOrder) {
-        this(data.getData(), service, byteOrder);
+    ByteArrayObjectDataInput(byte[] data, SerializationService service, ByteOrder byteOrder) {
+        this(data, 0, service, byteOrder);
     }
 
-    ByteArrayObjectDataInput(byte[] data, SerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataInput(byte[] data, int offset, SerializationService service, ByteOrder byteOrder) {
         super();
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.service = service;
+        pos = offset;
         bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
 
@@ -177,6 +178,16 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return Double.longBitsToDouble(readLong(position));
     }
 
+    @Override
+    public double readDouble(ByteOrder byteOrder) throws IOException {
+        return Double.longBitsToDouble(readLong(byteOrder));
+    }
+
+    @Override
+    public double readDouble(int position, ByteOrder byteOrder) throws IOException {
+        return Double.longBitsToDouble(readLong(position, byteOrder));
+    }
+
     /**
      * See the general contract of the <code>readFloat</code> method of
      * <code>DataInput</code>.
@@ -197,6 +208,16 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     public float readFloat(int position) throws IOException {
         return Float.intBitsToFloat(readInt(position));
+    }
+
+    @Override
+    public float readFloat(ByteOrder byteOrder) throws IOException {
+        return Float.intBitsToFloat(readInt(byteOrder));
+    }
+
+    @Override
+    public float readFloat(int position, ByteOrder byteOrder) throws IOException {
+        return Float.intBitsToFloat(readInt(position, byteOrder));
     }
 
     public void readFully(final byte[] b) throws IOException {
@@ -235,6 +256,19 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return Bits.readInt(data, position, bigEndian);
     }
 
+    @Override
+    public final int readInt(ByteOrder byteOrder) throws IOException {
+        final int i = readInt(pos, byteOrder);
+        pos += INT_SIZE_IN_BYTES;
+        return i;
+    }
+
+    @Override
+    public int readInt(int position, ByteOrder byteOrder) throws IOException {
+        checkAvailable(position, INT_SIZE_IN_BYTES);
+        return Bits.readInt(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
+    }
+
     @Deprecated
     public final String readLine() throws IOException {
         throw new UnsupportedOperationException();
@@ -264,6 +298,19 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return Bits.readLong(data, position, bigEndian);
     }
 
+    @Override
+    public final long readLong(ByteOrder byteOrder) throws IOException {
+        final long l = readLong(pos, byteOrder);
+        pos += LONG_SIZE_IN_BYTES;
+        return l;
+    }
+
+    @Override
+    public long readLong(int position, ByteOrder byteOrder) throws IOException {
+        checkAvailable(position, LONG_SIZE_IN_BYTES);
+        return Bits.readLong(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
+    }
+
     /**
      * See the general contract of the <code>readShort</code> method of
      * <code>DataInput</code>.
@@ -286,6 +333,19 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     public short readShort(int position) throws IOException {
         checkAvailable(position, SHORT_SIZE_IN_BYTES);
         return Bits.readShort(data, position, bigEndian);
+    }
+
+    @Override
+    public final short readShort(ByteOrder byteOrder) throws IOException {
+        short s = readShort(pos, byteOrder);
+        pos += SHORT_SIZE_IN_BYTES;
+        return s;
+    }
+
+    @Override
+    public short readShort(int position, ByteOrder byteOrder) throws IOException {
+        checkAvailable(position, SHORT_SIZE_IN_BYTES);
+        return Bits.readShort(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
     public byte[] readByteArray() throws IOException {

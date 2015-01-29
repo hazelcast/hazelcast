@@ -31,7 +31,7 @@ final class ByteArrayInputOutputFactory implements InputOutputFactory {
 
     @Override
     public BufferObjectDataInput createInput(Data data, SerializationService service) {
-        return new ByteArrayObjectDataInput(data, service, byteOrder);
+        return new ByteArrayObjectDataInput(data.getData(), DefaultData.DATA_OFFSET, service, byteOrder);
     }
 
     @Override

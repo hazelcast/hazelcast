@@ -28,7 +28,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
  */
 public final class Packet implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 3;
+    public static final byte VERSION = 4;
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
@@ -41,10 +41,8 @@ public final class Packet implements SocketWritable, SocketReadable {
     private static final short PERSIST_VERSION = 1;
     private static final short PERSIST_HEADER = 2;
     private static final short PERSIST_PARTITION = 3;
-    private static final short PERSIST_TYPE = 4;
-    private static final short PERSIST_HASH = 5;
-    private static final short PERSIST_SIZE = 6;
-    private static final short PERSIST_VALUE = 7;
+    private static final short PERSIST_SIZE = 4;
+    private static final short PERSIST_VALUE = 5;
 
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
 
@@ -55,7 +53,7 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     // These 2 fields are only used during read/write. Otherwise they have no meaning.
     private int valueOffset;
-    private int valueSize;
+    private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
     private short persistStatus;
 
@@ -138,14 +136,6 @@ public final class Packet implements SocketWritable, SocketReadable {
             return false;
         }
 
-        if (!writeType(destination)) {
-            return false;
-        }
-
-        if (!writeHash(destination)) {
-            return false;
-        }
-
         if (!writeSize(destination)) {
             return false;
         }
@@ -169,18 +159,6 @@ public final class Packet implements SocketWritable, SocketReadable {
         }
 
         if (!readPartition(source)) {
-            return false;
-        }
-
-        if (data == null) {
-            data = new DefaultData();
-        }
-
-        if (!readType(source)) {
-            return false;
-        }
-
-        if (!readHash(source)) {
             return false;
         }
 
@@ -273,55 +251,6 @@ public final class Packet implements SocketWritable, SocketReadable {
         return true;
     }
 
-    // ========================= type =================================================
-
-    private boolean readType(ByteBuffer source) {
-        if (!isPersistStatusSet(PERSIST_TYPE)) {
-            if (source.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            int type = source.getInt();
-            ((DefaultData) data).setType(type);
-            setPersistStatus(PERSIST_TYPE);
-        }
-        return true;
-    }
-
-    private boolean writeType(ByteBuffer destination) {
-        if (!isPersistStatusSet(PERSIST_TYPE)) {
-            if (destination.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            int type = data.getType();
-            destination.putInt(type);
-            setPersistStatus(PERSIST_TYPE);
-        }
-        return true;
-    }
-
-    // ========================= hash =================================================
-
-    private boolean readHash(ByteBuffer source) {
-        if (!isPersistStatusSet(PERSIST_HASH)) {
-            if (source.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            ((DefaultData) data).setPartitionHash(source.getInt());
-            setPersistStatus(PERSIST_HASH);
-        }
-        return true;
-    }
-
-    private boolean writeHash(ByteBuffer destination) {
-        if (!isPersistStatusSet(PERSIST_HASH)) {
-            if (destination.remaining() < INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            destination.putInt(data.hasPartitionHash() ? data.getPartitionHash() : 0);
-            setPersistStatus(PERSIST_HASH);
-        }
-        return true;
-    }
 
     // ========================= size =================================================
 
@@ -330,7 +259,7 @@ public final class Packet implements SocketWritable, SocketReadable {
             if (source.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            valueSize = source.getInt();
+            size = source.getInt();
             setPersistStatus(PERSIST_SIZE);
         }
         return true;
@@ -341,8 +270,8 @@ public final class Packet implements SocketWritable, SocketReadable {
             if (destination.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            valueSize = data.dataSize();
-            destination.putInt(valueSize);
+            size = data.totalSize();
+            destination.putInt(size);
             setPersistStatus(PERSIST_SIZE);
         }
         return true;
@@ -352,12 +281,12 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean writeValue(ByteBuffer destination) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
-            if (valueSize > 0) {
+            if (size > 0) {
                 // the number of bytes that can be written to the bb.
                 int bytesWritable = destination.remaining();
 
                 // the number of bytes that need to be written.
-                int bytesNeeded = valueSize - valueOffset;
+                int bytesNeeded = size - valueOffset;
 
                 int bytesWrite;
                 boolean done;
@@ -386,16 +315,18 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean readValue(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
-            byte[] bytes = data.getData();
-            if (bytes == null) {
-                bytes = new byte[valueSize];
-                ((DefaultData) data).setData(bytes);
+            byte[] bytes;
+            if (data == null) {
+                bytes = new byte[size];
+                data = new DefaultData(bytes);
+            } else {
+                bytes = data.getData();
             }
 
-            if (valueSize > 0) {
+            if (size > 0) {
                 int bytesReadable = source.remaining();
 
-                int bytesNeeded = valueSize - valueOffset;
+                int bytesNeeded = size - valueOffset;
 
                 boolean done;
                 int bytesRead;

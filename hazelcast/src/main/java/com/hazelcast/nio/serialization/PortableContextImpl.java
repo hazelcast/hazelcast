@@ -117,6 +117,7 @@ final class PortableContextImpl implements PortableContext {
                 fieldFactoryId = in.readInt();
                 fieldClassId = in.readInt();
 
+                // TODO: what there's a null inner Portable field
                 if (register) {
                     int fieldVersion = in.readInt();
                     readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
@@ -130,6 +131,7 @@ final class PortableContextImpl implements PortableContext {
                     int p = in.readInt();
                     in.position(p);
 
+                    // TODO: what there's a null inner Portable field
                     int fieldVersion = in.readInt();
                     readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
                 } else {

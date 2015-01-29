@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -220,7 +221,7 @@ public class SerializationTest
         new Random().nextBytes(array);
         Data data = ss.toData(array);
         byte[] deserialized =  ss.toObject(data);
-        assertEquals(array, deserialized);
+        assertArrayEquals(array, deserialized);
     }
 
     @Test
