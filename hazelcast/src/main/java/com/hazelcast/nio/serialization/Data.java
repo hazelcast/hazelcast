@@ -39,9 +39,15 @@ public interface Data {
     int getType();
 
     /**
-     * Returns size of binary data
+     * Returns the total size of Data in bytes
+     * @return total size
+     */
+    int totalSize();
+
+    /**
+     * Returns size of internal binary data in bytes
      *
-     * @return data size
+     * @return internal data size
      */
     int dataSize();
 
