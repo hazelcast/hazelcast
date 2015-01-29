@@ -62,7 +62,6 @@ public class GroupProperties {
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
-    public static final String PROP_IO_QUEUE_CAPACITY = "hazelcast.io.queue.capacity";
     /**
      * The number of partition threads per Member. If this is less than the number of partitions on a Member, then
      * partition operations will queue behind other operations of different partitions. The default is 4.
@@ -203,8 +202,6 @@ public class GroupProperties {
     public final GroupProperty PERFORMANCE_MONITORING_DELAY_SECONDS;
 
     public final GroupProperty IO_THREAD_COUNT;
-
-    public final GroupProperty IO_QUEUE_CAPACITY;
 
     public final GroupProperty EVENT_QUEUE_CAPACITY;
 
@@ -364,13 +361,12 @@ public class GroupProperties {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
-        IO_QUEUE_CAPACITY = new GroupProperty(config, PROP_IO_QUEUE_CAPACITY, "10000");
 
         //-1 means that the value is worked out dynamically.
         PARTITION_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_PARTITION_OPERATION_THREAD_COUNT, "-1");
         GENERIC_OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_GENERIC_OPERATION_THREAD_COUNT, "-1");
-        EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "3");
-        EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "10000");
+        EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
+        EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
         CLIENT_ENGINE_THREAD_COUNT = new GroupProperty(config, PROP_CLIENT_ENGINE_THREAD_COUNT, "-1");
 
