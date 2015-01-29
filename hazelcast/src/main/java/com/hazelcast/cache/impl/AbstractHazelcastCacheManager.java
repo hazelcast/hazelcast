@@ -94,17 +94,22 @@ public abstract class AbstractHazelcastCacheManager
             throw new CacheException("A cache named " + cacheName + " already exists.");
         }
         //create proxy object
-        final ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
+        ICache<K, V> cacheProxy = createCacheProxy(newCacheConfig);
         //CREATE THE CONFIG ON PARTITION
         CacheConfig<K, V> current = createConfigOnPartition(newCacheConfig);
         if (current == null) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
             //UPDATE LOCAL MEMBER
             addCacheConfigIfAbsentToLocal(newCacheConfig);
-            //no need to a putIfAbsent as this is a single threaded region
-            caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
-            //REGISTER LISTENERS
-            registerListeners(newCacheConfig, cacheProxy);
+            // Multiple threads can try to acquire the same cache concurrently, so another
+            // thread might also put his CacheProxy instance for the current config
+            ICache temp = caches.putIfAbsent(newCacheConfig.getNameWithPrefix(), cacheProxy);
+            if (temp != null) {
+                throw new CacheException("A concurrent construction for cache named " + cacheName + " happened.");
+            } else {
+                //REGISTER LISTENERS
+                registerListeners(newCacheConfig, cacheProxy);
+            }
             return cacheProxy;
         }
         ICache<?, ?> cache = getOrPutIfAbsent(current.getNameWithPrefix(), cacheProxy);
