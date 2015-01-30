@@ -23,6 +23,11 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     }
 
     @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;

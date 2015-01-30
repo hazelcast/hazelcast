@@ -30,10 +30,10 @@ public final class BasicTargetInvocation extends BasicInvocation {
 
     private final Address target;
 
-    public BasicTargetInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+    public BasicTargetInvocation(NodeEngineImpl nodeEngine, Operation op,
                                  Address target, int tryCount, long tryPauseMillis, long callTimeout,
                                  Callback<Object> callback, String executorName, boolean resultDeserialized) {
-        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
+        super(nodeEngine, op, op.getPartitionId(), op.getReplicaIndex(),
                 tryCount, tryPauseMillis, callTimeout, callback, executorName, resultDeserialized);
         this.target = target;
     }

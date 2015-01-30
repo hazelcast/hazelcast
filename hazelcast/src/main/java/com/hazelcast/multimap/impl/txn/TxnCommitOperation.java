@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -43,8 +44,10 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
     }
 
     public void run() throws Exception {
+        NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = getPartitionId();
         for (Operation op : opList) {
-            op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
+            op.setNodeEngine(nodeEngine).setPartitionId(partitionId);
             op.beforeRun();
             op.run();
             op.afterRun();

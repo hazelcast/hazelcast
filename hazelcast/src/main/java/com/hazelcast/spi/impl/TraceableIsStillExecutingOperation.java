@@ -21,6 +21,11 @@ public class TraceableIsStillExecutingOperation extends AbstractOperation implem
     }
 
     @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;

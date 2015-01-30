@@ -52,6 +52,11 @@ public class CachePutAllBackupOperation
     }
 
     @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun()
             throws Exception {
         CacheService service = getService();

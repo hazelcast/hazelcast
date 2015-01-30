@@ -34,6 +34,11 @@ public class SetReplicationOperation extends CollectionReplicationOperation {
     }
 
     @Override
+    public String getServiceName() {
+        return SetService.SERVICE_NAME;
+    }
+
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
         migrationData = new HashMap<String, CollectionContainer>(mapSize);

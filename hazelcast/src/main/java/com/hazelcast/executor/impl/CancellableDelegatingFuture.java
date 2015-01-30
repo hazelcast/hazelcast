@@ -92,9 +92,9 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
         OperationService opService = nodeEngine.getOperationService();
         InvocationBuilder builder;
         if (partitionId > -1) {
-            builder = opService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId);
+            builder = opService.createInvocationBuilder(op, partitionId);
         } else {
-            builder = opService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, target);
+            builder = opService.createInvocationBuilder(op, target);
         }
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
         return builder.invoke();

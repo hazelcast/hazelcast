@@ -93,7 +93,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     private InternalCompletableFuture invoke(Operation op) {
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(CountDownLatchService.SERVICE_NAME, op, partitionId);
+        return operationService.invokeOnPartition(op, partitionId);
     }
 
     @Override

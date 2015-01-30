@@ -150,8 +150,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         //noinspection unchecked
-        return (InternalCompletableFuture) operationService.invokeOnPartition(
-                SemaphoreService.SERVICE_NAME, operation, partitionId);
+        return (InternalCompletableFuture) operationService.invokeOnPartition(operation, partitionId);
     }
 
     @Override

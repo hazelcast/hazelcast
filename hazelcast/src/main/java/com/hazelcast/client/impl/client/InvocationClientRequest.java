@@ -29,11 +29,11 @@ public abstract class InvocationClientRequest extends ClientRequest {
 
     protected abstract void invoke();
 
-    protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
-        return operationService.createInvocationBuilder(serviceName, op, partitionId);
+    protected final InvocationBuilder createInvocationBuilder(Operation op, int partitionId) {
+        return operationService.createInvocationBuilder(op, partitionId);
     }
 
-    protected final InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
-        return operationService.createInvocationBuilder(serviceName, op, target);
+    protected final InvocationBuilder createInvocationBuilder(Operation op, Address target) {
+        return operationService.createInvocationBuilder(op, target);
     }
 }

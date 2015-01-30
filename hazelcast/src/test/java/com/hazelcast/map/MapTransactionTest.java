@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -219,11 +220,10 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     @Test
     public void testTxnOwnerDies() throws TransactionException, InterruptedException {
-        Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final HazelcastInstance h3 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = factory.newHazelcastInstance();
+        final HazelcastInstance h2 = factory.newHazelcastInstance();
+        final HazelcastInstance h3 = factory.newHazelcastInstance();
         final IMap map1 = h1.getMap("default");
         final int size = 50;
         final AtomicBoolean result = new AtomicBoolean(false);

@@ -40,6 +40,12 @@ public class AddInterceptorOperation extends AbstractOperation {
     public AddInterceptorOperation() {
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() {
         mapService = getService();
         mapService.getMapServiceContext().getMapContainer(mapName).addInterceptor(id, mapInterceptor);

@@ -156,7 +156,7 @@ public class EventServiceImpl implements EventService {
                 nodeEngine.getThisAddress(), listener, localOnly);
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {
-                invokeRegistrationOnOtherNodes(serviceName, reg);
+                invokeRegistrationOnOtherNodes(reg);
             }
             return reg;
         } else {
@@ -193,14 +193,14 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
+    private void invokeRegistrationOnOtherNodes(Registration reg) {
         OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 RegistrationOperation operation = new RegistrationOperation(reg);
-                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
+                Future f = operationService.invokeOnTarget(operation, member.getAddress());
                 calls.add(f);
             }
         }
@@ -214,8 +214,8 @@ public class EventServiceImpl implements EventService {
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
-                DeregistrationOperation operation = new DeregistrationOperation(topic, id);
-                Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
+                DeregistrationOperation operation = new DeregistrationOperation(serviceName, topic, id);
+                Future f = operationService.invokeOnTarget(operation, member.getAddress());
                 calls.add(f);
             }
         }
@@ -328,9 +328,8 @@ public class EventServiceImpl implements EventService {
 
         if (sync) {
             SendEventOperation op = new SendEventOperation(eventPacket, orderKey);
-            Future f = nodeEngine.getOperationService()
-                    .createInvocationBuilder(serviceName, op, subscriber)
-                    .setTryCount(SEND_RETRY_COUNT).invoke();
+            OperationService operationService = nodeEngine.getOperationService();
+            Future f = operationService.createInvocationBuilder(op, subscriber).setTryCount(SEND_RETRY_COUNT).invoke();
             try {
                 f.get(SEND_EVENT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             } catch (Exception ignored) {
@@ -905,6 +904,11 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
+        public String getServiceName() {
+            return null;
+        }
+
+        @Override
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             super.writeInternal(out);
             eventPacket.writeData(out);
@@ -939,6 +943,11 @@ public class EventServiceImpl implements EventService {
         }
 
         @Override
+        public String getServiceName() {
+            return null;
+        }
+
+        @Override
         public Object getResponse() {
             return response;
         }
@@ -957,24 +966,31 @@ public class EventServiceImpl implements EventService {
 
     public static class DeregistrationOperation extends AbstractOperation {
 
+        private String serviceName;
         private String topic;
         private String id;
 
         DeregistrationOperation() {
         }
 
-        private DeregistrationOperation(String topic, String id) {
+        private DeregistrationOperation(String serviceName, String topic, String id) {
             this.topic = topic;
             this.id = id;
+            this.serviceName = serviceName;
         }
 
         @Override
         public void run() throws Exception {
             EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
-            EventServiceSegment segment = eventService.getSegment(getServiceName(), false);
+            EventServiceSegment segment = eventService.getSegment(serviceName, false);
             if (segment != null) {
                 segment.removeRegistration(topic, id);
             }
+        }
+
+        @Override
+        public String getServiceName() {
+            return serviceName;
         }
 
         @Override
@@ -986,12 +1002,14 @@ public class EventServiceImpl implements EventService {
         protected void writeInternal(ObjectDataOutput out) throws IOException {
             out.writeUTF(topic);
             out.writeUTF(id);
+            out.writeUTF(serviceName);
         }
 
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             topic = in.readUTF();
             id = in.readUTF();
+            serviceName = in.readUTF();
         }
     }
 
@@ -1015,6 +1033,11 @@ public class EventServiceImpl implements EventService {
                     eventService.handleRegistration(reg);
                 }
             }
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
 
         @Override

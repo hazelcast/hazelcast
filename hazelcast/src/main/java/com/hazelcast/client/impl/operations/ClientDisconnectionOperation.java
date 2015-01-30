@@ -42,6 +42,11 @@ public class ClientDisconnectionOperation extends AbstractOperation implements U
     }
 
     @Override
+    public String getServiceName() {
+        return ClientEngineImpl.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
         final ClientEndpointManager endpointManager = engine.getEndpointManager();

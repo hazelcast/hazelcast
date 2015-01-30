@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.MapRecordKey;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -61,7 +60,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         operation.setThreadId(threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -74,7 +73,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         txnOp.setOwnerUuid(ownerUuid);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(op, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -85,7 +84,7 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key, ownerUuid);
         operation.setThreadId(threadId);
         try {
-            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            return nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

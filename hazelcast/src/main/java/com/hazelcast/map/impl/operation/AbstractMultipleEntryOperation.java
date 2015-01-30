@@ -81,9 +81,8 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
     }
 
     protected boolean hasRegisteredListenerForThisMap() {
-        final String serviceName = mapService.getMapServiceContext().serviceName();
         final EventService eventService = getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, name);
+        return eventService.hasEventRegistration(MapService.SERVICE_NAME, name);
     }
 
     /**

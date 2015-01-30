@@ -148,7 +148,7 @@ public class ProxyServiceImpl
             }
 
             DistributedObjectDestroyOperation operation = new DistributedObjectDestroyOperation(serviceName, name);
-            Future f = operationService.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress())
+            Future f = operationService.createInvocationBuilder(operation, member.getAddress())
                                                           .setTryCount(TRY_COUNT).invoke();
             calls.add(f);
         }
@@ -512,6 +512,11 @@ public class ProxyServiceImpl
         public DistributedObjectDestroyOperation(String serviceName, String name) {
             this.serviceName = serviceName;
             this.name = name;
+        }
+
+        @Override
+        public String getServiceName() {
+            return ProxyServiceImpl.SERVICE_NAME;
         }
 
         @Override

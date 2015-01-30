@@ -71,6 +71,11 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         this.ttl = ttl;
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     public final String getName() {
         return name;
     }

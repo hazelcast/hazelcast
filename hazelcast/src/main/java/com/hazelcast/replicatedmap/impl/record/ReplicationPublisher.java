@@ -292,7 +292,7 @@ public class ReplicationPublisher<K, V>
             Address address = member.getAddress();
             if (!thisAddress.equals(address)) {
                 Operation operation = new ReplicatedMapClearOperation(name, emptyReplicationQueue);
-                InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
+                InvocationBuilder ib = operationService.createInvocationBuilder(operation, address);
                 futures.put(member, ib.invoke());
             }
         }

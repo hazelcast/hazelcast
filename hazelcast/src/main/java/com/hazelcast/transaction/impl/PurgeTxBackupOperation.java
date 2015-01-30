@@ -37,6 +37,11 @@ public final class PurgeTxBackupOperation extends Operation {
     }
 
     @Override
+    public String getServiceName() {
+        return TransactionManagerServiceImpl.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 

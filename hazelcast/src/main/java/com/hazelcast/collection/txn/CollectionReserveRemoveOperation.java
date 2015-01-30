@@ -18,6 +18,7 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,15 +26,16 @@ import java.io.IOException;
 
 public class CollectionReserveRemoveOperation extends CollectionOperation {
 
-    String transactionId;
+    private String transactionId;
     private Data value;
     private long reservedItemId = -1;
 
     public CollectionReserveRemoveOperation() {
     }
 
-    public CollectionReserveRemoveOperation(String name, long reservedItemId, Data value, String transactionId) {
-        super(name);
+    public CollectionReserveRemoveOperation(CollectionType collectionType, String name, long reservedItemId,
+                                            Data value, String transactionId) {
+        super(collectionType, name);
         this.reservedItemId = reservedItemId;
         this.value = value;
         this.transactionId = transactionId;

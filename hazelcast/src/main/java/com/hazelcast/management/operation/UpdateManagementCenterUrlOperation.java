@@ -40,6 +40,11 @@ public class UpdateManagementCenterUrlOperation extends Operation {
     }
 
     @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 

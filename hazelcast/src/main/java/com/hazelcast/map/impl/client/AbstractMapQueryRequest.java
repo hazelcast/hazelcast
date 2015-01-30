@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.client;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
@@ -88,7 +86,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     private void createInvocations(Collection<MemberImpl> members, List<Future> futures, Predicate predicate) {
         for (MemberImpl member : members) {
-            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
+            Future future = createInvocationBuilder(new QueryOperation(name, predicate),
                     member.getAddress()).invoke();
             futures.add(future);
         }
@@ -129,7 +127,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
             QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
-                Future future = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, partitionId).invoke();
+                Future future = createInvocationBuilder(queryPartitionOperation, partitionId).invoke();
                 futures.add(future);
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

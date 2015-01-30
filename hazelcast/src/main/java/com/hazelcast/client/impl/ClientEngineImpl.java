@@ -538,7 +538,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private ClientDisconnectionOperation createClientDisconnectionOperation(String clientUuid) {
         ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid);
         op.setNodeEngine(nodeEngine)
-                .setServiceName(SERVICE_NAME)
                 .setService(this)
                 .setResponseHandler(createEmptyResponseHandler());
         return op;

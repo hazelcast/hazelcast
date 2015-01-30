@@ -25,8 +25,8 @@ public class CollectionGetAllOperation extends CollectionOperation {
     public CollectionGetAllOperation() {
     }
 
-    public CollectionGetAllOperation(String name) {
-        super(name);
+    public CollectionGetAllOperation(CollectionType collectionType, String name) {
+        super(collectionType, name);
     }
 
     @Override

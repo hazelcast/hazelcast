@@ -37,16 +37,26 @@ public abstract class CollectionOperation extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
-
     protected transient Object response;
 
     private transient CollectionContainer container;
+    private CollectionType collectionType;
 
     protected CollectionOperation() {
     }
 
-    protected CollectionOperation(String name) {
+    protected CollectionOperation(CollectionType collectionType, String name) {
         this.name = name;
+        this.collectionType = collectionType;
+    }
+
+    public CollectionType getCollectionType() {
+        return collectionType;
+    }
+
+    @Override
+    public String getServiceName() {
+       return collectionType.getServiceName();
     }
 
     protected final ListContainer getOrCreateListContainer() {
@@ -73,16 +83,16 @@ public abstract class CollectionOperation extends Operation
         return container;
     }
 
-
     protected void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        String serviceName = getServiceName();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, name);
+        final Address address = getNodeEngine().getThisAddress();
         for (EventRegistration registration : registrations) {
             CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
-            final Address address = getNodeEngine().getThisAddress();
             final boolean includeValue = filter.isIncludeValue();
             CollectionEvent event = new CollectionEvent(name, includeValue ? data : null, eventType, address);
-            eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
+            eventService.publishEvent(serviceName, registration, event, name.hashCode());
         }
     }
 
@@ -108,10 +118,12 @@ public abstract class CollectionOperation extends Operation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeByte(collectionType.asByte());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        collectionType = CollectionType.fromByte(in.readByte());
     }
 }

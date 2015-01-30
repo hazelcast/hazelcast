@@ -72,7 +72,7 @@ abstract class AbstractTargetCallableRequest extends TargetClientRequest {
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final Address target = getTarget();
         if (target != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, target);
+            return operationService.createInvocationBuilder(op, target);
         }
 
         final int partitionId = getPartitionId();
@@ -80,7 +80,7 @@ abstract class AbstractTargetCallableRequest extends TargetClientRequest {
             throw new IllegalArgumentException("Partition id is -1");
         }
 
-        return operationService.createInvocationBuilder(getServiceName(), op, partitionId);
+        return operationService.createInvocationBuilder(op, partitionId);
     }
 
     @SuppressWarnings("unchecked")

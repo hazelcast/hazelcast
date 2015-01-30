@@ -72,8 +72,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             for (MemberImpl member : members) {
                 if (!member.localMember()) {
                     PostJoinOperation operation = new PostJoinOperation(postJoinOperations);
-                    operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                            operation, member.getAddress()).setTryCount(100).invoke();
+                    operationService.createInvocationBuilder(operation, member.getAddress()).setTryCount(100).invoke();
                 }
             }
         }

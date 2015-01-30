@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl.txn;
 
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -55,7 +54,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            return operationService.invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -66,7 +65,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            return operationService.invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -77,7 +76,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             final OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            return operationService.invokeOnPartition(operation, partitionId);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

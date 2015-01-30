@@ -228,8 +228,8 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                        new BeginTxBackupOperation(txOwnerUuid, txnId, xid), backupAddress);
+                BeginTxBackupOperation op = new BeginTxBackupOperation(txOwnerUuid, txnId, xid);
+                Future f = operationService.invokeOnTarget(op, backupAddress);
                 futures.add(f);
             }
         }
@@ -270,9 +270,8 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         final OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                        new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
-                        backupAddress);
+                ReplicateTxOperation op = new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime);
+                Future f = operationService.invokeOnTarget(op, backupAddress);
                 futures.add(f);
             }
         }
@@ -359,8 +358,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                    final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new RollbackTxBackupOperation(txnId), backupAddress);
+                    Future f = operationService.invokeOnTarget(new RollbackTxBackupOperation(txnId), backupAddress);
                     futures.add(f);
                 }
             }
@@ -380,8 +378,8 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     try {
-                        operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                                new PurgeTxBackupOperation(txnId), backupAddress);
+                        PurgeTxBackupOperation op = new PurgeTxBackupOperation(txnId);
+                        operationService.invokeOnTarget(op, backupAddress);
                     } catch (Throwable e) {
                         nodeEngine.getLogger(getClass()).warning("Error during purging backups!", e);
                     }

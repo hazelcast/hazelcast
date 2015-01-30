@@ -41,6 +41,11 @@ public class UpdateMapConfigOperation extends Operation {
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 

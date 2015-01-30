@@ -56,7 +56,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static com.hazelcast.util.ValidationUtil.shouldBePositive;
 
@@ -671,7 +670,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
         NodeEngine nodeEngine = getNodeEngine();
-        Future f = nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        Future f = nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
         Object response = f.get();
         Object returnObj = toObject(response);
         if (returnObj instanceof Throwable) {

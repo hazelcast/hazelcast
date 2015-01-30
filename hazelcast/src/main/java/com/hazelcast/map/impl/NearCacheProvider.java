@@ -105,7 +105,7 @@ public class NearCacheProvider {
                 if (member.localMember()) {
                     continue;
                 }
-                Operation operation = new InvalidateNearCacheOperation(mapName, key).setServiceName(MapService.SERVICE_NAME);
+                Operation operation = new InvalidateNearCacheOperation(mapName, key);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
@@ -135,8 +135,7 @@ public class NearCacheProvider {
             return;
         }
         //send operation.
-        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys)
-                .setServiceName(MapService.SERVICE_NAME);
+        Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {

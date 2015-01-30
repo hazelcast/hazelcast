@@ -54,6 +54,11 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
         }
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     private boolean isOwner() {
         final NodeEngine nodeEngine = getNodeEngine();
         final Address owner = nodeEngine.getPartitionService().getPartitionOwner(getPartitionId());
@@ -66,11 +71,6 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
         final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
         partitionContainer.setHasRunningCleanup(false);
         partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
     }
 
     @Override

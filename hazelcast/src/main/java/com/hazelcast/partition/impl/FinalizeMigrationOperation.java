@@ -18,6 +18,7 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
@@ -39,6 +40,12 @@ final class FinalizeMigrationOperation extends AbstractOperation
     public FinalizeMigrationOperation(MigrationEndpoint endpoint, boolean success) {
         this.endpoint = endpoint;
         this.success = success;
+    }
+
+
+    @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
     }
 
     @Override

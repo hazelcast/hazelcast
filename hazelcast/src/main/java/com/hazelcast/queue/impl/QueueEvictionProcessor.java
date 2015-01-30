@@ -52,7 +52,7 @@ public class QueueEvictionProcessor implements ScheduledEntryProcessor<String, V
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(nodeEngine.toData(name));
             CheckAndEvictOperation op = new CheckAndEvictOperation(entry.getKey());
-            operationService.invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId).getSafely();
+            operationService.invokeOnPartition(op, partitionId).getSafely();
         }
     }
 }

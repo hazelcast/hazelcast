@@ -123,9 +123,8 @@ public class ListenerTest extends HazelcastTestSupport {
     @Test
     public void globalListenerRemoveTest() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         IMap<String, String> map1 = h1.getMap(name);
         IMap<String, String> map2 = h2.getMap(name);
 
@@ -133,9 +132,9 @@ public class ListenerTest extends HazelcastTestSupport {
         String id2 = map1.addEntryListener(createEntryListener(false), true);
         String id3 = map2.addEntryListener(createEntryListener(false), true);
         int k = 3;
-        map1.removeEntryListener(id1);
-        map1.removeEntryListener(id2);
-        map1.removeEntryListener(id3);
+        assertTrue(map1.removeEntryListener(id1));
+        assertTrue(map1.removeEntryListener(id2));
+        assertTrue(map1.removeEntryListener(id3));
         putDummyData(map2, k);
         checkCountWithExpected(0, 0, 0);
     }
@@ -211,9 +210,9 @@ public class ListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(expectedLocal, localCount.get());
-                assertEquals(expectedGlobal, globalCount.get());
-                assertEquals(expectedValue, valueCount.get());
+                assertEquals("local count does not match", expectedLocal, localCount.get());
+                assertEquals("global count does not match",expectedGlobal, globalCount.get());
+                assertEquals("value does not match", expectedValue, valueCount.get());
             }
         });
     }

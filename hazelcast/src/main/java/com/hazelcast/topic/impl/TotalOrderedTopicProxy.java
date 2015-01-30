@@ -35,7 +35,7 @@ public class TotalOrderedTopicProxy extends TopicProxy {
     public void publish(Object message) {
         NodeEngine nodeEngine = getNodeEngine();
         PublishOperation operation = new PublishOperation(getName(), nodeEngine.toData(message));
-        InternalCompletableFuture f = operationService.invokeOnPartition(TopicService.SERVICE_NAME, operation, partitionId);
+        InternalCompletableFuture f = operationService.invokeOnPartition(operation, partitionId);
         f.getSafely();
     }
 }

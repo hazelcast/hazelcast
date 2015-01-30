@@ -51,6 +51,12 @@ public class CacheGetAllOperation
     public CacheGetAllOperation() {
     }
 
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() {
         CacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());

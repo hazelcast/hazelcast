@@ -16,8 +16,10 @@
 
 package com.hazelcast.collection.txn;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -25,17 +27,16 @@ import java.io.IOException;
 
 public class CollectionPrepareBackupOperation extends CollectionOperation implements BackupOperation {
 
-    long itemId;
-
-    boolean removeOperation;
-
-    String transactionId;
+    private long itemId;
+    private boolean removeOperation;
+    private String transactionId;
 
     public CollectionPrepareBackupOperation() {
     }
 
-    public CollectionPrepareBackupOperation(String name, long itemId, String transactionId, boolean removeOperation) {
-        super(name);
+    public CollectionPrepareBackupOperation(CollectionType collectionType, String name, long itemId,
+                                            String transactionId, boolean removeOperation) {
+        super(collectionType, name);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
         this.transactionId = transactionId;
@@ -52,10 +53,11 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
 
     @Override
     public void run() throws Exception {
+        CollectionContainer container = getOrCreateContainer();
         if (removeOperation) {
-            getOrCreateContainer().reserveRemoveBackup(itemId, transactionId);
+            container.reserveRemoveBackup(itemId, transactionId);
         } else {
-            getOrCreateContainer().reserveAddBackup(itemId, transactionId);
+            container.reserveAddBackup(itemId, transactionId);
         }
     }
 

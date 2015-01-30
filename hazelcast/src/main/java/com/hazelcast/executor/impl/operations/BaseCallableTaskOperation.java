@@ -49,6 +49,11 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     }
 
     @Override
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
+    }
+
+    @Override
     public final void beforeRun() throws Exception {
         callable = getCallable();
         ManagedContext managedContext = getManagedContext();

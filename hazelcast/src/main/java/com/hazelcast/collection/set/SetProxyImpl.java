@@ -17,6 +17,7 @@
 package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.AbstractCollectionProxyImpl;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.core.ISet;
 import com.hazelcast.spi.NodeEngine;
@@ -24,7 +25,7 @@ import com.hazelcast.spi.NodeEngine;
 public class SetProxyImpl<E> extends AbstractCollectionProxyImpl<SetService, E> implements ISet<E> {
 
     public SetProxyImpl(String name, NodeEngine nodeEngine, SetService service) {
-        super(name, nodeEngine, service);
+        super(CollectionType.Set, name, nodeEngine, service);
     }
 
     @Override

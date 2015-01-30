@@ -29,6 +29,11 @@ public class MasterClaimOperation extends AbstractOperation implements JoinOpera
     private transient boolean approvedAsMaster;
 
     @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void run() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Node node = nodeEngine.getNode();

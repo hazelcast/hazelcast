@@ -45,7 +45,6 @@ import com.hazelcast.management.request.MemberConfigRequest;
 import com.hazelcast.management.request.RunGcRequest;
 import com.hazelcast.management.request.ShutdownMemberRequest;
 import com.hazelcast.management.request.ThreadDumpRequest;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -227,7 +226,7 @@ public class ManagementCenterService {
     public Object callOnAddress(Address address, Operation operation) {
         //todo: why are we always executing on the mapservice??
         OperationService operationService = instance.node.nodeEngine.getOperationService();
-        Future future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
+        Future future = operationService.invokeOnTarget(operation, address);
         try {
             return future.get();
         } catch (Throwable t) {
@@ -248,7 +247,7 @@ public class ManagementCenterService {
 
     public void send(Address address, Operation operation) {
         OperationService operationService = instance.node.nodeEngine.getOperationService();
-        operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, address).invoke();
+        operationService.createInvocationBuilder(operation, address).invoke();
     }
 
     public HazelcastInstanceImpl getHazelcastInstance() {

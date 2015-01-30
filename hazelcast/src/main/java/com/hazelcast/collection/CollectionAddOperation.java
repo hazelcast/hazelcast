@@ -31,8 +31,8 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
     public CollectionAddOperation() {
     }
 
-    public CollectionAddOperation(String name, Data value) {
-        super(name);
+    public CollectionAddOperation(CollectionType collectionType, String name, Data value) {
+        super(collectionType, name);
         this.value = value;
     }
 
@@ -43,7 +43,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionAddBackupOperation(name, itemId, value);
+        return new CollectionAddBackupOperation(getCollectionType(), name, itemId, value);
     }
 
     @Override

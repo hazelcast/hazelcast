@@ -67,6 +67,11 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         }
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     private long getNow() {
         return Clock.currentTimeMillis();
     }

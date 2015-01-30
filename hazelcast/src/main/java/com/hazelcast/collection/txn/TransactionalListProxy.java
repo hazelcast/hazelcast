@@ -17,6 +17,7 @@
 package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.spi.NodeEngine;
@@ -30,7 +31,7 @@ public class TransactionalListProxy<E> extends AbstractTransactionalCollectionPr
     private final LinkedList<CollectionItem> list = new LinkedList<CollectionItem>();
 
     public TransactionalListProxy(String name, TransactionSupport tx, NodeEngine nodeEngine, ListService service) {
-        super(name, tx, nodeEngine, service);
+        super(CollectionType.List, name, tx, nodeEngine, service);
     }
 
     @Override

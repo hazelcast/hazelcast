@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.tx;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -90,7 +88,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
             Future f = nodeEngine.getOperationService()
-                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+                    .invokeOnPartition(operation, partitionId);
             return (Boolean) f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -114,8 +112,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         try {
-            Future f = nodeEngine.getOperationService()
-                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+            Future f = nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -130,9 +127,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public int sizeInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
         try {
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(new SizeOperationFactory(name));
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) getService().getMapServiceContext().toObject(result);
@@ -228,7 +225,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Future<VersionedValue> f = nodeEngine.getOperationService()
-                    .invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
+                    .invokeOnPartition(operation, partitionId);
             versionedValue = f.get();
             if (versionedValue == null) {
                 throw new TransactionException("Transaction couldn't obtain lock for the key:"
@@ -244,11 +241,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected Set<Data> keySetInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(
-                            SERVICE_NAME,
-                            new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine)
-                    );
+            OperationService operationService = nodeEngine.getOperationService();
+            BinaryOperationFactory operationFactory = new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine);
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
                 Set keys = ((MapKeySet) getService().getMapServiceContext().toObject(result)).getKeySet();
@@ -263,11 +258,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected List<Map.Entry<Data, Data>> getEntries() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(
-                            SERVICE_NAME,
-                            new BinaryOperationFactory(new MapEntrySetOperation(name), nodeEngine)
-                    );
+            OperationService operationService = nodeEngine.getOperationService();
+            BinaryOperationFactory operationFactory = new BinaryOperationFactory(new MapEntrySetOperation(name), nodeEngine);
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(operationFactory);
             List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
             for (Object result : results.values()) {
                 entries.addAll(((MapEntrySet) getService()
@@ -323,7 +316,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
             queryPartitionOperation.setPartitionId(pid);
             try {
-                Future f = operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
+                Future f = operationService.invokeOnPartition(queryPartitionOperation, pid);
                 futures.add(f);
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -356,8 +349,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     private void invokeQueryOperaration(Predicate predicate, OperationService operationService,
                                         Collection<MemberImpl> members, List<Future> futures) {
         for (MemberImpl member : members) {
-            Future future = operationService
-                    .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
+            QueryOperation op = new QueryOperation(name, predicate);
+            Future future = operationService.invokeOnTarget(op, member.getAddress());
             futures.add(future);
         }
     }

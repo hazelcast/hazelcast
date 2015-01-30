@@ -54,7 +54,6 @@ public abstract class InvocationBuilder {
     public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
     protected final NodeEngineImpl nodeEngine;
-    protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
     protected final Address target;
@@ -71,15 +70,13 @@ public abstract class InvocationBuilder {
      * Creates an InvocationBuilder
      *
      * @param nodeEngine  the nodeEngine
-     * @param serviceName the name of the service
      * @param op          the operation to execute
      * @param partitionId the id of the partition upon which to execute the operation
      * @param target      the target machine. Either the partitionId or the target needs to be set.
      */
-    public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+    public InvocationBuilder(NodeEngineImpl nodeEngine, Operation op,
                              int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
-        this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
         this.target = target;
@@ -182,7 +179,7 @@ public abstract class InvocationBuilder {
      * @return the name of the service
      */
     public String getServiceName() {
-        return serviceName;
+        return op.getServiceName();
     }
 
     /**

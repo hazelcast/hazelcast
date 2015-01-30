@@ -35,8 +35,8 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     public CollectionCompareAndRemoveOperation() {
     }
 
-    public CollectionCompareAndRemoveOperation(String name, boolean retain, Set<Data> valueSet) {
-        super(name);
+    public CollectionCompareAndRemoveOperation(CollectionType collectionType, String name, boolean retain, Set<Data> valueSet) {
+        super(collectionType, name);
         this.retain = retain;
         this.valueSet = valueSet;
     }
@@ -48,7 +48,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionClearBackupOperation(name, itemIdMap.keySet());
+        return new CollectionClearBackupOperation(getCollectionType(), name, itemIdMap.keySet());
     }
 
     @Override

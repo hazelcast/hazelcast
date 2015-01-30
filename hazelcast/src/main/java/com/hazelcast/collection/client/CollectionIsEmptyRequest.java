@@ -32,7 +32,7 @@ public class CollectionIsEmptyRequest extends CollectionRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionIsEmptyOperation(name);
+        return new CollectionIsEmptyOperation(getCollectionType(), name);
     }
 
     @Override

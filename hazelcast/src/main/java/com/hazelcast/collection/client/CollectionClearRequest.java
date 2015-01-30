@@ -32,7 +32,7 @@ public class CollectionClearRequest extends CollectionRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionClearOperation(name);
+        return new CollectionClearOperation(getCollectionType(), name);
     }
 
     @Override

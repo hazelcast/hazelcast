@@ -51,6 +51,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     public PartitionIteratingOperation() {
     }
 
+    @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void run() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         results = new HashMap<Integer, Object>(partitions.size());
@@ -59,12 +65,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             for (final int partitionId : partitions) {
                 ResponseQueue responseQueue = new ResponseQueue();
                 final Operation op = operationFactory.createOperation();
+                Object service = ((NodeEngineImpl) nodeEngine).getService(op.getServiceName());
                 op.setNodeEngine(nodeEngine)
                         .setPartitionId(partitionId)
                         .setReplicaIndex(getReplicaIndex())
                         .setResponseHandler(responseQueue)
-                        .setServiceName(getServiceName())
-                        .setService(getService())
+                        .setService(service)
                         .setCallerUuid(getCallerUuid());
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 responses.put(partitionId, responseQueue);

@@ -29,7 +29,6 @@ import java.io.IOException;
 public class ListIndexOfRequest extends CollectionRequest {
 
     Data value;
-
     boolean last;
 
     public ListIndexOfRequest() {
@@ -51,12 +50,14 @@ public class ListIndexOfRequest extends CollectionRequest {
         return CollectionPortableHook.LIST_INDEX_OF;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeBoolean("l", last);
         writer.getRawDataOutput().writeData(value);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         last = reader.readBoolean("l");

@@ -22,6 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -36,6 +37,11 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
 
     public JoinCheckOperation(final JoinRequest joinRequest) {
         this.joinRequest = joinRequest;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override

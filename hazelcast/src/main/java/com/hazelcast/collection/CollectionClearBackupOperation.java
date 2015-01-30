@@ -25,13 +25,13 @@ import java.util.Set;
 
 public class CollectionClearBackupOperation extends CollectionOperation implements BackupOperation {
 
-    Set<Long> itemIdSet;
+    private  Set<Long> itemIdSet;
 
     public CollectionClearBackupOperation() {
     }
 
-    public CollectionClearBackupOperation(String name, Set<Long> itemIdSet) {
-        super(name);
+    public CollectionClearBackupOperation(CollectionType collectionType, String name, Set<Long> itemIdSet) {
+        super(collectionType, name);
         this.itemIdSet = itemIdSet;
     }
 

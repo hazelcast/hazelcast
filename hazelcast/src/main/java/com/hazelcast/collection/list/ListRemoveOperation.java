@@ -20,6 +20,7 @@ import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionRemoveBackupOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,7 +37,7 @@ public class ListRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public ListRemoveOperation(String name, int index) {
-        super(name);
+        super(CollectionType.List, name);
         this.index = index;
     }
 
@@ -47,7 +48,7 @@ public class ListRemoveOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionRemoveBackupOperation(name, itemId);
+        return new CollectionRemoveBackupOperation(CollectionType.List, name, itemId);
     }
 
     @Override

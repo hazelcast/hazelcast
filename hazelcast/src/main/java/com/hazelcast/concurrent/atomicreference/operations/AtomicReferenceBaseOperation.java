@@ -33,11 +33,15 @@ public abstract class AtomicReferenceBaseOperation extends Operation
     protected String name;
 
     public AtomicReferenceBaseOperation() {
-        super();
     }
 
     public AtomicReferenceBaseOperation(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String getServiceName() {
+        return AtomicReferenceService.SERVICE_NAME;
     }
 
     public ReferenceWrapper getReference() {

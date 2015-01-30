@@ -38,6 +38,11 @@ public final class CancellationOperation extends Operation {
     }
 
     @Override
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 

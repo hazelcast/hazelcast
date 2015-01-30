@@ -50,7 +50,7 @@ public class CollectionContainsRequest extends CollectionRequest {
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionContainsOperation(name, valueSet);
+        return new CollectionContainsOperation(getCollectionType(), name, valueSet);
     }
 
     @Override
@@ -58,6 +58,7 @@ public class CollectionContainsRequest extends CollectionRequest {
         return CollectionPortableHook.COLLECTION_CONTAINS;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -67,6 +68,7 @@ public class CollectionContainsRequest extends CollectionRequest {
         }
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();

@@ -58,6 +58,11 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();

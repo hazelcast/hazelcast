@@ -63,9 +63,9 @@ public class CancellationRequest extends InvocationClientRequest {
         CancellationOperation op = new CancellationOperation(uuid, interrupt);
         InvocationBuilder builder;
         if (target == null) {
-            builder = createInvocationBuilder(getServiceName(), op, partitionId);
+            builder = createInvocationBuilder(op, partitionId);
         } else {
-            builder = createInvocationBuilder(getServiceName(), op, target);
+            builder = createInvocationBuilder(op, target);
         }
 
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);

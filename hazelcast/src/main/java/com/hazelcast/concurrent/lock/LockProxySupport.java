@@ -28,7 +28,6 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
 
@@ -48,7 +47,7 @@ public final class LockProxySupport {
 
     private InternalCompletableFuture invoke(NodeEngine nodeEngine, Operation operation, Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        return nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
+        return nodeEngine.getOperationService().invokeOnPartition(operation, partitionId);
     }
 
     public boolean isLockedByCurrentThread(NodeEngine nodeEngine, Data key) {

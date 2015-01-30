@@ -53,7 +53,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         for (Address target : targets) {
             Operation op = operationFactory.createOperation();
             op.setCallerUuid(endpoint.getUuid());
-            InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
+            InvocationBuilder builder = operationService.createInvocationBuilder(op, target)
                     .setTryCount(TRY_COUNT)
                     .setResultDeserialized(false)
                     .setCallback(new SingleTargetCallback(target, callback));

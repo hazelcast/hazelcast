@@ -31,8 +31,8 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
     public CollectionRemoveOperation() {
     }
 
-    public CollectionRemoveOperation(String name, Data value) {
-        super(name);
+    public CollectionRemoveOperation(CollectionType collectionType, String name, Data value) {
+        super(collectionType, name);
         this.value = value;
     }
 
@@ -64,7 +64,7 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionRemoveBackupOperation(name, itemId);
+        return new CollectionRemoveBackupOperation(getCollectionType(), name, itemId);
     }
 
     @Override

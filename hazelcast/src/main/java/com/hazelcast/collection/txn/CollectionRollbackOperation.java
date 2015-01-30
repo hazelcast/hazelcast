@@ -18,6 +18,7 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -32,8 +33,8 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
     public CollectionRollbackOperation() {
     }
 
-    public CollectionRollbackOperation(String name, long itemId, boolean removeOperation) {
-        super(name);
+    public CollectionRollbackOperation(CollectionType collectionType, String name, long itemId, boolean removeOperation) {
+        super(collectionType, name);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
     }
@@ -45,7 +46,7 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionRollbackBackupOperation(name, itemId, removeOperation);
+        return new CollectionRollbackBackupOperation(getCollectionType(), name, itemId, removeOperation);
     }
 
     @Override

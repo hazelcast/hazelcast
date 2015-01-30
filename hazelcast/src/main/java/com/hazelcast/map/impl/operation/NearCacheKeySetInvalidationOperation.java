@@ -25,10 +25,6 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * User: ahmetmircik
- * Date: 10/31/13
- */
 public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
     MapService mapService;
     MapKeySet mapKeySet;
@@ -50,6 +46,11 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
                     + mapName + " map. Possible configuration conflict among nodes.");
         }
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     @Override

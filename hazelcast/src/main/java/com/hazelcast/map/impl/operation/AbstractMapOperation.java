@@ -29,8 +29,12 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     }
 
     public AbstractMapOperation(String name) {
-        super();
         this.name = name;
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     @Override

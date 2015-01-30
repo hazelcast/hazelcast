@@ -30,6 +30,11 @@ final class ResetReplicaVersionOperation extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
     @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         int partitionId = getPartitionId();
         InternalPartitionService partitionService = getService();

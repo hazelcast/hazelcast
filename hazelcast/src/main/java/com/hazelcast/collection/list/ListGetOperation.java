@@ -19,6 +19,7 @@ package com.hazelcast.collection.list;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
@@ -31,8 +32,13 @@ public class ListGetOperation extends CollectionOperation {
     }
 
     public ListGetOperation(String name, int index) {
-        super(name);
+        super(CollectionType.List, name);
         this.index = index;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override
@@ -41,7 +47,7 @@ public class ListGetOperation extends CollectionOperation {
 
     @Override
     public void run() throws Exception {
-        final CollectionItem item = getOrCreateListContainer().get(index);
+        CollectionItem item = getOrCreateListContainer().get(index);
         response = item.getValue();
     }
 

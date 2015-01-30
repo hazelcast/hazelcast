@@ -18,6 +18,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.collection.txn.TransactionalListProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
@@ -35,7 +36,7 @@ public class ListService extends CollectionService {
     private final ConcurrentMap<String, ListContainer> containerMap = new ConcurrentHashMap<String, ListContainer>();
 
     public ListService(NodeEngine nodeEngine) {
-        super(nodeEngine);
+        super(nodeEngine, CollectionType.List);
     }
 
     @Override

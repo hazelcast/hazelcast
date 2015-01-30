@@ -26,6 +26,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
@@ -178,14 +179,14 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         claimingMaster = true;
         Collection<Future<Boolean>> responses = new LinkedList<Future<Boolean>>();
+        OperationService operationService = node.nodeEngine.getOperationService();
         for (Address address : possibleAddresses) {
             if (isBlacklisted(address)) {
                 continue;
             }
             if (node.getConnectionManager().getConnection(address) != null) {
-                Future future = node.nodeEngine.getOperationService()
-                        .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                                new MasterClaimOperation(), address).setTryCount(1).invoke();
+                MasterClaimOperation op = new MasterClaimOperation();
+                Future future = operationService.createInvocationBuilder(op, address).setTryCount(1).invoke();
                 responses.add(future);
             }
         }

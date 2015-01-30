@@ -53,7 +53,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         Operation op = new OperationWithResponse(response);
 
         OperationService service = localNode.nodeEngine.getOperationService();
-        Future f = service.createInvocationBuilder(null, op, localNode.address).invoke();
+        Future f = service.createInvocationBuilder(op, localNode.address).invoke();
         Object instance1 = f.get();
         Object instance2 = f.get();
 
@@ -76,7 +76,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         Address remoteAddress = getNode(remote).address;
 
         OperationService operationService = localNode.nodeEngine.getOperationService();
-        Future f = operationService.createInvocationBuilder(null, op, remoteAddress).invoke();
+        Future f = operationService.createInvocationBuilder(op, remoteAddress).invoke();
         Object instance1 = f.get();
         Object instance2 = f.get();
 
@@ -100,6 +100,11 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
         public OperationWithResponse(Data response) {
             this.response = response;
+        }
+
+        @Override
+        public String getServiceName() {
+            return null;
         }
 
         @Override

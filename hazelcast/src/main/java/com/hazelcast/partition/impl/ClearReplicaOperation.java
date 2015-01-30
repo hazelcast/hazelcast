@@ -55,6 +55,11 @@ final class ClearReplicaOperation extends AbstractOperation
     }
 
     @Override
+    public String getServiceName() {
+        return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
     public boolean returnsResponse() {
         return false;
     }

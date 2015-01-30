@@ -31,8 +31,8 @@ public class CollectionAddBackupOperation extends CollectionOperation implements
     public CollectionAddBackupOperation() {
     }
 
-    public CollectionAddBackupOperation(String name, long itemId, Data value) {
-        super(name);
+    public CollectionAddBackupOperation(CollectionType collectionType, String name, long itemId, Data value) {
+        super(collectionType, name);
         this.itemId = itemId;
         this.value = value;
     }

@@ -185,14 +185,14 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     private InternalCompletableFuture invoke(Operation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, getPartitionId());
+        return operationService.invokeOnPartition(operation, getPartitionId());
     }
 
     private Object invokeAndGetData(QueueOperation operation) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             OperationService operationService = nodeEngine.getOperationService();
-            Future f = operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+            Future f = operationService.invokeOnPartition(operation, partitionId);
             return f.get();
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

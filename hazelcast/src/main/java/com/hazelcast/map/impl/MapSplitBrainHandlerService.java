@@ -113,7 +113,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
                         ICompletableFuture f = nodeEngine.getOperationService()
-                                .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
+                                .invokeOnPartition(operation, partitionId);
 
                         f.andThen(mergeCallback);
                     } catch (Throwable t) {

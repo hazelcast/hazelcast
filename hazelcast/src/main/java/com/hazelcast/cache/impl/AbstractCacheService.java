@@ -144,7 +144,7 @@ public abstract class AbstractCacheService implements ICacheService {
         for (MemberImpl member : members) {
             if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
                 final CacheDestroyOperation op = new CacheDestroyOperation(objectName, true);
-                operationService.invokeOnTarget(AbstractCacheService.SERVICE_NAME, op, member.getAddress());
+                operationService.invokeOnTarget(op, member.getAddress());
             }
         }
     }
@@ -172,7 +172,7 @@ public abstract class AbstractCacheService implements ICacheService {
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
-                operationService.invokeOnTarget(AbstractCacheService.SERVICE_NAME, op, member.getAddress());
+                operationService.invokeOnTarget(op, member.getAddress());
             }
         }
     }
@@ -326,8 +326,8 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public String registerListener(String distributedObjectName, CacheEventListener listener) {
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService
-                .registerListener(AbstractCacheService.SERVICE_NAME, distributedObjectName, listener);
+        final EventRegistration registration = eventService.registerListener(
+                CacheService.SERVICE_NAME, distributedObjectName, listener);
         return registration.getId();
     }
 
@@ -339,7 +339,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public void deregisterAllListener(String name) {
-        nodeEngine.getEventService().deregisterAllListeners(AbstractCacheService.SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllListeners(CacheService.SERVICE_NAME, name);
     }
 
     @Override

@@ -21,8 +21,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     boolean shouldBackup = true;
@@ -69,9 +67,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public Operation getBackupOperation() {
-        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name);
-        clearBackupOperation.setServiceName(SERVICE_NAME);
-        return clearBackupOperation;
+        return new ClearBackupOperation(name);
     }
 
     @Override

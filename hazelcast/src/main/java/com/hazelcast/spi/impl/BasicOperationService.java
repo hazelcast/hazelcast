@@ -212,18 +212,30 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
+        op.setServiceName(serviceName);
+        return createInvocationBuilder(op, partitionId);
+    }
+
+    @Override
+    public InvocationBuilder createInvocationBuilder(Operation op, int partitionId) {
         if (partitionId < 0) {
             throw new IllegalArgumentException("Partition id cannot be negative!");
         }
-        return new BasicInvocationBuilder(nodeEngine, serviceName, op, partitionId);
+        return new BasicInvocationBuilder(nodeEngine, op, partitionId);
     }
 
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
+        op.setServiceName(serviceName);
+        return createInvocationBuilder(op, target);
+    }
+
+    @Override
+    public InvocationBuilder createInvocationBuilder(Operation op, Address target) {
         if (target == null) {
             throw new IllegalArgumentException("Target cannot be null!");
         }
-        return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
+        return new BasicInvocationBuilder(nodeEngine, op, target);
     }
 
     @PrivateApi
@@ -261,7 +273,13 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
+        op.setServiceName(serviceName);
+        return invokeOnPartition(op, partitionId);
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op, int partitionId) {
+        return new BasicPartitionInvocation(nodeEngine, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
                 InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -269,7 +287,13 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
+        op.setServiceName(serviceName);
+        return invokeOnTarget(op, target);
+    }
+
+    @Override
+    public <E> InternalCompletableFuture<E> invokeOnTarget(Operation op, Address target) {
+        return new BasicTargetInvocation(nodeEngine, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -314,6 +338,11 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public Map<Integer, Object> invokeOnAllPartitions(OperationFactory operationFactory) throws Exception {
+        return invokeOnAllPartitions(null, operationFactory);
+    }
+
+    @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
@@ -327,6 +356,12 @@ final class BasicOperationService implements InternalOperationService {
         }
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(serviceName, operationFactory, memberPartitions);
         return invokeOnPartitions.invoke();
+    }
+
+    @Override
+    public Map<Integer, Object> invokeOnPartitions(OperationFactory operationFactory, Collection<Integer> partitions)
+            throws Exception {
+        return invokeOnPartitions(null, operationFactory, partitions);
     }
 
     @Override
@@ -483,7 +518,7 @@ final class BasicOperationService implements InternalOperationService {
                 Address address = mp.getKey();
                 List<Integer> partitions = mp.getValue();
                 PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-                Future future = createInvocationBuilder(serviceName, pi, address)
+                Future future = createInvocationBuilder(pi, address)
                         .setTryCount(TRY_COUNT)
                         .setTryPauseMillis(TRY_PAUSE_MILLIS)
                         .invoke();
@@ -881,7 +916,6 @@ final class BasicOperationService implements InternalOperationService {
             Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
             backup.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
-                    .setServiceName(op.getServiceName())
                     .setCallerUuid(nodeEngine.getLocalMember().getUuid());
             setCallId(backup, op.getCallId());
             return backup;
@@ -895,8 +929,7 @@ final class BasicOperationService implements InternalOperationService {
 
             Operation op = (Operation) backupAwareOp;
             backupOp.setPartitionId(op.getPartitionId())
-                    .setReplicaIndex(replicaIndex)
-                    .setServiceName(op.getServiceName());
+                    .setReplicaIndex(replicaIndex);
             return backupOp;
         }
 

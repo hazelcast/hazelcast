@@ -27,6 +27,7 @@ import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.partition.impl.SafeStateCheckOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -91,11 +92,11 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
             return true;
         }
         final Collection<Future> futures = new ArrayList<Future>(memberList.size());
+        OperationService operationService = node.getNodeEngine().getOperationService();
         for (MemberImpl member : memberList) {
             final Address target = member.getAddress();
             final Operation operation = new SafeStateCheckOperation();
-            final InternalCompletableFuture future = node.getNodeEngine().getOperationService()
-                    .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+            final InternalCompletableFuture future = operationService.invokeOnTarget(operation, target);
             futures.add(future);
         }
         // todo this max wait is appropriate?
@@ -126,8 +127,8 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         }
         final Address target = ((MemberImpl) member).getAddress();
         final Operation operation = new SafeStateCheckOperation();
-        final InternalCompletableFuture future = getNode().getNodeEngine().getOperationService()
-                .invokeOnTarget(InternalPartitionService.SERVICE_NAME, operation, target);
+        OperationService operationService = getNode().getNodeEngine().getOperationService();
+        final InternalCompletableFuture future = operationService.invokeOnTarget(operation, target);
         boolean safe;
         try {
             final Object result = future.get(10, TimeUnit.SECONDS);

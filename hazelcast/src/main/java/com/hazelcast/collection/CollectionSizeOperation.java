@@ -21,8 +21,8 @@ public class CollectionSizeOperation extends CollectionOperation {
     public CollectionSizeOperation() {
     }
 
-    public CollectionSizeOperation(String name) {
-        super(name);
+    public CollectionSizeOperation(CollectionType collectionType, String name) {
+        super(collectionType, name);
     }
 
     @Override

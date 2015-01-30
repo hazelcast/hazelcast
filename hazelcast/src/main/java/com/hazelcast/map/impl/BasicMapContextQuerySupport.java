@@ -249,9 +249,9 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     }
 
     private Future queryOnLocalMember(String mapName, Predicate predicate, NodeEngine nodeEngine) {
-        return nodeEngine
-                .getOperationService()
-                .invokeOnTarget(MapService.SERVICE_NAME, new QueryOperation(mapName, predicate), nodeEngine.getThisAddress());
+        OperationService operationService = nodeEngine.getOperationService();
+        QueryOperation op = new QueryOperation(mapName, predicate);
+        return operationService.invokeOnTarget(op, nodeEngine.getThisAddress());
     }
 
     private List<Future> queryOnMembers(String mapName, Predicate predicate, NodeEngine nodeEngine) {
@@ -259,8 +259,8 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         List<Future> futures = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
-            Future future = operationService
-                    .invokeOnTarget(MapService.SERVICE_NAME, new QueryOperation(mapName, predicate), member.getAddress());
+            QueryOperation op = new QueryOperation(mapName, predicate);
+            Future future = operationService.invokeOnTarget(op, member.getAddress());
             futures.add(future);
         }
         return futures;
@@ -278,7 +278,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(mapName, predicate);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
-                Future future = operationService.invokeOnPartition(MapService.SERVICE_NAME, queryPartitionOperation, partitionId);
+                Future future = operationService.invokeOnPartition(queryPartitionOperation, partitionId);
                 futures.add(future);
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

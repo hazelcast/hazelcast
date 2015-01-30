@@ -115,7 +115,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     protected long pendingResponseReceivedMillis = -1;
     protected final long callTimeout;
     protected final NodeEngineImpl nodeEngine;
-    protected final String serviceName;
+
     protected final Operation op;
     protected final int partitionId;
     protected final int replicaIndex;
@@ -143,13 +143,12 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private Address invTarget;
     private MemberImpl invTargetMember;
 
-    BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+    BasicInvocation(NodeEngineImpl nodeEngine, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
                     String executorName, boolean resultDeserialized) {
         this.operationService = (BasicOperationService) nodeEngine.operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
-        this.serviceName = serviceName;
         this.op = op;
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
@@ -162,10 +161,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     abstract ExceptionAction onException(Throwable t);
-
-    public String getServiceName() {
-        return serviceName;
-    }
 
     InternalPartition getPartition() {
         return nodeEngine.getPartitionService().getPartition(partitionId);
@@ -218,7 +213,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             setCallTimeout(op, callTimeout);
             setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine)
-                    .setServiceName(serviceName)
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex)
                     .setExecutorName(executorName);
@@ -315,7 +309,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             remote = false;
             if (nodeEngine.isActive()) {
                 notify(new WrongTargetException(thisAddress, null, partitionId
-                        , replicaIndex, op.getClass().getName(), serviceName));
+                        , replicaIndex, op.getClass().getName(), op.getServiceName()));
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
@@ -324,7 +318,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
 
         invTargetMember = nodeEngine.getClusterService().getMember(invTarget);
         if (!isJoinOperation(op) && invTargetMember == null) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), op.getServiceName()));
             return false;
         }
 
@@ -618,7 +612,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("BasicInvocation");
-        sb.append("{ serviceName='").append(serviceName).append('\'');
+        sb.append("{ serviceName='").append(op.getServiceName()).append('\'');
         sb.append(", op=").append(op);
         sb.append(", partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);

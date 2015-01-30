@@ -18,6 +18,7 @@ package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.CollectionType;
 import com.hazelcast.collection.txn.TransactionalSetProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
@@ -35,7 +36,7 @@ public class SetService extends CollectionService {
     private final ConcurrentMap<String, SetContainer> containerMap = new ConcurrentHashMap<String, SetContainer>();
 
     public SetService(NodeEngine nodeEngine) {
-        super(nodeEngine);
+        super(nodeEngine, CollectionType.Set);
     }
 
     @Override

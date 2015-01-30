@@ -417,8 +417,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         try {
             Operation isStillExecuting = createCheckOperation();
 
-            BasicInvocation inv = new BasicTargetInvocation(
-                    invocation.nodeEngine, invocation.serviceName, isStillExecuting,
+            BasicInvocation inv = new BasicTargetInvocation(invocation.nodeEngine, isStillExecuting,
                     target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, null, true);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + toString());
@@ -434,7 +433,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         Operation op = invocation.op;
         if (op instanceof TraceableOperation) {
             TraceableOperation traceable = (TraceableOperation) op;
-            return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
+            return new TraceableIsStillExecutingOperation(invocation.op.getServiceName(), traceable.getTraceIdentifier());
         } else {
             return new IsStillExecutingOperation(op.getCallId(), op.getPartitionId());
         }
