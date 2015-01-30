@@ -417,8 +417,9 @@ public abstract class Operation implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Operation{");
+        final StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
         sb.append("serviceName='").append(serviceName).append('\'');
+        sb.append(", partitionId=").append(partitionId);
         sb.append(", callId=").append(callId);
         sb.append(", invocationTime=").append(invocationTime);
         sb.append(", waitTimeout=").append(waitTimeout);
