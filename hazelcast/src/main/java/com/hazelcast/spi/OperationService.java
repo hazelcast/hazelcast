@@ -33,26 +33,80 @@ import java.util.Map;
  */
 public interface OperationService {
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getResponseQueueSize();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getOperationExecutorQueueSize();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getPriorityOperationExecutorQueueSize();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getRunningOperationsCount();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getRemoteOperationsCount();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getPartitionOperationThreadCount();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     int getGenericOperationThreadCount();
 
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     long getExecutedOperationCount();
 
     /**
      * Dumps all kinds of metrics: for example, performance. This can be used for performance analysis. In the future we'll have a
      * more formal (such as map with key/value pairs) information.
      */
+    /**
+     * This methods is deprecated since 3.5
+     *
+     * @return
+     */
+    @Deprecated
     void dumpPerformanceMetrics(StringBuffer sb);
 
     /**
@@ -128,9 +182,13 @@ public interface OperationService {
     /**
      * Sends a response to a remote machine.
      *
+     * This methods is deprecated since 3.5. It is an implementation detail, so it is moved to the
+     * {@link com.hazelcast.spi.impl.InternalOperationService}.
+     *
      * @param response the response to send.
      * @param target   the address of the target machine
      * @return true if send is successful, false otherwise.
      */
+    @Deprecated
     boolean send(Response response, Address target);
 }

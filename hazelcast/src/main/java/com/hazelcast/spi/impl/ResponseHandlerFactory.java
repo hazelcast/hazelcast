@@ -119,7 +119,7 @@ public final class ResponseHandlerFactory {
                 response = (Response) obj;
             }
 
-            OperationService operationService = nodeEngine.getOperationService();
+            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
             if (!operationService.send(response, operation.getCallerAddress())) {
                 throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
             }
