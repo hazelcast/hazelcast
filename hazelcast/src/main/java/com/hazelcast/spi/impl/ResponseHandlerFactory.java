@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
