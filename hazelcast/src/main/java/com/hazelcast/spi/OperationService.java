@@ -29,30 +29,73 @@ import java.util.Map;
  * and {@link #executeOperation(Operation)}. Or it can executed remotely using one of the send methods.
  * <p/>
  * It also is possible to execute multiple operation on multiple partitions using one of the invoke methods.
- *
  */
 public interface OperationService {
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getResponseQueueSize();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getOperationExecutorQueueSize();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getPriorityOperationExecutorQueueSize();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getRunningOperationsCount();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getRemoteOperationsCount();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getPartitionOperationThreadCount();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     int getGenericOperationThreadCount();
 
+    /**
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
+     */
+    @Deprecated
     long getExecutedOperationCount();
 
     /**
      * Dumps all kinds of metrics: for example, performance. This can be used for performance analysis. In the future we'll have a
      * more formal (such as map with key/value pairs) information.
+     * <p/>
+     * This methods is deprecated since 3.5. This feature will be dropped since it is an internal implementation
+     * detail and should not directly be exposed the the SPI user.
      */
+    @Deprecated
     void dumpPerformanceMetrics(StringBuffer sb);
 
     /**
@@ -76,7 +119,10 @@ public interface OperationService {
      *
      * @param op the operation to check.
      * @return true if the operation is allowed to run on the calling thread, false otherwise.
+     *
+     * @deprecated since 3.5 since not needed anymore.
      */
+    @Deprecated
     boolean isAllowedToRunOnCallingThread(Operation op);
 
     <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId);
@@ -127,10 +173,14 @@ public interface OperationService {
 
     /**
      * Sends a response to a remote machine.
+     * <p/>
+     * This methods is deprecated since 3.5. It is an implementation detail, so it is moved to the
+     * {@link com.hazelcast.spi.impl.InternalOperationService}.
      *
      * @param response the response to send.
      * @param target   the address of the target machine
      * @return true if send is successful, false otherwise.
      */
+    @Deprecated
     boolean send(Response response, Address target);
 }
