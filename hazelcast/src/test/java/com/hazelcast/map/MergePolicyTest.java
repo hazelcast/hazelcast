@@ -30,6 +30,8 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -188,6 +190,39 @@ public class MergePolicyTest extends HazelcastTestSupport {
         assertEquals("passThroughValue", mapTest.get(key));
     }
 
+    @Test
+    public void testCustomMergePolicy() {
+        String mapName = randomMapName();
+        Config config = newConfig(CustomMergePolicy.class.getName(), mapName);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+
+        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
+        h2.getCluster().addMembershipListener(memberShipListener);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
+
+        closeConnectionBetween(h1, h2);
+
+        assertOpenEventually(memberShipListener.latch);
+        assertClusterSizeEventually(1, h1);
+        assertClusterSizeEventually(1, h2);
+
+        IMap<Object, Object> map1 = h1.getMap(mapName);
+        String key = generateKeyOwnedBy(h1);
+        map1.put(key, "value");
+
+        IMap<Object, Object> map2 = h2.getMap(mapName);
+        map2.put(key,Integer.valueOf(1));
+
+        assertOpenEventually(lifeCycleListener.latch);
+        assertClusterSizeEventually(2, h1);
+        assertClusterSizeEventually(2, h2);
+
+        IMap<Object, Object> mapTest = h2.getMap(mapName);
+        assertNotNull(mapTest.get(key));
+        assertTrue(mapTest.get(key) instanceof Integer);
+    }
 
     private Config newConfig(String mergePolicy, String mapName) {
         Config config = new Config();
@@ -246,4 +281,5 @@ public class MergePolicyTest extends HazelcastTestSupport {
         }
 
     }
+
 }
