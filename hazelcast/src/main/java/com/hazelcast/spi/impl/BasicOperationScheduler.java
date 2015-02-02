@@ -24,7 +24,6 @@ import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.HazelcastManagedThread;
