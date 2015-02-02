@@ -43,8 +43,8 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
             if (op == null) {
                 throw new NullPointerException();
             }
-            if (op instanceof PartitionAwareOperation) {
-                throw new IllegalArgumentException("Post join operation can not be a PartitionAwareOperation!");
+            if (op.getPartitionId() >= 0) {
+                throw new IllegalArgumentException("Post join operation can not have a partition-id!");
             }
         }
         // we may need to do array copy!

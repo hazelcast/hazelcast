@@ -194,16 +194,12 @@ public final class BasicOperationScheduler {
         return true;
     }
 
-    int getPartitionIdForExecution(Operation op) {
-        return op instanceof PartitionAwareOperation ? op.getPartitionId() : -1;
-    }
-
     boolean isAllowedToRunInCurrentThread(Operation op) {
-        return isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
+        return isAllowedToRunInCurrentThread(op.getPartitionId());
     }
 
     boolean isInvocationAllowedFromCurrentThread(Operation op) {
-        return isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
+        return isInvocationAllowedFromCurrentThread(op.getPartitionId());
     }
 
     private boolean isAllowedToRunInCurrentThread(int partitionId) {
@@ -304,7 +300,7 @@ public final class BasicOperationScheduler {
     public void execute(Operation op) {
         String executorName = op.getExecutorName();
         if (executorName == null) {
-            int partitionId = getPartitionIdForExecution(op);
+            int partitionId = op.getPartitionId();
             boolean hasPriority = op.isUrgent();
             execute(op, partitionId, hasPriority);
         } else {
