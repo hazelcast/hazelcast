@@ -4,7 +4,6 @@ import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry.createWithNullKey;
+import static com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry.createWithOnlyKey;
 
 /**
  * TODO Holds current write behind state and should be included in migrations.
@@ -90,7 +90,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         final DelayedEntry<Data, Object> delayedEntry =
                 DelayedEntry.create(key, value, storeTime, partitionId);
 
-        writeBehindQueue.offer(delayedEntry);
+        writeBehindQueue.addLast(delayedEntry);
         removeFromWaitingDeletions(key);
 
         return value;
@@ -115,7 +115,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         addToWaitingDeletions(key);
         removeFromStagingArea(key);
 
-        writeBehindQueue.offer(delayedEntry);
+        writeBehindQueue.addLast(delayedEntry);
     }
 
     @Override
@@ -175,19 +175,14 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      * <p/>
      * With this method we can be sure that a key can be loadable from map-store or not.
      *
-     * @param key            to query whether loadable or not.
-     * @param lastUpdateTime last update time.
-     * @param now            in mills
+     * @param key to query whether loadable or not.
      * @return <code>true</code> if loadable, otherwise false.
      */
     @Override
-    public boolean loadable(Data key, long lastUpdateTime, long now) {
-        if (hasWaitingWriteBehindDeleteOperation(key)
-                || isInStagingArea(key, now)
-                || hasAnyWaitingOperationInWriteBehindQueue(lastUpdateTime, now)) {
-            return false;
-        }
-        return true;
+    public boolean loadable(Data key) {
+        return !(hasWaitingWriteBehindDeleteOperation(key)
+                || isInStagingArea(key)
+                || writeBehindQueue.contains(createWithOnlyKey(key)));
     }
 
     @Override
@@ -231,22 +226,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         stagingArea.remove(key);
     }
 
-    private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
-        return writeBehindWaitingDeletions.contains(key);
-    }
-
-    private boolean hasAnyWaitingOperationInWriteBehindQueue(long lastUpdateTime, long now) {
-        final long scheduledStoreTime = lastUpdateTime + writeDelayTime;
-        return now < scheduledStoreTime;
-    }
-
-    private boolean isInStagingArea(Data key, long now) {
-        final DelayedEntry entry = stagingArea.get(key);
-        if (entry == null) {
-            return false;
-        }
-        final long storeTime = entry.getStoreTime();
-        return now < storeTime;
+    private boolean isInStagingArea(Data key) {
+        return stagingArea.containsKey(key);
     }
 
     private Object getFromStagingArea(Data key) {
@@ -254,14 +235,14 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (entry == null) {
             return null;
         }
-        final long storeTime = entry.getStoreTime();
-        final long now = Clock.currentTimeMillis();
-        // entry can not be reached from staging area.
-        if (now >= storeTime) {
-            return null;
-        }
-        return toObject(entry.getValue());
+        final Object value = entry.getValue();
+        return toObject(value);
     }
+
+    private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
+        return writeBehindWaitingDeletions.contains(key);
+    }
+
 
     public WriteBehindQueue<DelayedEntry> getWriteBehindQueue() {
         return writeBehindQueue;

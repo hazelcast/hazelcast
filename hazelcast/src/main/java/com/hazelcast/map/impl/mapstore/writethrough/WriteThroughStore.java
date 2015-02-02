@@ -74,7 +74,7 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
-    public boolean loadable(Data key, long lastUpdateTime, long now) {
+    public boolean loadable(Data key) {
         return true;
     }
 

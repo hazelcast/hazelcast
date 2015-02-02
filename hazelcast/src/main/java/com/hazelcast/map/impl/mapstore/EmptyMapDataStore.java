@@ -57,7 +57,7 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
-    public boolean loadable(Object key, long lastUpdateTime, long now) {
+    public boolean loadable(Object key) {
         return false;
     }
 

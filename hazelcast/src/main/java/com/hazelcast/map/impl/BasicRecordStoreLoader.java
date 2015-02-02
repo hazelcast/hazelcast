@@ -16,7 +16,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -313,13 +312,10 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        final long now = getNow();
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             final Data key = iterator.next();
-            final Record record = recordStore.getRecord(key);
-            final long lastUpdateTime = record == null ? 0L : record.getLastUpdateTime();
-            if (!mapDataStore.loadable(key, lastUpdateTime, now)) {
+            if (!mapDataStore.loadable(key)) {
                 iterator.remove();
             }
         }
@@ -329,15 +325,11 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         return mapServiceContext.getNodeEngine().getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
     }
 
-    private long getNow() {
-        return Clock.currentTimeMillis();
-    }
-
     private boolean shouldLoad(Data key, boolean replaceExisting) {
         Record record = recordStore.getRecord(key);
 
         if (record != null) {
-            if (!mapDataStore.loadable(key, record.getLastUpdateTime(), getNow())) {
+            if (!mapDataStore.loadable(key)) {
                 return false;
             }
 

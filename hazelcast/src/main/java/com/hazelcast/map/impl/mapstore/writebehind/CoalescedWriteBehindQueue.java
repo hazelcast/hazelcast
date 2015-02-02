@@ -9,33 +9,128 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 /**
  * A write-behind queue which supports write coalescing.
  */
 class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
-    protected Map<Data, DelayedEntry> queue;
+    protected Map<Data, DelayedEntry> map;
 
     public CoalescedWriteBehindQueue() {
-        queue = new LinkedHashMap<Data, DelayedEntry>();
-    }
-
-    public CoalescedWriteBehindQueue(Map<Data, DelayedEntry> queue) {
-        this.queue = queue;
+        map = new LinkedHashMap<Data, DelayedEntry>();
     }
 
     @Override
-    public boolean offer(DelayedEntry delayedEntry) {
+    public void addFirst(Collection<DelayedEntry> collection) {
+        if (isEmpty(collection)) {
+            return;
+        }
+        int expectedCapacity = map.size() + collection.size();
+        Map<Data, DelayedEntry> newMap = createMapWithExpectedCapacity(expectedCapacity);
+        Iterator<DelayedEntry> iterator = collection.iterator();
+        while (iterator.hasNext()) {
+            DelayedEntry next = iterator.next();
+            newMap.put((Data) next.getKey(), next);
+        }
+        newMap.putAll(map);
+        map = newMap;
+    }
+
+    @Override
+    public void addLast(DelayedEntry delayedEntry) {
+        if (delayedEntry == null) {
+            return;
+        }
+        calculateStoreTime(delayedEntry);
+        Data key = (Data) delayedEntry.getKey();
+        map.put(key, delayedEntry);
+    }
+
+    /**
+     * Removes the first occurrence of the specified element in this queue
+     * when searching it by starting from the head of this queue.
+     *
+     * @param entry element to be removed.
+     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
+     */
+    @Override
+    public boolean removeFirstOccurrence(DelayedEntry entry) {
+        Data key = (Data) entry.getKey();
+        Object value = entry.getValue();
+        DelayedEntry delayedEntry = map.get(key);
         if (delayedEntry == null) {
             return false;
         }
-        calculateStoreTime(delayedEntry);
-        final Data key = (Data) delayedEntry.getKey();
-        queue.put(key, delayedEntry);
-        return true;
+        Object existingValue = delayedEntry.getValue();
+        if (existingValue == value) {
+            map.remove(key);
+            return true;
+        }
+
+        return false;
     }
+
+    @Override
+    public boolean contains(DelayedEntry entry) {
+        return map.containsKey(entry.getKey());
+    }
+
+    @Override
+    public int size() {
+        return map.size();
+    }
+
+    @Override
+    public void clear() {
+        map.clear();
+    }
+
+    @Override
+    public int drainTo(Collection<DelayedEntry> collection) {
+        checkNotNull(collection, "collection can not be null");
+
+        Collection<DelayedEntry> delayedEntries = map.values();
+        for (DelayedEntry delayedEntry : delayedEntries) {
+            collection.add(delayedEntry);
+        }
+        map.clear();
+        return collection.size();
+    }
+
+    @Override
+    public List<DelayedEntry> asList() {
+        Collection<DelayedEntry> values = map.values();
+        return Collections.unmodifiableList(new ArrayList<DelayedEntry>(values));
+    }
+
+
+    @Override
+    public void getFrontByTime(long time, Collection<DelayedEntry> collection) {
+        Collection<DelayedEntry> values = map.values();
+        for (DelayedEntry e : values) {
+            if (e.getStoreTime() <= time) {
+                collection.add(e);
+            }
+        }
+    }
+
+    @Override
+    public void getFrontByNumber(int numberOfElements, Collection<DelayedEntry> collection) {
+        int count = 0;
+        Collection<DelayedEntry> values = map.values();
+        for (DelayedEntry e : values) {
+            if (count == numberOfElements) {
+                break;
+            }
+            collection.add(e);
+            count++;
+        }
+    }
+
 
     /**
      * If this is an existing key in this queue, use previously set store time;
@@ -43,153 +138,17 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      */
     private void calculateStoreTime(DelayedEntry delayedEntry) {
         Data key = (Data) delayedEntry.getKey();
-        DelayedEntry currentEntry = queue.get(key);
+        DelayedEntry currentEntry = map.get(key);
         if (currentEntry != null) {
             long currentStoreTime = currentEntry.getStoreTime();
             delayedEntry.setStoreTime(currentStoreTime);
         }
     }
 
-    @Override
-    public DelayedEntry get(DelayedEntry entry) {
-        return queue.get(entry.getKey());
+    private static <K, V> Map<K, V> createMapWithExpectedCapacity(int expectedCapacity) {
+        final double defaultLoadFactor = 0.75;
+        int initialCapacity = (int) (expectedCapacity / defaultLoadFactor) + 1;
+        return new LinkedHashMap<K, V>(initialCapacity);
     }
 
-    @Override
-    public DelayedEntry getFirst() {
-        final Iterator<DelayedEntry> iterator = queue.values().iterator();
-        if (iterator.hasNext()) {
-            return iterator.next();
-        }
-        return null;
-    }
-
-    @Override
-    public void removeFirst() {
-        final Set<Data> keySet = queue.keySet();
-        for (Data key : keySet) {
-            queue.remove(key);
-            break;
-        }
-    }
-
-    @Override
-    public int size() {
-        return queue.size();
-    }
-
-    @Override
-    public void clear() {
-        queue.clear();
-    }
-
-    @Override
-    public WriteBehindQueue<DelayedEntry> getSnapShot() {
-        return new CoalescedWriteBehindQueue(queue);
-    }
-
-    @Override
-    public void addFront(Collection<DelayedEntry> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        final LinkedHashMap<Data, DelayedEntry> newQueue = new LinkedHashMap<Data, DelayedEntry>();
-        final Iterator<DelayedEntry> iterator = collection.iterator();
-        while (iterator.hasNext()) {
-            final DelayedEntry next = iterator.next();
-            newQueue.put((Data) next.getKey(), next);
-        }
-        newQueue.putAll(queue);
-        queue = newQueue;
-    }
-
-    @Override
-    public void addEnd(Collection<DelayedEntry> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        for (DelayedEntry entry : collection) {
-            queue.put((Data) entry.getKey(), entry);
-        }
-    }
-
-    @Override
-    public void removeAll(Collection<DelayedEntry> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        for (DelayedEntry entry : collection) {
-            final Data entryKey = (Data) entry.getKey();
-            final Object entryValue = entry.getValue();
-            final DelayedEntry delayedEntry = queue.get(entryKey);
-            if (delayedEntry == null) {
-                continue;
-            }
-            final Object value = delayedEntry.getValue();
-            if (value == entryValue) {
-                queue.remove(entryKey);
-            }
-        }
-    }
-
-    @Override
-    public List<DelayedEntry> removeAll() {
-        final List<DelayedEntry> delayedEntries = asList();
-        queue.clear();
-        return delayedEntries;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
-
-    @Override
-    public List<DelayedEntry> asList() {
-        final Collection<DelayedEntry> values = queue.values();
-        return new ArrayList<DelayedEntry>(values);
-    }
-
-    @Override
-    public List<DelayedEntry> filterItems(long now) {
-        List<DelayedEntry> delayedEntries = null;
-        final Collection<DelayedEntry> values = queue.values();
-        for (DelayedEntry e : values) {
-            if (delayedEntries == null) {
-                delayedEntries = new ArrayList<DelayedEntry>();
-            }
-            if (e.getStoreTime() <= now) {
-                delayedEntries.add(e);
-            }
-        }
-        if (delayedEntries == null) {
-            return Collections.emptyList();
-        }
-        return delayedEntries;
-    }
-
-    /**
-     * Returns supplied number of entries from the start.
-     *
-     * @param count number of entries to return.
-     * @return list of entries
-     */
-    @Override
-    public List<DelayedEntry> get(int count) {
-        if (count <= 0) {
-            return Collections.emptyList();
-        }
-        Collection<DelayedEntry> values = queue.values();
-        if (values.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<DelayedEntry> delayedEntries = new ArrayList<DelayedEntry>(count);
-        for (DelayedEntry e : values) {
-            if (delayedEntries.size() == count) {
-                break;
-            }
-            delayedEntries.add(e);
-        }
-        return delayedEntries;
-    }
 }

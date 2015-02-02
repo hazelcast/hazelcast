@@ -64,7 +64,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (writeBatchSize > 1) {
             failMap = doStoreUsingBatchSize(delayedEntries);
         } else {
-            failMap = processInternal(delayedEntries);
+            failMap = processInternal((List) delayedEntries);
         }
         return failMap;
     }
@@ -287,8 +287,9 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (queue.size() == 0) {
             return Collections.emptyList();
         }
-        final List<DelayedEntry> sortedDelayedEntries = queue.removeAll();
-        return flushInternal(sortedDelayedEntries);
+        final List<DelayedEntry> delayedEntries = new ArrayList<DelayedEntry>(queue.size());
+        queue.drainTo(delayedEntries);
+        return flushInternal(delayedEntries);
     }
 
     @Override
@@ -316,7 +317,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         logger.severe(logMessage);
     }
 
-    private List<Data> getDataKeys(final List<DelayedEntry> sortedDelayedEntries) {
+    private List<Data> getDataKeys(final Collection<DelayedEntry> sortedDelayedEntries) {
         if (sortedDelayedEntries == null || sortedDelayedEntries.isEmpty()) {
             return Collections.emptyList();
         }
@@ -341,11 +342,11 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
      * @param sortedDelayedEntries entries to be stored.
      * @return not-stored entries per partition.
      */
-    private Map<Integer, List<DelayedEntry>> doStoreUsingBatchSize(List<DelayedEntry> sortedDelayedEntries) {
+    private Map<Integer, List<DelayedEntry>> doStoreUsingBatchSize(Collection<DelayedEntry> sortedDelayedEntries) {
         final Map<Integer, List<DelayedEntry>> failsPerPartition = new HashMap<Integer, List<DelayedEntry>>();
         int page = 0;
         List<DelayedEntry> delayedEntryList;
-        while ((delayedEntryList = getBatchChunk(sortedDelayedEntries, writeBatchSize, page++)) != null) {
+        while ((delayedEntryList = getBatchChunk((List) sortedDelayedEntries, writeBatchSize, page++)) != null) {
             final Map<Integer, List<DelayedEntry>> fails = processInternal(delayedEntryList);
             final Set<Map.Entry<Integer, List<DelayedEntry>>> entries = fails.entrySet();
             for (Map.Entry<Integer, List<DelayedEntry>> entry : entries) {
