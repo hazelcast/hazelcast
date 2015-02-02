@@ -17,10 +17,17 @@
 package com.hazelcast.client.standalone;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.standalone.model.MyElement;
 import com.hazelcast.client.standalone.model.MyKey;
+import com.hazelcast.client.standalone.model.MyPortableElement;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapEvent;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
@@ -33,7 +40,10 @@ import org.junit.runner.RunWith;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.query.Predicates.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 
@@ -72,7 +82,9 @@ public class ClientMapStandaloneTest {
         } finally {
             thread.setContextClassLoader(tccl);
         }
-        client = HazelcastClient.newHazelcastClient(null);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig().addPortableFactory(MyPortableElement.FACTORY_ID, new MyPortableElement.Factory());
+        client = HazelcastClient.newHazelcastClient(clientConfig);
     }
 
     public IMap createMap() {
@@ -173,4 +185,24 @@ public class ClientMapStandaloneTest {
             thread.setContextClassLoader(tccl);
         }
     }
+
+    @Test
+    public void testPortable_withEntryListenerWithPredicate() throws Exception {
+        int key = 1;
+        int id = 1;
+
+        IMap<Integer, MyPortableElement> map = createMap();
+        Predicate predicate = equal("id", id);
+        MyPortableElement element = new MyPortableElement(id);
+        final CountDownLatch eventLatch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<Integer, MyPortableElement>() {
+            @Override
+            public void onEntryEvent(EntryEvent<Integer, MyPortableElement> event) {
+                eventLatch.countDown();
+            }
+        }, predicate, true);
+        map.put(key, element);
+        assertOpenEventually(eventLatch);
+    }
+
 }
