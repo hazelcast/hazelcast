@@ -409,7 +409,7 @@ public class GroupProperties {
         MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
                 = new GroupProperty(config, PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "10");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
-        LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
+        LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, (String)null); // use default logic in Logger class
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");

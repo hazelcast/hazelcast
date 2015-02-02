@@ -79,7 +79,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.initial.wait.seconds` | 0 | int  |   Initial time in seconds to wait before node to start completely.
 `hazelcast.map.replica.wait.seconds.for.scheduled.tasks`|10|int|Scheduler delay for the map tasks to be executed on backup members.
 `hazelcast.partition.count` | 271 | int  |   Total partition count.
-`hazelcast.logging.type` | jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
+`hazelcast.logging.type` | slf4j with fallback to jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
 `hazelcast.jmx` | false | bool  |   Enable [JMX](#monitoring-with-jmx) agent.
 `hazelcast.jmx.detailed` | false | bool  |   Enable detailed views on [JMX](#monitoring-with-jmx).
 `hazelcast.mc.max.visible.instance.count` | 100 | int  |   Management Center maximum visible instance count.

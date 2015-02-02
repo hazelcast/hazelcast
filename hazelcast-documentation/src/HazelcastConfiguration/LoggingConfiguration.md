@@ -5,11 +5,11 @@ Hazelcast has a flexible logging configuration and does not depend on any loggin
 
 To use built-in adaptors, you should set `hazelcast.logging.type` property to one of predefined types below.
 
--   **jdk**: JDK logging (default)
+-   **slf4j**: Slf4j (default if slf4j found in classpath)
+
+-   **jdk**: JDK logging (default if slf4j not found in classpath)
 
 -   **log4j**: Log4j
-
--   **slf4j**: Slf4j
 
 -   **none**: disable logging
 
