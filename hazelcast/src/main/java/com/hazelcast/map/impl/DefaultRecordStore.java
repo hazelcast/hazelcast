@@ -772,6 +772,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        mergingEntry = EntryViews.convertToLazyEntryView(mergingEntry, serializationService, mergePolicy);
         Object newValue;
         if (record == null) {
             final Object notExistingKey = mapServiceContext.toObject(key);
