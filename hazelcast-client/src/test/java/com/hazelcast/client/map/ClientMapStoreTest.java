@@ -11,14 +11,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.map.impl.mapstore.writebehind.ReachedMaxSizeException;
+import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -111,12 +110,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
     }
 
-    // Default impl. of write-behind-queue has no capacity it is bounded by number of elements in a map.
-    // we can open this test, when we have a configuration parameter for write-coalescing.
-    // for now this test should be ignored since default mode is write-coalescing.
-    // please see https://github.com/hazelcast/hazelcast/issues/3056 for additional details
     @Test
-    @Ignore
     public void mapSize_After_MapStore_OperationQueue_OverFlow_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
@@ -127,6 +121,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(store);
         mapStoreConfig.setWriteDelaySeconds(delaySeconds);
+        mapStoreConfig.setWriteCoalescing(false);
 
         mapConfig.setName(MAP_NAME);
 
@@ -147,11 +142,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         assertEquals(max - 1, map.size());
     }
 
-    // Default impl. of write-behind-queue has no capacity it is bounded by number of elements in a map.
-    // we can open this test, when we have a configuration parameter for write-coalescing.
-    // for now this test should be ignored since default mode is write-coalescing.
     @Test(expected = ReachedMaxSizeException.class)
-    @Ignore
     public void mapStore_OperationQueue_AtMaxCapacity_Test() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
@@ -162,6 +153,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(store);
         mapStoreConfig.setWriteDelaySeconds(longDelaySec);
+        mapStoreConfig.setWriteCoalescing(false);
 
         mapConfig.setName(MAP_NAME);
 

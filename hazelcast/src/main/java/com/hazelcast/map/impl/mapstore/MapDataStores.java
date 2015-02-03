@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
-import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
+import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createBoundedWriteBehindQueue;
 
 /**
  * Factory class responsible for creating various data store implementations.
@@ -57,7 +57,7 @@ public final class MapDataStores {
         final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
         final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
         return writeCoalescing ? createDefaultWriteBehindQueue()
-                : createSafeBoundedArrayWriteBehindQueue(capacity, counter);
+                : createBoundedWriteBehindQueue(capacity, counter);
     }
 
     /**
