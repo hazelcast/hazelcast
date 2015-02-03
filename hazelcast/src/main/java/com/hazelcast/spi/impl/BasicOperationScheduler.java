@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -24,14 +23,12 @@ import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
@@ -297,34 +294,11 @@ public final class BasicOperationScheduler {
     }
 
     public void execute(Operation op) {
-        String executorName = op.getExecutorName();
-        if (executorName == null) {
-            int partitionId = op.getPartitionId();
-            boolean hasPriority = op.isUrgent();
-            execute(op, partitionId, hasPriority);
-        } else {
-            executeOnExternalExecutor(op, executorName);
-        }
+        execute(op, op.getPartitionId(), op.isUrgent());
     }
 
     public void execute(Runnable task, int partitionId) {
         execute(task, partitionId, false);
-    }
-
-    private void executeOnExternalExecutor(Operation op, String executorName) {
-        ExecutorService executor = executionService.getExecutor(executorName);
-        if (executor == null) {
-            throw new IllegalStateException("Could not found executor with name: " + executorName);
-        }
-        if (op instanceof PartitionAware) {
-            throw new IllegalStateException("PartitionAwareOperation " + op + " can't be executed on a "
-                    + "custom executor with name: " + executorName);
-        }
-        if (op instanceof UrgentSystemOperation) {
-            throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
-                    + "executor with name: " + executorName);
-        }
-        executor.execute(new LocalOperationProcessor(op));
     }
 
     public void execute(Packet packet) {
