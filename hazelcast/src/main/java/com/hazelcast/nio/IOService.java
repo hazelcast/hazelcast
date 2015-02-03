@@ -121,4 +121,6 @@ public interface IOService {
     PacketReader createPacketReader(TcpIpConnection connection);
 
     PacketWriter createPacketWriter(TcpIpConnection connection);
+
+    void shutdown();
 }

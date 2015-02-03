@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Tracing;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
@@ -586,6 +587,8 @@ final class BasicOperationService implements InternalOperationService {
             executedOperationsCount.incrementAndGet();
 
             try {
+                traceSlowInvocation(op);
+
                 if (timeout(op)) {
                     return;
                 }
@@ -603,6 +606,24 @@ final class BasicOperationService implements InternalOperationService {
                 afterRun(op);
             } catch (Throwable e) {
                 handleOperationError(op, e);
+            }
+        }
+
+        private void traceSlowInvocation(Operation op) {
+            if (Tracing.DELAYED_INVOCATION_ENABLED) {
+                long invocationTime = op.getInvocationTime();
+                if (invocationTime > 0) {
+                    long diff = nodeEngine.getClusterTime() - invocationTime;
+                    if (diff > Tracing.DELAYED_INVOCATION_THRESHOLD_MS) {
+                        StringBuilder sb = new StringBuilder(Tracing.DELAYED_INVOCATION_CODE)
+                                .append(" Operation ")
+                                .append(op)
+                                .append(" has been invoked ")
+                                .append(diff)
+                                .append(" ms ago.");
+                        logger.warning(sb.toString());
+                    }
+                }
             }
         }
 
