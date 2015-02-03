@@ -67,7 +67,7 @@ public interface InternalOperationService extends OperationService {
     /**
      * Sends a response to a remote machine.
      *
-     * This methods is deprecated since 3.5. It is an implementation detail
+     * This method is deprecated since 3.5. It is an implementation detail.
      *
      * @param response the response to send.
      * @param target   the address of the target machine
