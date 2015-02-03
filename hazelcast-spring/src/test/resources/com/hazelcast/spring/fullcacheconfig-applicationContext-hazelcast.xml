@@ -19,10 +19,13 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:p="http://www.springframework.org/schema/p"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xmlns:s="http://www.hazelcast.com/schema/sample"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd
+		http://www.hazelcast.com/schema/sample
+		hazelcast-sample-service.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -262,6 +265,23 @@
                 <hz:attribute name="attribute.double" type="double">0.0d</hz:attribute>
                 <hz:attribute name="attribute.float" type="float">1234.5678</hz:attribute>
             </hz:member-attributes>
+            <hz:services>
+                <hz:service>
+                    <hz:name>my-service</hz:name>
+                    <hz:class-name>com.hazelcast.spring.MyService</hz:class-name>
+                    <hz:properties>
+                        <hz:property name="prop1">prop1-value</hz:property>
+                        <hz:property name="prop2">prop2-value</hz:property>
+                    </hz:properties>
+                    <hz:configuration parser="com.hazelcast.spring.MyServiceConfigParser">
+                        <s:my-service id="my-service">
+                            <s:string-prop>prop1</s:string-prop>
+                            <s:int-prop>123</s:int-prop>
+                            <s:bool-prop>true</s:bool-prop>
+                        </s:my-service>
+                    </hz:configuration>
+                </hz:service>
+            </hz:services>
         </hz:config>
     </hz:hazelcast>
 
