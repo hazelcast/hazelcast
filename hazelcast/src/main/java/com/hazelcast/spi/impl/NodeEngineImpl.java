@@ -38,7 +38,6 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
@@ -357,15 +356,15 @@ public class NodeEngineImpl implements NodeEngine {
         }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
-            final Operation pjOp = service.getPostJoinOperation();
-            if (pjOp != null) {
-                if (pjOp instanceof PartitionAwareOperation) {
+            final Operation postJoinOperation = service.getPostJoinOperation();
+            if (postJoinOperation != null) {
+                if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(
                             "Post-join operations cannot implement PartitionAwareOperation! Service: " + service + ", Operation: "
-                                    + pjOp);
+                                    + postJoinOperation);
                     continue;
                 }
-                postJoinOps.add(pjOp);
+                postJoinOps.add(postJoinOperation);
             }
         }
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);

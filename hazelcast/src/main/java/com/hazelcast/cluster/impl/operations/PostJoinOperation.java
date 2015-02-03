@@ -24,7 +24,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 
@@ -43,8 +42,8 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
             if (op == null) {
                 throw new NullPointerException();
             }
-            if (op instanceof PartitionAwareOperation) {
-                throw new IllegalArgumentException("Post join operation can not be a PartitionAwareOperation!");
+            if (op.getPartitionId() >= 0) {
+                throw new IllegalArgumentException("Post join operation can not have a partition-id!");
             }
         }
         // we may need to do array copy!

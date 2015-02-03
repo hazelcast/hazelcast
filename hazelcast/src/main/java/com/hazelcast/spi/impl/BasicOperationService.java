@@ -41,7 +41,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
@@ -338,7 +337,7 @@ final class BasicOperationService implements InternalOperationService {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
         Data data = nodeEngine.toData(op);
-        int partitionId = scheduler.getPartitionIdForExecution(op);
+        int partitionId = op.getPartitionId();
         Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         if (op instanceof UrgentSystemOperation) {
@@ -670,13 +669,9 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void ensureNoPartitionProblems(Operation op) {
-            if (!(op instanceof PartitionAwareOperation)) {
-                return;
-            }
-
             int partitionId = op.getPartitionId();
             if (partitionId < 0) {
-                throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
+                return;
             }
 
             InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
