@@ -20,6 +20,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -196,6 +197,16 @@ public final class ReflectionHelper {
 
     public static Comparable extractValue(Object object, String attributeName) throws Exception {
         return (Comparable) createGetter(object, attributeName).getValue(object);
+    }
+
+    public static <T> T invokeMethod(Object object, String methodName) throws RuntimeException {
+        try {
+            Method method = object.getClass().getMethod(methodName);
+            method.setAccessible(true);
+            return (T) method.invoke(object);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     private abstract static class Getter {
