@@ -296,7 +296,7 @@ final class BasicOperationService implements InternalOperationService {
             final long invocationTime = op.getInvocationTime();
             final long expireTime = invocationTime + callTimeout;
             if (expireTime > 0 && expireTime < Long.MAX_VALUE) {
-                final long now = nodeEngine.getClusterTime();
+                final long now = nodeEngine.getClusterService().getClusterClock().getClusterTime();
                 if (expireTime < now) {
                     return true;
                 }
