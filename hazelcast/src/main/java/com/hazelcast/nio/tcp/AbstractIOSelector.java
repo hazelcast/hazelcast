@@ -163,7 +163,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    private void handleSelectionKeyFailure(final Throwable e) {
+    public void handleSelectionKeyFailure(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
