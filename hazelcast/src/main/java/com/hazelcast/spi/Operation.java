@@ -46,8 +46,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_WAIT_TIMEOUT_SET = 1 << 3;
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
-    static final int BITMASK_EXECUTOR_NAME_SET = 1 << 6;
-    static final int BITMASK_SERVICE_NAME_SET = 1 << 7;
+    static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
 
     // serialized
     private String serviceName;
@@ -59,7 +58,6 @@ public abstract class Operation implements DataSerializable {
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
     private String callerUuid;
-    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -145,15 +143,6 @@ public abstract class Operation implements DataSerializable {
         setFlag(replicaIndex != 0, BITMASK_REPLICA_INDEX_SET);
         this.replicaIndex = replicaIndex;
         return this;
-    }
-
-    public String getExecutorName() {
-        return executorName;
-    }
-
-    public void setExecutorName(String executorName) {
-        this.executorName = executorName;
-        setFlag(executorName != null, BITMASK_EXECUTOR_NAME_SET);
     }
 
     public final long getCallId() {
@@ -361,9 +350,6 @@ public abstract class Operation implements DataSerializable {
             out.writeUTF(callerUuid);
         }
 
-        if (isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
-            out.writeUTF(executorName);
-        }
         writeInternal(out);
     }
 
@@ -405,9 +391,6 @@ public abstract class Operation implements DataSerializable {
             callerUuid = in.readUTF();
         }
 
-        if (isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
-            executorName = in.readUTF();
-        }
         readInternal(in);
     }
 
