@@ -339,7 +339,7 @@ public class EventServiceImpl implements EventService {
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
             packet.setHeader(Packet.HEADER_EVENT);
-            if (!nodeEngine.send(packet, subscriber)) {
+            if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {
                 if (nodeEngine.isActive()) {
                     logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
                 }

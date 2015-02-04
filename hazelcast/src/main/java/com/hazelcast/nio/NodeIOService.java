@@ -104,7 +104,7 @@ public class NodeIOService implements IOService {
                 member.didRead();
             }
         }
-        nodeEngine.handlePacket(packet);
+        nodeEngine.getPacketTransceiver().receive(packet);
     }
 
     @Override
