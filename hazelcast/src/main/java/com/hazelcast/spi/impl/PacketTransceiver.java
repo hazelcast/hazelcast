@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * The PacketTransceiver is responsible for receiving and transmitting {@link com.hazelcast.nio.Packet} instances.

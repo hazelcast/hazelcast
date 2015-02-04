@@ -81,7 +81,7 @@ public class NodeEngineImpl implements NodeEngine {
                 node, logger, operationService, eventService, wanReplicationService, executionService);
     }
 
-    public PacketTransceiver getPacketTransceiver(){
+    public PacketTransceiver getPacketTransceiver() {
         return packetTransceiver;
     }
 
