@@ -1,12 +1,12 @@
 ### Cluster Quorum
 
-Hazelcast Cluster Quorum enables you to define minimum number of machines required in a cluster to remain in an operational state. If the number of machines is below the defined minimum at any time operations will be rejected and the rejected operations will return a `QuorumException` to their callers.
+Hazelcast Cluster Quorum enables you to define the minimum number of machines required in a cluster to remain in an operational state. If the number of machines is below the defined minimum at any time, the operations are rejected and the rejected operations return a `QuorumException` to their callers.
 
 When a network partition happens, Hazelcast behaves as a AP solution, with cluster quorum you can tune your hazelcast instance, by rejecting updates with a minimum threshold, towards to a CP solution.
 
 By default Hazelcast invokes Cluster Quorum when any change happens on the member list. But you can manually trigger Cluster Quorum at any time.
 
-**Note: Currently cluster quorum only applies to the Map and Transactional Map, support for other data structures will be added soon.**
+![image](images/NoteSmall.jpg) ***NOTE:*** *Currently cluster quorum only applies to the Map and Transactional Map, support for other data structures will be added soon.*
 
 
 #### Configuration

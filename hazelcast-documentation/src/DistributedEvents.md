@@ -215,3 +215,10 @@ You can add event listeners also to a Hazelcast Java client. You can configure t
 *Please refer to the [Client Listenerconfig section](#client-listenerconfig) for more information.*
 <br></br>
 
+<br></br>
+***RELATED INFORMATION***
+
+*Please refer to the [Listener Configurations section](#listener-configurations) for a configuration wrap-up of event listeners.*
+<br></br>
+
+
