@@ -44,11 +44,11 @@ public class MemberStateImpl implements MemberState {
 
     private String address;
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    private Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
-    private Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
-    private Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
-    private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
-    private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
+    private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
+    private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
+    private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
+    private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
+    private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
     private SerializableMXBeans beans = new SerializableMXBeans();
@@ -63,27 +63,27 @@ public class MemberStateImpl implements MemberState {
         JsonObject root = new JsonObject();
         root.add("address", address);
         JsonObject mapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
+        for (Map.Entry<String, LocalMapStats> entry : mapStats.entrySet()) {
             mapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("mapStats", mapStatsObject);
         JsonObject multimapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
+        for (Map.Entry<String, LocalMultiMapStats> entry : multiMapStats.entrySet()) {
             multimapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("multiMapStats", multimapStatsObject);
         JsonObject queueStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
+        for (Map.Entry<String, LocalQueueStats> entry : queueStats.entrySet()) {
             queueStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("queueStats", queueStatsObject);
         JsonObject topicStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
+        for (Map.Entry<String, LocalTopicStats> entry : topicStats.entrySet()) {
             topicStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("topicStats", topicStatsObject);
         JsonObject executorStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
+        for (Map.Entry<String, LocalExecutorStats> entry : executorStats.entrySet()) {
             executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("executorStats", executorStatsObject);
@@ -211,23 +211,23 @@ public class MemberStateImpl implements MemberState {
         this.address = address;
     }
 
-    public void putLocalMapStats(String name, LocalMapStatsImpl localMapStats) {
+    public void putLocalMapStats(String name, LocalMapStats localMapStats) {
         mapStats.put(name, localMapStats);
     }
 
-    public void putLocalMultiMapStats(String name, LocalMultiMapStatsImpl localMultiMapStats) {
+    public void putLocalMultiMapStats(String name, LocalMultiMapStats localMultiMapStats) {
         multiMapStats.put(name, localMultiMapStats);
     }
 
-    public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
+    public void putLocalQueueStats(String name, LocalQueueStats localQueueStats) {
         queueStats.put(name, localQueueStats);
     }
 
-    public void putLocalTopicStats(String name, LocalTopicStatsImpl localTopicStats) {
+    public void putLocalTopicStats(String name, LocalTopicStats localTopicStats) {
         topicStats.put(name, localTopicStats);
     }
 
-    public void putLocalExecutorStats(String name, LocalExecutorStatsImpl localExecutorStats) {
+    public void putLocalExecutorStats(String name, LocalExecutorStats localExecutorStats) {
         executorStats.put(name, localExecutorStats);
     }
 

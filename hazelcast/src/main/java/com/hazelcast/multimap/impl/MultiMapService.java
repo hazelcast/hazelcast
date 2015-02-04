@@ -25,7 +25,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EventData;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
@@ -45,6 +45,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -62,7 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class MultiMapService implements ManagedService, RemoteService, MigrationAwareService,
-        EventPublishingService<EventData, EntryListener>, TransactionalService {
+        EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
     private static final int STATS_MAP_INITIAL_CAPACITY = 1000;
@@ -265,7 +266,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         clearMigrationData(partitionId);
     }
 
-    public LocalMapStats createStats(String name) {
+    public LocalMultiMapStats createStats(String name) {
         LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(name);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
@@ -337,5 +338,18 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
     @Override
     public void dispatchEvent(EventData event, EntryListener listener) {
         dispatcher.dispatchEvent(event, listener);
+    }
+
+    @Override
+    public Map<String, LocalMultiMapStats> getStats() {
+        Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
+        for (int i = 0; i < partitionContainers.length; i++) {
+            for (String name : partitionContainers[i].containerMap.keySet()) {
+                if (!multiMapStats.containsKey(name)) {
+                    multiMapStats.put(name, createStats(name));
+                }
+            }
+        }
+        return multiMapStats;
     }
 }

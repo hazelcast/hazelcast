@@ -414,6 +414,7 @@
     <suppress checks="ReturnCount" files="com.hazelcast.multimap.impl.operations.MultiMapOperationFactory"/>
     <!-- todo: needs to be fixed -->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.impl.MultiMapService"/>
+    <suppress checks="MethodCount" files="com.hazelcast.multimap.impl.MultiMapService"/>
 
     <!-- Util -->
     <!-- /*
