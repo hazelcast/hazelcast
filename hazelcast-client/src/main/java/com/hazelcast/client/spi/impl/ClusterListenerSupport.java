@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
@@ -56,19 +71,19 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
     protected ClientClusterServiceImpl clusterService;
 
     private final Collection<AddressProvider> addressProviders;
-    private final ManagerAuthenticator managerAuthenticator;
+    private final ManagerAuthenticator managerAuthenticator = new ManagerAuthenticator();
+    private final boolean shuffleMemberList;
+
+    private Credentials credentials;
     private HazelcastClientInstanceImpl client;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
     private volatile Address ownerConnectionAddress;
-
-
-    private Credentials credentials;
     private volatile ClientPrincipal principal;
 
-    public ClusterListenerSupport(Collection<AddressProvider> addressProviders) {
+    public ClusterListenerSupport(Collection<AddressProvider> addressProviders, boolean shuffleMemberList) {
         this.addressProviders = addressProviders;
-        managerAuthenticator = new ManagerAuthenticator();
+        this.shuffleMemberList = shuffleMemberList;
     }
 
     public void init(HazelcastClientInstanceImpl client) {
@@ -113,7 +128,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
 
     public void connectToCluster() {
         try {
-            ownerConnectionAddress = connectToOne();
+            connectToOne();
         } catch (Exception e) {
             client.getLifecycleService().shutdown();
             throw ExceptionUtil.rethrow(e);
@@ -135,17 +150,20 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
         }
     }
 
-    private Collection<InetSocketAddress> getSocketAddresses() throws Exception {
+    private Collection<InetSocketAddress> getSocketAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
         if (!members.isEmpty()) {
             for (MemberImpl member : members) {
                 socketAddresses.add(member.getInetSocketAddress());
             }
-            Collections.shuffle(socketAddresses);
         }
 
         for (AddressProvider addressProvider : addressProviders) {
             socketAddresses.addAll(addressProvider.loadAddresses());
+        }
+
+        if (shuffleMemberList) {
+            Collections.shuffle(socketAddresses);
         }
 
         return socketAddresses;
@@ -230,7 +248,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
         return principal;
     }
 
-    private Address connectToOne() throws Exception {
+    private void connectToOne() throws Exception {
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
@@ -239,27 +257,19 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
 
         int attempt = 0;
         Throwable lastError = null;
-        Set<Address> triedAddresses = new HashSet<Address>();
-        while (true) {
+        Set<InetSocketAddress> triedAddresses = new HashSet<InetSocketAddress>();
+        while (attempt < connectionAttemptLimit) {
+            attempt++;
             final long nextTry = Clock.currentTimeMillis() + connectionAttemptPeriod;
-            final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
-            for (InetSocketAddress isa : socketAddresses) {
-                Address address = new Address(isa);
-                triedAddresses.add(address);
-                LOGGER.finest("Trying to connect to " + address);
-                try {
-                    final Connection conn = connectionManager.getOrConnect(address, managerAuthenticator);
-                    clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
-                    return conn.getEndPoint();
-                } catch (Exception e) {
-                    lastError = e;
-                    Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
-                    LOGGER.log(level, "Exception during initial connection to " + address, e);
-                }
+
+            final Throwable throwable = connect(triedAddresses);
+
+            if (throwable == null) {
+                return;
             }
-            if (attempt++ >= connectionAttemptLimit) {
-                break;
-            }
+
+            lastError = throwable;
+
             final long remainingTime = nextTry - Clock.currentTimeMillis();
             LOGGER.warning(
                     String.format("Unable to get alive cluster connection,"
@@ -276,6 +286,29 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
         }
         throw new IllegalStateException("Unable to connect to any address in the config! "
                 + "The following addresses were tried:" + triedAddresses, lastError);
+    }
+
+    private Throwable connect(Set<InetSocketAddress> triedAddresses) {
+        final Collection<InetSocketAddress> socketAddresses = getSocketAddresses();
+        Throwable lastError = null;
+        for (InetSocketAddress inetSocketAddress : socketAddresses) {
+            try {
+                triedAddresses.add(inetSocketAddress);
+                Address address = new Address(inetSocketAddress);
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Trying to connect to " + address);
+                }
+                final Connection connection = connectionManager.getOrConnect(address, managerAuthenticator);
+                clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
+                ownerConnectionAddress = connection.getEndPoint();
+                return null;
+            } catch (Exception e) {
+                lastError = e;
+                Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;
+                LOGGER.log(level, "Exception during initial connection to " + inetSocketAddress, e);
+            }
+        }
+        return lastError;
     }
 
     @Override
