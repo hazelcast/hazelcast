@@ -371,7 +371,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public long getClusterTime() {
-        return node.getClusterService().getClusterTime();
+        return node.getClusterService().getClusterClock().getClusterTime();
     }
 
     @Override
