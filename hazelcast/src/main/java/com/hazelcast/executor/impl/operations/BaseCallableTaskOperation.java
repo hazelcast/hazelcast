@@ -39,6 +39,14 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     protected transient Callable callable;
     private Data callableData;
 
+    // transient.
+    // We are cheating a bit here. The idea is the following. A BaseCallableTaskOperation is always going to be send to a
+    // partition, but the operation doesn't send a response directly and therefor when a WrongTargetException is thronw (e.g.
+    // partition has moved) the operation is not retried. To prevent this from happening, we say that we return a response until
+    // the before-run method is called. Then we know we are going to be offloaded to a different thread and we are not returning
+    // a response immediately. So then we switch to 'returnsResponse = false'.
+    private boolean returnsResponse = true;
+
     public BaseCallableTaskOperation() {
     }
 
@@ -50,6 +58,8 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
 
     @Override
     public final void beforeRun() throws Exception {
+        returnsResponse = false;
+
         callable = getCallable();
         ManagedContext managedContext = getManagedContext();
 
@@ -94,7 +104,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
 
     @Override
     public final boolean returnsResponse() {
-        return false;
+        return returnsResponse;
     }
 
     @Override
