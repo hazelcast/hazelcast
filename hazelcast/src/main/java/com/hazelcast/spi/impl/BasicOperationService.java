@@ -344,7 +344,7 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
 
     @Override
@@ -363,7 +363,7 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
 
     public void registerInvocation(BasicInvocation invocation) {
