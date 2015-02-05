@@ -56,7 +56,6 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     }
 
     @Override
-    @PrivateApi
     public void receive(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
             operationService.executeOperation(packet);
