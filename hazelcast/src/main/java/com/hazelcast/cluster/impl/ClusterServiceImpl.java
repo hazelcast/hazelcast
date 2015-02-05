@@ -66,6 +66,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ValidationUtil;
@@ -852,7 +853,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 public void run() {
                     lifecycleService.fireLifecycleEvent(MERGING);
                     final NodeEngineImpl nodeEngine = node.nodeEngine;
-                    final Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
+                    ServiceManager serviceManager = nodeEngine.getServiceManager();
+                    final Collection<SplitBrainHandlerService> services = serviceManager.getServices(SplitBrainHandlerService.class);
                     final Collection<Runnable> tasks = new LinkedList<Runnable>();
                     for (SplitBrainHandlerService service : services) {
                         final Runnable runnable = service.prepareMergeRunnable();
@@ -860,7 +862,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             tasks.add(runnable);
                         }
                     }
-                    final Collection<ManagedService> managedServices = nodeEngine.getServices(ManagedService.class);
+                    final Collection<ManagedService> managedServices = serviceManager.getServices(ManagedService.class);
                     for (ManagedService service : managedServices) {
                         service.reset();
                     }
@@ -1177,7 +1179,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private void sendMembershipEventNotifications(final MemberImpl member, Set<Member> members, final boolean added) {
         final int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
         final MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member, eventType, members);
-        final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        final Collection<MembershipAwareService> membershipAwareServices = serviceManager.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
@@ -1202,7 +1205,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key, Object value) {
         final MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(getClusterProxy(), member, operationType, key, value);
-        final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        final Collection<MembershipAwareService> membershipAwareServices = serviceManager.getServices(MembershipAwareService.class);
         final MemberAttributeServiceEvent event = new MemberAttributeServiceEvent(getClusterProxy(), member, operationType, key, value);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             for (final MembershipAwareService service : membershipAwareServices) {

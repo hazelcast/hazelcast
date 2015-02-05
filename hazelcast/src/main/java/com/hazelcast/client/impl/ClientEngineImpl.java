@@ -60,6 +60,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
 
@@ -467,7 +468,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 return;
             }
 
-            Object service = nodeEngine.getService(serviceName);
+            ServiceManager serviceManager = nodeEngine.getServiceManager();
+            Object service = serviceManager.getService(serviceName);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     throw new IllegalArgumentException("No service registered with name: " + serviceName);

@@ -256,10 +256,9 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
         original.setAccessible(true);
 
         HazelcastInstanceImpl impl1 = (HazelcastInstanceImpl) original.get(node1);
-        HazelcastInstanceImpl impl2 = (HazelcastInstanceImpl) original.get(node2);
 
-        cacheServiceOnNode1 = impl1.node.getNodeEngine().getService(CacheService.SERVICE_NAME);
-        cacheServiceOnNode2 = impl2.node.getNodeEngine().getService(CacheService.SERVICE_NAME);
+        cacheServiceOnNode1 = getService(node1, CacheService.SERVICE_NAME);
+        cacheServiceOnNode2 = getService(node2, CacheService.SERVICE_NAME);
 
         serializationService = impl1.node.getNodeEngine().getSerializationService();
     }

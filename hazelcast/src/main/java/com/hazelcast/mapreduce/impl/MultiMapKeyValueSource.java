@@ -30,7 +30,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.InternalNodeEngine;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -54,7 +55,7 @@ public class MultiMapKeyValueSource<K, V>
     private String multiMapName;
 
     private transient int partitionId;
-    private transient SerializationService ss;
+    private transient SerializationService serializationService;
     private transient MultiMapContainer multiMapContainer;
     private transient boolean isBinary;
 
@@ -72,11 +73,12 @@ public class MultiMapKeyValueSource<K, V>
 
     @Override
     public boolean open(NodeEngine nodeEngine) {
-        NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
-        InternalPartitionService ps = nei.getPartitionService();
-        MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);
-        ss = nei.getSerializationService();
-        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        InternalNodeEngine internalNodeEngine = (InternalNodeEngine) nodeEngine;
+        InternalPartitionService partitionService = internalNodeEngine.getPartitionService();
+        ServiceManager serviceManager = internalNodeEngine.getServiceManager();
+        MultiMapService multiMapService = serviceManager.getService(MultiMapService.SERVICE_NAME);
+        serializationService = internalNodeEngine.getSerializationService();
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
         if (partitionOwner == null) {
             return false;
         }
@@ -103,7 +105,7 @@ public class MultiMapKeyValueSource<K, V>
 
         if (keyIterator != null && keyIterator.hasNext()) {
             Data dataKey = keyIterator.next();
-            key = (K) ss.toObject(dataKey);
+            key = (K) serializationService.toObject(dataKey);
             MultiMapWrapper wrapper = multiMapContainer.getMultiMapWrapperOrNull(dataKey);
             valueIterator = wrapper.getCollection(true).iterator();
             return hasNext();
@@ -127,7 +129,7 @@ public class MultiMapKeyValueSource<K, V>
         }
         simpleEntry.setKey(key);
         Object value = multiMapRecord.getObject();
-        simpleEntry.setValue((V) (isBinary ? ss.toObject((Data) value) : value));
+        simpleEntry.setValue((V) (isBinary ? serializationService.toObject((Data) value) : value));
         return simpleEntry;
     }
 

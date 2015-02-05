@@ -36,7 +36,7 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.InternalNodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -81,12 +81,12 @@ public class MapReduceService
     private final InternalPartitionService partitionService;
     private final ClusterService clusterService;
 
-    private final NodeEngineImpl nodeEngine;
+    private final InternalNodeEngine nodeEngine;
     private final Config config;
 
     public MapReduceService(NodeEngine nodeEngine) {
         this.config = nodeEngine.getConfig();
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.nodeEngine = (InternalNodeEngine) nodeEngine;
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService =  nodeEngine.getPartitionService();
 

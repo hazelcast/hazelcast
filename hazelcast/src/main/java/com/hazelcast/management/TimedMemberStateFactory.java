@@ -48,6 +48,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.topic.impl.TopicService;
 
 import java.util.ArrayList;
@@ -75,7 +76,8 @@ public class TimedMemberStateFactory {
     public TimedMemberStateFactory(final HazelcastInstanceImpl instance) {
         this.instance = instance;
         maxVisibleInstanceCount = instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
-        cacheServiceEnabled = instance.node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
+        ServiceManager serviceManager = instance.node.nodeEngine.getServiceManager();
+        cacheServiceEnabled = serviceManager.getService(CacheService.SERVICE_NAME) != null;
         logger = instance.node.getLogger(TimedMemberStateFactory.class);
     }
 
@@ -90,7 +92,8 @@ public class TimedMemberStateFactory {
 
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
-        Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
+        ServiceManager serviceManager = instance.node.nodeEngine.getServiceManager();
+        Collection<StatisticsAwareService> services = serviceManager.getServices(StatisticsAwareService.class);
         createMemberState(memberState, services);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         TimedMemberState timedMemberState = new TimedMemberState();

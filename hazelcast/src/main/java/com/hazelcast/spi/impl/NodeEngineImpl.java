@@ -50,7 +50,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-public class NodeEngineImpl implements NodeEngine {
+public class NodeEngineImpl implements InternalNodeEngine {
 
     final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
@@ -83,6 +83,11 @@ public class NodeEngineImpl implements NodeEngine {
 
     public PacketTransceiver getPacketTransceiver() {
         return packetTransceiver;
+    }
+
+    @Override
+    public <T extends SharedService> T getSharedService(String serviceName) {
+        return serviceManager.getSharedService(serviceName);
     }
 
     @PrivateApi
@@ -119,6 +124,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public EventService getEventService() {
         return eventService;
+    }
+
+    @Override
+    public ServiceManager getServiceManager() {
+        return serviceManager;
     }
 
     @Override
@@ -214,38 +224,6 @@ public class NodeEngineImpl implements NodeEngine {
 
 
     @PrivateApi
-    public <T> T getService(String serviceName) {
-        final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
-        return serviceInfo != null ? (T) serviceInfo.getService() : null;
-    }
-
-    public <T extends SharedService> T getSharedService(String serviceName) {
-        final Object service = getService(serviceName);
-        if (service == null) {
-            return null;
-        }
-        if (service instanceof SharedService) {
-            return (T) service;
-        }
-        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
-    }
-
-    /**
-     * Returns a list of services matching provides service class/interface.
-     * <br></br>
-     * <b>CoreServices will be placed at the beginning of the list.</b>
-     */
-    @PrivateApi
-    public <S> Collection<S> getServices(Class<S> serviceClass) {
-        return serviceManager.getServices(serviceClass);
-    }
-
-    @PrivateApi
-    public Collection<ServiceInfo> getServiceInfos(Class serviceClass) {
-        return serviceManager.getServiceInfos(serviceClass);
-    }
-
-    @PrivateApi
     public Node getNode() {
         return node;
     }
@@ -281,7 +259,7 @@ public class NodeEngineImpl implements NodeEngine {
         if (eventPostJoinOp != null) {
             postJoinOps.add(eventPostJoinOp);
         }
-        Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
+        Collection<PostJoinAwareService> services = serviceManager.getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
             final Operation postJoinOperation = service.getPostJoinOperation();
             if (postJoinOperation != null) {

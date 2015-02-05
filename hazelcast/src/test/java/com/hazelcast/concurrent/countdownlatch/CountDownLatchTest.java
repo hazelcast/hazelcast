@@ -111,7 +111,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     public void testCountDown_whenReachZero_thenLatchRemoved() {
         HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
-        CountDownLatchService service = getNode(instance).getNodeEngine().getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = getNode(instance).getNodeEngine().getServiceManager().getService(CountDownLatchService.SERVICE_NAME);
 
         latch.trySetCount(1);
         assertTrue(service.containsLatch(latch.getName()));
@@ -136,8 +136,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
     public void testDestroy() {
         HazelcastInstance instance = createHazelcastInstance();
         ICountDownLatch latch = instance.getCountDownLatch(randomString());
-        NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
-        CountDownLatchService service = nodeEngine.getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = getService(instance, CountDownLatchService.SERVICE_NAME);
 
         latch.destroy();
         assertFalse(service.containsLatch(latch.getName()));

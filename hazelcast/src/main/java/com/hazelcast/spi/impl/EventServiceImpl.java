@@ -552,7 +552,8 @@ public class EventServiceImpl implements EventService {
         }
 
         private EventPublishingService<Object, Object> getPublishingService(String serviceName) {
-            EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
+            ServiceManager serviceManager = nodeEngine.getServiceManager();
+            EventPublishingService<Object, Object> service = serviceManager.getService(serviceName);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     logger.warning("There is no service named: " + serviceName);
@@ -663,7 +664,8 @@ public class EventServiceImpl implements EventService {
 
         @Override
         public void run() {
-            final EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
+            ServiceManager serviceManager = nodeEngine.getServiceManager();
+            final EventPublishingService<Object, Object> service = serviceManager.getService(serviceName);
             if (service != null) {
                 service.dispatchEvent(event, listener);
             } else {

@@ -28,7 +28,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.InternalNodeEngine;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -52,7 +53,7 @@ public class MapKeyValueSource<K, V>
     private String mapName;
 
     private transient int partitionId;
-    private transient SerializationService ss;
+    private transient SerializationService serializationService;
     private transient Iterator<Map.Entry<Data, Data>> iterator;
     private transient Map.Entry<Data, Data> nextElement;
 
@@ -65,11 +66,15 @@ public class MapKeyValueSource<K, V>
 
     @Override
     public boolean open(NodeEngine nodeEngine) {
-        NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
-        InternalPartitionService ps = nei.getPartitionService();
-        MapService mapService = nei.getService(MapService.SERVICE_NAME);
-        ss = nei.getSerializationService();
-        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        InternalNodeEngine internalNodeEngine = (InternalNodeEngine) nodeEngine;
+
+        ServiceManager serviceManager = internalNodeEngine.getServiceManager();
+        MapService mapService = serviceManager.getService(MapService.SERVICE_NAME);
+
+        serializationService = internalNodeEngine.getSerializationService();
+
+        InternalPartitionService partitionService = internalNodeEngine.getPartitionService();
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
         if (partitionOwner == null) {
             return false;
         }
@@ -96,7 +101,7 @@ public class MapKeyValueSource<K, V>
             throw new IllegalStateException("no more elements");
         }
         Data keyData = nextElement.getKey();
-        K key = (K) ss.toObject(keyData);
+        K key = (K) serializationService.toObject(keyData);
         simpleEntry.setKeyData(keyData);
         simpleEntry.setKey(key);
         return key;
@@ -108,9 +113,9 @@ public class MapKeyValueSource<K, V>
             throw new IllegalStateException("no more elements");
         }
         if (!nextElement.getKey().equals(simpleEntry.getKeyData())) {
-            simpleEntry.setKey((K) ss.toObject(nextElement.getKey()));
+            simpleEntry.setKey((K) serializationService.toObject(nextElement.getKey()));
         }
-        simpleEntry.setValue((V) ss.toObject(nextElement.getValue()));
+        simpleEntry.setValue((V) serializationService.toObject(nextElement.getValue()));
         return simpleEntry;
     }
 

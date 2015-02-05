@@ -98,7 +98,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
 
             HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(proxy);
             NodeEngineImpl nodeEngine = impl.node.nodeEngine;
-            CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+            CacheService cacheService = getService(impl, CacheService.SERVICE_NAME);
 
             int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 

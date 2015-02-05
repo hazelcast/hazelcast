@@ -163,7 +163,8 @@ public class ProxyServiceImpl
         if (registry != null) {
             registry.destroyProxy(name, fireEvent);
         }
-        final RemoteService service = nodeEngine.getService(serviceName);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        final RemoteService service = serviceManager.getService(serviceName);
         if (service != null) {
             service.destroyDistributedObject(name);
         }
@@ -283,7 +284,8 @@ public class ProxyServiceImpl
 
         private ProxyRegistry(String serviceName) {
             this.serviceName = serviceName;
-            this.service = nodeEngine.getService(serviceName);
+            ServiceManager serviceManager = nodeEngine.getServiceManager();
+            this.service = serviceManager.getService(serviceName);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     throw new IllegalArgumentException("Unknown service: " + serviceName);

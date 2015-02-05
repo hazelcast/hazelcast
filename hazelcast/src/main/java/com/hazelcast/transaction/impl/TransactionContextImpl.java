@@ -29,6 +29,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -134,7 +135,8 @@ final class TransactionContextImpl implements TransactionContext {
             return obj;
         }
 
-        final Object service = nodeEngine.getService(serviceName);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        final Object service = serviceManager.getService(serviceName);
         if (service instanceof TransactionalService) {
             nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
             obj = ((TransactionalService) service).createTransactionalObject(name, transaction);

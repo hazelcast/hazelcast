@@ -36,6 +36,7 @@ import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -196,7 +197,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
 
         Collection<Operation> tasks = new LinkedList<Operation>();
-        for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        for (ServiceInfo serviceInfo : serviceManager.getServiceInfos(MigrationAwareService.class)) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
             service.beforeMigration(migrationEvent);
             Operation op = service.prepareReplicationOperation(replicationEvent);

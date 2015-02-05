@@ -26,6 +26,8 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.util.StringUtil;
 import org.junit.After;
 import org.junit.ComparisonFailure;
@@ -203,6 +205,12 @@ public abstract class HazelcastTestSupport {
 
     public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
+    }
+
+    public static <T> T getService(HazelcastInstance hz, String name){
+        NodeEngineImpl nodeEngine = getNode(hz).getNodeEngine();
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        return serviceManager.getService(name);
     }
 
     public static void warmUpPartitions(HazelcastInstance... instances) {

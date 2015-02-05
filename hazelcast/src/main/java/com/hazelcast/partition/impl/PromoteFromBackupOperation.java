@@ -32,6 +32,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -88,7 +89,8 @@ final class PromoteFromBackupOperation extends AbstractOperation
 
     private void sendToAllMigrationAwareServices(PartitionMigrationEvent event) {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        for (MigrationAwareService service : serviceManager.getServices(MigrationAwareService.class)) {
             try {
                 service.beforeMigration(event);
                 service.commitMigration(event);

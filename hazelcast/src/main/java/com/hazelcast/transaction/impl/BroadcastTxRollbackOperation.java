@@ -23,6 +23,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -50,7 +51,8 @@ public final class BroadcastTxRollbackOperation extends Operation {
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Collection<TransactionalService> services = nodeEngine.getServices(TransactionalService.class);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        Collection<TransactionalService> services = serviceManager.getServices(TransactionalService.class);
         for (TransactionalService service : services) {
             try {
                 service.rollbackTransaction(txnId);

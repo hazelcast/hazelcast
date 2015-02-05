@@ -25,6 +25,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -37,7 +38,8 @@ final class ClearReplicaOperation extends AbstractOperation
     public void run() throws Exception {
         int partitionId = getPartitionId();
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        final Collection<MigrationAwareService> services = serviceManager.getServices(MigrationAwareService.class);
         for (MigrationAwareService service : services) {
             try {
                 service.clearPartitionReplica(partitionId);
