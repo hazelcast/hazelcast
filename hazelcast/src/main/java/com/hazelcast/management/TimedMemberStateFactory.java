@@ -23,6 +23,7 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
@@ -224,7 +225,7 @@ public class TimedMemberStateFactory {
         for (String mapName : maps.keySet()) {
             if (count >= maxVisibleInstanceCount) {
                 break;
-            } else if (config.findMapConfig(mapName).isStatisticsEnabled()) {
+            } else {
                 memberState.putLocalMapStats(mapName, maps.get(mapName));
                 count = count + 1;
             }
@@ -308,7 +309,7 @@ public class TimedMemberStateFactory {
 
     private int collectMapName(Set<String> setLongInstanceNames, int count, Config config, Set<String> mapNames) {
         for (String name : mapNames) {
-            if (config.findMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
+            if (count < maxVisibleInstanceCount) {
                 setLongInstanceNames.add("c:" + name);
                 ++count;
             }
@@ -351,8 +352,12 @@ public class TimedMemberStateFactory {
         MapServiceContext msc = getMapService().getMapServiceContext();
         Map<String, MapContainer> mapContainers = msc.getMapContainers();
         Map<String, LocalMapStatsImpl> mapStats = MapUtil.createHashMap(mapContainers.size());
-        for (String mapName : mapContainers.keySet()) {
-            mapStats.put(mapName, msc.getLocalMapStatsProvider().createLocalMapStats(mapName));
+        for (Map.Entry<String, MapContainer> entry : mapContainers.entrySet()) {
+            String mapName = entry.getKey();
+            MapConfig mapConfig = entry.getValue().getMapConfig();
+            if (mapConfig.isStatisticsEnabled()) {
+                mapStats.put(mapName, msc.getLocalMapStatsProvider().createLocalMapStats(mapName));
+            }
         }
         return mapStats;
     }
