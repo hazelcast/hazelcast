@@ -77,7 +77,7 @@ public final class OutOfMemoryHandlerHelper {
 
         HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
         try {
-            factory.node.getHazelcastThreadGroup().interrupt();
+            factory.node.getHazelcastThreadGroup().destroy();
         } catch (Throwable ignored) {
             EmptyStatement.ignore(ignored);
         }

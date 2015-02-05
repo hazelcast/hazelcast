@@ -64,17 +64,7 @@ public final class HazelcastThreadGroup {
     }
 
     /**
-     * Interrupts all threads of this ThreadGroup. It does this by interrupting the {@link #internalThreadGroup}.
-     */
-    public void interrupt() {
-        internalThreadGroup.interrupt();
-    }
-
-    /**
-     * Destroys all threads in this ThreadGroup. The main difference between {@link #interrupt()} and this method is that
-     * this method add some logging.
-     * <p/>
-     * todo: probably get rid of {@link #interrupt()}.
+     * Destroys all threads in this ThreadGroup.
      */
     public void destroy() {
         int numThreads = internalThreadGroup.activeCount();
