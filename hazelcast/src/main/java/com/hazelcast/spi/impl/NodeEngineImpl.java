@@ -370,10 +370,6 @@ public class NodeEngineImpl implements NodeEngine {
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
     }
 
-    public long getClusterTime() {
-        return node.getClusterService().getClusterTime();
-    }
-
     @Override
     public Storage<DataRef> getOffHeapStorage() {
         return node.getNodeExtension().getNativeDataStorage();

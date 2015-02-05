@@ -92,12 +92,5 @@ public interface ClusterService extends CoreService {
      */
     int getSize();
 
-    /**
-     * Returns the cluster-time.
-     * <p/>
-     * TODO: We need to document what cluster time really means and what is can be used for.
-     *
-     * @return the cluster-time.
-     */
-    long getClusterTime();
+    ClusterClock getClusterClock();
 }

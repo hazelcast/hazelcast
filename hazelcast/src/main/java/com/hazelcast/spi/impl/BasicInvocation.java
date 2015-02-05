@@ -250,7 +250,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
 
-        setInvocationTime(op, nodeEngine.getClusterTime());
+        setInvocationTime(op, nodeEngine.getClusterService().getClusterClock().getClusterTime());
 
         if (remote) {
             doInvokeRemote();

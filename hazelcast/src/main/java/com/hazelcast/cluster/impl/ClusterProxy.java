@@ -42,7 +42,7 @@ public class ClusterProxy implements Cluster {
 
     @Override
     public long getClusterTime() {
-        return clusterService.getClusterTime();
+        return clusterService.getClusterClock().getClusterTime();
     }
 
     @Override
