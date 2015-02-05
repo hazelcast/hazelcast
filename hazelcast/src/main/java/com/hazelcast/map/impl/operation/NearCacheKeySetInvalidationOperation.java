@@ -42,6 +42,11 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
         this.mapName = mapName;
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     public void run() {
         mapService = getService();
         if (mapService.getMapServiceContext().getMapContainer(mapName).isNearCacheEnabled()) {

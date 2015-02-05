@@ -74,6 +74,11 @@ public class PublishOperation extends AbstractNamedOperation
     }
 
     @Override
+    public String getServiceName() {
+        return TopicService.SERVICE_NAME;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeData(message);
