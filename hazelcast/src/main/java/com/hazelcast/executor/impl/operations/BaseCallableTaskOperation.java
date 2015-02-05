@@ -118,6 +118,11 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     }
 
     @Override
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(uuid);

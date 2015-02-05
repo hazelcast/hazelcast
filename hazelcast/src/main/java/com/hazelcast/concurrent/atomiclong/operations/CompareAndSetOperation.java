@@ -51,7 +51,6 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
         return returnValue;
     }
 
-
     @Override
     public int getId() {
         return AtomicLongDataSerializerHook.COMPARE_AND_SET;

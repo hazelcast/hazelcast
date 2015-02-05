@@ -39,6 +39,11 @@ public final class BroadcastTxRollbackOperation extends Operation {
     }
 
     @Override
+    public String getServiceName() {
+        return TransactionManagerServiceImpl.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
     }
 

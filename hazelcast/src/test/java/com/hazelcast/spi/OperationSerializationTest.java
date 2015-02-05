@@ -13,13 +13,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class OperationSerializationTest extends HazelcastTestSupport {
+
+    public static final String DUMMY_SERVICE_NAME = "foobar";
 
     private SerializationService serializationService;
 
@@ -135,7 +142,6 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         assertSerializationCloneEquals(op);
     }
 
-
     @Test
     public void test_validateTarget_defaultValue() {
         Operation op = new DummyOperation();
@@ -157,23 +163,72 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         assertEquals("wait timeout does not match", expected.getWaitTimeout(), actual.getWaitTimeout());
     }
 
+    @Test
+    public void test_serviceName_whenOverridesGetServiceName_thenNotSerialized(){
+        OperationWithServiceNameOverride op = new OperationWithServiceNameOverride();
+        assertNull(op.getRawServiceName());
+        assertFalse("service name should not be set", op.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+
+        Operation copy = copy(op);
+        assertSame(DUMMY_SERVICE_NAME, copy.getServiceName());
+        assertNull(copy.getRawServiceName());
+        assertFalse("service name should not be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+    }
+
+    @Test
+    public void test_serviceName_whenNotOverridesServiceName_thenSerialized(){
+        DummyOperation op = new DummyOperation();
+        op.setServiceName(DUMMY_SERVICE_NAME);
+        assertSame(DUMMY_SERVICE_NAME, op.getRawServiceName());
+        assertSame(DUMMY_SERVICE_NAME, op.getServiceName());
+        assertTrue("service name should be set", op.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+
+        Operation copy = copy(op);
+        assertCopy(DUMMY_SERVICE_NAME, copy.getServiceName());
+        assertCopy(DUMMY_SERVICE_NAME, copy.getRawServiceName());
+        assertTrue("service name should be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+    }
+
+    public void assertCopy(String expected, String actual){
+        assertEquals(expected, actual);
+        assertNotSame(expected, actual);
+    }
+
     private Operation copy(Operation op) {
         try {
             BufferObjectDataOutput out = serializationService.createObjectDataOutput(1000);
             op.writeData(out);
 
             BufferObjectDataInput in = serializationService.createObjectDataInput(out.toByteArray());
-            Operation copiedOperation = new DummyOperation();
+            Constructor constructor = op.getClass().getConstructor();
+            constructor.setAccessible(true);
+            Operation copiedOperation = (Operation)constructor.newInstance();
             copiedOperation.readData(in);
             return copiedOperation;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     private static class DummyOperation extends AbstractOperation {
+        public DummyOperation(){}
         @Override
         public void run() throws Exception {
+
+        }
+    }
+
+
+    private static class OperationWithServiceNameOverride extends AbstractOperation {
+        public OperationWithServiceNameOverride(){}
+
+        @Override
+        public void run() throws Exception {
+        }
+
+        @Override
+        public String getServiceName() {
+            return DUMMY_SERVICE_NAME;
         }
     }
 }

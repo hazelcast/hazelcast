@@ -36,6 +36,11 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     public InvalidateNearCacheOperation() {
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     public void run() {
         MapService mapService = getService();
         if (mapService.getMapServiceContext().getMapContainer(mapName).isNearCacheEnabled()) {

@@ -42,6 +42,11 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         final MapService mapService = getService();
         final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());

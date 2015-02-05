@@ -40,6 +40,11 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
         innerBeforeRun();
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     public void innerBeforeRun() {
     }
 

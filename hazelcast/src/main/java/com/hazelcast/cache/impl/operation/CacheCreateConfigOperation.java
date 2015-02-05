@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -58,6 +59,11 @@ public class CacheCreateConfigOperation
         super(config.getNameWithPrefix());
         this.config = config;
         this.isLocal = isLocal;
+    }
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
     }
 
     @Override

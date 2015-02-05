@@ -80,4 +80,9 @@ public class SemaphoreReplicationOperation extends AbstractOperation implements 
     public int getId() {
         return SemaphoreDataSerializerHook.SEMAPHORE_REPLICATION_OPERATION;
     }
+
+    @Override
+    public String getServiceName() {
+        return SemaphoreService.SERVICE_NAME;
+    }
 }

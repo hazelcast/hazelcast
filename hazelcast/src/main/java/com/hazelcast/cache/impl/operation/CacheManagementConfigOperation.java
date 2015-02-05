@@ -50,6 +50,11 @@ public class CacheManagementConfigOperation
     }
 
     @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public void run()
             throws Exception {
         final CacheService service = getService();
