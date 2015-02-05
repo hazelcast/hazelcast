@@ -181,12 +181,12 @@ public class OperationSerializationTest extends HazelcastTestSupport {
         op.setServiceName(DUMMY_SERVICE_NAME);
         assertSame(DUMMY_SERVICE_NAME, op.getRawServiceName());
         assertSame(DUMMY_SERVICE_NAME, op.getServiceName());
-        assertTrue("service name should not be set", op.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+        assertTrue("service name should be set", op.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
 
         Operation copy = copy(op);
         assertCopy(DUMMY_SERVICE_NAME, copy.getServiceName());
         assertCopy(DUMMY_SERVICE_NAME, copy.getRawServiceName());
-        assertTrue("service name should not be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
+        assertTrue("service name should be set", copy.isFlagSet(Operation.BITMASK_SERVICE_NAME_SET));
     }
 
     public void assertCopy(String expected, String actual){
