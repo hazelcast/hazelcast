@@ -111,7 +111,7 @@ public class TimedMemberStateFactory {
     }
 
     protected LocalMemoryStats getMemoryStats() {
-         return new LocalMemoryStatsImpl(instance.getMemoryStats());
+        return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
     private void createMemberState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
@@ -176,11 +176,14 @@ public class TimedMemberStateFactory {
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
                                       Map<String, LocalExecutorStats> executorServices) {
-        for (String name : executorServices.keySet()) {
+
+        for (Map.Entry<String, LocalExecutorStats> entry : executorServices.entrySet()) {
+            String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findExecutorConfig(name).isStatisticsEnabled()) {
-                memberState.putLocalExecutorStats(name, executorServices.get(name));
+                LocalExecutorStats stats = entry.getValue();
+                memberState.putLocalExecutorStats(name, stats);
                 ++count;
             }
         }
@@ -188,11 +191,13 @@ public class TimedMemberStateFactory {
     }
 
     private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
-        for (String name : multiMaps.keySet()) {
+        for (Map.Entry<String, LocalMultiMapStats> entry : multiMaps.entrySet()) {
+            String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
-                memberState.putLocalMultiMapStats(name, multiMaps.get(name));
+                LocalMultiMapStats stats = entry.getValue();
+                memberState.putLocalMultiMapStats(name, stats);
                 ++count;
             }
         }
@@ -200,11 +205,13 @@ public class TimedMemberStateFactory {
     }
 
     private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
-        for (String name : topics.keySet()) {
+        for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
+            String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findTopicConfig(name).isStatisticsEnabled()) {
-                memberState.putLocalTopicStats(name, topics.get(name));
+                LocalTopicStats stats = entry.getValue();
+                memberState.putLocalTopicStats(name, stats);
                 ++count;
             }
         }
@@ -212,11 +219,13 @@ public class TimedMemberStateFactory {
     }
 
     private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
-        for (String name : queues.keySet()) {
+        for (Map.Entry<String, LocalQueueStats> entry : queues.entrySet()) {
+            String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findQueueConfig(name).isStatisticsEnabled()) {
-                memberState.putLocalQueueStats(name, queues.get(name));
+                LocalQueueStats stats = entry.getValue();
+                memberState.putLocalQueueStats(name, stats);
                 ++count;
             }
         }
@@ -224,12 +233,14 @@ public class TimedMemberStateFactory {
     }
 
     private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
-        for (String mapName : maps.keySet()) {
+        for (Map.Entry<String, LocalMapStats> entry : maps.entrySet()) {
+            String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
                 break;
-            } else if (config.findMapConfig(mapName).isStatisticsEnabled()) {
-                memberState.putLocalMapStats(mapName, maps.get(mapName));
-                count = count + 1;
+            } else if (config.findMapConfig(name).isStatisticsEnabled()) {
+                LocalMapStats stats = entry.getValue();
+                memberState.putLocalMapStats(name, stats);
+                ++count;
             }
         }
         return count;
