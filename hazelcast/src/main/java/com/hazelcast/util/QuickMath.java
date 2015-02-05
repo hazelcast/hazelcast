@@ -126,11 +126,11 @@ public final class QuickMath {
     }
 
     /**
-     * Utility method to compare integers
+     * Compares two integers
      *
-     * @param i1 compared value
-     * @param i2 compared value
-     * @return 0, 1 or -1
+     * @param i1 First number to compare with second one
+     * @param i2 Second number to compare with first one
+     * @return +1 if i1 > i2, -1 if i2 > i1, 0 if i1 and i2 are equals
      */
     public static int compareIntegers(int i1, int i2) {
         if (i1 > i2) {
@@ -143,11 +143,11 @@ public final class QuickMath {
     }
 
     /**
-     * Utility method to compare longs
+     * Compares two longs
      *
-     * @param l1 compared value
-     * @param l2 compared value
-     * @return 0, 1 or -1
+     * @param l1 First number to compare with second one
+     * @param l2 Second number to compare with first one
+     * @return +1 if l1 > l2, -1 if l2 > l1, 0 if l1 and l2 are equals
      */
     public static int compareLongs(long l1, long l2) {
         if (l1 > l2) {
