@@ -195,8 +195,8 @@ public final class ReflectionHelper {
         }
     }
 
-    public static Comparable extractValue(Object object, String attributeName) throws Exception {
-        return (Comparable) createGetter(object, attributeName).getValue(object);
+    public static Object extractValue(Object object, String attributeName) throws Exception {
+        return createGetter(object, attributeName).getValue(object);
     }
 
     public static <T> T invokeMethod(Object object, String methodName) throws RuntimeException {

@@ -90,6 +90,10 @@ public class EntryObject {
         return addPredicate(Predicates.in(qb.getAttribute(), values));
     }
 
+    public PredicateBuilder contains(Comparable value) {
+        return addPredicate(Predicates.contains(qb.getAttribute(), value));
+    }
+
     private PredicateBuilder addPredicate(Predicate predicate) {
         qb.lsPredicates.add(predicate);
         return qb;

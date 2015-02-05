@@ -25,6 +25,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.Date;
 import java.util.UUID;
 
@@ -182,7 +183,7 @@ public final class SampleObjects {
         STATE1, STATE2
     }
 
-    public static class Employee implements Serializable {
+    public static class Employee implements Serializable, Comparable<Employee> {
         long id;
         String name;
         String city;
@@ -331,6 +332,82 @@ public final class SampleObjects {
             sb.append(", salary=").append(salary);
             sb.append('}');
             return sb.toString();
+        }
+
+        @Override
+        public int compareTo(Employee that) {
+
+            if (this == that || this.equals(that)) return 0;
+
+            return (int)(this.id - that.id);
+        }
+    }
+
+
+    public static class InterestGroup implements Serializable {
+        private String name;
+        private Collection<Employee> members;
+
+        public InterestGroup(String name, Collection<Employee> members) {
+            this.name = name;
+            this.members = members;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Collection<Employee> getMembers() {
+            return members;
+        }
+
+        public void setMembers(Collection<Employee> members) {
+            this.members = members;
+        }
+
+        @Override
+        public int hashCode() {
+            int result;
+
+            result = name != null ? name.hashCode() : 0;
+            result = 31 * result + members.hashCode();
+
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("InterestGroup");
+            sb.append("{name='").append(name).append('\'');
+            sb.append(", members=").append(members.toString());
+            sb.append('}');
+
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+
+            if (obj == null) return false;
+            if (this == obj) return true;
+            if (!getClass().equals(obj.getClass())) return false;
+
+            InterestGroup toCompare = (InterestGroup)obj;
+            if (name == null && toCompare.name != null) return false;
+            if (name != null && !name.equals(toCompare.name)) return false;
+
+            //We now know name is equal
+
+            if (members == null && toCompare.members != null) return false;
+            if (members != null && toCompare.members == null) return false;
+
+            return members.equals(toCompare.members);
         }
     }
 
