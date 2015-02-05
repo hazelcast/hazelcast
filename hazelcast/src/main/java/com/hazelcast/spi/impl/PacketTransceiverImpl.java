@@ -8,7 +8,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.TimeUnit;
