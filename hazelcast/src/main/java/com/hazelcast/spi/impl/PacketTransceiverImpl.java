@@ -14,6 +14,9 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.concurrent.TimeUnit;
 
 
+/**
+ * Default {@link com.hazelcast.spi.impl.PacketTransceiver} implementation.
+ */
 public class PacketTransceiverImpl implements PacketTransceiver {
 
     private static final int RETRY_NUMBER = 5;
