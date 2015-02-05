@@ -203,7 +203,6 @@ public class OperationSerializationTest extends HazelcastTestSupport {
             Constructor constructor = op.getClass().getConstructor();
             constructor.setAccessible(true);
             Operation copiedOperation = (Operation)constructor.newInstance();
-            if(op instanceof DummyOperation)
             copiedOperation.readData(in);
             return copiedOperation;
         } catch (Exception e) {
