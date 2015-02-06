@@ -12,7 +12,7 @@ In addition to this, the following sections compare Hadoop and Hazelcast MapRedu
 The flowchart below demonstrates the basic workflow of the word count example (distributed occurrences analysis) mentioned in the [MapReduce section](#mapreduce). From left to right, it iterates over all the entries of a data structure (in this case an IMap). In the mapping phase, it splits the sentence into single words and emits a key-value pair per word: the word is the key, 1 is the value. In the next phase, values are collected (grouped) and transported to their
 corresponding reducers, where they are eventually reduced to a single key-value pair, the value being the number of occurrences of the word. At the last step, the different reducer results are grouped up to the final result and returned to the requester.
 
-![](images/mapreduce_workflow_small.png)
+![](images/mapreduce/workflow.png)
 
 In pseudo code, the corresponding map and reduce function would look like the following. A Hazelcast code example will be shown in the next section.
 

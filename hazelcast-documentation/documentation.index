@@ -149,7 +149,8 @@ src/Management.md
 	src/MonitoringWithJMX.md
 	src/ClusterUtilities.md
 		src/MemberAttributes.md
-		src/PartitionService.md
+		src/ClusterMemberSafetyCheck.md
+		src/ClusterQuorum.md
 	src/ManagementCenter.md
 	src/ClusteredJMX.md
 	src/ClusteredREST.md

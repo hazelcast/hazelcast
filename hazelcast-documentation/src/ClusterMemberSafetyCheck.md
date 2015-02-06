@@ -50,7 +50,7 @@ if (partitionService().isLocalMemberSafe()) {
 }
 ```
 <br></br>
-
 ***RELATED INFORMATION***
 
 *For more code samples please refer to [PartitionService Code Samples](https://github.com/hazelcast/hazelcast-code-samples/tree/master/monitoring/cluster/src/main/java)*.
+<br></br>
