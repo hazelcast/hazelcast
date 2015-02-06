@@ -147,7 +147,7 @@ public class NodeEngineImpl implements InternalNodeEngine {
     }
 
     @Override
-    public OperationService getOperationService() {
+    public InternalOperationService getOperationService() {
         return operationService;
     }
 
