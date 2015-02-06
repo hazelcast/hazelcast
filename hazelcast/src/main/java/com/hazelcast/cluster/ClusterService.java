@@ -92,5 +92,12 @@ public interface ClusterService extends CoreService {
      */
     int getSize();
 
+    /**
+     * Returns the {@link com.hazelcast.cluster.ClusterClock} of the cluster.
+     *
+     * The returned value will never be null and will never change.
+     *
+     * @return the ClusterClock.
+     */
     ClusterClock getClusterClock();
 }
