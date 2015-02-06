@@ -88,6 +88,11 @@ public class TimedMemberStateFactory {
         }, INITIAL_PARTITION_SAFETY_CHECK_DELAY, PARTITION_SAFETY_CHECK_PERIOD, TimeUnit.SECONDS);
     }
 
+    /**
+     * Creates member statistics
+     *
+     * @return {@link com.hazelcast.monitor.TimedMemberState}
+     */
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
@@ -96,7 +101,7 @@ public class TimedMemberStateFactory {
         TimedMemberState timedMemberState = new TimedMemberState();
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
-        if (timedMemberState.getMaster()) {
+        if(timedMemberState.getMaster()) {
             Set<Member> memberSet = instance.getCluster().getMembers();
             for (Member member : memberSet) {
                 MemberImpl memberImpl = (MemberImpl) member;
