@@ -39,7 +39,7 @@ public interface InternalPartition {
      * {@link com.hazelcast.cluster.ClusterService#getThisAddress()}. If the address is null or a different address, false
      * is returned.
      *
-     * @return true of local, false otherwise.
+     * @return true if local, false otherwise.
      * @since 3.5
      */
     boolean isLocal();
