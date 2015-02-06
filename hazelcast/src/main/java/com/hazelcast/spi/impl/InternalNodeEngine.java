@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.spi.NodeEngine;
@@ -7,12 +8,19 @@ import com.hazelcast.spi.NodeEngine;
 /**
  * The InternalNodeEngine extends the {@link NodeEngine} and exposes all kinds of other internal services that
  * are not exposed to the regular SPI user.
- *
+ * <p/>
  * The InternalNodeEngine is purely an 'umbrella' to inject dependencies. It should not contain all kinds of convenience
  * methods because then it will become polluted + more difficult to test. So don't add methods like 'toObject' or 'toData';
  * let this be a concern of the appropriate dependency.
  */
 public interface InternalNodeEngine extends NodeEngine {
+
+    /**
+     * Gets the Config.
+     *
+     * @return the config.
+     */
+    Config getConfig();
 
     InternalOperationService getOperationService();
 
