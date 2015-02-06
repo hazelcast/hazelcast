@@ -23,10 +23,10 @@ import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
@@ -35,6 +35,9 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
@@ -49,12 +52,14 @@ import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -147,11 +152,10 @@ public class TimedMemberStateFactory {
         int count = 0;
         final Config config = instance.getConfig();
         final Iterator<DistributedObject> iterator = distributedObjects.iterator();
+
         while (iterator.hasNext() && count < maxVisibleInstanceCount) {
             DistributedObject distributedObject = iterator.next();
-            if (distributedObject instanceof IMap) {
-                count = handleMap(memberState, count, config, (IMap) distributedObject);
-            } else if (distributedObject instanceof IQueue) {
+            if (distributedObject instanceof IQueue) {
                 count = handleQueue(memberState, count, config, (IQueue) distributedObject);
             } else if (distributedObject instanceof ITopic) {
                 count = handleTopic(memberState, count, config, (ITopic) distributedObject);
@@ -163,6 +167,12 @@ public class TimedMemberStateFactory {
                 logger.finest("Distributed object ignored for monitoring: " + distributedObject.getName());
             }
         }
+
+        /*
+        Collect map statistics from map service, backport for
+        https://github.com/hazelcast/management-center/issues/153
+        */
+        count = handleMap(memberState, count, config, getMapStats());
 
         if (cacheServiceEnabled) {
             final ICacheService cacheService = getCacheService();
@@ -211,10 +221,14 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int handleMap(MemberStateImpl memberState, int count, Config config, IMap map) {
-        if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
-            memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
-            return count + 1;
+    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStatsImpl> maps) {
+        for (String mapName : maps.keySet()) {
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else {
+                memberState.putLocalMapStats(mapName, maps.get(mapName));
+                count = count + 1;
+            }
         }
         return count;
     }
@@ -235,12 +249,11 @@ public class TimedMemberStateFactory {
                                       Collection<DistributedObject> distributedObjects) {
         int count = 0;
         final Config config = instance.getConfig();
+
         for (DistributedObject distributedObject : distributedObjects) {
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof MultiMap) {
                     count = collectMultiMapName(setLongInstanceNames, count, config, (MultiMap) distributedObject);
-                } else if (distributedObject instanceof IMap) {
-                    count = collectMapName(setLongInstanceNames, count, config, (IMap) distributedObject);
                 } else if (distributedObject instanceof IQueue) {
                     count = collectQueueName(setLongInstanceNames, count, config, (IQueue) distributedObject);
                 } else if (distributedObject instanceof ITopic) {
@@ -252,6 +265,11 @@ public class TimedMemberStateFactory {
                 }
             }
         }
+
+        /*Collect IMap instance names from map service, backport for
+        https://github.com/hazelcast/management-center/issues/153
+        */
+        count = collectMapName(setLongInstanceNames, count, config, getMapStats().keySet());
 
         if (cacheServiceEnabled) {
             for (CacheConfig cacheConfig : getCacheService().getCacheConfigs()) {
@@ -289,10 +307,12 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int collectMapName(Set<String> setLongInstanceNames, int count, Config config, IMap map) {
-        if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
-            setLongInstanceNames.add("c:" + map.getName());
-            return count + 1;
+    private int collectMapName(Set<String> setLongInstanceNames, int count, Config config, Set<String> mapNames) {
+        for (String name : mapNames) {
+            if (count < maxVisibleInstanceCount) {
+                setLongInstanceNames.add("c:" + name);
+                ++count;
+            }
         }
         return count;
     }
@@ -316,5 +336,29 @@ public class TimedMemberStateFactory {
     private ICacheService getCacheService() {
         final CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
         return setupRef.getService();
+    }
+
+    private MapService getMapService() {
+        return instance.node.nodeEngine.getService(MapService.SERVICE_NAME);
+    }
+
+    /**
+     * Backport: https://github.com/hazelcast/hazelcast/pull/4413
+     * This method will not take place in 3.5 release. All statistics will be provided by
+     * <a href="https://github.com/hazelcast/hazelcast/blob/master/hazelcast/src/main/java/com/
+     * hazelcast/spi/StatisticsAwareService.java">StatisticsAwareService</a> implementations
+     */
+    private Map<String, LocalMapStatsImpl> getMapStats() {
+        MapServiceContext msc = getMapService().getMapServiceContext();
+        Map<String, MapContainer> mapContainers = msc.getMapContainers();
+        Map<String, LocalMapStatsImpl> mapStats = MapUtil.createHashMap(mapContainers.size());
+        for (Map.Entry<String, MapContainer> entry : mapContainers.entrySet()) {
+            String mapName = entry.getKey();
+            MapConfig mapConfig = entry.getValue().getMapConfig();
+            if (mapConfig.isStatisticsEnabled()) {
+                mapStats.put(mapName, msc.getLocalMapStatsProvider().createLocalMapStats(mapName));
+            }
+        }
+        return mapStats;
     }
 }
