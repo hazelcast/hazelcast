@@ -14,6 +14,8 @@ import com.hazelcast.spi.NodeEngine;
  */
 public interface InternalNodeEngine extends NodeEngine {
 
+    InternalOperationService getOperationService();
+
     /**
      * Gets the ServiceManager.
      *
