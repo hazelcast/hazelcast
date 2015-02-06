@@ -6,11 +6,11 @@ src/WhatsNew.md
 	src/UpgradingFrom2x.md
 	src/DocumentRevisionHistory.md
 src/GettingStarted.md
-	src/WhyHazelcast.md
-	src/Installation.md
 		src/InstallingHZEnterprise.md
-	src/StartingClusterClient.md
+	src/StartingInstanceClient.md
 	src/ConfiguringHazelcast.md
+src/Overview.md
+	src/WhyHazelcast.md
 	src/DataPartitioning.md
 	src/UseCases.md
 	src/Resources.md
