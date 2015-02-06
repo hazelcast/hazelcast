@@ -10,8 +10,7 @@ import com.hazelcast.spi.NodeEngine;
  * are not exposed to the regular SPI user.
  * <p/>
  * The InternalNodeEngine is purely an 'umbrella' to inject dependencies. It should not contain all kinds of convenience
- * methods because then it will become polluted + more difficult to test. So don't add methods like 'toObject' or 'toData';
- * let this be a concern of the appropriate dependency.
+ * methods because then it will become polluted + more difficult to test.
  */
 public interface InternalNodeEngine extends NodeEngine {
 
