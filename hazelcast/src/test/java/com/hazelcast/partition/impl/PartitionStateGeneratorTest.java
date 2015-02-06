@@ -227,6 +227,11 @@ public class PartitionStateGeneratorTest {
         }
 
         @Override
+        public boolean isLocal() {
+            return true;
+        }
+
+        @Override
         public int getPartitionId() {
             throw new UnsupportedOperationException();
         }

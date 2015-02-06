@@ -109,13 +109,11 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     private void onOwnerDisconnected(final String caller) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
-        Address thisAddress = nodeEngine.getThisAddress();
 
         for (String name : permitMap.keySet()) {
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
             InternalPartition partition = partitionService.getPartition(partitionId);
-
-            if (thisAddress.equals(partition.getOwnerOrNull())) {
+            if (partition.isLocal()) {
                 Operation op = new SemaphoreDeadMemberOperation(name, caller)
                         .setPartitionId(partitionId)
                         .setResponseHandler(createEmptyResponseHandler())

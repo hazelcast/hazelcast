@@ -158,8 +158,6 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
 
     public Set<Data> localKeySet(String name) {
         Set<Data> keySet = new HashSet<Data>();
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
-        Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             InternalPartition partition = nodeEngine.getPartitionService().getPartition(i);
             MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
@@ -167,7 +165,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
             if (multiMapContainer == null) {
                 continue;
             }
-            if (thisAddress.equals(partition.getOwnerOrNull())) {
+            if (partition.isLocal()) {
                 keySet.addAll(multiMapContainer.keySet());
             }
         }

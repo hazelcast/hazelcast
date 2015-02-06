@@ -6,7 +6,7 @@ import com.hazelcast.partition.InternalPartition;
 import java.util.Arrays;
 
 class InternalPartitionImpl implements InternalPartition {
-
+;
     // The content of this array will never be updated, so it can be safely read using a volatile read.
     // Writing to 'addresses' is done under InternalPartitionServiceImpl.lock,
     // so there's no need to guard `addresses` field or to use a CAS.
@@ -14,11 +14,13 @@ class InternalPartitionImpl implements InternalPartition {
     private volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
     private final int partitionId;
     private final PartitionListener partitionListener;
+    private final Address thisAddress;
     private volatile boolean isMigrating;
 
-    InternalPartitionImpl(int partitionId, PartitionListener partitionListener) {
+    InternalPartitionImpl(int partitionId, PartitionListener partitionListener, Address thisAddress) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
+        this.thisAddress = thisAddress;
     }
 
     @Override
@@ -33,6 +35,11 @@ class InternalPartitionImpl implements InternalPartition {
 
     public void setMigrating(boolean isMigrating) {
         this.isMigrating = isMigrating;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return thisAddress.equals(getOwnerOrNull());
     }
 
     @Override

@@ -129,8 +129,7 @@ public class TimedMemberStateFactory {
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();
         List<Integer> partitionList = memberPartitionState.getPartitions();
         for (InternalPartition partition : partitions) {
-            Address owner = partition.getOwnerOrNull();
-            if (owner != null && thisAddress.equals(owner)) {
+            if (partition.isLocal()) {
                 partitionList.add(partition.getPartitionId());
             }
         }
