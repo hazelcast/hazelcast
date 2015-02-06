@@ -115,7 +115,7 @@ public class TimedMemberStateFactory {
     }
 
     protected LocalMemoryStats getMemoryStats() {
-         return new LocalMemoryStatsImpl(instance.getMemoryStats());
+        return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
     private void createMemberState(MemberStateImpl memberState) {
@@ -172,7 +172,7 @@ public class TimedMemberStateFactory {
         Collect map statistics from map service, backport for
         https://github.com/hazelcast/management-center/issues/153
         */
-        count = handleMap(memberState, count, config, getMapStats());
+        count = handleMap(memberState, count, getMapStats());
 
         if (cacheServiceEnabled) {
             final ICacheService cacheService = getCacheService();
@@ -221,12 +221,12 @@ public class TimedMemberStateFactory {
         return count;
     }
 
-    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStatsImpl> maps) {
-        for (String mapName : maps.keySet()) {
+    private int handleMap(MemberStateImpl memberState, int count, Map<String, LocalMapStatsImpl> maps) {
+        for (Map.Entry<String, LocalMapStatsImpl> entry : maps.entrySet()) {
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else {
-                memberState.putLocalMapStats(mapName, maps.get(mapName));
+                memberState.putLocalMapStats(entry.getKey(), entry.getValue());
                 count = count + 1;
             }
         }
