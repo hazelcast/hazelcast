@@ -30,7 +30,6 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 
-@Ignore("not a JUnit test")
 public final class TestUtil {
 
     static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();

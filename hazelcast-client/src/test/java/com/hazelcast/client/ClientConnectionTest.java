@@ -113,20 +113,9 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 
+        final CountingConnectionRemoveListener listener = new CountingConnectionRemoveListener();
 
-        final AtomicInteger count = new AtomicInteger();
-
-        connectionManager.addConnectionListener(new ConnectionListener() {
-            @Override
-            public void connectionAdded(Connection connection) {
-
-            }
-
-            @Override
-            public void connectionRemoved(Connection connection) {
-                count.incrementAndGet();
-            }
-        });
+        connectionManager.addConnectionListener(listener);
 
         final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
         final Connection connectionToServer = connectionManager.getConnection(serverAddress);
@@ -134,6 +123,22 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         connectionManager.destroyConnection(connectionToServer);
         connectionManager.destroyConnection(connectionToServer);
 
-        assertEquals("connection removed should be called only once", 1, count.get());
+        assertEquals("connection removed should be called only once", 1, listener.count.get());
     }
+
+    private class CountingConnectionRemoveListener implements ConnectionListener {
+
+        final AtomicInteger count = new AtomicInteger();
+
+        @Override
+        public void connectionAdded(Connection connection) {
+
+        }
+
+        @Override
+        public void connectionRemoved(Connection connection) {
+            count.incrementAndGet();
+        }
+    }
+
 }
