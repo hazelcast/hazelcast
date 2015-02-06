@@ -101,7 +101,7 @@ public class TimedMemberStateFactory {
         TimedMemberState timedMemberState = new TimedMemberState();
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
-        if(timedMemberState.getMaster()) {
+        if (timedMemberState.getMaster()) {
             Set<Member> memberSet = instance.getCluster().getMembers();
             for (Member member : memberSet) {
                 MemberImpl memberImpl = (MemberImpl) member;
