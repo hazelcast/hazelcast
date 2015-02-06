@@ -13,7 +13,7 @@ The declarative configuration for ICache is a superset of the previously discuss
   <backup-count>1</backup-count>
   <async-backup-count>1</async-backup-count>
   <in-memory-format>BINARY</in-memory-format>
-  <eviction size="10000" max-size-policy="ENTRY-COUNT" eviction-policy="LRU" />
+  <eviction size="10000" max-size-policy="ENTRY_COUNT" eviction-policy="LRU" />
 </cache>
 ```
 
