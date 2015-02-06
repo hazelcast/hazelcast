@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -80,6 +81,12 @@ public class NodeEngineImpl implements InternalNodeEngine {
                 node, logger, operationService, eventService, wanReplicationService, executionService);
     }
 
+    @Override
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
+        return node.getHazelcastThreadGroup();
+    }
+
+    @Override
     public PacketTransceiver getPacketTransceiver() {
         return packetTransceiver;
     }
@@ -220,7 +227,6 @@ public class NodeEngineImpl implements InternalNodeEngine {
     public GroupProperties getGroupProperties() {
         return node.getGroupProperties();
     }
-
 
     @PrivateApi
     public Node getNode() {
