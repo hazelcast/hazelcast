@@ -6,7 +6,7 @@ import com.hazelcast.partition.InternalPartition;
 import java.util.Arrays;
 
 class InternalPartitionImpl implements InternalPartition {
-;
+
     // The content of this array will never be updated, so it can be safely read using a volatile read.
     // Writing to 'addresses' is done under InternalPartitionServiceImpl.lock,
     // so there's no need to guard `addresses` field or to use a CAS.
