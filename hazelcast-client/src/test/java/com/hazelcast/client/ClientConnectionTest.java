@@ -18,9 +18,15 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.ClientTestUtil;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -97,5 +104,36 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         Collection<Client> connectedClients2 = server2.getClientService().getConnectedClients();
         assertEquals(connectedClients2.size(), 0);
+    }
+
+    @Test
+    public void testConnectionRemovedOnce() {
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+
+
+        final AtomicInteger count = new AtomicInteger();
+
+        connectionManager.addConnectionListener(new ConnectionListener() {
+            @Override
+            public void connectionAdded(Connection connection) {
+
+            }
+
+            @Override
+            public void connectionRemoved(Connection connection) {
+                count.incrementAndGet();
+            }
+        });
+
+        final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
+        final Connection connectionToServer = connectionManager.getConnection(serverAddress);
+
+        connectionManager.destroyConnection(connectionToServer);
+        connectionManager.destroyConnection(connectionToServer);
+
+        assertEquals("connection removed should be called only once", 1, count.get());
     }
 }
