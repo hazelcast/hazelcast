@@ -123,7 +123,6 @@ final class BasicOperationService implements InternalOperationService {
 
     private final long defaultCallTimeoutMillis;
     private final long backupOperationTimeoutMillis;
-    private final ExecutionService executionService;
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
@@ -137,7 +136,6 @@ final class BasicOperationService implements InternalOperationService {
         this.invocationLogger = nodeEngine.getLogger(BasicInvocation.class);
         this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
         this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
-        this.executionService = nodeEngine.getExecutionService();
         this.backPressureService = new BasicBackPressureService(node.getGroupProperties(), logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -147,7 +145,16 @@ final class BasicOperationService implements InternalOperationService {
         this.operationHandler = new OperationHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
-        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler, responsePacketHandler);
+        this.scheduler = new BasicOperationScheduler(
+                node.getGroupProperties(),
+                node.loggingService,
+                node.getThisAddress(),
+                operationHandler,
+                node.getNodeExtension(),
+                responsePacketHandler,
+                node.getHazelcastThreadGroup());
+
+        ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
@@ -929,7 +936,7 @@ final class BasicOperationService implements InternalOperationService {
         public static final int DELAY_MILLIS = 1000;
 
         private CleanupThread() {
-            super(node.getThreadNamePrefix("CleanupThread"));
+            super(node.getHazelcastThreadGroup().getThreadNamePrefix("CleanupThread"));
         }
 
         @Override

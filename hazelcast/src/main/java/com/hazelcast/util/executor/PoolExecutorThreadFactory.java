@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Queue;
@@ -31,6 +32,11 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
 
     public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         super(threadGroup, classLoader);
+        this.threadNamePrefix = threadNamePrefix;
+    }
+
+    public PoolExecutorThreadFactory(HazelcastThreadGroup threadGroup, String threadNamePrefix) {
+        super(threadGroup.getInternalThreadGroup(), threadGroup.getClassLoader());
         this.threadNamePrefix = threadNamePrefix;
     }
 

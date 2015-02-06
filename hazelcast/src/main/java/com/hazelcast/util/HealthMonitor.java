@@ -82,7 +82,8 @@ public class HealthMonitor extends Thread {
     private final ThreadMXBean threadMxBean;
 
     public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
-        super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("HealthMonitor"));
+        super(hazelcastInstance.node.getHazelcastThreadGroup().getInternalThreadGroup(),
+                hazelcastInstance.node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
         setDaemon(true);
 
         this.node = hazelcastInstance.node;

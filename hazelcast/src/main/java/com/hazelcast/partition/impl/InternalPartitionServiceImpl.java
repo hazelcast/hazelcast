@@ -1744,7 +1744,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         private volatile boolean migrating;
 
         MigrationThread(Node node) {
-            super(node.threadGroup, node.getThreadNamePrefix("migration"));
+            super(node.getHazelcastThreadGroup().getInternalThreadGroup(),
+                    node.getHazelcastThreadGroup().getThreadNamePrefix("migration"));
         }
 
         @Override

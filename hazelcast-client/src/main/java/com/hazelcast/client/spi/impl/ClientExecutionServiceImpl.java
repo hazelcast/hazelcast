@@ -43,7 +43,6 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
 
-
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
         int executorPoolSize = poolSize;
         if (executorPoolSize <= 0) {
