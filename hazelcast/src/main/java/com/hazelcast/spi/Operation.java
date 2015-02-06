@@ -71,11 +71,6 @@ public abstract class Operation implements DataSerializable {
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
 
-    // Gets the actual service name witout looking at overriding methods. This method only exists for testing purposes.
-    String getRawServiceName() {
-        return serviceName;
-    }
-
     public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
     }
@@ -93,10 +88,16 @@ public abstract class Operation implements DataSerializable {
 
     public abstract Object getResponse();
 
+    // Gets the actual service name witout looking at overriding methods. This method only exists for testing purposes.
+    String getRawServiceName() {
+        return serviceName;
+    }
+
     public String getServiceName() {
         return serviceName;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
         // If the name of the service is the same as the name already provided, the call is skipped.
         // We can do a == instead of an equals because serviceName are typically constants, and it will
