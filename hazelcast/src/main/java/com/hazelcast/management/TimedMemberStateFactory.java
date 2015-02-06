@@ -88,6 +88,11 @@ public class TimedMemberStateFactory {
         }, INITIAL_PARTITION_SAFETY_CHECK_DELAY, PARTITION_SAFETY_CHECK_PERIOD, TimeUnit.SECONDS);
     }
 
+    /**
+     * Creates member statistics
+     *
+     * @return {@link com.hazelcast.monitor.TimedMemberState}
+     */
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
