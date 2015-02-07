@@ -49,12 +49,6 @@ public abstract class HazelcastTestSupport {
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     static {
-        // Activate logging if run from IntelliJ IDEA
-        String libPath = StringUtil.lowerCaseInternal(System.getProperty("java.library.path"));
-        if (libPath.contains("idea") || libPath.contains("intellij")) {
-            setLogLevelWarn();
-        }
-
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");
 
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout", "120"));
