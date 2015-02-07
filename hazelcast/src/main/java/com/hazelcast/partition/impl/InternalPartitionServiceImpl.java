@@ -151,7 +151,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         this.partitions = new InternalPartitionImpl[partitionCount];
         PartitionListener partitionListener = new LocalPartitionListener(this, node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
-            this.partitions[i] = new InternalPartitionImpl(i, partitionListener);
+            this.partitions[i] = new InternalPartitionImpl(i, partitionListener, node.getThisAddress());
         }
         replicaVersions = new PartitionReplicaVersions[partitionCount];
         for (int i = 0; i < replicaVersions.length; i++) {
@@ -1505,9 +1505,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         @Override
         public void run() {
             if (node.isActive() && migrationActive.get()) {
-                Address thisAddress = node.getThisAddress();
                 for (InternalPartitionImpl partition : partitions) {
-                    if (thisAddress.equals(partition.getOwnerOrNull())) {
+                    if (partition.isLocal()) {
                         for (int index = 1; index < InternalPartition.MAX_REPLICA_COUNT; index++) {
                             if (partition.getReplicaAddress(index) != null) {
                                 SyncReplicaVersion op = new SyncReplicaVersion(index, null);

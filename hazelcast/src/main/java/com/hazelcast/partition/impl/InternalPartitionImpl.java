@@ -14,11 +14,13 @@ class InternalPartitionImpl implements InternalPartition {
     private volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
     private final int partitionId;
     private final PartitionListener partitionListener;
+    private final Address thisAddress;
     private volatile boolean isMigrating;
 
-    InternalPartitionImpl(int partitionId, PartitionListener partitionListener) {
+    InternalPartitionImpl(int partitionId, PartitionListener partitionListener, Address thisAddress) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
+        this.thisAddress = thisAddress;
     }
 
     @Override
@@ -33,6 +35,11 @@ class InternalPartitionImpl implements InternalPartition {
 
     public void setMigrating(boolean isMigrating) {
         this.isMigrating = isMigrating;
+    }
+
+    @Override
+    public boolean isLocal() {
+        return thisAddress.equals(getOwnerOrNull());
     }
 
     @Override

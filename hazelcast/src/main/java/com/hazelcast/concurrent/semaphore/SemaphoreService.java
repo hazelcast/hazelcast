@@ -19,7 +19,6 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.InternalPartitionService;
@@ -109,13 +108,11 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     private void onOwnerDisconnected(final String caller) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
-        Address thisAddress = nodeEngine.getThisAddress();
 
         for (String name : permitMap.keySet()) {
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
             InternalPartition partition = partitionService.getPartition(partitionId);
-
-            if (thisAddress.equals(partition.getOwnerOrNull())) {
+            if (partition.isLocal()) {
                 Operation op = new SemaphoreDeadMemberOperation(name, caller)
                         .setPartitionId(partitionId)
                         .setResponseHandler(createEmptyResponseHandler())

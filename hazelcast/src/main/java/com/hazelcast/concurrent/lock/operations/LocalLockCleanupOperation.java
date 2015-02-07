@@ -42,8 +42,7 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
         final NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         InternalPartition partition = partitionService.getPartition(getPartitionId());
-        return nodeEngine.getThisAddress().equals(partition.getOwnerOrNull())
-                && Boolean.TRUE.equals(response);
+        return partition.isLocal() && Boolean.TRUE.equals(response);
     }
 
     @Override

@@ -33,6 +33,18 @@ public interface InternalPartition {
     int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
 
     /**
+     * Checks if the partition is local.
+     *
+     * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the
+     * {@link com.hazelcast.cluster.ClusterService#getThisAddress()}. If the address is null or a different address, false
+     * is returned.
+     *
+     * @return true if local, false otherwise.
+     * @since 3.5
+     */
+    boolean isLocal();
+
+    /**
      * Returns the partition id. The partition id will be between 0 and partitionCount (exclusive).
      *
      * @return the id of the partition.
