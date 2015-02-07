@@ -95,7 +95,7 @@ KeyValueSource<String, String> source = KeyValueSource.fromList( list );
 ```
 
 ```java
-// KeyValueSource from com.hazelcast.core.IList
+// KeyValueSource from com.hazelcast.core.ISet
 ISet<String> set = hazelcastInstance.getSet( "my-set" );
 KeyValueSource<String, String> source = KeyValueSource.fromSet( set );
 ```
