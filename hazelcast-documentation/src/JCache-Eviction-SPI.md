@@ -6,7 +6,7 @@
   <backup-count>1</backup-count>
   <async-backup-count>1</async-backup-count>
   <in-memory-format>BINARY</in-memory-format>
-  <eviction size="10000" size-policy="ENTRY-COUNT" eviction-policy="LRU">
+  <eviction size="10000" size-policy="ENTRY_COUNT" eviction-policy="LRU">
     <eviction-strategy-factory
         class-name="com.hazelcast.cache...sampling.SamplingBasedEvictionStrategyFactory"/>
     <eviction-policy-strategy-factory
