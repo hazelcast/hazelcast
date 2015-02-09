@@ -28,10 +28,6 @@ interface SerializerAdapter {
 
     Object read(ObjectDataInput in) throws IOException;
 
-    Data toData(Object object, int partitionHash) throws IOException;
-
-    Object toObject(Data data) throws IOException;
-
     int getTypeId();
 
     void destroy();

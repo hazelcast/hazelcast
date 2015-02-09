@@ -19,60 +19,58 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.util.HashUtil;
 
-import java.nio.ByteOrder;
+import java.util.Arrays;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
-public final class DefaultData implements MutableData {
+public final class DefaultData implements Data {
 
-    private int type = SerializationConstants.CONSTANT_TYPE_NULL;
-    private byte[] header;
+    // type and partition_hash are always written with BIG_ENDIAN byte-order
+    static final int TYPE_OFFSET = 0;
+    // will use a byte to store partition_hash bit
+    static final int PARTITION_HASH_BIT_OFFSET = 4;
+    static final int DATA_OFFSET = 5;
+
+    // array (12: array header, 4: length)
+    private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;
+
     private byte[] data;
-    private int partitionHash;
 
     public DefaultData() {
     }
 
-    public DefaultData(int type, byte[] data) {
+    public DefaultData(byte[] data) {
+        if (data != null && data.length > 0 && data.length < DATA_OFFSET) {
+            throw new IllegalArgumentException("Data should be either empty or should contain more than "
+                    + DefaultData.DATA_OFFSET + " bytes! -> " + Arrays.toString(data));
+        }
         this.data = data;
-        this.type = type;
-    }
-
-    public DefaultData(int type, byte[] data, int partitionHash) {
-        this.data = data;
-        this.partitionHash = partitionHash;
-        this.type = type;
-    }
-
-    public DefaultData(int type, byte[] data, int partitionHash, byte[] header) {
-        this.type = type;
-        this.data = data;
-        this.partitionHash = partitionHash;
-        this.header = header;
     }
 
     @Override
     public int dataSize() {
+        return Math.max(totalSize() - DATA_OFFSET, 0);
+    }
+
+    @Override
+    public int totalSize() {
         return data != null ? data.length : 0;
     }
 
     @Override
     public int getPartitionHash() {
-        return partitionHash != 0 ? partitionHash : hashCode();
+        if (totalSize() == 0) {
+            return 0;
+        }
+
+        if (hasPartitionHash()) {
+            return Bits.readIntB(data, data.length - Bits.INT_SIZE_IN_BYTES);
+        }
+        return hashCode();
     }
 
     @Override
     public boolean hasPartitionHash() {
-        return partitionHash != 0;
-    }
-
-    @Override
-    public int headerSize() {
-        return header != null ? header.length : 0;
-    }
-
-    @Override
-    public byte[] getHeader() {
-        return header;
+        return totalSize() != 0 && data[PARTITION_HASH_BIT_OFFSET] != 0;
     }
 
     @Override
@@ -81,64 +79,18 @@ public final class DefaultData implements MutableData {
     }
 
     @Override
-    public void setData(byte[] array) {
-        this.data = array;
-    }
-
-    @Override
-    public void setPartitionHash(int partitionHash) {
-        this.partitionHash = partitionHash;
-    }
-
-    @Override
     public int getType() {
-        return type;
-    }
-
-    @Override
-    public void setType(int type) {
-        this.type = type;
-    }
-
-    @Override
-    public void setHeader(byte[] header) {
-        this.header = header;
-    }
-
-    @Override
-    public int readIntHeader(int offset, ByteOrder order) {
-        return Bits.readInt(header, offset, order == ByteOrder.BIG_ENDIAN);
+        if (totalSize() == 0) {
+            return SerializationConstants.CONSTANT_TYPE_NULL;
+        }
+        return Bits.readIntB(data, TYPE_OFFSET);
     }
 
     @Override
     public int getHeapCost() {
-        final int integerSizeInBytes = 4;
-        final int arrayHeaderSizeInBytes = 16;
-
-        int total = 0;
-        // type
-        total += integerSizeInBytes;
-
-        if (header != null) {
-            // metadata array ref (12: array header, 4: length)
-            total += arrayHeaderSizeInBytes;
-            total += header.length;
-        } else {
-            total += integerSizeInBytes;
-        }
-
-        if (data != null) {
-            // buffer array ref (12: array header, 4: length)
-            total += arrayHeaderSizeInBytes;
-            // data itself
-            total += data.length;
-        } else {
-            total += integerSizeInBytes;
-        }
-
-        // partition-hash
-        total += integerSizeInBytes;
-        return total;
+        // reference (assuming compressed oops)
+        int objectRef = Bits.INT_SIZE_IN_BYTES;
+        return objectRef + (data != null ? ARRAY_HEADER_SIZE_IN_BYTES + data.length : 0);
     }
 
     @Override
@@ -167,7 +119,7 @@ public final class DefaultData implements MutableData {
     }
 
     // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
-    private static boolean equals(final byte[] data1, final byte[] data2) {
+    private static boolean equals(byte[] data1, byte[] data2) {
         if (data1 == data2) {
             return true;
         }
@@ -178,7 +130,7 @@ public final class DefaultData implements MutableData {
         if (data2.length != length) {
             return false;
         }
-        for (int i = length - 1; i >= 0; i--) {
+        for (int i = length - 1; i >= DATA_OFFSET; i--) {
             if (data1[i] != data2[i]) {
                 return false;
             }
@@ -188,22 +140,22 @@ public final class DefaultData implements MutableData {
 
     @Override
     public int hashCode() {
-        return HashUtil.MurmurHash3_x86_32(data, 0, dataSize());
+        return HashUtil.MurmurHash3_x86_32(data, DATA_OFFSET, dataSize());
     }
 
     @Override
     public long hash64() {
-        return HashUtil.MurmurHash3_x64_64(data, 0, dataSize());
+        return HashUtil.MurmurHash3_x64_64(data, DATA_OFFSET, dataSize());
     }
 
     @Override
     public boolean isPortable() {
-        return SerializationConstants.CONSTANT_TYPE_PORTABLE == type;
+        return SerializationConstants.CONSTANT_TYPE_PORTABLE == getType();
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("HeapData{");
+        final StringBuilder sb = new StringBuilder("DefaultData{");
         sb.append("type=").append(getType());
         sb.append(", hashCode=").append(hashCode());
         sb.append(", partitionHash=").append(getPartitionHash());

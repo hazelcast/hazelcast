@@ -164,6 +164,16 @@ public final class ClassDefinitionBuilder {
         return this;
     }
 
+    ClassDefinitionBuilder addField(FieldDefinitionImpl fieldDefinition) {
+        check();
+        if (index != fieldDefinition.getIndex()) {
+            throw new IllegalArgumentException("Invalid field index");
+        }
+        index++;
+        fieldDefinitions.add(fieldDefinition);
+        return this;
+    }
+
     public ClassDefinition build() {
         done = true;
         final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId, version);
@@ -177,5 +187,17 @@ public final class ClassDefinitionBuilder {
         if (done) {
             throw new HazelcastSerializationException("ClassDefinition is already built for " + classId);
         }
+    }
+
+    public int getFactoryId() {
+        return factoryId;
+    }
+
+    public int getClassId() {
+        return classId;
+    }
+
+    public int getVersion() {
+        return version;
     }
 }
