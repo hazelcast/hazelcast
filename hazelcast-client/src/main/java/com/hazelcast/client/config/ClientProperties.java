@@ -22,62 +22,63 @@ package com.hazelcast.client.config;
 public class ClientProperties {
 
     /**
-     * Client shuffles the given member list to prevent all clients to connect to same node when
-     * this property is false. When set to true, client tries to connect to nodes in order as given.
+     * Client shuffles the given member list to prevent all clients to connect to the same node when
+     * this property is set to false. When it is set to true, the client tries to connect to the nodes
+     * in the given order.
      */
     public static final String PROP_SHUFFLE_MEMBER_LIST = "hazelcast.client.shuffle.member.list";
     /**
-     * Default value of shuffle member list is true when user not set it explicitly
+     * Default value of the shuffle member list is true unless the user specifies it explicitly.
      */
     public static final String PROP_SHUFFLE_INITIAL_MEMBER_LIST_DEFAULT = "true";
 
     /**
-     * Client will be sending heartbeat messages to members and this is the timeout. If there is not any message
-     * passing between client and member within the given time via this property in milliseconds the connection
-     * will be closed.
+     * Client sends heartbeat messages to the members and this is the timeout for this sending operations. If there
+     * is not any message passing between the client and member within the given time via this property
+     * in milliseconds, the connection will be closed.
      */
     public static final String PROP_HEARTBEAT_TIMEOUT = "hazelcast.client.heartbeat.timeout";
     /**
-     * Default value of heartbeat timeout when user not set it explicitly
+     * Default value of the heartbeat timeout unless the user specifies it explicitly.
      */
     public static final String PROP_HEARTBEAT_TIMEOUT_DEFAULT = "60000";
 
     /**
-     * Time interval between heartbeats to nodes from client
+     * Time interval between the heartbeats sent by the client to the nodes.
      */
     public static final String PROP_HEARTBEAT_INTERVAL = "hazelcast.client.heartbeat.interval";
     /**
-     * Default value of PROP_HEARTBEAT_INTERVAL when user not set it explicitly
+     * Default value of heartbeat interval unless the user specifies it explicitly.
      */
     public static final String PROP_HEARTBEAT_INTERVAL_DEFAULT = "5000";
 
     /**
-     * Number of threads to handle incoming event packets
+     * Number of the threads to handle the incoming event packets.
      */
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.client.event.thread.count";
 
     /**
-     * Default value of number of threads to handle incoming event packets
+     * Default value of the number of threads to handle the incoming event packets.
      */
     public static final String PROP_EVENT_THREAD_COUNT_DEFAULT = "5";
 
     /**
-     * Capacity of executor that will handle incoming event packets.
+     * Capacity of the executor that handles the incoming event packets.
      */
     public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.client.event.queue.capacity";
 
     /**
-     * Default value of capacity of executor that will handle incoming event packets.
+     * Default value of the capacity of the executor that handles the incoming event packets.
      */
     public static final String PROP_EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
 
     /**
-     * Time to give up on invocation when a member in member list is not reachable
+     * Time to give up on invocation when a member in the member list is not reachable.
      */
     public static final String PROP_INVOCATION_TIMEOUT_SECONDS = "hazelcast.client.invocation.timeout.seconds";
 
     /**
-     * Default value of invocation timeout seconds
+     * Default value of invocation timeout seconds.
      */
     public static final String PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT = "120";
 
