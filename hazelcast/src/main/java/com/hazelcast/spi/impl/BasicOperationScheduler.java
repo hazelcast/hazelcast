@@ -32,7 +32,6 @@ import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
@@ -129,11 +128,12 @@ public final class BasicOperationScheduler {
             threadCount = Math.max(2, coreSize);
         }
 
-        PartitionOperationThreadFactory threadFactory = new PartitionOperationThreadFactory();
         OperationThread[] threads = new OperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
-
-            OperationThread operationThread = threadFactory.newThread(null);
+            String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
+            LinkedBlockingQueue workQueue = new LinkedBlockingQueue();
+            ConcurrentLinkedQueue priorityWorkQueue = new ConcurrentLinkedQueue();
+            OperationThread operationThread = new OperationThread(threadName, true, threadId, workQueue, priorityWorkQueue);
             threads[threadId] = operationThread;
             operationThread.start();
         }
@@ -149,14 +149,15 @@ public final class BasicOperationScheduler {
             threadCount = Math.max(2, coreSize / 2);
         }
 
-        GenericOperationThreadFactory threadFactory = new GenericOperationThreadFactory();
-
         OperationThread[] threads = new OperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
-            OperationThread operationThread = threadFactory.newThread(null);
+            String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
+            OperationThread operationThread = new OperationThread(threadName, false, threadId, genericWorkQueue,
+                    genericPriorityWorkQueue);
             threads[threadId] = operationThread;
             operationThread.start();
         }
+
         return threads;
     }
     @PrivateApi
@@ -412,35 +413,6 @@ public final class BasicOperationScheduler {
         return "BasicOperationScheduler{"
                 + "node=" + thisAddress
                 + '}';
-    }
-
-    private class GenericOperationThreadFactory implements ThreadFactory {
-        private int threadId;
-
-        @Override
-        public OperationThread newThread(Runnable ignore) {
-            String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
-            OperationThread thread = new OperationThread(threadName, false, threadId, genericWorkQueue,
-                    genericPriorityWorkQueue);
-            threadId++;
-            return thread;
-        }
-    }
-
-    private class PartitionOperationThreadFactory implements ThreadFactory {
-        private int threadId;
-
-        @Override
-        public OperationThread newThread(Runnable ignore) {
-            String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
-            //each partition operation thread, has its own workqueues because operations are partition specific and can't
-            //be executed by other threads.
-            LinkedBlockingQueue workQueue = new LinkedBlockingQueue();
-            ConcurrentLinkedQueue priorityWorkQueue = new ConcurrentLinkedQueue();
-            OperationThread thread = new OperationThread(threadName, true, threadId, workQueue, priorityWorkQueue);
-            threadId++;
-            return thread;
-        }
     }
 
     final class OperationThread extends HazelcastManagedThread {
