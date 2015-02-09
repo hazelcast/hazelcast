@@ -97,10 +97,7 @@ public class XMLConfigPreProcessorTest {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast>";
-
-        Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
-        Config config = buildConfig(xml, properties);
+        Config config = buildConfig(xml, "config.location", file.getAbsolutePath());
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
         assertTrue(join.getTcpIpConfig().isEnabled());
@@ -440,7 +437,6 @@ public class XMLConfigPreProcessorTest {
 
     @Test
     public void testXmlVariableReplacementAsSubstring() throws Exception {
-        Properties properties = new Properties();
         String xml = "<hazelcast>\n" +
                 "    <properties>\n" +
                 "        <property name=\"${env}-with-suffix\">local-with-suffix</property>\n" +
@@ -448,15 +444,13 @@ public class XMLConfigPreProcessorTest {
                 "    </properties>\n" +
                 "</hazelcast>";
 
-        properties.setProperty("env", "local");
-        Config config = buildConfig(xml, properties);
+        Config config = buildConfig(xml, "env", "local");
         assertEquals(config.getProperty("local-with-suffix"), "local-with-suffix");
         assertEquals(config.getProperty("with-prefix-local"), "with-prefix-local");
     }
 
     @Test
     public void testXmlImportWithVariableReplacementAsSubstring() throws Exception {
-        Properties properties = new Properties();
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
         String networkConfig = "<hazelcast>" +
@@ -470,8 +464,7 @@ public class XMLConfigPreProcessorTest {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"file://" + "${file}" + "\"/>\n" +
                 "</hazelcast>";
-        properties.setProperty("file", file.getAbsolutePath());
-        Config config = buildConfig(xml, properties);
+        Config config = buildConfig(xml, "file", file.getAbsolutePath());
         assertEquals(config.getProperty("prop1"), "value1");
         assertEquals(config.getProperty("prop2"), "value2");
     }
@@ -495,5 +488,11 @@ public class XMLConfigPreProcessorTest {
         configBuilder.setProperties(properties);
         Config config = configBuilder.build();
         return config;
+    }
+
+    Config buildConfig(String xml, String key, String value) {
+        Properties properties = new Properties();
+        properties.setProperty(key, value);
+        return buildConfig(xml, properties);
     }
 }
