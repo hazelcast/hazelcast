@@ -64,6 +64,9 @@ public interface ClientConnectionManager {
     /**
      * Destroys the connection
      * Clears related resources of given connection.
+     * ConnectionListener.connectionRemoved is called on registered listeners.
+     * <p/>
+     * If connection is already destroyed before calling this then does nothing.
      *
      * @param connection to be closed
      */

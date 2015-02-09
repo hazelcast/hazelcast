@@ -18,9 +18,15 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.ClientTestUtil;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +38,7 @@ import org.junit.runner.RunWith;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
@@ -98,4 +105,40 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         Collection<Client> connectedClients2 = server2.getClientService().getConnectedClients();
         assertEquals(connectedClients2.size(), 0);
     }
+
+    @Test
+    public void destroyConnection_whenDestroyedMultipleTimes_thenListenerRemoveCalledOnce() {
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+
+        final CountingConnectionRemoveListener listener = new CountingConnectionRemoveListener();
+
+        connectionManager.addConnectionListener(listener);
+
+        final Address serverAddress = new Address(server.getCluster().getLocalMember().getSocketAddress());
+        final Connection connectionToServer = connectionManager.getConnection(serverAddress);
+
+        connectionManager.destroyConnection(connectionToServer);
+        connectionManager.destroyConnection(connectionToServer);
+
+        assertEquals("connection removed should be called only once", 1, listener.count.get());
+    }
+
+    private class CountingConnectionRemoveListener implements ConnectionListener {
+
+        final AtomicInteger count = new AtomicInteger();
+
+        @Override
+        public void connectionAdded(Connection connection) {
+
+        }
+
+        @Override
+        public void connectionRemoved(Connection connection) {
+            count.incrementAndGet();
+        }
+    }
+
 }

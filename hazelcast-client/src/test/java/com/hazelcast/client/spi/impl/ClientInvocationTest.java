@@ -27,6 +27,7 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -36,14 +37,13 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientInvocationTest {
+public class ClientInvocationTest extends HazelcastTestSupport {
 
     @Before
     @After
@@ -55,7 +55,7 @@ public class ClientInvocationTest {
     /**
      * When a async operation fails because of a node termination,
      * failure stack trace is copied incrementally for each async invocation/future
-     *
+     * <p/>
      * see https://github.com/hazelcast/hazelcast/issues/4192
      */
     @Test
@@ -66,23 +66,26 @@ public class ClientInvocationTest {
         HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        IMap<Object, Object> map = client.getMap("test");
+        IMap<Object, Object> map = client.getMap(randomMapName());
 
         DummyEntryProcessor ep = new DummyEntryProcessor();
 
         int count = 100;
         FailureExecutionCallback[] callbacks = new FailureExecutionCallback[count];
+        String key = randomString();
         for (int i = 0; i < count; i++) {
             callbacks[i] = new FailureExecutionCallback();
-            map.submitToKey("key", ep, callbacks[i]);
+            map.submitToKey(key, ep, callbacks[i]);
         }
 
         // crash the server
         TestUtil.getNode(server).getConnectionManager().shutdown();
         server.getLifecycleService().terminate();
 
+        int callBackCount = 0;
         for (FailureExecutionCallback callback : callbacks) {
-            assertTrue("Callback should be notified on time!", callback.latch.await(1, TimeUnit.MINUTES));
+            callBackCount++;
+            assertOpenEventually("Callback should be notified on time! callbackCount:" + callBackCount, callback.latch);
 
             Throwable failure = callback.failure;
             if (failure == null) {

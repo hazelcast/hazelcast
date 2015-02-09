@@ -258,10 +258,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public void destroyConnection(Connection connection) {
         Address endpoint = connection.getEndPoint();
         if (endpoint != null) {
-            connections.remove(endpoint);
-            connection.close();
+            final ClientConnection conn = connections.remove(endpoint);
+            if (conn == null) {
+                return;
+            }
+            conn.close();
             for (ConnectionListener connectionListener : connectionListeners) {
-                connectionListener.connectionRemoved(connection);
+                connectionListener.connectionRemoved(conn);
             }
         }
     }
