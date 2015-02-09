@@ -26,7 +26,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -62,9 +62,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(1 <= listener.events.size());
+                assertNotEquals("Expecting one or more events", 0, listener.events.size());
                 MembershipEvent event = listener.events.getLast();
-                assertEquals(MembershipEvent.MEMBER_ADDED, event.getEventType());
+                assertEquals("Last event should be member added", MembershipEvent.MEMBER_ADDED, event.getEventType());
                 assertEquals(server2.getCluster().getLocalMember(), event.getMember());
                 assertEquals(getMembers(server1, server2), event.getMembers());
             }
@@ -87,9 +87,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(1 <= listener.events.size());
+                assertNotEquals("Expecting one or more events", 0, listener.events.size());
                 MembershipEvent event = listener.events.getLast();
-                assertEquals(MembershipEvent.MEMBER_REMOVED, event.getEventType());
+                assertEquals("Last event should be member removed", MembershipEvent.MEMBER_REMOVED, event.getEventType());
                 assertEquals(server2Member, event.getMember());
                 assertEquals(getMembers(server1), event.getMembers());
             }
