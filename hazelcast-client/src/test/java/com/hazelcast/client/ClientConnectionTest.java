@@ -107,7 +107,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConnectionRemovedOnce() {
+    public void destroyConnection_whenDestroyedMultipleTimes_thenListenerRemoveCalledOnce() {
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
