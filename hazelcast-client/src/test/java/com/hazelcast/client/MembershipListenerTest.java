@@ -21,12 +21,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import java.util.Vector;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -45,13 +45,13 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
 
     @Test
     public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
+        final MemberShipEventLogger listener = new MemberShipEventLogger();
 
         client.getCluster().addMembershipListener(listener);
 
@@ -62,9 +62,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(1, listener.events.size());
-                MembershipEvent event = listener.events.get(0);
-                assertEquals(MembershipEvent.MEMBER_ADDED, event.getEventType());
+                assertNotEquals("Expecting one or more events", 0, listener.events.size());
+                MembershipEvent event = listener.events.getLast();
+                assertEquals("Last event should be member added", MembershipEvent.MEMBER_ADDED, event.getEventType());
                 assertEquals(server2.getCluster().getLocalMember(), event.getMember());
                 assertEquals(getMembers(server1, server2), event.getMembers());
             }
@@ -73,7 +73,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
-        final MemberShipEventLoger listener = new MemberShipEventLoger();
+        final MemberShipEventLogger listener = new MemberShipEventLogger();
 
         //start a second server and verify that the listener receives it.
         final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
@@ -87,9 +87,9 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(1, listener.events.size());
-                MembershipEvent event = listener.events.get(0);
-                assertEquals(MembershipEvent.MEMBER_REMOVED, event.getEventType());
+                assertNotEquals("Expecting one or more events", 0, listener.events.size());
+                MembershipEvent event = listener.events.getLast();
+                assertEquals("Last event should be member removed", MembershipEvent.MEMBER_REMOVED, event.getEventType());
                 assertEquals(server2Member, event.getMember());
                 assertEquals(getMembers(server1), event.getMembers());
             }
@@ -98,7 +98,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
 
     @Test
     public void removedPhantomListener_thenFalse() throws Exception {
-        assertFalse(client.getCluster().removeMembershipListener("_IamNotHear_"));
+        assertFalse(client.getCluster().removeMembershipListener(randomString()));
     }
 
     @Test(expected = NullPointerException.class)
@@ -123,16 +123,16 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     }
 
 
-    private class MemberShipEventLoger implements MembershipListener {
+    private class MemberShipEventLogger implements MembershipListener {
 
-        private List<MembershipEvent> events = new Vector<MembershipEvent>();
+        public LinkedBlockingDeque<MembershipEvent> events = new LinkedBlockingDeque<MembershipEvent>();
 
         public void memberAdded(MembershipEvent event) {
-            events.add(event);
+            events.addLast(event);
         }
 
         public void memberRemoved(MembershipEvent event) {
-            events.add(event);
+            events.addLast(event);
         }
 
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
