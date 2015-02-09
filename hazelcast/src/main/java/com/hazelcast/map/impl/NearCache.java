@@ -26,7 +26,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.QuickMath;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -38,7 +37,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * NearCache.
@@ -60,36 +58,10 @@ public class NearCache {
     private final NodeEngine nodeEngine;
     private final AtomicBoolean canCleanUp;
     private final AtomicBoolean canEvict;
-    private final ConcurrentMap<Data, CacheRecord> cache;
+    private final ConcurrentMap<Data, NearCacheRecord> cache;
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
-    private final Comparator<CacheRecord> selectedComparator;
-
-    private final Comparator<CacheRecord> lruComparator = new Comparator<CacheRecord>() {
-        public int compare(CacheRecord o1, CacheRecord o2) {
-            final int result = QuickMath.compareLongs(o1.lastAccessTime, o2.lastAccessTime);
-            if (result != 0) {
-                return result;
-            }
-            return QuickMath.compareIntegers(o1.key.getPartitionHash(), o2.key.getPartitionHash());
-        }
-    };
-
-    private final Comparator<CacheRecord> lfuComparator = new Comparator<CacheRecord>() {
-        public int compare(CacheRecord o1, CacheRecord o2) {
-            final int result = QuickMath.compareIntegers(o1.hit.get(), o2.hit.get());
-            if (result != 0) {
-                return result;
-            }
-            return QuickMath.compareIntegers(o1.key.getPartitionHash(), o2.key.getPartitionHash());
-        }
-    };
-
-    private final Comparator<CacheRecord> defaultComparator = new Comparator<CacheRecord>() {
-        public int compare(CacheRecord o1, CacheRecord o2) {
-            return QuickMath.compareIntegers(o1.key.getPartitionHash(), o2.key.getPartitionHash());
-        }
-    };
+    private final Comparator<NearCacheRecord> selectedComparator;
 
     private SizeEstimator nearCacheSizeEstimator;
 
@@ -106,14 +78,8 @@ public class NearCache {
         inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         timeToLiveMillis = TimeUnit.SECONDS.toMillis(nearCacheConfig.getTimeToLiveSeconds());
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
-        if (EvictionPolicy.LRU.equals(evictionPolicy)) {
-            selectedComparator = lruComparator;
-        } else if (EvictionPolicy.LFU.equals(evictionPolicy)) {
-            selectedComparator = lfuComparator;
-        } else {
-            selectedComparator = defaultComparator;
-        }
-        cache = new ConcurrentHashMap<Data, CacheRecord>();
+        selectedComparator = NearCacheRecord.getComparator(evictionPolicy);
+        cache = new ConcurrentHashMap<Data, NearCacheRecord>();
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
         nearCacheStats = new NearCacheStatsImpl();
@@ -141,7 +107,7 @@ public class NearCache {
         } else {
             value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
         }
-        final CacheRecord record = new CacheRecord(key, value);
+        final NearCacheRecord record = new NearCacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
         if (NULL_OBJECT.equals(value)) {
@@ -158,7 +124,7 @@ public class NearCache {
     private NearCacheStatsImpl createNearCacheStats() {
         long ownedEntryCount = 0;
         long ownedEntryMemoryCost = 0;
-        for (CacheRecord record : cache.values()) {
+        for (NearCacheRecord record : cache.values()) {
             ownedEntryCount++;
             ownedEntryMemoryCost += record.getCost();
         }
@@ -173,12 +139,12 @@ public class NearCache {
                 nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
                     public void run() {
                         try {
-                            TreeSet<CacheRecord> records = new TreeSet<CacheRecord>(selectedComparator);
+                            TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
                             records.addAll(cache.values());
                             int evictSize = cache.size() * EVICTION_PERCENTAGE / HUNDRED_PERCENT;
                             int i = 0;
-                            for (CacheRecord record : records) {
-                                cache.remove(record.key);
+                            for (NearCacheRecord record : records) {
+                                cache.remove(record.getKey());
                                 updateSizeEstimator(-calculateCost(record));
                                 if (++i > evictSize) {
                                     break;
@@ -208,10 +174,10 @@ public class NearCache {
                     public void run() {
                         try {
                             lastCleanup = Clock.currentTimeMillis();
-                            for (Map.Entry<Data, CacheRecord> entry : cache.entrySet()) {
-                                if (entry.getValue().expired()) {
+                            for (Map.Entry<Data, NearCacheRecord> entry : cache.entrySet()) {
+                                if (entry.getValue().isExpired(maxIdleMillis, timeToLiveMillis)) {
                                     final Data key = entry.getKey();
-                                    final CacheRecord record = cache.remove(key);
+                                    final NearCacheRecord record = cache.remove(key);
                                     //if a mapping exists.
                                     if (record != null) {
                                         updateSizeEstimator(-calculateCost(record));
@@ -233,16 +199,17 @@ public class NearCache {
 
     public Object get(Data key) {
         fireTtlCleanup();
-        CacheRecord record = cache.get(key);
+        NearCacheRecord record = cache.get(key);
         if (record != null) {
-            if (record.expired()) {
+            if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
                 nearCacheStats.incrementMisses();
                 return null;
             }
+            nearCacheStats.incrementHits();
             record.access();
-            return record.value;
+            return record.getValue();
         } else {
             nearCacheStats.incrementMisses();
             return null;
@@ -250,7 +217,7 @@ public class NearCache {
     }
 
     public void invalidate(Data key) {
-        final CacheRecord record = cache.remove(key);
+        final NearCacheRecord record = cache.remove(key);
         // if a mapping exists for the key.
         if (record != null) {
             updateSizeEstimator(-calculateCost(record));
@@ -275,73 +242,8 @@ public class NearCache {
         resetSizeEstimator();
     }
 
-    public Map<Data, CacheRecord> getReadonlyMap() {
+    public Map<Data, NearCacheRecord> getReadonlyMap() {
         return Collections.unmodifiableMap(cache);
-    }
-
-    /**
-     * CacheRecord.
-     */
-    public class CacheRecord {
-        final Data key;
-        final Object value;
-        final long creationTime;
-        final AtomicInteger hit;
-        volatile long lastAccessTime;
-
-        CacheRecord(Data key, Object value) {
-            this.key = key;
-            this.value = value;
-            long time = Clock.currentTimeMillis();
-            this.lastAccessTime = time;
-            this.creationTime = time;
-            this.hit = new AtomicInteger(0);
-        }
-
-        void access() {
-            hit.incrementAndGet();
-            nearCacheStats.incrementHits();
-            lastAccessTime = Clock.currentTimeMillis();
-        }
-
-        boolean expired() {
-            long time = Clock.currentTimeMillis();
-            return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis)
-                    || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
-        }
-
-        // If you don't think instances of this class will ever be inserted into a HashMap/HashTable,
-        // the recommended hashCode implementation to use is:
-        public int hashCode() {
-            assert false : "hashCode not designed";
-            // any arbitrary constant will do.
-            return 42;
-        }
-
-        public long getCost() {
-            // todo find object size  if not a Data instance.
-            if (!(value instanceof Data)) {
-                return 0;
-            }
-            final int numberOfLongs = 2;
-            final int numberOfIntegers = 3;
-            // value is Data
-            return key.getHeapCost()
-                    + ((Data) value).getHeapCost()
-                    + numberOfLongs * (Long.SIZE / Byte.SIZE)
-                    // sizeof atomic integer
-                    + (Integer.SIZE / Byte.SIZE)
-                    // object references (key, value, hit)
-                    + numberOfIntegers * (Integer.SIZE / Byte.SIZE);
-        }
-
-        public Data getKey() {
-            return key;
-        }
-
-        public Object getValue() {
-            return value;
-        }
     }
 
     private void resetSizeEstimator() {
@@ -352,7 +254,7 @@ public class NearCache {
         getNearCacheSizeEstimator().add(size);
     }
 
-    private long calculateCost(CacheRecord record) {
+    private long calculateCost(NearCacheRecord record) {
         return getNearCacheSizeEstimator().getCost(record);
     }
 
