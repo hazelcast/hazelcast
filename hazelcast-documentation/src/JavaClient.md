@@ -701,8 +701,8 @@ The table below lists the client configuration properties with their description
 
 Property Name | Default Value | Type | Description
 :--------------|:---------------|:------|:------------
-`hazelcast.client.event.thread.count`|5|string|The thread count for handling incoming event packets.
 `hazelcast.client.event.queue.capacity`|1000000|string|The default value of the capacity of executor that handles incoming event packets.
+`hazelcast.client.event.thread.count`|5|string|The thread count for handling incoming event packets.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to the members.
 `hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If no messages pass between client and member within the given time via this property in milliseconds, the connection will be closed.
 `hazelcast.client.invocation.timeout.seconds`|120|string|Time to give up the invocation when a member in the member list is not reachable.
