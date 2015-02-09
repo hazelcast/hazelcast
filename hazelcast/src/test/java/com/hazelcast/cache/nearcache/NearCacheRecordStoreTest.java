@@ -22,7 +22,7 @@ public class NearCacheRecordStoreTest extends NearCacheTestSupport {
 
     private static final int DEFAULT_RECORD_COUNT = 100;
 
-    private void putAndGetRecordSuccessfully(InMemoryFormat inMemoryFormat) {
+    private void putAndGetRecord(InMemoryFormat inMemoryFormat) {
         NearCacheRecordStore<Integer, String> nearCacheRecordStore =
                 createNearCacheRecordStore(
                         createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat),
@@ -39,16 +39,16 @@ public class NearCacheRecordStoreTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void putAndGetRecordSuccessfullyFromNearCacheObjectRecordStore() {
-        putAndGetRecordSuccessfully(InMemoryFormat.OBJECT);
+    public void putAndGetRecordFromNearCacheObjectRecordStore() {
+        putAndGetRecord(InMemoryFormat.OBJECT);
     }
 
     @Test
     public void putAndGetRecordSuccessfullyFromNearCacheDataRecordStore() {
-        putAndGetRecordSuccessfully(InMemoryFormat.BINARY);
+        putAndGetRecord(InMemoryFormat.BINARY);
     }
 
-    private void putAndRemoveRecordSuccessfully(InMemoryFormat inMemoryFormat) {
+    private void putAndRemoveRecord(InMemoryFormat inMemoryFormat) {
         NearCacheRecordStore<Integer, String> nearCacheRecordStore =
                 createNearCacheRecordStore(
                         createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat),
@@ -68,16 +68,16 @@ public class NearCacheRecordStoreTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void putAndRemoveRecordSuccessfullyFromNearCacheObjectRecordStore() {
-        putAndRemoveRecordSuccessfully(InMemoryFormat.OBJECT);
+    public void putAndRemoveRecordFromNearCacheObjectRecordStore() {
+        putAndRemoveRecord(InMemoryFormat.OBJECT);
     }
 
     @Test
     public void putAndRemoveRecordSuccessfullyFromNearCacheDataRecordStore() {
-        putAndRemoveRecordSuccessfully(InMemoryFormat.BINARY);
+        putAndRemoveRecord(InMemoryFormat.BINARY);
     }
 
-    private void clearRecordsOrDestroyStoreSuccessfullyFromNearCacheDataRecordStore(
+    private void clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(
             InMemoryFormat inMemoryFormat, boolean destroy) {
         NearCacheRecordStore<Integer, String> nearCacheRecordStore =
                 createNearCacheRecordStore(
@@ -103,26 +103,26 @@ public class NearCacheRecordStoreTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void clearRecordsSuccessfullyFromNearCacheObjectRecordStore() {
-        clearRecordsOrDestroyStoreSuccessfullyFromNearCacheDataRecordStore(InMemoryFormat.OBJECT, false);
+    public void clearRecordsFromNearCacheObjectRecordStore() {
+        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.OBJECT, false);
     }
 
     @Test
     public void clearRecordsSuccessfullyFromNearCacheDataRecordStore() {
-        clearRecordsOrDestroyStoreSuccessfullyFromNearCacheDataRecordStore(InMemoryFormat.BINARY, false);
+        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.BINARY, false);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void destoryStoreSuccessfullyFromNearCacheObjectRecordStore() {
-        clearRecordsOrDestroyStoreSuccessfullyFromNearCacheDataRecordStore(InMemoryFormat.OBJECT, true);
+    public void destoryStoreFromNearCacheObjectRecordStore() {
+        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.OBJECT, true);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void destoryStoreSuccessfullyFromNearCacheDataRecordStore() {
-        clearRecordsOrDestroyStoreSuccessfullyFromNearCacheDataRecordStore(InMemoryFormat.BINARY, true);
+    public void destoryStoreFromNearCacheDataRecordStore() {
+        clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(InMemoryFormat.BINARY, true);
     }
 
-    private void statsCalculatedSuccessfully(InMemoryFormat inMemoryFormat) {
+    private void statsCalculated(InMemoryFormat inMemoryFormat) {
         long creationStartTime = System.currentTimeMillis();
         NearCacheRecordStore<Integer, String> nearCacheRecordStore =
                 createNearCacheRecordStore(
@@ -192,16 +192,16 @@ public class NearCacheRecordStoreTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void statsCalculatedSuccessfullyOnNearCacheObjectRecordStore() {
-        statsCalculatedSuccessfully(InMemoryFormat.OBJECT);
+    public void statsCalculatedOnNearCacheObjectRecordStore() {
+        statsCalculated(InMemoryFormat.OBJECT);
     }
 
     @Test
-    public void statsCalculatedSuccessfullyOnNearCacheDataRecordStore() {
-        statsCalculatedSuccessfully(InMemoryFormat.BINARY);
+    public void statsCalculatedOnNearCacheDataRecordStore() {
+        statsCalculated(InMemoryFormat.BINARY);
     }
 
-    private void ttlEvaluatedSuccessfully(InMemoryFormat inMemoryFormat) {
+    private void ttlEvaluated(InMemoryFormat inMemoryFormat) {
         final int TTL_SECONDS = 3;
 
         NearCacheConfig nearCacheConfig =
@@ -230,13 +230,13 @@ public class NearCacheRecordStoreTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void ttlEvaluatedSuccessfullyOnNearCacheObjectRecordStore() {
-        ttlEvaluatedSuccessfully(InMemoryFormat.OBJECT);
+    public void ttlEvaluatedOnNearCacheObjectRecordStore() {
+        ttlEvaluated(InMemoryFormat.OBJECT);
     }
 
     @Test
     public void ttlEvaluatedSuccessfullyOnNearCacheDataRecordStore() {
-        ttlEvaluatedSuccessfully(InMemoryFormat.BINARY);
+        ttlEvaluated(InMemoryFormat.BINARY);
     }
 
     private void maxIdleTimeEvaluatedSuccessfully(InMemoryFormat inMemoryFormat) {

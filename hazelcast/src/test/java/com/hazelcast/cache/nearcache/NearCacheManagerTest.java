@@ -32,7 +32,7 @@ public class NearCacheManagerTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void createAndGetNearCacheSuccessfully() {
+    public void createAndGetNearCache() {
         NearCacheManager nearCacheManager = new DefaultNearCacheManager();
 
         assertNull(nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME));
@@ -50,7 +50,7 @@ public class NearCacheManagerTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void listNearCachesSuccessfully() {
+    public void listNearCaches() {
         NearCacheManager nearCacheManager = new DefaultNearCacheManager();
 
         Collection<NearCache> nearCaches1 = nearCacheManager.listAllNearCaches();
@@ -70,7 +70,7 @@ public class NearCacheManagerTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void clearNearCacheAndClearAllNearCachesSuccessfully() {
+    public void clearNearCacheAndClearAllNearCaches() {
         NearCacheManager nearCacheManager = new DefaultNearCacheManager();
 
         for (int i = 0; i < DEFAULT_NEAR_CACHE_COUNT; i++) {
@@ -97,7 +97,7 @@ public class NearCacheManagerTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void destroyNearCacheAndDestroyAllNearCachesSuccessfully() {
+    public void destroyNearCacheAndDestroyAllNearCaches() {
         NearCacheManager nearCacheManager = new DefaultNearCacheManager();
 
         for (int i = 0; i < DEFAULT_NEAR_CACHE_COUNT; i++) {
