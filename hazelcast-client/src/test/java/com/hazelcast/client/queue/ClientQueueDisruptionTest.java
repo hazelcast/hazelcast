@@ -33,6 +33,7 @@ public class ClientQueueDisruptionTest {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(cluster.getName()));
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         client1 = HazelcastClient.newHazelcastClient(clientConfig);
         client2 = HazelcastClient.newHazelcastClient(clientConfig);
     }
@@ -46,15 +47,15 @@ public class ClientQueueDisruptionTest {
     @Test
     public void clientsConsume_withNodeShutdown() throws InterruptedException {
 
-        final int inital = 2000, max = 8000;
+        final int initial = 2000, max = 8000;
 
-        for (int i = 0; i < inital; i++) {
+        for (int i = 0; i < initial; i++) {
             cluster.getRandomNode().getQueue("Q1").offer(i);
             cluster.getRandomNode().getQueue("Q2").offer(i);
         }
 
         int expect = 0;
-        for (int i = inital; i < max; i++) {
+        for (int i = initial; i < max; i++) {
 
             if (i == max / 2) {
                 cluster.shutdownRandomNode();
