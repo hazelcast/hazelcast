@@ -41,6 +41,15 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         this.nearCacheRecordStore = createNearCacheRecordStore(nearCacheConfig, nearCacheContext);
     }
 
+    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
+                            NearCacheContext nearCacheContext,
+                            NearCacheRecordStore<K, V> nearCacheRecordStore) {
+        this.name = name;
+        this.nearCacheConfig = nearCacheConfig;
+        this.serializationService = nearCacheContext.getSerializationService();
+        this.nearCacheRecordStore = nearCacheRecordStore;
+    }
+
     protected NearCacheRecordStore<K, V> createNearCacheRecordStore(NearCacheConfig nearCacheConfig,
                                                                     NearCacheContext nearCacheContext) {
         InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
