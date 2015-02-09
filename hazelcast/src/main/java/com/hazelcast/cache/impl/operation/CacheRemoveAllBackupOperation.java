@@ -51,6 +51,11 @@ public class CacheRemoveAllBackupOperation
     }
 
     @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }

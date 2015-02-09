@@ -25,9 +25,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -38,7 +35,6 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
@@ -53,12 +49,8 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.concurrent.TimeUnit;
 
 public class NodeEngineImpl implements NodeEngine {
-
-    private static final int RETRY_NUMBER = 5;
-    private static final int DELAY_FACTOR = 100;
 
     final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
@@ -72,6 +64,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
+    private final PacketTransceiver packetTransceiver;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -84,6 +77,12 @@ public class NodeEngineImpl implements NodeEngine {
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
         wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+        packetTransceiver = new PacketTransceiverImpl(
+                node, logger, operationService, eventService, wanReplicationService, executionService);
+    }
+
+    public PacketTransceiver getPacketTransceiver() {
+        return packetTransceiver;
     }
 
     @PrivateApi
@@ -198,67 +197,6 @@ public class NodeEngineImpl implements NodeEngine {
         return node.hazelcastInstance;
     }
 
-    public boolean send(Packet packet, Connection connection) {
-        if (connection == null || !connection.isAlive()) {
-            return false;
-        }
-        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
-        }
-        return connection.write(packet);
-    }
-
-    /**
-     * Retries sending packet maximum 5 times until connection to target becomes available.
-     */
-    public boolean send(Packet packet, Address target) {
-        return send(packet, target, null);
-    }
-
-    private boolean send(Packet packet, Address target, SendTask sendTask) {
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getConnection(target);
-        if (connection != null) {
-            return send(packet, connection);
-        }
-
-        if (sendTask == null) {
-            sendTask = new SendTask(packet, target);
-        }
-
-        final int retries = sendTask.retries;
-        if (retries < RETRY_NUMBER && node.isActive()) {
-            connectionManager.getOrConnect(target, true);
-            // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-            executionService.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
-            return true;
-        }
-        return false;
-    }
-
-    private final class SendTask implements Runnable {
-        private final Packet packet;
-        private final Address target;
-        private volatile int retries;
-
-        private SendTask(Packet packet, Address target) {
-            this.packet = packet;
-            this.target = target;
-        }
-
-        //retries is incremented by a single thread, but will be read by multiple. So there is no problem.
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
-        @Override
-        public void run() {
-            retries++;
-            if (logger.isFinestEnabled()) {
-                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
-            }
-            send(packet, target, this);
-        }
-    }
-
     @Override
     public ILogger getLogger(String name) {
         return node.getLogger(name);
@@ -274,18 +212,6 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getGroupProperties();
     }
 
-    @PrivateApi
-    public void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.executeOperation(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-            eventService.handleEvent(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
-            wanReplicationService.handleEvent(packet);
-        } else {
-            logger.severe("Unknown packet type! Header: " + packet.getHeader());
-        }
-    }
 
     @PrivateApi
     public <T> T getService(String serviceName) {
@@ -357,22 +283,18 @@ public class NodeEngineImpl implements NodeEngine {
         }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
-            final Operation pjOp = service.getPostJoinOperation();
-            if (pjOp != null) {
-                if (pjOp instanceof PartitionAwareOperation) {
+            final Operation postJoinOperation = service.getPostJoinOperation();
+            if (postJoinOperation != null) {
+                if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(
                             "Post-join operations cannot implement PartitionAwareOperation! Service: " + service + ", Operation: "
-                                    + pjOp);
+                                    + postJoinOperation);
                     continue;
                 }
-                postJoinOps.add(pjOp);
+                postJoinOps.add(postJoinOperation);
             }
         }
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
-    }
-
-    public long getClusterTime() {
-        return node.getClusterService().getClusterTime();
     }
 
     @Override

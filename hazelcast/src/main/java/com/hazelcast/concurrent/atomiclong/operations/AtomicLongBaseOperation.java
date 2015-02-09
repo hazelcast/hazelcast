@@ -50,6 +50,11 @@ public abstract class AtomicLongBaseOperation extends Operation
     }
 
     @Override
+    public String getServiceName() {
+        return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
     }

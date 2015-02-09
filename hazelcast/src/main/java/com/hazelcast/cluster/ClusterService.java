@@ -93,11 +93,11 @@ public interface ClusterService extends CoreService {
     int getSize();
 
     /**
-     * Returns the cluster-time.
-     * <p/>
-     * TODO: We need to document what cluster time really means and what is can be used for.
+     * Returns the {@link com.hazelcast.cluster.ClusterClock} of the cluster.
      *
-     * @return the cluster-time.
+     * The returned value will never be null and will never change.
+     *
+     * @return the ClusterClock.
      */
-    long getClusterTime();
+    ClusterClock getClusterClock();
 }

@@ -11,7 +11,7 @@ When you start a second node, i.e. there will be a 2 node Hazelcast cluster, the
 
 ![](images/BackupPartitions.jpg)
 
-The blacks are primary partitions and reds are replicas (backups). In the above illustration, the first node has 135 primary partitions (black) and each of these partitions are backed up in the second node (red). At the same time, the first node has the replica partitions of the second node's primary partitions.
+The blacks are primary partitions and blue ones are replicas (backups). In the above illustration, the first node has 135 primary partitions (black) and each of these partitions are backed up in the second node (blue). At the same time, the first node has the replica partitions of the second node's primary partitions.
 
 As you add more nodes, Hazelcast moves one by one some of the primary and replica partitions to the new nodes, making all nodes equal and redundant. Only the minimum amount of partitions will be moved to scale out Hazelcast. The following is an illustration of the partition distributions in a 4 node Hazelcast cluster.
 

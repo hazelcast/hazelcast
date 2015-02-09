@@ -1,7 +1,7 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.impl.mapstore.writebehind.ReachedMaxSizeException;
+import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

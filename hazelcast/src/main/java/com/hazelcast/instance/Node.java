@@ -120,21 +120,20 @@ public class Node {
 
     public final SecurityContext securityContext;
 
-    public final ThreadGroup threadGroup;
-
     private final ClassLoader configClassLoader;
 
     private final BuildInfo buildInfo;
 
     private final VersionCheck versionCheck = new VersionCheck();
 
+    private final HazelcastThreadGroup hazelcastThreadGroup;
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
-        this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
-        configClassLoader = config.getClassLoader();
+        this.configClassLoader = config.getClassLoader();
         this.groupProperties = new GroupProperties(config);
-        buildInfo = BuildInfoProvider.getBuildInfo();
+        this.buildInfo = BuildInfoProvider.getBuildInfo();
 
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
@@ -152,6 +151,8 @@ public class Node {
             localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
+            hazelcastThreadGroup = new HazelcastThreadGroup(
+                    hazelcastInstance.getName(), logger, configClassLoader);
             nodeExtension = NodeExtensionFactory.create(configClassLoader);
             nodeExtension.beforeStart(this);
 
@@ -168,7 +169,6 @@ public class Node {
             this.multicastService = createMulticastService(addressPicker);
             initializeListeners(config);
             joiner = nodeContext.createJoiner(this);
-
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();
@@ -176,6 +176,10 @@ public class Node {
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    public HazelcastThreadGroup getHazelcastThreadGroup(){
+        return hazelcastThreadGroup;
     }
 
     private MulticastService createMulticastService(AddressPicker addressPicker) {
@@ -298,14 +302,6 @@ public class Node {
         return hazelcastInstance.getName();
     }
 
-    public String getThreadNamePrefix(String name) {
-        return "hz." + getName() + "." + name;
-    }
-
-    public String getThreadPoolNamePrefix(String poolName) {
-        return getThreadNamePrefix(poolName) + ".thread-";
-    }
-
     public boolean joined() {
         return joined.get();
     }
@@ -331,7 +327,8 @@ public class Node {
         nodeEngine.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
-            final Thread multicastServiceThread = new Thread(hazelcastInstance.threadGroup, multicastService, getThreadNamePrefix("MulticastThread"));
+            final Thread multicastServiceThread = new Thread(
+                    hazelcastThreadGroup.getInternalThreadGroup(), multicastService, hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
         setActive(true);
@@ -414,18 +411,7 @@ public class Node {
             logger.finest("Destroying serialization service...");
             serializationService.destroy();
 
-            int numThreads = threadGroup.activeCount();
-            Thread[] threads = new Thread[numThreads * 2];
-            numThreads = threadGroup.enumerate(threads, false);
-            for (int i = 0; i < numThreads; i++) {
-                Thread thread = threads[i];
-                if (thread.isAlive()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Shutting down thread " + thread.getName());
-                    }
-                    thread.interrupt();
-                }
-            }
+            hazelcastThreadGroup.destroy();
             logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }

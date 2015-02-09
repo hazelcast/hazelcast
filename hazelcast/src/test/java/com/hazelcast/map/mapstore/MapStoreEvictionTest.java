@@ -52,7 +52,7 @@ public class MapStoreEvictionTest extends HazelcastTestSupport {
 
         IMap<Object, Object> map = getMap(mapName, cfg);
 
-        assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
+        assertEquals(MAP_STORE_ENTRY_COUNT, map.size());
         assertEquals(MAP_STORE_ENTRY_COUNT, loadedValueCount.get());
     }
 

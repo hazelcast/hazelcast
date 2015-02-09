@@ -46,8 +46,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_WAIT_TIMEOUT_SET = 1 << 3;
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
-    static final int BITMASK_EXECUTOR_NAME_SET = 1 << 6;
-    static final int BITMASK_SERVICE_NAME_SET = 1 << 7;
+    static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
 
     // serialized
     private String serviceName;
@@ -59,7 +58,6 @@ public abstract class Operation implements DataSerializable {
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
     private String callerUuid;
-    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -69,6 +67,7 @@ public abstract class Operation implements DataSerializable {
     private transient ResponseHandler responseHandler;
 
     public Operation() {
+        setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
 
@@ -89,11 +88,24 @@ public abstract class Operation implements DataSerializable {
 
     public abstract Object getResponse();
 
+    // Gets the actual service name witout looking at overriding methods. This method only exists for testing purposes.
+    String getRawServiceName() {
+        return serviceName;
+    }
+
     public String getServiceName() {
         return serviceName;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
+        // If the name of the service is the same as the name already provided, the call is skipped.
+        // We can do a == instead of an equals because serviceName are typically constants, and it will
+        // prevent serialization of the service-name if it is already provided by the getServiceName.
+        if (serviceName == getServiceName()) {
+            return this;
+        }
+
         this.serviceName = serviceName;
         setFlag(serviceName != null, BITMASK_SERVICE_NAME_SET);
         return this;
@@ -144,15 +156,6 @@ public abstract class Operation implements DataSerializable {
         setFlag(replicaIndex != 0, BITMASK_REPLICA_INDEX_SET);
         this.replicaIndex = replicaIndex;
         return this;
-    }
-
-    public String getExecutorName() {
-        return executorName;
-    }
-
-    public void setExecutorName(String executorName) {
-        this.executorName = executorName;
-        setFlag(executorName != null, BITMASK_EXECUTOR_NAME_SET);
     }
 
     public final long getCallId() {
@@ -360,9 +363,6 @@ public abstract class Operation implements DataSerializable {
             out.writeUTF(callerUuid);
         }
 
-        if (isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
-            out.writeUTF(executorName);
-        }
         writeInternal(out);
     }
 
@@ -404,9 +404,6 @@ public abstract class Operation implements DataSerializable {
             callerUuid = in.readUTF();
         }
 
-        if (isFlagSet(BITMASK_EXECUTOR_NAME_SET)) {
-            executorName = in.readUTF();
-        }
         readInternal(in);
     }
 
@@ -416,8 +413,9 @@ public abstract class Operation implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Operation{");
+        final StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
         sb.append("serviceName='").append(serviceName).append('\'');
+        sb.append(", partitionId=").append(partitionId);
         sb.append(", callId=").append(callId);
         sb.append(", invocationTime=").append(invocationTime);
         sb.append(", waitTimeout=").append(waitTimeout);

@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class QueryEntryTest extends HazelcastTestSupport {
 
-    private static SerializationService serializationService;
+    private SerializationService serializationService;
 
     @Before
     public void before() {

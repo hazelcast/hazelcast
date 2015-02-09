@@ -16,26 +16,22 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.PartitionAware;
-import com.hazelcast.instance.Node;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
@@ -72,8 +68,6 @@ public final class BasicOperationScheduler {
     //all operations that are not specific for a partition will be executed here, e.g heartbeat or map.size
     final OperationThread[] genericOperationThreads;
     private final ILogger logger;
-    private final Node node;
-    private final ExecutionService executionService;
     private final BasicOperationHandler operationHandler;
 
     //the generic workqueues are shared between all generic operation threads, so that work can be stolen
@@ -83,6 +77,9 @@ public final class BasicOperationScheduler {
 
     private final ResponseThread responseThread;
     private final BasicResponsePacketHandler responsePacketHandler;
+    private final Address thisAddress;
+    private final NodeExtension nodeExtension;
+    private final HazelcastThreadGroup threadGroup;
 
     private volatile boolean shutdown;
 
@@ -100,21 +97,22 @@ public final class BasicOperationScheduler {
         }
     };
 
-    public BasicOperationScheduler(Node node,
-                                   ExecutionService executionService,
-                                   BasicOperationHandler operationHandler, BasicResponsePacketHandler responsePacketHandler) {
-        this.executionService = executionService;
-        this.logger = node.getLogger(BasicOperationScheduler.class);
-        this.node = node;
+    public BasicOperationScheduler(GroupProperties groupProperties,
+                                   LoggingService loggerService,
+                                   Address thisAddress,
+                                   BasicOperationHandler operationHandler,
+                                   NodeExtension nodeExtension,
+                                   BasicResponsePacketHandler responsePacketHandler,
+                                   HazelcastThreadGroup hazelcastThreadGroup) {
+        this.thisAddress = thisAddress;
+        this.logger = loggerService.getLogger(BasicOperationScheduler.class);
         this.operationHandler = operationHandler;
         this.responsePacketHandler = responsePacketHandler;
+        this.nodeExtension = nodeExtension;
+        this.threadGroup = hazelcastThreadGroup;
 
-        this.genericOperationThreads = new OperationThread[getGenericOperationThreadCount()];
-        initOperationThreads(genericOperationThreads, new GenericOperationThreadFactory());
-
-        this.partitionOperationThreads = new OperationThread[getPartitionOperationThreadCount()];
-        initOperationThreads(partitionOperationThreads, new PartitionOperationThreadFactory());
-
+        this.genericOperationThreads = initGenericThreads(groupProperties);
+        this.partitionOperationThreads = initPartitionThreads(groupProperties);
         this.responseThread = new ResponseThread();
         responseThread.start();
 
@@ -122,35 +120,46 @@ public final class BasicOperationScheduler {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"NP_NONNULL_PARAM_VIOLATION" })
-    private static void initOperationThreads(OperationThread[] operationThreads, ThreadFactory threadFactory) {
-        for (int threadId = 0; threadId < operationThreads.length; threadId++) {
-            OperationThread operationThread = (OperationThread) threadFactory.newThread(null);
-            operationThreads[threadId] = operationThread;
-            operationThread.start();
-        }
-    }
-
-    private int getGenericOperationThreadCount() {
-        int threadCount = node.getGroupProperties().GENERIC_OPERATION_THREAD_COUNT.getInteger();
-        if (threadCount <= 0) {
-            // default generic operation thread count
-            int coreSize = Runtime.getRuntime().availableProcessors();
-            threadCount = Math.max(2, coreSize / 2);
-        }
-        return threadCount;
-    }
-
-    private int getPartitionOperationThreadCount() {
-        int threadCount = node.getGroupProperties().PARTITION_OPERATION_THREAD_COUNT.getInteger();
+    private OperationThread[] initPartitionThreads(GroupProperties groupProperties) {
+        int threadCount = groupProperties.PARTITION_OPERATION_THREAD_COUNT.getInteger();
         if (threadCount <= 0) {
             // default partition operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
             threadCount = Math.max(2, coreSize);
         }
-        return threadCount;
+
+        OperationThread[] threads = new OperationThread[threadCount];
+        for (int threadId = 0; threadId < threads.length; threadId++) {
+            String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
+            LinkedBlockingQueue workQueue = new LinkedBlockingQueue();
+            ConcurrentLinkedQueue priorityWorkQueue = new ConcurrentLinkedQueue();
+            OperationThread operationThread = new OperationThread(threadName, true, threadId, workQueue, priorityWorkQueue);
+            threads[threadId] = operationThread;
+            operationThread.start();
+        }
+
+        return threads;
     }
 
+    private OperationThread[] initGenericThreads(GroupProperties groupProperties) {
+        int threadCount = groupProperties.GENERIC_OPERATION_THREAD_COUNT.getInteger();
+        if (threadCount <= 0) {
+            // default generic operation thread count
+            int coreSize = Runtime.getRuntime().availableProcessors();
+            threadCount = Math.max(2, coreSize / 2);
+        }
+
+        OperationThread[] threads = new OperationThread[threadCount];
+        for (int threadId = 0; threadId < threads.length; threadId++) {
+            String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
+            OperationThread operationThread = new OperationThread(threadName, false, threadId, genericWorkQueue,
+                    genericPriorityWorkQueue);
+            threads[threadId] = operationThread;
+            operationThread.start();
+        }
+
+        return threads;
+    }
     @PrivateApi
     /**
      * Checks if an operation is still running.
@@ -194,16 +203,12 @@ public final class BasicOperationScheduler {
         return true;
     }
 
-    int getPartitionIdForExecution(Operation op) {
-        return op instanceof PartitionAwareOperation ? op.getPartitionId() : -1;
-    }
-
     boolean isAllowedToRunInCurrentThread(Operation op) {
-        return isAllowedToRunInCurrentThread(getPartitionIdForExecution(op));
+        return isAllowedToRunInCurrentThread(op.getPartitionId());
     }
 
     boolean isInvocationAllowedFromCurrentThread(Operation op) {
-        return isInvocationAllowedFromCurrentThread(getPartitionIdForExecution(op));
+        return isInvocationAllowedFromCurrentThread(op.getPartitionId());
     }
 
     private boolean isAllowedToRunInCurrentThread(int partitionId) {
@@ -302,51 +307,22 @@ public final class BasicOperationScheduler {
     }
 
     public void execute(Operation op) {
-        String executorName = op.getExecutorName();
-        if (executorName == null) {
-            int partitionId = getPartitionIdForExecution(op);
-            boolean hasPriority = op.isUrgent();
-            execute(op, partitionId, hasPriority);
-        } else {
-            executeOnExternalExecutor(op, executorName);
-        }
+        execute(op, op.getPartitionId(), op.isUrgent());
     }
 
     public void execute(Runnable task, int partitionId) {
         execute(task, partitionId, false);
     }
 
-    private void executeOnExternalExecutor(Operation op, String executorName) {
-        ExecutorService executor = executionService.getExecutor(executorName);
-        if (executor == null) {
-            throw new IllegalStateException("Could not found executor with name: " + executorName);
-        }
-        if (op instanceof PartitionAware) {
-            throw new IllegalStateException("PartitionAwareOperation " + op + " can't be executed on a "
-                    + "custom executor with name: " + executorName);
-        }
-        if (op instanceof UrgentSystemOperation) {
-            throw new IllegalStateException("UrgentSystemOperation " + op + " can't be executed on a custom "
-                    + "executor with name: " + executorName);
-        }
-        executor.execute(new LocalOperationProcessor(op));
-    }
-
     public void execute(Packet packet) {
-        try {
-            if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-                //it is an response packet.
-                responseThread.workQueue.add(packet);
-            } else {
-                //it is an must be an operation packet
-                int partitionId = packet.getPartitionId();
-                boolean hasPriority = packet.isUrgent();
-                execute(packet, partitionId, hasPriority);
-            }
-        } catch (RejectedExecutionException e) {
-            if (node.nodeEngine.isActive()) {
-                throw e;
-            }
+        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+            //it is an response packet.
+            responseThread.workQueue.add(packet);
+        } else {
+            //it is an must be an operation packet
+            int partitionId = packet.getPartitionId();
+            boolean hasPriority = packet.isUrgent();
+            execute(packet, partitionId, hasPriority);
         }
     }
 
@@ -435,37 +411,8 @@ public final class BasicOperationScheduler {
     @Override
     public String toString() {
         return "BasicOperationScheduler{"
-                + "node=" + node.getThisAddress()
+                + "node=" + thisAddress
                 + '}';
-    }
-
-    private class GenericOperationThreadFactory implements ThreadFactory {
-        private int threadId;
-
-        @Override
-        public OperationThread newThread(Runnable ignore) {
-            String threadName = node.getThreadPoolNamePrefix("generic-operation") + threadId;
-            OperationThread thread = new OperationThread(threadName, false, threadId, genericWorkQueue,
-                    genericPriorityWorkQueue);
-            threadId++;
-            return thread;
-        }
-    }
-
-    private class PartitionOperationThreadFactory implements ThreadFactory {
-        private int threadId;
-
-        @Override
-        public Thread newThread(Runnable ignore) {
-            String threadName = node.getThreadPoolNamePrefix("partition-operation") + threadId;
-            //each partition operation thread, has its own workqueues because operations are partition specific and can't
-            //be executed by other threads.
-            LinkedBlockingQueue workQueue = new LinkedBlockingQueue();
-            ConcurrentLinkedQueue priorityWorkQueue = new ConcurrentLinkedQueue();
-            OperationThread thread = new OperationThread(threadName, true, threadId, workQueue, priorityWorkQueue);
-            threadId++;
-            return thread;
-        }
     }
 
     final class OperationThread extends HazelcastManagedThread {
@@ -483,8 +430,8 @@ public final class BasicOperationScheduler {
 
         public OperationThread(String name, boolean isPartitionSpecific,
                                int threadId, BlockingQueue workQueue, Queue priorityWorkQueue) {
-            super(node.threadGroup, name);
-            setContextClassLoader(node.getConfigClassLoader());
+            super(threadGroup.getInternalThreadGroup(), name);
+            setContextClassLoader(threadGroup.getClassLoader());
             this.isPartitionSpecific = isPartitionSpecific;
             this.workQueue = workQueue;
             this.priorityWorkQueue = priorityWorkQueue;
@@ -493,14 +440,14 @@ public final class BasicOperationScheduler {
 
         @Override
         public void run() {
-            node.getNodeExtension().onThreadStart(this);
+            nodeExtension.onThreadStart(this);
             try {
                 doRun();
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe(t);
             } finally {
-                node.getNodeExtension().onThreadStop(this);
+                nodeExtension.onThreadStop(this);
             }
         }
 
@@ -592,8 +539,8 @@ public final class BasicOperationScheduler {
         private volatile long processedResponses;
 
         public ResponseThread() {
-            super(node.threadGroup, node.getThreadNamePrefix("response"));
-            setContextClassLoader(node.getConfigClassLoader());
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("response"));
+            setContextClassLoader(threadGroup.getClassLoader());
         }
 
         public void run() {
@@ -635,22 +582,6 @@ public final class BasicOperationScheduler {
                 inspectOutputMemoryError(e);
                 logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName());
             }
-        }
-    }
-
-    /**
-     * Process the operation that has been send locally to this OperationService.
-     */
-    private final class LocalOperationProcessor implements Runnable {
-        private final Operation op;
-
-        private LocalOperationProcessor(Operation op) {
-            this.op = op;
-        }
-
-        @Override
-        public void run() {
-            operationHandler.process(op);
         }
     }
 }

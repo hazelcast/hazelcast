@@ -16,9 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -29,120 +26,32 @@ public final class WriteBehindQueues {
     private WriteBehindQueues() {
     }
 
-    public static WriteBehindQueue createSafeBoundedArrayWriteBehindQueue(int maxSizePerNode, AtomicInteger counter) {
-        return createSafeWriteBehindQueue(new BoundedArrayWriteBehindQueue(maxSizePerNode, counter));
+    public static WriteBehindQueue createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter) {
+        final WriteBehindQueue queue = createCyclicWriteBehindQueue();
+        final WriteBehindQueue boundedQueue = createBoundedWriteBehindQueue(maxCapacity, counter, queue);
+        return createSyncronizedWriteBehindQueue(boundedQueue);
     }
 
     public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue() {
-        return (WriteBehindQueue<T>) createSafeWriteBehindQueue(createCoalescedWriteBehindQueue());
+        final WriteBehindQueue queue = createCoalescedWriteBehindQueue();
+        return createSyncronizedWriteBehindQueue(queue);
     }
 
-    public static <T> WriteBehindQueue<T> emptyWriteBehindQueue() {
-        return (WriteBehindQueue<T>) EmptyWriteBehindQueueHolder.EMPTY_WRITE_BEHIND_QUEUE;
+    private static WriteBehindQueue createSyncronizedWriteBehindQueue(WriteBehindQueue queue) {
+        return new SynchronizedWriteBehindQueue(queue);
     }
 
-    public static <T> WriteBehindQueue<T> createSafeWriteBehindQueue(WriteBehindQueue<T> queue) {
-        return new SynchronizedWriteBehindQueue<T>(queue);
-    }
-
-    public static WriteBehindQueue createCoalescedWriteBehindQueue() {
+    private static WriteBehindQueue createCoalescedWriteBehindQueue() {
         return new CoalescedWriteBehindQueue();
     }
 
-    /**
-     * Holder provides lazy initialization for singleton instance.
-     */
-    private static final class EmptyWriteBehindQueueHolder {
-        /**
-         * Neutral null empty queue.
-         */
-        private static final WriteBehindQueue EMPTY_WRITE_BEHIND_QUEUE = new EmptyWriteBehindQueue();
+    private static WriteBehindQueue createCyclicWriteBehindQueue() {
+        return new CyclicWriteBehindQueue();
     }
 
-    /**
-     * Empty write behind queue provides neutral null behaviour.
-     */
-    private static final class EmptyWriteBehindQueue<T> implements WriteBehindQueue<T> {
-
-        @Override
-        public boolean offer(T t) {
-            return false;
-        }
-
-        @Override
-        public T get(T t) {
-            return null;
-        }
-
-        @Override
-        public T getFirst() {
-            return null;
-        }
-
-        @Override
-        public void removeFirst() {
-        }
-
-        @Override
-        public int size() {
-            return 0;
-        }
-
-        @Override
-        public void clear() {
-
-        }
-
-        @Override
-        public WriteBehindQueue<T> getSnapShot() {
-            return WriteBehindQueues.emptyWriteBehindQueue();
-        }
-
-        @Override
-        public void removeAll(Collection<T> collection) {
-
-        }
-
-        @Override
-        public void addFront(Collection collection) {
-
-        }
-
-        @Override
-        public void addEnd(Collection collection) {
-
-        }
-
-        @Override
-        public List removeAll() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return false;
-        }
-
-        @Override
-        public List asList() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List filterItems(long now) {
-            return Collections.emptyList();
-        }
-
-        /**
-         * Returns supplied number of entries from the start.
-         *
-         * @param count number of entries to return.
-         * @return list of entries
-         */
-        @Override
-        public List<DelayedEntry> get(int count) {
-            return Collections.emptyList();
-        }
+    private static WriteBehindQueue createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter,
+                                                                  WriteBehindQueue queue) {
+        return new BoundedWriteBehindQueue(maxCapacity, counter, queue);
     }
 
 }

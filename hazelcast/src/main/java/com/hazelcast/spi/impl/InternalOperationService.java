@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -62,4 +63,16 @@ public interface InternalOperationService extends OperationService {
      * Shuts down this InternalOperationService.
      */
     void shutdown();
+
+    /**
+     * Sends a response to a remote machine.
+     *
+     * This method is deprecated since 3.5. It is an implementation detail.
+     *
+     * @param response the response to send.
+     * @param target   the address of the target machine
+     * @return true if send is successful, false otherwise.
+     */
+    @Deprecated
+    boolean send(Response response, Address target);
 }

@@ -40,6 +40,11 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation
     }
 
     @Override
+    public String getServiceName() {
+        return SemaphoreService.SERVICE_NAME;
+    }
+
+    @Override
     public Object getResponse() {
         return response;
     }

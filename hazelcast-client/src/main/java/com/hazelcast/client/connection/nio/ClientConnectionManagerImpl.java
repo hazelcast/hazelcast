@@ -196,22 +196,29 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 connection = connections.get(target);
                 if (connection == null) {
                     connection = createSocketConnection(address);
-                    authenticator.authenticate(connection);
-                    ClientConnection current = connections.putIfAbsent(connection.getRemoteEndpoint(), connection);
-                    if (current != null) { //There was already a connection close new one
-                        connection.close();
-                        connection = current;
-                    } else {
-                        for (ConnectionListener connectionListener : connectionListeners) {
-                            connectionListener.connectionAdded(connection);
-                        }
-                    }
+                    authenticate(authenticator, connection);
+                    connections.put(connection.getRemoteEndpoint(), connection);
+                    fireConnectionAddedEvent(connection);
                 }
             }
         }
         return connection;
     }
 
+    private void authenticate(Authenticator authenticator, ClientConnection connection) throws IOException {
+        try {
+            authenticator.authenticate(connection);
+        } catch (Throwable throwable) {
+            connection.close(throwable);
+            throw ExceptionUtil.rethrow(throwable, IOException.class);
+        }
+    }
+
+    private void fireConnectionAddedEvent(ClientConnection connection) {
+        for (ConnectionListener connectionListener : connectionListeners) {
+            connectionListener.connectionAdded(connection);
+        }
+    }
 
     private ClientConnection createSocketConnection(final Address address) throws IOException {
         if (!alive) {
@@ -258,10 +265,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     public void destroyConnection(Connection connection) {
         Address endpoint = connection.getEndPoint();
         if (endpoint != null) {
-            connections.remove(endpoint);
-            connection.close();
+            final ClientConnection conn = connections.remove(endpoint);
+            if (conn == null) {
+                return;
+            }
+            conn.close();
             for (ConnectionListener connectionListener : connectionListeners) {
-                connectionListener.connectionRemoved(connection);
+                connectionListener.connectionRemoved(conn);
             }
         }
     }

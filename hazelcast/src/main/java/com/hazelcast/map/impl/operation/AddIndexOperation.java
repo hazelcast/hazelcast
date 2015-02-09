@@ -49,6 +49,11 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
         MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);

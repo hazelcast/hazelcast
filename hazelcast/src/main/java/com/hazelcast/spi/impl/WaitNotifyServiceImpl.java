@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -77,9 +78,11 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
 
-        String threadNamePrefix = node.getThreadNamePrefix("wait-notify");
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         expirationService = Executors.newSingleThreadExecutor(
-                new SingleExecutorThreadFactory(node.threadGroup, node.getConfigClassLoader(), threadNamePrefix));
+                new SingleExecutorThreadFactory(threadGroup.getInternalThreadGroup(),
+                        threadGroup.getClassLoader(),
+                        threadGroup.getThreadNamePrefix("wait-notify")));
 
         expirationTask = expirationService.submit(new ExpirationTask());
     }

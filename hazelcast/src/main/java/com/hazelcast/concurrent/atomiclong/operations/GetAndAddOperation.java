@@ -48,7 +48,6 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
         return returnValue;
     }
 
-
     @Override
     public int getId() {
         return AtomicLongDataSerializerHook.GET_AND_ADD;

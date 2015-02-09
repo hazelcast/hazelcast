@@ -21,6 +21,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -35,6 +36,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PacketTransceiver;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,10 +47,12 @@ public class NodeIOService implements IOService {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
+    private final PacketTransceiver packetTransceiver;
 
     public NodeIOService(Node node) {
         this.node = node;
         this.nodeEngine = node.nodeEngine;
+        this.packetTransceiver = nodeEngine.getPacketTransceiver();
     }
 
     @Override
@@ -73,7 +77,8 @@ public class NodeIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-        new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        new Thread(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
             }
@@ -104,7 +109,7 @@ public class NodeIOService implements IOService {
                 member.didRead();
             }
         }
-        nodeEngine.handlePacket(packet);
+        packetTransceiver.receive(packet);
     }
 
     @Override
@@ -139,12 +144,14 @@ public class NodeIOService implements IOService {
 
     @Override
     public String getThreadPrefix() {
-        return node.getThreadPoolNamePrefix("IO");
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        return threadGroup.getThreadPoolNamePrefix("IO");
     }
 
     @Override
     public ThreadGroup getThreadGroup() {
-        return node.threadGroup;
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        return threadGroup.getInternalThreadGroup();
     }
 
     @Override

@@ -32,6 +32,7 @@ import com.hazelcast.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.ascii.rest.RestValue;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
@@ -209,8 +210,10 @@ public class TextCommandServiceImpl implements TextCommandService {
             synchronized (this) {
                 if (responseThreadRunnable == null) {
                     responseThreadRunnable = new ResponseThreadRunnable();
-                    String threadNamePrefix = node.getThreadNamePrefix("ascii.service.response");
-                    Thread thread = new Thread(node.threadGroup, responseThreadRunnable, threadNamePrefix);
+                    HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
+                    String threadNamePrefix = hazelcastThreadGroup.getThreadNamePrefix("ascii.service.response");
+                    Thread thread = new Thread(
+                            hazelcastThreadGroup.getInternalThreadGroup(), responseThreadRunnable, threadNamePrefix);
                     thread.start();
                 }
             }

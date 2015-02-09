@@ -34,4 +34,5 @@ public interface IOSelector extends NIOThread {
 
     void awaitShutdown();
 
+    void handleSelectionKeyFailure(Throwable e);
 }

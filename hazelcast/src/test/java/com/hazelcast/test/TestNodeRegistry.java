@@ -353,7 +353,7 @@ final class TestNodeRegistry {
                 if (member != null) {
                     member.didRead();
                 }
-                nodeEngine.handlePacket(newPacket);
+                nodeEngine.getPacketTransceiver().receive(newPacket);
                 return true;
             }
             return false;

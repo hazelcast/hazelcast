@@ -37,6 +37,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,7 +51,7 @@ import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
-    private Map<String, List<DelayedEntry>> delayedEntries;
+    private Map<String, Collection<DelayedEntry>> delayedEntries;
 
     public MapReplicationOperation() {
     }
@@ -82,8 +83,9 @@ public class MapReplicationOperation extends AbstractOperation {
         readDelayedEntries(container);
     }
 
+
     private void readDelayedEntries(PartitionContainer container) {
-        delayedEntries = new HashMap<String, List<DelayedEntry>>(container.getMaps().size());
+        delayedEntries = new HashMap<String, Collection<DelayedEntry>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -92,7 +94,7 @@ public class MapReplicationOperation extends AbstractOperation {
             }
             final WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) recordStore.getMapDataStore())
                     .getWriteBehindQueue();
-            final List<DelayedEntry> delayedEntries = writeBehindQueue.getSnapShot().asList();
+            final Collection<DelayedEntry> delayedEntries = writeBehindQueue.asList();
             if (delayedEntries != null && delayedEntries.size() == 0) {
                 continue;
             }
@@ -121,12 +123,13 @@ public class MapReplicationOperation extends AbstractOperation {
 
             }
         }
-        for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
+        for (Entry<String, Collection<DelayedEntry>> entry : delayedEntries.entrySet()) {
             final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), entry.getKey());
-            final List<DelayedEntry> replicatedEntries = entry.getValue();
+            final Collection<DelayedEntry> replicatedEntries = entry.getValue();
             final WriteBehindQueue<DelayedEntry> writeBehindQueue
                     = ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue();
-            writeBehindQueue.addEnd(replicatedEntries);
+            writeBehindQueue.clear();
+            writeBehindQueue.addFirst(replicatedEntries);
         }
     }
 
@@ -148,7 +151,7 @@ public class MapReplicationOperation extends AbstractOperation {
             data.put(name, recordReplicationInfos);
         }
         size = in.readInt();
-        delayedEntries = new HashMap<String, List<DelayedEntry>>(size);
+        delayedEntries = new HashMap<String, Collection<DelayedEntry>>(size);
         for (int i = 0; i < size; i++) {
             final String mapName = in.readUTF();
             final int listSize = in.readInt();
@@ -178,9 +181,9 @@ public class MapReplicationOperation extends AbstractOperation {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         out.writeInt(delayedEntries.size());
-        for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
+        for (Entry<String, Collection<DelayedEntry>> entry : delayedEntries.entrySet()) {
             out.writeUTF(entry.getKey());
-            final List<DelayedEntry> delayedEntryList = entry.getValue();
+            final Collection<DelayedEntry> delayedEntryList = entry.getValue();
             out.writeInt(delayedEntryList.size());
             for (DelayedEntry e : delayedEntryList) {
                 final Data key = mapServiceContext.toData(e.getKey());

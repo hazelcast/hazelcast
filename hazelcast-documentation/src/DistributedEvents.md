@@ -17,7 +17,7 @@ Hazelcast offers the following event listeners:
 - **Distributed Object Listener** for distributed object creation and destroy events.
 - **Migration Listener** for partition migration start and complete events.
 - **Lifecycle Listener** for HazelcastInstance lifecycle events.
-- **Entry Listener** for IMap and MultiMap entry events.
+- **Entry Listener** for IMap and MultiMap entry events (please refer to the [Map Listener section](#map-listener)).
 - **Item Listener** for IQueue, ISet and IList item events (please refer to the Event Registration and Configuration parts of the sections [Set](#set) and [List](#list)).
 - **Message Listener** for ITopic message events.
 - **Client Listener** for client connection events.
@@ -214,4 +214,11 @@ You can add event listeners also to a Hazelcast Java client. You can configure t
 
 *Please refer to the [Client Listenerconfig section](#client-listenerconfig) for more information.*
 <br></br>
+
+<br></br>
+***RELATED INFORMATION***
+
+*Please refer to the [Listener Configurations section](#listener-configurations) for a configuration wrap-up of event listeners.*
+<br></br>
+
 

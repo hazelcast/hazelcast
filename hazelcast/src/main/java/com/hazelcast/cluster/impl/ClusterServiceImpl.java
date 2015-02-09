@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.ClusterClock;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
@@ -168,12 +169,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ExceptionHandler whileFinalizeJoinsExceptionHandler;
 
-    private volatile long clusterTimeDiff = Long.MAX_VALUE;
+    private final ClusterClockImpl clusterClock;
 
     public ClusterServiceImpl(final Node node) {
         this.node = node;
         nodeEngine = node.nodeEngine;
         logger = node.getLogger(ClusterService.class.getName());
+        clusterClock = new ClusterClockImpl(logger);
         whileFinalizeJoinsExceptionHandler =
                 logAllExceptions(logger, "While waiting finalize join calls...", Level.WARNING);
         thisAddress = node.getThisAddress();
@@ -190,6 +192,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.connectionManager.addConnectionListener(this);
+    }
+
+    @Override
+    public ClusterClockImpl getClusterClock() {
+        return clusterClock;
     }
 
     @Override
@@ -486,7 +493,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         final Collection<MemberImpl> members = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime(), false);
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
+                createMemberInfos(members), clusterClock.getClusterTime(), false);
         for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
@@ -718,7 +726,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         ? new PostJoinOperation(postJoinOps) : null;
 
                 Operation op = new FinalizeJoinOperation(createMemberInfos(getMemberList()), postJoinOp,
-                        getClusterTime(), false);
+                        clusterClock.getClusterTime(), false);
                 nodeEngine.getOperationService().send(op, target);
             } else {
                 sendMasterAnswer(target);
@@ -943,7 +951,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 for (MemberInfo memberJoining : setJoins) {
                     memberInfos.add(memberJoining);
                 }
-                final long time = getClusterTime();
+                final long time = clusterClock.getClusterTime();
                 // Post join operations must be lock free; means no locks at all;
                 // no partition locks, no key-based locks, no service level locks!
                 final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
@@ -1293,24 +1301,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return members != null ? members.size() : 0;
     }
 
-    @Override
-    public long getClusterTime() {
-        return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
-    }
-
-    public void setMasterTime(long masterTime) {
-        long diff = masterTime - Clock.currentTimeMillis();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Setting cluster time diff to " + diff + "ms.");
-        }
-        this.clusterTimeDiff = diff;
-    }
-
-    public long getClusterTimeDiff() {
-        return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;
-    }
-
-    public String addMembershipListener(MembershipListener listener) {
+      public String addMembershipListener(MembershipListener listener) {
         if (listener == null) {
             throw new NullPointerException("listener can't be null");
         }

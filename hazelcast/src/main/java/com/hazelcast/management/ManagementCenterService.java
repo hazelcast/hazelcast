@@ -29,6 +29,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.operation.UpdateManagementCenterUrlOperation;
@@ -96,6 +97,7 @@ public class ManagementCenterService {
     private final ManagementCenterIdentifier identifier;
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final TimedMemberStateFactory timedMemberStateFactory;
+    private final HazelcastThreadGroup threadGroup;
 
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
@@ -103,6 +105,7 @@ public class ManagementCenterService {
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
+        this.threadGroup = instance.node.getHazelcastThreadGroup();
         logger = instance.node.getLogger(ManagementCenterService.class);
         managementCenterConfig = getManagementCenterConfig();
         managementCenterUrl = getManagementCenterUrl();
@@ -277,7 +280,7 @@ public class ManagementCenterService {
         private final long updateIntervalMs;
 
         private StateSendThread() {
-            super(instance.getThreadGroup(), instance.node.getThreadNamePrefix("MC.State.Sender"));
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.State.Sender"));
             updateIntervalMs = calcUpdateInterval();
         }
 
@@ -368,7 +371,7 @@ public class ManagementCenterService {
                 new HashMap<Integer, Class<? extends ConsoleRequest>>();
 
         TaskPollThread() {
-            super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.Task.Poller"));
             register(new ThreadDumpRequest());
             register(new ExecuteScriptRequest());
             register(new ConsoleCommandRequest());

@@ -41,7 +41,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.WaitSupport;
@@ -124,7 +123,6 @@ final class BasicOperationService implements InternalOperationService {
 
     private final long defaultCallTimeoutMillis;
     private final long backupOperationTimeoutMillis;
-    private final ExecutionService executionService;
     private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
@@ -138,7 +136,6 @@ final class BasicOperationService implements InternalOperationService {
         this.invocationLogger = nodeEngine.getLogger(BasicInvocation.class);
         this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
         this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
-        this.executionService = nodeEngine.getExecutionService();
         this.backPressureService = new BasicBackPressureService(node.getGroupProperties(), logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -148,7 +145,16 @@ final class BasicOperationService implements InternalOperationService {
         this.operationHandler = new OperationHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
-        this.scheduler = new BasicOperationScheduler(node, executionService, operationHandler, responsePacketHandler);
+        this.scheduler = new BasicOperationScheduler(
+                node.getGroupProperties(),
+                node.loggingService,
+                node.getThisAddress(),
+                operationHandler,
+                node.getNodeExtension(),
+                responsePacketHandler,
+                node.getHazelcastThreadGroup());
+
+        ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
@@ -263,7 +269,7 @@ final class BasicOperationService implements InternalOperationService {
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
         return new BasicPartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
                 InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
+                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
@@ -271,7 +277,7 @@ final class BasicOperationService implements InternalOperationService {
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
         return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
+                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     // =============================== processing response  ===============================
@@ -297,7 +303,7 @@ final class BasicOperationService implements InternalOperationService {
             final long invocationTime = op.getInvocationTime();
             final long expireTime = invocationTime + callTimeout;
             if (expireTime > 0 && expireTime < Long.MAX_VALUE) {
-                final long now = nodeEngine.getClusterTime();
+                final long now = nodeEngine.getClusterService().getClusterClock().getClusterTime();
                 if (expireTime < now) {
                     return true;
                 }
@@ -338,14 +344,14 @@ final class BasicOperationService implements InternalOperationService {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
         Data data = nodeEngine.toData(op);
-        int partitionId = scheduler.getPartitionIdForExecution(op);
+        int partitionId = op.getPartitionId();
         Packet packet = new Packet(data, partitionId, nodeEngine.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
         if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
 
     @Override
@@ -364,7 +370,7 @@ final class BasicOperationService implements InternalOperationService {
             packet.setHeader(Packet.HEADER_URGENT);
         }
         Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.send(packet, connection);
+        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
 
     public void registerInvocation(BasicInvocation invocation) {
@@ -670,13 +676,9 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void ensureNoPartitionProblems(Operation op) {
-            if (!(op instanceof PartitionAwareOperation)) {
-                return;
-            }
-
             int partitionId = op.getPartitionId();
             if (partitionId < 0) {
-                throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
+                return;
             }
 
             InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
@@ -934,7 +936,7 @@ final class BasicOperationService implements InternalOperationService {
         public static final int DELAY_MILLIS = 1000;
 
         private CleanupThread() {
-            super(node.getThreadNamePrefix("CleanupThread"));
+            super(node.getHazelcastThreadGroup().getThreadNamePrefix("CleanupThread"));
         }
 
         @Override

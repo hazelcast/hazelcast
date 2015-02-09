@@ -327,6 +327,31 @@
         <async-backup-count>0</async-backup-count>
     </semaphore>
 
+    <cache name="default">
+        <key-type class-name="java.lang.Object" />
+        <value-type class-name="java.lang.Object" />
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory
+                class-name="com.example.cache.MyCacheLoaderFactory" />
+        <cache-writer-factory
+                class-name="com.example.cache.MyCacheWriterFactory" />
+        <expiry-policy-factory
+                class-name="com.example.cache.MyExpirePolicyFactory" />
+
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="false" synchronous="false">
+                <cache-entry-listener-factory
+                        class-name="com.example.cache.MyEntryListenerFactory" />
+                <cache-entry-event-filter-factory
+                        class-name="com.example.cache.MyEntryEventFilterFactory" />
+            </cache-entry-listener>
+        </cache-entry-listeners>
+    </cache>
+
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
         <listener>com.hazelcast.examples.InstanceListener</listener>

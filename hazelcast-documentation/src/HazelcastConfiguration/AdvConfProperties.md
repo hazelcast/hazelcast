@@ -43,10 +43,8 @@ Property Name | Default Value | Type | Description
 `hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
 `hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is not any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
-`hazelcast.client.max.failed.heartbeat.count`|3|string|When the count of failed heartbeats sent to members reaches this value, the cluster is deemed as dead by the client.
-`hazelcast.client.max.no.heartbeat.seconds`|300|int|Heartbeat timeout for client connections in seconds. When a client connection does not send any heartbeats in this period, client connection is closed explicitly. This is required to detect unalive/unresponsive clients and release their resources (locks, transactions, etc).
-`hazelcast.client.request.retry.count`|20|string|The retry count of the connection requests by the client to the members.
-`hazelcast.client.request.retry.wait.time`|250|string|The frequency of the connection retries.
+`hazelcast.client.invocation.timeout.seconds`|120|string|Time to give up the invocation when a member in the member list is not reachable.
+`hazelcast.client.shuffle.member.list`|true|string|The client shuffles the given member list to prevent all clients to connect to the same node when this property is `false`. When it is set to `true`, the client tries to connect to the nodes in the given order.
 `hazelcast.connect.all.wait.seconds` | 120 | int | Timeout to connect all other cluster members when a member is joining to a cluster.
 `hazelcast.connection.monitor.interval` | 100 | int  |   Minimum interval to consider a connection error as critical in milliseconds.
 `hazelcast.connection.monitor.max.faults` | 3 | int  |   Maximum IO error count before disconnecting from a node.

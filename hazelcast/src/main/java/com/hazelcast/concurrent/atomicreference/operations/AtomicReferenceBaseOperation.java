@@ -40,6 +40,11 @@ public abstract class AtomicReferenceBaseOperation extends Operation
         this.name = name;
     }
 
+    @Override
+    public String getServiceName() {
+        return AtomicReferenceService.SERVICE_NAME;
+    }
+
     public ReferenceWrapper getReference() {
         AtomicReferenceService service = getService();
         return service.getReference(name);

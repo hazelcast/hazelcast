@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -99,10 +100,11 @@ public class EventServiceImpl implements EventService {
         this.eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
         this.eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
         this.eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         this.eventExecutor = new StripedExecutor(
                 node.getLogger(EventServiceImpl.class),
-                node.getThreadNamePrefix("event"),
-                node.threadGroup,
+                threadGroup.getThreadNamePrefix("event"),
+                threadGroup.getInternalThreadGroup(),
                 eventThreadCount,
                 eventQueueCapacity);
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
@@ -339,7 +341,7 @@ public class EventServiceImpl implements EventService {
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
             packet.setHeader(Packet.HEADER_EVENT);
-            if (!nodeEngine.send(packet, subscriber)) {
+            if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {
                 if (nodeEngine.isActive()) {
                     logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
                 }

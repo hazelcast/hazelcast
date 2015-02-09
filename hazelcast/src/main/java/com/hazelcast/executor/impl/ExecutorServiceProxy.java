@@ -91,6 +91,7 @@ public class ExecutorServiceProxy
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.logger = nodeEngine.getLogger(ExecutorServiceProxy.class);
+        getLocalExecutorStats();
     }
 
     @Override

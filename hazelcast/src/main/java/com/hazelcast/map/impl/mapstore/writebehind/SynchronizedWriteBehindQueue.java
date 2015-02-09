@@ -41,33 +41,42 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public boolean offer(E e) {
+    public void addFirst(Collection<E> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
         synchronized (mutex) {
-            return queue.offer(e);
+            queue.addFirst(collection);
         }
     }
 
     @Override
-    public E get(E e) {
+    public void addLast(E e) {
         synchronized (mutex) {
-            return queue.get(e);
+            queue.addLast(e);
+        }
+    }
+
+    /**
+     * Removes the first occurrence of the specified element in this queue
+     * when searching it by starting from the head of this queue.
+     *
+     * @param e element to be removed.
+     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
+     */
+    @Override
+    public boolean removeFirstOccurrence(E e) {
+        synchronized (mutex) {
+            return queue.removeFirstOccurrence(e);
         }
     }
 
     @Override
-    public E getFirst() {
+    public boolean contains(E e) {
         synchronized (mutex) {
-            return queue.getFirst();
+            return queue.contains(e);
         }
     }
-
-    @Override
-    public void removeFirst() {
-        synchronized (mutex) {
-            queue.removeFirst();
-        }
-    }
-
 
     @Override
     public int size() {
@@ -84,50 +93,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public WriteBehindQueue<E> getSnapShot() {
+    public int drainTo(Collection<E> collection) {
         synchronized (mutex) {
-            return new SynchronizedWriteBehindQueue<E>(queue.getSnapShot());
-        }
-    }
-
-    @Override
-    public void addFront(Collection<E> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        synchronized (mutex) {
-            queue.addFront(collection);
-        }
-    }
-
-    @Override
-    public void addEnd(Collection<E> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        synchronized (mutex) {
-            queue.addEnd(collection);
-        }
-    }
-
-    @Override
-    public void removeAll(Collection<E> collection) {
-        synchronized (mutex) {
-            queue.removeAll(collection);
-        }
-    }
-
-    @Override
-    public List<E> removeAll() {
-        synchronized (mutex) {
-            return queue.removeAll();
-        }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        synchronized (mutex) {
-            return queue.isEnabled();
+            return queue.drainTo(collection);
         }
     }
 
@@ -139,22 +107,16 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public List<E> filterItems(long now) {
+    public void getFrontByTime(long time, Collection<E> collection) {
         synchronized (mutex) {
-            return queue.filterItems(now);
+            queue.getFrontByTime(time, collection);
         }
     }
 
-    /**
-     * Returns supplied number of entries from the start.
-     *
-     * @param count number of entries to return.
-     * @return list of entries
-     */
     @Override
-    public List<DelayedEntry> get(int count) {
+    public void getFrontByNumber(int numberOfElements, Collection<E> collection) {
         synchronized (mutex) {
-            return queue.get(count);
+            queue.getFrontByNumber(numberOfElements, collection);
         }
     }
 

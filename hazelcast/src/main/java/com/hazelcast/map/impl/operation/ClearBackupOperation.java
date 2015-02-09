@@ -35,6 +35,11 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         mapService = getService();
         recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);

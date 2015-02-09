@@ -52,8 +52,12 @@ public interface PartitionService {
      * <p/>
      * The returned value will never be null.
      *
+     * This method is deprecated since Hazelcast 3.5. If you need a random partition-key, you can use e.g. a
+     * random number, random string or UUID for that.
+     *
      * @return the random partition key.
      */
+    @Deprecated
     String randomPartitionKey();
 
     /**

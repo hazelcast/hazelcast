@@ -85,4 +85,8 @@ public class CountDownLatchReplicationOperation extends AbstractOperation implem
         return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REPLICATION_OPERATION;
     }
 
+    @Override
+    public String getServiceName() {
+        return CountDownLatchService.SERVICE_NAME;
+    }
 }

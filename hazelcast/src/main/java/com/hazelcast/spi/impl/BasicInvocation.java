@@ -138,14 +138,12 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
      //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
 
-    private final String executorName;
-
     private Address invTarget;
     private MemberImpl invTargetMember;
 
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
-                    String executorName, boolean resultDeserialized) {
+                    boolean resultDeserialized) {
         this.operationService = (BasicOperationService) nodeEngine.operationService;
         this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
@@ -157,7 +155,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
         this.invocationFuture = new BasicInvocationFuture(operationService, this, callback);
-        this.executorName = executorName;
         this.resultDeserialized = resultDeserialized;
     }
 
@@ -220,8 +217,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             op.setNodeEngine(nodeEngine)
                     .setServiceName(serviceName)
                     .setPartitionId(partitionId)
-                    .setReplicaIndex(replicaIndex)
-                    .setExecutorName(executorName);
+                    .setReplicaIndex(replicaIndex);
 
             if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
@@ -254,7 +250,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
 
-        setInvocationTime(op, nodeEngine.getClusterTime());
+        setInvocationTime(op, nodeEngine.getClusterService().getClusterClock().getClusterTime());
 
         if (remote) {
             doInvokeRemote();

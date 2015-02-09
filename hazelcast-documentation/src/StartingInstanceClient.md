@@ -1,6 +1,6 @@
 
 
-## Starting the Cluster and Client
+## Starting the Instance and Client
 
 
 Having installed Hazelcast, you can get started. 
@@ -14,7 +14,7 @@ In this short tutorial, we:
 Let's begin.
 
 
--	The following code starts the first node, and creates and uses the `customers` map and queue.
+-	The following code starts the first instance (node), and creates and uses the `customers` map and queue.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -81,11 +81,10 @@ Hazelcast also offers a tool, **Management Center**, that enables you to monitor
 
 
 By default, Hazelcast uses Multicast to discover other nodes that can form a cluster.  If you are working with other Hazelcast developers on the same network, you may find yourself joining their clusters under the default settings.  Hazelcast provides a way to segregate clusters within the same network when using Multicast. Please see the FAQ item [How do I create separate clusters](#how-do-i-create-separate-clusters) for more information.  Alternatively, if you do not wish to use the default Multicast mechanism, you can provide a fixed list of IP addresses that are allowed to join. Please see the [Configuring TCP/IP Cluster section](#network-configuration) for more information.
-
 <br> </br>
-
 
 ***RELATED INFORMATION***
 
 *You can also check the video tutorials [here](http://hazelcast.org/getting-started/).*
+<br> </br>
 

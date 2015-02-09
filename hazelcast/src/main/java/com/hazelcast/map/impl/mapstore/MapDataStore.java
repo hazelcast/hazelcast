@@ -41,7 +41,7 @@ public interface MapDataStore<K, V> {
      */
     void removeAll(Collection keys);
 
-    boolean loadable(K key, long lastUpdateTime, long now);
+    boolean loadable(K key);
 
     int notFinishedOperationsCount();
 
