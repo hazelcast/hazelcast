@@ -34,7 +34,6 @@ import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
-import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -71,6 +70,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -133,7 +133,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected class ClientNearCacheExecutor implements NearCacheExecutor {
+    protected class ClientNearCacheExecutor implements Executor {
 
         protected ClientExecutionService clientExecutionService;
 
@@ -148,7 +148,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     }
 
-    protected NearCacheExecutor createNearCacheExecutor(ClientExecutionService clientExecutionService) {
+    protected Executor createNearCacheExecutor(ClientExecutionService clientExecutionService) {
         return new ClientNearCacheExecutor(clientExecutionService);
     }
 
