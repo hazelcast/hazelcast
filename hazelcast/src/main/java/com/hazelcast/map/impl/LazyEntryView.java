@@ -1,6 +1,8 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
+import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
@@ -51,16 +53,18 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
     }
 
     public V getValue() {
-        if (validMergePolicyForValueNullCheck(mergePolicy)) {
+        if (returnRawData(mergePolicy)) {
             return value;
         }
         value = serializationService.toObject(value);
         return value;
     }
 
-    private boolean validMergePolicyForValueNullCheck(MapMergePolicy mergePolicy) {
+    private boolean returnRawData(MapMergePolicy mergePolicy) {
         return mergePolicy instanceof PutIfAbsentMapMergePolicy
-                || mergePolicy instanceof PassThroughMergePolicy;
+                || mergePolicy instanceof PassThroughMergePolicy
+                || mergePolicy instanceof HigherHitsMapMergePolicy
+                || mergePolicy instanceof LatestUpdateMapMergePolicy;
     }
 
     public void setValue(V value) {
