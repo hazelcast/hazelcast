@@ -17,6 +17,7 @@
 package com.hazelcast.client.nearcache;
 
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -120,7 +121,8 @@ public class ClientHeapNearCache<K>
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
             try {
-                context.getExecutionService().execute(new Runnable() {
+                final ClientExecutionService executionService = context.getExecutionService();
+                executionService.execute(new Runnable() {
                     public void run() {
                         try {
                             TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
@@ -135,6 +137,9 @@ public class ClientHeapNearCache<K>
                             }
                         } finally {
                             canEvict.set(true);
+                        }
+                        if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
+                            executionService.execute(this);
                         }
                     }
                 });
