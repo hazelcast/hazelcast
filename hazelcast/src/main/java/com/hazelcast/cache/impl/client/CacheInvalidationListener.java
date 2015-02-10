@@ -36,9 +36,6 @@ public final class CacheInvalidationListener implements CacheEventListener {
             if (endpoint.isAlive()) {
                 endpoint.sendEvent(message.getKey(), message, callId);
             }
-        } else {
-            throw new IllegalArgumentException("Only " + CacheInvalidationMessage.class.getName()
-                    + " events are supported. Unsupported event object: " + eventObject);
         }
     }
 
