@@ -594,7 +594,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    // TODO come up with a better sync
     protected synchronized void addInvalidationListener(MemberImpl member) {
         if (nearCacheInvalidationListeners.containsKey(member)) {
             return;
@@ -615,7 +614,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void removeInvalidationListener(MemberImpl member) {
+    protected synchronized void removeInvalidationListener(MemberImpl member) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
         if (registrationId != null) {
             try {
