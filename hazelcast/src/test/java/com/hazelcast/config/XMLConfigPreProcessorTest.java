@@ -19,14 +19,15 @@ package com.hazelcast.config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,10 +45,7 @@ public class XMLConfigPreProcessorTest {
                 "        <import resource=\"\"/>\n" +
                 "   </network>" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -56,10 +54,7 @@ public class XMLConfigPreProcessorTest {
                 "   <hazelcast>" +
                 "   </hazelcast>" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test
@@ -72,17 +67,13 @@ public class XMLConfigPreProcessorTest {
                         "        <async-backup-count>${notreplaced}</async-backup-count>\n" +
                         "    </semaphore>" +
                         "</hazelcast>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
         properties.setProperty("initial.permits", "25");
         properties.setProperty("backupcount.part1", "1");
         properties.setProperty("backupcount.part2", "0");
-        configBuilder.setProperties(properties);
-
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml, properties);
         SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
         assertEquals(25, semaphoreConfig.getInitialPermits());
         assertEquals(10, semaphoreConfig.getBackupCount());
@@ -106,14 +97,7 @@ public class XMLConfigPreProcessorTest {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
-        configBuilder.setProperties(properties);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml, "config.location", file.getAbsolutePath());
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
         assertTrue(join.getTcpIpConfig().isEnabled());
@@ -137,14 +121,10 @@ public class XMLConfigPreProcessorTest {
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-
         Properties properties = new Properties();
         properties.setProperty("config.location", file.getAbsolutePath());
         properties.setProperty("tcp.ip.enabled", "true");
-        configBuilder.setProperties(properties);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml, properties);
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
         assertTrue(join.getTcpIpConfig().isEnabled());
@@ -164,10 +144,7 @@ public class XMLConfigPreProcessorTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(config1Xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -190,9 +167,7 @@ public class XMLConfigPreProcessorTest {
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
         writeStringToStreamAndClose(os3, config3Xml);
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(config1Xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -203,9 +178,7 @@ public class XMLConfigPreProcessorTest {
                 "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, "");
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(config1Xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -213,10 +186,7 @@ public class XMLConfigPreProcessorTest {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"\"/>\n" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -224,10 +194,7 @@ public class XMLConfigPreProcessorTest {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"notexisting.xml\"/>\n" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
 
@@ -249,9 +216,7 @@ public class XMLConfigPreProcessorTest {
                 "    <import resource=\"file://" + file.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml, null);
         JoinConfig join = config.getNetworkConfig().getJoin();
         assertFalse(join.getMulticastConfig().isEnabled());
         assertTrue(join.getTcpIpConfig().isEnabled());
@@ -278,9 +243,7 @@ public class XMLConfigPreProcessorTest {
                 "    <import resource=\"file://" + file.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml, null);
         MapConfig myMapConfig = config.getMapConfig("mymap");
         assertEquals("mymap", myMapConfig.getName());
         assertEquals(6, myMapConfig.getBackupCount());
@@ -298,9 +261,7 @@ public class XMLConfigPreProcessorTest {
                 "    <import resource=\"classpath:test-hazelcast.xml\"/>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml, null);
         GroupConfig groupConfig = config.getGroupConfig();
         assertEquals("foobar", groupConfig.getName());
         assertEquals("dev-pass", groupConfig.getPassword());
@@ -321,10 +282,7 @@ public class XMLConfigPreProcessorTest {
                 "        </join>\n" +
                 "    </network>\n" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -339,10 +297,7 @@ public class XMLConfigPreProcessorTest {
                 "        <password>dev-pass</password>\n" +
                 "    </group>" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -351,10 +306,7 @@ public class XMLConfigPreProcessorTest {
                 "    <license-key>foo</license-key>" +
                 "    <license-key>bar</license-key>" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -367,10 +319,7 @@ public class XMLConfigPreProcessorTest {
                 "        <property>bar</property>\n" +
                 "    </properties>" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -388,9 +337,7 @@ public class XMLConfigPreProcessorTest {
                 "   </partition-group>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -404,9 +351,7 @@ public class XMLConfigPreProcessorTest {
                 "   </listeners>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -443,9 +388,7 @@ public class XMLConfigPreProcessorTest {
                 "    </serialization>\n" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -465,9 +408,7 @@ public class XMLConfigPreProcessorTest {
                 "   </services>" +
                 "</hazelcast>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -478,10 +419,7 @@ public class XMLConfigPreProcessorTest {
                 "   <security>   " +
                 "   </security>" +
                 "</hazelcast>";
-
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml, null);
     }
 
     @Test(expected = HazelcastException.class)
@@ -494,10 +432,41 @@ public class XMLConfigPreProcessorTest {
                 "        <attribute name=\"attribute.float\" type=\"float\">1234.5678</attribute>\n" +
                 "    </member-attributes>\n" +
                 "</hazelcast>";
+        buildConfig(xml, null);
+    }
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        configBuilder.build();
+    @Test
+    public void testXmlVariableReplacementAsSubstring() throws Exception {
+        String xml = "<hazelcast>\n" +
+                "    <properties>\n" +
+                "        <property name=\"${env}-with-suffix\">local-with-suffix</property>\n" +
+                "        <property name=\"with-prefix-${env}\">with-prefix-local</property>\n" +
+                "    </properties>\n" +
+                "</hazelcast>";
+
+        Config config = buildConfig(xml, "env", "local");
+        assertEquals(config.getProperty("local-with-suffix"), "local-with-suffix");
+        assertEquals(config.getProperty("with-prefix-local"), "with-prefix-local");
+    }
+
+    @Test
+    public void testXmlImportWithVariableReplacementAsSubstring() throws Exception {
+        File file = createConfigFile("foo", "bar");
+        FileOutputStream os = new FileOutputStream(file);
+        String networkConfig = "<hazelcast>" +
+                "    <properties>\n" +
+                "        <property name=\"prop1\">value1</property>\n" +
+                "        <property name=\"prop2\">value2</property>\n" +
+                "    </properties>\n" +
+                "</hazelcast>";
+        writeStringToStreamAndClose(os, networkConfig);
+
+        String xml = "<hazelcast>\n" +
+                "    <import resource=\"file://" + "${file}" + "\"/>\n" +
+                "</hazelcast>";
+        Config config = buildConfig(xml, "file", file.getAbsolutePath());
+        assertEquals(config.getProperty("prop1"), "value1");
+        assertEquals(config.getProperty("prop2"), "value2");
     }
 
     private File createConfigFile(String filename, String suffix) throws IOException {
@@ -513,4 +482,17 @@ public class XMLConfigPreProcessorTest {
         os.close();
     }
 
+    Config buildConfig(String xml, Properties properties) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.setProperties(properties);
+        Config config = configBuilder.build();
+        return config;
+    }
+
+    Config buildConfig(String xml, String key, String value) {
+        Properties properties = new Properties();
+        properties.setProperty(key, value);
+        return buildConfig(xml, properties);
+    }
 }
