@@ -18,6 +18,7 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,7 +30,7 @@ import java.util.concurrent.Callable;
  * An adapter that adapts a {@link Runnable} to become a {@link Callable}.
  * @param <V>
  */
-public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware {
+public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Callable<V>, HazelcastInstanceAware, PartitionAware {
 
     private Runnable task;
 
@@ -51,6 +52,14 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
     @Override
     public V call() throws Exception {
         task.run();
+        return null;
+    }
+
+    @Override
+    public Object getPartitionKey() {
+        if (task instanceof PartitionAware) {
+            return ((PartitionAware) task).getPartitionKey();
+        }
         return null;
     }
 
