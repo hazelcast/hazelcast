@@ -121,7 +121,7 @@ You can configure `MapStore` as write-behind by setting the `write-delay-seconds
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *In write-behind mode, by default Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it. But, you can set `MapStoreConfig#setWriteCoalescing` to `FALSE` and you can store all updates performed on a key to the data store.*
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *When you set `MapStoreConfig#setWriteCoalescing` to `FALSE`, after you reached per-node max write-behind-queue capacity, subsequent put operations will fail with `ReachedMaxSizeException`. This exception will be thrown to prevent uncontrolled grow of write-behind queues. You can set per node max capacity with `GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY` *
+![image](images/NoteSmall.jpg) ***NOTE:*** *When you set `MapStoreConfig#setWriteCoalescing` to `FALSE`, after you reached per-node maximum write-behind-queue capacity, subsequent put operations will fail with `ReachedMaxSizeException`. This exception will be thrown to prevent uncontrolled grow of write-behind queues. You can set per node maximum capacity with `GroupProperty#MAP_WRITE_BEHIND_QUEUE_CAPACITY`.*
 
 
 In this mode, when the `map.put(key,value)` call returns:
@@ -155,31 +155,20 @@ Here is a sample configuration:
   <map name="default">
     ...
     <map-store enabled="true">
-      <!--
-        Name of the class implementing MapLoader and/or MapStore.
-        The class should implement at least of these interfaces and
-        contain no-argument constructor. Note that the inner classes are not supported.
-      -->
       <class-name>com.hazelcast.examples.DummyStore</class-name>
-      <!--
-        Number of seconds to delay to call the MapStore.store(key, value).
-        If the value is zero then it is write-through so MapStore.store(key, value)
-        will be called as soon as the entry is updated.
-        Otherwise it is write-behind so updates will be stored after write-delay-seconds
-        value by calling Hazelcast.storeAll(map). Default value is 0.
-      -->
       <write-delay-seconds>60</write-delay-seconds>
-      <!--
-        Used to create batch chunks when writing map store.
-        In default mode all entries will be tried to persist in one go.
-        To create batch chunks, minimum meaningful value for write-batch-size
-        is 2. For values smaller than 2, it works as in default mode.
-      -->
       <write-batch-size>1000</write-batch-size>
+      <write-coalescing>true</write-coalescing>
     </map-store>
   </map>
 </hazelcast>
 ```
+<br></br>
+***RELATED INFORMATION***
+
+*Please refer to the [Map Store section](#map-store) for the full Map Store configuration description.*
+
+<br></br>
 
 #### MapStoreFactory And MapLoaderLifecycleSupport Interfaces
 
