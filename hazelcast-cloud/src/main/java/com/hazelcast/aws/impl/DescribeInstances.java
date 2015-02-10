@@ -55,7 +55,7 @@ public class DescribeInstances {
         attributes.put("X-Amz-Credential", rs.createFormattedCredential());
         attributes.put("X-Amz-Date", timeStamp);
         attributes.put("X-Amz-SignedHeaders", "host");
-        attributes.put("X-Amz-Expires", "3000");
+        attributes.put("X-Amz-Expires", "30");
     }
 
     private String getFormattedTimestamp() {
