@@ -594,7 +594,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected synchronized void addInvalidationListener(MemberImpl member) {
+    protected void addInvalidationListener(MemberImpl member) {
         if (nearCacheInvalidationListeners.containsKey(member)) {
             return;
         }
@@ -614,7 +614,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected synchronized void removeInvalidationListener(MemberImpl member) {
+    protected void removeInvalidationListener(MemberImpl member) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
         if (registrationId != null) {
             try {
