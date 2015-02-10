@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.nearcache.impl.record;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
  * Abstract implementation of {@link NearCacheRecord} with value and
@@ -28,11 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
+    private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
+
     protected V value;
     protected long creationTime = TIME_NOT_SET;
     protected volatile long expirationTime = TIME_NOT_SET;
     protected volatile long accessTime = TIME_NOT_SET;
-    protected AtomicInteger accessHit = new AtomicInteger(0);
+    protected volatile int accessHit;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
         this.value = value;
@@ -83,22 +86,22 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public int getAccessHit() {
-        return accessHit.get();
+        return accessHit;
     }
 
     @Override
     public void setAccessHit(int accessHit) {
-        this.accessHit.set(accessHit);
+        ACCESS_HIT_UPDATER.set(this, accessHit);
     }
 
     @Override
     public void incrementAccessHit() {
-        accessHit.incrementAndGet();
+        ACCESS_HIT_UPDATER.addAndGet(this, 1);
     }
 
     @Override
     public void resetAccessHit() {
-        accessHit.set(0);
+        ACCESS_HIT_UPDATER.set(this, 0);
     }
 
     @Override
