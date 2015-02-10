@@ -22,6 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -68,7 +69,8 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     @Override
     protected OperationFactory createOperationFactory() {
         final MapService mapService = getService();
-        id = mapService.getMapServiceContext().addInterceptor(name, mapInterceptor);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        id = mapServiceContext.generateInterceptorId(name, mapInterceptor);
         return new AddInterceptorOperationFactory(id, name, mapInterceptor);
     }
 
@@ -82,9 +84,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-            if (!member.localMember()) {
-                addresses.add(member.getAddress());
-            }
+            addresses.add(member.getAddress());
         }
         return addresses;
     }

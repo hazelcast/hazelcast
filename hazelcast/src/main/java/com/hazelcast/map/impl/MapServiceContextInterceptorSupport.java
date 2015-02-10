@@ -17,7 +17,9 @@ public interface MapServiceContextInterceptorSupport {
 
     void interceptAfterRemove(String mapName, Object value);
 
-    String addInterceptor(String mapName, MapInterceptor interceptor);
+    String generateInterceptorId(String mapName, MapInterceptor interceptor);
+
+    void addInterceptor(String id, String mapName, MapInterceptor interceptor);
 
     void removeInterceptor(String mapName, String id);
 

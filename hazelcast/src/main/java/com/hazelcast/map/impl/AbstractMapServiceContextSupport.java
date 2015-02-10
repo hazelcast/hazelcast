@@ -152,8 +152,15 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     }
 
     @Override
-    public String addInterceptor(String mapName, MapInterceptor interceptor) {
-        return mapServiceContext.getMapContainer(mapName).addInterceptor(interceptor);
+    public void addInterceptor(String id, String mapName, MapInterceptor interceptor) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.addInterceptor(id, interceptor);
+    }
+
+
+    @Override
+    public String generateInterceptorId(String mapName, MapInterceptor interceptor) {
+        return interceptor.getClass().getName() + interceptor.hashCode();
     }
 
     @Override
