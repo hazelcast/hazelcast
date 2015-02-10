@@ -37,8 +37,8 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     @Override
-    public <K, V> NearCache<K, V> createNearCacheIfAbsent(String name, NearCacheConfig nearCacheConfig,
-                                                          NearCacheContext nearCacheContext) {
+    public <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig,
+                                                       NearCacheContext nearCacheContext) {
         NearCache<K, V> nearCache = nearCacheMap.get(name);
         if (nearCache == null) {
             synchronized (nearCacheMap) {

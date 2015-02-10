@@ -26,7 +26,7 @@ public class NearCacheManagerTest extends NearCacheTestSupport {
     private static final int DEFAULT_NEAR_CACHE_COUNT = 5;
 
     private NearCache createNearCache(NearCacheManager nearCacheManager, String name) {
-        return nearCacheManager.createNearCacheIfAbsent(name,
+        return nearCacheManager.getOrCreateNearCache(name,
                     createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
                     createNearCacheContext());
     }
