@@ -581,7 +581,8 @@ public class ClientMapNearCacheTest {
             @Override
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertTrue(MAX_CACHE_SIZE > stats.getOwnedEntryCount());
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
@@ -599,7 +600,8 @@ public class ClientMapNearCacheTest {
             @Override
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertTrue(MAX_CACHE_SIZE > stats.getOwnedEntryCount());
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
@@ -617,7 +619,8 @@ public class ClientMapNearCacheTest {
             @Override
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertTrue(MAX_CACHE_SIZE > stats.getOwnedEntryCount());
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
@@ -635,7 +638,8 @@ public class ClientMapNearCacheTest {
             @Override
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-                assertTrue(MAX_CACHE_SIZE > stats.getOwnedEntryCount());
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
