@@ -148,9 +148,9 @@ public class NearCacheTest extends NearCacheTestSupport {
         // Show that NearCache delegates get call to wrapped NearCacheRecordStore
 
         for (int i = 0; i < expectedKeyValueMappings.size(); i++) {
-            nearCache.get(i);
+            String value = nearCache.get(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnGet);
-            assertEquals(expectedKeyValueMappings.get(i), managedNearCacheRecordStore.latestValueOnGet);
+            assertEquals(value, managedNearCacheRecordStore.latestValueOnGet);
         }
     }
 
