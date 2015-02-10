@@ -216,7 +216,6 @@ public class EC2RequestSigner {
     }
 
 
-
     private String sha256Hashhex(final String in) {
         String payloadHash = "";
         try {
@@ -230,5 +229,9 @@ public class EC2RequestSigner {
             return null;
         }
         return payloadHash;
+    }
+
+    public String createFormattedCredential() {
+        return config.getAccessKey() + "/" + timestamp.substring(0, 8) + "/" + config.getRegion() + "/" + "ec2/aws4_request";
     }
 }
