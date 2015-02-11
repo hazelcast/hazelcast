@@ -81,7 +81,7 @@ public class CacheReplicationOperation extends AbstractOperation {
         //        //migrate CacheConfigs first
         CacheService service = getService();
         for (CacheConfig config : configs) {
-            service.createCacheConfigIfAbsent(config, true);
+            service.createCacheConfigIfAbsent(config);
         }
     }
 

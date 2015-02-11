@@ -58,7 +58,7 @@ public class CacheGetConfigOperation
                     CacheConfig cacheConfigFromSimpleConfig = new CacheConfig(simpleConfig);
                     cacheConfigFromSimpleConfig.setName(simpleName);
                     cacheConfigFromSimpleConfig.setManagerPrefix(name.substring(0, name.lastIndexOf(simpleName)));
-                    if (service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig, false) == null) {
+                    if (service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig) == null) {
                         response = cacheConfigFromSimpleConfig;
                         return;
                     }
