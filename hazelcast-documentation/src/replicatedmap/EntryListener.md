@@ -17,7 +17,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 
 HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
-ReplicatedMap<String, Customer> customers = hazelcastInstance.getReplicatedMap("customers");
+ReplicatedMap<String, Customer> customers =
+    hazelcastInstance.getReplicatedMap( "customers" );
 
 customers.addEntryListener( new EntryListener<String, Customer>() {
   @Override
