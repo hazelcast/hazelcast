@@ -41,7 +41,7 @@ import static com.hazelcast.config.XmlElements.IMPORT;
 /**
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
  */
-public abstract class XmlConfigPreProcessor extends AbstractXmlConfigHelper {
+public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
 
     protected enum ConfigType {
         SERVER("hazelcast"),
@@ -53,17 +53,13 @@ public abstract class XmlConfigPreProcessor extends AbstractXmlConfigHelper {
         }
     }
 
-    private static final ILogger LOGGER = Logger.getLogger(XmlConfigPreProcessor.class);
-
+    private static final ILogger LOGGER = Logger.getLogger(AbstractConfigBuilder.class);
     private Set<String> currentlyImportedFiles = new HashSet<String>();
     private XPathFactory xpathFactory = XPathFactory.newInstance();
     private XPath xpath = xpathFactory.newXPath();
-
-
-    public XmlConfigPreProcessor() {
+    public AbstractConfigBuilder() {
 
     }
-
 
     protected void process(Node root) throws Exception {
         traverseChildsAndReplaceVariables(root);
@@ -108,12 +104,24 @@ public abstract class XmlConfigPreProcessor extends AbstractXmlConfigHelper {
         root.removeChild(node);
     }
 
+    /**
+     * Reads xml from InputStream and parses
+     *
+     * @param inputStream
+     * @return Document after parsing xml
+     * @throws Exception
+     */
     protected abstract Document parse(InputStream inputStream) throws Exception;
 
+    /**
+     * @return system properties
+     */
     protected abstract Properties getProperties();
 
+    /**
+     * @return ConfigType of current config class as enum value.
+     */
     protected abstract ConfigType getXmlType();
-
 
     private void traverseChildsAndReplaceVariables(Node root) throws XPathExpressionException {
         NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + this.getXmlType().name, root.getOwnerDocument(),

@@ -20,21 +20,24 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Properties;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XmlClientConfigPreProcessorTest {
+public class XmlClientConfigImportVariableReplacementTest {
 
 
     @Test(expected = IllegalStateException.class)
@@ -45,9 +48,7 @@ public class XmlClientConfigPreProcessorTest {
                 "   </network>" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        ClientConfig config = configBuilder.build();
+        buildConfig(xml);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -57,9 +58,7 @@ public class XmlClientConfigPreProcessorTest {
                 "   </hazelcast-client>" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        ClientConfig config = configBuilder.build();
+        buildConfig(xml);
     }
 
     @Test
@@ -68,14 +67,8 @@ public class XmlClientConfigPreProcessorTest {
                 "<hazelcast-client>\n" +
                         "<executor-pool-size>${executor.pool.size}</executor-pool-size>" +
                         "</hazelcast-client>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
 
-        Properties properties = new Properties();
-        properties.setProperty("executor.pool.size", "40");
-        configBuilder.setProperties(properties);
-
-        ClientConfig config = configBuilder.build();
+        ClientConfig config = buildConfig(xml, "executor.pool.size", "40");
         assertEquals(40, config.getExecutorPoolSize());
     }
 
@@ -106,13 +99,7 @@ public class XmlClientConfigPreProcessorTest {
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-
-        Properties properties = new Properties();
-        properties.setProperty("config.location", file.getAbsolutePath());
-        configBuilder.setProperties(properties);
-        ClientConfig config = configBuilder.build();
+        ClientConfig config = buildConfig(xml, "config.location", file.getAbsolutePath());
         assertFalse(config.getNetworkConfig().isSmartRouting());
         assertTrue(config.getNetworkConfig().isRedoOperation());
         assertTrue(config.getNetworkConfig().getAddresses().contains("192.168.100.100"));
@@ -136,14 +123,11 @@ public class XmlClientConfigPreProcessorTest {
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
 
         Properties properties = new Properties();
         properties.setProperty("config.location", file.getAbsolutePath());
         properties.setProperty("ip.address", "192.168.5.5");
-        configBuilder.setProperties(properties);
-        ClientConfig config = configBuilder.build();
+        ClientConfig config = buildConfig(xml, properties);
         assertTrue(config.getNetworkConfig().getAddresses().contains("192.168.5.5"));
     }
 
@@ -162,9 +146,7 @@ public class XmlClientConfigPreProcessorTest {
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(config1Xml);
     }
 
     @Test(expected = HazelcastException.class)
@@ -187,9 +169,7 @@ public class XmlClientConfigPreProcessorTest {
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
         writeStringToStreamAndClose(os3, config3Xml);
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(config1Xml);
     }
 
     @Test(expected = HazelcastException.class)
@@ -200,9 +180,7 @@ public class XmlClientConfigPreProcessorTest {
                 "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, "");
-        ByteArrayInputStream bis = new ByteArrayInputStream(config1Xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(config1Xml);
     }
 
     @Test(expected = HazelcastException.class)
@@ -211,9 +189,7 @@ public class XmlClientConfigPreProcessorTest {
                 "    <import resource=\"\"/>\n" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml);
     }
 
     @Test(expected = HazelcastException.class)
@@ -222,9 +198,7 @@ public class XmlClientConfigPreProcessorTest {
                 "    <import resource=\"notexisting.xml\"/>\n" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        configBuilder.build();
+        buildConfig(xml);
     }
 
     @Test
@@ -233,9 +207,7 @@ public class XmlClientConfigPreProcessorTest {
                 "    <import resource=\"classpath:hazelcast-client-c1.xml\"/>\n" +
                 "</hazelcast-client>";
 
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
-        ClientConfig config = configBuilder.build();
+        ClientConfig config = buildConfig(xml);
         GroupConfig groupConfig = config.getGroupConfig();
         assertEquals("cluster1", groupConfig.getName());
         assertEquals("cluster1pass", groupConfig.getPassword());
@@ -252,6 +224,24 @@ public class XmlClientConfigPreProcessorTest {
         os.write(string.getBytes());
         os.flush();
         os.close();
+    }
+
+    ClientConfig buildConfig(String xml, Properties properties) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);
+        configBuilder.setProperties(properties);
+        ClientConfig config = configBuilder.build();
+        return config;
+    }
+
+    ClientConfig buildConfig(String xml, String key, String value) {
+        Properties properties = new Properties();
+        properties.setProperty(key, value);
+        return buildConfig(xml, properties);
+    }
+
+    ClientConfig buildConfig(String xml) {
+        return buildConfig(xml, null);
     }
 
 }

@@ -80,7 +80,7 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
-public class XmlConfigBuilder extends XmlConfigPreProcessor implements ConfigBuilder {
+public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
@@ -201,6 +201,7 @@ public class XmlConfigBuilder extends XmlConfigPreProcessor implements ConfigBui
         handleConfig(root);
     }
 
+    @Override
     protected Document parse(InputStream is) throws Exception {
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc;

@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -25,7 +26,6 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
-import com.hazelcast.config.XmlConfigPreProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
@@ -47,7 +47,7 @@ import java.util.Properties;
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
-public class XmlClientConfigBuilder extends XmlConfigPreProcessor {
+public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private static final int DEFAULT_VALUE = 5;
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
@@ -103,9 +103,8 @@ public class XmlClientConfigBuilder extends XmlConfigPreProcessor {
     protected Document parse(InputStream inputStream) throws Exception {
 
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc;
         try {
-            doc = builder.parse(inputStream);
+            return builder.parse(inputStream);
         } catch (final Exception e) {
             String msg = "Failed to parse Config Stream"
                     + "\nException: " + e.getMessage()
@@ -115,7 +114,6 @@ public class XmlClientConfigBuilder extends XmlConfigPreProcessor {
         } finally {
             IOUtil.closeResource(inputStream);
         }
-        return doc;
     }
 
     @Override
