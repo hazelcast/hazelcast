@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -150,7 +149,7 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
-    public CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean isLocal) {
+    public CacheConfig createCacheConfigIfAbsent(CacheConfig config) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         if (localConfig == null) {
             if (config.isStatisticsEnabled()) {
@@ -159,22 +158,8 @@ public abstract class AbstractCacheService implements ICacheService {
             if (config.isManagementEnabled()) {
                 setManagementEnabled(config, config.getNameWithPrefix(), true);
             }
-            if (!isLocal) {
-                createConfigOnAllMembers(config);
-            }
         }
         return localConfig;
-    }
-
-    protected <K, V> void createConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
-        final OperationService operationService = nodeEngine.getOperationService();
-        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
-            if (!member.localMember()) {
-                final CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true);
-                operationService.invokeOnTarget(AbstractCacheService.SERVICE_NAME, op, member.getAddress());
-            }
-        }
     }
 
     @Override
