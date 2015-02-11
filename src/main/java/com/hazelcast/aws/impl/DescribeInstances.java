@@ -33,10 +33,9 @@ import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 
 public class DescribeInstances {
+    String timeStamp = getFormattedTimestamp();
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
-    String timeStamp = getFormattedTimestamp();
-
     private Map<String, String> attributes = new HashMap<String, String>();
 
     public DescribeInstances(AwsConfig awsConfig) {
