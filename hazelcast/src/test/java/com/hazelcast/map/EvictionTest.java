@@ -1059,6 +1059,28 @@ public class EvictionTest extends HazelcastTestSupport {
         assertExpirationOccuredOnJoinerNode(mapName, key, joinerNode);
     }
 
+
+    @Test
+    @Category(NightlyTest.class)
+    public void testExpiration_onBackupPartitions_whenPuttingWithTTL() throws Exception {
+        String mapName = randomMapName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] nodes = factory.newInstances();
+        IMap<Integer, Integer> map = nodes[0].getMap(mapName);
+
+        //1. put keys with TTL.
+        for (int i = 0; i < 60; i++) {
+            map.put(i, i, 5, TimeUnit.SECONDS);
+        }
+
+        // 2. Shutdown one node.
+        // Since we want to see previous backup partitions as owners.
+        nodes[1].shutdown();
+
+        // 3. Background task should sweep all keys.
+        assertSizeEventually(0, map);
+    }
+
     private void assertExpirationOccuredOnJoinerNode(String mapName, String key, HazelcastInstance joinerNode) {
         final IMap<String, Integer> newNodeMap = joinerNode.getMap(mapName);
         final Integer value = newNodeMap.get(key);
