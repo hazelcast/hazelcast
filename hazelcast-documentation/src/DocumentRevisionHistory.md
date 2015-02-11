@@ -5,6 +5,8 @@
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
 |[Chapter 1 - Preface](#preface)||Added as a new chapter as the front matter of this manual.|
+|[Chapter 4 - Overview](#overview)||Separated from [Getting Started](#getting-started) as a new chapter.|
+||[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 5 - Hazelcast Clusters](#hazelcast-clusters)||Added as a new chapter to explain the Hazelcast clusters and their features.|
 |[Chapter 6 - Distributed Data Structures](#distributed-data-structures)|[Map Persistence](#map-persistence)|Thread information related to MapLoader interface added as a note.
 ||[Eviction](#eviction)|New `max-size` policies `FREE_HEAP_SIZE` and `FREE_HEAP_PERCENTAGE` descriptions added.
