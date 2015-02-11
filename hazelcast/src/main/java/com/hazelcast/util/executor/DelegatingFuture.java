@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.CancellationException;
@@ -37,6 +38,8 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private V value;
     private Throwable error;
     private volatile boolean done;
+
+    private volatile OperationResultVerifier<V> operationResultVerifier;
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
         this(future, serializationService, null);
@@ -90,7 +93,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
             // should not happen!
             throw new ExecutionException(error);
         }
-        return value;
+        return (V) verifyResponse(value);
     }
 
     private V getResult(Object object) {
@@ -142,5 +145,22 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     @Override
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
         future.andThen(callback, executor);
+    }
+
+    public void setOperationResultVerifier(OperationResultVerifier<V> operationResultVerifier) {
+        this.operationResultVerifier = operationResultVerifier;
+    }
+
+    private Object verifyResponse(Object value) {
+        if (value instanceof Data) {
+            return value;
+        }
+        if (operationResultVerifier != null) {
+            value = operationResultVerifier.verify((V) value);
+        }
+        if (value instanceof Throwable) {
+            ExceptionUtil.sneakyThrow((Throwable) value);
+        }
+        return value;
     }
 }
