@@ -51,6 +51,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
+@Ignore
 public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private BlockingQueue<HazelcastInstance> queue = new LinkedBlockingQueue<HazelcastInstance>();

@@ -2,7 +2,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Packet;
 
-public interface BasicResponsePacketHandler {
+public interface ResponsePacketHandler {
 
     Response deserialize(Packet packet) throws Exception;
 

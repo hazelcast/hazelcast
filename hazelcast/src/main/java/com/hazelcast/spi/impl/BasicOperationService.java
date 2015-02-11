@@ -50,6 +50,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.spi.impl.classicscheduler.ClassicOperationScheduler;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -123,10 +124,9 @@ final class BasicOperationService implements InternalOperationService {
 
     private final long defaultCallTimeoutMillis;
     private final long backupOperationTimeoutMillis;
-    private final OperationHandler operationHandler;
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
-    private final ResponsePacketHandler responsePacketHandler;
+    private final BasicResponsePacketHandler responsePacketHandler;
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -142,17 +142,16 @@ final class BasicOperationService implements InternalOperationService {
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-        this.operationHandler = new OperationHandler();
-        this.responsePacketHandler = new ResponsePacketHandler();
+        this.responsePacketHandler = new BasicResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
+
         this.scheduler = new ClassicOperationScheduler(
                 node.getGroupProperties(),
                 node.loggingService,
                 node.getThisAddress(),
-                operationHandler,
-                node.getNodeExtension(),
-                responsePacketHandler,
-                node.getHazelcastThreadGroup());
+                new BasicOperationHandlerFactory(),
+                responsePacketHandler, node.getHazelcastThreadGroup(), node.getNodeExtension()
+        );
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
@@ -217,8 +216,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public void execute(Runnable task, int partitionId) {
-        scheduler.execute(task, partitionId);
+    public void execute(PartitionSpecificRunnable task) {
+        scheduler.execute(task);
     }
 
     @Override
@@ -237,30 +236,13 @@ final class BasicOperationService implements InternalOperationService {
         return new BasicInvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
-    @PrivateApi
     @Override
-    public void executeOperation(final Packet packet) {
-        scheduler.execute(packet);
-    }
-
-    /**
-     * Runs operation in calling thread.
-     *
-     * @param op
-     */
-    @Override
-    //todo: move to BasicOperationScheduler
     public void runOperationOnCallingThread(Operation op) {
-        if (scheduler.isAllowedToRunInCurrentThread(op)) {
-            operationHandler.process(op);
-        } else {
-            throw new IllegalThreadStateException("Operation: " + op + " cannot be run in current thread! -> "
-                    + Thread.currentThread());
-        }
+       scheduler.runOperationOnCallingThread(op);
     }
 
     @Override
-    public void executeOperation(final Operation op) {
+    public void executeOperation(Operation op) {
         scheduler.execute(op);
     }
 
@@ -280,7 +262,7 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
+         return new BasicTargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -301,7 +283,7 @@ final class BasicOperationService implements InternalOperationService {
 
     // =============================== processing operation  ===============================
 
-    @PrivateApi
+    @Override
     public boolean isCallTimedOut(Operation op) {
         if (op.returnsResponse() && op.getCallId() != 0) {
             final long callTimeout = op.getCallTimeout();
@@ -412,6 +394,61 @@ final class BasicOperationService implements InternalOperationService {
         return false;
     }
 
+
+    /**
+     * Checks if an operation is still running.
+     * <p/>
+     * If the partition id is set, then it is super cheap since it just involves some volatiles reads since the right worker
+     * thread can be found and in the worker-thread the current operation is stored in a volatile field.
+     * <p/>
+     * If the partition id isn't set, then we iterate over all generic-operationthread and check if one of them is running
+     * the given operation. So this is a more expensive, but in most cases this should not be an issue since most of the data
+     * is hot in cache.
+     */
+    @Override
+    public boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId) {
+        if (partitionId < 0) {
+            OperationHandler[] genericOperationHandlers = scheduler.getGenericOperationHandlers();
+            for (OperationHandler genericOperationHandler : genericOperationHandlers) {
+
+                Object task = genericOperationHandler.currentTask();
+                if (!(task instanceof Operation)) {
+                    continue;
+                }
+                Operation op = (Operation) task;
+                if (matches(op, callerAddress, operationCallId)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            OperationHandler[] partitionOperationHandlers = scheduler.getPartitionOperationHandlers();
+            OperationHandler operationHandler = partitionOperationHandlers[partitionId];
+            Object task = operationHandler.currentTask();
+            if (!(task instanceof Operation)) {
+                return false;
+            }
+            Operation op = (Operation) task;
+            return matches(op, callerAddress, operationCallId);
+        }
+    }
+
+    private static boolean matches(Operation op, Address callerAddress, long operationCallId) {
+        if (op == null) {
+            return false;
+        }
+
+        if (op.getCallId() != operationCallId) {
+            return false;
+        }
+
+        if (!op.getCallerAddress().equals(callerAddress)) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public void onMemberLeft(final MemberImpl member) {
         // postpone notifying calls since real response may arrive in the mean time.
@@ -483,9 +520,8 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private void ensureNotCallingFromOperationThread() {
-            Thread currentThread = Thread.currentThread();
-            if (currentThread instanceof ClassicOperationScheduler.OperationThread) {
-                throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
+            if (scheduler.isOperationThread()) {
+                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make invocation on multiple partitions!");
             }
         }
 
@@ -548,7 +584,7 @@ final class BasicOperationService implements InternalOperationService {
     /**
      * Responsible for handling responses.
      */
-    private final class ResponsePacketHandler implements BasicResponsePacketHandler {
+    private final class BasicResponsePacketHandler implements ResponsePacketHandler {
 
         @Override
         public Response deserialize(Packet packet) throws Exception {
@@ -585,17 +621,75 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    private class BasicOperationHandlerFactory implements OperationHandlerFactory {
+        @Override
+        public OperationHandler createAdHocOperationHandler() {
+            return new BasicOperationHandler(BasicOperationHandler.AD_HOC_PARTITION_ID);
+        }
+
+        @Override
+        public OperationHandler createPartitionHandler(int partitionId) {
+            return new BasicOperationHandler(partitionId);
+        }
+
+        @Override
+        public OperationHandler createGenericOperationHandler() {
+            return new BasicOperationHandler(-1);
+        }
+    }
+
     /**
      * Responsible for processing an Operation.
      */
-    private final class OperationHandler implements BasicOperationHandler {
+    private class BasicOperationHandler extends OperationHandler {
+        private static final int AD_HOC_PARTITION_ID = -2;
 
-        /**
-         * Runs operation in calling thread.
-         */
+        private final int thisPartitionId;
+
+        // This field doesn't need additional synchronization, since a partition-specific OperationHandler
+        // will never be called concurrently.
+        private InternalPartition internalPartition;
+
+        // When partitionId >= 0, it is a partition specific
+        // when partitionId =-1, it is generic
+        // when partitionId =-2, it is ad hoc
+        // an ad-hoc OperationHandler can only process generic operations, but it can be shared between threads
+        // and therefor the {@link OperationHandler#currentTask()} always returns null
+        public BasicOperationHandler(int partitionId) {
+            this.thisPartitionId = partitionId;
+        }
+
+        @Override
+        public void process(Runnable task) {
+            boolean publishCurrentTask = publishCurrentTask();
+
+            if (publishCurrentTask) {
+                currentTask = task;
+            }
+
+            try {
+                task.run();
+            } finally {
+                if (publishCurrentTask) {
+                    currentTask = null;
+                }
+            }
+        }
+
+        private boolean publishCurrentTask() {
+            return thisPartitionId != AD_HOC_PARTITION_ID && currentTask == null;
+        }
+
         @Override
         public void process(Operation op) {
+            // TODO: We need to think about replacing this contended counter.
             executedOperationsCount.incrementAndGet();
+
+            boolean publishCurrentTask = publishCurrentTask();
+
+            if (publishCurrentTask) {
+                currentTask = op;
+            }
 
             try {
                 if (timeout(op)) {
@@ -615,6 +709,10 @@ final class BasicOperationService implements InternalOperationService {
                 afterRun(op);
             } catch (Throwable e) {
                 handleOperationError(op, e);
+            } finally {
+                if (publishCurrentTask) {
+                    currentTask = null;
+                }
             }
         }
 
@@ -680,13 +778,21 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
 
-        private void ensureNoPartitionProblems(Operation op) {
+        protected void ensureNoPartitionProblems(Operation op) {
             int partitionId = op.getPartitionId();
+
             if (partitionId < 0) {
                 return;
             }
 
-            InternalPartition internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
+            if (partitionId != thisPartitionId) {
+                throw new IllegalStateException("wrong partition, expected: " + thisPartitionId + " but found:" + op);
+            }
+
+            if (internalPartition == null) {
+                internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
+            }
+
             if (retryDuringMigration(op) && internalPartition.isMigrating()) {
                 throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                         op.getClass().getName(), op.getServiceName());
@@ -730,7 +836,13 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         @Override
-        public Operation deserialize(Packet packet) throws Exception {
+        public void process(Packet packet)throws Exception {
+            boolean publishCurrentTask = publishCurrentTask();
+
+            if (publishCurrentTask) {
+                currentTask = packet;
+            }
+
             Connection connection = packet.getConn();
             Address caller = connection.getEndPoint();
             Data data = packet.getData();
@@ -744,16 +856,23 @@ final class BasicOperationService implements InternalOperationService {
                 setRemoteResponseHandler(nodeEngine, op);
 
                 if (!ensureValidMember(op)) {
-                    return null;
+                    return;
                 }
 
-                return op;
+                if (publishCurrentTask) {
+                    currentTask = null;
+                }
+                process(op);
             } catch (Throwable throwable) {
                 // If exception happens we need to extract the callId from the bytes directly!
                 long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
                 send(new NormalResponse(throwable, callId, 0, packet.isUrgent()), caller);
                 logOperationDeserializationException(throwable, callId);
                 throw ExceptionUtil.rethrow(throwable);
+            } finally {
+                if (publishCurrentTask) {
+                    currentTask = null;
+                }
             }
         }
 
@@ -761,7 +880,7 @@ final class BasicOperationService implements InternalOperationService {
             if (!isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
                 Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
                         op.getClass().getName(), op.getServiceName());
-                operationHandler.handleOperationError(op, error);
+                handleOperationError(op, error);
                 return false;
             }
             return true;
@@ -989,4 +1108,5 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
     }
+
 }

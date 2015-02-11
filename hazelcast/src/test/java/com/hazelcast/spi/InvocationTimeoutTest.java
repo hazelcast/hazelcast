@@ -1,33 +1,10 @@
-/*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.spi;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -36,85 +13,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class InvocationTest extends HazelcastTestSupport {
-
-    @Test
-    public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance local = factory.newHazelcastInstance();
-        HazelcastInstance remote = factory.newHazelcastInstance();
-        warmUpPartitions(local, remote);
-
-        Node localNode = getNode(local);
-        OperationService service = localNode.nodeEngine.getOperationService();
-        Operation op = new PartitionTargetOperation();
-        String partitionKey = generateKeyOwnedBy(remote);
-        int partitionId = localNode.nodeEngine.getPartitionService().getPartitionId(partitionKey);
-        Future f = service.createInvocationBuilder(null, op, partitionId).setCallTimeout(30000).invoke();
-        sleepSeconds(1);
-
-        remote.shutdown();
-
-        //the get should work without a problem because the operation should be re-targeted at the newest owner
-        //for that given partition
-        f.get();
-    }
-
-    @Test
-    public void whenTargetMemberDiesThenOperationAbortedWithMembersLeftException() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance local = factory.newHazelcastInstance();
-        HazelcastInstance remote = factory.newHazelcastInstance();
-        warmUpPartitions(local, remote);
-
-        OperationService service = getNode(local).nodeEngine.getOperationService();
-        Operation op = new TargetOperation();
-        Address address = new Address(remote.getCluster().getLocalMember().getSocketAddress());
-        Future f = service.createInvocationBuilder(null, op, address).invoke();
-        sleepSeconds(1);
-
-        remote.getLifecycleService().terminate();
-
-        try {
-            f.get();
-            fail();
-        } catch (MemberLeftException expected) {
-
-        }
-    }
-
-    /**
-     * Operation send to a specific member.
-     */
-    private static class TargetOperation extends AbstractOperation {
-        public void run() throws InterruptedException {
-            Thread.sleep(10000);
-        }
-    }
-
-    /**
-     * Operation send to a specific target partition.
-     */
-    private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
-
-        public void run() throws InterruptedException {
-            Thread.sleep(5000);
-        }
-    }
+public class InvocationTimeoutTest extends HazelcastTestSupport {
 
     @Test
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
@@ -184,7 +92,7 @@ public class InvocationTest extends HazelcastTestSupport {
 
     @Test
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
-       final Config config = new Config();
+        final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "3000");
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -265,67 +173,6 @@ public class InvocationTest extends HazelcastTestSupport {
         }
 
         protected abstract void doOp() throws InterruptedException;
-    }
-
-    @Test(expected = ExecutionException.class, timeout = 120000)
-    public void testIssue2509() throws Exception {
-
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-
-        UnDeserializable unDeserializable = new UnDeserializable(1);
-        IExecutorService executorService = h1.getExecutorService("default");
-        Issue2509Runnable task = new Issue2509Runnable(unDeserializable);
-        Future<?> future = executorService.submitToMember(task, h2.getCluster().getLocalMember());
-        future.get();
-    }
-
-    public static class Issue2509Runnable implements Callable<Integer>, DataSerializable {
-
-        private UnDeserializable unDeserializable;
-
-        public Issue2509Runnable() {
-        }
-
-        public Issue2509Runnable(UnDeserializable unDeserializable) {
-            this.unDeserializable = unDeserializable;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(unDeserializable);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            unDeserializable = in.readObject();
-        }
-
-        @Override
-        public Integer call() {
-            return unDeserializable.foo;
-        }
-    }
-
-    public static class UnDeserializable implements DataSerializable {
-
-        private int foo;
-
-        public UnDeserializable(int foo) {
-            this.foo = foo;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(foo);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            foo = in.readInt();
-        }
     }
 
 }
