@@ -25,7 +25,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.Queue;
@@ -37,9 +36,11 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 
 /**
- * The BasicOperationProcessor belongs to the BasicOperationService and is responsible for scheduling
- * operations/packets to the correct threads.
- * <p/>
+ * A {@link com.hazelcast.spi.impl.OperationScheduler} that scheduled:
+ * <ol>
+ *     <li>partition specific operations to a specific partition-operation-thread (using a mod on the partition-id)</li>
+ *     <li> non specific operations to generic-operation-threads</li>
+ * </ol>
  * The actual processing of the 'task' that is scheduled, is forwarded to the {@link BasicOperationHandler}. So
  * this class is purely responsible for assigning a 'task' to a particular thread.
  * <p/>
@@ -58,7 +59,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  * </li>
  * </ol>
  */
-public final class BasicOperationScheduler {
+public final class ClassicOperationScheduler implements OperationScheduler {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
@@ -97,15 +98,15 @@ public final class BasicOperationScheduler {
         }
     };
 
-    public BasicOperationScheduler(GroupProperties groupProperties,
-                                   LoggingService loggerService,
-                                   Address thisAddress,
-                                   BasicOperationHandler operationHandler,
-                                   NodeExtension nodeExtension,
-                                   BasicResponsePacketHandler responsePacketHandler,
-                                   HazelcastThreadGroup hazelcastThreadGroup) {
+    public ClassicOperationScheduler(GroupProperties groupProperties,
+                                     LoggingService loggerService,
+                                     Address thisAddress,
+                                     BasicOperationHandler operationHandler,
+                                     NodeExtension nodeExtension,
+                                     BasicResponsePacketHandler responsePacketHandler,
+                                     HazelcastThreadGroup hazelcastThreadGroup) {
         this.thisAddress = thisAddress;
-        this.logger = loggerService.getLogger(BasicOperationScheduler.class);
+        this.logger = loggerService.getLogger(ClassicOperationScheduler.class);
         this.operationHandler = operationHandler;
         this.responsePacketHandler = responsePacketHandler;
         this.nodeExtension = nodeExtension;
@@ -160,7 +161,7 @@ public final class BasicOperationScheduler {
 
         return threads;
     }
-    @PrivateApi
+
     /**
      * Checks if an operation is still running.
      *
@@ -171,7 +172,8 @@ public final class BasicOperationScheduler {
      * the given operation. So this is a more expensive, but in most cases this should not be an issue since most of the data
      * is hot in cache.
      */
-    boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId) {
+    @Override
+    public boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId) {
         if (partitionId < 0) {
             for (OperationThread operationThread : genericOperationThreads) {
                 if (matches(operationThread.currentOperation, callerAddress, operationCallId)) {
@@ -203,11 +205,13 @@ public final class BasicOperationScheduler {
         return true;
     }
 
-    boolean isAllowedToRunInCurrentThread(Operation op) {
+    @Override
+    public boolean isAllowedToRunInCurrentThread(Operation op) {
         return isAllowedToRunInCurrentThread(op.getPartitionId());
     }
 
-    boolean isInvocationAllowedFromCurrentThread(Operation op) {
+    @Override
+    public boolean isInvocationAllowedFromCurrentThread(Operation op) {
         return isInvocationAllowedFromCurrentThread(op.getPartitionId());
     }
 
@@ -264,6 +268,7 @@ public final class BasicOperationScheduler {
         return true;
     }
 
+    @Override
     public int getRunningOperationCount() {
         int result = 0;
         for (OperationThread thread : partitionOperationThreads) {
@@ -279,6 +284,7 @@ public final class BasicOperationScheduler {
         return result;
     }
 
+    @Override
     public int getOperationExecutorQueueSize() {
         int size = 0;
 
@@ -291,6 +297,7 @@ public final class BasicOperationScheduler {
         return size;
     }
 
+    @Override
     public int getPriorityOperationExecutorQueueSize() {
         int size = 0;
 
@@ -302,18 +309,32 @@ public final class BasicOperationScheduler {
         return size;
     }
 
+    @Override
     public int getResponseQueueSize() {
         return responseThread.workQueue.size();
     }
 
+    @Override
+    public int getPartitionOperationThreadCount() {
+        return partitionOperationThreads.length;
+    }
+
+    @Override
+    public int getGenericOperationThreadCount() {
+        return genericOperationThreads.length;
+    }
+
+    @Override
     public void execute(Operation op) {
         execute(op, op.getPartitionId(), op.isUrgent());
     }
 
+    @Override
     public void execute(Runnable task, int partitionId) {
         execute(task, partitionId, false);
     }
 
+    @Override
     public void execute(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
             //it is an response packet.
@@ -357,7 +378,7 @@ public final class BasicOperationScheduler {
 
         boolean offer = queue.offer(task);
         if (!offer) {
-            logger.severe("Failed to offer " + task + " to BasicOperationScheduler due to overload");
+            logger.severe("Failed to offer " + task + " to ClassicOperationScheduler due to overload");
         }
     }
 
@@ -365,6 +386,7 @@ public final class BasicOperationScheduler {
         return partitionId % partitionOperationThreads.length;
     }
 
+    @Override
     public void shutdown() {
         shutdown = true;
         interruptAll(partitionOperationThreads);
@@ -389,6 +411,7 @@ public final class BasicOperationScheduler {
         }
     }
 
+    @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
         for (int k = 0; k < partitionOperationThreads.length; k++) {
             OperationThread operationThread = partitionOperationThreads[k];
@@ -410,7 +433,7 @@ public final class BasicOperationScheduler {
 
     @Override
     public String toString() {
-        return "BasicOperationScheduler{"
+        return "ClassicOperationScheduler{"
                 + "node=" + thisAddress
                 + '}';
     }

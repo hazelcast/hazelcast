@@ -25,8 +25,8 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
-        BasicOperationScheduler scheduler = operationService.scheduler;
+        InternalOperationService operationService = nodeEngine.operationService;
+        OperationScheduler scheduler = operationService.getScheduler();
         boolean executing = scheduler.isOperationExecuting(getCallerAddress(), getPartitionId(), operationCallId);
         getResponseHandler().sendResponse(executing);
     }

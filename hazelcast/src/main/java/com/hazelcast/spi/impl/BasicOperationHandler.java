@@ -20,7 +20,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 
 /**
- * To keep the {@link com.hazelcast.spi.impl.BasicOperationScheduler} clean of operations/packets etc, the scheduler
+ * To keep the {@link ClassicOperationScheduler} clean of operations/packets etc, the scheduler
  * takes care of scheduling, but forwards the actual handling of the task to the {@link BasicOperationHandler}.
  */
 public interface BasicOperationHandler {
