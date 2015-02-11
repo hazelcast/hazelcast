@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -731,5 +732,97 @@ public class ClientRegressionTest
         map.get(1);
         //test should finish without throwing any exception.
         client.shutdown();
+    }
+
+
+    @Test
+    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() throws Exception {
+        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        final CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    clientStartedDoingRequests.await();
+                } catch (InterruptedException ignored) {
+                }
+
+                hazelcastInstance.shutdown();
+
+                Hazelcast.newHazelcastInstance();
+
+            }
+        }).start();
+
+
+        ClientConfig clientConfig = new ClientConfig();
+        //Retry all requests
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        //retry to connect to cluster forever(never shutdown the client)
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        //Retry all requests forever(until client is shutdown)
+        clientConfig.setProperty(ClientProperties.PROP_REQUEST_RETRY_COUNT, String.valueOf(Integer.MAX_VALUE));
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        IMap<Object, Object> map = client.getMap(randomMapName());
+
+        int mapSize = 1000;
+        for (int i = 0; i < mapSize; i++) {
+            if (i == mapSize / 4) {
+                clientStartedDoingRequests.countDown();
+            }
+            try {
+                map.put(i, i);
+            } catch (Exception e) {
+                assertTrue("Requests should not throw exception with this configuration", false);
+            }
+        }
+    }
+
+    @Test
+    public void testClusterShutdown_thenCheckOperationsNotHanging() throws Exception {
+        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        //Retry all requests
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        //Retry all requests forever(until client is shutdown)
+        clientConfig.setProperty(ClientProperties.PROP_REQUEST_RETRY_COUNT, String.valueOf(Integer.MAX_VALUE));
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+        final int mapSize = 1000;
+
+        final CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
+        final CountDownLatch testFinishedLatch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                for (int i = 0; i < mapSize; i++) {
+                    if (i == mapSize / 4) {
+                        clientStartedDoingRequests.countDown();
+                    }
+                    try {
+                        map.put(i, i);
+                    } catch (Exception ignored) {
+                    }
+                }
+                testFinishedLatch.countDown();
+
+            }
+        }).start();
+
+
+        try {
+            clientStartedDoingRequests.await();
+        } catch (InterruptedException ignored) {
+        }
+
+        hazelcastInstance.shutdown();
+
+        assertOpenEventually("Put operations should not hang", testFinishedLatch);
+
     }
 }
