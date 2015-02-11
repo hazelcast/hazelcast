@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -58,6 +59,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     private volatile Object response;
 
+    private volatile OperationResultVerifier<V> operationResultVerifier;
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
                                   ClientRequest request, EventHandler handler) {
@@ -164,7 +166,20 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         if (response == null) {
             throw new TimeoutException();
         }
-        return (V) response;
+        return (V) verifyResponse(response);
+    }
+
+    private Object verifyResponse(Object value) {
+        if (value instanceof Data) {
+            return value;
+        }
+        if (operationResultVerifier != null) {
+            value = operationResultVerifier.verify((V) value);
+        }
+        if (value instanceof Throwable) {
+            ExceptionUtil.sneakyThrow((Throwable) value);
+        }
+        return value;
     }
 
     @Override
@@ -192,6 +207,10 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             }
             callbackNodeList.add(new ExecutionCallbackNode(callback, executor, false));
         }
+    }
+
+    public void setOperationResultVerifier(OperationResultVerifier<V> operationResultVerifier) {
+        this.operationResultVerifier = operationResultVerifier;
     }
 
     public ClientRequest getRequest() {

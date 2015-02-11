@@ -170,7 +170,7 @@ public final class CacheProxyUtil {
      * @param <K> the type of key.
      * @throws ClassCastException if the provided key does not match with configured type.
      */
-    public static <K> void validateConfiguredTypes(CacheConfig cacheConfig, K key)
+    public static <K> void validateConfiguredKeyType(CacheConfig cacheConfig, K key)
             throws ClassCastException {
         final Class keyType = cacheConfig.getKeyType();
         validateConfiguredKeyType(keyType, key);
@@ -232,6 +232,20 @@ public final class CacheProxyUtil {
     }
 
     /**
+     * Validates the configured key and value types matches the provided value.
+     *
+     * @param cacheConfig Cache configuration.
+     * @param value the value to be validated.
+     * @param <V> the type of value.
+     * @throws ClassCastException if the provided key or value do not match with configured types.
+     */
+    public static <V> void validateConfiguredValueType(CacheConfig cacheConfig, V value)
+            throws ClassCastException {
+        final Class valueType = cacheConfig.getValueType();
+        validateConfiguredValueType(valueType, value);
+    }
+
+    /**
      * Validates the value with value type.
      * @param valueType value class.
      * @param value value to be validated.
@@ -240,7 +254,7 @@ public final class CacheProxyUtil {
      */
     public static <V> void validateConfiguredValueType(Class<V> valueType, V value)
             throws ClassCastException {
-        if (Object.class != valueType) {
+        if (value != null && valueType != null && Object.class != valueType) {
             //means type checks required
             if (!valueType.isAssignableFrom(value.getClass())) {
                 throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
@@ -248,4 +262,63 @@ public final class CacheProxyUtil {
         }
     }
 
+    /**
+     * Convenience method that validates key, oldValue and the newValue to be not null and
+     * matching the configured types (if configured in the {@link com.hazelcast.config.CacheConfig}).
+     *
+     * @param hasOldValue true if an oldValue exists, otherwise false
+     * @param key key to be validated.
+     * @param oldValue oldValue to be validated.
+     * @param newValue newValue to be validated.
+     * @param cacheConfig Cache configuration.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     */
+    public static <K, V> void validateKeyOldValueNewValueType(boolean hasOldValue, K key, V oldValue, V newValue,
+                                                              CacheConfig cacheConfig) {
+
+        if (hasOldValue) {
+            validateNotNull(key, oldValue, newValue);
+            validateConfiguredTypes(cacheConfig, key, oldValue, newValue);
+        } else {
+            validateNotNull(key, newValue);
+            validateConfiguredTypes(cacheConfig, key, newValue);
+        }
+    }
+
+    /**
+     * Convenience method that validates key and the oldValue to be not null and matching the configured
+     * types (if configured in the {@link com.hazelcast.config.CacheConfig}).
+     *
+     * @param hasOldValue true if an oldValue exists, otherwise false
+     * @param key key to be validated.
+     * @param oldValue oldValue to be validated.
+     * @param cacheConfig Cache configuration.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     */
+    public static <K, V> void validateKeyOldValue(boolean hasOldValue, K key, V oldValue, CacheConfig cacheConfig) {
+        if (hasOldValue) {
+            validateNotNull(key, oldValue);
+            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, oldValue);
+        } else {
+            validateNotNull(key);
+            validateConfiguredKeyType(cacheConfig, key);
+        }
+    }
+
+    /**
+     * Convenience method that validates key and the value to be not null and matching the configured
+     * types (if configured in the {@link com.hazelcast.config.CacheConfig}).
+     *
+     * @param key key to be validated.
+     * @param value value to be validated.
+     * @param cacheConfig Cache configuration.
+     * @param <K> the type of key.
+     * @param <V> the type of value.
+     */
+    public static <K, V> void validateKeyValue(K key, V value, CacheConfig cacheConfig) {
+        validateNotNull(key, value);
+        validateConfiguredTypes(cacheConfig, key, value);
+    }
 }

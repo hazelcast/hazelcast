@@ -18,7 +18,6 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
-import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
@@ -37,6 +36,7 @@ import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -62,7 +62,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateKeyOldValue;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateKeyOldValueNewValueType;
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateKeyValue;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -105,7 +107,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected <T> ICompletableFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
+    protected <T> ClientInvocationFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
 
         Integer completionId = null;
         if (completionOperation) {
@@ -118,7 +120,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
-            final ICompletableFuture<T> f = clientInvocation.invoke();
+            final ClientInvocationFuture<T> f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
@@ -146,13 +148,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue, boolean isGet,
                                                             boolean withCompletionEvent) {
         ensureOpen();
-        if (hasOldValue) {
-            validateNotNull(key, oldValue);
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, oldValue);
-        } else {
-            validateNotNull(key);
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
-        }
+        validateKeyOldValue(hasOldValue, key, oldValue, cacheConfig);
+
         final Data keyData = toData(key);
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         ClientRequest request;
@@ -162,26 +159,24 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } else {
             request = new CacheRemoveRequest(nameWithPrefix, keyData, oldValueData, inMemoryFormat);
         }
-        ICompletableFuture future;
+        ClientInvocationFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
             invalidateNearCache(keyData);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        DelegatingFuture<T> df = new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        if (isGet) {
+            df = registerReturnedValueTypeCheck(df);
+        }
+        return df;
     }
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
                                                              boolean hasOldValue, boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
-        if (hasOldValue) {
-            validateNotNull(key, oldValue, newValue);
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, oldValue, newValue);
-        } else {
-            validateNotNull(key, newValue);
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, newValue);
-        }
+        validateKeyOldValueNewValueType(hasOldValue, key, oldValue, newValue, cacheConfig);
 
         final Data keyData = toData(key);
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
@@ -200,15 +195,18 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
-
+        DelegatingFuture<T> df = new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        if (isGet) {
+            df = registerReturnedValueTypeCheck(df);
+        }
+        return df;
     }
 
     protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
                                                          boolean withCompletionEvent) {
         ensureOpen();
-        validateNotNull(key, value);
-        CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
+        validateKeyValue(key, value, cacheConfig);
+
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
@@ -230,8 +228,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected ICompletableFuture<Boolean> putIfAbsentAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
                                                                    boolean withCompletionEvent) {
         ensureOpen();
-        validateNotNull(key, value);
-        CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
+        validateKeyValue(key, value, cacheConfig);
+
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy,
