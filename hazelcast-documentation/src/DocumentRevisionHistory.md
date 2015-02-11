@@ -5,8 +5,8 @@
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
 |[Chapter 1 - Preface](#preface)||Added information on how to contribute to Hazelcast.|
-|[Chapter 3 - Getting Started](#getting-started)|[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 4 - Overview](#overview)||Separated from [Getting Started](#getting-started) as a new chapter.|
+||[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 5 - Hazelcast Clusters](#hazelcast-clusters)|[Creating Cluster Groups](#creating-cluster-groups)|Added as a new section explaining how to separate a Hazelcast cluster.|
 |[Chapter 6 - Distributed Data Structures](#distributed-data-structures)|[Map](#map)|The content of the section, previously read as Entry Listener improved and its name changed to [Map Listener](#map-listener).<br><br> Description of the new element `write-coalescing` added to the [Write-Behind section](#write-behind). |
 |[Chapter 7 - Distributed Events](#distributed-events)||The whole chapter improved by adding sections describing each listener.|
