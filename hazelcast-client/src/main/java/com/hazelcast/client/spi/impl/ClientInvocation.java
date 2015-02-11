@@ -15,6 +15,7 @@ import com.hazelcast.executor.impl.client.RefreshableRequest;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
@@ -214,11 +215,20 @@ public class ClientInvocation implements Runnable {
         }
 
         try {
-            executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+            sleep();
+            executionService.execute(this);
         } catch (RejectedExecutionException e) {
             return false;
         }
         return true;
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+        } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
+        }
     }
 
     private boolean isBindToSingleConnection() {
