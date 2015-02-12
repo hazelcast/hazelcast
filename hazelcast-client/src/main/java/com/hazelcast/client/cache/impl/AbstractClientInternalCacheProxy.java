@@ -30,6 +30,7 @@ import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
 import com.hazelcast.cache.impl.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
+import com.hazelcast.cache.impl.client.CacheRemoveInvalidationListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
@@ -526,7 +527,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         public void memberRemoved(MembershipEvent event) {
             MemberImpl member = (MemberImpl) event.getMember();
-            removeInvalidationListener(member);
+            removeInvalidationListener(member, false);
         }
 
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
@@ -589,7 +590,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             }
             Collection<MemberImpl> memberList = clusterService.getMemberList();
             for (MemberImpl member : memberList) {
-                removeInvalidationListener(member);
+                removeInvalidationListener(member, true);
             }
         }
     }
@@ -614,10 +615,20 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void removeInvalidationListener(MemberImpl member) {
+    protected void removeInvalidationListener(MemberImpl member, boolean removeFromMemberAlso) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
         if (registrationId != null) {
             try {
+                if (removeFromMemberAlso) {
+                    ClientRequest request = new CacheRemoveInvalidationListenerRequest(name, registrationId);
+                    HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());
+                    Future future = invocation.invoke();
+                    boolean result = clientContext.getSerializationService().toObject(future.get());
+                    if (!result) {
+                        // TODO What we do if result is false
+                    }
+                }
                 clientContext.getListenerService().deRegisterListener(registrationId);
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);

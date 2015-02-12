@@ -191,8 +191,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean replace(K key, V value) {
-        final ExpiryPolicy expiryPolicy = null;
-        return replace(key, value, expiryPolicy);
+        return replace(key, value, (ExpiryPolicy) null);
     }
 
     @Override
@@ -296,7 +295,7 @@ public class ClientCacheProxy<K, V>
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         ensureOpen();
         if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
@@ -314,7 +313,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
