@@ -39,5 +39,15 @@ public class CallTimeoutResponse extends Response implements IdentifiedDataSeria
     public int getId() {
         return SpiDataSerializerHook.CALL_TIMEOUT_RESPONSE;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("CallTimeoutResponse");
+        sb.append("{callId=").append(callId);
+        sb.append(", urgent=").append(urgent);
+        sb.append('}');
+        return sb.toString();
+    }
 }
 

@@ -1,5 +1,6 @@
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
@@ -27,6 +28,10 @@ abstract class AbstractCacheAllPartitionsRequest extends AllPartitionsClientRequ
     protected CacheOperationProvider getOperationProvider() {
         ICacheService service = getService();
         CacheConfig cacheConfig = service.getCacheConfig(name);
+        if (cacheConfig == null) {
+            throw new CacheNotExistsException(
+                    "Cache config for cache " + name + " has not been created yet !");
+        }
         return service.getCacheOperationProvider(name, cacheConfig.getInMemoryFormat());
     }
 

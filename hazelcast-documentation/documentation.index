@@ -53,7 +53,7 @@ src/Distributed_Data_Structures.md
         src/replicatedmap/Considerations.md
         src/replicatedmap/BreakageMapContract.md
         src/replicatedmap/TechnicalDesign.md
-        src/replicatedmap/InMemoryFormat.md
+        src/replicatedmap/Configuration.md
         src/replicatedmap/EntryListener.md
 src/DistributedEvents.md
 	src/GlobalEventConfiguration.md

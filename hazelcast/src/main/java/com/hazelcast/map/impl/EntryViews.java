@@ -68,4 +68,20 @@ public final class EntryViews {
         return lazyEntryView;
     }
 
+    public static <K, V> EntryView<K, V> convertToLazyEntryView(EntryView entryView,
+            SerializationService serializationService, MapMergePolicy mergePolicy) {
+        final LazyEntryView lazyEntryView = new LazyEntryView(entryView.getKey(), entryView.getValue(),
+                serializationService, mergePolicy);
+        lazyEntryView.setCost(entryView.getCost());
+        lazyEntryView.setVersion(entryView.getVersion());
+        lazyEntryView.setLastAccessTime(entryView.getLastAccessTime());
+        lazyEntryView.setLastUpdateTime(entryView.getLastUpdateTime());
+        lazyEntryView.setTtl(entryView.getTtl());
+        lazyEntryView.setCreationTime(entryView.getCreationTime());
+        lazyEntryView.setHits(entryView.getHits());
+        lazyEntryView.setExpirationTime(entryView.getExpirationTime());
+        lazyEntryView.setLastStoredTime(entryView.getLastStoredTime());
+        return lazyEntryView;
+    }
+
 }

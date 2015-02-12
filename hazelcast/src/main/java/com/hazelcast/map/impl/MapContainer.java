@@ -150,14 +150,6 @@ public class MapContainer extends MapContainerSupport {
         return wanMergePolicy;
     }
 
-    public String addInterceptor(MapInterceptor interceptor) {
-        String id = interceptor.getClass().getName() + interceptor.hashCode();
-
-        addInterceptor(id, interceptor);
-
-        return id;
-    }
-
     public void addInterceptor(String id, MapInterceptor interceptor) {
 
         removeInterceptor(id);

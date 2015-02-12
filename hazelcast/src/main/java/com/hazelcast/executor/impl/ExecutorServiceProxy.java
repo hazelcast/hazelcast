@@ -274,14 +274,13 @@ public class ExecutorServiceProxy
     }
 
     private <T> int getTaskPartitionId(Callable<T> task) {
-        int partitionId;
         if (task instanceof PartitionAware) {
-            final Object partitionKey = ((PartitionAware) task).getPartitionKey();
-            partitionId = getNodeEngine().getPartitionService().getPartitionId(partitionKey);
-        } else {
-            partitionId = random.nextInt(partitionCount);
+            Object partitionKey = ((PartitionAware) task).getPartitionKey();
+            if (partitionKey != null) {
+                return getNodeEngine().getPartitionService().getPartitionId(partitionKey);
+            }
         }
-        return partitionId;
+        return random.nextInt(partitionCount);
     }
 
     @Override

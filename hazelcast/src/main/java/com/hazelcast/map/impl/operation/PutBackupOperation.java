@@ -50,6 +50,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public void run() {
+        ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
         final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
         if (recordInfo != null) {
             Records.applyRecordInfo(record, recordInfo);

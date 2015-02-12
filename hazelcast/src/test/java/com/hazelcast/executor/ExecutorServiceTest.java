@@ -28,6 +28,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
@@ -775,9 +776,9 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         executorService.execute(new SleepLatchRunnable());
 
         assertTrue(SleepLatchRunnable.startLatch.await(30, TimeUnit.SECONDS));
-        final Future waitingInQueue = executorService.submit(new EmptyRunnable());
+        Future waitingInQueue = executorService.submit(new EmptyRunnable());
 
-        final Future rejected = executorService.submit(new EmptyRunnable());
+        Future rejected = executorService.submit(new EmptyRunnable());
 
         try {
             rejected.get(1, TimeUnit.MINUTES);
@@ -799,8 +800,13 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
 
     static class SleepLatchRunnable implements Runnable, Serializable {
 
-        static CountDownLatch startLatch = new CountDownLatch(1);
-        static CountDownLatch sleepLatch = new CountDownLatch(1);
+        static CountDownLatch startLatch;
+        static CountDownLatch sleepLatch;
+
+        public SleepLatchRunnable() {
+            startLatch = new CountDownLatch(1);
+            sleepLatch = new CountDownLatch(1);
+        }
 
         @Override
         public void run() {
@@ -809,10 +815,14 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
-    static class EmptyRunnable implements Runnable, Serializable {
+    static class EmptyRunnable implements Runnable, Serializable, PartitionAware {
         @Override
         public void run() {
+        }
 
+        @Override
+        public Object getPartitionKey() {
+            return "key";
         }
     }
 

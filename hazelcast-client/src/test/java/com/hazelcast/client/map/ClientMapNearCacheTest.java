@@ -67,6 +67,10 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_WITH_IDLE = "NEAR_CACHE_WITH_IDLE";
     private static final String NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME = "NEAR_CACHE_WITH_LONG_MAX_IDLE_TIME";
     private static final String NEAR_CACHE_WITH_INVALIDATION = "NEAR_CACHE_WITH_INVALIDATION";
+    private static final String NEAR_CACHE_LFU_WITH_MAX_SIZE = "NEAR_CACHE_LFU_WITH_MAX_SIZE";
+    private static final String NEAR_CACHE_LRU_WITH_MAX_SIZE = "NEAR_CACHE_LRU_WITH_MAX_SIZE";
+    private static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
+    private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
     private static HazelcastInstance h1;
     private static HazelcastInstance h2;
@@ -114,6 +118,35 @@ public class ClientMapNearCacheTest {
         invalidateConfig.setName(NEAR_CACHE_WITH_INVALIDATION + "*");
         invalidateConfig.setInvalidateOnChange(true);
         clientConfig.addNearCacheConfig(invalidateConfig);
+
+        NearCacheConfig lfuMaxSizeConfig = new NearCacheConfig();
+        lfuMaxSizeConfig.setName(NEAR_CACHE_LFU_WITH_MAX_SIZE + "*");
+        lfuMaxSizeConfig.setInvalidateOnChange(true);
+        lfuMaxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
+        lfuMaxSizeConfig.setEvictionPolicy("LFU");
+        clientConfig.addNearCacheConfig(lfuMaxSizeConfig);
+
+        NearCacheConfig lruMaxSizeConfig = new NearCacheConfig();
+        lruMaxSizeConfig.setName(NEAR_CACHE_LRU_WITH_MAX_SIZE + "*");
+        lruMaxSizeConfig.setInvalidateOnChange(true);
+        lruMaxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
+        lruMaxSizeConfig.setEvictionPolicy("LRU");
+        clientConfig.addNearCacheConfig(lruMaxSizeConfig);
+
+
+        NearCacheConfig randomMaxSizeConfig = new NearCacheConfig();
+        randomMaxSizeConfig.setName(NEAR_CACHE_RANDOM_WITH_MAX_SIZE + "*");
+        randomMaxSizeConfig.setInvalidateOnChange(true);
+        randomMaxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
+        randomMaxSizeConfig.setEvictionPolicy("RANDOM");
+        clientConfig.addNearCacheConfig(randomMaxSizeConfig);
+
+        NearCacheConfig noneMaxSizeConfig = new NearCacheConfig();
+        noneMaxSizeConfig.setName(NEAR_CACHE_NONE_WITH_MAX_SIZE + "*");
+        noneMaxSizeConfig.setInvalidateOnChange(true);
+        noneMaxSizeConfig.setMaxSize(MAX_CACHE_SIZE);
+        noneMaxSizeConfig.setEvictionPolicy("NONE");
+        clientConfig.addNearCacheConfig(noneMaxSizeConfig);
 
         client = HazelcastClient.newHazelcastClient(clientConfig);
     }
@@ -531,6 +564,100 @@ public class ClientMapNearCacheTest {
                 final LocalMapStats localMapStats = clientMap.getLocalMapStats();
                 NearCacheStats stats = localMapStats.getNearCacheStats();
                 assertEquals(1, stats.getOwnedEntryCount());
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheInvalidationWithLFU() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
+        final IMap map = client.getMap(mapName);
+
+        int mapSize = MAX_CACHE_SIZE * 2;
+
+        populateNearCache(map, mapSize);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheInvalidation_WithLFU_whenMaxSizeExceeded() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_LFU_WITH_MAX_SIZE);
+        final IMap map = client.getMap(mapName);
+
+        int mapSize = MAX_CACHE_SIZE * 2;
+
+        populateNearCache(map, mapSize);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheInvalidation_WithLRU_whenMaxSizeExceeded() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_LRU_WITH_MAX_SIZE);
+        final IMap map = client.getMap(mapName);
+
+        int mapSize = MAX_CACHE_SIZE * 2;
+
+        populateNearCache(map, mapSize);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheInvalidation_WithRandom_whenMaxSizeExceeded() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_RANDOM_WITH_MAX_SIZE);
+        final IMap map = client.getMap(mapName);
+
+        int mapSize = MAX_CACHE_SIZE * 2;
+
+        populateNearCache(map, mapSize);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                long ownedEntryCount = stats.getOwnedEntryCount();
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+            }
+        });
+    }
+
+    @Test
+    public void testNearCacheInvalidation_WithNone_whenMaxSizeExceeded() throws Exception {
+        final String mapName = randomMapName(NEAR_CACHE_NONE_WITH_MAX_SIZE);
+        final IMap map = client.getMap(mapName);
+
+        final int mapSize = MAX_CACHE_SIZE * 2;
+
+        populateNearCache(map, mapSize);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
+                assertEquals(MAX_CACHE_SIZE, stats.getOwnedEntryCount());
             }
         });
     }

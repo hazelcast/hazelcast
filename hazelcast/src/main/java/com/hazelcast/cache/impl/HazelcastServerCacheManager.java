@@ -122,7 +122,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        cacheService.createCacheConfigIfAbsent(cacheConfig, false);
+        cacheService.createCacheConfigIfAbsent(cacheConfig);
     }
 
     @Override

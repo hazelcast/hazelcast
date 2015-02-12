@@ -34,7 +34,7 @@ for ( Customer customer : colCustomers ) {
 }
 ```
 
-`HazelcastInstance::getReplicatedMap`returns `com.hazelcast.core.ReplicatedMap` which, as stated above, extends the
+`HazelcastInstance::getReplicatedMap` returns `com.hazelcast.core.ReplicatedMap` which, as stated above, extends the
 `java.util.Map` interface.
 
 The `com.hazelcast.core.ReplicatedMap` interface has some additional methods for registering entry listeners or retrieving values in an expected order.

@@ -25,6 +25,7 @@ The following are the example configurations.
     <map-store enabled="true">
        <write-delay-seconds>60</write-delay-seconds>
        <write-batch-size>1000</write-batch-size>
+       <write-coalescing>true</write-coalescing>
     </map-store>
     <indexes>
         <index ordered="true">id</index>
@@ -83,6 +84,7 @@ PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to d
 - `class-name`: Name of the class implementing MapLoader and/or MapStore.
 - `write-delay-seconds`: Number of seconds to delay to call the MapStore.store(key, value). If the value is zero then it is write-through so MapStore.store(key, value) will be called as soon as the entry is updated. Otherwise it is write-behind so updates will be stored after write-delay-seconds value by calling Hazelcast.storeAll(map). Default value is 0.
 - `write-batch-size`: Used to create batch chunks when writing map store. In default mode all entries will be tried to persist in one go. To create batch chunks, minimum meaningful value for write-batch-size is 2. For values smaller than 2, it works as in default mode.
+- `write-coalescing`: In write-behind mode, by default Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it. You can set this element to `false` and by this way, you can store all updates performed on a key to the data store.
 
 ### Near Cache
 

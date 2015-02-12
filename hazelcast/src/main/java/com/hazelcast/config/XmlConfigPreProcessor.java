@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +27,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -61,7 +63,8 @@ public class XmlConfigPreProcessor {
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate("//" + IMPORT.name
                         + "/parent::*[not(name()=\"" + HAZELCAST.name + "\")]", document,
-                XPathConstants.NODESET);
+                XPathConstants.NODESET
+        );
         if (misplacedImports.getLength() > 0) {
             throw new IllegalStateException("<import> element can appear only in the top level of the XML");
         }
@@ -119,28 +122,27 @@ public class XmlConfigPreProcessor {
 
     private void replaceVariables(Node node) {
         String value = node.getNodeValue();
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(value);
         int endIndex = -1;
-        int startIndex = value.indexOf("${");
+        int startIndex = sb.indexOf("${");
         while (startIndex > -1) {
-            endIndex = value.indexOf('}', startIndex);
+            endIndex = sb.indexOf("}", startIndex);
             if (endIndex == -1) {
                 LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: "
                         + node.getLocalName());
                 break;
             }
-            String variable = value.substring(startIndex + 2, endIndex);
+            String variable = sb.substring(startIndex + 2, endIndex);
             String variableReplacement = xmlConfigBuilder.getProperties().getProperty(variable);
             if (variableReplacement != null) {
-                sb.append(variableReplacement);
+                sb.replace(startIndex, endIndex + 1, variableReplacement);
+                endIndex = startIndex + variableReplacement.length();
             } else {
-                sb.append(value.substring(startIndex, endIndex + 1));
                 LOGGER.warning("Could not find a value for property  '" + variable + "' on node: "
                         + node.getLocalName());
             }
-            startIndex = value.indexOf("${", endIndex);
+            startIndex = sb.indexOf("${", endIndex);
         }
-        sb.append(value.substring(endIndex + 1));
         node.setNodeValue(sb.toString());
     }
 }
