@@ -76,6 +76,11 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
 
     @Override
     protected Object reduce(Map<Address, Object> map) {
+        for (Object result : map.values()) {
+            if (result instanceof Throwable) {
+                return result;
+            }
+        }
         return id;
     }
 
