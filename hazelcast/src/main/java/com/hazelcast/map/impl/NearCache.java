@@ -23,6 +23,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -48,6 +49,7 @@ public class NearCache {
      * Used when caching nonexistent values.
      */
     public static final Object NULL_OBJECT = new Object();
+    public static final String NEAR_CACHE_EXECUTOR_NAME = "hz:near-cache";
     private static final int HUNDRED_PERCENT = 100;
     private static final int EVICTION_PERCENTAGE = 20;
     private static final int CLEANUP_INTERVAL = 5000;
@@ -170,7 +172,8 @@ public class NearCache {
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
             try {
-                nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
+                final ExecutionService executionService = nodeEngine.getExecutionService();
+                executionService.execute(NEAR_CACHE_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         try {
                             TreeSet<CacheRecord> records = new TreeSet<CacheRecord>(selectedComparator);
@@ -186,6 +189,10 @@ public class NearCache {
                             }
                         } finally {
                             canEvict.set(true);
+                        }
+
+                        if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
+                            executionService.execute(NEAR_CACHE_EXECUTOR_NAME, this);
                         }
                     }
                 });
@@ -204,7 +211,7 @@ public class NearCache {
 
         if (canCleanUp.compareAndSet(true, false)) {
             try {
-                nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
+                nodeEngine.getExecutionService().execute(NEAR_CACHE_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         try {
                             lastCleanup = Clock.currentTimeMillis();
