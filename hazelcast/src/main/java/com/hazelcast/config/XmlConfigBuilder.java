@@ -27,6 +27,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -208,21 +209,22 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         try {
             doc = builder.parse(is);
         } catch (final Exception e) {
+            String lineSeparator = StringUtil.getLineSeperator();
             if (configurationFile != null) {
                 String msg = "Failed to parse " + configurationFile
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             } else if (configurationUrl != null) {
                 String msg = "Failed to parse " + configurationUrl
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             } else {
                 String msg = "Failed to parse the inputstream"
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             }

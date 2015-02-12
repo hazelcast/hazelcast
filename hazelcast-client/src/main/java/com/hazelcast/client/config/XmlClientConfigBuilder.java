@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -106,9 +107,10 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         try {
             return builder.parse(inputStream);
         } catch (final Exception e) {
+            String lineSeparator = StringUtil.getLineSeperator();
             String msg = "Failed to parse Config Stream"
-                    + "\nException: " + e.getMessage()
-                    + "\nHazelcastClient startup interrupted.";
+                    + lineSeparator + "Exception: " + e.getMessage()
+                    + lineSeparator + "HazelcastClient startup interrupted.";
             LOGGER.severe(msg);
             throw e;
         } finally {
