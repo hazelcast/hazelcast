@@ -375,6 +375,35 @@ The default number of process per users is 1024. Adding the following to your `$
 
 Repartitioning is the process of redistributing the partition ownerships. Hazelcast performs the repartitioning in the cases where a node leaves the cluster or joins to the cluster. If  a repartitioning is to be happen while an entry processor is active in a node processing on an entry object, the repartitioning waits for the entry processor to complete its job.
 
+## Why do Hazelcast instances on different machines not see each other?
+
+Assume you have two instances on two different machines and you develop a configuration as shown below.
+
+```java
+Config config = new Config();
+NetworkConfig network = config.getNetworkConfig();
+
+JoinConfig join = network.getJoin();
+join.getMulticastConfig().setEnabled(false);
+join.getTcpIpConfig().addMember("IP1")
+    .addMember("IP2").setEnabled(true);
+network.getInterfaces().setEnabled(true)
+    .addInterface("IP1").addInterface("IP2");
+```    
+When you create the Hazelcast instance, you have to pass the configuration to the instance. If you create the instances without passing the configuration, each instance starts but cannot see each other. Therefore, the correct way to create the instance is like the following:
+
+```
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+```
+
+The following is the incorrect one:
+
+```
+HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+```
+
+ 
+
 
 
 
