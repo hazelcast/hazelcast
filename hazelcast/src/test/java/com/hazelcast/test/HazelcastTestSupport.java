@@ -476,4 +476,30 @@ public abstract class HazelcastTestSupport {
         });
     }
 
+    public static void makeSureExactlyOneSuccessfulRun(AssertTask task) {
+        makeSureExactlyOneSuccessfulRun(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    public static void makeSureExactlyOneSuccessfulRun(AssertTask task, int giveUpTime, TimeUnit timeUnit) {
+        long timeout = System.currentTimeMillis() + timeUnit.toMillis(giveUpTime);
+        RuntimeException lastException = new RuntimeException("Did not try even once");
+        while (System.currentTimeMillis() < timeout) {
+            try {
+                task.run();
+                return;
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    lastException = (RuntimeException) e;
+                } else {
+                    lastException = new RuntimeException(e);
+                }
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                lastException = new RuntimeException(e);
+            }
+        }
+        throw lastException;
+    }
 }
