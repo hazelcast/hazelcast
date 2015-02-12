@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapreduce;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.MapReduceTest.GroupingTestMapper;
@@ -55,8 +56,10 @@ public class MapReduceStressTest
         TestHazelcastInstanceFactory hazelcastInstanceFactory = createHazelcastInstanceFactory(HAZELCAST_INSTANCE_COUNT);
 
         HazelcastInstance[] instances = new HazelcastInstance[HAZELCAST_INSTANCE_COUNT];
+        Config config = new Config();
+        config.getGroupConfig().setName(generateRandomString(10));
         for (int i = 0; i < HAZELCAST_INSTANCE_COUNT; i++) {
-            instances[i] = hazelcastInstanceFactory.newHazelcastInstance();
+            instances[i] = hazelcastInstanceFactory.newHazelcastInstance(config);
         }
 
         for (int i = 0; i < HAZELCAST_INSTANCE_COUNT; i++) {

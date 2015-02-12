@@ -228,6 +228,7 @@ public class MergePolicyTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.getGroupConfig().setName(generateRandomString(10));
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMergePolicy(mergePolicy);
         return config;
