@@ -223,7 +223,6 @@ public class NearCacheConfig implements DataSerializable , Serializable {
         evictionPolicy = in.readUTF();
         timeToLiveSeconds = in.readInt();
         maxSize = in.readInt();
-        maxSize = in.readInt();
         invalidateOnChange = in.readBoolean();
         cacheLocalEntries = in.readBoolean();
         final int inMemoryFormatInt = in.readInt();
