@@ -38,10 +38,10 @@ import java.util.Map;
  */
 public class EC2RequestSigner {
     private static final String API_TERMINATOR = "aws4_request";
-
+    private final int lastIndex = 8;
     private final AwsConfig config;
-    private String service;
     private final String timestamp;
+    private String service;
     private String signature;
     private Map<String, String> attributes;
     private String canonicalRequest;
@@ -216,7 +216,6 @@ public class EC2RequestSigner {
     }
 
 
-
     private String sha256Hashhex(final String in) {
         String payloadHash = "";
         try {
@@ -230,5 +229,10 @@ public class EC2RequestSigner {
             return null;
         }
         return payloadHash;
+    }
+
+    public String createFormattedCredential() {
+        return config.getAccessKey() + "/" + timestamp.substring(0, lastIndex) + "/"
+                + config.getRegion() + "/" + "ec2/aws4_request";
     }
 }

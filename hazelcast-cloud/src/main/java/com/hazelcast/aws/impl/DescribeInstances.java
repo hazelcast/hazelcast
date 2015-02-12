@@ -30,11 +30,12 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
+import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 
 public class DescribeInstances {
+    String timeStamp = getFormattedTimestamp();
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
-
     private Map<String, String> attributes = new HashMap<String, String>();
 
     public DescribeInstances(AwsConfig awsConfig) {
@@ -46,9 +47,14 @@ public class DescribeInstances {
         }
         this.awsConfig = awsConfig;
 
-        rs = new EC2RequestSigner(awsConfig, getFormattedTimestamp());
+        rs = new EC2RequestSigner(awsConfig, timeStamp);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
+        attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
+        attributes.put("X-Amz-Credential", rs.createFormattedCredential());
+        attributes.put("X-Amz-Date", timeStamp);
+        attributes.put("X-Amz-SignedHeaders", "host");
+        attributes.put("X-Amz-Expires", "30");
     }
 
     private String getFormattedTimestamp() {
@@ -58,19 +64,19 @@ public class DescribeInstances {
     }
 
     public Map<String, String> execute() throws Exception {
-        final String endpoint = String.format("https://%s", awsConfig.getHostHeader());
+        final String endpoint = String.format(awsConfig.getHostHeader());
         final String signature = rs.sign("ec2", attributes);
+        attributes.put("X-Amz-Signature", signature);
         InputStream stream = callService(endpoint, signature);
         return CloudyUtility.unmarshalTheResponse(stream, awsConfig);
     }
 
     private InputStream callService(String endpoint, String signature) throws Exception {
         String query = rs.getCanonicalizedQueryString(attributes);
-        URL url = new URL("https", endpoint, -1, "/" + query);
+        URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
-        httpConnection.setDoOutput(true);
-        httpConnection.setRequestProperty("Authorization", signature);
+        httpConnection.setDoOutput(false);
         httpConnection.connect();
         return httpConnection.getInputStream();
     }
