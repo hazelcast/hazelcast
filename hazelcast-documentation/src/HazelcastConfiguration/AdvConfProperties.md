@@ -66,7 +66,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.jcache.provider.type`||string|Type of the JCache provider. Values can be `client` or `server`.
 `hazelcast.jmx` | false | bool  |   Enable [JMX](#monitoring-with-jmx) agent.
 `hazelcast.jmx.detailed` | false | bool  |   Enable detailed views on [JMX](#monitoring-with-jmx).
-`hazelcast.logging.type` | jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
+`hazelcast.logging.type` | slf4j with fallback to jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
 `hazelcast.map.load.chunk.size` | 1000 | int |   Chunk size for [MapLoader](#persistence) 's map initialization process (MapLoder.loadAllKeys()).
 `hazelcast.map.replica.wait.seconds.for.scheduled.tasks`|10|int|Scheduler delay for map tasks those will be executed on backup members.
 `hazelcast.map.write.behind.queue.capacity`|50000|string|Maximum write-behind queue capacity per node. It is the total of all write-behind queue sizes in a node including backups. Its maximum value is `Integer.MAX_VALUE`. The value of this property is taken into account only if the `write-coalescing` element of the Map Store configuration is `false`. Please refer to the [Map Store section](#map-store) for the description of the `write-coalescing` element.

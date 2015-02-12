@@ -68,7 +68,17 @@ public final class Logger {
         }
 
         if (loggerFactory == null) {
-            loggerFactory = new StandardLoggerFactory();
+            if (loggerType == null) {
+                try {
+                    Class c = Class.forName("org.slf4j.LoggerFactory");
+                    loggerFactory = loadLoggerFactory("com.hazelcast.logging.Slf4jFactory");
+                } catch(ClassNotFoundException ex) {
+                    // slf4j API not on classpath, ignore
+                }
+            }
+            if(loggerFactory == null) {
+                loggerFactory = new StandardLoggerFactory();
+            }
         }
         return loggerFactory;
     }
