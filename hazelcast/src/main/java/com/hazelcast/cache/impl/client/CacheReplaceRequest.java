@@ -38,10 +38,10 @@ import java.io.IOException;
 public class CacheReplaceRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
-    protected Data value;
-    protected Data currentValue;
-    protected ExpiryPolicy expiryPolicy;
+    private Data key;
+    private Data value;
+    private Data currentValue;
+    private ExpiryPolicy expiryPolicy;
     private int completionId;
 
     public CacheReplaceRequest() {
@@ -63,10 +63,12 @@ public class CacheReplaceRequest
         this.expiryPolicy = expiryPolicy;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.REPLACE;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -77,6 +79,7 @@ public class CacheReplaceRequest
         return operationProvider.createReplaceOperation(key, currentValue, value, expiryPolicy, completionId);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -88,6 +91,7 @@ public class CacheReplaceRequest
         out.writeObject(expiryPolicy);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -99,6 +103,7 @@ public class CacheReplaceRequest
         expiryPolicy = in.readObject();
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }

@@ -17,7 +17,6 @@ public class CacheInvalidationMessage implements Portable {
     private String sourceUuid;
 
     public CacheInvalidationMessage() {
-
     }
 
     public CacheInvalidationMessage(String name, Data key, String sourceUuid) {
@@ -69,16 +68,6 @@ public class CacheInvalidationMessage implements Portable {
         if (in.readBoolean()) {
             key = in.readData();
         }
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheInvalidationMessage{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", key=").append(key);
-        sb.append(", sourceUuid='").append(sourceUuid).append('\'');
-        sb.append('}');
-        return sb.toString();
     }
 
 }

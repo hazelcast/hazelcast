@@ -38,11 +38,10 @@ import java.io.IOException;
 public class CachePutRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
-    protected Data value;
-    protected ExpiryPolicy expiryPolicy;
-    // getAndPut
-    protected boolean get;
+    private Data key;
+    private Data value;
+    private ExpiryPolicy expiryPolicy;
+    private boolean get;
     private int completionId;
 
     public CachePutRequest() {
@@ -71,10 +70,12 @@ public class CachePutRequest
         this.get = get;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.PUT;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -85,6 +86,7 @@ public class CachePutRequest
         return operationProvider.createPutOperation(key, value, expiryPolicy, get, completionId);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -96,6 +98,7 @@ public class CachePutRequest
         out.writeObject(expiryPolicy);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -107,7 +110,9 @@ public class CachePutRequest
         expiryPolicy = in.readObject();
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }
+
 }

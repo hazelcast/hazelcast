@@ -21,8 +21,8 @@ import com.hazelcast.client.ClientEndpoint;
 
 public final class CacheInvalidationListener implements CacheEventListener {
 
-    private final ClientEndpoint endpoint;
-    private final int callId;
+    private ClientEndpoint endpoint;
+    private int callId;
 
     public CacheInvalidationListener(ClientEndpoint endpoint, int callId) {
         this.endpoint = endpoint;

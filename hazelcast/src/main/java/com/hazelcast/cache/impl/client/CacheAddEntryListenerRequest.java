@@ -44,7 +44,6 @@ public class CacheAddEntryListenerRequest
         implements RetryableRequest {
 
     private String name;
-    //    private CacheEntryListenerConfiguration configuration;
 
     public CacheAddEntryListenerRequest() {
     }
@@ -84,6 +83,7 @@ public class CacheAddEntryListenerRequest
         return partitionKey;
     }
 
+    @Override
     public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }

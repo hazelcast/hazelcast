@@ -34,7 +34,6 @@ public class CacheAddInvalidationListenerRequest
     private String name;
 
     public CacheAddInvalidationListenerRequest() {
-
     }
 
     public CacheAddInvalidationListenerRequest(String name) {
