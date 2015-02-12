@@ -1,7 +1,7 @@
 
 ### Breakage of the Map-Contract
 
-Replicated Maap offers a distributed `java.util.Map::clear` implementation, but due to the asynchronous nature and the
+Replicated Map offers a distributed `java.util.Map::clear` implementation, but due to the asynchronous nature and the
 weakly consistency of it, there is no point in time where you can say the map is empty. Every node
 applies that to its local dataset in "a near point in time".
 If you need a definite point in time to empty the map, you may want to consider using a lock around the `clear` operation.
