@@ -158,7 +158,11 @@ public class NearCache {
                         }
 
                         if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
-                            executionService.execute(NEAR_CACHE_EXECUTOR_NAME, this);
+                            try {
+                                executionService.execute(NEAR_CACHE_EXECUTOR_NAME, this);
+                            } catch (RejectedExecutionException e) {
+                                canEvict.set(true);
+                            }
                         }
                     }
                 });
