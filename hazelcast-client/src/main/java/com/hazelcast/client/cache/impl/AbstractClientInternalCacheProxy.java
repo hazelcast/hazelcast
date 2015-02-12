@@ -55,6 +55,8 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -93,6 +95,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
+
+    protected final ILogger logger = Logger.getLogger(getClass());
 
     protected final AbstractHazelcastCacheManager cacheManager;
     protected final NearCacheManager nearCacheManager;
@@ -621,12 +625,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             try {
                 if (removeFromMemberAlso) {
                     ClientRequest request = new CacheRemoveInvalidationListenerRequest(name, registrationId);
-                    HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+                    HazelcastClientInstanceImpl clientInstance =
+                            (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
                     ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());
                     Future future = invocation.invoke();
-                    boolean result = clientContext.getSerializationService().toObject(future.get());
+                    Boolean result = clientContext.getSerializationService().toObject(future.get());
                     if (!result) {
-                        // TODO What we do if result is false
+                        logger.warning("Invalidation listener couldn't be removed on member " + member.getAddress());
+                        // TODO What we do if result is false ???
                     }
                 }
                 clientContext.getListenerService().deRegisterListener(registrationId);
