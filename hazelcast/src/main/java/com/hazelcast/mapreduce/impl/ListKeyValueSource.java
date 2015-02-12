@@ -29,7 +29,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.InternalNodeEngine;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class ListKeyValueSource<V>
 
     private String listName;
 
-    private transient SerializationService ss;
+    private transient SerializationService serializationService;
     private transient Iterator<CollectionItem> iterator;
     private transient CollectionItem nextElement;
 
@@ -66,19 +67,20 @@ public class ListKeyValueSource<V>
 
     @Override
     public boolean open(NodeEngine nodeEngine) {
-        NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
-        ss = nei.getSerializationService();
+        InternalNodeEngine internalNodeEngine = (InternalNodeEngine) nodeEngine;
+        serializationService = internalNodeEngine.getSerializationService();
 
-        Address thisAddress = nei.getThisAddress();
-        InternalPartitionService ps = nei.getPartitionService();
-        Data data = ss.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
+        Address thisAddress = internalNodeEngine.getThisAddress();
+        InternalPartitionService ps = internalNodeEngine.getPartitionService();
+        Data data = serializationService.toData(listName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
         int partitionId = ps.getPartitionId(data);
         Address partitionOwner = ps.getPartitionOwner(partitionId);
         if (partitionOwner == null) {
             return false;
         }
         if (thisAddress.equals(partitionOwner)) {
-            ListService listService = nei.getService(ListService.SERVICE_NAME);
+            ServiceManager serviceManager = internalNodeEngine.getServiceManager();
+            ListService listService = serviceManager.getService(ListService.SERVICE_NAME);
             ListContainer listContainer = listService.getOrCreateContainer(listName, false);
             List<CollectionItem> items = new ArrayList<CollectionItem>(listContainer.getCollection());
             iterator = items.iterator();
@@ -103,7 +105,7 @@ public class ListKeyValueSource<V>
     public Map.Entry<String, V> element() {
         Object value = nextElement.getValue();
         if (value != null) {
-            value = ss.toObject(value);
+            value = serializationService.toObject(value);
         }
         simpleEntry.setKey(listName);
         simpleEntry.setValue((V) value);

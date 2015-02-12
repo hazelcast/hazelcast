@@ -26,6 +26,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -109,7 +110,8 @@ public class WanReplicationServiceImpl implements WanReplicationService {
                 try {
                     WanReplicationEvent replicationEvent = (WanReplicationEvent) node.nodeEngine.toObject(data);
                     String serviceName = replicationEvent.getServiceName();
-                    ReplicationSupportingService service = node.nodeEngine.getService(serviceName);
+                    ServiceManager serviceManager = node.nodeEngine.getServiceManager();
+                    ReplicationSupportingService service = serviceManager.getService(serviceName);
                     service.onReplicationEvent(replicationEvent);
                 } catch (Exception e) {
                     logger.severe(e);

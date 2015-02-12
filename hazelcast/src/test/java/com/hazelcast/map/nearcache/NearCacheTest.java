@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -672,9 +673,7 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     private NearCache getNearCache(String mapName, HazelcastInstance instance) {
-        NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
-        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-
+        MapService service = getService(instance, MapService.SERVICE_NAME);
         return service.getMapServiceContext().getNearCacheProvider().getNearCache(mapName);
     }
 }

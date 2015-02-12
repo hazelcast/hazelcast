@@ -28,6 +28,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -190,7 +191,8 @@ public abstract class Operation implements DataSerializable {
         if (service == null) {
             // one might have overridden getServiceName() method...
             final String name = serviceName != null ? serviceName : getServiceName();
-            service = ((NodeEngineImpl) nodeEngine).getService(name);
+            ServiceManager serviceManager = ((NodeEngineImpl) nodeEngine).getServiceManager();
+            service = serviceManager.getService(name);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     throw new HazelcastException("Service with name '" + name + "' not found!");

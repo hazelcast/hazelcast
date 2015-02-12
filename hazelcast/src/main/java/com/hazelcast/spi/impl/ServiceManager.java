@@ -46,6 +46,7 @@ import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
+import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -64,7 +65,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 @PrivateApi
-final class ServiceManager {
+public final class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -207,6 +208,22 @@ final class ServiceManager {
         }
     }
 
+    public <T> T getService(String serviceName) {
+        final ServiceInfo serviceInfo = getServiceInfo(serviceName);
+        return serviceInfo != null ? (T) serviceInfo.getService() : null;
+    }
+
+    public <T extends SharedService> T getSharedService(String serviceName) {
+        final Object service = getService(serviceName);
+        if (service == null) {
+            return null;
+        }
+        if (service instanceof SharedService) {
+            return (T) service;
+        }
+        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
+    }
+
     @SuppressWarnings("unchecked")
     private Object createServiceObject(String className) {
         try {
@@ -266,7 +283,7 @@ final class ServiceManager {
         }
     }
 
-    ServiceInfo getServiceInfo(String serviceName) {
+    public ServiceInfo getServiceInfo(String serviceName) {
         return services.get(serviceName);
     }
 
@@ -275,7 +292,7 @@ final class ServiceManager {
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      */
-    <S> List<S> getServices(Class<S> serviceClass) {
+    public <S> List<S> getServices(Class<S> serviceClass) {
         final LinkedList<S> result = new LinkedList<S>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
@@ -295,7 +312,7 @@ final class ServiceManager {
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      */
-    List<ServiceInfo> getServiceInfos(Class serviceClass) {
+    public List<ServiceInfo> getServiceInfos(Class serviceClass) {
         final LinkedList<ServiceInfo> result = new LinkedList<ServiceInfo>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {

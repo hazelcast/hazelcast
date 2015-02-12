@@ -28,6 +28,7 @@ import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -71,7 +72,7 @@ public class TopicTest extends HazelcastTestSupport {
 
         topic.destroy();
 
-        final TopicService topicService = getNode(instance).nodeEngine.getService(TopicService.SERVICE_NAME);
+        final TopicService topicService = getService(instance, TopicService.SERVICE_NAME);
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -32,6 +32,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -136,7 +137,8 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
 
     private List<Operation> createReplicationOperations() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        Collection<ServiceInfo> services = serviceManager.getServiceInfos(MigrationAwareService.class);
         PartitionReplicationEvent event = new PartitionReplicationEvent(getPartitionId(), getReplicaIndex());
         List<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : services) {

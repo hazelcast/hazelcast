@@ -27,7 +27,8 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.InternalNodeEngine;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.Arrays;
@@ -66,7 +67,8 @@ public class TrackableJobFuture<V>
         this.jobTracker = jobTracker;
         this.collator = collator;
         this.latch = new CountDownLatch(1);
-        this.mapReduceService = ((NodeEngineImpl) nodeEngine).getService(MapReduceService.SERVICE_NAME);
+        ServiceManager serviceManager = ((InternalNodeEngine) nodeEngine).getServiceManager();
+        this.mapReduceService = serviceManager.getService(MapReduceService.SERVICE_NAME);
     }
 
     @Override

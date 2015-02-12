@@ -395,7 +395,8 @@ final class BasicOperationService implements InternalOperationService {
 
     @PrivateApi
     boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
-        Object service = nodeEngine.getService(serviceName);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        Object service = serviceManager.getService(serviceName);
         if (service == null) {
             logger.severe("Not able to find operation execution info. Invalid service: " + serviceName);
             return false;

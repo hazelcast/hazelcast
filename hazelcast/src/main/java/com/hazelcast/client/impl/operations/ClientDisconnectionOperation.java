@@ -25,6 +25,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -53,7 +54,8 @@ public class ClientDisconnectionOperation extends AbstractOperation implements U
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         nodeEngine.onClientDisconnected(clientUuid);
-        Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        Collection<ClientAwareService> services = serviceManager.getServices(ClientAwareService.class);
         for (ClientAwareService service : services) {
             service.clientDisconnected(clientUuid);
         }

@@ -29,7 +29,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.InternalNodeEngine;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class SetKeyValueSource<V>
 
     private String setName;
 
-    private transient SerializationService ss;
+    private transient SerializationService serializationService;
     private transient Iterator<CollectionItem> iterator;
     private transient CollectionItem nextElement;
 
@@ -66,19 +67,20 @@ public class SetKeyValueSource<V>
 
     @Override
     public boolean open(NodeEngine nodeEngine) {
-        NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
-        ss = nei.getSerializationService();
+        InternalNodeEngine internalNodeEngine = (InternalNodeEngine) nodeEngine;
+        serializationService = internalNodeEngine.getSerializationService();
 
-        Address thisAddress = nei.getThisAddress();
-        InternalPartitionService ps = nei.getPartitionService();
-        Data data = ss.toData(setName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
-        int partitionId = ps.getPartitionId(data);
-        Address partitionOwner = ps.getPartitionOwner(partitionId);
+        Address thisAddress = internalNodeEngine.getThisAddress();
+        InternalPartitionService partitionService = internalNodeEngine.getPartitionService();
+        Data data = serializationService.toData(setName, StringAndPartitionAwarePartitioningStrategy.INSTANCE);
+        int partitionId = partitionService.getPartitionId(data);
+        Address partitionOwner = partitionService.getPartitionOwner(partitionId);
         if (partitionOwner == null) {
             return false;
         }
         if (thisAddress.equals(partitionOwner)) {
-            SetService setService = nei.getService(SetService.SERVICE_NAME);
+            ServiceManager serviceManager = internalNodeEngine.getServiceManager();
+            SetService setService = serviceManager.getService(SetService.SERVICE_NAME);
             SetContainer setContainer = setService.getOrCreateContainer(setName, false);
             List<CollectionItem> items = new ArrayList<CollectionItem>(setContainer.getCollection());
             iterator = items.iterator();
@@ -102,7 +104,7 @@ public class SetKeyValueSource<V>
     public Map.Entry<String, V> element() {
         Object value = nextElement.getValue();
         if (value != null) {
-            value = ss.toObject(value);
+            value = serializationService.toObject(value);
         }
         simpleEntry.setKey(setName);
         simpleEntry.setValue((V) value);

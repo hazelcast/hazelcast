@@ -47,6 +47,7 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -122,7 +123,8 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals(partitionKey, lock.getPartitionKey());
 
         Node node = getNode(hz);
-        LockServiceImpl lockService = node.nodeEngine.getService(LockServiceImpl.SERVICE_NAME);
+        ServiceManager serviceManager = node.nodeEngine.getServiceManager();
+        LockServiceImpl lockService = serviceManager.getService(LockServiceImpl.SERVICE_NAME);
 
         Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
         LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
@@ -139,7 +141,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("semaphore@" + partitionKey, semaphore.getName());
         assertEquals(partitionKey, semaphore.getPartitionKey());
 
-        SemaphoreService service = getNodeEngine(hz).getService(SemaphoreService.SERVICE_NAME);
+        SemaphoreService service = getNodeEngine(hz).getServiceManager().getService(SemaphoreService.SERVICE_NAME);
         assertTrue(service.containsSemaphore(semaphore.getName()));
     }
 
@@ -153,7 +155,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("idgenerator@" + partitionKey, idGenerator.getName());
         assertEquals(partitionKey, idGenerator.getPartitionKey());
 
-        AtomicLongService service = getNodeEngine(hz).getService(AtomicLongService.SERVICE_NAME);
+        AtomicLongService service = getNodeEngine(hz).getServiceManager().getService(AtomicLongService.SERVICE_NAME);
         assertTrue(service.containsAtomicLong("hz:atomic:idGenerator:" + idGenerator.getName()));
     }
 
@@ -167,7 +169,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("atomiclong@" + partitionKey, atomicLong.getName());
         assertEquals(partitionKey, atomicLong.getPartitionKey());
 
-        AtomicLongService service = getNodeEngine(hz).getService(AtomicLongService.SERVICE_NAME);
+        AtomicLongService service = getNodeEngine(hz).getServiceManager().getService(AtomicLongService.SERVICE_NAME);
         assertTrue(service.containsAtomicLong(atomicLong.getName()));
     }
 
@@ -181,7 +183,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("queue@" + partitionKey, queue.getName());
         assertEquals(partitionKey, queue.getPartitionKey());
 
-        QueueService service = getNodeEngine(hz).getService(QueueService.SERVICE_NAME);
+        QueueService service = getNodeEngine(hz).getServiceManager().getService(QueueService.SERVICE_NAME);
         assertTrue(service.containsQueue(queue.getName()));
     }
 
@@ -195,7 +197,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("list@" + partitionKey, list.getName());
         assertEquals(partitionKey, list.getPartitionKey());
 
-        ListService service = getNodeEngine(hz).getService(ListService.SERVICE_NAME);
+        ListService service = getNodeEngine(hz).getServiceManager().getService(ListService.SERVICE_NAME);
         assertTrue(service.getContainerMap().containsKey(list.getName()));
     }
 
@@ -209,7 +211,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("set@" + partitionKey, set.getName());
         assertEquals(partitionKey, set.getPartitionKey());
 
-        SetService service = getNodeEngine(hz).getService(SetService.SERVICE_NAME);
+        SetService service = getNodeEngine(hz).getServiceManager().getService(SetService.SERVICE_NAME);
         assertTrue(service.getContainerMap().containsKey(set.getName()));
     }
 
@@ -223,7 +225,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertEquals("countdownlatch@" + partitionKey, countDownLatch.getName());
         assertEquals(partitionKey, countDownLatch.getPartitionKey());
 
-        CountDownLatchService service = getNodeEngine(hz).getService(CountDownLatchService.SERVICE_NAME);
+        CountDownLatchService service = getNodeEngine(hz).getServiceManager().getService(CountDownLatchService.SERVICE_NAME);
         assertTrue(service.containsLatch(countDownLatch.getName()));
     }
 
@@ -255,7 +257,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         @Override
         public Boolean call() {
             NodeEngineImpl nodeEngine = TestUtil.getNode(hz).nodeEngine;
-            SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = nodeEngine.getServiceManager().getService(SemaphoreService.SERVICE_NAME);
             return service.containsSemaphore(semaphoreName);
         }
     }
@@ -301,8 +303,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         @Override
         public Boolean call() {
-            NodeEngineImpl nodeEngine = TestUtil.getNode(hz).nodeEngine;
-            SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
+            SemaphoreService service = getService(hz, SemaphoreService.SERVICE_NAME);
 
             IMap map = hz.getMap("map");
             if (map.localKeySet().contains(mapKey)) {

@@ -26,6 +26,7 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ServiceManager;
 
 import java.io.IOException;
 
@@ -54,7 +55,8 @@ final class FinalizeMigrationOperation extends AbstractOperation
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
 
         PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, partitionId);
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        ServiceManager serviceManager = nodeEngine.getServiceManager();
+        for (MigrationAwareService service : serviceManager.getServices(MigrationAwareService.class)) {
             finishMigration(event, service);
         }
 

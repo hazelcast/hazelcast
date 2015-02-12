@@ -528,7 +528,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     private int writeBehindQueueSize(HazelcastInstance node, String mapName) {
         int size = 0;
         final NodeEngineImpl nodeEngine = getNode(node).getNodeEngine();
-        MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapService mapService = nodeEngine.getServiceManager().getService(MapService.SERVICE_NAME);
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
@@ -973,7 +973,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     private boolean checkIfMapLoaded(String mapName, HazelcastInstance instance) throws InterruptedException {
         NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
+        MapService service = getService(instance, MapService.SERVICE_NAME);
         boolean loaded = false;
 
         final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);

@@ -42,7 +42,7 @@ public class MergePolicySerializationTest extends HazelcastTestSupport {
         map.put("key", myObjectExisting);
 
         NodeEngineImpl nodeEngine = HazelcastTestSupport.getNode(instance).getNodeEngine();
-        MapService mapService = nodeEngine.getService(serviceName);
+        MapService mapService = getService(instance, serviceName);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         int partitionId = nodeEngine.getPartitionService().getPartitionId("key");
         Data dataKey = mapServiceContext.toData("key");

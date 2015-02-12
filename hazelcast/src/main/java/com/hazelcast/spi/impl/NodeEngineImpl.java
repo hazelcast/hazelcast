@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -34,10 +35,8 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -50,7 +49,7 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
-public class NodeEngineImpl implements NodeEngine {
+public class NodeEngineImpl implements InternalNodeEngine {
 
     final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
@@ -81,8 +80,19 @@ public class NodeEngineImpl implements NodeEngine {
                 node, logger, operationService, eventService, wanReplicationService, executionService);
     }
 
+    @Override
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
+        return node.getHazelcastThreadGroup();
+    }
+
+    @Override
     public PacketTransceiver getPacketTransceiver() {
         return packetTransceiver;
+    }
+
+    @Override
+    public <T extends SharedService> T getSharedService(String serviceName) {
+        return serviceManager.getSharedService(serviceName);
     }
 
     @PrivateApi
@@ -122,6 +132,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public ServiceManager getServiceManager() {
+        return serviceManager;
+    }
+
+    @Override
     public SerializationService getSerializationService() {
         return node.getSerializationService();
     }
@@ -131,7 +146,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public OperationService getOperationService() {
+    public InternalOperationService getOperationService() {
         return operationService;
     }
 
@@ -212,39 +227,6 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getGroupProperties();
     }
 
-
-    @PrivateApi
-    public <T> T getService(String serviceName) {
-        final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
-        return serviceInfo != null ? (T) serviceInfo.getService() : null;
-    }
-
-    public <T extends SharedService> T getSharedService(String serviceName) {
-        final Object service = getService(serviceName);
-        if (service == null) {
-            return null;
-        }
-        if (service instanceof SharedService) {
-            return (T) service;
-        }
-        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
-    }
-
-    /**
-     * Returns a list of services matching provides service class/interface.
-     * <br></br>
-     * <b>CoreServices will be placed at the beginning of the list.</b>
-     */
-    @PrivateApi
-    public <S> Collection<S> getServices(Class<S> serviceClass) {
-        return serviceManager.getServices(serviceClass);
-    }
-
-    @PrivateApi
-    public Collection<ServiceInfo> getServiceInfos(Class serviceClass) {
-        return serviceManager.getServiceInfos(serviceClass);
-    }
-
     @PrivateApi
     public Node getNode() {
         return node;
@@ -281,7 +263,7 @@ public class NodeEngineImpl implements NodeEngine {
         if (eventPostJoinOp != null) {
             postJoinOps.add(eventPostJoinOp);
         }
-        Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
+        Collection<PostJoinAwareService> services = serviceManager.getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
             final Operation postJoinOperation = service.getPostJoinOperation();
             if (postJoinOperation != null) {
