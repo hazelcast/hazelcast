@@ -172,7 +172,11 @@ public class ClientHeapNearCache<K>
                             canEvict.set(true);
                         }
                         if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
-                            executionService.execute(this);
+                            try {
+                                executionService.execute(this);
+                            } catch (RejectedExecutionException e) {
+                                canEvict.set(true);
+                            }
                         }
                     }
                 });
