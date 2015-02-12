@@ -32,7 +32,7 @@ public class GettingStarted {
     customers.put( 3, "Avi" );
 
     System.out.println( "Customer with key 1: " + customers.get(1) );
-    System.out.println( "Map Size:" + hazelcastInstance.size() );
+    System.out.println( "Map Size:" + customers.size() );
 
     Queue<String> queueCustomers = hazelcastInstance.getQueue( "customers" );
     queueCustomers.offer( "Tom" );
