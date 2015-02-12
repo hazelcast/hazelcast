@@ -52,6 +52,10 @@ After you run the first code sample, run the `PrintMember` sample. You will see 
 When using MultiMap, the collection type of the values can be either **Set** or **List**. You configure the collection type with the `valueCollectionType` parameter. If you choose `Set`, duplicate and null values are not allowed in your collection and ordering is irrelevant. If you choose `List`, ordering is relevant and your collection can include duplicate and null values.
 
 You can also enable statistics for your MultiMap with the `statisticsEnabled` parameter. If you enable `statisticsEnabled`, statistics can be retrieved with `getLocalMultiMapStats()` method.
+
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *Currently, eviction is not supported for the MultiMap data structure.*
+
 <br></br>
 
 ***RELATED INFORMATION***
