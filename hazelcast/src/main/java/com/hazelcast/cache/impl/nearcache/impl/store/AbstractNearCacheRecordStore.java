@@ -98,6 +98,26 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
         }
     }
 
+    protected Data toData(Object obj) {
+        if (obj == null) {
+            return null;
+        } else if (obj instanceof Data) {
+            return (Data) obj;
+        } else {
+            return valueToData((V) obj);
+        }
+    }
+
+    protected V toValue(Object obj) {
+        if (obj == null) {
+            return null;
+        } else if (obj instanceof Data) {
+            return dataToValue((Data) obj);
+        } else {
+            return (V) obj;
+        }
+    }
+
     protected long getTotalStorageMemoryCost(K key, R record) {
         return getKeyStorageMemoryCost(key) + getRecordStorageMemoryCost(record);
     }

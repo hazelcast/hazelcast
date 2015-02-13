@@ -57,6 +57,7 @@ public class NearCacheObjectRecordStore<K, V>
 
     @Override
     protected NearCacheObjectRecord valueToRecord(V value) {
+        value = toValue(value);
         long creationTime = Clock.currentTimeMillis();
         if (timeToLiveMillis > 0) {
             return new NearCacheObjectRecord(value, creationTime, creationTime + timeToLiveMillis);
@@ -112,7 +113,13 @@ public class NearCacheObjectRecordStore<K, V>
             if (selectedCandidate != null) {
                 return selectedCandidate;
             } else {
-                return candidates[0];
+                // Select a non-null candidate
+                for (Object candidate : candidates) {
+                    if (candidate != null) {
+                        selectedCandidate = candidate;
+                        break;
+                    }
+                }
             }
         }
         return selectedCandidate;

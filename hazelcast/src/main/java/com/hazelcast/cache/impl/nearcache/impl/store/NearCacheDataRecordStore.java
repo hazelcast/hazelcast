@@ -76,7 +76,7 @@ public class NearCacheDataRecordStore<K, V>
 
     @Override
     protected NearCacheDataRecord valueToRecord(V value) {
-        Data data = valueToData(value);
+        Data data = toData(value);
         long creationTime = Clock.currentTimeMillis();
         if (timeToLiveMillis > 0) {
             return new NearCacheDataRecord(data, creationTime, creationTime + timeToLiveMillis);
@@ -133,7 +133,13 @@ public class NearCacheDataRecordStore<K, V>
             if (selectedCandidate != null) {
                 return selectedCandidate;
             } else {
-                return candidates[0];
+                // Select a non-null candidate
+                for (Object candidate : candidates) {
+                    if (candidate != null) {
+                        selectedCandidate = candidate;
+                        break;
+                    }
+                }
             }
         }
         return selectedCandidate;

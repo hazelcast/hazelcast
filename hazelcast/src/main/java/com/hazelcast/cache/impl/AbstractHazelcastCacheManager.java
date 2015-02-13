@@ -344,7 +344,7 @@ public abstract class AbstractHazelcastCacheManager
         return sb.toString();
     }
 
-    protected String getCacheNameWithPrefix(String name) {
+    public String getCacheNameWithPrefix(String name) {
         return cacheNamePrefix + name;
     }
 
