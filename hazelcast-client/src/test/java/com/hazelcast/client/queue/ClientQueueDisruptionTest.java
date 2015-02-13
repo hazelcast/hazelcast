@@ -5,21 +5,25 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
-import junit.framework.TestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
+
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class ClientQueueDisruptionTest {
+public class ClientQueueDisruptionTest extends HazelcastTestSupport {
 
     HazelcastInstance client1;
     HazelcastInstance client2;
@@ -33,7 +37,6 @@ public class ClientQueueDisruptionTest {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(cluster.getName()));
-        clientConfig.getNetworkConfig().setRedoOperation(true);
         client1 = HazelcastClient.newHazelcastClient(clientConfig);
         client2 = HazelcastClient.newHazelcastClient(clientConfig);
     }
@@ -54,25 +57,51 @@ public class ClientQueueDisruptionTest {
             cluster.getRandomNode().getQueue("Q2").offer(i);
         }
 
-        int expect = 0;
+        int expectCount = 0;
         for (int i = initial; i < max; i++) {
 
             if (i == max / 2) {
                 cluster.shutdownRandomNode();
             }
+            final int index = i;
 
-            assertTrue(cluster.getRandomNode().getQueue("Q1").offer(i));
-            assertTrue(cluster.getRandomNode().getQueue("Q2").offer(i));
+            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertTrue(cluster.getRandomNode().getQueue("Q1").offer(index));
+                }
+            });
 
-            TestCase.assertEquals(expect, client1.getQueue("Q1").poll());
-            TestCase.assertEquals(expect, client2.getQueue("Q2").poll());
+            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertTrue(cluster.getRandomNode().getQueue("Q2").offer(index));
+                }
+            });
 
-            expect++;
+            final int expected = expectCount;
+
+            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(expected, client1.getQueue("Q1").poll());
+                }
+            });
+
+            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(expected, client2.getQueue("Q2").poll());
+                }
+            });
+
+
+            expectCount++;
         }
 
-        for (int i = expect; i < max; i++) {
-            TestCase.assertEquals(i, client1.getQueue("Q1").poll());
-            TestCase.assertEquals(i, client2.getQueue("Q2").poll());
+        for (int i = expectCount; i < max; i++) {
+            assertEquals(i, client1.getQueue("Q1").poll());
+            assertEquals(i, client2.getQueue("Q2").poll());
         }
     }
 }
