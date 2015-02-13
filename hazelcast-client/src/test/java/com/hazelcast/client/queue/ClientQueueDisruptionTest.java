@@ -16,8 +16,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.TimeUnit;
-
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
@@ -65,14 +63,14 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
             }
             final int index = i;
 
-            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+            assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertTrue(cluster.getRandomNode().getQueue("Q1").offer(index));
                 }
             });
 
-            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+            assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertTrue(cluster.getRandomNode().getQueue("Q2").offer(index));
@@ -81,14 +79,14 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
 
             final int expected = expectCount;
 
-            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+            assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertEquals(expected, client1.getQueue("Q1").poll());
                 }
             });
 
-            makeSureExactlyOneSuccessfulRun(new AssertTask() {
+            assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertEquals(expected, client2.getQueue("Q2").poll());
