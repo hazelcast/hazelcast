@@ -75,4 +75,8 @@ public interface InternalOperationService extends OperationService {
      */
     @Deprecated
     boolean send(Response response, Address target);
+
+    OperationScheduler getScheduler();
+
+    boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier);
 }

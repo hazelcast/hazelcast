@@ -23,7 +23,7 @@ public class TraceableIsStillExecutingOperation extends AbstractOperation implem
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        BasicOperationService operationService = (BasicOperationService) nodeEngine.operationService;
+        InternalOperationService operationService =  nodeEngine.operationService;
         boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(),
                 serviceName, identifier);
         getResponseHandler().sendResponse(executing);

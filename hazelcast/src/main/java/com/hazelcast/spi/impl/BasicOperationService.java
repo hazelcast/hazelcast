@@ -111,7 +111,7 @@ final class BasicOperationService implements InternalOperationService {
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
-    final BasicOperationScheduler scheduler;
+    final OperationScheduler scheduler;
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
     private final AtomicLong executedOperationsCount = new AtomicLong();
@@ -145,7 +145,7 @@ final class BasicOperationService implements InternalOperationService {
         this.operationHandler = new OperationHandler();
         this.responsePacketHandler = new ResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
-        this.scheduler = new BasicOperationScheduler(
+        this.scheduler = new ClassicOperationScheduler(
                 node.getGroupProperties(),
                 node.loggingService,
                 node.getThisAddress(),
@@ -173,12 +173,12 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public int getPartitionOperationThreadCount() {
-        return scheduler.partitionOperationThreads.length;
+        return scheduler.getPartitionOperationThreadCount();
     }
 
     @Override
     public int getGenericOperationThreadCount() {
-        return scheduler.genericOperationThreads.length;
+        return scheduler.getGenericOperationThreadCount();
     }
 
     @Override
@@ -209,6 +209,11 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public int getPriorityOperationExecutorQueueSize() {
         return scheduler.getPriorityOperationExecutorQueueSize();
+    }
+
+    @Override
+    public OperationScheduler getScheduler() {
+        return scheduler;
     }
 
     @Override
@@ -393,8 +398,8 @@ final class BasicOperationService implements InternalOperationService {
         return defaultCallTimeoutMillis;
     }
 
-    @PrivateApi
-    boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
+    @Override
+    public boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
         Object service = nodeEngine.getService(serviceName);
         if (service == null) {
             logger.severe("Not able to find operation execution info. Invalid service: " + serviceName);
@@ -479,7 +484,7 @@ final class BasicOperationService implements InternalOperationService {
 
         private void ensureNotCallingFromOperationThread() {
             Thread currentThread = Thread.currentThread();
-            if (currentThread instanceof BasicOperationScheduler.OperationThread) {
+            if (currentThread instanceof ClassicOperationScheduler.OperationThread) {
                 throw new IllegalThreadStateException(currentThread + " cannot make invocation on multiple partitions!");
             }
         }
