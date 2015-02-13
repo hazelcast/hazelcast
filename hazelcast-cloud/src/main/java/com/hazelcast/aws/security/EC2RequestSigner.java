@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class EC2RequestSigner {
     private static final String API_TERMINATOR = "aws4_request";
-    private final int lastIndex = 8;
+    private static final int LAST_INDEX = 8;
     private final AwsConfig config;
     private final String timestamp;
     private String service;
@@ -232,7 +232,7 @@ public class EC2RequestSigner {
     }
 
     public String createFormattedCredential() {
-        return config.getAccessKey() + "/" + timestamp.substring(0, lastIndex) + "/"
+        return config.getAccessKey() + "/" + timestamp.substring(0, LAST_INDEX) + "/"
                 + config.getRegion() + "/" + "ec2/aws4_request";
     }
 }
