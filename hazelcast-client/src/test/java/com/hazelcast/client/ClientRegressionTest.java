@@ -774,14 +774,14 @@ public class ClientRegressionTest
             try {
                 map.put(i, i);
             } catch (Exception e) {
-                assertTrue("Requests should not throw exception with this configuration", false);
+                assertTrue("Requests should not throw exception with this configuration. Last put key: " + i, false);
             }
         }
     }
 
     @Test
     public void testClusterShutdown_thenCheckOperationsNotHanging() throws Exception {
-        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         //Retry all requests
@@ -794,34 +794,37 @@ public class ClientRegressionTest
         final int mapSize = 1000;
 
         final CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
-        final CountDownLatch testFinishedLatch = new CountDownLatch(1);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
+        int threadCount = 100;
 
-                for (int i = 0; i < mapSize; i++) {
-                    if (i == mapSize / 4) {
-                        clientStartedDoingRequests.countDown();
-                    }
+        final CountDownLatch testFinishedLatch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
                     try {
-                        map.put(i, i);
-                    } catch (Exception ignored) {
+                        for (int i = 0; i < mapSize; i++) {
+                            if (i == mapSize / 4) {
+                                clientStartedDoingRequests.countDown();
+                            }
+
+                            map.put(i, i);
+
+                        }
+                    } catch (Throwable ignored) {
+                    } finally {
+                        testFinishedLatch.countDown();
                     }
                 }
-                testFinishedLatch.countDown();
-
-            }
-        }).start();
-
-
-        try {
-            clientStartedDoingRequests.await();
-        } catch (InterruptedException ignored) {
+            });
+            thread.start();
         }
+
+        assertTrue(clientStartedDoingRequests.await(30, TimeUnit.SECONDS));
 
         hazelcastInstance.shutdown();
 
-        assertOpenEventually("Put operations should not hang", testFinishedLatch);
+        assertOpenEventually("Put operations should not hang.", testFinishedLatch);
 
     }
 }
