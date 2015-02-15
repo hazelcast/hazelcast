@@ -117,7 +117,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(false);
+        responseHandler.sendResponse(this, false);
     }
 
     @Override

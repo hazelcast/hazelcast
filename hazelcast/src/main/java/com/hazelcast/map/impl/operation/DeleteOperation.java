@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ResponseHandler;
 
 public class DeleteOperation extends BaseRemoveOperation {
     boolean success;
@@ -49,7 +50,8 @@ public class DeleteOperation extends BaseRemoveOperation {
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, false);
     }
 
     @Override

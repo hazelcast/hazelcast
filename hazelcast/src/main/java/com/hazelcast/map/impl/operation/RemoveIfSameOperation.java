@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ResponseHandler;
 
 import java.io.IOException;
 
@@ -68,7 +69,8 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, null);
     }
 
     @Override

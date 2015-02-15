@@ -56,7 +56,7 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation
     @Override
     public void onWaitExpire() {
         ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(false);
+        responseHandler.sendResponse(this, false);
     }
 
     @Override

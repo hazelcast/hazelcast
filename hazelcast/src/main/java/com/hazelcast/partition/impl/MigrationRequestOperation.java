@@ -146,7 +146,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
         nodeEngine.getOperationService()
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
-                .setCallback(new MigrationCallback(migrationInfo, getResponseHandler()))
+                .setCallback(new MigrationCallback(migrationInfo, getResponseHandler(), this))
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .setTryPauseMillis(TRY_PAUSE_MILLIS)
@@ -210,18 +210,20 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private static final class MigrationCallback implements Callback<Object> {
 
-        final MigrationInfo migrationInfo;
-        final ResponseHandler responseHandler;
+        private final MigrationInfo migrationInfo;
+        private final ResponseHandler responseHandler;
+        private final MigrationRequestOperation op;
 
-        private MigrationCallback(MigrationInfo migrationInfo, ResponseHandler responseHandler) {
+        private MigrationCallback(MigrationInfo migrationInfo, ResponseHandler responseHandler, MigrationRequestOperation op) {
             this.migrationInfo = migrationInfo;
             this.responseHandler = responseHandler;
+            this.op = op;
         }
 
         @Override
         public void notify(Object result) {
             migrationInfo.doneProcessing();
-            responseHandler.sendResponse(result);
+            responseHandler.sendResponse(op, result);
         }
     }
 }

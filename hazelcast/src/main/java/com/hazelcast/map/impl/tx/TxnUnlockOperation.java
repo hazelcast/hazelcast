@@ -85,7 +85,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(false);
+        responseHandler.sendResponse(this, false);
     }
 
     public final int getAsyncBackupCount() {

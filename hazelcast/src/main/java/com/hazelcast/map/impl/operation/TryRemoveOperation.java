@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ResponseHandler;
 
 import java.io.IOException;
 
@@ -64,7 +65,8 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, false);
     }
 
     @Override

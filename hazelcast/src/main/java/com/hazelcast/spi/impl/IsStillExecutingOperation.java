@@ -3,6 +3,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
@@ -28,7 +29,8 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
         InternalOperationService operationService = nodeEngine.operationService;
         OperationScheduler scheduler = operationService.getScheduler();
         boolean executing = scheduler.isOperationExecuting(getCallerAddress(), getPartitionId(), operationCallId);
-        getResponseHandler().sendResponse(executing);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, executing);
     }
 
     @Override

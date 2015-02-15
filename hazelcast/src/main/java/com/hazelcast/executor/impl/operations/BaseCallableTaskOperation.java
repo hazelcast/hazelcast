@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.TraceableOperation;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -80,7 +81,8 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
         try {
             return getNodeEngine().toObject(callableData);
         } catch (HazelcastSerializationException e) {
-            getResponseHandler().sendResponse(e);
+            ResponseHandler responseHandler = getResponseHandler();
+            responseHandler.sendResponse(this, e);
             throw ExceptionUtil.rethrow(e);
         }
     }
@@ -95,7 +97,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     @Override
     public final void run() throws Exception {
         DistributedExecutorService service = getService();
-        service.execute(name, uuid, callable, getResponseHandler());
+        service.execute(name, uuid, callable, this);
     }
 
     @Override

@@ -113,7 +113,7 @@ public class AwaitOperation extends BaseLockOperation
         if (locked) {
             ResponseHandler responseHandler = getResponseHandler();
             // expired & acquired lock, send FALSE
-            responseHandler.sendResponse(false);
+            responseHandler.sendResponse(this, false);
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

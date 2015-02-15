@@ -27,6 +27,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.WaitSupport;
@@ -194,7 +195,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                             waitingOp.setValid(false);
                             PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
                                     partitionId, op.getClass().getName(), op.getServiceName());
-                            op.getResponseHandler().sendResponse(pme);
+                            ResponseHandler responseHandler = op.getResponseHandler();
+                            responseHandler.sendResponse(op, pme);
                             it.remove();
                         }
                     }
@@ -230,7 +232,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
                     if (thisAddress.equals(op.getCallerAddress())) {
                         try {
-                            op.getResponseHandler().sendResponse(response);
+                            ResponseHandler responseHandler = op.getResponseHandler();
+                            responseHandler.sendResponse(op, response);
                         } catch (Exception e) {
                             logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
                         }
@@ -343,7 +346,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             if (expired) {
                 waitSupport.onWaitExpire();
             } else {
-                op.getResponseHandler().sendResponse(cancelResponse);
+                ResponseHandler responseHandler = op.getResponseHandler();
+                responseHandler.sendResponse(op, cancelResponse);
             }
         }
 

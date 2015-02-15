@@ -3,6 +3,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
@@ -26,7 +27,8 @@ public class TraceableIsStillExecutingOperation extends AbstractOperation implem
         InternalOperationService operationService =  nodeEngine.operationService;
         boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(),
                 serviceName, identifier);
-        getResponseHandler().sendResponse(executing);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, executing);
     }
 
     @Override

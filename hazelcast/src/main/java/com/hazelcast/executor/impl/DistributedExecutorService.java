@@ -24,6 +24,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.StatisticsAwareService;
@@ -42,17 +43,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService,
         StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
-
-    //Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
-    //object. Using this approach, you don't create that object.
-    private static final AtomicReferenceFieldUpdater<CallableProcessor, Boolean> RESPONSE_FLAG_FIELD_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(CallableProcessor.class, Boolean.class, "responseFlag");
 
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
@@ -89,9 +84,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         reset();
     }
 
-    public void execute(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
+    public void execute(String name, String uuid, Callable callable, Operation operation) {
         startPending(name);
-        CallableProcessor processor = new CallableProcessor(name, uuid, callable, responseHandler);
+        CallableProcessor processor = new CallableProcessor(name, uuid, callable, operation);
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
@@ -174,22 +169,19 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     }
 
     private final class CallableProcessor extends FutureTask implements Runnable {
-        //is being used through the RESPONSE_FLAG_FIELD_UPDATER. Can't be private due to reflection constraint.
-        volatile Boolean responseFlag = Boolean.FALSE;
-
         private final String name;
         private final String uuid;
-        private final ResponseHandler responseHandler;
+        private final Operation operation;
         private final String callableToString;
         private final long creationTime = Clock.currentTimeMillis();
 
-        private CallableProcessor(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
+        private CallableProcessor(String name, String uuid, Callable callable, Operation operation) {
             //noinspection unchecked
             super(callable);
             this.name = name;
             this.uuid = uuid;
             this.callableToString = String.valueOf(callable);
-            this.responseHandler = responseHandler;
+            this.operation = operation;
         }
 
         @Override
@@ -223,9 +215,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
 
         private void sendResponse(Object result) {
-            if (RESPONSE_FLAG_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
-                responseHandler.sendResponse(result);
-            }
+            ResponseHandler responseHandler = operation.getResponseHandler();
+            responseHandler.sendResponse(operation, result);
         }
     }
 }

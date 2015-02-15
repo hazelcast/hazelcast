@@ -37,6 +37,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -107,7 +108,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, null);
     }
 
     @Override

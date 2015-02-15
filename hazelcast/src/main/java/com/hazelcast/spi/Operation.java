@@ -30,6 +30,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -40,6 +41,11 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  */
 public abstract class Operation implements DataSerializable {
 
+    //Updates the CallableProcessor.responseFlag field. An AtomicBoolean is simpler, but creates another unwanted
+    //object. Using this approach, you don't create that object.
+    private static final AtomicReferenceFieldUpdater<Operation, Boolean> RESPONSE_SEND_FIELD_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Operation.class, Boolean.class, "responseSend");
+
     static final int BITMASK_VALIDATE_TARGET = 1;
     static final int BITMASK_CALLER_UUID_SET = 1 << 1;
     static final int BITMASK_REPLICA_INDEX_SET = 1 << 2;
@@ -48,7 +54,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
 
-    // serialized
+     // serialized
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
@@ -66,9 +72,24 @@ public abstract class Operation implements DataSerializable {
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
 
+    private volatile Boolean responseSend = Boolean.FALSE;
+
     public Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
+    }
+
+    /**
+     * Sets if a response has been send
+     *
+     * @return true if no response has been send before, false if there was a response send.
+     */
+    boolean setResponseSend() {
+        return RESPONSE_SEND_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE);
+    }
+
+    void resetResponseSend() {
+        responseSend = Boolean.FALSE;
     }
 
     public boolean isUrgent() {

@@ -24,6 +24,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -80,7 +82,8 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, false);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

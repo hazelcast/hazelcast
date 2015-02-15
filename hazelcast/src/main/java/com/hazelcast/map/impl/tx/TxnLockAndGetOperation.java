@@ -59,7 +59,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     @Override
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(null);
+        responseHandler.sendResponse(this, null);
     }
 
     @Override

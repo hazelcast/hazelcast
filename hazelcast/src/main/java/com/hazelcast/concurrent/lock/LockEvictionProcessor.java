@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
@@ -83,7 +84,7 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
 
     private class UnlockResponseHandler implements ResponseHandler {
         @Override
-        public void sendResponse(Object obj) {
+        public void sendResponse(Operation op, Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
                 if (t instanceof RetryableException) {

@@ -108,7 +108,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(null);
+        responseHandler.sendResponse(this, null);
     }
 
     @Override

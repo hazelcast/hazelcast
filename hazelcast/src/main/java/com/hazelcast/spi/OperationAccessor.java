@@ -33,6 +33,14 @@ public final class OperationAccessor {
     private OperationAccessor() {
     }
 
+    public static boolean setResponseSend(Operation op) {
+        return op.setResponseSend();
+    }
+
+    public static void resetResponseSend(Operation op) {
+        op.resetResponseSend();
+    }
+
     public static boolean isJoinOperation(Operation op) {
         return op instanceof JoinOperation
                 && op.getClass().getClassLoader() == THIS_CLASS_LOADER;

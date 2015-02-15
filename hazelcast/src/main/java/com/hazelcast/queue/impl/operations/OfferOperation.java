@@ -26,6 +26,7 @@ import com.hazelcast.queue.impl.QueueContainer;
 import com.hazelcast.queue.impl.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -103,7 +104,8 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(Boolean.FALSE);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, Boolean.FALSE);
     }
 
     @Override

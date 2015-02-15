@@ -21,32 +21,20 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class ResponseHandlerFactory {
 
     private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
+    private static final RemoteInvocationResponseHandler REMOTE_RESPONSE_HANDLER = new RemoteInvocationResponseHandler();
 
     private ResponseHandlerFactory() {
     }
 
-    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
-        ResponseHandler responseHandler = createRemoteResponseHandler(nodeEngine, operation);
-        operation.setResponseHandler(responseHandler);
-    }
-
-    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
-        if (operation.getCallId() == 0) {
-            if (operation.returnsResponse()) {
-                throw new HazelcastException(
-                        "Op: " + operation.getClass().getName() + " can not return response without call-id!");
-            }
-            return NO_RESPONSE_HANDLER;
-        }
-        return new RemoteInvocationResponseHandler(nodeEngine, operation);
+    public static ResponseHandler createRemoteResponseHandler() {
+        return REMOTE_RESPONSE_HANDLER;
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
@@ -57,7 +45,7 @@ public final class ResponseHandlerFactory {
             implements ResponseHandler {
 
         @Override
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Operation op, Object obj) {
         }
 
         @Override
@@ -78,7 +66,7 @@ public final class ResponseHandlerFactory {
         }
 
         @Override
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Operation op, Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);
@@ -91,33 +79,25 @@ public final class ResponseHandlerFactory {
         }
     }
 
-    private static final class RemoteInvocationResponseHandler implements ResponseHandler {
-
-        private final NodeEngine nodeEngine;
-        private final Operation operation;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
-
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation operation) {
-            this.nodeEngine = nodeEngine;
-            this.operation = operation;
-        }
+    public static final class RemoteInvocationResponseHandler implements ResponseHandler {
 
         @Override
-        public void sendResponse(Object obj) {
+        public void sendResponse(Operation operation, Object obj) {
             long callId = operation.getCallId();
             Connection conn = operation.getConnection();
-            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
+            if (!OperationAccessor.setResponseSend(operation) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
             Response response;
             if (!(obj instanceof Response)) {
-                response = new NormalResponse(obj, operation.getCallId(), 0, operation.isUrgent());
+                response = new NormalResponse(obj, callId, 0, operation.isUrgent());
             } else {
                 response = (Response) obj;
             }
 
+            NodeEngine nodeEngine = operation.getNodeEngine();
             InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
             if (!operationService.send(response, operation.getCallerAddress())) {
                 throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());

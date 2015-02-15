@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -78,6 +79,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
         } else {
             response = Boolean.FALSE;
         }
-        getResponseHandler().sendResponse(response);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, response);
     }
 }

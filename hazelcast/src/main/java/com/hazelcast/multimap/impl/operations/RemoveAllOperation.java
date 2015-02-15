@@ -23,6 +23,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 
 import java.util.Collection;
 
@@ -63,7 +64,8 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     public void onWaitExpire() {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapConfig.ValueCollectionType valueCollectionType = getValueCollectionType(container);
-        getResponseHandler().sendResponse(new MultiMapResponse(null, valueCollectionType));
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, new MultiMapResponse(null, valueCollectionType));
     }
 
     public int getId() {

@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 
 import java.io.IOException;
 
@@ -50,7 +51,8 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(this, false);
     }
 
     public Operation getBackupOperation() {
