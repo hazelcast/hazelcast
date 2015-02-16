@@ -34,6 +34,7 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.LinkedList;
@@ -271,8 +272,26 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
         if (request instanceof RefreshableRequest) {
             ((RefreshableRequest) request).refresh();
         }
-        executionService.schedule(new ReSendTask(), retryWaitTime, TimeUnit.MILLISECONDS);
+
+        try {
+            sleep();
+            executionService.execute(new ReSendTask());
+        } catch (RejectedExecutionException e) {
+            response = e;
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Retry could not be scheduled ", e);
+            }
+            return false;
+        }
         return true;
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(retryWaitTime);
+        } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
+        }
     }
 
     private void runAsynchronous(final ExecutionCallback callback, Executor executor, final boolean deserialized) {
@@ -316,7 +335,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
                 if (handler != null) {
                     clientListenerService.registerFailedListener(ClientCallFuture.this);
                 } else {
-                    setResponse(e);
+                    ClientCallFuture.this.notify(new TargetDisconnectedException());
                 }
             }
         }
