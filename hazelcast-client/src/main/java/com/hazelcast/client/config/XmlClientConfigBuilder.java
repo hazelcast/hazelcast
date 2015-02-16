@@ -41,6 +41,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
+
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
@@ -171,22 +173,22 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
             if ("max-size".equals(nodeName)) {
-                nearCacheConfig.setMaxSize(Integer.parseInt(getTextContent(child)));
+                nearCacheConfig.setMaxSize(Integer.parseInt(value));
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
+                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
             } else if ("max-idle-seconds".equals(nodeName)) {
-                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
+                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
             } else if ("eviction-policy".equals(nodeName)) {
-                nearCacheConfig.setEvictionPolicy(getTextContent(child));
+                nearCacheConfig.setEvictionPolicy(value);
             } else if ("in-memory-format".equals(nodeName)) {
-                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(getTextContent(child)));
+                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("invalidate-on-change".equals(nodeName)) {
-                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
             } else if ("cache-local-entries".equals(nodeName)) {
-                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
             } else if ("local-update-policy".equals(nodeName)) {
-                String value = getTextContent(child);
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             }
