@@ -86,10 +86,29 @@ public class ClientNearCacheTest {
             this.nearCache = nearCache;
         }
 
+        void close() {
+            cache.destroy();
+            client.shutdown();
+        }
+
     }
 
     private String generateValueFromKey(Integer key) {
         return "Value-" + key;
+    }
+
+    private NearCacheTestContext getNearCacheTest(String cacheName) {
+        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.newHazelcastClient();
+        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+
+        ICache<Integer, String> cache = cacheManager.getCache(cacheName);
+
+        NearCache<Data, String> nearCache =
+                nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
+
+        return new NearCacheTestContext(client, cacheManager, nearCacheManager, cache, nearCache);
     }
 
     private NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig) {
@@ -137,7 +156,7 @@ public class ClientNearCacheTest {
             final String expectedValue = generateValueFromKey(i);
             final Data keyData = nearCacheTestContext.serializationService.toData(i);
             // Entries are stored in the near-cache as async not sync.
-            // So these records will be there in near-cache eventually
+            // So these records will be there in near-cache eventually.
             HazelcastTestSupport.assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() throws Exception {
@@ -146,9 +165,7 @@ public class ClientNearCacheTest {
             });
         }
 
-        nearCacheTestContext.cache.destroy();
-
-        nearCacheTestContext.client.shutdown();
+        nearCacheTestContext.close();
     }
 
     @Test
@@ -174,9 +191,7 @@ public class ClientNearCacheTest {
                                 nearCacheTestContext.serializationService.toData(i)));
         }
 
-        nearCacheTestContext.cache.destroy();
-
-        nearCacheTestContext.client.shutdown();
+        nearCacheTestContext.close();
     }
 
     @Test
@@ -187,6 +202,83 @@ public class ClientNearCacheTest {
     @Test
     public void putToCacheAndThenGetFromClientNearCacheWithObjectInMemoryFormat() {
         putToCacheAndThenGetFromClientNearCache(InMemoryFormat.OBJECT);
+    }
+
+    private void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setInvalidateOnChange(true);
+        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
+        NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
+        final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
+
+        // Put cache record from client-1
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            nearCacheTestContext1.cache.put(i, generateValueFromKey(i));
+        }
+
+        // Get records from client-2
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            final Integer key = i;
+            final String value = nearCacheTestContext2.cache.get(key);
+            // Records are stored in the cache as async not sync.
+            // So these records will be there in cache eventually.
+            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(value,
+                            nearCacheTestContext2.nearCache.get(
+                                    nearCacheTestContext2.serializationService.toData(key)));
+                }
+            });
+        }
+
+        // Update cache record from client-1
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            nearCacheTestContext1.cache.put(i, generateValueFromKey(DEFAULT_RECORD_COUNT + i));
+        }
+
+        // Get updated records from client-2
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            final int key = i;
+            // Records are stored in the near-cache will be invalidated eventually
+            // since cache records are updated.
+            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertNull(nearCacheTestContext2.nearCache.get(
+                            nearCacheTestContext2.serializationService.toData(key)));
+                }
+            });
+        }
+
+        // Get updated records from client-2
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            final Integer key = i;
+            final String value = nearCacheTestContext2.cache.get(key);
+            // Records are stored in the cache as async not sync.
+            // So these records will be there in cache eventually.
+            HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(value,
+                            nearCacheTestContext2.nearCache.get(
+                                    nearCacheTestContext2.serializationService.toData(key)));
+                }
+            });
+        }
+
+        nearCacheTestContext1.close();
+        nearCacheTestContext2.close();
+    }
+
+    @Test
+    public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithBinaryInMemoryFormat() {
+        putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
+    }
+
+    @Test
+    public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithObjectInMemoryFormat() {
+        putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.OBJECT);
     }
 
 }

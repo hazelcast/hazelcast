@@ -604,7 +604,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             return;
         }
         try {
-            ClientRequest request = new CacheAddInvalidationListenerRequest(name);
+            ClientRequest request = new CacheAddInvalidationListenerRequest(nameWithPrefix);
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
             HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
@@ -624,7 +624,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         if (registrationId != null) {
             try {
                 if (removeFromMemberAlso) {
-                    ClientRequest request = new CacheRemoveInvalidationListenerRequest(name, registrationId);
+                    ClientRequest request = new CacheRemoveInvalidationListenerRequest(nameWithPrefix, registrationId);
                     HazelcastClientInstanceImpl clientInstance =
                             (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
                     ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());
