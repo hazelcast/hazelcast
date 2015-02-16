@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class XMLConfigPreProcessorTest {
+public class XmlConfigImportVariableReplacementTest {
 
 
     @Test(expected = HazelcastException.class)

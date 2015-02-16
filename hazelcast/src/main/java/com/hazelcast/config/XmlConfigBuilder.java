@@ -27,6 +27,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -80,13 +81,12 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
-public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
+public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
     private static final int DEFAULT_VALUE = 5;
     private static final int THOUSAND_FACTOR = 5;
-    private final XmlConfigPreProcessor xmlConfigPreProcessor = new XmlConfigPreProcessor(this);
 
     private Config config;
     private InputStream in;
@@ -167,6 +167,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     @Override
+    protected ConfigType getXmlType() {
+        return ConfigType.SERVER;
+    }
+
+    @Override
     public Config build() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -193,31 +198,33 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-        xmlConfigPreProcessor.process(root);
+        process(root);
         handleConfig(root);
     }
 
-    Document parse(InputStream is) throws Exception {
+    @Override
+    protected Document parse(InputStream is) throws Exception {
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc;
         try {
             doc = builder.parse(is);
         } catch (final Exception e) {
+            String lineSeparator = StringUtil.getLineSeperator();
             if (configurationFile != null) {
                 String msg = "Failed to parse " + configurationFile
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             } else if (configurationUrl != null) {
                 String msg = "Failed to parse " + configurationUrl
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             } else {
                 String msg = "Failed to parse the inputstream"
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             }
@@ -949,12 +956,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (maxSizePolicy != null) {
                     evictionConfig.setMaxSizePolicy(
                             CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
-                                    upperCaseInternal(getTextContent(maxSizePolicy))));
+                                    upperCaseInternal(getTextContent(maxSizePolicy)))
+                    );
                 }
                 if (evictionPolicy != null) {
                     evictionConfig.setEvictionPolicy(
                             EvictionPolicy.valueOf(
-                                    upperCaseInternal(getTextContent(evictionPolicy))));
+                                    upperCaseInternal(getTextContent(evictionPolicy)))
+                    );
                 }
                 cacheConfig.setEvictionConfig(evictionConfig);
             }
