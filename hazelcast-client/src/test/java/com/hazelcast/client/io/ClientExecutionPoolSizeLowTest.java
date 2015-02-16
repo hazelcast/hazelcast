@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 @Category(SlowTest.class)
 public class ClientExecutionPoolSizeLowTest {
 
-    static final int COUNT = 30000;
+    static final int COUNT = 1000;
     static HazelcastInstance server1;
     static HazelcastInstance server2;
     static HazelcastInstance client;
