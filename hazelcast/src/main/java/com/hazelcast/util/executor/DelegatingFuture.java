@@ -158,9 +158,6 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         if (operationResultVerifier != null) {
             value = operationResultVerifier.verify((V) value);
         }
-        if (value instanceof Throwable) {
-            ExceptionUtil.sneakyThrow((Throwable) value);
-        }
         return value;
     }
 }

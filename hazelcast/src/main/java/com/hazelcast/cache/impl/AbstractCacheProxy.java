@@ -154,7 +154,7 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
-        final InternalCompletableFuture<V> f = getAsync(key, expiryPolicy);
+        final Future<V> f = getAsync(key, expiryPolicy);
         try {
             return f.get();
         } catch (Throwable e) {

@@ -33,7 +33,7 @@ public class TypeCheckingOperationResultVerifier<K, V> implements OperationResul
             CacheProxyUtil.validateConfiguredValueType(cacheConfig, value);
             return value;
         } catch (ClassCastException cce) {
-            return cce;
+            throw cce;
         }
     }
 }

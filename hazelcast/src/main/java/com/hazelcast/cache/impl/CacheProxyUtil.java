@@ -257,7 +257,8 @@ public final class CacheProxyUtil {
         if (value != null && valueType != null && Object.class != valueType) {
             //means type checks required
             if (!valueType.isAssignableFrom(value.getClass())) {
-                throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
+                throw new ClassCastException("Value '" + value + "' is not assignable to type, expected '"
+                        + valueType + "' but is '" + value.getClass() + "'");
             }
         }
     }
