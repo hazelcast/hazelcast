@@ -18,7 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
@@ -26,8 +26,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -40,13 +43,20 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Properties;
+
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
-public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
+public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private static final int DEFAULT_VALUE = 5;
+    private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
+
+
+    private Properties properties = System.getProperties();
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -92,6 +102,38 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         this.in = locator.getIn();
     }
 
+    @Override
+    protected Document parse(InputStream inputStream) throws Exception {
+
+        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        try {
+            return builder.parse(inputStream);
+        } catch (final Exception e) {
+            String lineSeparator = StringUtil.getLineSeperator();
+            String msg = "Failed to parse Config Stream"
+                    + lineSeparator + "Exception: " + e.getMessage()
+                    + lineSeparator + "HazelcastClient startup interrupted.";
+            LOGGER.severe(msg);
+            throw e;
+        } finally {
+            IOUtil.closeResource(inputStream);
+        }
+    }
+
+    @Override
+    protected Properties getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
+
+    @Override
+    protected ConfigType getXmlType() {
+        return ConfigType.CLIENT;
+    }
+
     public ClientConfig build() {
         return build(Thread.currentThread().getContextClassLoader());
     }
@@ -100,7 +142,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClassLoader(classLoader);
         try {
-            parse(clientConfig);
+            parseAndBuildConfig(clientConfig);
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -111,29 +153,24 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
     ClientConfig build(ClientConfig clientConfig) {
         try {
-            parse(clientConfig);
+            parseAndBuildConfig(clientConfig);
             return clientConfig;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private void parse(ClientConfig clientConfig) throws Exception {
+    private void parseAndBuildConfig(ClientConfig clientConfig) throws Exception {
         this.clientConfig = clientConfig;
-        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document doc;
+        Document doc = parse(in);
+        Element root = doc.getDocumentElement();
         try {
-            doc = builder.parse(in);
-        } catch (final Exception e) {
-            throw new IllegalStateException("Could not parse configuration file, giving up.");
-        }
-        Element element = doc.getDocumentElement();
-        try {
-            element.getTextContent();
+            root.getTextContent();
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-        handleConfig(element);
+        process(root);
+        handleConfig(root);
     }
 
     private void handleConfig(final Element docElement) throws Exception {
@@ -171,22 +208,22 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
             if ("max-size".equals(nodeName)) {
-                nearCacheConfig.setMaxSize(Integer.parseInt(getTextContent(child)));
+                nearCacheConfig.setMaxSize(Integer.parseInt(value));
             } else if ("time-to-live-seconds".equals(nodeName)) {
-                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
+                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(value));
             } else if ("max-idle-seconds".equals(nodeName)) {
-                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
+                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(value));
             } else if ("eviction-policy".equals(nodeName)) {
-                nearCacheConfig.setEvictionPolicy(getTextContent(child));
+                nearCacheConfig.setEvictionPolicy(value);
             } else if ("in-memory-format".equals(nodeName)) {
-                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(getTextContent(child)));
+                nearCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("invalidate-on-change".equals(nodeName)) {
-                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
             } else if ("cache-local-entries".equals(nodeName)) {
-                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(getTextContent(child)));
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
             } else if ("local-update-policy".equals(nodeName)) {
-                String value = getTextContent(child);
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
             }

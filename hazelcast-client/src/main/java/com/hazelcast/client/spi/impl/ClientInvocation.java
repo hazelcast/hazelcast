@@ -12,9 +12,12 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.executor.impl.client.RefreshableRequest;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
@@ -27,6 +30,7 @@ public class ClientInvocation implements Runnable {
 
     private static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     private static final int UNASSIGNED_PARTITION = -1;
+    private static final ILogger LOGGER = Logger.getLogger(ClientInvocation.class);
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
@@ -38,7 +42,6 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationFuture clientInvocationFuture;
     private final int heartBeatInterval;
     private final AtomicInteger reSendCount = new AtomicInteger();
-
     private final boolean isBindToSingleConnection;
     private final Address address;
     private final int partitionId;
@@ -58,7 +61,6 @@ public class ClientInvocation implements Runnable {
         this.address = address;
         this.connection = (ClientConnection) connection;
         this.isBindToSingleConnection = connection != null;
-
         final ClientProperties clientProperties = client.getClientProperties();
 
         int waitTime = clientProperties.getInvocationTimeoutSeconds().getInteger();
@@ -214,11 +216,23 @@ public class ClientInvocation implements Runnable {
         }
 
         try {
-            executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+            sleep();
+            executionService.execute(this);
         } catch (RejectedExecutionException e) {
-            return false;
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Retry could not be scheduled ", e);
+            }
+            clientInvocationFuture.setResponse(e);
         }
         return true;
+    }
+
+    private void sleep() {
+        try {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
+        } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
+        }
     }
 
     private boolean isBindToSingleConnection() {

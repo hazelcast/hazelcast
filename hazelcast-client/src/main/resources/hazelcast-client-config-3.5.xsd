@@ -24,6 +24,7 @@
     <xs:element name="hazelcast-client">
         <xs:complexType>
             <xs:sequence>
+                <xs:element ref="import" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
@@ -38,6 +39,15 @@
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="import">
+        <xs:complexType>
+            <xs:complexContent>
+                <xs:restriction base="xs:anyType">
+                    <xs:attribute name="resource" type="xs:string" use="required"/>
+                </xs:restriction>
+            </xs:complexContent>
         </xs:complexType>
     </xs:element>
     <xs:complexType name="aws">
@@ -167,7 +177,7 @@
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="proxy-factory">
-        <xs:attribute name="service" >
+        <xs:attribute name="service">
             <xs:simpleType>
                 <xs:restriction base="non-space-string"/>
             </xs:simpleType>
@@ -242,7 +252,7 @@
             <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU"/>
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1" />
+            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="eviction-policy">
@@ -345,26 +355,26 @@
             <xs:element name="metadata-space-percentage" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="xs:decimal">
-                        <xs:totalDigits value="3" />
+                        <xs:totalDigits value="3"/>
                         <xs:fractionDigits value="1"/>
-                        <xs:minInclusive value="5" />
+                        <xs:minInclusive value="5"/>
                         <xs:maxInclusive value="95"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type" />
+        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
 
     <xs:complexType name="memory-size">
         <xs:attribute name="value" type="xs:int" default="128"/>
-        <xs:attribute name="unit" type="memory-unit" default="MEGABYTES" />
+        <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
 
     <xs:simpleType name="memory-unit">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="BYTES" />
+            <xs:enumeration value="BYTES"/>
             <xs:enumeration value="KILOBYTES"/>
             <xs:enumeration value="MEGABYTES"/>
             <xs:enumeration value="GIGABYTES"/>
@@ -373,7 +383,7 @@
 
     <xs:simpleType name="memory-allocator-type">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="STANDARD" />
+            <xs:enumeration value="STANDARD"/>
             <xs:enumeration value="POOLED"/>
         </xs:restriction>
     </xs:simpleType>

@@ -20,8 +20,10 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -34,27 +36,32 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import static com.hazelcast.config.XmlElements.HAZELCAST;
 import static com.hazelcast.config.XmlElements.IMPORT;
 
 /**
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
  */
-public class XmlConfigPreProcessor {
+public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
 
-    private static final ILogger LOGGER = Logger.getLogger(XmlConfigPreProcessor.class);
+    protected enum ConfigType {
+        SERVER("hazelcast"),
+        CLIENT("hazelcast-client");
+        final String name;
 
-    private final XmlConfigBuilder xmlConfigBuilder;
+        ConfigType(String name) {
+            this.name = name;
+        }
+    }
+
+    private static final ILogger LOGGER = Logger.getLogger(AbstractConfigBuilder.class);
     private Set<String> currentlyImportedFiles = new HashSet<String>();
     private XPathFactory xpathFactory = XPathFactory.newInstance();
     private XPath xpath = xpathFactory.newXPath();
+    public AbstractConfigBuilder() {
 
-    public XmlConfigPreProcessor(XmlConfigBuilder xmlConfigBuilder) {
-        this.xmlConfigBuilder = xmlConfigBuilder;
     }
 
-
-    void process(Node root) throws Exception {
+    protected void process(Node root) throws Exception {
         traverseChildsAndReplaceVariables(root);
         replaceImportElementsWithActualFileContents(root);
     }
@@ -62,13 +69,13 @@ public class XmlConfigPreProcessor {
     private void replaceImportElementsWithActualFileContents(Node root) throws Exception {
         Document document = root.getOwnerDocument();
         NodeList misplacedImports = (NodeList) xpath.evaluate("//" + IMPORT.name
-                        + "/parent::*[not(name()=\"" + HAZELCAST.name + "\")]", document,
+                        + "/parent::*[not(name()=\"" + this.getXmlType().name + "\")]", document,
                 XPathConstants.NODESET
         );
         if (misplacedImports.getLength() > 0) {
             throw new IllegalStateException("<import> element can appear only in the top level of the XML");
         }
-        NodeList importTags = (NodeList) xpath.evaluate("/" + HAZELCAST.name + "/" + IMPORT.name, document,
+        NodeList importTags = (NodeList) xpath.evaluate("/" + this.getXmlType().name + "/" + IMPORT.name, document,
                 XPathConstants.NODESET);
         for (Node node : new AbstractXmlConfigHelper.IterableNodeList(importTags)) {
             loadAndReplaceImportElement(root, node);
@@ -86,7 +93,7 @@ public class XmlConfigPreProcessor {
         if (!currentlyImportedFiles.add(url.getPath())) {
             throw new HazelcastException("Cyclic loading of resource " + url.getPath() + " is detected !");
         }
-        Document doc = xmlConfigBuilder.parse(url.openStream());
+        Document doc = parse(url.openStream());
         Element importedRoot = doc.getDocumentElement();
         traverseChildsAndReplaceVariables(importedRoot);
         replaceImportElementsWithActualFileContents(importedRoot);
@@ -97,11 +104,30 @@ public class XmlConfigPreProcessor {
         root.removeChild(node);
     }
 
+    /**
+     * Reads xml from InputStream and parses
+     *
+     * @param inputStream
+     * @return Document after parsing xml
+     * @throws Exception
+     */
+    protected abstract Document parse(InputStream inputStream) throws Exception;
+
+    /**
+     * @return system properties
+     */
+    protected abstract Properties getProperties();
+
+    /**
+     * @return ConfigType of current config class as enum value.
+     */
+    protected abstract ConfigType getXmlType();
+
     private void traverseChildsAndReplaceVariables(Node root) throws XPathExpressionException {
-        NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + HAZELCAST.name, root.getOwnerDocument(),
+        NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + this.getXmlType().name, root.getOwnerDocument(),
                 XPathConstants.NODESET);
         if (misplacedHazelcastTag.getLength() > 1) {
-            throw new IllegalStateException("<hazelcast> element can appear only once in the XML");
+            throw new IllegalStateException("<" + this.getXmlType().name + "> element can appear only once in the XML");
         }
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
@@ -132,8 +158,9 @@ public class XmlConfigPreProcessor {
                         + node.getLocalName());
                 break;
             }
+
             String variable = sb.substring(startIndex + 2, endIndex);
-            String variableReplacement = xmlConfigBuilder.getProperties().getProperty(variable);
+            String variableReplacement = getProperties().getProperty(variable);
             if (variableReplacement != null) {
                 sb.replace(startIndex, endIndex + 1, variableReplacement);
                 endIndex = startIndex + variableReplacement.length();
