@@ -75,7 +75,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.3.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.5.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append("****").append("</password>");
@@ -216,9 +216,9 @@ public class ConfigXmlGenerator {
         final Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
             xml.append("<queue name=\"").append(q.getName()).append("\">");
-            xml.append("<queue-max-size>").append(q.getMaxSize()).append("</queue-max-size>");
-            xml.append("<queue-sync-backup-count>").append(q.getBackupCount()).append("</queue-sync-backup-count>");
-            xml.append("<queue-async-backup-count>").append(q.getAsyncBackupCount()).append("</queue-async-backup-count>");
+            xml.append("<max-size>").append(q.getMaxSize()).append("</max-size>");
+            xml.append("<backup-count>").append(q.getBackupCount()).append("</backup-count>");
+            xml.append("<async-backup-count>").append(q.getAsyncBackupCount()).append("</async-backup-count>");
             if (!q.getItemListenerConfigs().isEmpty()) {
                 xml.append("<item-listeners>");
                 for (ItemListenerConfig lc : q.getItemListenerConfigs()) {
@@ -436,9 +436,11 @@ public class ConfigXmlGenerator {
         final TcpIpConfig tcpCfg = join.getTcpIpConfig();
         xml.append("<tcp-ip enabled=\"").append(tcpCfg.isEnabled()).append("\">");
         final List<String> members = tcpCfg.getMembers();
+        xml.append("<member-list>");
         for (String m : members) {
             xml.append("<member>").append(m).append("</member>");
         }
+        xml.append("</member-list>");
         if (tcpCfg.getRequiredMember() != null) {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }

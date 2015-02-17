@@ -16,17 +16,40 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.AbstractConfigBuilder.ConfigType;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.util.StringUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
+import javax.xml.XMLConstants;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.ByteOrder;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -41,6 +64,9 @@ public abstract class AbstractXmlConfigHelper {
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
+    private final String xmlns = "http://www.hazelcast.com/schema/" + getNamespaceType();
+    private final String xsi = "http://www.w3.org/2001/XMLSchema-instance";
+    private final String hazelcastSchemaLocation = getXmlType().name + "-config-" + getReleaseVersion() + ".xsd";
 
     /**
      * Iterator for NodeList
@@ -99,6 +125,88 @@ public abstract class AbstractXmlConfigHelper {
                 }
             };
         }
+    }
+
+    protected ConfigType getXmlType() {
+        return ConfigType.SERVER;
+    }
+
+    public String getNamespaceType() {
+        return getXmlType().name.equals("hazelcast") ? "config" : "client-config";
+    }
+
+    protected void schemaValidation(Document doc)
+            throws Exception {
+        ArrayList<StreamSource> schemas = new ArrayList<StreamSource>();
+        InputStream inputStream;
+        String lineSeperator = StringUtil.getLineSeperator();
+
+        //get every two pair. every pair includes namespace and uri
+        String[] xsdLocations = doc.getDocumentElement().getAttribute("xsi:schemaLocation").split("(?<!\\G\\S+)\\s");
+        for (String xsdLocation : xsdLocations) {
+            if (xsdLocation.isEmpty()) {
+                continue;
+            }
+            String namespace = xsdLocation.split("[" + lineSeperator + " ]+")[0];
+            String uri = xsdLocation.split("[" + lineSeperator + " ]+")[1];
+
+            // if this is hazelcast namespace but location is different log only warning
+            if (namespace.equals(xmlns) && !namespace.equals(hazelcastSchemaLocation)) {
+                LOGGER.warning("Name of the hazelcast schema location incorrect using default");
+            }
+
+            // if this is not hazelcast namespace then try to load from uri
+            if (!namespace.equals(xmlns)) {
+                inputStream = loadSchemaFile(uri);
+                schemas.add(new StreamSource(inputStream));
+            }
+        }
+
+        // include hazelcast schema
+        schemas.add(new StreamSource(getClass().getClassLoader().getResourceAsStream(hazelcastSchemaLocation)));
+        Element root = doc.getDocumentElement();
+
+        // set schema settings, so user don't have to set hazelcast xsd namespace,uri
+        root.setAttribute("xmlns", xmlns);
+        root.setAttribute("xmlns:xsi", xsi);
+        root.setAttribute("xsi:schemaLocation", hazelcastSchemaLocation);
+
+        // document to inputstream conversion
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        Source xmlSource = new DOMSource(doc);
+        Result outputTarget = new StreamResult(outputStream);
+        TransformerFactory.newInstance().newTransformer().transform(xmlSource, outputTarget);
+        InputStream is = new ByteArrayInputStream(outputStream.toByteArray());
+
+        // schema validation
+        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        Schema schema = schemaFactory.newSchema(schemas.toArray(new Source[schemas.size()]));
+        Validator validator = schema.newValidator();
+        try {
+            SAXSource source = new SAXSource(new InputSource(is));
+            validator.validate(source);
+        } catch (Exception e) {
+            throw new InvalidConfigurationException(e.getMessage());
+        }
+    }
+
+    protected InputStream loadSchemaFile(String schemaLocation) {
+        // is resource file
+        InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(schemaLocation);
+        // is URL
+        if (inputStream == null) {
+            try {
+                inputStream = new URL(schemaLocation).openStream();
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("Your xsd schema couldn't be load");
+            }
+        }
+        return inputStream;
+    }
+
+    protected String getReleaseVersion() {
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        return buildInfo.getVersion().split("\\-")[0];
     }
 
     protected String xmlToJavaName(final String name) {

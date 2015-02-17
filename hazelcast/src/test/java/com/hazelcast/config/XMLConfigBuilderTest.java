@@ -247,9 +247,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "    </semaphore>" +
                         "    <semaphore name=\"custom\">\n" +
                         "        <initial-permits>10</initial-permits>\n" +
-                        "        <semaphore-factory enabled=\"true\">" +
-                        "             <class-name>com.acme.MySemaphore</class-name>\n" +
-                        "        </semaphore-factory>" +
                         "    </semaphore>" +
                         "</hazelcast>";
         Config config = buildConfig(xml);
@@ -297,12 +294,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml =
                 "<hazelcast>\n" +
                         "<map name=\"testCaseInsensitivity\">" +
-                        "<in-memory-format>binary</in-memory-format>     " +
+                        "<in-memory-format>BINARY</in-memory-format>     " +
                         "<backup-count>1</backup-count>                 " +
                         "<async-backup-count>0</async-backup-count>    " +
                         "<time-to-live-seconds>0</time-to-live-seconds>" +
                         "<max-idle-seconds>0</max-idle-seconds>    " +
-                        "<eviction-policy>none</eviction-policy>  " +
+                        "<eviction-policy>NONE</eviction-policy>  " +
                         "<max-size policy=\"per_partition\">0</max-size>" +
                         "<eviction-percentage>25</eviction-percentage>" +
                         "<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>" +
@@ -605,7 +602,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.4.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.5.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);

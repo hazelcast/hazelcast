@@ -1,6 +1,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.Hazelcast;
@@ -24,7 +25,7 @@ public class BadConfigurationMemberStartTest {
         Hazelcast.shutdownAll();
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testMulticastAndTcpEnabled() throws Exception {
         Config config = new Config();
 
