@@ -68,7 +68,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class SplitBrainHandlerTest {
+public class SplitBrainHandlerTest extends HazelcastTestSupport {
 
     @Before
     @After
@@ -90,7 +90,8 @@ public class SplitBrainHandlerTest {
         Config config1 = new Config();
         config1.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config1.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
-        config1.getGroupConfig().setName("differentGroup");
+        String firstGroupName = generateRandomString(10);
+        config1.getGroupConfig().setName(firstGroupName);
 
         NetworkConfig networkConfig1 = config1.getNetworkConfig();
         JoinConfig join1 = networkConfig1.getJoin();
@@ -101,7 +102,8 @@ public class SplitBrainHandlerTest {
         Config config2 = new Config();
         config2.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config2.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
-        config2.getGroupConfig().setName("sameGroup");
+        String secondGroupName = generateRandomString(10);
+        config2.getGroupConfig().setName(secondGroupName);
 
         NetworkConfig networkConfig2 = config2.getNetworkConfig();
         JoinConfig join2 = networkConfig2.getJoin();
@@ -118,7 +120,7 @@ public class SplitBrainHandlerTest {
         assertEquals(1, h2.getCluster().getMembers().size());
 
         // warning: assuming group name will be visible to the split brain handler!
-        config1.getGroupConfig().setName("sameGroup");
+        config1.getGroupConfig().setName(secondGroupName);
         assertTrue(l.waitFor(LifecycleState.MERGED, 30));
 
         assertEquals(1, l.getCount(LifecycleState.MERGING));
@@ -132,7 +134,8 @@ public class SplitBrainHandlerTest {
         Config config1 = new Config();
         config1.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config1.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
-        config1.getGroupConfig().setName("differentGroup");
+        String firstGroupName = generateRandomString(10);
+        config1.getGroupConfig().setName(firstGroupName);
 
         NetworkConfig networkConfig1 = config1.getNetworkConfig();
         JoinConfig join1 = networkConfig1.getJoin();
@@ -142,7 +145,8 @@ public class SplitBrainHandlerTest {
         Config config2 = new Config();
         config2.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config2.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
-        config2.getGroupConfig().setName("sameGroup");
+        String secondGroupName = generateRandomString(10);
+        config2.getGroupConfig().setName(secondGroupName);
 
         NetworkConfig networkConfig2 = config2.getNetworkConfig();
         JoinConfig join2 = networkConfig2.getJoin();
@@ -217,6 +221,8 @@ public class SplitBrainHandlerTest {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        String groupName = generateRandomString(10);
+        config.getGroupConfig().setName(groupName);
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         JoinConfig join = networkConfig.getJoin();
@@ -408,10 +414,12 @@ public class SplitBrainHandlerTest {
         props.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "0");
         props.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "0");
 
+        String groupName = generateRandomString(10);
         final CountDownLatch latch = new CountDownLatch(1);
         Config config1 = new Config();
         // bigger port to make sure address.hashCode() check pass during merge!
         config1.getNetworkConfig().setPort(5901);
+        config1.getGroupConfig().setName(groupName);
         config1.setProperties(props);
         config1.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
@@ -428,6 +436,7 @@ public class SplitBrainHandlerTest {
         Thread.sleep(5000);
 
         Config config2 = new Config();
+        config2.getGroupConfig().setName(groupName);
         config2.getNetworkConfig().setPort(5701);
         config2.setProperties(props);
         Hazelcast.newHazelcastInstance(config2);
@@ -448,6 +457,8 @@ public class SplitBrainHandlerTest {
     private void testClusterMerge_when_split_not_detected_by_master(boolean multicastEnabled)
             throws InterruptedException {
         Config config = new Config();
+        String groupName = generateRandomString(10);
+        config.getGroupConfig().setName(groupName);
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
 
@@ -530,6 +541,8 @@ public class SplitBrainHandlerTest {
     @Test
     public void testClusterMerge_when_split_not_detected_by_slave() throws InterruptedException {
         Config config = new Config();
+        String groupName = generateRandomString(10);
+        config.getGroupConfig().setName(groupName);
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
 
@@ -609,6 +622,8 @@ public class SplitBrainHandlerTest {
     @Test
     public void testClusterMerge_when_split_not_detected_by_slave_and_restart_during_merge() throws InterruptedException {
         Config config = new Config();
+        String groupName = generateRandomString(10);
+        config.getGroupConfig().setName(groupName);
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
 
