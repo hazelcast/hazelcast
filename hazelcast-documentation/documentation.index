@@ -11,6 +11,7 @@ src/GettingStarted.md
 	src/ConfiguringHazelcast.md
 src/Overview.md
 	src/WhyHazelcast.md
+	src/DataPartitioning.md
 	src/UseCases.md
 	src/Resources.md
 src/HazelcastClusters.md
