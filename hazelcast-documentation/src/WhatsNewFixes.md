@@ -1,6 +1,15 @@
 
 ### Fixes
 
+
+**3.4.2 Fixes**
+
+This section lists issues solved for Hazelcast 3.4.2 release.
+
+- The method `readData` in `NearCacheConfig` reads the `maxSize` twice [[#4609]](https://github.com/hazelcast/hazelcast/issues/4609).
+- The system property `hazelcast.client.request.retry.count` is not handled properly [[#4592]](https://github.com/hazelcast/hazelcast/issues/4592).
+
+
 **3.4.1 Fixes**
 
 This section lists issues solved for Hazelcast 3.4.1 release.
