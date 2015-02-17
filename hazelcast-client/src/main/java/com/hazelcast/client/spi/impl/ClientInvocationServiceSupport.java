@@ -140,7 +140,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         return false;
     }
 
-    private void cleanResources(ConstructorFunction<Object, Throwable> responseCtor, ClientConnection connection) {
+
+    public void cleanResources(ConstructorFunction<Object, Throwable> responseCtor, ClientConnection connection) {
         final Iterator<Map.Entry<Integer, ClientInvocation>> iter = callIdMap.entrySet().iterator();
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientInvocation> entry = iter.next();
@@ -192,9 +193,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     @Override
     public void connectionRemoved(Connection connection) {
+        cleanConnectionResources((ClientConnection) connection);
+    }
+
+    @Override
+    public void cleanConnectionResources(ClientConnection connection) {
         if (connectionManager.isAlive()) {
             try {
-                executionService.execute(new CleanResourcesTask((ClientConnection) connection));
+                executionService.execute(new CleanResourcesTask(connection));
             } catch (RejectedExecutionException e) {
                 logger.warning("Execution rejected ", e);
             }
@@ -204,7 +210,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 public Throwable createNew(Object arg) {
                     return new HazelcastClientNotActiveException("Client is shutting down!");
                 }
-            }, (ClientConnection) connection);
+            }, connection);
         }
     }
 

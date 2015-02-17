@@ -20,7 +20,6 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-
 import java.io.IOException;
 
 /**
@@ -49,6 +48,8 @@ public interface ClientInvocationService {
     void shutdown();
 
     void handlePacket(Packet packet);
+
+    void cleanConnectionResources(ClientConnection connection);
 
     EventHandler getEventHandler(int callId);
 }
