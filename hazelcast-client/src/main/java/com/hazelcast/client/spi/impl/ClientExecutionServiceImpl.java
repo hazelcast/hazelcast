@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
-    private final static long TERMINATE_TIMEOUT_SECONDS = 30;
+    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
     private final ExecutorService executor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
