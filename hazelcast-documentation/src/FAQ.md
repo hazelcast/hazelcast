@@ -347,10 +347,9 @@ The default number of process per users is 1024. Adding the following to your `$
 
 `# ulimit -u 4096`
 
-## Which virtualization should I use on AWS
+## Does repartitioning wait for Entry Processor?
 
-AWS uses two virtualization types to launch the EC2 instances: Para-Virtualization (PV) and Hardware-assisted Virtual Machine (HVM). According to the tests we performed, HVM provided up to three times higher throughput than PV. Therefore, we recommend you use HVM when you run Hazelcast on EC2.
-
+Repartitioning is the process of redistributing the partition ownerships. Hazelcast performs the repartitioning in the cases where a node leaves the cluster or joins to the cluster. If a repartitioning is to be happen while an entry processor is active in a node processing on an entry object, the repartitioning waits for the entry processor to complete its job.
 
 
 
