@@ -166,6 +166,7 @@ src/Performance.md
 		src/ThreadingExecutor.md
 		src/ThreadingOperation.md
 	src/BackPressure.md
+	src/HazelcastPerformanceOnAWS.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 #src/Config.md
