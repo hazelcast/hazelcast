@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
-    private final long terminateTimeoutSeconds = 30;
+    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
     private final ExecutorService executor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
@@ -135,10 +135,10 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public void shutdown() {
         internalExecutor.shutdown();
         try {
-            boolean success = internalExecutor.awaitTermination(terminateTimeoutSeconds, TimeUnit.SECONDS);
+            boolean success = internalExecutor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
                 LOGGER.warning("InternalExecutor awaitTermination could not completed in "
-                        + terminateTimeoutSeconds + " seconds");
+                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
             }
         } catch (InterruptedException e) {
             LOGGER.warning("Internal Executor await termination is interrupted", e);
@@ -146,9 +146,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
         scheduledExecutor.shutdownNow();
         executor.shutdown();
         try {
-            boolean success = executor.awaitTermination(terminateTimeoutSeconds, TimeUnit.SECONDS);
+            boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                LOGGER.warning("Executor awaitTermination could not completed in " + terminateTimeoutSeconds + " seconds");
+                LOGGER.warning("Executor awaitTermination could not completed in " + TERMINATE_TIMEOUT_SECONDS + " seconds");
             }
         } catch (InterruptedException e) {
             LOGGER.warning("Executor await termination is interrupted", e);
