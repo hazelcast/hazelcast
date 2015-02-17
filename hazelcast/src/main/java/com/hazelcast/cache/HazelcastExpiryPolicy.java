@@ -55,6 +55,13 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration update;
 
     /**
+     * Default constructor to serialize/deserialize
+     */
+    public HazelcastExpiryPolicy() {
+
+    }
+
+    /**
      * Constructs an expiry policy with provided values for creation, access and update in milliseconds.
      *
      * @param createMillis expiry time in milliseconds after creation
