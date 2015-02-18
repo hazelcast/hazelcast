@@ -26,11 +26,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
+import java.io.Closeable;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -241,16 +244,25 @@ final class BasicMapStoreContext implements MapStoreContext {
         initialKeys.clear();
         int maxSizePerNode = getApproximateMaxSize(maxSizeConfig, PER_NODE) - 1;
 
-        for (Object key : loadedKeys) {
-            Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
-            // this node will load only owned keys
-            if (mapServiceContext.isOwnedKey(dataKey)) {
+        Iterator keyIterator = loadedKeys.iterator();
 
-                initialKeys.put(dataKey, key);
+        try {
+            while (keyIterator.hasNext()) {
+                Object key = keyIterator.next();
+                Data dataKey = mapServiceContext.toData(key, partitioningStrategy);
+                // this node will load only owned keys
+                if (mapServiceContext.isOwnedKey(dataKey)) {
 
-                if (initialKeys.size() == maxSizePerNode) {
-                    break;
+                    initialKeys.put(dataKey, key);
+
+                    if (initialKeys.size() == maxSizePerNode) {
+                        break;
+                    }
                 }
+            }
+        } finally {
+            if (keyIterator instanceof Closeable) {
+                IOUtil.closeResource((Closeable) keyIterator);
             }
         }
     }
