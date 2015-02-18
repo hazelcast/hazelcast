@@ -111,10 +111,7 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 while (!Thread.interrupted()) {
-                    try {
-                        mapClient.put(1, 1);
-                    } catch (Throwable ignored) {
-                    }
+                    mapClient.put(1, 1);
                 }
             }
         };
