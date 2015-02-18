@@ -5,9 +5,6 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.OperationHandler;
 
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-
 /**
  * An {@link OperationThread} that executes Operations for a particular partition, e.g. a map.get operation.
  */
@@ -15,11 +12,11 @@ public final class PartitionOperationThread extends OperationThread {
 
     private final OperationHandler[] partitionOperationHandlers;
 
-    public PartitionOperationThread(String name, int threadId, BlockingQueue workQueue,
-                                    Queue priorityWorkQueue, ILogger logger,
+    public PartitionOperationThread(String name, int threadId,
+                                    ScheduleQueue scheduleQueue, ILogger logger,
                                     HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
                                     OperationHandler[] partitionOperationHandlers) {
-        super(name, threadId, workQueue, priorityWorkQueue, logger, threadGroup, nodeExtension);
+        super(name, threadId, scheduleQueue, logger, threadGroup, nodeExtension);
         this.partitionOperationHandlers = partitionOperationHandlers;
     }
 

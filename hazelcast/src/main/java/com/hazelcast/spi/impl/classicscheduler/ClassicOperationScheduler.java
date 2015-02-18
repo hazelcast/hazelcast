@@ -31,10 +31,6 @@ import com.hazelcast.spi.impl.OperationHandlerFactory;
 import com.hazelcast.spi.impl.OperationScheduler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -71,10 +67,8 @@ public final class ClassicOperationScheduler implements OperationScheduler {
     private final PartitionOperationThread[] partitionOperationThreads;
     private final OperationHandler[] partitionOperationHandlers;
 
-    //the generic workqueues are shared between all generic operation threads, so that work can be stolen
-    //and a task gets processed as quickly as possible.
-    private final BlockingQueue genericWorkQueue = new LinkedBlockingQueue();
-    private final ConcurrentLinkedQueue genericPriorityWorkQueue = new ConcurrentLinkedQueue();
+    private final ScheduleQueue genericScheduleQueue;
+
     //all operations that are not specific for a partition will be executed here, e.g heartbeat or map.size
     private final GenericOperationThread[] genericOperationThreads;
     private final OperationHandler[] genericOperationHandlers;
@@ -98,6 +92,7 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         this.threadGroup = hazelcastThreadGroup;
         this.logger = loggerService.getLogger(ClassicOperationScheduler.class);
         this.responsePacketHandler = responsePacketHandler;
+        this.genericScheduleQueue = new DefaultScheduleQueue();
 
         this.adHocOperationHandler = operationHandlerFactory.createAdHocOperationHandler();
 
@@ -154,10 +149,9 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         PartitionOperationThread[] threads = new PartitionOperationThread[threadCount];
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
-            LinkedBlockingQueue workQueue = new LinkedBlockingQueue();
-            ConcurrentLinkedQueue priorityWorkQueue = new ConcurrentLinkedQueue();
+            ScheduleQueue scheduleQueue = new DefaultScheduleQueue();
             PartitionOperationThread operationThread = new PartitionOperationThread(
-                    threadName, threadId, workQueue, priorityWorkQueue, logger,
+                    threadName, threadId, scheduleQueue, logger,
                     threadGroup, nodeExtension, partitionOperationHandlers);
             threads[threadId] = operationThread;
             operationThread.start();
@@ -170,11 +164,14 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         // we created as many generic operation handlers, as there are generic threads.
         int threadCount = genericOperationHandlers.length;
         GenericOperationThread[] threads = new GenericOperationThread[threadCount];
+
+
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
             OperationHandler operationHandler = genericOperationHandlers[threadId];
+
             GenericOperationThread operationThread = new GenericOperationThread(
-                    threadName, threadId, genericWorkQueue, genericPriorityWorkQueue,
+                    threadName, threadId, genericScheduleQueue,
                     logger, threadGroup, nodeExtension, operationHandler);
             threads[threadId] = operationThread;
             operationThread.start();
@@ -192,7 +189,6 @@ public final class ClassicOperationScheduler implements OperationScheduler {
     public OperationHandler[] getGenericOperationHandlers() {
         return genericOperationHandlers;
     }
-
 
     @Override
     public boolean isAllowedToRunInCurrentThread(Operation op) {
@@ -279,10 +275,10 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         int size = 0;
 
         for (PartitionOperationThread t : partitionOperationThreads) {
-            size += t.workQueue.size();
+            size += t.scheduleQueue.normalSize();
         }
 
-        size += genericWorkQueue.size();
+        size += genericScheduleQueue.normalSize();
 
         return size;
     }
@@ -292,10 +288,10 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         int size = 0;
 
         for (PartitionOperationThread t : partitionOperationThreads) {
-            size += t.priorityWorkQueue.size();
+            size += t.scheduleQueue.prioritySize();
         }
 
-        size += genericPriorityWorkQueue.size();
+        size += genericScheduleQueue.prioritySize();
         return size;
     }
 
@@ -378,39 +374,16 @@ public final class ClassicOperationScheduler implements OperationScheduler {
     }
 
     private void execute(Object task, int partitionId, boolean priority) {
-        BlockingQueue workQueue;
-        Queue priorityWorkQueue;
+        ScheduleQueue scheduleQueue;
+
         if (partitionId < 0) {
-            workQueue = genericWorkQueue;
-            priorityWorkQueue = genericPriorityWorkQueue;
+            scheduleQueue = genericScheduleQueue;
         } else {
             OperationThread partitionOperationThread = partitionOperationThreads[toPartitionThreadIndex(partitionId)];
-            workQueue = partitionOperationThread.workQueue;
-            priorityWorkQueue = partitionOperationThread.priorityWorkQueue;
+            scheduleQueue = partitionOperationThread.scheduleQueue;
         }
 
-        if (priority) {
-            offerWork(priorityWorkQueue, task);
-            offerWork(workQueue, OperationThread.TRIGGER_TASK);
-        } else {
-            offerWork(workQueue, task);
-        }
-    }
-
-    private void offerWork(Queue queue, Object task) {
-        //in 3.3 we are going to apply backpressure on overload and then we are going to do something
-        //with the return values of the offer methods.
-        //Currently the queues are all unbound, so this can't happen anyway.
-
-
-        if (task instanceof Runnable && !(task instanceof PartitionSpecificRunnable)) {
-            throw new RuntimeException();
-        }
-
-        boolean offer = queue.offer(task);
-        if (!offer) {
-            logger.severe("Failed to offer " + task + " to ClassicOperationScheduler due to overload");
-        }
+        scheduleQueue.add(task, priority);
     }
 
     private int toPartitionThreadIndex(int partitionId) {
@@ -448,10 +421,10 @@ public final class ClassicOperationScheduler implements OperationScheduler {
             OperationThread operationThread = partitionOperationThreads[k];
             sb.append(operationThread.getName())
                     .append(" processedCount=").append(operationThread.processedCount)
-                    .append(" pendingCount=").append(operationThread.workQueue.size())
+                    .append(" pendingCount=").append(operationThread.scheduleQueue.size())
                     .append('\n');
         }
-        sb.append("pending generic operations ").append(genericWorkQueue.size()).append('\n');
+        sb.append("pending generic operations ").append(genericScheduleQueue.size()).append('\n');
         for (int k = 0; k < genericOperationThreads.length; k++) {
             OperationThread operationThread = genericOperationThreads[k];
             sb.append(operationThread.getName())
