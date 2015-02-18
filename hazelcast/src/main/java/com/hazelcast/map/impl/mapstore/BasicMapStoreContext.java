@@ -21,8 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
@@ -202,11 +200,6 @@ final class BasicMapStoreContext implements MapStoreContext {
 
     private static void callLifecycleSupportInit(MapStoreContext mapStoreContext) {
         final MapStoreWrapper mapStoreWrapper = mapStoreContext.getMapStoreWrapper();
-        final MapStore store = mapStoreWrapper.getMapStore();
-        if (!(store instanceof MapLoaderLifecycleSupport)) {
-            return;
-        }
-
         final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
@@ -214,8 +207,7 @@ final class BasicMapStoreContext implements MapStoreContext {
         final Properties properties = mapStoreConfig.getProperties();
         final String mapName = mapStoreContext.getMapName();
 
-        final MapLoaderLifecycleSupport mapLoaderLifecycleSupport = (MapLoaderLifecycleSupport) store;
-        mapLoaderLifecycleSupport.init(hazelcastInstance, properties, mapName);
+        mapStoreWrapper.init(hazelcastInstance, properties, mapName);
     }
 
     private void loadInitialKeys() {

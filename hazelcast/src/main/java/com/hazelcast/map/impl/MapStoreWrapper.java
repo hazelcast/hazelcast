@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
@@ -24,10 +25,11 @@ import com.hazelcast.core.PostProcessingMapStore;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 @SuppressWarnings("unchecked")
-public class MapStoreWrapper implements MapStore {
+public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
 
     private final MapLoader mapLoader;
 
@@ -57,9 +59,17 @@ public class MapStoreWrapper implements MapStore {
         return mapStore;
     }
 
+    @Override
     public void destroy() {
         if (impl instanceof MapLoaderLifecycleSupport) {
             ((MapLoaderLifecycleSupport) impl).destroy();
+        }
+    }
+
+    @Override
+    public void init(HazelcastInstance hazelcastInstance, Properties properties, String mapName) {
+        if (impl instanceof MapLoaderLifecycleSupport) {
+            ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance, properties, mapName);
         }
     }
 
@@ -83,12 +93,14 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
+    @Override
     public void storeAll(Map map) {
         if (isMapStore()) {
             mapStore.storeAll(map);
         }
     }
 
+    @Override
     public void deleteAll(Collection keys) {
         if (keys == null || keys.isEmpty()) {
             return;
@@ -98,6 +110,7 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
+    @Override
     public Set loadAllKeys() {
         if (isMapLoader()) {
             return mapLoader.loadAllKeys();
@@ -105,6 +118,7 @@ public class MapStoreWrapper implements MapStore {
         return null;
     }
 
+    @Override
     public Object load(Object key) {
         if (isMapLoader()) {
             return mapLoader.load(key);
@@ -112,6 +126,7 @@ public class MapStoreWrapper implements MapStore {
         return null;
     }
 
+    @Override
     public Map loadAll(Collection keys) {
         if (keys == null || keys.isEmpty()) {
             return Collections.EMPTY_MAP;
