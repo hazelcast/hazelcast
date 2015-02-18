@@ -206,5 +206,6 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/Logging.md
 	src/ConfigurationProperties.md
 src/NetworkPartitioning.md
+src/Licenses.md
 src/FAQ.md
 src/Glossary.md

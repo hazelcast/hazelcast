@@ -17,6 +17,8 @@ Throughout this manual:
 
 Hazelcast is free provided under the Apache 2 license. Hazelcast Enterprise is commercially licensed by Hazelcast, Inc.
 
+For more detailed information on licensing please see the [License Questions](#license-questions) appendix.
+
 ##### Trademarks
 
 Hazelcast is a registered trademark of Hazelcast, Inc. All other trademarks in this manual are held by their respective owners. 
