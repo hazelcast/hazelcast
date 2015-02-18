@@ -24,9 +24,9 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     private final Node node;
     private final ExecutionService executionService;
     private final ILogger logger;
-    private final InternalOperationService operationService;
     private final EventServiceImpl eventService;
     private final WanReplicationService wanReplicationService;
+    private final OperationScheduler operationScheduler;
 
     public PacketTransceiverImpl(Node node,
                                  ILogger logger,
@@ -36,7 +36,7 @@ public class PacketTransceiverImpl implements PacketTransceiver {
                                  ExecutionService executionService) {
         this.node = node;
         this.executionService = executionService;
-        this.operationService = operationService;
+        this.operationScheduler = operationService.getScheduler();
         this.eventService = eventService;
         this.wanReplicationService = wanReplicationService;
         this.logger = logger;
@@ -57,7 +57,7 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     @Override
     public void receive(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.executeOperation(packet);
+            operationScheduler.execute(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {

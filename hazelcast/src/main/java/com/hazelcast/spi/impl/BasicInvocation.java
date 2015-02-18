@@ -220,7 +220,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     .setReplicaIndex(replicaIndex);
 
             if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
-                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
+               throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
@@ -272,10 +272,11 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         op.setResponseHandler(this);
 
         //todo: should move to the operationService.
-        if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
-            operationService.runOperationOnCallingThread(op);
+        OperationScheduler scheduler = operationService.scheduler;
+        if (scheduler.isAllowedToRunInCurrentThread(op)) {
+            scheduler.runOperationOnCallingThread(op);
         } else {
-            operationService.executeOperation(op);
+            scheduler.execute(op);
         }
     }
 
