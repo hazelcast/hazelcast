@@ -1,0 +1,32 @@
+
+# Hazelcast Stabilizer
+
+## Stabilizer Overview
+
+A production simulator for stress testing Hazelcast and Hazelcast based applications in clustered environments. This can be in a local machine, but can also be in a cloud like EC2 or Google Compute Engine. The Stabilizer makes use of JClouds, so in theory we can roll out in any cloud.
+
+Stabilizer includes a test suite for our own stress simulation, but you can fork this repo, and add your own.
+
+Commercially we offer support agreements where we will integrate your tests into our runs for new releases so that your tests act as an Application TCK.
+
+Additional content: The goal of Stabilizer is to verify Hazelcast and Hazelcast Enterprise by deploying it in simulated customer situations and adding stresses and loads to it.
+Secondly to allow us to reproduce customer issues.
+
+It will eventually consist of:
+User code
+Stabilizer Framework
+JClouds
+Linux OS tools and drivers
+EC2 cluster or physical hardware
+chef
+Brooklyn?
+
+
+The goal of the Stabilizer is to put load on a Hazelcast environment so that we can verify its resilience to all kinds of problems:
+total failure of networking e.g. through ip table changes
+partial failure of networking by network congestion, dropping packets etc etc
+total failure of a JVM, e.g. by calling kill -9 or with different termination levels. 
+partial failure of JVM, e.g. send a message to it that it should start claiming e.g. 90% of the available heap and see what happens. Or send a message that a trainee should spawn x threads that consume all cpu. Or send random packets with huge size, or open many connections to a HazelcastInstance. 
+total failure of the OS (e.g calling shutdown or an EC2 api to do the hard kill)
+internal buffers overflow by running for a long time.
+The stability test should give a lot more confidence that Hazelcast will operate fine in completely failing and partly failing environments.
