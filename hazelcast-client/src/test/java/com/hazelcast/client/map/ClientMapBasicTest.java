@@ -17,15 +17,11 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,12 +51,23 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapBasicTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private static final String KEY = "key";
+    private static final String OLD_VALUE = "oldValue";
+    private static final String NEW_VALUE = "newValue";
+
+    private static HazelcastInstance client;
+    private static HazelcastInstance server1;
+    private static HazelcastInstance server2;
+    private static HazelcastInstance server3;
+
+    private String randomMapName = randomString();
+    private IMap<String, String> randomStringMap = client.getMap(randomMapName);
 
     @BeforeClass
     public static void init() {
-        server = Hazelcast.newHazelcastInstance();
+        server1 = Hazelcast.newHazelcastInstance();
+        server2 = Hazelcast.newHazelcastInstance();
+        server3 = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
     }
 
@@ -72,995 +79,736 @@ public class ClientMapBasicTest {
 
     @Test
     public void testClientGetMap() {
-        assertNotNull( client.getMap(randomString()) );
+        assertNotNull(client.getMap(randomMapName));
     }
 
     @Test
     public void testGetName() {
-        String mapName = randomString();
-        final IMap map = client.getMap(mapName);
-        assertEquals(mapName, map.getName());
+        assertEquals(randomMapName, randomStringMap.getName());
     }
 
     @Test
     public void testSize_whenEmpty() {
-        final IMap map = client.getMap(randomString());
-        assertEquals(0, map.size());
+        assertEquals(0, randomStringMap.size());
     }
 
     @Test
     public void testSize() {
-        final IMap map = client.getMap(randomString());
-        map.put("key", "val");
-        assertEquals(1, map.size());
+        randomStringMap.put(KEY, NEW_VALUE);
+
+        assertEquals(1, randomStringMap.size());
     }
 
     @Test
     public void testSize_withMultiKeyPuts() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        randomStringMap.put(KEY, NEW_VALUE);
 
-        map.put(key, oldValue);
-        map.put(key, newValue);
-
-        assertEquals(1, map.size());
+        assertEquals(1, randomStringMap.size());
     }
 
     @Test
     public void testIsEmpty_whenEmpty() {
-        final IMap map = client.getMap(randomString());
-        assertTrue(map.isEmpty());
+        assertTrue(randomStringMap.isEmpty());
     }
 
     @Test
     public void testIsEmpty_whenNotEmpty() {
-        final IMap map = client.getMap(randomString());
-        map.put("key", "val");
-        assertFalse(map.isEmpty());
+        randomStringMap.put(KEY, NEW_VALUE);
+
+        assertFalse(randomStringMap.isEmpty());
     }
 
     @Test
     public void testIsEmpty_afterPutRemove() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "key";
-        map.put(key, "val");
-        map.remove(key);
-        assertTrue(map.isEmpty());
+        randomStringMap.put(KEY, NEW_VALUE);
+        randomStringMap.remove(KEY);
+
+        assertTrue(randomStringMap.isEmpty());
     }
 
     @Test(expected = NullPointerException.class)
     public void testPut_whenKeyNull() {
-        final IMap map = client.getMap(randomString());
-        final Object val = "Val";
-        map.put(null, val);
+        randomStringMap.put(null, NEW_VALUE);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPut_whenValueNull() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        map.put(key, null);
+        randomStringMap.put(KEY, null);
     }
 
     @Test
     public void testPut() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Val";
+        String oldValue = randomStringMap.put(KEY, NEW_VALUE);
 
-        final Object result = map.put(key, value);
-        assertNull(result);
-        assertEquals(value, map.get(key));
+        assertNull(oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPut_whenKeyExists() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.put(KEY, NEW_VALUE);
 
-        map.put(key, oldValue);
-        final Object result = map.put(key, newValue);
-        assertEquals(oldValue, result);
-        assertEquals(newValue, map.get(key));
+        assertEquals(OLD_VALUE, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTTL() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        String oldValue = randomStringMap.put(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        final Object result = map.put(key, value, 5, TimeUnit.MINUTES);
-        assertNull(result);
-        assertEquals(value, map.get(key));
+        assertNull(oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTTL_whenKeyExists() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.put(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        map.put(key, oldValue);
-        final Object result = map.put(key, newValue, 5, TimeUnit.MINUTES);
-        assertEquals(oldValue, result);
-        assertEquals(newValue, map.get(key));
+        assertEquals(OLD_VALUE, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTTL_AfterExpire() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        String oldValue = randomStringMap.put(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
+        assertNull(oldValue);
 
-        final Object result = map.put(key, value, 1, TimeUnit.SECONDS);
-        assertNull(result);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTTL_AfterExpireWhenKeyExists() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.put(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
+        assertEquals(OLD_VALUE, oldValue);
 
-        map.put(key, oldValue);
-        final Object result = map.put(key, newValue, 1, TimeUnit.SECONDS);
-        assertEquals(oldValue, result);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutAsync() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Val";
+        Future oldValue = randomStringMap.putAsync(KEY, NEW_VALUE);
 
-        Future result = map.putAsync(key, value);
-
-        assertEquals(null, result.get());
-        assertEquals(value, map.get(key));
+        assertEquals(null, oldValue.get());
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutAsync_whenKeyExists() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        Future oldValue = randomStringMap.putAsync(KEY, NEW_VALUE);
 
-        map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue);
-
-        assertEquals(oldValue, result.get());
-        assertEquals(newValue, map.get(key));
+        assertEquals(OLD_VALUE, oldValue.get());
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test(expected = NullPointerException.class)
     public void testPutAsync_withKeyNull() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object val = "Val";
-
-        map.putAsync(null, val);
+        randomStringMap.putAsync(null, NEW_VALUE);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPutAsync_withValueNull() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "key";
-
-        map.putAsync(key, null);
+        randomStringMap.putAsync(KEY, null);
     }
 
     @Test
     public void testPutAsyncTTL() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Val";
+        Future oldValue = randomStringMap.putAsync(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        Future result = map.putAsync(key, value, 5, TimeUnit.MINUTES);
-
-        assertEquals(null, result.get());
-        assertEquals(value, map.get(key));
+        assertEquals(null, oldValue.get());
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutAsyncTTL_whenKeyExists() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        Future oldValueFuture = randomStringMap.putAsync(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue, 5, TimeUnit.MINUTES);
-
-        assertEquals(oldValue, result.get());
-        assertEquals(newValue, map.get(key));
+        assertEquals(OLD_VALUE, oldValueFuture.get());
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutAsyncTTL_afterExpire() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Val";
-
-        Future result = map.putAsync(key, value, 1, TimeUnit.SECONDS);
+        Future oldValueFuture = randomStringMap.putAsync(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, result.get());
-        assertEquals(null, map.get(key));
+
+        assertEquals(null, oldValueFuture.get());
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutAsyncTTL_afterExpireWhenKeyExists() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
-
-        map.put(key, oldValue);
-        Future result = map.putAsync(key, newValue, 1, TimeUnit.SECONDS);
+        randomStringMap.put(KEY, OLD_VALUE);
+        Future oldValueFuture = randomStringMap.putAsync(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(oldValue, result.get());
-        assertEquals(null, map.get(key));
+
+        assertEquals(OLD_VALUE, oldValueFuture.get());
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testTryPut_whenNotLocked() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
+        boolean putSuccess = randomStringMap.tryPut(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
 
-        boolean result = map.tryPut(key, value, 1, TimeUnit.SECONDS);
-
-        assertTrue(result);
-        assertEquals(value, map.get(key));
+        assertTrue(putSuccess);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testTryPut_whenKeyPresentAndNotLocked() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "Val";
+        randomStringMap.put(KEY, OLD_VALUE);
+        boolean putSuccess = randomStringMap.tryPut(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
 
-        map.put(key, oldValue);
-        boolean result = map.tryPut(key, newValue, 1, TimeUnit.SECONDS);
-
-        assertTrue(result);
-        assertEquals(newValue, map.get(key));
+        assertTrue(putSuccess);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test(expected = NullPointerException.class)
     public void testPutIfAbsent_whenKeyNull() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object value = "Value";
-        map.putIfAbsent(null, value);
+        randomStringMap.putIfAbsent(null, NEW_VALUE);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPutIfAbsent_whenValueNull() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "key";
-        map.putIfAbsent(key, null);
+        randomStringMap.putIfAbsent(KEY, null);
     }
 
     @Test
     public void testPutIfAbsent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE);
 
-        Object result = map.putIfAbsent(key, value);
-
-        assertEquals(null, result);
-        assertEquals(value, map.get(key));
+        assertEquals(null, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsent_whenKeyPresent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.putIfAbsent(KEY, OLD_VALUE);
 
-        map.put(key, value);
-        Object result = map.putIfAbsent(key, value);
-
-        assertEquals(value, result);
-        assertEquals(value, map.get(key));
+        assertEquals(OLD_VALUE, oldValue);
+        assertEquals(OLD_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsentNewValue_whenKeyPresent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
-        final Object newValue = "newValue";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE);
 
-        map.put(key, value);
-        Object result = map.putIfAbsent(key, newValue);
-
-        assertEquals(value, result);
-        assertEquals(value, map.get(key));
+        assertEquals(OLD_VALUE, oldValue);
+        assertEquals(OLD_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsentTTL() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        Object result = map.putIfAbsent(key, value, 5, TimeUnit.MINUTES);
-
-        assertEquals(null, result);
-        assertEquals(value, map.get(key));
+        assertEquals(null, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsentTTL_whenExpire() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
-
-        final Object result = map.putIfAbsent(key, value, 1, TimeUnit.SECONDS);
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
 
-        assertEquals(null, result);
-        assertEquals(null, map.get(key));
+        assertEquals(null, oldValue);
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsentTTL_whenKeyPresentAfterExpire() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        randomStringMap.put(KEY, NEW_VALUE);
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
 
-        map.put(key, value);
-        final Object result = map.putIfAbsent(key, value, 1, TimeUnit.SECONDS);
-
-        assertEquals(value, result);
-        assertEquals(value, map.get(key));
+        assertEquals(NEW_VALUE, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsentTTL_whenKeyPresent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        randomStringMap.put(KEY, NEW_VALUE);
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        map.put(key, value);
-        final Object result = map.putIfAbsent(key, value, 5, TimeUnit.MINUTES);
-
-        assertEquals(value, result);
-        assertEquals(value, map.get(key));
+        assertEquals(NEW_VALUE, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutIfAbsentNewValueTTL_whenKeyPresent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
-        final Object newValue = "newValue";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.putIfAbsent(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
 
-        map.put(key, value);
-        final Object result = map.putIfAbsent(key, newValue, 5, TimeUnit.MINUTES);
-
-        assertEquals(value, result);
-        assertEquals(value, map.get(key));
+        assertEquals(OLD_VALUE, oldValue);
+        assertEquals(OLD_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testClear_whenEmpty() throws Exception {
-        final IMap map = client.getMap(randomString());
-        map.clear();
-        assertTrue(map.isEmpty());
+        randomStringMap.clear();
+        assertTrue(randomStringMap.isEmpty());
     }
 
     @Test
     public void testClear() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+        randomStringMap.put(KEY, NEW_VALUE);
+        randomStringMap.clear();
 
-        map.put(key, value);
-        map.clear();
-
-        assertTrue(map.isEmpty());
+        assertTrue(randomStringMap.isEmpty());
     }
 
     @Test
     public void testContainsKey_whenKeyAbsent() {
-        final IMap map = client.getMap(randomString());
-        assertFalse(map.containsKey("NOT_THERE"));
+        assertFalse(randomStringMap.containsKey("NOT_THERE"));
     }
 
     @Test(expected = NullPointerException.class)
     public void testContainsKey_whenKeyNull() {
-        final IMap map = client.getMap(randomString());
-        map.containsKey(null);
+        randomStringMap.containsKey(null);
     }
 
     @Test
     public void testContainsKey_whenKeyPresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "key";
-        map.put(key, "val");
-        assertTrue(map.containsKey(key));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertTrue(randomStringMap.containsKey(KEY));
     }
 
     @Test
     public void testContainsValue_whenValueAbsent() {
-        final IMap map = client.getMap(randomString());
-        assertFalse(map.containsValue("NOT_THERE"));
+        assertFalse(randomStringMap.containsValue("NOT_THERE"));
     }
 
     @Test(expected = NullPointerException.class)
     public void testContainsValue_whenValueNull() {
-        final IMap map = client.getMap(randomString());
-        map.containsValue(null);
+        randomStringMap.containsValue(null);
     }
 
     @Test
     public void testContainsValue_whenValuePresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "key";
-        final Object value = "value";
-        map.put(key, value);
-        assertTrue(map.containsValue(value));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertTrue(randomStringMap.containsValue(NEW_VALUE));
     }
 
     @Test
     public void testContainsValue_whenMultiValuePresent() {
-        final IMap map = client.getMap(randomString());
-        final Object value = "value";
-        map.put("key1", value);
-        map.put("key2", value);
-        assertTrue(map.containsValue(value));
+        randomStringMap.put("key1", NEW_VALUE);
+        randomStringMap.put("key2", NEW_VALUE);
+        assertTrue(randomStringMap.containsValue(NEW_VALUE));
     }
 
     @Test
     public void testGet_whenKeyPresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object val = "Val";
-
-        map.put(key, val);
-        assertEquals(val, map.get(key));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testGet_whenKeyAbsent() {
-        final IMap map = client.getMap(randomString());
-        assertEquals(null, map.get("NOT_THERE"));
+        assertEquals(null, randomStringMap.get("NOT_THERE"));
     }
 
     @Test(expected = NullPointerException.class)
     public void testGet_whenKeyNull() {
-        final IMap map = client.getMap(randomString());
-        map.get(null);
+        randomStringMap.get(null);
     }
 
     @Test
     public void testGetAsync_whenKeyPresent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object val = "Val";
-
-        map.put(key, val);
-        Future result = map.getAsync(key);
-        assertEquals(val, result.get());
+        randomStringMap.put(KEY, NEW_VALUE);
+        Future getFuture = randomStringMap.getAsync(KEY);
+        assertEquals(NEW_VALUE, getFuture.get());
     }
 
     @Test
     public void testGetAsync_whenKeyAbsent() throws Exception {
-        final IMap map = client.getMap(randomString());
-
-        Future result = map.getAsync("NOT_THERE");
-        assertEquals(null, result.get());
+        Future getFuture = randomStringMap.getAsync("NOT_THERE");
+        assertEquals(null, getFuture.get());
     }
 
     @Test(expected = NullPointerException.class)
     public void testGetAsync_whenKeyNull() throws Exception {
-        final IMap map = client.getMap(randomString());
-        map.getAsync(null);
+        randomStringMap.getAsync(null);
     }
 
     @Test
     public void testMapSet() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object val = "Val";
-
-        map.set(key, val);
-        assertEquals(val, map.get(key));
+        randomStringMap.set(KEY, NEW_VALUE);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testMapSet_whenKeyPresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "Val";
-        final Object newValue = "newValue";
-
-        map.set(key, oldValue);
-        map.set(key, newValue);
-        assertEquals(newValue, map.get(key));
+        randomStringMap.set(KEY, OLD_VALUE);
+        randomStringMap.set(KEY, NEW_VALUE);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testMapSetTTl() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object val = "Val";
-
-        map.set(key, val, 5, TimeUnit.MINUTES);
-        assertEquals(val, map.get(key));
+        randomStringMap.set(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testMapSetTTl_whenExpired() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object val = "Val";
-
-        map.set(key, val, 1, TimeUnit.SECONDS);
+        randomStringMap.set(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testMapSetTTl_whenReplacingKeyAndExpired() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object newValue = "newValue";
-        final Object oldValue = "oldvalue";
-
-        map.set(key, oldValue);
-        map.set(key, newValue, 1, TimeUnit.SECONDS);
+        randomStringMap.set(KEY, OLD_VALUE);
+        randomStringMap.set(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testRemove_WhenKeyAbsent() {
-        final IMap map = client.getMap(randomString());
-        assertNull(map.remove("NOT_THERE"));
+        assertNull(randomStringMap.remove("NOT_THERE"));
     }
 
     @Test(expected = NullPointerException.class)
     public void testRemove_WhenKeyNull() {
-        final IMap map = client.getMap(randomString());
-        assertNull(map.remove(null));
+        assertNull(randomStringMap.remove(null));
     }
 
     @Test
     public void testRemove_WhenKeyPresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        map.put(key, value);
-        assertEquals(value, map.remove(key));
-        assertNull(map.get(key));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertEquals(NEW_VALUE, randomStringMap.remove(KEY));
+        assertNull(randomStringMap.get(KEY));
     }
 
     @Test
     public void testRemoveKeyValue_WhenPresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        map.put(key, value);
-        assertTrue(map.remove(key, value));
-        assertNull(map.get(key));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertTrue(randomStringMap.remove(KEY, NEW_VALUE));
+        assertNull(randomStringMap.get(KEY));
     }
 
     @Test
     public void testRemoveKeyValue_WhenValueAbsent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        map.put(key, value);
-        assertFalse(map.remove(key, "NOT_THERE"));
-        assertEquals(value, map.get(key));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertFalse(randomStringMap.remove(KEY, "NOT_THERE"));
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testRemoveKeyValue_WhenKeyAbsent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        map.put(key, value);
-        assertFalse(map.remove("NOT_THERE", value));
+        randomStringMap.put(KEY, NEW_VALUE);
+        assertFalse(randomStringMap.remove("NOT_THERE", NEW_VALUE));
     }
 
     @Test
     public void testRemoveAsync() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
+        randomStringMap.put(KEY, NEW_VALUE);
+        Future removeFuture = randomStringMap.removeAsync(KEY);
 
-        map.put(key, value);
-        Future result = map.removeAsync(key);
-
-        assertEquals(value, result.get());
-        assertEquals(null, map.get(key));
+        assertEquals(NEW_VALUE, removeFuture.get());
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testRemoveAsync_whenKeyNotPresent() throws Exception {
-        final IMap map = client.getMap(randomString());
-
-        Future result = map.removeAsync("NOT_THERE");
-        assertEquals(null, result.get());
+        Future removeFuture = randomStringMap.removeAsync("NOT_THERE");
+        assertEquals(null, removeFuture.get());
     }
 
     @Test(expected = NullPointerException.class)
     public void testRemoveAsync_whenKeyNull() throws Exception {
-        final IMap map = client.getMap(randomString());
-        map.removeAsync(null);
+        randomStringMap.removeAsync(null);
     }
 
     @Test
     public void testTryRemove_WhenKeyPresentAndNotLocked() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
+        randomStringMap.put(KEY, NEW_VALUE);
+        boolean removeSuccess = randomStringMap.tryRemove(KEY, 1, TimeUnit.SECONDS);
 
-        map.put(key, value);
-        boolean result = map.tryRemove(key, 1, TimeUnit.SECONDS);
-        assertTrue(result);
-        assertNull(map.get(key));
+        assertTrue(removeSuccess);
+        assertNull(randomStringMap.get(KEY));
     }
 
     @Test
     public void testTryRemove_WhenKeyAbsentAndNotLocked() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        boolean result = map.tryRemove(key, 1, TimeUnit.SECONDS);
-        assertFalse(result);
+        boolean removeSuccess = randomStringMap.tryRemove(KEY, 1, TimeUnit.SECONDS);
+        assertFalse(removeSuccess);
     }
-
 
     @Test(expected = NullPointerException.class)
     public void testDelete_whenKeyNull() {
-        final IMap map = client.getMap(randomString());
-        map.delete(null);
+        randomStringMap.delete(null);
     }
 
     @Test
     public void testDelete_whenKeyPresent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-        map.put(key, value);
-
-        map.delete(key);
-        assertEquals(0, map.size());
+        randomStringMap.put(KEY, NEW_VALUE);
+        randomStringMap.delete(KEY);
+        assertEquals(0, randomStringMap.size());
     }
 
     @Test
     public void testDelete_whenKeyAbsent() {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-        map.put(key, value);
-
-        map.delete("NOT_THERE");
-        assertEquals(1, map.size());
+        randomStringMap.put(KEY, NEW_VALUE);
+        randomStringMap.delete("NOT_THERE");
+        assertEquals(1, randomStringMap.size());
     }
 
     @Test
     public void testEvict_whenKeyAbsent() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        boolean result = map.evict("NOT_THERE");
-        assertFalse( result );
+        boolean evictSuccess = randomStringMap.evict("NOT_THERE");
+        assertFalse(evictSuccess);
     }
 
     @Test(expected = NullPointerException.class)
     public void testEvict_whenKeyNull() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        map.evict(null);
+        randomStringMap.evict(null);
     }
 
     @Test
     public void testEvict() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
+        randomStringMap.put(KEY, NEW_VALUE);
+        boolean evictSuccess = randomStringMap.evict(KEY);
 
-        map.put(key, value);
-        boolean result = map.evict(key);
-        assertTrue(result);
-        assertEquals(null, map.get(key));
+        assertTrue(evictSuccess);
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutAll() {
-        final int max = 100;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 100;
+        IMap<Integer, Integer> map = client.getMap(randomMapName);
 
-        final Map expected = new HashMap();
-        for (int i = 0; i < max; i++) {
-            expected.put(i, i);
+        Map<Integer, Integer> expectedMap = new HashMap<Integer, Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            expectedMap.put(i, i);
         }
-        map.putAll(expected);
+        map.putAll(expectedMap);
 
-        for(Object key : expected.keySet()){
-            Object value = map.get(key);
-            Object expectedValue = expected.get(key);
+        for (Integer key : expectedMap.keySet()) {
+            Integer value = map.get(key);
+            Integer expectedValue = expectedMap.get(key);
             assertEquals(expectedValue, value);
         }
     }
 
     @Test
     public void testGetAll() {
-        final int max = 100;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 100;
+        IMap<Integer, Integer> map = client.getMap(randomMapName);
 
-        final Map expected = new HashMap();
-        for (int i = 0; i < max; i++) {
+        Map<Integer, Integer> expectedMap = new HashMap<Integer, Integer>();
+        for (int i = 0; i < mapSize; i++) {
             map.put(i, i);
-            expected.put(i, i);
+            expectedMap.put(i, i);
         }
-        Map result = map.getAll(expected.keySet());
+        Map<Integer, Integer> getAllMap = map.getAll(expectedMap.keySet());
 
-        for(Object key : expected.keySet()){
-            Object value = result.get(key);
-            Object expectedValue = expected.get(key);
+        for (Integer key : expectedMap.keySet()) {
+            Integer value = getAllMap.get(key);
+            Integer expectedValue = expectedMap.get(key);
             assertEquals(expectedValue, value);
         }
     }
 
     public void testGetAll_whenMapEmpty() {
-        final int max = 10;
-        final IMap map = client.getMap(randomString());
-        final Map expected = new HashMap();
-        for (int i = 0; i < max; i++) {
-            expected.put(i, i);
+        int mapSize = 10;
+        IMap<Integer, Integer> map = client.getMap(randomMapName);
+
+        Map<Integer, Integer> expectedMap = new HashMap<Integer, Integer>();
+        for (int i = 0; i < mapSize; i++) {
+            expectedMap.put(i, i);
         }
+        Map getAllMap = map.getAll(expectedMap.keySet());
 
-        Map result = map.getAll(expected.keySet());
-
-        assertTrue(result.isEmpty());
+        assertTrue(getAllMap.isEmpty());
     }
 
     @Test
     public void testReplace_whenKeyValueAbsent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        assertNull(map.replace(key, value));
-        assertNull(map.get(key));
+        assertNull(randomStringMap.replace(KEY, NEW_VALUE));
+        assertNull(randomStringMap.get(KEY));
     }
 
     @Test
     public void testReplace() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "value";
-        final Object newValue = "NewValue";
+        randomStringMap.put(KEY, OLD_VALUE);
+        String oldValue = randomStringMap.replace(KEY, NEW_VALUE);
 
-        map.put(key, oldValue);
-        final Object result = map.replace(key, newValue);
-
-        assertEquals(oldValue, result);
-        assertEquals(newValue, map.get(key));
+        assertEquals(OLD_VALUE, oldValue);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testReplaceKeyValue() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-        final Object newValue = "NewValue";
+        randomStringMap.put(KEY, OLD_VALUE);
+        boolean replaceSuccess = randomStringMap.replace(KEY, OLD_VALUE, NEW_VALUE);
 
-        map.put(key, value);
-        final boolean result = map.replace(key, value, newValue);
-
-        assertTrue(result);
-        assertEquals(newValue, map.get(key));
+        assertTrue(replaceSuccess);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testReplaceKeyValue_whenValueAbsent() throws Exception {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-        final Object newValue = "NewValue";
+        randomStringMap.put(KEY, OLD_VALUE);
+        boolean replaceSuccess = randomStringMap.replace(KEY, "NOT_THERE", NEW_VALUE);
 
-        map.put(key, value);
-        final boolean result = map.replace(key, "NOT_THERE", newValue);
-
-        assertFalse(result);
-        assertEquals(value, map.get(key));
+        assertFalse(replaceSuccess);
+        assertEquals(OLD_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTransient() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        map.putTransient(key, value, 5, TimeUnit.MINUTES);
-        assertEquals(value, map.get(key));
+        randomStringMap.putTransient(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTransient_whenExpire() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "value";
-
-        map.putTransient(key, value, 1, TimeUnit.SECONDS);
+        randomStringMap.putTransient(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTransient_whenKeyPresent() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "newValue";
-
-        map.put(key, oldValue);
-        map.putTransient(key, newValue, 5, TimeUnit.MINUTES);
-        assertEquals(newValue, map.get(key));
+        randomStringMap.put(KEY, OLD_VALUE);
+        randomStringMap.putTransient(KEY, NEW_VALUE, 5, TimeUnit.MINUTES);
+        assertEquals(NEW_VALUE, randomStringMap.get(KEY));
     }
 
     @Test
     public void testPutTransient_whenKeyPresentAfterExpire() throws InterruptedException {
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object oldValue = "oldValue";
-        final Object newValue = "newValue";
-
-        map.put(key, oldValue);
-        map.putTransient(key, newValue, 1, TimeUnit.SECONDS);
+        randomStringMap.put(KEY, OLD_VALUE);
+        randomStringMap.putTransient(KEY, NEW_VALUE, 1, TimeUnit.SECONDS);
         sleepSeconds(2);
-        assertEquals(null, map.get(key));
+        assertEquals(null, randomStringMap.get(KEY));
     }
 
     @Test
-    public void testGetEntryView_whenKeyAbsent(){
-        final IMap map = client.getMap(randomString());
-        final EntryView view = map.getEntryView("NOT_THERE");
-
+    public void testGetEntryView_whenKeyAbsent() {
+        EntryView view = randomStringMap.getEntryView("NOT_THERE");
         assertEquals(null, view);
     }
 
     @Test
-    public void testGetEntryView(){
-        final IMap map = client.getMap(randomString());
-        final Object key = "Key";
-        final Object value = "Value";
+    public void testGetEntryView() {
+        randomStringMap.put(KEY, NEW_VALUE);
+        EntryView view = randomStringMap.getEntryView(KEY);
 
-        map.put(key, value);
-        final EntryView view = map.getEntryView(key);
-
-
-        assertEquals(key, view.getKey());
-        assertEquals(value, view.getValue());
+        assertEquals(KEY, view.getKey());
+        assertEquals(NEW_VALUE, view.getValue());
     }
 
     @Test
     public void testKeySet_whenEmpty() {
-        final IMap map = client.getMap(randomString());
-        final Set keySet = map.keySet();
-        assertTrue(keySet.isEmpty());
+        assertTrue(randomStringMap.keySet().isEmpty());
     }
 
     @Test
     public void testKeySet() {
-        final int max = 81;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 81;
+        IMap<Integer, String> map = client.getMap(randomMapName);
 
-        final Set expected = new TreeSet();
-        for (int key = 0; key < max; key++) {
-            Object value = key+"value";
-            expected.add(key);
+        Set<Integer> expectedSet = new TreeSet<Integer>();
+        for (int key = 0; key < mapSize; key++) {
+            String value = key + "value";
+            expectedSet.add(key);
             map.put(key, value);
         }
-        final Set keySet = map.keySet();
+        Set<Integer> mapKeySet = map.keySet();
 
-        assertEquals(expected, keySet);
+        assertEquals(mapSize, mapKeySet.size());
+        assertEquals(expectedSet, mapKeySet);
     }
 
     @Test
     public void testKeySet_withPredicate() {
-        final int max = 44;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 44;
+        IMap<Integer, String> map = client.getMap(randomMapName);
 
-        final Set expected = new TreeSet();
-        for (int key = 0; key < max; key++) {
-            Object value = key+"value";
+        Set<Integer> expectedSet = new TreeSet<Integer>();
+        for (int key = 0; key < mapSize; key++) {
+            String value = key + "value";
             map.put(key, value);
         }
-        expected.add(4);
+        expectedSet.add(4);
+        Set<Integer> mapKeySet = map.keySet(new SqlPredicate("this == 4value"));
 
-        final Set keySet = map.keySet(new SqlPredicate("this == 4value"));
-
-        assertEquals(expected, keySet);
+        assertEquals(expectedSet, mapKeySet);
     }
 
     @Test
     public void testValues_whenEmpty() {
-        final IMap map = client.getMap(randomString());
-        final Collection values = map.values();
-        assertTrue(values.isEmpty());
+        assertTrue(randomStringMap.values().isEmpty());
     }
 
     @Test
     public void testValues() {
-        final int max = 23;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 23;
+        IMap<Integer, String> map = client.getMap(randomMapName);
 
-        final Set expected = new TreeSet();
-        for (int key = 0; key < max; key++) {
-            Object value = key+"value";
-            expected.add(value);
+        Set<String> expectedSet = new TreeSet<String>();
+        for (int key = 0; key < mapSize; key++) {
+            String value = key + "value";
+            expectedSet.add(value);
             map.put(key, value);
         }
-        final Collection collection = map.values();
-        final Set resultSet = new TreeSet(collection);
 
-        assertEquals(expected, resultSet);
+        Collection<String> mapValues = map.values();
+        int size = mapValues.size();
+        assertEquals("map.values().size() should be " + mapSize + ", but was " + size, mapSize, size);
+
+        Set<String> malValuesSet = new TreeSet<String>(mapValues);
+        assertEquals(expectedSet, malValuesSet);
     }
 
     @Test
     public void testValues_withPredicate() {
-        final int max = 27;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 27;
+        IMap<Integer, String> map = client.getMap(randomMapName);
 
-        final Set expected = new TreeSet();
-        for (int key = 0; key < max; key++) {
-            Object value = key+"value";
+        Set<String> expectedSet = new TreeSet<String>();
+        for (int key = 0; key < mapSize; key++) {
+            String value = key + "value";
             map.put(key, value);
         }
-        expected.add(4);
+        expectedSet.add("4value");
 
-        final Set keySet = map.keySet(new SqlPredicate("this == 4value"));
-
-        assertEquals(expected, keySet);
+        Set<String> mapValuesSet = new TreeSet<String>(map.values(new SqlPredicate("this == 4value")));
+        assertEquals(expectedSet, mapValuesSet);
     }
 
     @Test
     public void testEntrySet_whenEmpty() {
-        final IMap map = client.getMap(randomString());
-        Set<Map.Entry> entrySet = map.entrySet();
-        assertTrue(entrySet.isEmpty());
+        assertTrue(randomStringMap.entrySet().isEmpty());
     }
 
     @Test
     public void testEntrySet() {
-        final int max = 34;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 34;
+        IMap<Integer, String> map = client.getMap(randomMapName);
 
-        final Map expected = new HashMap();
-        for (int key = 0; key < max; key++) {
-            Object value = key+"value";
-            expected.put(key, value);
+        Map<Integer, String> expectedMap = new HashMap<Integer, String>();
+        for (int key = 0; key < mapSize; key++) {
+            String value = key + "value";
+            expectedMap.put(key, value);
             map.put(key, value);
         }
-        Set<Map.Entry> entrySet = map.entrySet();
+        Set<Map.Entry<Integer, String>> mapEntrySet = map.entrySet();
 
-        for(Map.Entry entry : entrySet){
-            Object value = entry.getValue();
-            Object key = entry.getKey();
-            Object expectedValue = expected.get(key);
+        for (Map.Entry<Integer, String> entry : mapEntrySet) {
+            Integer key = entry.getKey();
+            String value = entry.getValue();
+            String expectedValue = expectedMap.get(key);
 
             assertEquals(expectedValue, value);
         }
@@ -1068,93 +816,55 @@ public class ClientMapBasicTest {
 
     @Test
     public void testEntrySet_withPredicate() {
-        final int max = 44;
-        final IMap map = client.getMap(randomString());
+        int mapSize = 44;
+        IMap<Integer, String> map = client.getMap(randomMapName);
 
-        final Map expected = new HashMap();
-        for (int key = 0; key < max; key++) {
-            Object value = key+"value";
-            expected.put(key, value);
+        for (int key = 0; key < mapSize; key++) {
+            String value = key + "value";
             map.put(key, value);
         }
+        Set<Map.Entry<Integer, String>> mapEntrySet = map.entrySet(new SqlPredicate("this == 1value"));
 
-        final Set<Map.Entry> entrySet = map.entrySet(new SqlPredicate("this == 1value"));
-
-        Map.Entry entry = entrySet.iterator().next();
+        Map.Entry entry = mapEntrySet.iterator().next();
         assertEquals(1, entry.getKey());
         assertEquals("1value", entry.getValue());
-        assertEquals(1, entrySet.size());
+        assertEquals(1, mapEntrySet.size());
     }
 
     @Test
     public void testMapStatistics_withClientOperations() {
-        final String mapName = randomString();
-        final LocalMapStats serverMapStats = server.getMap(mapName).getLocalMapStats();
+        int operationCount = 1123;
+        IMap<Integer, Integer> map = client.getMap(randomMapName);
 
-        final IMap map = client.getMap(mapName);
-        final int operationCount = 1123;
         for (int i = 0; i < operationCount; i++) {
             map.put(i, i);
             map.get(i);
             map.remove(i);
         }
+        HashMap<String, Long> stats = new HashMap<String, Long>(3);
+        addLocalMapStats(stats, server1.getMap(randomMapName).getLocalMapStats());
+        addLocalMapStats(stats, server2.getMap(randomMapName).getLocalMapStats());
+        addLocalMapStats(stats, server3.getMap(randomMapName).getLocalMapStats());
 
-        assertEquals("put count", operationCount, serverMapStats.getPutOperationCount());
-        assertEquals("get count", operationCount, serverMapStats.getGetOperationCount());
-        assertEquals("remove count", operationCount, serverMapStats.getRemoveOperationCount());
-        assertTrue("put latency", 0 < serverMapStats.getTotalPutLatency());
-        assertTrue("get latency", 0 < serverMapStats.getTotalGetLatency());
-        assertTrue("remove latency", 0 < serverMapStats.getTotalRemoveLatency());
+        assertEquals("put count", operationCount, (long) stats.get("put"));
+        assertEquals("get count", operationCount, (long) stats.get("get"));
+        assertEquals("remove count", operationCount, (long) stats.get("remove"));
+        assertTrue("put latency", 0 < stats.get("putLatency"));
+        assertTrue("get latency", 0 < stats.get("getLatency"));
+        assertTrue("remove latency", 0 < stats.get("removeLatency"));
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListener(){
-        final IMap map = client.getMap(randomString());
-        map.addLocalEntryListener(new DumEntryListener());
+    private void addLocalMapStats(HashMap<String, Long> stats, LocalMapStats serverMapStats) {
+        addValueToHashMap(stats, "put", serverMapStats.getPutOperationCount());
+        addValueToHashMap(stats, "get", serverMapStats.getGetOperationCount());
+        addValueToHashMap(stats, "remove", serverMapStats.getRemoveOperationCount());
+        addValueToHashMap(stats, "putLatency", serverMapStats.getTotalPutLatency());
+        addValueToHashMap(stats, "getLatency", serverMapStats.getTotalGetLatency());
+        addValueToHashMap(stats, "removeLatency", serverMapStats.getTotalRemoveLatency());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListener_WithPredicate(){
-        final IMap map = client.getMap(randomString());
-        map.addLocalEntryListener(new DumEntryListener(), new DumPredicate(), true);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListener_WithPredicateAndKey(){
-        final IMap map = client.getMap(randomString());
-        map.addLocalEntryListener(new DumEntryListener(), new DumPredicate(), "Key", true);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySet(){
-        final IMap map = client.getMap(randomString());
-        map.localKeySet();
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySet_WithPredicate(){
-        final IMap map = client.getMap(randomString());
-        map.localKeySet(new DumPredicate());
-    }
-
-    static class DumEntryListener implements EntryListener {
-        public void entryAdded(EntryEvent event) {
-        }
-        public void entryRemoved(EntryEvent event) {
-        }
-        public void entryUpdated(EntryEvent event) {
-        }
-        public void entryEvicted(EntryEvent event) {
-        }
-        public void mapEvicted(MapEvent event) {
-        }
-        public void mapCleared(MapEvent event) {
-        }
-    }
-
-    static class DumPredicate implements Predicate {
-        public boolean apply(Map.Entry mapEntry) {
-            return false;
-        }
+    private void addValueToHashMap(HashMap<String, Long> stats, String key, Long value) {
+        Long oldValue = stats.get(key);
+        stats.put(key, (oldValue == null) ? value : oldValue + value);
     }
 }
