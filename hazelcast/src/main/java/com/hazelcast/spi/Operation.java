@@ -305,7 +305,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Operation{");
+        final StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
         sb.append("serviceName='").append(serviceName).append('\'');
         sb.append(", callId=").append(callId);
         sb.append(", invocationTime=").append(invocationTime);
