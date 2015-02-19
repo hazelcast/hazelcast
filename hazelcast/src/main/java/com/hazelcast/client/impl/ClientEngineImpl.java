@@ -92,11 +92,14 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public static final String SERVICE_NAME = "hz:core:clientEngine";
     private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
-    private static final int THREADS_PER_CORE = 20;
+
+    private static final int THREADS_PER_CORE = 2;
+    private static final int TX_THREADS_PER_CORE = 20;
+    private static final int TX_PARTITION_ID = -2;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final Executor executor;
+    private final Executor clientExecutor;
 
     private final SerializationService serializationService;
     // client uuid -> member uuid
@@ -105,6 +108,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
+    private final Executor txExecutor;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -112,14 +116,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
-        this.executor = newExecutor();
+        this.clientExecutor = newClientExecutor();
+        this.txExecutor = newTxExecutor();
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
         heartBeatMonitor.start();
     }
 
-    private Executor newExecutor() {
+    private Executor newClientExecutor() {
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = Runtime.getRuntime().availableProcessors();
 
@@ -129,6 +134,20 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         return executionService.register(ExecutionService.CLIENT_EXECUTOR,
+                threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
+                ExecutorType.CONCRETE);
+    }
+
+    private Executor newTxExecutor() {
+        final ExecutionService executionService = nodeEngine.getExecutionService();
+        int coreSize = Runtime.getRuntime().availableProcessors();
+
+        int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
+        if (threadCount <= 0) {
+            threadCount = coreSize * TX_THREADS_PER_CORE;
+        }
+
+        return executionService.register(ExecutionService.CLIENT_TX_EXECUTOR,
                 threadCount, coreSize * EXECUTOR_QUEUE_CAPACITY_PER_CORE,
                 ExecutorType.CONCRETE);
     }
@@ -145,8 +164,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public void handlePacket(Packet packet) {
         int partitionId = packet.getPartitionId();
-        if (partitionId < 0) {
-            executor.execute(new ClientPacketProcessor(packet));
+
+        if (partitionId == TX_PARTITION_ID) {
+            // if the partition id is -2, it means that it is a tx-request and they need to be executed on their
+            // own threadpool. For more information see https://github.com/hazelcast/hazelcast/issues/4641
+            txExecutor.execute(new ClientPacketProcessor(packet));
+        } else if (partitionId < 0) {
+            clientExecutor.execute(new ClientPacketProcessor(packet));
         } else {
             InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
             operationService.execute(new ClientPacketProcessor(packet));

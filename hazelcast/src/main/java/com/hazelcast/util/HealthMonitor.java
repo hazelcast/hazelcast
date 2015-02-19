@@ -170,6 +170,7 @@ public class HealthMonitor extends Thread {
         private final int currentClientConnectionCount;
         private final int connectionCount;
         private final int ioExecutorQueueSize;
+        private final int clientTxExecutorQueueSize;
 
         //CHECKSTYLE:OFF
         public HealthMetrics() {
@@ -187,6 +188,7 @@ public class HealthMonitor extends Thread {
             clusterTimeDiff = clusterService.getClusterClock().getClusterTimeDiff();
             asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).getQueueSize();
             clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).getQueueSize();
+            clientTxExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_TX_EXECUTOR).getQueueSize();
             queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).getQueueSize();
             scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).getQueueSize();
             systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).getQueueSize();
@@ -262,6 +264,7 @@ public class HealthMonitor extends Thread {
             sb.append("event.q.size=").append(eventQueueSize).append(", ");
             sb.append("executor.q.async.size=").append(asyncExecutorQueueSize).append(", ");
             sb.append("executor.q.client.size=").append(clientExecutorQueueSize).append(", ");
+            sb.append("executor.q.client.tx.size=").append(clientTxExecutorQueueSize).append(", ");
             sb.append("executor.q.query.size=").append(queryExecutorQueueSize).append(", ");
             sb.append("executor.q.scheduled.size=").append(scheduledExecutorQueueSize).append(", ");
             sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");
