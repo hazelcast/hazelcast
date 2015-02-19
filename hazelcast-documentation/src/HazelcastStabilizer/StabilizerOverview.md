@@ -3,7 +3,13 @@
 
 ## Stabilizer Overview
 
-A production simulator for stress testing Hazelcast and Hazelcast based applications in clustered environments. This can be in a local machine, but can also be in a cloud like EC2 or Google Compute Engine. The Stabilizer makes use of JClouds, so in theory we can roll out in any cloud.
+Hazelcast Stabilizer is a production simulator to perform tests on Hazelcast and Hazelcast based applications in clustered environments. It allows you to create your own tests and perform tests against anything that can be specified on the virtual computing environments like Amazon Web Services (AWS) and Google Compute Engine (GCE) specific hardware, operating system, Java version etc - anything that can be specified on AWS or GCE. It can also be used to reproduce a customer issue.
+To simulate production, it also allows us to add real-life failures. Network problems, nodes dying, high CPU etc. Much like Netflix Chaos Monkey.
+Provides a platform for benchmarking/performance-testing: it has basic support for performance tracking (more will be added in the 0.4 release) and has out of the box support for various profilers etc.
+
+
+
+This can be in a local machine, but can also be in a cloud like EC2 or Google Compute Engine. The Stabilizer makes use of JClouds, so in theory we can roll out in any cloud.
 
 Stabilizer includes a test suite for our own stress simulation, but you can fork this repo, and add your own.
 
@@ -30,7 +36,7 @@ total failure of the OS (e.g calling shutdown or an EC2 api to do the hard kill)
 internal buffers overflow by running for a long time.
 The stability test should give a lot more confidence that Hazelcast will operate fine in completely failing and partly failing environments.
 
-## Basic Concepts
+## Key Concepts
 
 Test: the functionality you want to test, e.g. a map. It looks a bit like a JUnit test, but it doesn't use annotations and has a bunch of methods that one can override.
 
