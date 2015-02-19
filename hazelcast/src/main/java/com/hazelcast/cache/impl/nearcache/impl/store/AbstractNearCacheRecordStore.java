@@ -26,6 +26,7 @@ import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheRecord>
         implements NearCacheRecordStore<K, V> {
@@ -144,11 +145,23 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     }
 
-    protected void onPut(K key, V value, R newRecord, R oldRecord) {
+    protected void onGetError(K key, V value, R record, Throwable error) {
 
     }
 
-    protected void onRemove(K key, R record) {
+    protected void onPut(K key, V value, R record, boolean newPut) {
+
+    }
+
+    protected void onPutError(K key, V value, R record, boolean newPut, Throwable error) {
+
+    }
+
+    protected void onRemove(K key, R record, boolean removed) {
+
+    }
+
+    protected void onRemoveError(K key, R record, boolean removed, Throwable error) {
 
     }
 
@@ -156,20 +169,27 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     public V get(K key) {
         checkAvailable();
 
-        R record = getRecord(key);
-        if (record != null) {
-            if (isRecordExpired(record)) {
-                remove(key);
+        R record = null;
+        V value = null;
+        try {
+            record = getRecord(key);
+            if (record != null) {
+                if (isRecordExpired(record)) {
+                    remove(key);
+                    return null;
+                }
+                onRecordAccess(record);
+                nearCacheStats.incrementHits();
+                value = recordToValue(record);
+                onGet(key, value, record);
+                return value;
+            } else {
+                nearCacheStats.incrementMisses();
                 return null;
             }
-            onRecordAccess(record);
-            nearCacheStats.incrementHits();
-            V value = recordToValue(record);
-            onGet(key, value, record);
-            return value;
-        } else {
-            nearCacheStats.incrementMisses();
-            return null;
+        } catch (Throwable error) {
+            onGetError(key, value, record, error);
+            throw ExceptionUtil.rethrow(error);
         }
     }
 
@@ -177,31 +197,49 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     public void put(K key, V value) {
         checkAvailable();
 
-        R newRecord = valueToRecord(value);
-        onRecordCreate(newRecord);
-        R oldRecord = putRecord(key, newRecord);
-        if (oldRecord == null) {
-            nearCacheStats.incrementOwnedEntryCount();
-            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, newRecord));
-        } else {
-            long newRecordMemoryCost = getRecordStorageMemoryCost(newRecord);
-            long oldRecordMemoryCost = getRecordStorageMemoryCost(oldRecord);
-            nearCacheStats.incrementOwnedEntryMemoryCost(newRecordMemoryCost - oldRecordMemoryCost);
+        R record = null;
+        boolean newPut = false;
+        try {
+            record = getRecord(key);
+            if (record == null) {
+                newPut = true;
+                record = valueToRecord(value);
+                onRecordCreate(record);
+                putRecord(key, record);
+                nearCacheStats.incrementOwnedEntryCount();
+                nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+            } else {
+                long oldRecordMemoryCost = getRecordStorageMemoryCost(record);
+                record.setValue(value);
+                long newRecordMemoryCost = getRecordStorageMemoryCost(record);
+                nearCacheStats.incrementOwnedEntryMemoryCost(newRecordMemoryCost - oldRecordMemoryCost);
+            }
+            onPut(key, value, record, newPut);
+        } catch (Throwable error) {
+            onPutError(key, value, record, newPut, error);
+            throw ExceptionUtil.rethrow(error);
         }
-        onPut(key, value, newRecord, oldRecord);
     }
 
     @Override
     public boolean remove(K key) {
         checkAvailable();
 
-        R record = removeRecord(key);
-        if (record != null) {
-            nearCacheStats.decrementOwnedEntryCount();
-            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
-            onRemove(key, record);
+        R record = null;
+        boolean removed = false;
+        try {
+            record = removeRecord(key);
+            if (record != null) {
+                removed = true;
+                nearCacheStats.decrementOwnedEntryCount();
+                nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+            }
+            onRemove(key, record, removed);
+            return record != null;
+        } catch (Throwable error) {
+            onRemoveError(key, record, removed, error);
+            throw ExceptionUtil.rethrow(error);
         }
-        return record != null;
     }
 
     @Override

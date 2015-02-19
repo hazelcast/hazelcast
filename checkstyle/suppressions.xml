@@ -77,6 +77,9 @@
               files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractHazelcastCacheManager"/>
 
+    <!-- Near-Cache-->
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.nearcache.impl.store.AbstractNearCacheRecordStore"/>
+
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>
