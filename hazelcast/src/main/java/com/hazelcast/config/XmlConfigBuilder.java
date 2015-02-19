@@ -26,6 +26,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
@@ -68,6 +69,7 @@ import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
 import static com.hazelcast.config.XmlElements.QUORUM;
+import static com.hazelcast.config.XmlElements.RELIABLE_TOPIC;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
 import static com.hazelcast.config.XmlElements.RINGBUFFER;
 import static com.hazelcast.config.XmlElements.SECURITY;
@@ -280,6 +282,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleSet(node);
         } else if (TOPIC.isEqual(nodeName)) {
             handleTopic(node);
+        } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
+            handleReliableTopic(node);
         } else if (CACHE.isEqual(nodeName)) {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
@@ -1377,6 +1381,32 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addTopicConfig(tConfig);
+    }
+
+    private void handleReliableTopic(final Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final ReliableTopicConfig topicConfig = new ReliableTopicConfig(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("read-batch-size".equals(cleanNodeName(nodeName))) {
+                String batchSize = getTextContent(n);
+                topicConfig.setReadBatchSize(
+                        getIntegerValue("read-batch-size", batchSize, ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                topicConfig.setStatisticsEnabled(checkTrue(getTextContent(n)));
+            } else if ("topic-overload-policy".equals(nodeName)) {
+                TopicOverloadPolicy topicOverloadPolicy = TopicOverloadPolicy.valueOf(upperCaseInternal(getTextContent(n)));
+                topicConfig.setTopicOverloadPolicy(topicOverloadPolicy);
+            } else if ("message-listeners".equals(nodeName)) {
+                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+                    if ("message-listener".equals(cleanNodeName(listenerNode))) {
+                        topicConfig.addMessageListenerConfig(new ListenerConfig(getTextContent(listenerNode)));
+                    }
+                }
+            }
+        }
+        config.addReliableTopicConfig(topicConfig);
     }
 
     private void handleJobTracker(final Node node) {

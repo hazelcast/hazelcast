@@ -85,6 +85,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
     }
 
     @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getOriginal().getReliableTopic(name);
+    }
+
+    @Override
     public <E> ISet<E> getSet(String name) {
         return getOriginal().getSet(name);
     }

@@ -70,6 +70,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -201,6 +202,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     public <E> ITopic<E> getTopic(String name) {
         checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
         return getDistributedObject(TopicService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
+        return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
     }
 
     @Override

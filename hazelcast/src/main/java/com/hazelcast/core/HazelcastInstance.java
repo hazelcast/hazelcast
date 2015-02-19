@@ -155,6 +155,14 @@ public interface HazelcastInstance {
     <E> Ringbuffer<E> getRingbuffer(String name);
 
     /**
+     * Returns the reliable ReliableTopic instance with the specified name.
+     *
+     * @param name name of the reliable ITopic
+     * @return the reliable ITopic
+     */
+    <E> ITopic<E> getReliableTopic(String name);
+
+    /**
      * Returns the Cluster that this Hazelcast instance is part of.
      * Cluster interface allows you to add a listener for membership
      * events and to learn more about the cluster that this Hazelcast

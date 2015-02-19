@@ -49,6 +49,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -117,6 +118,7 @@ final class ServiceManager {
         registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
+        registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));
         registerService(MultiMapService.SERVICE_NAME, new MultiMapService(nodeEngine));
         registerService(ListService.SERVICE_NAME, new ListService(nodeEngine));
         registerService(SetService.SERVICE_NAME, new SetService(nodeEngine));

@@ -492,9 +492,10 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
-    public static void assertInstanceOf(Class clazz, Object o) {
+    public static <E> E assertInstanceOf(Class<E> clazz, Object o) {
         Assert.assertNotNull(o);
         assertTrue(o + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(o.getClass()));
+        return (E)o;
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -633,6 +634,10 @@ public abstract class HazelcastTestSupport {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void assertTrueFiveSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 5);
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {

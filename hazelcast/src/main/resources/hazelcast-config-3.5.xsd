@@ -41,6 +41,7 @@
                 <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
@@ -562,6 +563,27 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="reliable-topic">
+        <xs:all>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
+            <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="message-listener" type="listener-base" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+
+            <xs:element name="read-batch-size" type="xs:int" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="topic-overload-policy" type="topic-overload-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:simpleType>
@@ -1289,6 +1311,15 @@
             <xs:enumeration value="KILOBYTES"/>
             <xs:enumeration value="MEGABYTES"/>
             <xs:enumeration value="GIGABYTES"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="topic-overload-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="DISCARD_OLDEST"/>
+            <xs:enumeration value="DISCARD_NEWEST"/>
+            <xs:enumeration value="BLOCK"/>
+            <xs:enumeration value="ERROR"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="memory-allocator-type">

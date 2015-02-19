@@ -70,6 +70,10 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         return FRAMEWORK_METHOD_THREAD_LOCAL.get();
     }
 
+    public static String getTestMethodName() {
+        return FRAMEWORK_METHOD_THREAD_LOCAL.get().getName();
+    }
+
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code klass}
      *
