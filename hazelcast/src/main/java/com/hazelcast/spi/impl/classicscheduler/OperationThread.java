@@ -9,8 +9,6 @@ import com.hazelcast.spi.impl.OperationHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
@@ -26,15 +24,8 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  */
 public abstract class OperationThread extends HazelcastManagedThread {
 
-    public static final Object TRIGGER_TASK = new Object() {
-        public String toString() {
-            return "triggerTask";
-        }
-    };
-
     final int threadId;
-    final BlockingQueue workQueue;
-    final Queue priorityWorkQueue;
+    final ScheduleQueue scheduleQueue;
     // This field is updated by this OperationThread (so a single writer) and can be read by other threads.
     volatile long processedCount;
 
@@ -46,13 +37,11 @@ public abstract class OperationThread extends HazelcastManagedThread {
     // than the actual running thread. So we create it in the {@link #run} method.
     private OperationHandler currentOperationHandler;
 
-    public OperationThread(String name,
-                           int threadId, BlockingQueue workQueue, Queue priorityWorkQueue,
+    public OperationThread(String name, int threadId, ScheduleQueue scheduleQueue,
                            ILogger logger, HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
         super(threadGroup.getInternalThreadGroup(), name);
         setContextClassLoader(threadGroup.getClassLoader());
-        this.workQueue = workQueue;
-        this.priorityWorkQueue = priorityWorkQueue;
+        this.scheduleQueue = scheduleQueue;
         this.threadId = threadId;
         this.logger = logger;
         this.nodeExtension = nodeExtension;
@@ -81,7 +70,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
         for (; ; ) {
             Object task;
             try {
-                task = workQueue.take();
+                task = scheduleQueue.take();
             } catch (InterruptedException e) {
                 if (shutdown) {
                     return;
@@ -93,28 +82,12 @@ public abstract class OperationThread extends HazelcastManagedThread {
                 return;
             }
 
-            processPriorityMessages();
-            process(task);
-        }
-    }
-
-    private void processPriorityMessages() {
-        for (; ; ) {
-            Object task = priorityWorkQueue.poll();
-            if (task == null) {
-                return;
-            }
-
             process(task);
         }
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
     private void process(Object task) {
-        if (task == TRIGGER_TASK) {
-            return;
-        }
-
         processedCount++;
 
         if (task instanceof Operation) {
