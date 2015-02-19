@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -83,6 +84,12 @@ public abstract class HazelcastTestSupport {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
+    public static int getPartitionId(HazelcastInstance hz, String name){
+        PartitionService partitionService = hz.getPartitionService();
+        Partition partition = partitionService.getPartition(name);
+        return partition.getPartitionId();
+    }
+
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
@@ -114,7 +121,7 @@ public abstract class HazelcastTestSupport {
         return node.clusterService.getThisAddress();
     }
 
-    public static Packet toPacket(HazelcastInstance hz, Operation operation){
+    public static Packet toPacket(HazelcastInstance hz, Operation operation) {
         SerializationService serializationService = getSerializationService(hz);
         ConnectionManager connectionManager = getConnectionManager(hz);
 
@@ -125,12 +132,12 @@ public abstract class HazelcastTestSupport {
         return packet;
     }
 
-    public static ConnectionManager getConnectionManager(HazelcastInstance hz){
+    public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.connectionManager;
     }
 
-    public static ClusterService getClusterService(HazelcastInstance hz){
+    public static ClusterService getClusterService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService;
     }
@@ -150,7 +157,7 @@ public abstract class HazelcastTestSupport {
         return node.partitionService;
     }
 
-    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz){
+    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.nodeEngine;
     }
@@ -293,7 +300,8 @@ public abstract class HazelcastTestSupport {
         }).start();
     }
 
-    public static void consume(Object o) {}
+    public static void consume(Object o) {
+    }
 
     public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
@@ -371,9 +379,13 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    private static boolean comparePartitionOwnership(boolean shouldBeOwner, Member member, Partition partition) {
-        final boolean memberIsOwner = member.equals(partition.getOwner());
-        return memberIsOwner == shouldBeOwner;
+    private static boolean comparePartitionOwnership(boolean ownedBy, Member member, Partition partition) {
+        final Member owner = partition.getOwner();
+        if (ownedBy) {
+            return member.equals(owner);
+        } else {
+            return !member.equals(owner);
+        }
     }
 
     public static boolean isInstanceInSafeState(final HazelcastInstance instance) {
@@ -480,9 +492,9 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
-    public static void assertInstanceOf(Class clazz, Object o){
+    public static void assertInstanceOf(Class clazz, Object o) {
         Assert.assertNotNull(o);
-        assertTrue(o+" is not an instanceof "+clazz.getName(), clazz.isAssignableFrom(o.getClass()));
+        assertTrue(o + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(o.getClass()));
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -500,6 +512,15 @@ public abstract class HazelcastTestSupport {
         }
 
         assertEquals("Iterator and values sizes are not equal", values.length, counter);
+    }
+
+    public static void assertCompletesEventually(final Future future) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue("Future has not completed", future.isDone());
+            }
+        });
     }
 
     public static void assertSizeEventually(int expectedSize, Collection c) {

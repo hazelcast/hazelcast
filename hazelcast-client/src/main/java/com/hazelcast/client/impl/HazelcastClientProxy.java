@@ -46,6 +46,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -63,6 +64,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public HazelcastClientProxy(HazelcastClientInstanceImpl client) {
         this.client = client;
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

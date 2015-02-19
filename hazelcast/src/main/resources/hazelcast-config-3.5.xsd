@@ -43,6 +43,7 @@
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -648,6 +649,20 @@
             <xs:element name="initial-permits" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
             <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="ringbuffer">
+        <xs:all>
+            <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -1276,7 +1291,6 @@
             <xs:enumeration value="GIGABYTES"/>
         </xs:restriction>
     </xs:simpleType>
-
     <xs:simpleType name="memory-allocator-type">
         <xs:restriction base="xs:string">
             <xs:enumeration value="STANDARD"/>

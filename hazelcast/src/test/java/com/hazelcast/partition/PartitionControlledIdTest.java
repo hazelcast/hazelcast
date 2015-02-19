@@ -48,6 +48,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -144,6 +146,20 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         SemaphoreService service = getNodeEngine(hz).getService(SemaphoreService.SERVICE_NAME);
         assertTrue(service.containsSemaphore(semaphore.getName()));
+    }
+
+    @Test
+    public void testRingbuffer() throws Exception {
+        String partitionKey = "hazelcast";
+        HazelcastInstance hz = getHazelcastInstance(partitionKey);
+
+        Ringbuffer ringbuffer = hz.getRingbuffer("ringbuffer@" + partitionKey);
+        ringbuffer.add("foo");
+        assertEquals("ringbuffer@" + partitionKey, ringbuffer.getName());
+        assertEquals(partitionKey, ringbuffer.getPartitionKey());
+
+        RingbufferService service = getNodeEngine(hz).getService(RingbufferService.SERVICE_NAME);
+        assertTrue(service.getContainers().containsKey(ringbuffer.getName()));
     }
 
     @Test

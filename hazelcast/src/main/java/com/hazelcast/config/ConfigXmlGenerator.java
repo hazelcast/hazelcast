@@ -107,6 +107,8 @@ public class ConfigXmlGenerator {
 
         semaphoreXmlGenerator(xml, config);
 
+        ringbufferXmlGenerator(xml, config);
+
         executorXmlGenerator(xml, config);
 
         partitionGroupXmlGenerator(xml, config);
@@ -230,6 +232,19 @@ public class ConfigXmlGenerator {
                 xml.append("</item-listeners>");
             }
             xml.append("</queue>");
+        }
+    }
+
+    private void ringbufferXmlGenerator(StringBuilder xml, Config config) {
+        final Collection<RingbufferConfig> configs = config.getRingbufferConfigs().values();
+        for (RingbufferConfig rbConfig : configs) {
+            xml.append("<ringbuffer name=\"").append(rbConfig.getName()).append("\">");
+            xml.append("<capacity>").append(rbConfig.getCapacity()).append("</capacity>");
+            xml.append("<backup-count>").append(rbConfig.getBackupCount()).append("</backup-count>");
+            xml.append("<async-backup-count>").append(rbConfig.getAsyncBackupCount()).append("</async-backup-count>");
+            xml.append("<time-to-live-seconds>").append(rbConfig.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
+            xml.append("<in-memory-format>").append(rbConfig.getInMemoryFormat().toString()).append("</in-memory-format>");
+            xml.append("</ringbuffer>");
         }
     }
 

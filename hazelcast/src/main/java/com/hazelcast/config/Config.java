@@ -91,6 +91,8 @@ public class Config {
 
     private final Map<String, QuorumConfig> quorumConfigs = new ConcurrentHashMap<String, QuorumConfig>();
 
+    private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -534,6 +536,40 @@ public class Config {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public RingbufferConfig findRingbufferConfig(String name) {
+        String baseName = getBaseName(name);
+        RingbufferConfig config = lookupByPattern(ringbufferConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getRingbufferConfig("default").getAsReadOnly();
+    }
+
+    public RingbufferConfig getRingbufferConfig(String name) {
+        String baseName = getBaseName(name);
+        RingbufferConfig config = lookupByPattern(ringbufferConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        RingbufferConfig defConfig = ringbufferConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new RingbufferConfig("default");
+            addRingBufferConfig(defConfig);
+        }
+        config = new RingbufferConfig(name, defConfig);
+        addRingBufferConfig(config);
+        return config;
+    }
+
+    public Config addRingBufferConfig(RingbufferConfig ringbufferConfig) {
+        ringbufferConfigs.put(ringbufferConfig.getName(), ringbufferConfig);
+        return this;
+    }
+
+    public Map<String, RingbufferConfig> getRingbufferConfigs() {
+        return ringbufferConfigs;
     }
 
     public TopicConfig findTopicConfig(String name) {
@@ -1013,6 +1049,7 @@ public class Config {
         sb.append(", multiMapConfigs=").append(multiMapConfigs);
         sb.append(", executorConfigs=").append(executorConfigs);
         sb.append(", semaphoreConfigs=").append(semaphoreConfigs);
+        sb.append(", ringbufferConfigs=").append(ringbufferConfigs);
         sb.append(", wanReplicationConfigs=").append(wanReplicationConfigs);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", partitionGroupConfig=").append(partitionGroupConfig);

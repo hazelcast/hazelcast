@@ -81,6 +81,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.topic.impl.TopicService;
@@ -179,6 +180,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
             c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
         }
         return c;
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        throw new UnsupportedOperationException();
     }
 
     private ClientInvocationService initInvocationService() {

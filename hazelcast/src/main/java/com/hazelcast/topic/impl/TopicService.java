@@ -18,6 +18,7 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
@@ -103,17 +104,14 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public TopicProxy createDistributedObject(String name) {
-        if (isGlobalOrderingEnabled(name)) {
+    public ITopic createDistributedObject(String name) {
+        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
+
+        if (topicConfig.isGlobalOrderingEnabled()) {
             return new TotalOrderedTopicProxy(name, nodeEngine, this);
         } else {
             return new TopicProxy(name, nodeEngine, this);
         }
-    }
-
-    private boolean isGlobalOrderingEnabled(String name) {
-        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
-        return topicConfig.isGlobalOrderingEnabled();
     }
 
     @Override

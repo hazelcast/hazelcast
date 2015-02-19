@@ -80,6 +80,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -307,6 +308,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     @Override
     public ILock getLock(String key) {
         return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

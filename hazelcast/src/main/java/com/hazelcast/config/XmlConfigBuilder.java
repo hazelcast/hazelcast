@@ -69,6 +69,7 @@ import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
 import static com.hazelcast.config.XmlElements.QUORUM;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
+import static com.hazelcast.config.XmlElements.RINGBUFFER;
 import static com.hazelcast.config.XmlElements.SECURITY;
 import static com.hazelcast.config.XmlElements.SEMAPHORE;
 import static com.hazelcast.config.XmlElements.SERIALIZATION;
@@ -287,6 +288,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleJobTracker(node);
         } else if (SEMAPHORE.isEqual(nodeName)) {
             handleSemaphore(node);
+        } else if (RINGBUFFER.isEqual(nodeName)) {
+            handleRingbuffer(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -1427,6 +1430,33 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addSemaphoreConfig(sConfig);
+    }
+
+    private void handleRingbuffer(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        RingbufferConfig rbConfig = new RingbufferConfig(name);
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            String nodeName = cleanNodeName(n.getNodeName());
+            String value = getTextContent(n).trim();
+            if ("capacity".equals(nodeName)) {
+                int capacity = getIntegerValue("capacity", value, RingbufferConfig.DEFAULT_CAPACITY);
+                rbConfig.setCapacity(capacity);
+            } else if ("backup-count".equals(nodeName)) {
+                int backupCount = getIntegerValue("backup-count", value, RingbufferConfig.DEFAULT_SYNC_BACKUP_COUNT);
+                rbConfig.setBackupCount(backupCount);
+            } else if ("async-backup-count".equals(nodeName)) {
+                int asyncBackupCount = getIntegerValue("async-backup-count", value, RingbufferConfig.DEFAULT_ASYNC_BACKUP_COUNT);
+                rbConfig.setAsyncBackupCount(asyncBackupCount);
+            } else if ("time-to-live-seconds".equals(nodeName)) {
+                int timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value, RingbufferConfig.DEFAULT_TTL_SECONDS);
+                rbConfig.setTimeToLiveSeconds(timeToLiveSeconds);
+            } else if ("in-memory-format".equals(nodeName)) {
+                InMemoryFormat inMemoryFormat = InMemoryFormat.valueOf(upperCaseInternal(value));
+                rbConfig.setInMemoryFormat(inMemoryFormat);
+            }
+        }
+        config.addRingBufferConfig(rbConfig);
     }
 
     private void handleListeners(final org.w3c.dom.Node node) throws Exception {

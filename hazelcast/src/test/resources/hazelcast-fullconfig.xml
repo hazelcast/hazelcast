@@ -352,6 +352,14 @@
         <async-backup-count>0</async-backup-count>
     </semaphore>
 
+    <ringbuffer name="default">
+        <capacity>25311</capacity>
+        <backup-count>2</backup-count>
+        <async-backup-count>1</async-backup-count>
+        <time-to-live-seconds>29</time-to-live-seconds>
+        <in-memory-format>OBJECT</in-memory-format>
+    </ringbuffer>
+
     <cache name="default">
         <key-type class-name="java.lang.Object"/>
         <value-type class-name="java.lang.Object"/>

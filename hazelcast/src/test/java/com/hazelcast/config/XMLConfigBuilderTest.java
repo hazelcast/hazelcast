@@ -259,6 +259,27 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void readRingbuffer() {
+        String xml =
+                "<hazelcast>\n" +
+                        "    <ringbuffer name=\"custom\">\n" +
+                        "        <capacity>10</capacity>\n" +
+                        "        <backup-count>2</backup-count>\n" +
+                        "        <async-backup-count>1</async-backup-count>\n" +
+                        "        <time-to-live-seconds>9</time-to-live-seconds>\n" +
+                        "        <in-memory-format>OBJECT</in-memory-format>\n" +
+                        "    </ringbuffer>" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        RingbufferConfig ringbufferConfig = config.getRingbufferConfig("custom");
+        assertEquals(10, ringbufferConfig.getCapacity());
+        assertEquals(2, ringbufferConfig.getBackupCount());
+        assertEquals(1, ringbufferConfig.getAsyncBackupCount());
+        assertEquals(9, ringbufferConfig.getTimeToLiveSeconds());
+        assertEquals(InMemoryFormat.OBJECT, ringbufferConfig.getInMemoryFormat());
+    }
+
+    @Test
     public void testConfig2Xml2DefaultConfig() {
         testConfig2Xml2Config("hazelcast-default.xml");
     }

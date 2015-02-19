@@ -66,6 +66,8 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.impl.TopicService;
@@ -221,6 +223,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     public JobTracker getJobTracker(String name) {
         checkNotNull(name, "Retrieving a job tracker instance with a null name is not allowed!");
         return getDistributedObject(MapReduceService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        checkNotNull(name, "Retrieving a ringbuffer instance with a null name is not allowed!");
+        return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
 
     @Deprecated

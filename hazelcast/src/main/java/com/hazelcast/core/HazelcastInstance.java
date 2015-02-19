@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -143,6 +144,14 @@ public interface HazelcastInstance {
      */
     @Deprecated
     ILock getLock(Object key);
+
+    /**
+     * Returns the distributed Ringbuffer instance with the specified name.
+     *
+     * @param name name of the distributed Ringbuffer
+     * @return distributed RingBuffer instance with the specified name
+     */
+    <E> Ringbuffer<E> getRingbuffer(String name);
 
     /**
      * Returns the Cluster that this Hazelcast instance is part of.

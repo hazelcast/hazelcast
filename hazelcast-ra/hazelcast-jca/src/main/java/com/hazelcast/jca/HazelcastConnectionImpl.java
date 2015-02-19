@@ -47,6 +47,7 @@ import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -299,6 +300,11 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getHazelcastInstance().getReplicatedMap(name);
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        return getHazelcastInstance().getRingbuffer(name);
     }
 
     @Override
