@@ -31,9 +31,6 @@ import java.io.IOException;
 
 import static org.junit.Assert.*;
 
-/**
- * @author ali 5/13/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class AtomicLongClientRequestTest extends ClientTestSupport {
