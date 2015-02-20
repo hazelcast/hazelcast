@@ -1,9 +1,11 @@
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -23,6 +25,38 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ConditionAdvancedTest extends HazelcastTestSupport{
+
+    @Test(timeout = 60000)
+    public void testInterruptionDuringWaiting() throws InterruptedException {
+        Config config = new Config();
+        // the system should wait at most 5000 ms in order to determine the operation status
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final ILock lock = instance.getLock(randomString());
+        final ICondition condition0 = lock.newCondition(randomString());
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    lock.lock();
+                    condition0.await();
+                } catch (InterruptedException e) {
+                    latch.countDown();
+                }
+            }
+        });
+        thread.start();
+
+        sleepSeconds(2);
+        thread.interrupt();
+
+        assertOpenEventually(latch);
+    }
 
     // ====================== tests to make sure the condition can deal with cluster member failure ====================
 

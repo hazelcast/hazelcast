@@ -1,13 +1,10 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
-import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -32,12 +29,12 @@ import static org.junit.Assert.assertTrue;
 public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     protected HazelcastInstance[] instances;
-    private HazelcastInstance instance;
+    private HazelcastInstance callerInstance;
 
     @Before
     public void setup() {
         instances = newInstances();
-        instance = instances[0];
+        callerInstance = instances[0];
     }
 
     protected String newName() {
@@ -49,21 +46,21 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testNewConditionWithoutNameIsNotSupported() {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
 
         lock.newCondition();
     }
 
     @Test(timeout = 60000, expected = NullPointerException.class)
     public void testNewCondition_whenNullName() {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
 
         lock.newCondition(null);
     }
 
     @Test(timeout = 60000)
     public void testMultipleConditionsForSameLock() throws InterruptedException {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         ICondition condition0 = lock.newCondition(newName());
         ICondition condition1 = lock.newCondition(newName());
 
@@ -88,7 +85,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testSignalAll() throws InterruptedException {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
 
         CountDownLatch latch = new CountDownLatch(2);
@@ -108,7 +105,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testSignalAll_whenMultipleConditions() throws InterruptedException {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         ICondition condition0 = lock.newCondition(newName());
         ICondition condition1 = lock.newCondition(newName());
 
@@ -134,7 +131,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testSameConditionRetrievedMultipleTimesForSameLock() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         String name = newName();
         final ICondition condition0 = lock.newCondition(name);
         final ICondition condition1 = lock.newCondition(name);
@@ -156,7 +153,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test
     public void testAwaitTime_whenTimeout() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
         lock.lock();
 
@@ -169,9 +166,9 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     @Test(timeout = 60000)
     public void testConditionsWithSameNameButDifferentLocksAreIndependent() throws InterruptedException {
         String name = newName();
-        ILock lock0 = instance.getLock(newName());
+        ILock lock0 = callerInstance.getLock(newName());
         final ICondition condition0 = lock0.newCondition(name);
-        ILock lock1 = instance.getLock(newName());
+        ILock lock1 = callerInstance.getLock(newName());
         final ICondition condition1 = lock1.newCondition(name);
 
         final CountDownLatch latch = new CountDownLatch(2);
@@ -198,7 +195,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     public void testSignalWithSingleWaiter() throws InterruptedException {
         String lockName = newName();
         String conditionName = newName();
-        final ILock lock = instance.getLock(lockName);
+        final ILock lock = callerInstance.getLock(lockName);
         final ICondition condition = lock.newCondition(conditionName);
         final AtomicInteger count = new AtomicInteger(0);
 
@@ -235,7 +232,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     public void testSignalAllWithSingleWaiter() throws InterruptedException {
         String lockName = newName();
         String conditionName = newName();
-        final ILock lock = instance.getLock(lockName);
+        final ILock lock = callerInstance.getLock(lockName);
         final ICondition condition = lock.newCondition(conditionName);
         final AtomicInteger count = new AtomicInteger(0);
         final int k = 50;
@@ -281,7 +278,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     public void testContendedLockUnlockWithVeryShortAwait() throws InterruptedException {
         String lockName = newName();
         String conditionName = newName();
-        final ILock lock = instance.getLock(lockName);
+        final ILock lock = callerInstance.getLock(lockName);
         final ICondition condition = lock.newCondition(conditionName);
 
         final AtomicBoolean running = new AtomicBoolean(true);
@@ -330,42 +327,10 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         }
     }
 
-//    @Test(timeout = 60000)
-//    public void testInterruptionDuringWaiting() throws InterruptedException {
-//        Config config = new Config();
-//        // the system should wait at most 5000 ms in order to determine the operation status
-//        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "5000");
-//
-//        HazelcastInstance instance = createHazelcastInstance(config);
-//
-//        final ILock lock = instance.getLock(newName());
-//        final ICondition condition0 = lock.newCondition(newName());
-//
-//        final CountDownLatch latch = new CountDownLatch(1);
-//
-//        Thread thread = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    lock.lock();
-//                    condition0.await();
-//                } catch (InterruptedException e) {
-//                    latch.countDown();
-//                }
-//            }
-//        });
-//        thread.start();
-//
-//        sleepSeconds(2);
-//        thread.interrupt();
-//
-//        assertOpenEventually(latch);
-//    }
-
     //if there are multiple waiters, then only 1 waiter should be notified.
     @Test(timeout = 60000)
     public void testSignalWithMultipleWaiters() throws InterruptedException {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
         final CountDownLatch latch = new CountDownLatch(10);
@@ -395,7 +360,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     //receive this signal
     @Test(timeout = 60000)
     public void testSignalIsNotStored() throws InterruptedException {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
 
         CountDownLatch latch = new CountDownLatch(1);
@@ -411,21 +376,21 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
     public void testAwaitOnConditionOfFreeLock() throws InterruptedException {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition("condition");
         condition.await();
     }
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
     public void testSignalOnConditionOfFreeLock() {
-        ILock lock = instance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition("condition");
         condition.signal();
     }
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
     public void testAwait_whenOwnedByOtherThread() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -445,7 +410,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
     public void testSignal_whenOwnedByOtherThread() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -465,7 +430,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testAwaitTimeout_whenFail() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
         lock.lock();
@@ -475,7 +440,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testAwaitTimeout_whenSuccess() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -501,7 +466,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testAwaitUntil_whenFail() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
         lock.lock();
@@ -513,7 +478,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testAwaitUntil_whenSuccess() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -543,15 +508,13 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     @Test(timeout = 60000)
     @Ignore
     public void testAwait_whenNegativeTimeout() throws InterruptedException {
-        final ILock lock = instance.getLock(newName());
+        final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
         lock.lock();
 
         assertFalse(condition.await(-1, TimeUnit.MILLISECONDS));
     }
-
-
 
     private TestThread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition, final CountDownLatch syncLatch) {
         TestThread t = new TestThread() {
