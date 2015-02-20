@@ -33,8 +33,6 @@ public abstract class OperationThread extends HazelcastManagedThread {
     private final ILogger logger;
     private volatile boolean shutdown;
 
-    // We can't create this object in the constructor, because that being called from a different thread
-    // than the actual running thread. So we create it in the {@link #run} method.
     private OperationHandler currentOperationHandler;
 
     public OperationThread(String name, int threadId, ScheduleQueue scheduleQueue,

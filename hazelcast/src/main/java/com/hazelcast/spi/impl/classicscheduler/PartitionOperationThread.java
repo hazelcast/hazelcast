@@ -12,6 +12,7 @@ public final class PartitionOperationThread extends OperationThread {
 
     private final OperationHandler[] partitionOperationHandlers;
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public PartitionOperationThread(String name, int threadId,
                                     ScheduleQueue scheduleQueue, ILogger logger,
                                     HazelcastThreadGroup threadGroup, NodeExtension nodeExtension,
