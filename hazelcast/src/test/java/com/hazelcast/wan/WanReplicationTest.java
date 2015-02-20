@@ -354,6 +354,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
 
     @Test
+    @Ignore
     public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
