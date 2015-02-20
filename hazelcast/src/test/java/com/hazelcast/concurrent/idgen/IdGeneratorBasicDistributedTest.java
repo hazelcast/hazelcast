@@ -1,4 +1,4 @@
-package com.hazelcast.concurrent.atomicreference;
+package com.hazelcast.concurrent.idgen;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -8,11 +8,10 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class AtomicReferenceBasicRemoteTest extends AtomicReferenceBasicTest {
+public class IdGeneratorBasicDistributedTest extends IdGeneratorBasicTest {
 
     @Override
     protected HazelcastInstance[] newInstances() {
         return createHazelcastInstanceFactory(2).newInstances();
     }
-
 }

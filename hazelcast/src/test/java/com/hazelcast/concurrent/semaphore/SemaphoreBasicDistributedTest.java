@@ -1,4 +1,4 @@
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -8,7 +8,8 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class LockBasicRemoteTest extends LockBasicTest {
+public class SemaphoreBasicDistributedTest extends SemaphoreBasicTest {
+
     @Override
     protected HazelcastInstance[] newInstances() {
         return createHazelcastInstanceFactory(2).newInstances();

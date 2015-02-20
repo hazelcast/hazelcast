@@ -1,4 +1,4 @@
-package com.hazelcast.concurrent.semaphore;
+package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class SemaphoreBasicRemoteTest extends SemaphoreBasicTest {
+public class AtomicLongBasicDistributedTest extends BasicAtomicLongTest {
 
     @Override
     protected HazelcastInstance[] newInstances() {

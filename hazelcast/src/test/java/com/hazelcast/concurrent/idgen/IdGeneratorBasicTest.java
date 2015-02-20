@@ -43,6 +43,8 @@ public abstract class IdGeneratorBasicTest extends HazelcastTestSupport {
     }
 
     private void testInit(int initialValue, boolean expected, long expectedValue) {
+        IdGenerator idGenerator = newInstance();
+
         boolean initialized = idGenerator.init(initialValue);
         assertEquals(expected, initialized);
 

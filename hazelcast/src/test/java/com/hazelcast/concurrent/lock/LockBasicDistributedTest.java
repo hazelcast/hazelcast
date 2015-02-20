@@ -1,4 +1,4 @@
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -8,8 +8,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class AtomicLongBasicRemoteTest extends BasicAtomicLongTest {
-
+public class LockBasicDistributedTest extends LockBasicTest {
     @Override
     protected HazelcastInstance[] newInstances() {
         return createHazelcastInstanceFactory(2).newInstances();
