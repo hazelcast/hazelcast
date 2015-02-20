@@ -33,6 +33,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
     private final ILogger logger;
     private volatile boolean shutdown;
 
+    // This field wil only be accessed by the thread itself when doing 'self' calls. So no need
+    // for any form of synchronization.
     private OperationHandler currentOperationHandler;
 
     public OperationThread(String name, int threadId, ScheduleQueue scheduleQueue,
