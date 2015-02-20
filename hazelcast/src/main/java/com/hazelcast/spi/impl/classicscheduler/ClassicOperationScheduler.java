@@ -180,11 +180,13 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         return threads;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationHandler[] getPartitionOperationHandlers() {
         return partitionOperationHandlers;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationHandler[] getGenericOperationHandlers() {
         return genericOperationHandlers;

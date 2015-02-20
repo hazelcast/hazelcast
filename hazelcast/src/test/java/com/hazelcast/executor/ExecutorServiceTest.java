@@ -1477,7 +1477,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SleepingTask implements Callable<Boolean>, Serializable {
+    public static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware {
 
         long sleepTime = 10000;
 
@@ -1488,6 +1488,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         public Boolean call() throws InterruptedException {
             Thread.sleep(sleepTime);
             return Boolean.TRUE;
+        }
+
+        @Override
+        public Object getPartitionKey() {
+            return "key";
         }
     }
 
