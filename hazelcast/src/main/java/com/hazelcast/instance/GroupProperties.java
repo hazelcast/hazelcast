@@ -67,6 +67,12 @@ public class GroupProperties {
      * partition operations will queue behind other operations of different partitions. The default is 4.
      */
     public static final String PROP_PARTITION_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
+    public static final String PROP_PROGRESSIVE_SCHEDULER_ENABLED = "hazelcast.operation.progressivescheduler.enabled";
+
+    //public static final String PROP_PROGRESSIVE_SCHEDULER_ENABLED = "hazelcast.kickass.scheduler.enabled";
+
+
+
     public static final String PROP_GENERIC_OPERATION_THREAD_COUNT = "hazelcast.operation.generic.thread.count";
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.event.thread.count";
     public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.event.queue.capacity";
@@ -210,6 +216,8 @@ public class GroupProperties {
     public static final String PROP_JCACHE_PROVIDER_TYPE = "hazelcast.jcache.provider.type";
 
     public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
+
+    public final GroupProperty PROGRESSIVE_SCHEDULER_ENABLED;
 
     public final GroupProperty PARTITION_OPERATION_THREAD_COUNT;
 
@@ -399,6 +407,8 @@ public class GroupProperties {
         EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
         CLIENT_ENGINE_THREAD_COUNT = new GroupProperty(config, PROP_CLIENT_ENGINE_THREAD_COUNT, "-1");
+
+        PROGRESSIVE_SCHEDULER_ENABLED = new GroupProperty(config, PROP_PROGRESSIVE_SCHEDULER_ENABLED, "true");
 
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");

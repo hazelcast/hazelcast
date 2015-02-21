@@ -31,6 +31,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.InternalOperationService;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
 import java.util.Collection;
@@ -61,7 +62,7 @@ public abstract class HazelcastTestSupport {
     static {
         System.setProperty("hazelcast.repmap.hooks.allowed", "true");
 
-        ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout", "120"));
+        ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.parseInt(System.getProperty("hazelcast.assertTrueEventually.timeout", "5"));
         System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
@@ -255,6 +256,12 @@ public abstract class HazelcastTestSupport {
                 currentThread.interrupt();
             }
         }.start();
+    }
+
+    public static void assertInstanceOf(Class expectedClazz, Object object) {
+        Assert.assertNotNull("object can't be null", object);
+        assertTrue("object " + object + ", with class:" + object.getClass() + "is not a subclass of "
+                + expectedClazz.getName(), object.getClass().isAssignableFrom(expectedClazz));
     }
 
     public HazelcastInstance createHazelcastInstance() {

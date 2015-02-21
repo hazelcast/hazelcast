@@ -42,13 +42,13 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             = AtomicIntegerFieldUpdater.newUpdater(BasicInvocationFuture.class,  "waiterCount");
 
     volatile boolean interrupted;
+    volatile Object response;
     // Contains the number of threads waiting for a result from this future.
     // is updated through the WAITER_COUNT_FIELD_UPDATER.
     private volatile int waiterCount;
     private final BasicOperationService operationService;
     private final BasicInvocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
-    private volatile Object response;
 
     BasicInvocationFuture(BasicOperationService operationService, BasicInvocation invocation, final Callback<E> callback) {
         this.invocation = invocation;
