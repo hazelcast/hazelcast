@@ -28,12 +28,14 @@
         <artifactId>hazelcast-root</artifactId>
         <version>3.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
+
     </parent>
 
     <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
         <atomikos-version>3.9.2</atomikos-version>
+        <jmh.version>1.4.1</jmh.version>
     </properties>
 
     <build>
@@ -329,6 +331,18 @@
             <scope>compile</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

@@ -422,6 +422,7 @@ public abstract class Operation implements DataSerializable {
         sb.append(", invocationTime=").append(invocationTime);
         sb.append(", waitTimeout=").append(waitTimeout);
         sb.append(", callTimeout=").append(callTimeout);
+        sb.append(", partitionId=").append(partitionId);
         sb.append('}');
         return sb.toString();
     }

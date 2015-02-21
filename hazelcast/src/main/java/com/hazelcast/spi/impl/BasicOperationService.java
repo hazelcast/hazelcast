@@ -52,11 +52,11 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
-import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
+import com.hazelcast.spi.impl.operationexecutor.progressive.ProgressiveOperationExecutor;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -153,15 +153,7 @@ final class BasicOperationService implements InternalOperationService {
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.operationBackupHandler = new OperationBackupHandler();
 
-        this.operationExecutor = new ClassicOperationExecutor(
-                node.getGroupProperties(),
-                node.loggingService,
-                node.getThisAddress(),
-                new BasicOperationRunnerFactory(),
-                new BasicResponsePacketHandler(),
-                node.getHazelcastThreadGroup(),
-                node.getNodeExtension()
-        );
+        this.operationExecutor = initOperationExecutor();
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
@@ -179,6 +171,27 @@ final class BasicOperationService implements InternalOperationService {
                 operationExecutor.getPartitionOperationRunners(),
                 node.groupProperties,
                 node.getHazelcastThreadGroup());
+    }
+
+    private OperationExecutor initOperationExecutor() {
+        return new ProgressiveOperationExecutor(
+                node.getGroupProperties(),
+                node.loggingService,
+                new BasicOperationRunnerFactory(),
+                node.getNodeExtension(),
+                new BasicResponsePacketHandler(),
+                node.getHazelcastThreadGroup()
+        );
+//
+//        return new ClassicOperationScheduler(
+//                node.getGroupProperties(),
+//                node.loggingService,
+//                node.getThisAddress(),
+//                new BasicOperationHandlerFactory(),
+//                responsePacketHandler,
+//                node.getHazelcastThreadGroup(),
+//                node.getNodeExtension()
+//        );
     }
 
     @Override
@@ -394,13 +407,13 @@ final class BasicOperationService implements InternalOperationService {
 
     public void deregisterInvocation(BasicInvocation invocation) {
         long callId = invocation.op.getCallId();
-        // locally executed non backup-aware operations (e.g. a map.get on a local member) doesn't have a call id.
+       // locally executed non backup-aware operations (e.g. a map.get on a local member) doesn't have a call id.
         // so in that case we can skip the deregistration since it isn't registered in the first place.
         if (callId == 0) {
             return;
         }
 
-        invocations.remove(callId);
+       invocations.remove(callId);
     }
 
     @PrivateApi
@@ -524,6 +537,11 @@ final class BasicOperationService implements InternalOperationService {
         } catch (InterruptedException e) {
             EmptyStatement.ignore(e);
         }
+    }
+
+    @Override
+    public void start() {
+        operationExecutor.start();
     }
 
     /**

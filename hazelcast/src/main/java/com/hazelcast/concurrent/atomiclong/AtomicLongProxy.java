@@ -51,6 +51,7 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
     private <E> InternalCompletableFuture<E> asyncInvoke(Operation operation) {
         try {
             OperationService operationService = getNodeEngine().getOperationService();
+            operation.setService(getService());
             //noinspection unchecked
             return (InternalCompletableFuture<E>) operationService.invokeOnPartition(
                     AtomicLongService.SERVICE_NAME, operation, partitionId);

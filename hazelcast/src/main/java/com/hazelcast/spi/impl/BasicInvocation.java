@@ -359,12 +359,12 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     @Override
-    public void sendResponse(Object obj) {
+    public void sendResponse(Object response) {
         if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + obj);
+                    + ", current-response: : " + response + " pending response: " + invocationFuture.response);
         }
-        notify(obj);
+        notify(response);
     }
 
     @Override

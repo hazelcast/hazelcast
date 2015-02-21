@@ -51,6 +51,11 @@ public interface InternalOperationService extends OperationService {
     void execute(PartitionSpecificRunnable task);
 
     /**
+     * Starts this InternalOperationService.
+     */
+    void start();
+
+    /**
      * Sends a response to a remote machine.
      *
      * This method is deprecated since 3.5. It is an implementation detail.
