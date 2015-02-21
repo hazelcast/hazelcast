@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

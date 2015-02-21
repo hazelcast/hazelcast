@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 /**
  * The ScheduleQueue is a kind of priority queue where 'tasks' are queued for scheduling.

@@ -1,9 +1,9 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.ResponsePacketHandler;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import com.hazelcast.spi.impl.Response;
 
 import java.util.concurrent.BlockingQueue;
@@ -15,7 +15,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  * The ResponseThread is responsible for processing responses-packets.
  *
  * So when a response is received from a remote system, it is put in the workQueue of the ResponseThread.
- * Then the ResponseThread takes it from this workQueue and calls the {@link com.hazelcast.spi.impl.ResponsePacketHandler} for the
+ * Then the ResponseThread takes it from this workQueue and calls the {@link ResponsePacketHandler} for the
  * actual processing.
  *
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the

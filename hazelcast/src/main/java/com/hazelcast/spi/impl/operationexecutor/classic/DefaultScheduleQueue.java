@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;

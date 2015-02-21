@@ -1,20 +1,24 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 /**
- * The OperationScheduler is responsible for scheduling work (packets/operations) to be executed. Scheduling in this
- * case means that a thread is looked up to execute the work. The thread could be some kind of pooled thread, but it
- * could also be the calling thread. This is something implementation specific.
- * <p/>
- * So in case of an Operation or a packet containing an operation, and OperationHandler is looked up and a thread (could
- * be the calling thread) and one of the process methods is called.
- * <p/>
- * In case of a response packet, the {@link ResponsePacketHandler} is used to handle the
- * response.
+ * The OperationExecutor is responsible for scheduling work (packets/operations) to be executed. It can be compared
+ * to a {@link java.util.concurrent.Executor} with the big difference that it is designed for assigning packets,
+ * operations and PartitionSpecificRunnable to a thread instead of only runnables.
+ *
+ * It depends on the implementation if an operation is executed on the calling thread or not. For example the
+ * {@link com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor} will always offload a partition specific
+ * Operation to the correct partition-operation-thread.
+ *
+ * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the
+ * {@link OperationRunner}.
+ *
+ * In case of a response packet, the {@link ResponsePacketHandler} is used to handle the response.
  */
-public interface OperationScheduler {
+public interface OperationExecutor {
 
     // Will be replaced by the black-box
     @Deprecated
@@ -52,7 +56,7 @@ public interface OperationScheduler {
      *
      * @return the operation handlers.
      */
-    OperationHandler[] getPartitionOperationHandlers();
+    OperationRunner[] getPartitionOperationRunners();
 
     /**
      * Gets all the generic operation handlers. The number of generic operation handlers depends on the number of
@@ -62,7 +66,7 @@ public interface OperationScheduler {
      *
      * @return the generic operation handlers.
      */
-    OperationHandler[] getGenericOperationHandlers();
+    OperationRunner[] getGenericOperationRunners();
 
     /**
      * Executes an Operation.
@@ -95,7 +99,15 @@ public interface OperationScheduler {
      * @throws java.lang.NullPointerException if op is null.
      * @throws IllegalThreadStateException    if the operation is not allowed to be run on the calling thread.
      */
-    void runOperationOnCallingThread(Operation op);
+    void runOnCallingThread(Operation op);
+
+    /**
+     * Tries to run the operation on the calling thread if possible. Otherwise offload it to a different thread.
+     *
+     * @param op the operation to run.
+     * @throws java.lang.NullPointerException if op is null.
+     */
+    void runOnCallingThreadIfPossible(Operation op);
 
     /**
      * Checks if the operation is allowed to run on the current thread.
@@ -104,13 +116,14 @@ public interface OperationScheduler {
      * @return true if it is allowed, false otherwise.
      * @throws java.lang.NullPointerException if op is null.
      */
+    @Deprecated
     boolean isAllowedToRunInCurrentThread(Operation op);
 
     /**
      * Checks if the current thread is an operation thread.
      *
      * @return true if is an operation thread, false otherwise.
-     * @deprecated it should not matter if a thread is an operation thread or not; this is something scheduler specific.
+     * @deprecated it should not matter if a thread is an operation thread or not; this is something operationExecutor specific.
      */
     boolean isOperationThread();
 
@@ -125,7 +138,8 @@ public interface OperationScheduler {
     boolean isInvocationAllowedFromCurrentThread(Operation op);
 
     /**
-     * Shuts down this OperationScheduler.
+     * Shuts down this OperationExecutor.
      */
     void shutdown();
+
 }

@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
@@ -15,9 +15,9 @@ import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.ResponsePacketHandler;
-import com.hazelcast.spi.impl.OperationHandler;
-import com.hazelcast.spi.impl.OperationHandlerFactory;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.Response;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,23 +33,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Abstract test support to test the {@link com.hazelcast.spi.impl.classicscheduler.AbstractClassicSchedulerTest}.
+ * Abstract test support to test the {@link ClassicOperationExecutor}.
  * <p/>
- * The idea is the following; all dependencies for the scheduler are available as fields in this object and by calling the
- * {@link #initScheduler()} method, the actual ClassicOperationScheduler instance is created. But if you need to replace
- * the dependencies by mocks, just replace them before calling the {@link #initScheduler()} method.
+ * The idea is the following; all dependencies for the executor are available as fields in this object and by calling the
+ * {@link #initExecutor()} method, the actual ClassicOperationExecutor instance is created. But if you need to replace
+ * the dependencies by mocks, just replace them before calling the {@link #initExecutor()} method.
  */
-public abstract class AbstractClassicSchedulerTest extends HazelcastTestSupport {
+public abstract class AbstractClassicOperationExecutorTest extends HazelcastTestSupport {
 
     protected LoggingServiceImpl loggingService;
     protected GroupProperties groupProperties;
     protected Address thisAddress;
     protected HazelcastThreadGroup threadGroup;
     protected DefaultNodeExtension nodeExtension;
-    protected OperationHandlerFactory handlerFactory;
+    protected OperationRunnerFactory handlerFactory;
     protected SerializationService serializationService;
     protected ResponsePacketHandler responsePacketHandler;
-    protected ClassicOperationScheduler scheduler;
+    protected ClassicOperationExecutor executor;
     protected Config config;
 
     @Before
@@ -67,17 +67,17 @@ public abstract class AbstractClassicSchedulerTest extends HazelcastTestSupport 
                 loggingService.getLogger(HazelcastThreadGroup.class),
                 Thread.currentThread().getContextClassLoader());
         nodeExtension = new DefaultNodeExtension();
-        handlerFactory = new DummyOperationHandlerFactory();
+        handlerFactory = new DummyOperationRunnerFactory();
 
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 
-    protected ClassicOperationScheduler initScheduler() {
+    protected ClassicOperationExecutor initExecutor() {
         groupProperties = new GroupProperties(config);
-        scheduler = new ClassicOperationScheduler(
+        executor = new ClassicOperationExecutor(
                 groupProperties, loggingService, thisAddress, handlerFactory, responsePacketHandler,
                 threadGroup, nodeExtension);
-        return scheduler;
+        return executor;
     }
 
     public static <E> void assertEqualsEventually(final PartitionSpecificCallable task, final E expected) {
@@ -108,8 +108,8 @@ public abstract class AbstractClassicSchedulerTest extends HazelcastTestSupport 
 
     @After
     public void teardown() {
-        if (scheduler != null) {
-            scheduler.shutdown();
+        if (executor != null) {
+            executor.shutdown();
         }
     }
 
@@ -166,57 +166,61 @@ public abstract class AbstractClassicSchedulerTest extends HazelcastTestSupport 
         }
     }
 
-    protected class DummyOperationHandlerFactory implements OperationHandlerFactory {
-        protected List<DummyOperationHandler> partitionOperationHandlers = new LinkedList<DummyOperationHandler>();
-        protected List<DummyOperationHandler> genericOperationHandlers = new LinkedList<DummyOperationHandler>();
-        protected DummyOperationHandler adhocHandler;
+    protected class DummyOperationRunnerFactory implements OperationRunnerFactory {
+        protected List<DummyOperationRunner> partitionOperationHandlers = new LinkedList<DummyOperationRunner>();
+        protected List<DummyOperationRunner> genericOperationHandlers = new LinkedList<DummyOperationRunner>();
+        protected DummyOperationRunner adhocHandler;
 
         @Override
-        public OperationHandler createPartitionHandler(int partitionId) {
-            DummyOperationHandler operationHandler = new DummyOperationHandler();
+        public OperationRunner createPartitionRunner(int partitionId) {
+            DummyOperationRunner operationHandler = new DummyOperationRunner(partitionId);
             partitionOperationHandlers.add(operationHandler);
             return operationHandler;
         }
 
         @Override
-        public OperationHandler createGenericOperationHandler() {
-            DummyOperationHandler operationHandler = new DummyOperationHandler();
+        public OperationRunner createGenericRunner() {
+            DummyOperationRunner operationHandler = new DummyOperationRunner(-1);
             genericOperationHandlers.add(operationHandler);
             return operationHandler;
         }
 
         @Override
-        public OperationHandler createAdHocOperationHandler() {
+        public OperationRunner createAdHocRunner() {
             if (adhocHandler != null) {
                 throw new IllegalStateException("adHocHandler should only be created once");
             }
             // not the correct handler because it publishes the operation
-            DummyOperationHandler operationHandler = new DummyOperationHandler();
+            DummyOperationRunner operationHandler = new DummyOperationRunner(-2);
             adhocHandler = operationHandler;
             return operationHandler;
         }
     }
 
-    public class DummyOperationHandler extends OperationHandler {
+    public class DummyOperationRunner extends OperationRunner {
         protected List<Packet> packets = synchronizedList(new LinkedList<Packet>());
         protected List<Operation> operations = synchronizedList(new LinkedList<Operation>());
         protected List<Runnable> tasks = synchronizedList(new LinkedList<Runnable>());
 
+        public DummyOperationRunner(int partitionId) {
+            super(partitionId);
+        }
+
         @Override
-        public void process(Runnable task) {
+        public void run(Runnable task) {
             tasks.add(task);
             task.run();
         }
 
         @Override
-        public void process(Packet packet) throws Exception {
+        public void run(Packet packet) throws Exception {
             packets.add(packet);
             Operation op = serializationService.toObject(packet.getData());
-            process(op);
+            run(op);
         }
 
         @Override
-        public void process(Operation task) {
+        public void run(Operation task) {
             operations.add(task);
 
             this.currentTask = task;

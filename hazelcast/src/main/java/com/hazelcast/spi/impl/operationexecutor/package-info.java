@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the {@link com.hazelcast.spi.impl.classicscheduler.ClassicOperationScheduler} code.
+ * Contains the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} code.
  */
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
@@ -25,23 +25,20 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.ResponsePacketHandler;
-import com.hazelcast.spi.impl.OperationHandler;
-import com.hazelcast.spi.impl.OperationHandlerFactory;
-import com.hazelcast.spi.impl.OperationScheduler;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * A {@link com.hazelcast.spi.impl.OperationScheduler} that scheduled:
+ * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
  * <ol>
  * <li>partition specific operations to a specific partition-operation-thread (using a mod on the partition-id)</li>
- * <li> non specific operations to generic-operation-threads</li>
+ * <li>non specific operations to generic-operation-threads</li>
  * </ol>
- * The actual processing of the 'task' that is scheduled, is forwarded to the {@link com.hazelcast.spi.impl.OperationHandler}. So
- * this class is purely responsible for assigning a 'task' to a particular thread.
- * <p/>
  * The {@link #execute(Object, int, boolean)} accepts an Object instead of a runnable to prevent needing to
  * create wrapper runnables around tasks. This is done to reduce the amount of object litter and therefor
  * reduce pressure on the gc.
@@ -57,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  * </li>
  * </ol>
  */
-public final class ClassicOperationScheduler implements OperationScheduler {
+public final class ClassicOperationExecutor implements OperationExecutor {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
@@ -65,41 +62,41 @@ public final class ClassicOperationScheduler implements OperationScheduler {
 
     //all operations for specific partitions will be executed on these threads, .e.g map.put(key,value).
     private final PartitionOperationThread[] partitionOperationThreads;
-    private final OperationHandler[] partitionOperationHandlers;
+    private final OperationRunner[] partitionOperationRunners;
 
     private final ScheduleQueue genericScheduleQueue;
 
     //all operations that are not specific for a partition will be executed here, e.g heartbeat or map.size
     private final GenericOperationThread[] genericOperationThreads;
-    private final OperationHandler[] genericOperationHandlers;
+    private final OperationRunner[] genericOperationRunners;
 
     private final ResponseThread responseThread;
     private final ResponsePacketHandler responsePacketHandler;
     private final Address thisAddress;
     private final NodeExtension nodeExtension;
     private final HazelcastThreadGroup threadGroup;
-    private final OperationHandler adHocOperationHandler;
+    private final OperationRunner adHocOperationRunner;
 
-    public ClassicOperationScheduler(GroupProperties properties,
-                                     LoggingService loggerService,
-                                     Address thisAddress,
-                                     OperationHandlerFactory operationHandlerFactory,
-                                     ResponsePacketHandler responsePacketHandler,
-                                     HazelcastThreadGroup hazelcastThreadGroup,
-                                     NodeExtension nodeExtension) {
+    public ClassicOperationExecutor(GroupProperties properties,
+                                    LoggingService loggerService,
+                                    Address thisAddress,
+                                    OperationRunnerFactory operationRunnerFactory,
+                                    ResponsePacketHandler responsePacketHandler,
+                                    HazelcastThreadGroup hazelcastThreadGroup,
+                                    NodeExtension nodeExtension) {
         this.thisAddress = thisAddress;
         this.nodeExtension = nodeExtension;
         this.threadGroup = hazelcastThreadGroup;
-        this.logger = loggerService.getLogger(ClassicOperationScheduler.class);
+        this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
         this.responsePacketHandler = responsePacketHandler;
         this.genericScheduleQueue = new DefaultScheduleQueue();
 
-        this.adHocOperationHandler = operationHandlerFactory.createAdHocOperationHandler();
+        this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
 
-        this.partitionOperationHandlers = initPartitionOperationHandlers(properties, operationHandlerFactory);
+        this.partitionOperationRunners = initPartitionOperationRunners(properties, operationRunnerFactory);
         this.partitionOperationThreads = initPartitionThreads(properties);
 
-        this.genericOperationHandlers = initGenericOperationHandlers(properties, operationHandlerFactory);
+        this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
         this.genericOperationThreads = initGenericThreads();
 
         this.responseThread = initResponseThread();
@@ -108,7 +105,7 @@ public final class ClassicOperationScheduler implements OperationScheduler {
                 + partitionOperationThreads.length + " partition operation threads.");
     }
 
-    private OperationHandler[] initGenericOperationHandlers(GroupProperties properties, OperationHandlerFactory handlerFactory) {
+    private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
         int genericThreadCount = properties.GENERIC_OPERATION_THREAD_COUNT.getInteger();
         if (genericThreadCount <= 0) {
             // default generic operation thread count
@@ -116,20 +113,20 @@ public final class ClassicOperationScheduler implements OperationScheduler {
             genericThreadCount = Math.max(2, coreSize / 2);
         }
 
-        OperationHandler[] operationHandlers = new OperationHandler[genericThreadCount];
-        for (int partitionId = 0; partitionId < operationHandlers.length; partitionId++) {
-            operationHandlers[partitionId] = handlerFactory.createGenericOperationHandler();
+        OperationRunner[] operationRunners = new OperationRunner[genericThreadCount];
+        for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
+            operationRunners[partitionId] = runnerFactory.createGenericRunner();
         }
-        return operationHandlers;
+        return operationRunners;
     }
 
-    private OperationHandler[] initPartitionOperationHandlers(GroupProperties properties,
-                                                              OperationHandlerFactory handlerFactory) {
-        OperationHandler[] operationHandlers = new OperationHandler[properties.PARTITION_COUNT.getInteger()];
-        for (int partitionId = 0; partitionId < operationHandlers.length; partitionId++) {
-            operationHandlers[partitionId] = handlerFactory.createPartitionHandler(partitionId);
+    private OperationRunner[] initPartitionOperationRunners(GroupProperties properties,
+                                                            OperationRunnerFactory handlerFactory) {
+        OperationRunner[] operationRunners = new OperationRunner[properties.PARTITION_COUNT.getInteger()];
+        for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
+            operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId);
         }
-        return operationHandlers;
+        return operationRunners;
     }
 
     private ResponseThread initResponseThread() {
@@ -150,9 +147,19 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("partition-operation") + threadId;
             ScheduleQueue scheduleQueue = new DefaultScheduleQueue();
+
             PartitionOperationThread operationThread = new PartitionOperationThread(
                     threadName, threadId, scheduleQueue, logger,
-                    threadGroup, nodeExtension, partitionOperationHandlers);
+                    threadGroup, nodeExtension, partitionOperationRunners);
+
+            // we need to assign the thread to all OperationRunners this thread owns.
+            for (int partitionId = 0; partitionId < partitionOperationRunners.length; partitionId++) {
+                if (partitionId % threadCount == threadId) {
+                    OperationRunner operationRunner = partitionOperationRunners[partitionId];
+                    operationRunner.setCurrentThread(operationThread);
+                }
+            }
+
             threads[threadId] = operationThread;
             operationThread.start();
         }
@@ -162,18 +169,18 @@ public final class ClassicOperationScheduler implements OperationScheduler {
 
     private GenericOperationThread[] initGenericThreads() {
         // we created as many generic operation handlers, as there are generic threads.
-        int threadCount = genericOperationHandlers.length;
+        int threadCount = genericOperationRunners.length;
         GenericOperationThread[] threads = new GenericOperationThread[threadCount];
-
 
         for (int threadId = 0; threadId < threads.length; threadId++) {
             String threadName = threadGroup.getThreadPoolNamePrefix("generic-operation") + threadId;
-            OperationHandler operationHandler = genericOperationHandlers[threadId];
+            OperationRunner operationRunner = genericOperationRunners[threadId];
 
             GenericOperationThread operationThread = new GenericOperationThread(
                     threadName, threadId, genericScheduleQueue,
-                    logger, threadGroup, nodeExtension, operationHandler);
+                    logger, threadGroup, nodeExtension, operationRunner);
             threads[threadId] = operationThread;
+            operationRunner.setCurrentThread(operationThread);
             operationThread.start();
         }
 
@@ -182,14 +189,14 @@ public final class ClassicOperationScheduler implements OperationScheduler {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     @Override
-    public OperationHandler[] getPartitionOperationHandlers() {
-        return partitionOperationHandlers;
+    public OperationRunner[] getPartitionOperationRunners() {
+        return partitionOperationRunners;
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     @Override
-    public OperationHandler[] getGenericOperationHandlers() {
-        return genericOperationHandlers;
+    public OperationRunner[] getGenericOperationRunners() {
+        return genericOperationRunners;
     }
 
     @Override
@@ -259,12 +266,12 @@ public final class ClassicOperationScheduler implements OperationScheduler {
     @Override
     public int getRunningOperationCount() {
         int result = 0;
-        for (OperationHandler handler : partitionOperationHandlers) {
+        for (OperationRunner handler : partitionOperationRunners) {
             if (handler.currentTask() != null) {
                 result++;
             }
         }
-        for (OperationHandler handler : genericOperationHandlers) {
+        for (OperationRunner handler : genericOperationRunners) {
             if (handler.currentTask() != null) {
                 result++;
             }
@@ -329,6 +336,15 @@ public final class ClassicOperationScheduler implements OperationScheduler {
     }
 
     @Override
+    public void runOnCallingThreadIfPossible(Operation op) {
+        if (isAllowedToRunInCurrentThread(op)) {
+            runOnCallingThread(op);
+        } else {
+            execute(op);
+        }
+    }
+
+    @Override
     public void execute(Packet packet) {
         if (packet == null) {
             throw new NullPointerException("packet can't be null");
@@ -350,7 +366,7 @@ public final class ClassicOperationScheduler implements OperationScheduler {
     }
 
     @Override
-    public void runOperationOnCallingThread(Operation op) {
+    public void runOnCallingThread(Operation op) {
         if (op == null) {
             throw new NullPointerException("op can't be null");
         }
@@ -361,18 +377,18 @@ public final class ClassicOperationScheduler implements OperationScheduler {
         }
 
         //TODO: We need to find the correct operation handler.
-        OperationHandler operationHandler = getCurrentThreadOperationHandler();
-        operationHandler.process(op);
+        OperationRunner operationRunner = getCurrentThreadOperationRunner();
+        operationRunner.run(op);
     }
 
-    public OperationHandler getCurrentThreadOperationHandler() {
+    public OperationRunner getCurrentThreadOperationRunner() {
         Thread thread = Thread.currentThread();
         if (!(thread instanceof OperationThread)) {
-            return adHocOperationHandler;
+            return adHocOperationRunner;
         }
 
         OperationThread operationThread = (OperationThread) thread;
-        return operationThread.getCurrentOperationHandler();
+        return operationThread.getCurrentOperationRunner();
     }
 
     private void execute(Object task, int partitionId, boolean priority) {
@@ -439,7 +455,7 @@ public final class ClassicOperationScheduler implements OperationScheduler {
 
     @Override
     public String toString() {
-        return "ClassicOperationScheduler{"
+        return "ClassicOperationExecutor{"
                 + "node=" + thisAddress
                 + '}';
     }
