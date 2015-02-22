@@ -401,7 +401,11 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             scheduleQueue = partitionOperationThread.scheduleQueue;
         }
 
-        scheduleQueue.add(task, priority);
+        if (priority) {
+            scheduleQueue.addUrgent(task);
+        } else {
+            scheduleQueue.add(task);
+        }
     }
 
     private int toPartitionThreadIndex(int partitionId) {

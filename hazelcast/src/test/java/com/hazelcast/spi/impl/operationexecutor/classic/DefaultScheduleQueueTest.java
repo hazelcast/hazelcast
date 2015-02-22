@@ -37,13 +37,13 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void test_add_whenNull() {
-        queue.add(null, false);
+        queue.add(null);
     }
 
     @Test
     public void test_add_whenPriority() {
         Object task = new Object();
-        queue.add(task, true);
+        queue.addUrgent(task);
 
         assertContent(priorityQueue, task);
         assertContent(normalQueue, DefaultScheduleQueue.TRIGGER_TASK);
@@ -55,7 +55,7 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
     @Test
     public void test_add_whenNormal() {
         Object task = new Object();
-        queue.add(task, false);
+        queue.add(task);
 
         assertContent(normalQueue, task);
         assertEmpty(priorityQueue);
@@ -76,13 +76,13 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
         Object normalTask2 = "normalTask2";
         Object normalTask3 = "normalTask3";
 
-        queue.add(priorityTask1, true);
-        queue.add(normalTask1, false);
-        queue.add(normalTask2, false);
+        queue.addUrgent(priorityTask1);
+        queue.add(normalTask1);
+        queue.add(normalTask2);
 
-        queue.add(priorityTask2, true);
-        queue.add(normalTask3, false);
-        queue.add(priorityTask3, true);
+        queue.addUrgent(priorityTask2);
+        queue.add(normalTask3);
+        queue.addUrgent(priorityTask3);
 
         assertSame(priorityTask1, queue.take());
         assertSame(priorityTask2, queue.take());
@@ -104,6 +104,4 @@ public class DefaultScheduleQueueTest extends HazelcastTestSupport {
         List actual = new LinkedList(q);
         assertEquals(Arrays.asList(expected), actual);
     }
-
-
 }

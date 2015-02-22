@@ -28,17 +28,22 @@ public final class DefaultScheduleQueue implements ScheduleQueue {
     }
 
     @Override
-    public void add(Object task, boolean priority) {
+    public void add(Object task) {
         if (task == null) {
             throw new NullPointerException("task can't be null");
         }
 
-        if (priority) {
-            priorityQueue.add(task);
-            normalQueue.add(TRIGGER_TASK);
-        } else {
-            normalQueue.add(task);
+        normalQueue.add(task);
+    }
+
+    @Override
+    public void addUrgent(Object task) {
+        if (task == null) {
+            throw new NullPointerException("task can't be null");
         }
+
+        priorityQueue.add(task);
+        normalQueue.add(TRIGGER_TASK);
     }
 
     @Override
