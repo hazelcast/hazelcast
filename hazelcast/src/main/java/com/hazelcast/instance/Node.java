@@ -563,6 +563,16 @@ public class Node {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
+        } else if (join.getKubernetesConfig().isEnabled()) {
+            Class clazz;
+            try {
+                logger.info("Creating KubernetesJoiner");
+                clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverKubernetes");
+                Constructor constructor = clazz.getConstructor(Node.class);
+                return (Joiner) constructor.newInstance(this);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
         return null;
     }
