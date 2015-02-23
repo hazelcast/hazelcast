@@ -93,12 +93,27 @@ public class CacheService extends AbstractCacheService implements ICacheService 
     }
     //endregion
 
+    /**
+     * Registers and {@link CacheInvalidationListener} for specified <code>cacheName</code>.
+     *
+     * @param name      the name of the cache that {@link CacheInvalidationListener} will be registered for
+     * @param listener  the {@link CacheInvalidationListener} to be registered for specified <code>cache</code>
+     * @return the id which is unique for current registration
+     */
     public String addInvalidationListener(String name, CacheInvalidationListener listener) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
         return registration.getId();
     }
 
+    /**
+     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
+     * from mentioned source with <code>sourceUuid</code>.
+     *
+     * @param name       the name of the cache that invalidation event is sent for
+     * @param key        the {@link Data} represents the invalidation event
+     * @param sourceUuid an id that represents the source for invalidation event
+     */
     @Override
     public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
         EventService eventService = nodeEngine.getEventService();
