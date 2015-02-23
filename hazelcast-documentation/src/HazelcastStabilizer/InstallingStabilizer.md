@@ -6,14 +6,14 @@
 
 *Should be:* Hazelcast Stabilizer is provided as a separate downloadable package, in `zip` or `tar.gz` format. You can download the either one [here](???).
 
-After the download is completed, follow the below steps:
+After the download is completed, follow the below steps (*note by Serdar: the step `update_stabilizer` is skipped here since I assume the Stabilizer ZIP will handle that*):
 
-- Unpack the `tar.gz` or `zip` file to your preferred directory.
+- Unpack the `tar.gz` or `zip` file to your preferred directory. It extracts with the name `hazelcast-stabilizer-<`*version*`>` into that directory.
 
 - Add the following lines to the file `~/.bashrc` (for Linux) or to the file `~/.profile` (for Mac OSX).
 
 ```
-export STABILIZER_HOME=~/hazelcast-stabilizer-<version>
+export STABILIZER_HOME=<extracted directory path>/hazelcast-stabilizer-<version>
 PATH=$STABILIZER_HOME/bin:$PATH
 ```
 
@@ -23,7 +23,7 @@ PATH=$STABILIZER_HOME/bin:$PATH
 mkdir ~/tests
 ```
 
-- Copy the file `STABILIZER_HOME/conf/stabilizer.properties` to your working directory and edit this file. If your Hazelcast cluster is on Amazon EC2, you only need to set your EC2 identity and credential, using the parameters shown below and included in the `stabilizer.properties` file:
+- Copy the file `STABILIZER_HOME/conf/stabilizer.properties` to your working directory and edit this file. For example, if your Hazelcast cluster is on Amazon EC2, you only need to set your EC2 identity and credential, using the parameters shown below and included in the `stabilizer.properties` file:
 
 ```
 CLOUD_IDENTITY=~/ec2.identity
