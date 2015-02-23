@@ -2,34 +2,48 @@
 
 ## Installing Stabilizer
 
-The zip/tar.gz file containing the stabilizer artifacts can be downloaded here:
+*Current Edit:*You can download the compressed file containing the stabilizer artifacts [here](http://search.maven.org/remotecontent?filepath=com/hazelcast/stabilizer/hazelcast-stabilizer-dist/0.3/hazelcast-stabilizer-dist-0.3-dist.zip).
 
-http://search.maven.org/remotecontent?filepath=com/hazelcast/stabilizer/hazelcast-stabilizer-dist/0.3/hazelcast-stabilizer-dist-0.3-dist.zip
+*Should be:* Hazelcast Stabilizer is provided as a separate downloadable package, in `zip` or `tar.gz` format. You can download the either one [here](???).
 
-Download and unpack the tar.gz or zip file to e.g. the home directory.
+After the download is completed, follow the below steps:
 
-add to ~/.bashrc when using Linux or ~/.profile when using OSX:
+- Unpack the `tar.gz` or `zip` file to your preferred directory.
 
-export STABILIZER_HOME=~/hazelcast-stabilizer-0.3
+- Add the following lines to the file `~/.bashrc` (for Linux) or to the file `~/.profile` (for Mac OSX).
+
+```
+export STABILIZER_HOME=~/hazelcast-stabilizer-<version>
 PATH=$STABILIZER_HOME/bin:$PATH
+```
 
-Create your tests working directory, e.g.
+- Create a working directory for your Stabilizer tests (`tests` is an example name in the following command).
 
+```
 mkdir ~/tests
+```
 
-Copy the STABILIZER_HOME/conf/stabilizer.properties to the tests directory. And make the changes required. In case of EC2, you only need to set your ec2 identity/credential:
+- Copy the file `STABILIZER_HOME/conf/stabilizer.properties` to your working directory and edit this file. If your Hazelcast cluster is on Amazon EC2, you only need to set your EC2 identity and credential, using the parameters shown below and included in the `stabilizer.properties` file:
 
+```
 CLOUD_IDENTITY=~/ec2.identity
 CLOUD_CREDENTIAL=~/ec2.credential
+```
 
-The simplest thing you can do is to make a file '~/ec2.identity' containing your access key. And another file '~/ec2.credential' containing your secret key. The reason why you need to create files instead of just setting the values in this the stabilizer.properties, is security: it is too easy to share your credentials with the outside world and now you can safely add the stabilizer.properties file in your source repo or share it with other people.
+You should create the files `~/ec2.identity` and `~/ec2.credential` that contain your EC2 access key and secret key, respectively. 
 
-### Setup public/private-key
+![image](images/NoteSmall.jpg) ***NOTE***: *Creating these files instead of just setting the access and secret keys in the `stabilizer.properties` file is for security reasons. It is too easy to share your credentials with the outside world and now you can safely add the `stabilizer.properties` file in your source repository or share it with other people.*
 
-After you have set up stabilizer, make sure you have a id_rsa.pub in your ~/.ssh directory. The Provisioner will terminate when it needs to access the cloud and sees that the public/private key are missing. If you don't have a public/private key, you can generate one like this:
 
+### Setting Public/Private Key Pair
+
+Having set up Hazelcast Stabilizer as described in the previous section, make sure you have the file `id_rsa.pub` in your `~/.ssh` directory. The [Provisioner](#provisioner) terminates when it needs to access the cloud and realizes that the public/private key pair is missing. If you do not have any, you can generate a public/private key pair using the following command.
+
+```
 ssh-keygen -t rsa -C "your_email@example.com"
-You can press enter on all questions. The value for the email address is not relevant. After this command has completed, you should have a ida_rsa.pub and id_rsa file in your ~/.ssh directory. Your id_rsa.pub key will automatically be copied to the remote agent machines and added to the ~/.ssh/known_hosts file, so that you can log into that machine without a password or explicit provided credentials.
+```
+
+Press `Enter` for all questions. The value for the e-mail address is not relevant in this case. After you execute this command, you should have the files `id_rsa.pub` and `id_rsa` in your `~/.ssh` directory. The key `id_rsa.pub` is copied to the remote agent machines automatically and added to the file `~/.ssh/known_hosts`. By this way, you can log into a machine without a password or explicitly provided credentials.
 
 ### Install wget
 
