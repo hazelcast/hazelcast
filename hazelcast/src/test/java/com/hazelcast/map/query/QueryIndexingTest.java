@@ -36,18 +36,28 @@ import org.junit.runner.RunWith;
 public class QueryIndexingTest extends HazelcastTestSupport {
 
     private int count = 2000;
-    private Map<Integer, Employee> employees = newEmployees(count);
-    private Config conf = newConfig(employees);
+    private Map<Integer, Employee> employees;
+    private Config conf;
 
-    private TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-    private HazelcastInstance h1 = nodeFactory.newHazelcastInstance(conf);
-    private HazelcastInstance h2 = nodeFactory.newHazelcastInstance(conf);
+    private TestHazelcastInstanceFactory nodeFactory;
+    private HazelcastInstance h1;
+    private HazelcastInstance h2;
 
-    private EntryObject e = new PredicateBuilder().getEntryObject();
-    private Predicate predicate = e.get("name").equal(null).and(e.get("city").isNull());
+    private EntryObject e;
+    private Predicate predicate;
 
     @Before
     public void waitForCluster() {
+        employees = newEmployees(count);
+        conf = newConfig(employees);
+
+        nodeFactory = createHazelcastInstanceFactory(2);
+        h1 = nodeFactory.newHazelcastInstance(conf);
+        h2 = nodeFactory.newHazelcastInstance(conf);
+
+        e = new PredicateBuilder().getEntryObject();
+        predicate = e.get("name").equal(null).and(e.get("city").isNull());
+
         assertClusterSizeEventually(2, h1);
     }
 
