@@ -376,7 +376,14 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     public void deregisterInvocation(BasicInvocation invocation) {
-        invocations.remove(invocation.op.getCallId());
+        long callId = invocation.op.getCallId();
+        // locally executed non backup-aware operations (e.g. a map.get on a local member) doesn't have a call id.
+        // so in that case we can skip the deregistration since it isn't registered in the first place.
+        if (callId == 0) {
+            return;
+        }
+
+        invocations.remove(callId);
     }
 
     @PrivateApi
