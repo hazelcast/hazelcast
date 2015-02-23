@@ -16,25 +16,26 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import java.io.IOException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class MemoryLeakTest {
+public class MemoryLeakTest extends HazelcastTestSupport {
 
     @BeforeClass
     @AfterClass
@@ -45,8 +46,10 @@ public class MemoryLeakTest {
     @Test
     public void testShutdownAllMemoryLeak() throws Exception {
         final long usedMemoryInit = getUsedMemoryAsMB();
+        Config config = new Config();
+        config.getGroupConfig().setName(generateRandomString(10));
         for (int i = 0; i < 7; i++) {
-            Hazelcast.newHazelcastInstance();
+            Hazelcast.newHazelcastInstance(config);
         }
         TestUtil.warmUpPartitions(Hazelcast.getAllHazelcastInstances().toArray(new HazelcastInstance[0]));
         Hazelcast.shutdownAll();

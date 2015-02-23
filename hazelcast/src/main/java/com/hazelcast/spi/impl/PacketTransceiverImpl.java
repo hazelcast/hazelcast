@@ -8,6 +8,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.TimeUnit;
@@ -24,9 +25,9 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     private final Node node;
     private final ExecutionService executionService;
     private final ILogger logger;
-    private final InternalOperationService operationService;
     private final EventServiceImpl eventService;
     private final WanReplicationService wanReplicationService;
+    private final OperationExecutor operationExecutor;
 
     public PacketTransceiverImpl(Node node,
                                  ILogger logger,
@@ -36,7 +37,7 @@ public class PacketTransceiverImpl implements PacketTransceiver {
                                  ExecutionService executionService) {
         this.node = node;
         this.executionService = executionService;
-        this.operationService = operationService;
+        this.operationExecutor = operationService.getOperationExecutor();
         this.eventService = eventService;
         this.wanReplicationService = wanReplicationService;
         this.logger = logger;
@@ -57,7 +58,7 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     @Override
     public void receive(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.executeOperation(packet);
+            operationExecutor.execute(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {

@@ -180,7 +180,7 @@ public class ClientRegressionTest
         lock.unlock();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testOperationRedo() throws Exception {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();

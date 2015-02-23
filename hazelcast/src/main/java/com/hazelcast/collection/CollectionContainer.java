@@ -114,15 +114,11 @@ public abstract class CollectionContainer implements DataSerializable {
     }
 
     protected boolean contains(Set<Data> valueSet) {
+        Collection<CollectionItem> collection = getCollection();
+        CollectionItem collectionItem = new CollectionItem(-1, null);
         for (Data value : valueSet) {
-            boolean contains = false;
-            for (CollectionItem item : getCollection()) {
-                if (value.equals(item.getValue())) {
-                    contains = true;
-                    break;
-                }
-            }
-            if (!contains) {
+            collectionItem.setValue(value);
+            if (!collection.contains(collectionItem)) {
                 return false;
             }
         }

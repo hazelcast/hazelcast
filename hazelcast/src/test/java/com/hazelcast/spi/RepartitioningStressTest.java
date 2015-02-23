@@ -51,6 +51,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
+@Ignore
 public class RepartitioningStressTest extends HazelcastTestSupport {
 
     private BlockingQueue<HazelcastInstance> queue = new LinkedBlockingQueue<HazelcastInstance>();
@@ -72,6 +73,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
         instanceFactory = createHazelcastInstanceFactory(10000);
         config = new Config();
+        config.getGroupConfig().setName(generateRandomString(10));
         MapConfig mapConfig = new MapConfig("map");
         //mapConfig.setBackupCount(0);
         config.addMapConfig(mapConfig);

@@ -48,7 +48,6 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
@@ -262,7 +261,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public void destroyConnection(Connection connection) {
+    public void destroyConnection(final Connection connection) {
         Address endpoint = connection.getEndPoint();
         if (endpoint != null) {
             final ClientConnection conn = connections.remove(endpoint);
@@ -273,6 +272,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             for (ConnectionListener connectionListener : connectionListeners) {
                 connectionListener.connectionRemoved(conn);
             }
+
+        } else {
+            ClientInvocationService invocationService = client.getInvocationService();
+            invocationService.cleanConnectionResources((ClientConnection) connection);
         }
     }
 
