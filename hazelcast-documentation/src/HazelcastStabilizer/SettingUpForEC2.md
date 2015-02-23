@@ -2,6 +2,8 @@
 
 ## Setting Up For Amazon EC2
 
+Having installed it, this section describes how to prepare the Stabilizer for testing a Hazelcast cluster deployed at Amazon EC2.
+
 - Copy the file `STABILIZER_HOME/conf/stabilizer.properties` to your working directory and edit this file. For example, if your Hazelcast cluster is on Amazon EC2, you only need to set your EC2 identity and credential, using the parameters shown below and included in the `stabilizer.properties` file:
 
 ```

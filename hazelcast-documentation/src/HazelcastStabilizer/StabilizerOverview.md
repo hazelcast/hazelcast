@@ -7,7 +7,14 @@ Hazelcast Stabilizer is a production simulator API used to test Hazelcast and Ha
 
 Hazelcast Stabilizer allows you to add potential production problems like real-life failures, network problems, overloaded CPU and failing nodes to your tests. It also provides a benchmarking and performance testing platform by supporting performance tracking and various out of the box profilers.
 
-Hazelcast Stabilizer makes use of Apache JClouds, an open source multi-cloud toolkit, and is primarily designed for testing on the clouds like Amazon EC2 and GCE. 
+Hazelcast Stabilizer makes use of Apache JClouds, an open source multi-cloud toolkit, and is primarily designed for testing on the clouds like Amazon EC2 and GCE.
+
+You can use Hazelcast Stabilizer for the following example use cases:
+
+- When upgrading your Hazelcast version
+- ???
+- ???
+- ???
 
 Hazelcast Stabilizer is available as a downloadable package on the Hazelcast [web site](http://www.hazelcast.org/downloads). Please refer to the [Installing Stabilizer section](#installing-stabilizer) for more information.
 
