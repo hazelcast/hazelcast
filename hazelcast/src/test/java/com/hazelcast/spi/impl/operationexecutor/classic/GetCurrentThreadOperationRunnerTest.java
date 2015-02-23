@@ -1,40 +1,40 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.impl.OperationHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.test.AssertTask;
 import org.junit.Test;
 
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class GetCurrentThreadOperationHandlerTest extends AbstractClassicSchedulerTest {
+public class GetCurrentThreadOperationRunnerTest extends AbstractClassicOperationExecutorTest {
 
     @Test
     public void test_whenCallerIsNormalThread() {
-        initScheduler();
+        initExecutor();
 
-        OperationHandler operationHandler = scheduler.getCurrentThreadOperationHandler();
+        OperationRunner operationRunner = executor.getCurrentThreadOperationRunner();
 
-        DummyOperationHandlerFactory f = (DummyOperationHandlerFactory) handlerFactory;
+        DummyOperationRunnerFactory f = (DummyOperationRunnerFactory) handlerFactory;
 
-        assertSame(f.adhocHandler, operationHandler);
+        assertSame(f.adhocHandler, operationRunner);
     }
 
     @Test
     public void test_whenCallerIsPartitionOperationThread() {
-        initScheduler();
+        initExecutor();
 
         final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation();
         op.setPartitionId(0);
 
-        scheduler.execute(op);
+        executor.execute(op);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                OperationHandler expected = scheduler.getPartitionOperationHandlers()[0];
-                OperationHandler actual = op.getResponse();
+                OperationRunner expected = executor.getPartitionOperationRunners()[0];
+                OperationRunner actual = op.getResponse();
                 assertSame(expected, actual);
             }
         });
@@ -42,19 +42,19 @@ public class GetCurrentThreadOperationHandlerTest extends AbstractClassicSchedul
 
     @Test
     public void test_whenCallerIsGenericOperationThread() {
-        initScheduler();
+        initExecutor();
 
         final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation();
         op.setPartitionId(-1);
 
-        scheduler.execute(op);
+        executor.execute(op);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 boolean found = false;
-                OperationHandler foundHandler = op.getResponse();
-                for (OperationHandler h : scheduler.getGenericOperationHandlers()) {
+                OperationRunner foundHandler = op.getResponse();
+                for (OperationRunner h : executor.getGenericOperationRunners()) {
                     if (foundHandler == h) {
                         found = true;
                         break;
@@ -67,16 +67,16 @@ public class GetCurrentThreadOperationHandlerTest extends AbstractClassicSchedul
     }
 
     public class GetCurrentThreadOperationHandlerOperation extends AbstractOperation {
-        volatile OperationHandler operationHandler;
+        volatile OperationRunner operationRunner;
 
         @Override
         public void run() throws Exception {
-            operationHandler = scheduler.getCurrentThreadOperationHandler();
+            operationRunner = executor.getCurrentThreadOperationRunner();
         }
 
         @Override
-        public OperationHandler getResponse() {
-            return operationHandler;
+        public OperationRunner getResponse() {
+            return operationRunner;
         }
     }
 }

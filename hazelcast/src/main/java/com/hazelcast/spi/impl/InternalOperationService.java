@@ -20,6 +20,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -57,7 +58,7 @@ public interface InternalOperationService extends OperationService {
      */
     boolean send(Response response, Address target);
 
-    OperationScheduler getScheduler();
+    OperationExecutor getOperationExecutor();
 
     boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier);
 

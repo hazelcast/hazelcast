@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 /**
  * The ScheduleQueue is a kind of priority queue where 'tasks' are queued for scheduling.
@@ -14,15 +14,24 @@ package com.hazelcast.spi.impl.classicscheduler;
 public interface ScheduleQueue {
 
     /**
-     * Adds an task to this queue.
+     * Adds an task with normal priority to this queue.
      * <p/>
      * This method is thread safe.
      *
      * @param task     the item to add
-     * @param priority if the item has a priority or not.
      * @throws java.lang.NullPointerException if task is null
      */
-    void add(Object task, boolean priority);
+    void add(Object task);
+
+    /**
+     * Adds an task with normal priority to this queue.
+     * <p/>
+     * This method is thread safe.
+     *
+     * @param task     the item to add
+     * @throws java.lang.NullPointerException if task is null
+     */
+    void addUrgent(Object task);
 
     /**
      * Takes an item from this queue. If no item is available, the call blocks.

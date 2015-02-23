@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -11,45 +11,45 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IsOperationThreadTest extends AbstractClassicSchedulerTest {
+public class IsOperationThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test
     public void test_whenCallingFromNonOperationThread() {
-        initScheduler();
+        initExecutor();
 
-        boolean result = scheduler.isOperationThread();
+        boolean result = executor.isOperationThread();
 
         assertFalse(result);
     }
 
     @Test
     public void test_whenCallingFromPartitionOperationThread() {
-        initScheduler();
+        initExecutor();
 
         PartitionSpecificCallable task = new PartitionSpecificCallable() {
             @Override
             public Object call() {
-                return scheduler.isOperationThread();
+                return executor.isOperationThread();
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
     public void test_whenCallingFromGenericOperationThread() {
-        initScheduler();
+        initExecutor();
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
             @Override
             public Object call() {
-                return scheduler.isOperationThread();
+                return executor.isOperationThread();
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }

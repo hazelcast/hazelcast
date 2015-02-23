@@ -1,9 +1,9 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NormalResponse;
-import com.hazelcast.spi.impl.OperationHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -15,29 +15,29 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests {@link ClassicOperationScheduler#execute(com.hazelcast.nio.Packet)}
+ * Tests {@link ClassicOperationExecutor#execute(com.hazelcast.nio.Packet)}
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecutePacketTest extends AbstractClassicSchedulerTest {
+public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullPacket() {
-        initScheduler();
+        initExecutor();
 
-        scheduler.execute((Packet) null);
+        executor.execute((Packet) null);
     }
 
     @Test
     public void test_whenResponsePacket() {
-        initScheduler();
+        initExecutor();
 
         final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
         Data data = serializationService.toData(normalResponse);
         final Packet packet = new Packet(data, 0, serializationService.getPortableContext());
         packet.setHeader(Packet.HEADER_RESPONSE);
         packet.setHeader(Packet.HEADER_OP);
-        scheduler.execute(packet);
+        executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -51,19 +51,19 @@ public class ExecutePacketTest extends AbstractClassicSchedulerTest {
 
     @Test
     public void test_whenPartitionSpecificOperationPacket() {
-        initScheduler();
+        initExecutor();
 
         final DummyOperation operation = new DummyOperation(0);
         Data data = serializationService.toData(operation);
         final Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
-        scheduler.execute(packet);
+        executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                OperationHandler[] partitionHandlers = scheduler.getPartitionOperationHandlers();
-                DummyOperationHandler handler = (DummyOperationHandler) partitionHandlers[operation.getPartitionId()];
+                OperationRunner[] partitionHandlers = executor.getPartitionOperationRunners();
+                DummyOperationRunner handler = (DummyOperationRunner) partitionHandlers[operation.getPartitionId()];
                 assertTrue(handler.packets.contains(packet));
             }
         });
@@ -71,21 +71,21 @@ public class ExecutePacketTest extends AbstractClassicSchedulerTest {
 
     @Test
     public void test_whenGenericOperationPacket() {
-        initScheduler();
+        initExecutor();
 
         final DummyOperation operation = new DummyOperation(-1);
         Data data = serializationService.toData(operation);
         final Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
-        scheduler.execute(packet);
+        executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                OperationHandler[] genericHandlers = scheduler.getGenericOperationHandlers();
+                OperationRunner[] genericHandlers = executor.getGenericOperationRunners();
                 boolean found = false;
-                for (OperationHandler h : genericHandlers) {
-                    DummyOperationHandler dummyOperationHandler = (DummyOperationHandler) h;
+                for (OperationRunner h : genericHandlers) {
+                    DummyOperationRunner dummyOperationHandler = (DummyOperationRunner) h;
                     if (dummyOperationHandler.packets.contains(packet)) {
                         found = true;
                         break;

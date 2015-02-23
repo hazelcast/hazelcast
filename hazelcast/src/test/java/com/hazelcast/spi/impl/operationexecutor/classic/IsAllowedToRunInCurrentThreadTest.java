@@ -1,6 +1,5 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.spi.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -10,77 +9,79 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicSchedulerTest {
+public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNullOperation() {
-        initScheduler();
+        initExecutor();
 
-        scheduler.isInvocationAllowedFromCurrentThread(null);
+        executor.isAllowedToRunInCurrentThread(null);
     }
 
     // ============= generic operations ==============================
 
     @Test
     public void test_whenGenericOperation_andCallingFromUserThread() {
-        initScheduler();
+        initExecutor();
 
         DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        boolean result = scheduler.isInvocationAllowedFromCurrentThread(genericOperation);
+        boolean result = executor.isAllowedToRunInCurrentThread(genericOperation);
 
         assertTrue(result);
     }
 
     @Test
     public void test_whenGenericOperation_andCallingFromPartitionOperationThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(0) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable() {
             @Override
             public Object call() {
-                return scheduler.isInvocationAllowedFromCurrentThread(genericOperation);
+                return executor.isAllowedToRunInCurrentThread(genericOperation);
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
     public void test_whenGenericOperation_andCallingFromGenericOperationThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(0) {
             @Override
             public Object call() {
-                return scheduler.isInvocationAllowedFromCurrentThread(genericOperation);
+                return executor.isAllowedToRunInCurrentThread(genericOperation);
             }
         };
-        scheduler.execute(task);
+
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
     public void test_whenGenericOperation_andCallingFromNioThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return scheduler.isInvocationAllowedFromCurrentThread(genericOperation);
+                return executor.isAllowedToRunInCurrentThread(genericOperation);
             }
         });
 
@@ -90,84 +91,85 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicSch
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }
 
+
     // ===================== partition specific operations ========================
 
     @Test
     public void test_whenPartitionOperation_andCallingFromUserThread() {
-        initScheduler();
+        initExecutor();
 
-        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
+        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation(0);
 
-        boolean result = scheduler.isInvocationAllowedFromCurrentThread(partitionOperation);
+        boolean result = executor.isAllowedToRunInCurrentThread(partitionOperation);
 
-        assertTrue(result);
+        assertFalse(result);
     }
 
     @Test
-    public void test_whenPartitionOperation_andCallingFromGenericOperationThread() {
-        initScheduler();
+    public void test_whenPartitionOperation_andCallingFromGenericThread() {
+        initExecutor();
 
-        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
+        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation(0);
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
             @Override
             public Object call() {
-                return scheduler.isInvocationAllowedFromCurrentThread(partitionOperation);
+                return executor.isAllowedToRunInCurrentThread(partitionOperation);
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
-        assertEqualsEventually(task, Boolean.TRUE);
+        assertEqualsEventually(task, Boolean.FALSE);
     }
 
     @Test
     public void test_whenPartitionOperation_andCallingFromPartitionOperationThread_andCorrectPartition() {
-        initScheduler();
+        initExecutor();
 
-        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
+        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation(0);
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionOperation.getPartitionId()) {
             @Override
             public Object call() {
-                return scheduler.isInvocationAllowedFromCurrentThread(partitionOperation);
+                return executor.isAllowedToRunInCurrentThread(partitionOperation);
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
     public void test_whenPartitionOperation_andCallingFromPartitionOperationThread_andWrongPartition() {
-        initScheduler();
+        initExecutor();
 
-        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
+        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation(0);
 
-        int wrongPartition = partitionOperation.getPartitionId()+1;
+        int wrongPartition = partitionOperation.getPartitionId() + 1;
         PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
             @Override
             public Object call() {
-                return scheduler.isInvocationAllowedFromCurrentThread(partitionOperation);
+                return executor.isAllowedToRunInCurrentThread(partitionOperation);
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.FALSE);
     }
 
     @Test
     public void test_whenPartitionOperation_andCallingFromNioThread() {
-        initScheduler();
+        initExecutor();
 
-        final Operation operation = new DummyOperation(1);
+        final DummyPartitionOperation operation = new DummyPartitionOperation();
 
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return scheduler.isInvocationAllowedFromCurrentThread(operation);
+                return executor.isAllowedToRunInCurrentThread(operation);
             }
         });
 

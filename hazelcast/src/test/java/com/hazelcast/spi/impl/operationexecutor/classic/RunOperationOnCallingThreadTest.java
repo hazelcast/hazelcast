@@ -1,7 +1,6 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.spi.impl.OperationHandler;
 import com.hazelcast.test.AssertTask;
 import org.junit.Test;
 
@@ -10,44 +9,44 @@ import java.util.concurrent.FutureTask;
 
 import static org.junit.Assert.assertTrue;
 
-public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTest {
+public class RunOperationOnCallingThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {
-        initScheduler();
+        initExecutor();
 
-        scheduler.runOperationOnCallingThread(null);
+        executor.runOnCallingThread(null);
     }
 
     @Test
     public void test_whenGenericOperation_andCallingFromNormalThread() {
-        initScheduler();
+        initExecutor();
 
         DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        scheduler.runOperationOnCallingThread(genericOperation);
+        executor.runOnCallingThread(genericOperation);
 
-        DummyOperationHandler adhocHandler = ((DummyOperationHandlerFactory) handlerFactory).adhocHandler;
+        DummyOperationRunner adhocHandler = ((DummyOperationRunnerFactory) handlerFactory).adhocHandler;
         assertTrue(adhocHandler.operations.contains(genericOperation));
     }
 
     @Test
     public void test_whenGenericOperation_andCallingFromGenericThread() {
         config.setProperty(GroupProperties.PROP_GENERIC_OPERATION_THREAD_COUNT, "1");
-        initScheduler();
+        initExecutor();
 
-        final DummyOperationHandler genericOperationHandler = ((DummyOperationHandlerFactory) handlerFactory).genericOperationHandlers.get(0);
+        final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
             @Override
             public Object call() {
-                scheduler.runOperationOnCallingThread(genericOperation);
+                executor.runOnCallingThread(genericOperation);
                 return null;
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -60,7 +59,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
 
     @Test
     public void test_whenGenericOperation_andCallingFromPartitionThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
@@ -68,17 +67,17 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionId) {
             @Override
             public Object call() {
-                scheduler.runOperationOnCallingThread(genericOperation);
+                executor.runOnCallingThread(genericOperation);
                 return null;
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyOperationHandler handler = (DummyOperationHandler) scheduler.getPartitionOperationHandlers()[partitionId];
+                DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
                 assertTrue(handler.operations.contains(genericOperation));
             }
         });
@@ -87,7 +86,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
     // IO thread is now allowed to run any operation, so we expect an IllegalThreadStateException
     @Test
     public void test_whenGenericOperation_andCallingFromIOThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
@@ -95,7 +94,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
             @Override
             public Boolean call() throws Exception {
                 try {
-                    scheduler.runOperationOnCallingThread(genericOperation);
+                    executor.runOnCallingThread(genericOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
@@ -111,16 +110,16 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
 
     @Test(expected = IllegalThreadStateException.class)
     public void test_whenPartitionOperation_andCallingFromNormalThread() {
-        initScheduler();
+        initExecutor();
 
         DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        scheduler.runOperationOnCallingThread(partitionOperation);
+        executor.runOnCallingThread(partitionOperation);
     }
 
     @Test
     public void test_whenPartitionOperation_andCallingFromGenericThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
@@ -128,7 +127,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
             @Override
             public Object call() {
                 try {
-                    scheduler.runOperationOnCallingThread(partitionOperation);
+                    executor.runOnCallingThread(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
@@ -136,14 +135,14 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
     public void test_whenPartitionOperation_andCallingFromPartitionThread_andWrongPartition() {
-        initScheduler();
+        initExecutor();
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
@@ -152,7 +151,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
             @Override
             public Object call() {
                 try {
-                    scheduler.runOperationOnCallingThread(partitionOperation);
+                    executor.runOnCallingThread(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;
@@ -160,14 +159,14 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
     public void test_whenPartitionOperation_andCallingFromPartitionThread_andRightPartition() {
-        initScheduler();
+        initExecutor();
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
@@ -175,18 +174,18 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionId) {
             @Override
             public Object call() {
-                scheduler.runOperationOnCallingThread(partitionOperation);
+                executor.runOnCallingThread(partitionOperation);
                 return Boolean.TRUE;
             }
         };
 
-        scheduler.execute(task);
+        executor.execute(task);
 
         assertEqualsEventually(task, Boolean.TRUE);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                DummyOperationHandler handler = (DummyOperationHandler)scheduler.getPartitionOperationHandlers()[partitionId];
+                DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
                 assertTrue(handler.operations.contains(partitionOperation));
             }
         });
@@ -194,7 +193,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
 
     @Test
     public void test_whenPartitionOperation_andCallingFromIOThread() {
-        initScheduler();
+        initExecutor();
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
@@ -202,7 +201,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicSchedulerTes
             @Override
             public Boolean call() throws Exception {
                 try {
-                    scheduler.runOperationOnCallingThread(partitionOperation);
+                    executor.runOnCallingThread(partitionOperation);
                     return Boolean.FALSE;
                 } catch (IllegalThreadStateException e) {
                     return Boolean.TRUE;

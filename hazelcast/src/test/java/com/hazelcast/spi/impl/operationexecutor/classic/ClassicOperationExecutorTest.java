@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -12,35 +12,35 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClassicOperationSchedulerTest extends AbstractClassicSchedulerTest {
+public class ClassicOperationExecutorTest extends AbstractClassicOperationExecutorTest {
 
     @Test
     public void testConstruction() {
-        initScheduler();
+        initExecutor();
 
-        assertEquals(groupProperties.PARTITION_COUNT.getInteger(), scheduler.getPartitionOperationHandlers().length);
-        assertEquals(scheduler.getGenericOperationThreadCount(), scheduler.getGenericOperationHandlers().length);
+        assertEquals(groupProperties.PARTITION_COUNT.getInteger(), executor.getPartitionOperationRunners().length);
+        assertEquals(executor.getGenericOperationThreadCount(), executor.getGenericOperationRunners().length);
 
         assertEquals(groupProperties.PARTITION_OPERATION_THREAD_COUNT.getInteger(),
-                scheduler.getPartitionOperationThreadCount());
+                executor.getPartitionOperationThreadCount());
 
         assertEquals(groupProperties.GENERIC_OPERATION_THREAD_COUNT.getInteger(),
-                scheduler.getGenericOperationThreadCount());
+                executor.getGenericOperationThreadCount());
     }
 
     @Test
     public void test_getRunningOperationCount() {
-        initScheduler();
+        initExecutor();
 
-        scheduler.execute(new DummyOperation(-1).durationMs(2000));
-        scheduler.execute(new DummyOperation(-1).durationMs(2000));
+        executor.execute(new DummyOperation(-1).durationMs(2000));
+        executor.execute(new DummyOperation(-1).durationMs(2000));
 
-        scheduler.execute(new DummyOperation(0).durationMs(2000));
+        executor.execute(new DummyOperation(0).durationMs(2000));
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                int runningOperationCount = scheduler.getRunningOperationCount();
+                int runningOperationCount = executor.getRunningOperationCount();
                 System.out.println("runningOperationCount:" + runningOperationCount);
                 assertEquals(3, runningOperationCount);
             }
@@ -49,27 +49,27 @@ public class ClassicOperationSchedulerTest extends AbstractClassicSchedulerTest 
 
     @Test
     public void test_getOperationExecutorQueueSize() {
-        initScheduler();
+        initExecutor();
 
         // first we need to set the threads to work so the queues are going to be left alone.
-        for (int k = 0; k < scheduler.getGenericOperationThreadCount(); k++) {
-            scheduler.execute(new DummyOperation(-1).durationMs(2000));
+        for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
+            executor.execute(new DummyOperation(-1).durationMs(2000));
         }
-        for (int k = 0; k < scheduler.getPartitionOperationThreadCount(); k++) {
-            scheduler.execute(new DummyOperation(k).durationMs(2000));
+        for (int k = 0; k < executor.getPartitionOperationThreadCount(); k++) {
+            executor.execute(new DummyOperation(k).durationMs(2000));
         }
 
         // now we throw in some work in the queues that wont' be picked up
         int count = 0;
         for (int l = 0; l < 3; l++) {
-            for (int k = 0; k < scheduler.getGenericOperationThreadCount(); k++) {
-                scheduler.execute(new DummyOperation(-1).durationMs(2000));
+            for (int k = 0; k < executor.getGenericOperationThreadCount(); k++) {
+                executor.execute(new DummyOperation(-1).durationMs(2000));
                 count++;
             }
         }
         for (int l = 0; l < 5; l++) {
-            for (int k = 0; k < scheduler.getPartitionOperationThreadCount(); k++) {
-                scheduler.execute(new DummyOperation(k).durationMs(2000));
+            for (int k = 0; k < executor.getPartitionOperationThreadCount(); k++) {
+                executor.execute(new DummyOperation(k).durationMs(2000));
                 count++;
             }
         }
@@ -78,17 +78,17 @@ public class ClassicOperationSchedulerTest extends AbstractClassicSchedulerTest 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedCount, scheduler.getOperationExecutorQueueSize());
+                assertEquals(expectedCount, executor.getOperationExecutorQueueSize());
             }
         });
     }
 
     @Test
     public void test_dumpPerformanceMetrics() {
-        initScheduler();
+        initExecutor();
 
         StringBuffer sb = new StringBuffer();
-        scheduler.dumpPerformanceMetrics(sb);
+        executor.dumpPerformanceMetrics(sb);
         String content = sb.toString();
 
 

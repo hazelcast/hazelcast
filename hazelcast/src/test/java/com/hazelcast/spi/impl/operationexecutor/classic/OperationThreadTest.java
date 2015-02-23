@@ -1,10 +1,10 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.OperationHandler;
-import com.hazelcast.spi.impl.OperationHandlerFactory;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.test.AssertTask;
 import org.junit.Test;
 
@@ -14,15 +14,15 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OperationThreadTest extends AbstractClassicSchedulerTest {
+public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test
     public void testOOME_whenDeserializing() throws Exception {
-        handlerFactory = mock(OperationHandlerFactory.class);
-        OperationHandler handler = mock(OperationHandler.class);
-        when(handlerFactory.createGenericOperationHandler()).thenReturn(handler);
+        handlerFactory = mock(OperationRunnerFactory.class);
+        OperationRunner handler = mock(OperationRunner.class);
+        when(handlerFactory.createGenericRunner()).thenReturn(handler);
 
-        initScheduler();
+        initExecutor();
 
         DummyOperation operation = new DummyOperation(-1);
         Data data = serializationService.toData(operation);
@@ -30,11 +30,11 @@ public class OperationThreadTest extends AbstractClassicSchedulerTest {
         Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
 
-        doThrow(new OutOfMemoryError()).when(handler).process(packet);
+        doThrow(new OutOfMemoryError()).when(handler).run(packet);
 
         final int oldCount = OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount();
 
-        scheduler.execute(packet);
+        executor.execute(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override

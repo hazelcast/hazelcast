@@ -1,11 +1,11 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.OperationHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
@@ -20,7 +20,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  * - threads that deal with operations for a specific partition
  * - threads that deal with non partition specific tasks
  * <p/>
- * The actual processing of an operation is forwarded to the {@link OperationHandler}.
+ * The actual processing of an operation is forwarded to the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner}.
  */
 public abstract class OperationThread extends HazelcastManagedThread {
 
@@ -35,7 +35,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
 
     // This field wil only be accessed by the thread itself when doing 'self' calls. So no need
     // for any form of synchronization.
-    private OperationHandler currentOperationHandler;
+    private OperationRunner currentOperationRunner;
 
     public OperationThread(String name, int threadId, ScheduleQueue scheduleQueue,
                            ILogger logger, HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
@@ -47,11 +47,11 @@ public abstract class OperationThread extends HazelcastManagedThread {
         this.nodeExtension = nodeExtension;
     }
 
-    public OperationHandler getCurrentOperationHandler() {
-        return currentOperationHandler;
+    public OperationRunner getCurrentOperationRunner() {
+        return currentOperationRunner;
     }
 
-    public abstract OperationHandler getOperationHandler(int partitionId);
+    public abstract OperationRunner getOperationRunner(int partitionId);
 
     @Override
     public final void run() {
@@ -109,38 +109,38 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processPartitionSpecificRunnable(PartitionSpecificRunnable runnable) {
-        currentOperationHandler = getOperationHandler(runnable.getPartitionId());
+        currentOperationRunner = getOperationRunner(runnable.getPartitionId());
         try {
-            currentOperationHandler.process(runnable);
+            currentOperationRunner.run(runnable);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
             logger.severe("Failed to process task: " + runnable + " on " + getName());
         } finally {
-            currentOperationHandler = null;
+            currentOperationRunner = null;
         }
     }
 
     private void processPacket(Packet packet) {
-        currentOperationHandler = getOperationHandler(packet.getPartitionId());
+        currentOperationRunner = getOperationRunner(packet.getPartitionId());
         try {
-            currentOperationHandler.process(packet);
+            currentOperationRunner.run(packet);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
             logger.severe("Failed to process packet: " + packet + " on " + getName(), e);
         } finally {
-            currentOperationHandler = null;
+            currentOperationRunner = null;
         }
     }
 
     private void processOperation(Operation operation) {
-        currentOperationHandler = getOperationHandler(operation.getPartitionId());
+        currentOperationRunner = getOperationRunner(operation.getPartitionId());
         try {
-            currentOperationHandler.process(operation);
+            currentOperationRunner.run(operation);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
             logger.severe("Failed to process operation: " + operation + " on " + getName(), e);
         } finally {
-            currentOperationHandler = null;
+            currentOperationRunner = null;
         }
     }
 

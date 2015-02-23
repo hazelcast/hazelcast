@@ -1,26 +1,26 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.OperationHandler;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 
 /**
  * An {@link OperationThread} for non partition specific operations.
  */
 public final class GenericOperationThread extends OperationThread {
 
-    private final OperationHandler operationHandler;
+    private final OperationRunner operationRunner;
 
     public GenericOperationThread(String name, int threadId, ScheduleQueue scheduleQueue,
                                   ILogger logger, HazelcastThreadGroup threadGroup,
-                                  NodeExtension nodeExtension,  OperationHandler operationHandler) {
+                                  NodeExtension nodeExtension,  OperationRunner operationRunner) {
         super(name, threadId, scheduleQueue, logger, threadGroup, nodeExtension);
-        this.operationHandler = operationHandler;
+        this.operationRunner = operationRunner;
     }
 
     @Override
-    public OperationHandler getOperationHandler(int partitionId) {
-        return operationHandler;
+    public OperationRunner getOperationRunner(int partitionId) {
+        return operationRunner;
     }
 }

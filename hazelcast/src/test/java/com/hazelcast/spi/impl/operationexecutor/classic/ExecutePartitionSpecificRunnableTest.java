@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl.classicscheduler;
+package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -9,12 +9,12 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ExecutePartitionSpecificRunnableTest extends AbstractClassicSchedulerTest {
+public class ExecutePartitionSpecificRunnableTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)
     public void test() {
-        initScheduler();
+        initExecutor();
 
-        scheduler.execute((PartitionSpecificRunnable) null);
+        executor.execute((PartitionSpecificRunnable) null);
     }
 }

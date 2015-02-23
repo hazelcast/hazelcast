@@ -33,6 +33,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -219,7 +220,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex);
 
-            if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
+            if (!operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
@@ -271,13 +272,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         responseReceived = Boolean.FALSE;
         op.setResponseHandler(this);
 
-        //todo: should move to the operationService.
-        OperationScheduler scheduler = operationService.scheduler;
-        if (scheduler.isAllowedToRunInCurrentThread(op)) {
-            scheduler.runOperationOnCallingThread(op);
-        } else {
-            scheduler.execute(op);
-        }
+        OperationExecutor executor = operationService.operationExecutor;
+        executor.runOnCallingThreadIfPossible(op);
     }
 
     private void doInvokeRemote() {
