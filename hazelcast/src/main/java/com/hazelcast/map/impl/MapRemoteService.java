@@ -40,4 +40,11 @@ class MapRemoteService implements RemoteService {
         nodeEngine.getEventService().deregisterAllListeners(mapServiceContext.serviceName(), name);
     }
 
+    MapServiceContext getMapServiceContext() {
+        return mapServiceContext;
+    }
+
+    NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
 }

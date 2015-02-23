@@ -6,7 +6,6 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 
@@ -14,19 +13,12 @@ import java.util.List;
 
 import static com.hazelcast.map.impl.MapListenerAdaptors.createMapListenerAdaptor;
 
-abstract class AbstractMapServiceContextSupport implements MapServiceContextSupport,
-        MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
+abstract class AbstractMapServiceContextSupport implements MapServiceContext {
 
     protected NodeEngine nodeEngine;
 
-    private MapServiceContext mapServiceContext;
-
     protected AbstractMapServiceContextSupport(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-    }
-
-    public void setMapServiceContext(MapServiceContext mapServiceContext) {
-        this.mapServiceContext = mapServiceContext;
     }
 
     @Override
@@ -81,15 +73,15 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
         if (value2 == null) {
             return false;
         }
-        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        final MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.getRecordFactory().isEquals(value1, value2);
     }
 
     @Override
     public void interceptAfterGet(String mapName, Object value) {
-        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
-            value = mapServiceContext.toObject(value);
+            value = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
                 interceptor.afterGet(value);
             }
@@ -98,11 +90,11 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
 
     @Override
     public Object interceptPut(String mapName, Object oldValue, Object newValue) {
-        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         Object result = null;
         if (!interceptors.isEmpty()) {
-            result = mapServiceContext.toObject(newValue);
-            oldValue = mapServiceContext.toObject(oldValue);
+            result = toObject(newValue);
+            oldValue = toObject(oldValue);
             for (MapInterceptor interceptor : interceptors) {
                 Object temp = interceptor.interceptPut(oldValue, result);
                 if (temp != null) {
@@ -115,9 +107,9 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
 
     @Override
     public void interceptAfterPut(String mapName, Object newValue) {
-        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
-            newValue = mapServiceContext.toObject(newValue);
+            newValue = toObject(newValue);
             for (MapInterceptor interceptor : interceptors) {
                 interceptor.afterPut(newValue);
             }
@@ -126,10 +118,10 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
 
     @Override
     public Object interceptRemove(String mapName, Object value) {
-        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         Object result = null;
         if (!interceptors.isEmpty()) {
-            result = mapServiceContext.toObject(value);
+            result = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
                 Object temp = interceptor.interceptRemove(result);
                 if (temp != null) {
@@ -142,10 +134,10 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
 
     @Override
     public void interceptAfterRemove(String mapName, Object value) {
-        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         if (!interceptors.isEmpty()) {
             for (MapInterceptor interceptor : interceptors) {
-                value = mapServiceContext.toObject(value);
+                value = toObject(value);
                 interceptor.afterRemove(value);
             }
         }
@@ -153,7 +145,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
 
     @Override
     public void addInterceptor(String id, String mapName, MapInterceptor interceptor) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = getMapContainer(mapName);
         mapContainer.addInterceptor(id, interceptor);
     }
 
@@ -165,16 +157,16 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
 
     @Override
     public void removeInterceptor(String mapName, String id) {
-        mapServiceContext.getMapContainer(mapName).removeInterceptor(id);
+        getMapContainer(mapName).removeInterceptor(id);
     }
 
     // todo interceptors should get a wrapped object which includes the serialized version
     @Override
     public Object interceptGet(String mapName, Object value) {
-        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
         Object result = null;
         if (!interceptors.isEmpty()) {
-            result = mapServiceContext.toObject(value);
+            result = toObject(value);
             for (MapInterceptor interceptor : interceptors) {
                 Object temp = interceptor.interceptGet(result);
                 if (temp != null) {
@@ -189,7 +181,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     public String addLocalEventListener(MapListener mapListener, String mapName) {
         ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(mapServiceContext.serviceName(), mapName, listenerAdaptor);
+                registerLocalListener(serviceName(), mapName, listenerAdaptor);
         return registration.getId();
     }
 
@@ -197,7 +189,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     public String addLocalEventListener(MapListener mapListener, EventFilter eventFilter, String mapName) {
         ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(mapServiceContext.serviceName(), mapName, eventFilter, listenerAdaptor);
+                registerLocalListener(serviceName(), mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
@@ -205,21 +197,14 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
     public String addEventListener(MapListener mapListener, EventFilter eventFilter, String mapName) {
         ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerListener(mapServiceContext.serviceName(), mapName, eventFilter, listenerAdaptor);
+                registerListener(serviceName(), mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(mapServiceContext.serviceName(), mapName, registrationId);
+        return nodeEngine.getEventService().deregisterListener(serviceName(), mapName, registrationId);
     }
 
-    @Override
-    public boolean hasRegisteredListener(String name) {
-        final MapServiceContext mapServiceContext = this.mapServiceContext;
-        final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
-        final String serviceName = mapServiceContext.serviceName();
-        return eventService.hasEventRegistration(serviceName, name);
-    }
 }
 
