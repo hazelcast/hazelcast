@@ -26,12 +26,15 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
     @Override
     public void dispatchEvent(EventData eventData, ListenerAdapter listener) {
         if (eventData instanceof EntryEventData) {
-            dispatchEntryEventData(eventData, listener);
-        } else if (eventData instanceof MapEventData) {
-            dispatchMapEventData(eventData, listener);
-        } else {
-            throw new IllegalArgumentException("Unknown map event data");
+            dispatchEntryEventData((EntryEventData) eventData, listener);
+            return;
         }
+        if (eventData instanceof MapEventData) {
+            dispatchMapEventData((MapEventData) eventData, listener);
+            return;
+        }
+
+        throw new IllegalArgumentException("Unknown map event data");
     }
 
     private void incrementEventStats(IMapEvent event) {
@@ -43,12 +46,12 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
         }
     }
 
-    private void dispatchMapEventData(EventData eventData, ListenerAdapter listener) {
-        final MapEventData mapEventData = (MapEventData) eventData;
-        final Member member = getMember(eventData);
-        final MapEvent event = createMapEvent(mapEventData, member);
+    private void dispatchMapEventData(MapEventData mapEventData, ListenerAdapter listener) {
+        Member member = getMember(mapEventData);
+        MapEvent event = createMapEvent(mapEventData, member);
         callListener(listener, event);
     }
+
 
     private void callListener(ListenerAdapter listener, IMapEvent event) {
         listener.onEvent(event);
@@ -60,10 +63,9 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
                 mapEventData.getEventType(), mapEventData.getNumberOfEntries());
     }
 
-    private void dispatchEntryEventData(EventData eventData, ListenerAdapter listener) {
-        final EntryEventData entryEventData = (EntryEventData) eventData;
-        final Member member = getMember(eventData);
-        final EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
+    private void dispatchEntryEventData(EntryEventData entryEventData, ListenerAdapter listener) {
+        Member member = getMember(entryEventData);
+        EntryEvent event = createDataAwareEntryEvent(entryEventData, member);
         callListener(listener, event);
     }
 

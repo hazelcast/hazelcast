@@ -7,7 +7,6 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.map.impl.DefaultMapServiceContext;
 import com.hazelcast.map.impl.DefaultRecordStore;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -212,7 +211,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final DefaultMapServiceContext defaultMapServiceContext = (DefaultMapServiceContext) mapServiceContext;
         final EvictionOperator evictionOperator = EvictionOperator.create(new MemoryInfoAccessor() {
             @Override
             public long getTotalMemory() {
@@ -230,7 +228,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
             }
         }, mapServiceContext);
 
-        defaultMapServiceContext.setEvictionOperator(evictionOperator);
+        mapServiceContext.setEvictionOperator(evictionOperator);
     }
 
     private void setMockRuntimeMemoryInfoAccessor(Collection<IMap> maps, final long totalMemory,
