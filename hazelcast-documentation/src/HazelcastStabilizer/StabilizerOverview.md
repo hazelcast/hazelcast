@@ -3,21 +3,20 @@
 
 ## Stabilizer Overview
 
-Hazelcast Stabilizer is a production simulator API used to perform tests on Hazelcast and Hazelcast based applications in clustered environments. It allows you to create your own tests and perform them on your Hazelcast clusters and applications deployed to the cloud computing environments. In your tests, you can provide any property (hardware, operating system, Java version, etc.) that can be specified on these environments like Amazon Web Services (AWS) and Google Compute Engine (GCE).
+Hazelcast Stabilizer is a production simulator API used to test Hazelcast and Hazelcast based applications in clustered environments. It also allows you to create your own tests and perform them on your Hazelcast clusters and applications deployed to the cloud computing environments. In your tests, you can provide any property (hardware, operating system, Java version, etc.) that can be specified on these environments like Amazon Web Services (AWS) and Google Compute Engine (GCE).
 
 Hazelcast Stabilizer allows you to add potential production problems like real-life failures, network problems, overloaded CPU and failing nodes to your tests. It also provides a benchmarking and performance testing platform by supporting performance tracking and various out of the box profilers.
 
-Hazelcast Stabilizer makes use of Apache JClouds, an open source multi-cloud toolkit, and is primarily designed for testing on the clouds like Amazon EC2 and GCE. 
+Hazelcast Stabilizer makes use of Apache JClouds, an open source multi-cloud toolkit, and is primarily designed for testing on the clouds like Amazon EC2 and GCE.
 
-??? How it will be provided ???
+You can use Hazelcast Stabilizer for the following example use cases:
 
-Hazelcast Stabilizer consists of the following components:
-- The code
-- Stabilizer framework
-- JClouds
-- Linux Operating System tools and drivers
-- EC2 Cluster or physical hardware
-- Chef, the automation platform
+- When upgrading your Hazelcast version
+- ???
+- ???
+- ???
+
+Hazelcast Stabilizer is available as a downloadable package on the Hazelcast [web site](http://www.hazelcast.org/downloads). Please refer to the [Installing Stabilizer section](#installing-stabilizer) for more information.
 
 
 ## Key Concepts
@@ -36,6 +35,6 @@ The following are the key concepts mentioned with Hazelcast Stabilizer.
 
 - **Coordinator** -  A JVM that can run anywhere, e.g. on your local machine. It is actually responsible for running the test using the agents. You configure it with a list of Agent IP addresses and send a command like "run this testsuite with 10 worker JVMs for 2 hours".
 
-- **Provisioner** -  It is responsible for sp	awning and terminating EC2 instances and installing Agents on the remote machines. It can be used in combination with EC2 (or any other cloud), but it can also be used in a static setup like a local machine or a cluster of machines in your data center.
+- **Provisioner** -  It is responsible for spawning and terminating EC2 instances and installing Agents on the remote machines. It can be used in combination with EC2 (or any other cloud), but it can also be used in a static setup like a local machine or a cluster of machines in your data center.
 
-- **Communicator** -  ???
+- **Communicator** -  A JVM that enables the communication between the agents and workers.

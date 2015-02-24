@@ -87,4 +87,12 @@ public interface MapServiceContext extends MapServiceContextSupport,
     MapContextQuerySupport getMapContextQuerySupport();
 
     LocalMapStatsProvider getLocalMapStatsProvider();
+
+    /**
+     * Sets an {@link EvictionOperator} to this {@link MapServiceContext}.
+     * Used for testing purposes.
+     *
+     * @param evictionOperator {@link EvictionOperator} to be set.
+     */
+    void setEvictionOperator(EvictionOperator evictionOperator);
 }

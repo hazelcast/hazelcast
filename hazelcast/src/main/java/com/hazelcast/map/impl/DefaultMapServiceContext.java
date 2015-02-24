@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Default implementation of map service context.
  */
-public class DefaultMapServiceContext extends AbstractMapServiceContextSupport implements MapServiceContext {
+class DefaultMapServiceContext extends AbstractMapServiceContextSupport {
 
     private final PartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, MapContainer> mapContainers;
@@ -50,15 +50,14 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     private final NearCacheProvider nearCacheProvider;
     private final LocalMapStatsProvider localMapStatsProvider;
     private final MergePolicyProvider mergePolicyProvider;
-    private final MapEventPublisher mapEventPublisher;
     private final MapContextQuerySupport mapContextQuerySupport;
+    private MapEventPublisher mapEventPublisher;
     private EvictionOperator evictionOperator;
     private MapService mapService;
 
     public DefaultMapServiceContext(NodeEngine nodeEngine) {
         super(nodeEngine);
-        setMapServiceContext(this);
-        final int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         this.partitionContainers = new PartitionContainer[partitionCount];
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
@@ -67,8 +66,12 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
         this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
-        this.mapEventPublisher = new MapEventPublisherSupport(this);
+        this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapContextQuerySupport = new BasicMapContextQuerySupport(this);
+    }
+
+    MapEventPublisherSupport createMapEventPublisherSupport() {
+        return new MapEventPublisherSupport(this);
     }
 
     @Override
@@ -257,6 +260,7 @@ public class DefaultMapServiceContext extends AbstractMapServiceContextSupport i
     /**
      * Used for testing purposes.
      */
+    @Override
     public void setEvictionOperator(EvictionOperator evictionOperator) {
         this.evictionOperator = evictionOperator;
     }
