@@ -111,6 +111,6 @@ Hazelcast is available under the Apache 2 License.
 
 #### Copyright
 
-Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
