@@ -23,6 +23,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
@@ -100,6 +101,14 @@ abstract class AbstractMapServiceContextAwareFactory implements MapServiceContex
     abstract ReplicationSupportingService createReplicationSupportingService();
 
     /**
+     * Creates a new {@link StatisticsAwareService} for {@link MapService}.
+     *
+     * @return Creates a new {@link StatisticsAwareService} implementation.
+     * @see com.hazelcast.spi.StatisticsAwareService
+     */
+    abstract StatisticsAwareService createStatisticsAwareService();
+
+    /**
      * Returns a {@link MapService} object by populating it with required
      * auxiliary services.
      *
@@ -116,6 +125,7 @@ abstract class AbstractMapServiceContextAwareFactory implements MapServiceContex
         PostJoinAwareService postJoinAwareService = createPostJoinAwareService();
         SplitBrainHandlerService splitBrainHandlerService = createSplitBrainHandlerService();
         ReplicationSupportingService replicationSupportingService = createReplicationSupportingService();
+        StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
 
         checkNotNull(mapServiceContext, "mapServiceContext should not be null");
         checkNotNull(managedService, "managedService should not be null");
@@ -126,6 +136,7 @@ abstract class AbstractMapServiceContextAwareFactory implements MapServiceContex
         checkNotNull(postJoinAwareService, "postJoinAwareService should not be null");
         checkNotNull(splitBrainHandlerService, "splitBrainHandlerService should not be null");
         checkNotNull(replicationSupportingService, "replicationSupportingService should not be null");
+        checkNotNull(statisticsAwareService, "statisticsAwareService should not be null");
 
         MapService mapService = new MapService();
         mapService.setManagedService(managedService);
@@ -136,6 +147,7 @@ abstract class AbstractMapServiceContextAwareFactory implements MapServiceContex
         mapService.setPostJoinAwareService(postJoinAwareService);
         mapService.setSplitBrainHandlerService(splitBrainHandlerService);
         mapService.setReplicationSupportingService(replicationSupportingService);
+        mapService.setStatisticsAwareService(statisticsAwareService);
         mapService.setMapServiceContext(mapServiceContext);
         mapServiceContext.setService(mapService);
         return mapService;

@@ -23,6 +23,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
@@ -83,6 +84,17 @@ class DefaultMapServiceContextAwareFactory extends AbstractMapServiceContextAwar
     @Override
     ReplicationSupportingService createReplicationSupportingService() {
         return new MapReplicationSupportingService(getMapServiceContext());
+    }
+
+    /**
+     * Creates a new {@link com.hazelcast.spi.StatisticsAwareService} for {@link com.hazelcast.map.impl.MapService}.
+     *
+     * @return Creates a new {@link com.hazelcast.spi.StatisticsAwareService} implementation.
+     * @see com.hazelcast.spi.StatisticsAwareService
+     */
+    @Override
+    StatisticsAwareService createStatisticsAwareService() {
+        return new MapStatisticsAwareService(getMapServiceContext());
     }
 
 }
