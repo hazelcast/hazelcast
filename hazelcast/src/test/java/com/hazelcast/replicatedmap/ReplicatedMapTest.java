@@ -1182,4 +1182,14 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         ReplicatedMap<Object, Object> map1 = instance1.getReplicatedMap("default");
         map1.removeEntryListener(null);
     }
+
+    @Test
+    public void testSizeAfterRemove() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        map.put(1, Integer.MAX_VALUE);
+        map.remove(1);
+        assertTrue(map.size() == 0);
+    }
+
 }

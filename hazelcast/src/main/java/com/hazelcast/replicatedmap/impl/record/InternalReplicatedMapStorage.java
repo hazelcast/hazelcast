@@ -88,7 +88,14 @@ class InternalReplicatedMapStorage<K, V> {
     }
 
     public int size() {
-        return storage.size();
+        int count = 0;
+        for (ReplicatedRecord<K, V> record : storage.values()) {
+            if (record.isTombstone()) {
+                continue;
+            }
+            count++;
+        }
+        return count;
     }
 
     public void finishLoading() {
