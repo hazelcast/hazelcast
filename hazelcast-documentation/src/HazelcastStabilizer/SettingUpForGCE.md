@@ -2,6 +2,12 @@
 
 ## Setting Up For Google Compute Engine
 
-For setup on GCE a developer email can be obtained from the GCE admin GUI console. Its usually something in the form: @developer.gserviceaccount.com go to API & Auth > Credentials, click Create New Client ID, select Service Account. save your p12 keystore file that is obtained when creating a "Service Account"
+To prepare the Stabilizer for testing a Hazelcast cluster deployed at Google Compute Engine (GCE), first you need an e-mail address to be used as a GCE service account. You can obtain this e-mail address in the Admin GUI console of GCE. In this console, select **Credentials** in the menu **API &  Auth**. Then, click the **Create New Client ID** button and select **Service Account**. Usually, this e-mail address is in this form: `<your account ID>@developer.gserviceaccount.com`.
 
-run ./setupGce.sh script provide you @developer.gserviceaccount.com as 1st argument provide and the path to your p12 file as 2nd argument the setupGce.sh script will create your stabilizer.properties, in the conf directory
+Save the **p12** keystore file that you obtained while creating your Service Account. Run the `setupGce.sh` script that is in the `bin` folder of your Hazelcast Stabilizer package you downloaded. Of course, you need to edit the content of this script file and specify the following parameters:
+
+- GCE_id: Your developer e-mail address you obtained in the Admin GUI console of GCE.
+- p12File: The path to your p12 file you saved while you were obtaining your developer e-mail address.
+
+
+After you edit and run the `setupGce.sh` script, the `stabilizer.properties` file that is needed for a proper testing of your instances on GCE is created in the `conf` folder of Hazelcast Stabilizer.
