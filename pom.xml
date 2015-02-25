@@ -37,6 +37,7 @@
         <module>hazelcast-cloud</module>
         <module>hazelcast-ra</module>
         <module>hazelcast-build-utils</module>
+        <module>hazelcast-client-new</module>
     </modules>
 
     <properties>
