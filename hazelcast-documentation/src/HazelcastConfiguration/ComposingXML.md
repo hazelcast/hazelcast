@@ -1,8 +1,9 @@
 
 ## Composing XML Configuration
 
-You can compose your Hazelcast XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use the `<import/>` element to load different XML configuration files. Please see the following examples.   
+You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use the `<import/>` element to load different XML configuration files. Please see the following examples.   
 
+#### Example of Hazelcast XML Composing
 `hazelcast-config.xml`:
 
 ```xml
@@ -38,6 +39,40 @@ You can compose your Hazelcast XML Configuration file from multiple XML configur
   </network>
 </hazelcast>
 ```
+#### Example of Hazelcast Client XML Composing
+
+`hazelcast-client-config.xml`:
+
+```xml
+<hazelcast-client>
+  <import resource="client-group-config.xml"/>
+  <import resource="client-network-config.xml"/>
+</hazelcast>
+```
+
+`development-group-config.xml`:
+
+```xml
+<hazelcast-client>
+  <group>
+      <name>dev</name>
+      <password>dev-pass</password>
+  </group>
+</hazelcast-client>
+```
+
+`client-network-config.xml`:
+
+```xml
+<hazelcast-client>
+    <network>
+        <cluster-members>
+            <address>127.0.0.1:7000</address>
+        </cluster-members>
+    </network>
+</hazelcast-client>
+```
+
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *You can only use `<import/>` element on top level of the XML hierarchy.*
 <br></br>
