@@ -861,7 +861,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(6, testMapStore.callCount.get());
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 300000)
     public void testTwoMemberWriteThrough2() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1000, 0, 0);
         Config config = newConfig(testMapStore, 0);
@@ -873,8 +873,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         for (int i = 0; i < 1000; i++) {
             map1.put(i, "value" + i);
         }
-        assertTrue("store operations could not be done wisely ",
-                testMapStore.latchStore.await(30, TimeUnit.SECONDS));
+
+        assertOpenEventually("store operations could not be done wisely ", testMapStore.latchStore);
         assertEquals(1000, testMapStore.getStore().size());
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
