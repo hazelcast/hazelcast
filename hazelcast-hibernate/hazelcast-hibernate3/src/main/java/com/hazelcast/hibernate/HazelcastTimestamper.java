@@ -22,6 +22,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.Logger;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Helper class to create timestamps and calculate timeouts based on either Hazelcast
  * configuration of by requesting values on the cluster.
@@ -29,13 +31,27 @@ import com.hazelcast.logging.Logger;
 public final class HazelcastTimestamper {
 
     private static final int SEC_TO_MS = 1000;
+    private static final int BIN_DIGITS = 12;
+    private static final int ONE_MS = 1 << BIN_DIGITS;
+    private static final AtomicLong VALUE  = new AtomicLong();
 
     private HazelcastTimestamper() {
     }
 
     public static long nextTimestamp(HazelcastInstance instance) {
-        // System time in ms.
-        return instance.getCluster().getClusterTime();
+        int runs = 0;
+        while (true) {
+            long base = instance.getCluster().getClusterTime() << BIN_DIGITS;
+            long maxValue = base + ONE_MS - 1;
+
+            for (long current = VALUE.get(), update = Math.max(base, current + 1); update < maxValue;
+                 current = VALUE.get(), update = Math.max(base, current + 1)) {
+                if (VALUE.compareAndSet(current, update)) {
+                    return update;
+                }
+            }
+            ++runs;
+        }
     }
 
     public static int getTimeout(HazelcastInstance instance, String regionName) {
