@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,7 +54,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@Repeat(50)
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ReplicatedMapTest extends ReplicatedMapBaseTest {
