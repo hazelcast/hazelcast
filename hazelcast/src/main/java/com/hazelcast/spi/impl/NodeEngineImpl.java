@@ -303,6 +303,12 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
+    public void reset() {
+        waitNotifyService.reset();
+        operationService.reset();
+    }
+
+    @PrivateApi
     public void shutdown(final boolean terminate) {
         logger.finest("Shutting down services...");
         waitNotifyService.shutdown();

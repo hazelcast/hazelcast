@@ -468,6 +468,15 @@ public abstract class HazelcastTestSupport {
         });
     }
 
+    public static <E> void assertEqualsEventually(final Callable<E> task, final E value) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(value, task.call());
+            }
+        });
+    }
+
     public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
         assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
     }

@@ -76,6 +76,12 @@ public interface InternalOperationService extends OperationService {
     Collection<SlowOperationLog> getSlowOperationLogs();
 
     /**
+     * Resets internal state of InternalOperationService.
+     * Notifies registered invocations with an error message.
+     */
+    void reset();
+
+    /**
      * Shuts down this InternalOperationService.
      */
     void shutdown();
