@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
 
@@ -148,7 +149,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             executor.execute(new ClientPacketProcessor(packet));
         } else {
             InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-            operationService.execute(new ClientPacketProcessor(packet), packet.getPartitionId());
+            operationService.execute(new ClientPacketProcessor(packet));
         }
     }
 
@@ -320,11 +321,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return node.nodeEngine.getTransactionManagerService();
     }
 
-    private final class ClientPacketProcessor implements Runnable {
+    private final class ClientPacketProcessor implements PartitionSpecificRunnable {
         final Packet packet;
 
         private ClientPacketProcessor(Packet packet) {
             this.packet = packet;
+        }
+
+        @Override
+        public int getPartitionId() {
+            return packet.getPartitionId();
         }
 
         @Override

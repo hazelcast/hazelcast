@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -357,25 +358,28 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance instance = createHazelcastInstance();
         final ILock lock = instance.getLock(randomString());
 
-        final CountDownLatch latch0 = new CountDownLatch(1);
         final CountDownLatch latch = new CountDownLatch(1);
 
         new Thread() {
             public void run() {
                 lock.lock();
-                latch0.countDown();
+                latch.countDown();
                 sleepMillis(500);
                 lock.unlock();
             }
         }.start();
 
-        latch0.await();
+        latch.await();
 
-        lock.lock(1000, TimeUnit.MILLISECONDS);
+        lock.lock(4000, TimeUnit.MILLISECONDS);
 
         assertTrue(lock.isLocked());
-        sleepSeconds(2);
-        assertFalse(lock.isLocked());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(lock.isLocked());
+            }
+        });
     }
 
     @Test(timeout = 60000)

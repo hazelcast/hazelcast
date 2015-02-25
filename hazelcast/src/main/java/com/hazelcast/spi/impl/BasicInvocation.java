@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -219,8 +220,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex);
 
-            if (!operationService.scheduler.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
-                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
+            if (!operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
+               throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
@@ -271,12 +272,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         responseReceived = Boolean.FALSE;
         op.setResponseHandler(this);
 
-        //todo: should move to the operationService.
-        if (operationService.scheduler.isAllowedToRunInCurrentThread(op)) {
-            operationService.runOperationOnCallingThread(op);
-        } else {
-            operationService.executeOperation(op);
-        }
+        OperationExecutor executor = operationService.operationExecutor;
+        executor.runOnCallingThreadIfPossible(op);
     }
 
     private void doInvokeRemote() {

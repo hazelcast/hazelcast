@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -38,31 +38,14 @@ public interface InternalOperationService extends OperationService {
     void notifyBackupCall(long callId);
 
     /**
-     * Executes a Runnable on a thread that is responsible for a given partition.
+     * Executes a PartitionSpecificRunnable.
      *
      * This method is typically used by the {@link com.hazelcast.client.ClientEngine} when it has received a Packet containing
-     * a request that needs to be processed. The advantage of this method is that the request can immediately be handed over to
-     * a thread that can take care of it; either execute it directly or send it to the remote machine.
+     * a request that needs to be processed.
      *
      * @param task the task to execute
-     * @param partitionId the partition id. A partition of smaller than 0, means that the task is going to be executed in
-     *                    the generic operation-threads and not on a partition specific operation-thread.
      */
-    void execute(Runnable task, int partitionId);
-
-    /**
-     * Executes an operation.
-     *
-     * This method is typically called by the IO system when an operation-packet is received.
-     *
-     * @param packet the packet containing the serialized operation.
-     */
-    void executeOperation(Packet packet);
-
-    /**
-     * Shuts down this InternalOperationService.
-     */
-    void shutdown();
+    void execute(PartitionSpecificRunnable task);
 
     /**
      * Sends a response to a remote machine.
@@ -73,10 +56,16 @@ public interface InternalOperationService extends OperationService {
      * @param target   the address of the target machine
      * @return true if send is successful, false otherwise.
      */
-    @Deprecated
     boolean send(Response response, Address target);
 
-    OperationScheduler getScheduler();
+    OperationExecutor getOperationExecutor();
 
     boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier);
+
+    boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId);
+
+    /**
+     * Shuts down this InternalOperationService.
+     */
+    void shutdown();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,13 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -63,12 +70,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -92,6 +93,31 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         config.addExecutorConfig(new ExecutorConfig(name, poolSize));
         final HazelcastInstance instance = createHazelcastInstance(config);
         return instance.getExecutorService(name);
+    }
+
+    @Test
+    public void testAndThen() throws ExecutionException, InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        String name = randomString();
+        IExecutorService executorService = instance2.getExecutorService(name);
+        BasicTestTask task = new BasicTestTask();
+        String key = generateKeyOwnedBy(instance1);
+        ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
+        final CountDownLatch latch = new CountDownLatch(1);
+        future.andThen(new ExecutionCallback<String>() {
+            @Override
+            public void onResponse(String response) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        });
+        future.get();
+        assertOpenEventually(latch, 10);
     }
 
     @Test(expected = RejectedExecutionException.class)
@@ -1451,7 +1477,7 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SleepingTask implements Callable<Boolean>, Serializable {
+    public static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware {
 
         long sleepTime = 10000;
 
@@ -1462,6 +1488,11 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         public Boolean call() throws InterruptedException {
             Thread.sleep(sleepTime);
             return Boolean.TRUE;
+        }
+
+        @Override
+        public Object getPartitionKey() {
+            return "key";
         }
     }
 

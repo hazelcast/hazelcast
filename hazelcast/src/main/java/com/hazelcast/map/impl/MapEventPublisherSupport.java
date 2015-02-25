@@ -22,7 +22,7 @@ import java.util.List;
 
 class MapEventPublisherSupport implements MapEventPublisher {
 
-    private final MapServiceContext mapServiceContext;
+    protected final MapServiceContext mapServiceContext;
 
     protected MapEventPublisherSupport(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -164,7 +164,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
         throw new IllegalArgumentException("Unknown EventFilter type = [" + filter.getClass().getCanonicalName() + "]");
     }
 
-    private Collection<EventRegistration> getRegistrations(String mapName) {
+    Collection<EventRegistration> getRegistrations(String mapName) {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final EventService eventService = nodeEngine.getEventService();
@@ -194,7 +194,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
         }
     }
 
-    private void publishEventInternal(Collection<EventRegistration> registrations, Object eventData, int orderKey) {
+    void publishEventInternal(Collection<EventRegistration> registrations, Object eventData, int orderKey) {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final EventService eventService = nodeEngine.getEventService();
@@ -241,7 +241,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
         return Result.NONE;
     }
 
-    private void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {
+    void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         final String serviceName = mapServiceContext.serviceName();

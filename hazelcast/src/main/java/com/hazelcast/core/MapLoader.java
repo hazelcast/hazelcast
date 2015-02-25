@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package com.hazelcast.core;
 
+import java.io.Closeable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -53,7 +55,10 @@ public interface MapLoader<K, V> {
     Map<K, V> loadAll(Collection<K> keys);
 
     /**
-     * Loads all of the keys from the store.
+     * Loads all of the keys from the store. The returned {@link Iterable} may return the keys lazily
+     * by loading them in batches. The {@link Iterator} of this {@link Iterable} may implement the
+     * {@link Closeable} interface in which case it will be closed once iteration is over.
+     * This is intended for releasing resources such as closing a JDBC result set.
      *
      * @return all the keys
      */

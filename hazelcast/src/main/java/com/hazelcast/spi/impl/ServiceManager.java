@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,7 +111,7 @@ final class ServiceManager {
         }
 
         logger.finest("Registering default services...");
-        registerService(MapService.SERVICE_NAME, MapService.create(nodeEngine));
+        registerService(MapService.SERVICE_NAME, createService(MapService.class));
         registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
@@ -129,6 +129,12 @@ final class ServiceManager {
         registerCacheServiceIfAvailable();
     }
 
+    private <T> T createService(Class<T> service) {
+        Node node = nodeEngine.getNode();
+        NodeExtension nodeExtension = node.getNodeExtension();
+        return nodeExtension.createService(service);
+    }
+
     private void registerCacheServiceIfAvailable() {
         //CacheService Optional initialization
         try {
@@ -137,9 +143,8 @@ final class ServiceManager {
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
             Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
             if (theClass != null) {
-                NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
-                Object serviceObject = nodeExtension.createService(ICacheService.class);
-                registerService(ICacheService.SERVICE_NAME, serviceObject);
+                ICacheService service = createService(ICacheService.class);
+                registerService(ICacheService.SERVICE_NAME, service);
             }
         } catch (ClassNotFoundException e) {
             logger.finest("javax.cache api is not detected on classpath. Skipping CacheService...");

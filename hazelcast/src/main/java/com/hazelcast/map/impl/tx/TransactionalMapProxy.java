@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
 
-    private final Map<Object, TxnValueWrapper> txMap = new HashMap<Object, TxnValueWrapper>();
+    private final Map<Data, TxnValueWrapper> txMap = new HashMap<Data, TxnValueWrapper>();
 
     public TransactionalMapProxy(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
         super(name, mapService, nodeEngine, transaction);
@@ -51,21 +51,26 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public boolean containsKey(Object key) {
         checkTransactionState();
-        final TxnValueWrapper valueWrapper = txMap.get(key);
+        Data keyData = getService().getMapServiceContext().toData(key, partitionStrategy);
+        final TxnValueWrapper valueWrapper = txMap.get(keyData);
         if (valueWrapper != null) {
             return valueWrapper.type == TxnValueWrapper.Type.REMOVED ? false : true;
         }
-        return containsKeyInternal(getService().getMapServiceContext().toData(key, partitionStrategy));
+        return containsKeyInternal(keyData);
     }
 
     public int size() {
         checkTransactionState();
         int currentSize = sizeInternal();
-        for (TxnValueWrapper wrapper : txMap.values()) {
+        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
+            TxnValueWrapper wrapper = entry.getValue();
             if (wrapper.type == TxnValueWrapper.Type.NEW) {
                 currentSize++;
             } else if (wrapper.type == TxnValueWrapper.Type.REMOVED) {
-                currentSize--;
+                VersionedValue versionedValue = valueMap.get(entry.getKey());
+                if (versionedValue != null && versionedValue.value != null) {
+                    currentSize--;
+                }
             }
         }
         return currentSize;
@@ -78,25 +83,27 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public Object get(Object key) {
         checkTransactionState();
-        TxnValueWrapper currentValue = txMap.get(key);
+        final MapService service = getService();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        TxnValueWrapper currentValue = txMap.get(keyData);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        final MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        return mapServiceContext.toObject(getInternal(mapServiceContext.toData(key, partitionStrategy)));
+        return mapServiceContext.toObject(getInternal(keyData));
     }
 
     public Object getForUpdate(Object key) {
         checkTransactionState();
-        TxnValueWrapper currentValue = txMap.get(key);
+        final MapService service = getService();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        TxnValueWrapper currentValue = txMap.get(keyData);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        final MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        Data dataKey = mapServiceContext.toData(key, partitionStrategy);
-        return mapServiceContext.toObject(getForUpdateInternal(dataKey));
+
+        return mapServiceContext.toObject(getForUpdateInternal(keyData));
     }
 
     private Object checkIfRemoved(TxnValueWrapper wrapper) {
@@ -108,15 +115,15 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        final Object valueBeforeTxn = mapServiceContext.toObject(putInternal(mapServiceContext.toData(key, partitionStrategy),
-                mapServiceContext.toData(value)));
-        TxnValueWrapper currentValue = txMap.get(key);
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        final Object valueBeforeTxn = mapServiceContext.toObject(putInternal(keyData, mapServiceContext.toData(value)));
+        TxnValueWrapper currentValue = txMap.get(keyData);
         if (value != null) {
             TxnValueWrapper wrapper = valueBeforeTxn == null
                     ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW)
                     : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
 
-            txMap.put(key, wrapper);
+            txMap.put(keyData, wrapper);
         }
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
@@ -125,14 +132,15 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        final Object valueBeforeTxn = mapServiceContext.toObject(putInternal(mapServiceContext.toData(key, partitionStrategy),
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        final Object valueBeforeTxn = mapServiceContext.toObject(putInternal(keyData,
                 mapServiceContext.toData(value), ttl, timeUnit));
-        TxnValueWrapper currentValue = txMap.get(key);
+        TxnValueWrapper currentValue = txMap.get(keyData);
         if (value != null) {
             TxnValueWrapper wrapper = valueBeforeTxn == null
                     ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW)
                     : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
-            txMap.put(key, wrapper);
+            txMap.put(keyData, wrapper);
         }
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
@@ -141,34 +149,36 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        final Data dataBeforeTxn = putInternal(mapServiceContext.toData(key, partitionStrategy), mapServiceContext.toData(value));
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        final Data dataBeforeTxn = putInternal(keyData, mapServiceContext.toData(value));
         if (value != null) {
             TxnValueWrapper wrapper = dataBeforeTxn == null
                     ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW)
                     : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
-            txMap.put(key, wrapper);
+            txMap.put(keyData, wrapper);
         }
     }
 
     public Object putIfAbsent(Object key, Object value) {
         checkTransactionState();
-        TxnValueWrapper wrapper = txMap.get(key);
-        boolean haveTxnPast = wrapper != null;
         MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        TxnValueWrapper wrapper = txMap.get(keyData);
+        boolean haveTxnPast = wrapper != null;
         if (haveTxnPast) {
             if (wrapper.type != TxnValueWrapper.Type.REMOVED) {
                 return wrapper.value;
             }
-            putInternal(mapServiceContext.toData(key, partitionStrategy), mapServiceContext.toData(value));
-            txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
+            putInternal(keyData, mapServiceContext.toData(value));
+            txMap.put(keyData, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
             return null;
         } else {
             Data oldValue
-                    = putIfAbsentInternal(mapServiceContext.toData(key, partitionStrategy),
+                    = putIfAbsentInternal(keyData,
                     mapServiceContext.toData(value));
             if (oldValue == null) {
-                txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
+                txMap.put(keyData, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
             }
             return mapServiceContext.toObject(oldValue);
         }
@@ -176,22 +186,23 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public Object replace(Object key, Object value) {
         checkTransactionState();
-        TxnValueWrapper wrapper = txMap.get(key);
-        boolean haveTxnPast = wrapper != null;
-
         MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+
+        TxnValueWrapper wrapper = txMap.get(keyData);
+        boolean haveTxnPast = wrapper != null;
         if (haveTxnPast) {
             if (wrapper.type == TxnValueWrapper.Type.REMOVED) {
                 return null;
             }
-            putInternal(mapServiceContext.toData(key, partitionStrategy), mapServiceContext.toData(value));
-            txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
+            putInternal(keyData, mapServiceContext.toData(value));
+            txMap.put(keyData, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
             return wrapper.value;
         } else {
-            Data oldValue = replaceInternal(mapServiceContext.toData(key, partitionStrategy), mapServiceContext.toData(value));
+            Data oldValue = replaceInternal(keyData, mapServiceContext.toData(value));
             if (oldValue != null) {
-                txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
+                txMap.put(keyData, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
             }
             return mapServiceContext.toObject(oldValue);
         }
@@ -199,23 +210,24 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public boolean replace(Object key, Object oldValue, Object newValue) {
         checkTransactionState();
-        TxnValueWrapper wrapper = txMap.get(key);
+        MapService service = getService();
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        TxnValueWrapper wrapper = txMap.get(keyData);
         boolean haveTxnPast = wrapper != null;
 
-        MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
         if (haveTxnPast) {
             if (!wrapper.value.equals(oldValue)) {
                 return false;
             }
-            putInternal(mapServiceContext.toData(key, partitionStrategy), mapServiceContext.toData(newValue));
-            txMap.put(key, new TxnValueWrapper(wrapper.value, TxnValueWrapper.Type.UPDATED));
+            putInternal(keyData, mapServiceContext.toData(newValue));
+            txMap.put(keyData, new TxnValueWrapper(wrapper.value, TxnValueWrapper.Type.UPDATED));
             return true;
         } else {
-            boolean success = replaceIfSameInternal(mapServiceContext.toData(key),
+            boolean success = replaceIfSameInternal(keyData,
                     mapServiceContext.toData(oldValue), mapServiceContext.toData(newValue));
             if (success) {
-                txMap.put(key, new TxnValueWrapper(newValue, TxnValueWrapper.Type.UPDATED));
+                txMap.put(keyData, new TxnValueWrapper(newValue, TxnValueWrapper.Type.UPDATED));
             }
             return success;
         }
@@ -223,16 +235,18 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public boolean remove(Object key, Object value) {
         checkTransactionState();
-        TxnValueWrapper wrapper = txMap.get(key);
-
         MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        TxnValueWrapper wrapper = txMap.get(keyData);
+
         if (wrapper != null && !mapServiceContext.compare(name, wrapper.value, value)) {
             return false;
         }
-        boolean removed = removeIfSameInternal(mapServiceContext.toData(key, partitionStrategy), value);
+
+        boolean removed = removeIfSameInternal(keyData, value);
         if (removed) {
-            txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.REMOVED));
+            txMap.put(keyData, new TxnValueWrapper(value, TxnValueWrapper.Type.REMOVED));
         }
         return removed;
     }
@@ -241,11 +255,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        final Object valueBeforeTxn
-                = mapServiceContext.toObject(removeInternal(mapServiceContext.toData(key, partitionStrategy)));
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        final Object valueBeforeTxn = mapServiceContext.toObject(removeInternal(keyData));
         TxnValueWrapper wrapper = null;
-        if (valueBeforeTxn != null || txMap.containsKey(key)) {
-            wrapper = txMap.put(key, new TxnValueWrapper(valueBeforeTxn, TxnValueWrapper.Type.REMOVED));
+        if (valueBeforeTxn != null || txMap.containsKey(keyData)) {
+            wrapper = txMap.put(keyData, new TxnValueWrapper(valueBeforeTxn, TxnValueWrapper.Type.REMOVED));
         }
         return wrapper == null ? valueBeforeTxn : checkIfRemoved(wrapper);
     }
@@ -254,29 +268,29 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        Data data = removeInternal(mapServiceContext.toData(key, partitionStrategy));
-        if (data != null || txMap.containsKey(key)) {
-            txMap.put(key, new TxnValueWrapper(mapServiceContext.toObject(data), TxnValueWrapper.Type.REMOVED));
+        Data keyData = mapServiceContext.toData(key, partitionStrategy);
+        Data data = removeInternal(keyData);
+        if (data != null || txMap.containsKey(keyData)) {
+            txMap.put(keyData, new TxnValueWrapper(mapServiceContext.toObject(data), TxnValueWrapper.Type.REMOVED));
         }
     }
 
     public Set<Object> keySet() {
         checkTransactionState();
         final Set<Data> keySet = keySetInternal();
-        final Set<Object> keys = new HashSet<Object>(keySet.size());
         final MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        // convert Data to Object
-        for (final Data data : keySet) {
-            keys.add(mapServiceContext.toObject(data));
-        }
 
-        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+        for (final Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             if (TxnValueWrapper.Type.NEW.equals(entry.getValue().type)) {
-                keys.add(entry.getKey());
+                keySet.add(entry.getKey());
             } else if (TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
-                keys.remove(entry.getKey());
+                keySet.remove(entry.getKey());
             }
+        }
+        HashSet<Object> keys = new HashSet<Object>();
+        for (Data keyData : keySet) {
+            keys.add(mapServiceContext.toObject(keyData));
         }
         return keys;
     }
@@ -294,22 +308,21 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
         //todo: Can't we just use the original set?
         final Set<Object> keySet = new HashSet<Object>(queryResultSet);
-
-        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+        final SerializationService ss = getNodeEngine().getSerializationService();
+        for (final Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
+            Object key = ss.toObject(entry.getKey());
             if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
-                final Object value = entry.getValue().value instanceof Data
+                Object value = entry.getValue().value instanceof Data
                         ? mapServiceContext.toObject(entry.getValue().value) : entry.getValue().value;
 
-                final SerializationService ss = getNodeEngine().getSerializationService();
-                final QueryEntry queryEntry =
-                        new QueryEntry(ss, mapServiceContext.toData(entry.getKey()), entry.getKey(), value);
+                QueryEntry queryEntry = new QueryEntry(ss, entry.getKey(), key, value);
                 // apply predicate on txMap.
                 if (predicate.apply(queryEntry)) {
-                    keySet.add(entry.getKey());
+                    keySet.add(key);
                 }
             } else {
                 // meanwhile remove keys which are not in txMap.
-                keySet.remove(entry.getKey());
+                keySet.remove(key);
             }
         }
         return keySet;
@@ -321,18 +334,17 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         final MapService service = getService();
         final MapServiceContext mapServiceContext = service.getMapServiceContext();
         final Collection<Object> values = new ArrayList<Object>(entries.size());
-        final Set<Object> keyWontBeIncluded = new HashSet<Object>();
+        final Set<Data> keyWontBeIncluded = new HashSet<Data>();
 
-        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             final boolean isRemoved = TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type);
             final boolean isUpdated = TxnValueWrapper.Type.UPDATED.equals(entry.getValue().type);
 
-            Object objectKey = entry.getKey();
             if (isRemoved) {
-                keyWontBeIncluded.add(objectKey);
+                keyWontBeIncluded.add(entry.getKey());
             } else {
                 if (isUpdated) {
-                    keyWontBeIncluded.add(objectKey);
+                    keyWontBeIncluded.add(entry.getKey());
                 }
                 Object entryValue = entry.getValue().value;
                 values.add(entryValue);
@@ -340,9 +352,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
         Iterator<Map.Entry<Data, Data>> iterator = entries.iterator();
         while (iterator.hasNext()) {
-            final Map.Entry entry = iterator.next();
-            Object key = mapServiceContext.toObject(entry.getKey());
-            if (keyWontBeIncluded.contains(key)) {
+            Map.Entry entry = iterator.next();
+            if (keyWontBeIncluded.contains(entry.getKey())) {
                 continue;
             }
             Object value = mapServiceContext.toObject(entry.getValue());
@@ -359,33 +370,29 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging is not supported for Transactional queries");
         }
-        final MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);
         //todo: Can't we just use the original set?
         final Set<Object> valueSet = new HashSet<Object>();
         final Set<Object> keyWontBeIncluded = new HashSet<Object>();
 
+        SerializationService serializationService = getNodeEngine().getSerializationService();
         // iterate over the txMap and see if the values are updated or removed.
-        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+        for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
             final boolean isRemoved = TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type);
             final boolean isUpdated = TxnValueWrapper.Type.UPDATED.equals(entry.getValue().type);
 
-            Object objectKey = entry.getKey();
+            Object keyObject = serializationService.toObject(entry.getKey());
             if (isRemoved) {
-                keyWontBeIncluded.add(objectKey);
+                keyWontBeIncluded.add(keyObject);
             } else {
                 if (isUpdated) {
-                    keyWontBeIncluded.add(objectKey);
+                    keyWontBeIncluded.add(keyObject);
                 }
                 Object entryValue = entry.getValue().value;
-                final Object objectValue = entryValue instanceof Data
-                        ? mapServiceContext.toObject(entryValue) : entryValue;
-                Data dataKey = mapServiceContext.toData(objectKey);
-                final SerializationService serializationService = getNodeEngine().getSerializationService();
-                final QueryEntry queryEntry = new QueryEntry(serializationService, dataKey, objectKey, objectValue);
+
+                QueryEntry queryEntry = new QueryEntry(serializationService, entry.getKey(), keyObject, entryValue);
                 if (predicate.apply(queryEntry)) {
-                    valueSet.add(entryValue);
+                    valueSet.add(queryEntry.getValue());
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,13 @@ import static java.lang.String.format;
 /**
  * A utility class for validating arguments and state.
  */
-public final class ValidationUtil {
-
-    private ValidationUtil() {
-    }
+public abstract class ValidationUtil {
 
     /**
      * Tests if an argument is not null.
      *
      * @param argument the argument
-     * @param message message thrown if argument is null
+     * @param message  message thrown if argument is null
      * @return the argument
      * @throws java.lang.NullPointerException if argument is null
      */
@@ -45,7 +42,7 @@ public final class ValidationUtil {
      * Tests if a string contains text.
      *
      * @param argument the string to test
-     * @param argName the string name (used in message if an error is thrown)
+     * @param argName  the string name (used in message if an error is thrown)
      * @return the string argument
      * @throws java.lang.IllegalArgumentException if the string is empty
      */
@@ -63,7 +60,7 @@ public final class ValidationUtil {
      * Tests if a string is not null.
      *
      * @param argument the string to test
-     * @param argName the string name (used in message if an error is thrown)
+     * @param argName  the string name (used in message if an error is thrown)
      * @return the string argument
      * @throws java.lang.IllegalArgumentException if the string is null
      */
@@ -78,7 +75,7 @@ public final class ValidationUtil {
     /**
      * Tests if a long value is not negative.
      *
-     * @param value the long value to test
+     * @param value        the long value to test
      * @param argumentName the value name (used in message if an error is thrown)
      * @throws java.lang.IllegalArgumentException if the value is negative
      */
@@ -91,7 +88,7 @@ public final class ValidationUtil {
     /**
      * Tests if a long value is positive.
      *
-     * @param value the long value to test
+     * @param value        the long value to test
      * @param argumentName the value name (used in message if an error is thrown)
      * @throws java.lang.IllegalArgumentException if the value is not positive
      */

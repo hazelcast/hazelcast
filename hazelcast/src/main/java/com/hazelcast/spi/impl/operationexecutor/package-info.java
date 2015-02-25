@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
-
-import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Operation;
-
 /**
- * To keep the {@link ClassicOperationScheduler} clean of operations/packets etc, the scheduler
- * takes care of scheduling, but forwards the actual handling of the task to the {@link BasicOperationHandler}.
+ * Contains the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} code.
  */
-public interface BasicOperationHandler {
-
-    Operation deserialize(Packet packet) throws Exception;
-
-    void process(Operation task);
-}
+package com.hazelcast.spi.impl.operationexecutor;

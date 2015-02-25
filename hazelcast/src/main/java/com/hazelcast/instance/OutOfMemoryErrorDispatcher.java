@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.util.EmptyStatement;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -40,6 +41,7 @@ public final class OutOfMemoryErrorDispatcher {
 
     private static volatile OutOfMemoryHandler clientHandler = new EmptyOutOfMemoryHandler();
 
+    private static final AtomicInteger OUT_OF_MEMORY_ERROR_COUNT = new AtomicInteger();
 
     private OutOfMemoryErrorDispatcher() {
     }
@@ -47,6 +49,15 @@ public final class OutOfMemoryErrorDispatcher {
     //for testing only
     static HazelcastInstance[] current() {
         return SERVER_INSTANCES_REF.get();
+    }
+
+    /**
+     * Gets the number of OutOfMemoryErrors that have been reported.
+     *
+     * @return the number of OutOfMemoryErrors.
+     */
+    public static int getOutOfMemoryErrorCount() {
+        return OUT_OF_MEMORY_ERROR_COUNT.get();
     }
 
     public static void setServerHandler(OutOfMemoryHandler outOfMemoryHandler) {
@@ -156,6 +167,8 @@ public final class OutOfMemoryErrorDispatcher {
      */
     public static void onOutOfMemory(OutOfMemoryError outOfMemoryError) {
         isNotNull(outOfMemoryError, "outOfMemoryError");
+
+        OUT_OF_MEMORY_ERROR_COUNT.incrementAndGet();
 
         OutOfMemoryHandler h = clientHandler;
         if (h != null && h.shouldHandle(outOfMemoryError)) {

@@ -74,7 +74,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (response != null) {
+            if (response != null && !(response instanceof BasicInvocation.InternalResponse)) {
                 runAsynchronous(callback, executor);
                 return;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,11 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.impl.InternalOperationService;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 
@@ -34,7 +38,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
@@ -55,6 +62,39 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+    public static Future spawn(Runnable task) {
+        FutureTask futureTask = new FutureTask(task, null);
+        new Thread(futureTask).start();
+        return futureTask;
+    }
+
+
+    public static <E> Future<E> spawn(Callable<E> task) {
+        FutureTask futureTask = new FutureTask(task);
+        new Thread(futureTask).start();
+        return futureTask;
+    }
+
+    public static Address getAddress(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return node.clusterService.getThisAddress();
+    }
+
+    public static SerializationService getSerializationService(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return node.getSerializationService();
+    }
+
+    public static InternalOperationService getOperationService(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return (InternalOperationService) node.nodeEngine.getOperationService();
+    }
+
+    public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return node.partitionService;
+    }
 
     @After
     public final void shutdownNodeFactory() {
@@ -206,6 +246,25 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+     /**
+     * Gets a partition id owned by this particular member.
+      *
+     * @param hz
+     * @return
+     */
+    public static int getPartitionId(HazelcastInstance hz) {
+        warmUpPartitions(hz);
+
+        InternalPartitionService partitionService = getPartitionService(hz);
+        for(InternalPartition p: partitionService.getPartitions() ){
+            if(p.isLocal()){
+                return p.getPartitionId();
+            }
+        }
+
+        throw new RuntimeException("No local partitions are found for hz: "+hz.getName());
+    }
+
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         return generateKeyInternal(instance, true);
     }
@@ -228,7 +287,7 @@ public abstract class HazelcastTestSupport {
 
         Member localMember = cluster.getLocalMember();
         PartitionService partitionService = instance.getPartitionService();
-        for (;;) {
+        for (; ; ) {
             String id = randomString();
             Partition partition = partitionService.getPartition(id);
             if (comparePartitionOwnership(generateOwnedKey, localMember, partition)) {
@@ -391,6 +450,16 @@ public abstract class HazelcastTestSupport {
                 assertEquals("the size of the map is not correct", expectedSize, m.size());
             }
         }, timeoutSeconds);
+    }
+
+    public static <E> void assertEqualsEventually(final FutureTask<E> task, final E value) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue("FutureTask is not complete", task.isDone());
+                assertEquals(value, task.get());
+            }
+        });
     }
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {

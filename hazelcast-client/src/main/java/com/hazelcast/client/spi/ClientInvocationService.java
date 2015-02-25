@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-
 import java.io.IOException;
 
 /**
@@ -50,5 +51,10 @@ public interface ClientInvocationService {
 
     void handlePacket(Packet packet);
 
+    void cleanConnectionResources(ClientConnection connection);
+
     EventHandler getEventHandler(int callId);
+
+    //TODO just to be called by stabilizer at the moment
+    <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception;
 }
