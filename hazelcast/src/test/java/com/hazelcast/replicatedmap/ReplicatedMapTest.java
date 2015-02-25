@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -54,6 +55,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Repeat(50)
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ReplicatedMapTest extends ReplicatedMapBaseTest {
@@ -714,7 +716,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
         assertMatchSuccessfulOperationQuota(0.75, map1.size(), map2.size());
     }
@@ -817,7 +819,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 2, EntryEventType.ADDED, testValues.length, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, testValues.length, 0.75, map1, map2);
 
         int map2Contains = 0;
         for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
@@ -879,7 +881,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     valuesTestValues.add(entry.getValue());
                 }
             }
-        }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
         List<Integer> values1 = new ArrayList<Integer>(map1.values());
         List<Integer> values2 = new ArrayList<Integer>(map2.values());
@@ -942,7 +944,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     keySetTestValues.add(entry.getKey());
                 }
             }
-        }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
         List<Integer> keySet1 = new ArrayList<Integer>(map1.keySet());
         List<Integer> keySet2 = new ArrayList<Integer>(map2.keySet());
@@ -1002,7 +1004,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
         List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
