@@ -410,6 +410,18 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public void reset() {
+        for (BasicInvocation invocation : invocations.values()) {
+            try {
+                invocation.notify(new MemberLeftException());
+            } catch (Throwable e) {
+                logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
+            }
+        }
+        invocations.clear();
+    }
+
+    @Override
     public void shutdown() {
         logger.finest("Stopping operation threads...");
         for (BasicInvocation invocation : invocations.values()) {
