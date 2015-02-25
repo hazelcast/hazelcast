@@ -46,8 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ClientHeapNearCache<K>
         implements ClientNearCache<K, Object> {
 
-    private static final int HUNDRED_PERCENTAGE = 100;
-
     final int maxSize;
     final long maxIdleMillis;
     final long timeToLiveMillis;
@@ -127,7 +125,7 @@ public class ClientHeapNearCache<K>
                         try {
                             TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * EVICTION_PERCENTAGE / HUNDRED_PERCENTAGE;
+                            int evictSize = (int) (cache.size() * EVICTION_FACTOR);
                             int i = 0;
                             for (NearCacheRecord record : records) {
                                 cache.remove(record.getKey());
