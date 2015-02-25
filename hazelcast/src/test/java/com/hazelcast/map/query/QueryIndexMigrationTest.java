@@ -225,7 +225,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         assertTrue(latch.await(1, MINUTES));
         Collection<HazelcastInstance> instances = nodeFactory.getAllHazelcastInstances();
         assertEquals(nodes, instances.size());
-        waitAllForSafeState();
+        waitAllForSafeState(instances);
 
         final int expected = entryPerNode / modulo * nodes;
 
