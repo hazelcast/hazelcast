@@ -46,7 +46,6 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.test.TimeConstants.MINUTE;
-import static com.hazelcast.util.IterableUtil.getFirst;
 import static java.lang.Thread.interrupted;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -55,6 +54,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -64,9 +64,14 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(6);
+    private TestHazelcastInstanceFactory nodeFactory;
     private ExecutorService executor;
     private Random rand = new Random();
+
+    @Before
+    public void createFactory() {
+        nodeFactory = createHazelcastInstanceFactory(6);
+    }
 
     @After
     public void shutdown() throws Exception {
@@ -217,10 +222,10 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
             }).start();
         }
 
-        assertTrue(latch.await(5, MINUTES));
+        assertTrue(latch.await(1, MINUTES));
         Collection<HazelcastInstance> instances = nodeFactory.getAllHazelcastInstances();
         assertEquals(nodes, instances.size());
-        waitClusterForSafeState( getFirst(instances, null) );
+        waitAllForSafeState();
 
         final int expected = entryPerNode / modulo * nodes;
 
