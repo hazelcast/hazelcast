@@ -230,6 +230,10 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         }
     }
 
+    public ClientInvocation getInvocation() {
+        return invocation;
+    }
+
     class ExecutionCallbackNode {
 
         final ExecutionCallback callback;

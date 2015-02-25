@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -70,8 +71,8 @@ public class CacheListenerRegistrationRequest
     }
 
     @Override
-    public Address getTarget() {
-        return target;
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return operationService.createInvocationBuilder(getServiceName(), op, target);
     }
 
     @Override

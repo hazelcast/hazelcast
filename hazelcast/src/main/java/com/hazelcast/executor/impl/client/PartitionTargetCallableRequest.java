@@ -19,7 +19,7 @@ package com.hazelcast.executor.impl.client;
 import com.hazelcast.client.impl.client.TargetClientRequest;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.ExecutorPortableHook;
-import com.hazelcast.nio.Address;
+import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,9 +35,10 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 /**
- * Defines base behavior of sending a {@link java.util.concurrent.Callable} to a specific target.
+ * A {@link com.hazelcast.client.impl.client.TargetClientRequest} which sends a {@link java.util.concurrent.Callable} task
+ * to a specific target. That specific target address is decided by using partitionId.
  */
-abstract class AbstractTargetCallableRequest extends TargetClientRequest {
+public class PartitionTargetCallableRequest extends TargetClientRequest {
 
     private String name;
 
@@ -45,42 +46,26 @@ abstract class AbstractTargetCallableRequest extends TargetClientRequest {
 
     private Callable callable;
 
-    private volatile Address target;
-
     private int partitionId;
 
-    public AbstractTargetCallableRequest() {
+    public PartitionTargetCallableRequest() {
     }
 
-    public AbstractTargetCallableRequest(String name, String uuid, Callable callable, Address target) {
-        this(name, uuid, callable, -1, target);
-    }
-
-    public AbstractTargetCallableRequest(String name, String uuid, Callable callable, int partitionId) {
-        this(name, uuid, callable, partitionId, null);
-    }
-
-    private AbstractTargetCallableRequest(String name, String uuid, Callable callable, int partitionId, Address target) {
+    public PartitionTargetCallableRequest(String name, String uuid, Callable callable, int partitionId) {
         this.name = name;
         this.uuid = uuid;
         this.callable = callable;
         this.partitionId = partitionId;
-        this.target = target;
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final Address target = getTarget();
-        if (target != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, target);
-        }
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
+    }
 
-        final int partitionId = getPartitionId();
-        if (partitionId == -1) {
-            throw new IllegalArgumentException("Partition id is -1");
-        }
-
-        return operationService.createInvocationBuilder(getServiceName(), op, partitionId);
+    @Override
+    public int getFactoryId() {
+        return ExecutorPortableHook.F_ID;
     }
 
     @SuppressWarnings("unchecked")
@@ -95,35 +80,27 @@ abstract class AbstractTargetCallableRequest extends TargetClientRequest {
         return getOperation(name, uuid, callableData);
     }
 
-    @Override
-    public String getServiceName() {
-        return DistributedExecutorService.SERVICE_NAME;
+    private Operation getOperation(String name, String uuid, Data callableData) {
+        return new CallableTaskOperation(name, uuid, callableData);
     }
 
     @Override
-    public int getFactoryId() {
-        return ExecutorPortableHook.F_ID;
-    }
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        if (partitionId == -1) {
+            throw new IllegalArgumentException("Partition id is -1");
+        }
 
+        return operationService.createInvocationBuilder(getServiceName(), op, partitionId);
+    }
 
     @Override
     public Permission getRequiredPermission() {
         return null;
     }
 
-    public abstract Operation getOperation(String name, String uuid, Data callableData);
-
     @Override
-    public Address getTarget() {
-        return target;
-    }
-
-    public void setTarget(Address target) {
-        this.target = target;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
+    public int getClassId() {
+        return ExecutorPortableHook.PARTITION_TARGET_CALLABLE_REQUEST;
     }
 
     @Override
@@ -132,12 +109,7 @@ abstract class AbstractTargetCallableRequest extends TargetClientRequest {
         writer.writeUTF("u", uuid);
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
         rawDataOutput.writeObject(callable);
-        rawDataOutput.writeBoolean(target != null);
-        if (target != null) {
-            target.writeData(rawDataOutput);
-        } else {
-            rawDataOutput.writeInt(partitionId);
-        }
+        rawDataOutput.writeInt(partitionId);
     }
 
     @Override
@@ -146,14 +118,6 @@ abstract class AbstractTargetCallableRequest extends TargetClientRequest {
         uuid = reader.readUTF("u");
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         callable = rawDataInput.readObject();
-        final boolean isTarget = rawDataInput.readBoolean();
-        if (isTarget) {
-            target = new Address();
-            target.readData(rawDataInput);
-            partitionId = -1;
-        } else {
-            partitionId = rawDataInput.readInt();
-        }
+        partitionId = rawDataInput.readInt();
     }
-
 }
