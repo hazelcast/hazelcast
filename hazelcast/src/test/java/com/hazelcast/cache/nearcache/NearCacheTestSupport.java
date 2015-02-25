@@ -42,6 +42,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         protected boolean destroyCalled;
         protected boolean selectToSaveCalled;
         protected final Object selectedCandidateToSave = new Object();
+        protected int latestSize;
 
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
@@ -49,6 +50,9 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public String get(Integer key) {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
             String value = expectedKeyValueMappings.get(key);
             latestKeyOnGet = key;
             latestValueOnGet = value;
@@ -57,6 +61,9 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public void put(Integer key, String value) {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
             expectedKeyValueMappings.put(key, value);
             latestKeyOnPut = key;
             latestValueOnPut = value;
@@ -64,6 +71,9 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public boolean remove(Integer key) {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
             boolean result = expectedKeyValueMappings.remove(key) != null;
             latestKeyOnRemove = key;
             latestResultOnRemove = result;
@@ -72,12 +82,18 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public void clear() {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
             expectedKeyValueMappings.clear();
             clearCalled = true;
         }
 
         @Override
         public void destroy() {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
             expectedKeyValueMappings.clear();
             expectedKeyValueMappings = null;
             destroyCalled = true;
@@ -92,6 +108,15 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         public Object selectToSave(Object... candidates) {
             selectToSaveCalled = true;
             return selectedCandidateToSave;
+        }
+
+        @Override
+        public int size() {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
+            latestSize = expectedKeyValueMappings.size();
+            return latestSize;
         }
 
     }
@@ -129,6 +154,9 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         // Show that NearCache delegates get call to wrapped NearCacheRecordStore
 
+        final int size = nearCache.size();
+        assertEquals(size, managedNearCacheRecordStore.latestSize);
+
         for (int i = 0; i < expectedKeyValueMappings.size(); i++) {
             String value = nearCache.get(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnGet);
@@ -151,6 +179,9 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnPut);
             assertEquals(value, managedNearCacheRecordStore.latestValueOnPut);
         }
+
+        final int size = nearCache.size();
+        assertEquals(size, managedNearCacheRecordStore.latestSize);
     }
 
     protected void doRemoveFromNearCache() {
@@ -162,11 +193,17 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         // Show that NearCache delegates remove call to wrapped NearCacheRecordStore
 
+        final int size1 = nearCache.size();
+        assertEquals(size1, managedNearCacheRecordStore.latestSize);
+
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
             nearCache.remove(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }
+
+        final int size2 = nearCache.size();
+        assertEquals(size2, managedNearCacheRecordStore.latestSize);
     }
 
     protected void doInvalidateFromNearCache() {
@@ -178,11 +215,17 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         // Show that NearCache delegates invalidate call to wrapped NearCacheRecordStore
 
+        final int size1 = nearCache.size();
+        assertEquals(size1, managedNearCacheRecordStore.latestSize);
+
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
             nearCache.invalidate(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }
+
+        final int size2 = nearCache.size();
+        assertEquals(size2, managedNearCacheRecordStore.latestSize);
     }
 
     protected void doConfigureInvalidateOnChangeForNearCache() {
@@ -215,11 +258,17 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         assertFalse(managedNearCacheRecordStore.clearCalled);
 
+        final int size1 = nearCache.size();
+        assertEquals(size1, managedNearCacheRecordStore.latestSize);
+
         nearCache.clear();
 
         // Show that NearCache delegates clear call to wrapped NearCacheRecordStore
 
         assertTrue(managedNearCacheRecordStore.clearCalled);
+
+        final int size2 = nearCache.size();
+        assertEquals(size2, managedNearCacheRecordStore.latestSize);
     }
 
     protected void doDestroyNearCache() {

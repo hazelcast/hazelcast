@@ -23,6 +23,8 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
             nearCacheRecordStore.put(i, "Record-" + i);
         }
 
+        assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
+
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertEquals("Record-" + i, nearCacheRecordStore.get(i));
         }
@@ -41,10 +43,14 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
             assertNotNull(nearCacheRecordStore.get(i));
         }
 
+        assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
+
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             nearCacheRecordStore.remove(i);
             assertNull(nearCacheRecordStore.get(i));
         }
+
+        assertEquals(0, nearCacheRecordStore.size());
     }
 
     protected void clearRecordsOrDestroyStoreFromNearCacheDataRecordStore(
@@ -66,6 +72,8 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         } else {
             nearCacheRecordStore.clear();
         }
+
+        assertEquals(0, nearCacheRecordStore.size());
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertNull(nearCacheRecordStore.get(i));

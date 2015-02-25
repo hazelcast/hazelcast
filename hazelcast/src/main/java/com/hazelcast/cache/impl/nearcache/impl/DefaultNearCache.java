@@ -104,7 +104,6 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public void destroy() {
         nearCacheRecordStore.destroy();
-        nearCacheRecordStore = null;
     }
 
     @Override
@@ -122,4 +121,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         return nearCacheRecordStore.selectToSave(candidates);
     }
 
+    @Override
+    public int size() {
+        return nearCacheRecordStore.size();
+    }
 }

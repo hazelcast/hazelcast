@@ -125,4 +125,11 @@ public class NearCacheObjectRecordStore<K, V>
         return selectedCandidate;
     }
 
+    @Override
+    public int size() {
+        checkAvailable();
+
+        return store.size();
+    }
+
 }

@@ -51,13 +51,19 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     protected final NearCacheConfig nearCacheConfig;
     protected final SerializationService serializationService;
-    protected final NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl();
+    protected final NearCacheStatsImpl nearCacheStats;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
+        this(nearCacheConfig, nearCacheContext, new NearCacheStatsImpl());
+    }
+
+    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext,
+                                        NearCacheStatsImpl nearCacheStats) {
         this.nearCacheConfig = nearCacheConfig;
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.serializationService = nearCacheContext.getSerializationService();
+        this.nearCacheStats = nearCacheStats;
     }
 
     protected abstract boolean isAvailable();

@@ -76,4 +76,11 @@ public interface NearCacheRecordStore<K, V> {
      */
     Object selectToSave(Object... candidates);
 
+    /**
+     * Gets the count of stored records.
+     *
+     * @return the count of stored records
+     */
+    int size();
+
 }
