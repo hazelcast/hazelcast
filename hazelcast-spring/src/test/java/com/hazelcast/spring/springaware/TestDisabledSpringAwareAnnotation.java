@@ -33,6 +33,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -51,12 +52,12 @@ public class TestDisabledSpringAwareAnnotation {
     private ApplicationContext context;
 
     @Test
-    public void test() {
+    public void testDisabledSpringManagedContext() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
-        assertEquals(null, instance.getConfig().getManagedContext());
+        assertNull(instance.getConfig().getManagedContext());
 
         HazelcastClientProxy client = (HazelcastClientProxy) context.getBean("client");
-        assertEquals(null, client.getClientConfig().getManagedContext());
+        assertNull(client.getClientConfig().getManagedContext());
     }
 
 }

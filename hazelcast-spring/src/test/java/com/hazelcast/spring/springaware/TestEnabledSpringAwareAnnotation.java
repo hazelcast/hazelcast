@@ -51,7 +51,7 @@ public class TestEnabledSpringAwareAnnotation {
     private ApplicationContext context;
 
     @Test
-    public void test() {
+    public void testSpringManagedContext() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertTrue(instance.getConfig().getManagedContext() instanceof SpringManagedContext);
 

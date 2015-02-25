@@ -22,6 +22,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.spring.context.SpringManagedContext;
+import com.hazelcast.util.StringUtil;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -337,20 +338,16 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         protected void handleAnnotationDrivenConfig(final Node node) {
-            boolean annotationDriven = true;
             for (org.w3c.dom.Node element : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(element.getNodeName());
                 if ("annotation-driven".equals(nodeName)) {
                     String enabled = getTextContent(element.getAttributes().getNamedItem("enabled")).trim();
-                    if ("false".equals(enabled)) {
-                        annotationDriven = false;
+                    if ("true".equals(enabled)) {
+                        BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
+                        configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
                     }
                     break;
                 }
-            }
-            if (annotationDriven) {
-                BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
-                configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
             }
         }
     }
