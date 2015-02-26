@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,22 +32,36 @@ import java.util.concurrent.atomic.AtomicLong;
 public final class HazelcastTimestamper {
 
     private static final int SEC_TO_MS = 1000;
-    private static final int BIN_DIGITS = 12;
-    private static final int ONE_MS = 1 << BIN_DIGITS;
+    /**
+     * Value for left shifting instance.getCluster().getClusterTime(), freeing some space for the counter.
+     * Right now value is constant set to 12.
+     */
+    private static final int BASE_TIME_SHIFT = 12;
+    private static final int ONE_MS = 1 << BASE_TIME_SHIFT;
     private static final AtomicLong VALUE  = new AtomicLong();
+    private final ILogger logger = Logger.getLogger(getClass());
 
     private HazelcastTimestamper() {
     }
 
+    /**
+     * Returns an increasing unique value based on the cluster time. First loop works like a thread spin-waits and
+     * inner for loop guarantees that unique value is generated.
+     * @see com.hazelcast.hibernate.HazelcastTimestamper#BASE_TIME_SHIFT
+     * @return uniquely & increasing value
+     */
     public static long nextTimestamp(HazelcastInstance instance) {
         int runs = 0;
         while (true) {
-            long base = instance.getCluster().getClusterTime() << BIN_DIGITS;
+            long base = instance.getCluster().getClusterTime() << BASE_TIME_SHIFT;
             long maxValue = base + ONE_MS - 1;
-
+            //Make sure that update different than current value, otherwise while loop will run again.
             for (long current = VALUE.get(), update = Math.max(base, current + 1); update < maxValue;
                  current = VALUE.get(), update = Math.max(base, current + 1)) {
                 if (VALUE.compareAndSet(current, update)) {
+                    if(runs > 1) {
+                        Logger.getLogger(HazelcastTimestamper.class).finest(String.format("Waiting for time to pass. Looped %d times",runs));
+                    }
                     return update;
                 }
             }
