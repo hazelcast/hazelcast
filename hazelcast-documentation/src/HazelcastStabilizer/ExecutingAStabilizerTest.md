@@ -1,6 +1,18 @@
 
 
-## Writing a Stabilizer Test
+## Executing a Stabilizer Test
+
+After you install and prepare the Hazelcast Stabilizer for your environment, it is time to perform a test.
+
+The following steps wrap up the whole procedure for executing a Stabilizer Test.
+
+1. Install the Hazelcast Stabilizer.
+2. Create a directory for your tests, let's call it as the Test Directory.
+3. Copy the `stabilizer.properties` file from the `/conf` directory of Hazelcast Stabilizer to your Test Directory.
+4. Edit the `stabilizer.properties` file according to your needs.
+5. Execute the `run.sh` script to perform the Hazelcast Stabilizer tests.
+
+
 
 
 Probably you want to write your own test. The easiest way to do that is to make use of the Stabilizer archetype which

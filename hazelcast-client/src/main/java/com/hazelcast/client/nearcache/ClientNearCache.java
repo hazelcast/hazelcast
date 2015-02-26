@@ -11,9 +11,9 @@ import com.hazelcast.monitor.NearCacheStats;
 public interface ClientNearCache<K, V> {
 
     /**
-     * Eviction percentage
+     * Eviction factor
      */
-    int EVICTION_PERCENTAGE = 20;
+    double EVICTION_FACTOR = 0.2;
 
     /**
      * TTL Clean up interval
