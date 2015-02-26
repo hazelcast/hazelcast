@@ -59,8 +59,9 @@ public final class HazelcastTimestamper {
             for (long current = VALUE.get(), update = Math.max(base, current + 1); update < maxValue;
                  current = VALUE.get(), update = Math.max(base, current + 1)) {
                 if (VALUE.compareAndSet(current, update)) {
-                    if(runs > 1) {
-                        Logger.getLogger(HazelcastTimestamper.class).finest(String.format("Waiting for time to pass. Looped %d times",runs));
+                    if (runs > 1) {
+                        Logger.getLogger(HazelcastTimestamper.class)
+                                .finest(String.format("Waiting for time to pass. Looped %d times" , runs));
                     }
                     return update;
                 }
