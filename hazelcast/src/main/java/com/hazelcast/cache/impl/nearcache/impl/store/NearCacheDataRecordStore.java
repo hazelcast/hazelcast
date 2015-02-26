@@ -102,6 +102,11 @@ public class NearCacheDataRecordStore<K, V>
     }
 
     @Override
+    protected void putToRecord(NearCacheDataRecord record, V value) {
+        record.setValue(toData(value));
+    }
+
+    @Override
     protected NearCacheDataRecord removeRecord(K key) {
         return store.remove(key);
     }

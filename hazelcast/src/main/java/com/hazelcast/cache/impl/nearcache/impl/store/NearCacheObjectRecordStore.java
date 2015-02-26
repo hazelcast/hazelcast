@@ -82,6 +82,11 @@ public class NearCacheObjectRecordStore<K, V>
     }
 
     @Override
+    protected void putToRecord(NearCacheObjectRecord record, V value) {
+        record.setValue(value);
+    }
+
+    @Override
     protected NearCacheObjectRecord removeRecord(K key) {
         return store.remove(key);
     }
