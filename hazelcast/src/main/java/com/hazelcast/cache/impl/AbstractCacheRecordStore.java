@@ -490,7 +490,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         if (!isExpiredAt(expiryTime, now)) {
             R record = createRecord(key, value, expiryTime, completionId);
-            return doPutRecord(key, record);
+            doPutRecord(key, record);
+            return record;
         }
         publishEvent(CacheEventType.COMPLETED, key, null, null, false, completionId);
         return null;
