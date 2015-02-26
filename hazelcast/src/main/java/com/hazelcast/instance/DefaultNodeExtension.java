@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public class DefaultNodeExtension implements NodeExtension {
         }
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
-        systemLogger.info("Copyright (C) 2008-2014 Hazelcast.com");
+        systemLogger.info("Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.");
     }
 
     @Override

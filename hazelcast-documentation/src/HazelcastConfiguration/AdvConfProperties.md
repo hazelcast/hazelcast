@@ -99,7 +99,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.performance.monitoring.delay.seconds`||int| The delay in seconds between monitoring of the performance.
 `hazelcast.prefer.ipv4.stack` | true | bool  |   Prefer Ipv4 network interface when picking a local address.
 `hazelcast.rest.enabled` | true | bool |   Enable [REST](#rest-client) client request listener service.
-`hazelcast.shutdownhook.enabled` | true | bool  | Enable Hazelcast shutdownhook thread.
+`hazelcast.shutdownhook.enabled` | true | bool  | Enable Hazelcast shutdownhook thread. When this is enabled, this thread terminates the Hazelcast instance without waiting to shutdown gracefully. 
 `hazelcast.socket.bind.any` | true | bool | Bind both server-socket and client-sockets to any local interface.
 `hazelcast.socket.client.bind`|true|bool|Bind client socket to an interface when connecting to a remote server socket. When set to `false`, client socket is not bound to any interface.
 `hazelcast.socket.client.bind.any` | true | bool |   Bind client-sockets to any local interface. If not set, `hazelcast.socket.bind.any` will be used as default.

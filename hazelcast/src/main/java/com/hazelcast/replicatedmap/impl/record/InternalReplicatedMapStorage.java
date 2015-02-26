@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,7 +88,14 @@ class InternalReplicatedMapStorage<K, V> {
     }
 
     public int size() {
-        return storage.size();
+        int count = 0;
+        for (ReplicatedRecord<K, V> record : storage.values()) {
+            if (record.isTombstone()) {
+                continue;
+            }
+            count++;
+        }
+        return count;
     }
 
     public void finishLoading() {

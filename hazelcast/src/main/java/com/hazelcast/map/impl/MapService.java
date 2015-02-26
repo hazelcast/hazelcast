@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
-import com.hazelcast.util.MapUtil;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.Map;
@@ -69,6 +68,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private PostJoinAwareService postJoinAwareService;
     private SplitBrainHandlerService splitBrainHandlerService;
     private ReplicationSupportingService replicationSupportingService;
+    private StatisticsAwareService statisticsAwareService;
     private MapServiceContext mapServiceContext;
 
     public MapService() {
@@ -154,6 +154,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         transactionalService.rollbackTransaction(transactionId);
     }
 
+    @Override
+    public Map<String, LocalMapStats> getStats() {
+        return statisticsAwareService.getStats();
+    }
+
     public void setMapServiceContext(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
@@ -194,13 +199,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         this.replicationSupportingService = replicationSupportingService;
     }
 
-    @Override
-    public Map<String, LocalMapStats> getStats() {
-        Map<String, MapContainer> mapContainers = mapServiceContext.getMapContainers();
-        Map<String, LocalMapStats> mapStats = MapUtil.createHashMap(mapContainers.size());
-        for (String mapName : mapContainers.keySet()) {
-            mapStats.put(mapName, mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(mapName));
-        }
-        return mapStats;
+    void setStatisticsAwareService(StatisticsAwareService statisticsAwareService) {
+        this.statisticsAwareService = statisticsAwareService;
     }
 }
