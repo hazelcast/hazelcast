@@ -20,6 +20,7 @@ import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.KubernetesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastException;
@@ -335,8 +336,10 @@ class DefaultAddressPicker implements AddressPicker {
         // AWS does not support IPv6.
         JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();
+        KubernetesConfig kubernetesConfig = join.getKubernetesConfig();
         boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
-        return preferIPv4Stack || awsEnabled;
+        boolean kubernetesEnabled = kubernetesConfig != null && kubernetesConfig.isEnabled();
+        return preferIPv4Stack || awsEnabled || kubernetesEnabled;
     }
 
     @Deprecated

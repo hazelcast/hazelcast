@@ -16,39 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
-import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.mapreduce.TopologyChangedStrategy;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.ServiceConfigurationParser;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.StringUtil;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-
-import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
@@ -77,6 +44,41 @@ import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
+import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.mapreduce.TopologyChangedStrategy;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.ServiceConfigurationParser;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 
 /**
  * A XML {@link ConfigBuilder} implementation.
@@ -550,11 +552,40 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleTcpIp(child);
             } else if ("aws".equals(name)) {
                 handleAWS(child);
+            } else if ("kubernetes".equals(name)) {
+                handleKubernetes(child);
             }
         }
 
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.verify();
+    }
+
+    private void handleKubernetes(Node node) {
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        final NamedNodeMap atts = node.getAttributes();
+        final KubernetesConfig kubernetesConfig = join.getKubernetesConfig();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                kubernetesConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                kubernetesConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
+            }
+        }
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            if ("host".equals(cleanNodeName(n.getNodeName()))) {
+                kubernetesConfig.setHost(value);
+            } else if ("port".equals(cleanNodeName(n.getNodeName()))) {
+                kubernetesConfig.setPort(value);
+            } else if ("version".equals(cleanNodeName(n.getNodeName()))) {
+                kubernetesConfig.setVersion(value);
+            } else if ("labels-query".equals(cleanNodeName(n.getNodeName()))) {
+                kubernetesConfig.setLabelQuery(value);
+            }
+        }
     }
 
     private void handleAWS(Node node) {

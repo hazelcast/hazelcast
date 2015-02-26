@@ -29,6 +29,8 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
+    private KubernetesConfig kubernetesConfig = new KubernetesConfig();
+
     /**
      * @return the multicastConfig join configuration
      */
@@ -78,6 +80,22 @@ public class JoinConfig {
     }
 
     /**
+     * @return the kubernetesConfig join configuration
+     */
+    public KubernetesConfig getKubernetesConfig() {
+        return kubernetesConfig;
+    }
+
+    /**
+     * @param kubernetesConfig the KubernetesConfig join configuration to set
+     * @throws IllegalArgumentException if kubernetesConfig is null
+     */
+    public JoinConfig setKubernetesConfig(final KubernetesConfig kubernetesConfig) {
+        this.kubernetesConfig = isNotNull(kubernetesConfig, "kubernetesConfig");
+        return this;
+    }
+
+    /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
      * @throws IllegalStateException when the join config is not valid.
@@ -87,12 +105,16 @@ public class JoinConfig {
             throw new IllegalStateException("TCP/IP and Multicast join be enabled at the same time");
         }
 
-        if (getTcpIpConfig().isEnabled() && getAwsConfig().isEnabled()) {
-            throw new IllegalStateException("TCP/IP and AWS join can't be enabled at the same time");
+        if (getTcpIpConfig().isEnabled() && (getAwsConfig().isEnabled() || getKubernetesConfig().isEnabled())) {
+            throw new IllegalStateException("TCP/IP and AWS/Kubernetes join can't be enabled at the same time");
         }
 
-        if (getMulticastConfig().isEnabled() && getAwsConfig().isEnabled()) {
-            throw new IllegalStateException("Multicast and AWS join can't be enabled at the same time");
+        if (getMulticastConfig().isEnabled() && (getAwsConfig().isEnabled() || getKubernetesConfig().isEnabled())) {
+            throw new IllegalStateException("Multicast and AWS/Kubernetes join can't be enabled at the same time");
+        }
+
+        if (getAwsConfig().isEnabled() && getKubernetesConfig().isEnabled()) {
+            throw new IllegalStateException("AWS and Kubernetes join can't be enabled at the same time");
         }
     }
 
@@ -102,6 +124,7 @@ public class JoinConfig {
         sb.append("multicastConfig=").append(multicastConfig);
         sb.append(", tcpIpConfig=").append(tcpIpConfig);
         sb.append(", awsConfig=").append(awsConfig);
+        sb.append(", kubernetesConfig=").append(kubernetesConfig);
         sb.append('}');
         return sb.toString();
     }

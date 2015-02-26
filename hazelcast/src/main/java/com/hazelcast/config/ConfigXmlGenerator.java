@@ -16,15 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collection;
@@ -32,7 +25,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 /**
  * The ConfigXmlGenerator is responsible for transforming a {@link Config} to a Hazelcast XML string.
@@ -271,6 +272,8 @@ public class ConfigXmlGenerator {
 
         awsConfigXmlGenerator(xml, join);
 
+        kubernetesConfigXmlGenerator(xml, join);
+
         xml.append("</join>");
 
         interfacesConfigXmlGenerator(xml, netCfg);
@@ -443,6 +446,20 @@ public class ConfigXmlGenerator {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }
         xml.append("</tcp-ip>");
+    }
+
+    private void kubernetesConfigXmlGenerator(StringBuilder xml, JoinConfig join) {
+        final KubernetesConfig kubernetesConfig = join.getKubernetesConfig();
+        xml.append("<kubernetes enabled=\"").append(kubernetesConfig.isEnabled()).append("\">");
+        if (kubernetesConfig.getHost() != null) {
+            xml.append("<host>").append(kubernetesConfig.getHost()).append("</host>");
+        }
+        if (kubernetesConfig.getPort() != null) {
+            xml.append("<port>").append(kubernetesConfig.getPort()).append("</port>");
+        }
+        xml.append("<version>").append(kubernetesConfig.getVersion()).append("</version>");
+        xml.append("<labels-query>").append(kubernetesConfig.getLabelQuery()).append("</labels-query>");
+        xml.append("</kubernetes>");
     }
 
     private void awsConfigXmlGenerator(StringBuilder xml, JoinConfig join) {

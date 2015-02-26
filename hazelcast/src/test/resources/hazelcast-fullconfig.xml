@@ -93,6 +93,9 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <kubernetes enabled="false">
+                <label-query>name=hazelcast</label-query>
+            </kubernetes>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>

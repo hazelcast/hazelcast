@@ -733,11 +733,22 @@
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
     </xs:complexType>
+    <xs:complexType name="kubernetes">
+        <xs:sequence>
+            <xs:element name="host" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="port" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="version" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="label-query" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+    </xs:complexType>
     <xs:complexType name="join">
         <xs:sequence>
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
             <xs:element name="tcp-ip" type="tcp-ip" minOccurs="0"/>
             <xs:element name="aws" type="aws" minOccurs="0"/>
+            <xs:element name="kubernetes" type="kubernetes" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="interfaces">
