@@ -83,8 +83,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         if (isShutdown) {
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
-        registerInvocation(invocation);
-        invocation.setConnection(connection);
+        registerInvocationWithCallId(invocation);
+
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(invocation.getRequest());
         Packet packet = new Packet(data, invocation.getPartitionId(), ss.getPortableContext());
@@ -94,6 +94,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             deRegisterEventHandler(callId);
             throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
         }
+        invocation.setConnection(connection);
+        invocation.setSend();
     }
 
     private boolean isAllowedToSendRequest(ClientConnection connection, ClientRequest request) {
@@ -111,7 +113,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         return true;
     }
 
-    private void registerInvocation(ClientInvocation clientInvocation) {
+    private void registerInvocationWithCallId(ClientInvocation clientInvocation) {
         final int callId = newCallId();
         clientInvocation.getRequest().setCallId(callId);
         callIdMap.put(callId, clientInvocation);

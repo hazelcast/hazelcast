@@ -19,14 +19,12 @@ package com.hazelcast.client.util;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.executor.impl.client.CancellationRequest;
-import com.hazelcast.executor.impl.client.RandomTargetCallableRequest;
-import com.hazelcast.executor.impl.client.RefreshableRequest;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.concurrent.CancellationException;
@@ -63,6 +61,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
             return false;
         }
 
+        waitForRequestToBeSend();
         final Future f = invokeCancelRequest(mayInterruptIfRunning);
         try {
             final Boolean b = context.getSerializationService().toObject(f.get());
@@ -80,51 +79,37 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     }
 
     private Future invokeCancelRequest(boolean mayInterruptIfRunning) {
-        CancellationRequest request;
-        Address address = getTargetAddress();
-
-        if (address != null) {
-            request = new CancellationRequest(uuid, address, mayInterruptIfRunning);
+        ClientInvocation clientInvocation;
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        if (target != null) {
+            CancellationRequest request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
+            clientInvocation = new ClientInvocation(client, request, target);
         } else {
-            final ClientPartitionService partitionService = context.getPartitionService();
-            address = partitionService.getPartitionOwner(partitionId);
-            request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
+            ClientRequest request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
+            clientInvocation = new ClientInvocation(client, request, partitionId);
         }
 
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
-    private Address getTargetAddress() {
-        final Address foundTarget = findTargetOrNull();
-        return foundTarget == null ? this.target : foundTarget;
-    }
-
-    private Address findTargetOrNull() {
-        //0. Check preconditions.
+    private void waitForRequestToBeSend() {
         final ICompletableFuture future = getFuture();
-        if (!(future instanceof ClientInvocationFuture)) {
-            return null;
-        }
 
         final ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
-        final ClientRequest request = clientCallFuture.getRequest();
+        ClientInvocation invocation = clientCallFuture.getInvocation();
 
-        if (!(request instanceof RefreshableRequest)) {
-            return null;
+        while (!invocation.isSend()) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
+            }
         }
 
-        //1. Get target address.
-        if (request instanceof RandomTargetCallableRequest) {
-            return ((RandomTargetCallableRequest) request).getTarget();
-        }
-
-        return null;
     }
 
     @Override
