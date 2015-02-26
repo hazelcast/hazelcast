@@ -186,6 +186,7 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/ConfigurationOverview.md
 	src/HazelcastConfiguration/UsingWildcard.md
 	src/HazelcastConfiguration/ComposingXML.md
+	src/HazelcastConfiguration/UsingVariables.md
 #	src/NetworkConfig.md
 	src/HazelcastConfiguration/NetworkConfiguration.md
 	src/HazelcastConfiguration/GroupConfiguration.md
