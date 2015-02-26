@@ -583,6 +583,7 @@ public class ClientMapNearCacheTest {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                triggerEviction(map);
             }
         });
     }
@@ -602,6 +603,7 @@ public class ClientMapNearCacheTest {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                triggerEviction(map);
             }
         });
     }
@@ -621,6 +623,7 @@ public class ClientMapNearCacheTest {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                triggerEviction(map);
             }
         });
     }
@@ -640,6 +643,7 @@ public class ClientMapNearCacheTest {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
+                triggerEviction(map);
             }
         });
     }
@@ -660,6 +664,10 @@ public class ClientMapNearCacheTest {
                 assertEquals(MAX_CACHE_SIZE, stats.getOwnedEntryCount());
             }
         });
+    }
+
+    private void triggerEviction(IMap map) {
+        populateNearCache(map, 1);
     }
 
     private void populateNearCache(IMap map, int size) {

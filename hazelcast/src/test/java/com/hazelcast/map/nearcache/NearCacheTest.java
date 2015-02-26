@@ -513,6 +513,7 @@ public class NearCacheTest extends HazelcastTestSupport {
                 NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                triggerNearCacheEviction(map);
             }
         });
     }
@@ -532,6 +533,7 @@ public class NearCacheTest extends HazelcastTestSupport {
                 NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                triggerNearCacheEviction(map);
             }
         });
     }
@@ -551,6 +553,7 @@ public class NearCacheTest extends HazelcastTestSupport {
                 NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
                 assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
+                triggerNearCacheEviction(map);
             }
         });
     }
@@ -572,6 +575,19 @@ public class NearCacheTest extends HazelcastTestSupport {
                 assertEquals(maxSize, ownedEntryCount);
             }
         });
+    }
+
+    /**
+     * There is a time-window that an "is-near-cache-evictable" check may return false but
+     * in reality near-cache size is bigger than the configured near-cache max-size, this can happen because eviction
+     * process is offloaded to a different thread and there is no synchronization exist between the thread
+     * that puts the entry to near-cache and the thread which sweeps the entries from near-cache.
+     * This method continuously triggers the eviction to bring the near-cache size under the configured max-size.
+     * Only needed for testing purposes.
+     */
+    private void triggerNearCacheEviction(IMap map) {
+        populateMap(map, 1);
+        pullEntriesToNearCache(map, 1);
     }
 
     private IMap getMapConfiguredWithMaxSizeAndPolicy(String evictionPolicy, int maxSize) {
