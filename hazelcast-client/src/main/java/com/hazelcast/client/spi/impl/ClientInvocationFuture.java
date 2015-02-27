@@ -106,7 +106,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                         this.wait(Math.min(heartBeatInterval, waitMillis));
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
-                        if (!invocation.isConnectionHealthy(elapsed)) {
+                        if (!invocation.shouldContinueWaiting(elapsed)) {
                             invocation.notify(new TargetDisconnectedException());
                         }
                     }

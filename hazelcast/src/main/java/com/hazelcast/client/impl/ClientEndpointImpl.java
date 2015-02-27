@@ -113,6 +113,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         this.firstConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
+        clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
     }
 
     @Override
