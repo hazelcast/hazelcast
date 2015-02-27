@@ -1,17 +1,9 @@
 
-## Composing XML Configuration
+## Composing Declarative Configuration
 
-You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file from multiple XML configuration snippets. In order to compose XML configuration, you can use the `<import/>` element to load different XML configuration files. Please see the following examples.   
+You can compose the declarative configuration of your Hazelcast or Hazelcast Client from multiple declarative configuration snippets. In order to compose a declarative configuration, you can use the `<import/>` element to load different declarative configuration files. Please see the following examples.
 
-#### Example of Hazelcast XML Composing
-`hazelcast-config.xml`:
-
-```xml
-<hazelcast>
-  <import resource="development-group-config.xml"/>
-  <import resource="development-network-config.xml"/>
-</hazelcast>
-```
+Let's say you want to compose the declarative configuration for Hazelcast out of two configurations: `development-group-config.xml` and `development-network-config.xml`. These two configurations are shown below.
 
 `development-group-config.xml`:
 
@@ -23,6 +15,7 @@ You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file fr
   </group>
 </hazelcast>
 ```
+<br></br>
 
 `development-network-config.xml`:
 
@@ -39,18 +32,21 @@ You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file fr
   </network>
 </hazelcast>
 ```
-#### Example of Hazelcast Client XML Composing
 
-`hazelcast-client-config.xml`:
+To get your example Hazelcast declarative configuration out of the above two, use the `<import/>` element as shown below.
+
 
 ```xml
-<hazelcast-client>
-  <import resource="client-group-config.xml"/>
-  <import resource="client-network-config.xml"/>
+<hazelcast>
+  <import resource="development-group-config.xml"/>
+  <import resource="development-network-config.xml"/>
 </hazelcast>
 ```
 
-`development-group-config.xml`:
+This feature also applies to the declarative configuration of Hazelcast Client. Please see the following examples.
+
+
+`client-group-config.xml`:
 
 ```xml
 <hazelcast-client>
@@ -60,6 +56,7 @@ You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file fr
   </group>
 </hazelcast-client>
 ```
+<br></br>
 
 `client-network-config.xml`:
 
@@ -73,11 +70,21 @@ You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file fr
 </hazelcast-client>
 ```
 
+The get your example Hazelcast Client declarative configuration out of the above two, use the `<import/>` element as shown below.
+
+```xml
+<hazelcast-client>
+  <import resource="client-group-config.xml"/>
+  <import resource="client-network-config.xml"/>
+</hazelcast>
+```
+
+
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *You can only use `<import/>` element on top level of the XML hierarchy.*
 <br></br>
 
-- XML resources can be loaded from classpath and filesystem. For example:
+- XML resources can be loaded from classpath and filesystem. Please see the following example.
 
 ```xml
 <hazelcast>
@@ -86,7 +93,7 @@ You can compose your Hazelcast XML or Hazelcast-Client XML Configuration file fr
 </hazelcast>
 ```
 
-- You can use property placeholders in the `<import/>` elements. For example:
+- You can use property placeholders in the `<import/>` elements. Please see the following example.
 
 ```xml
 <hazelcast>
