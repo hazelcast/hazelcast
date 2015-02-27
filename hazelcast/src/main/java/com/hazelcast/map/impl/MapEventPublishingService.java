@@ -42,7 +42,7 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapServiceContext.getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(mapName).incrementReceivedEvents();
+                    .getInstantLocalMapStats(mapName).incrementReceivedEvents();
         }
     }
 

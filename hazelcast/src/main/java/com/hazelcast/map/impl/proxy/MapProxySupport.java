@@ -83,7 +83,7 @@ import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.InstantLocalMapStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -134,7 +134,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     protected final String name;
-    protected final LocalMapStatsImpl localMapStats;
+    protected final InstantLocalMapStats localMapStats;
     protected final LockProxySupport lockSupport;
     protected final PartitioningStrategy partitionStrategy;
 
@@ -142,7 +142,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         super(nodeEngine, service);
         this.name = name;
         partitionStrategy = service.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
-        localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
+        localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getInstantLocalMapStats(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 

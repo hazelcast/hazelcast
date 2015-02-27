@@ -2,34 +2,32 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.util.Clock;
-
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
+/**
+ * Default implementation of {@link com.hazelcast.monitor.NearCacheStats}
+ */
 public class NearCacheStatsImpl
         implements NearCacheStats {
 
-    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> HITS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(NearCacheStatsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(NearCacheStatsImpl.class, "misses");
+
+    private InstantNearCacheStats instantNearCacheStats;
+
     private long ownedEntryCount;
     private long ownedEntryMemoryCost;
-    private long creationTime;
-
-    // These fields are only accessed through the updaters
-    private volatile long hits;
-    private volatile long misses;
 
     public NearCacheStatsImpl() {
-        this.creationTime = Clock.currentTimeMillis();
+        this(new InstantNearCacheStats());
+    }
+
+    public NearCacheStatsImpl(InstantNearCacheStats instantNearCacheStats) {
+        this.instantNearCacheStats = instantNearCacheStats;
     }
 
     @Override
     public long getCreationTime() {
-        return creationTime;
+        return instantNearCacheStats.getCreationTime();
     }
 
     @Override
@@ -48,21 +46,21 @@ public class NearCacheStatsImpl
 
     @Override
     public long getHits() {
-        return hits;
+        return instantNearCacheStats.getHits();
     }
 
     @Override
     public long getMisses() {
-        return misses;
+        return instantNearCacheStats.getMisses();
     }
 
     public void setHits(long hits) {
-        HITS_UPDATER.set(this, hits);
+        instantNearCacheStats.setHits(hits);
     }
 
     @Override
     public double getRatio() {
-        return (double) hits / misses;
+        return instantNearCacheStats.getRatio();
     }
 
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
@@ -71,31 +69,26 @@ public class NearCacheStatsImpl
     }
 
     public void incrementMisses() {
-        MISSES_UPDATER.incrementAndGet(this);
+        instantNearCacheStats.incrementMisses();
     }
 
     public void incrementHits() {
-        HITS_UPDATER.incrementAndGet(this);
+        instantNearCacheStats.incrementHits();
     }
 
     @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        final JsonObject root = instantNearCacheStats.toJson();
         root.add("ownedEntryCount", ownedEntryCount);
         root.add("ownedEntryMemoryCost", ownedEntryMemoryCost);
-        root.add("creationTime", creationTime);
-        root.add("hits", hits);
-        root.add("misses", misses);
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
+        instantNearCacheStats.fromJson(json);
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
         ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        HITS_UPDATER.set(this, getLong(json, "hits", -1L));
-        MISSES_UPDATER.set(this, getLong(json, "misses", -1L));
     }
 
     @Override
@@ -103,9 +96,6 @@ public class NearCacheStatsImpl
         return "NearCacheStatsImpl{"
                 + "ownedEntryCount=" + ownedEntryCount
                 + ", ownedEntryMemoryCost=" + ownedEntryMemoryCost
-                + ", creationTime=" + creationTime
-                + ", hits=" + hits
-                + ", misses=" + misses
                 + ", ratio=" + getRatio()
                 + '}';
     }

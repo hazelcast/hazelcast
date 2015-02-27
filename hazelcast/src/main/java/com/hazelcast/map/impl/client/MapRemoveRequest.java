@@ -74,7 +74,7 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable,
         final MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name)
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getInstantLocalMapStats(name)
                     .incrementRemoves(latency);
         }
     }

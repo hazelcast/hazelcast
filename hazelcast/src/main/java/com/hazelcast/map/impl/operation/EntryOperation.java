@@ -29,7 +29,7 @@ import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.InstantLocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -243,10 +243,10 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return new MapEntrySimple(key, value);
     }
 
-    private LocalMapStatsImpl getLocalMapStats() {
+    private InstantLocalMapStats getLocalMapStats() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        return localMapStatsProvider.getLocalMapStatsImpl(name);
+        return localMapStatsProvider.getInstantLocalMapStats(name);
     }
 
     private boolean hasRegisteredListenerForThisMap() {
