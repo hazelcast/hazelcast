@@ -27,9 +27,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
 /**
  * Internal API
  */
-public class InstantLocalMapStats
-        implements JsonSerializable
-     {
+public class InstantLocalMapStats implements JsonSerializable {
 
     private static final AtomicLongFieldUpdater<InstantLocalMapStats> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(InstantLocalMapStats.class, "lastAccessTime");
