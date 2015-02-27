@@ -53,17 +53,26 @@ public final class HazelcastTimestamper {
     public static long nextTimestamp(HazelcastInstance instance) {
         int runs = 0;
         while (true) {
+
             long base = instance.getCluster().getClusterTime() << BASE_TIME_SHIFT;
             long maxValue = base + ONE_MS - 1;
-            //Make sure that update different than current value, otherwise while loop will run again.
-            for (long current = VALUE.get(), update = Math.max(base, current + 1); update < maxValue;
-                 current = VALUE.get(), update = Math.max(base, current + 1)) {
-                if (VALUE.compareAndSet(current, update)) {
-                    if (runs > 1) {
-                        Logger.getLogger(HazelcastTimestamper.class)
-                                .finest(String.format("Waiting for time to pass. Looped %d times", runs));
+            long current = VALUE.get();
+            long update = Math.max(base, current + 1);
+
+            if (runs > 1) {
+                Logger.getLogger(HazelcastTimestamper.class)
+                        .finest(String.format("Waiting for time to pass. Looped %d times", runs));
+            }
+            //Make sure that base or max value is not negative, if one of them is negative return current + 1
+            if (base < 0 || maxValue < 0) {
+                VALUE.compareAndSet(current, update);
+                return update;
+            } else {
+                //Make sure that update different than current value, otherwise while loop will run again.
+                for (; update < maxValue; current = VALUE.get(), update = Math.max(base, current + 1)) {
+                    if (VALUE.compareAndSet(current, update)) {
+                        return update;
                     }
-                    return update;
                 }
             }
             ++runs;
@@ -74,13 +83,8 @@ public final class HazelcastTimestamper {
         try {
             final MapConfig cfg = instance.getConfig().findMapConfig(regionName);
             if (cfg.getTimeToLiveSeconds() > 0) {
-                // TTL in ms. Added extra check for overflow.
-                // Since TTL value cannot take negative values, if timeout is negative,
-                // integer overflow occurs and timeout value is set to default cache timeout value.
-                int timeout = cfg.getTimeToLiveSeconds() * SEC_TO_MS;
-                if (timeout > 0) {
-                    return timeout;
-                }
+                // TTL in ms.
+                return cfg.getTimeToLiveSeconds() * SEC_TO_MS;
             }
         } catch (UnsupportedOperationException e) {
             // HazelcastInstance is instance of HazelcastClient.
