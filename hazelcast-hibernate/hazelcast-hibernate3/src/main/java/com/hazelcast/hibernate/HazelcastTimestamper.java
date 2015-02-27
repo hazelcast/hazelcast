@@ -61,7 +61,7 @@ public final class HazelcastTimestamper {
                 if (VALUE.compareAndSet(current, update)) {
                     if (runs > 1) {
                         Logger.getLogger(HazelcastTimestamper.class)
-                                .finest(String.format("Waiting for time to pass. Looped %d times" , runs));
+                                .finest(String.format("Waiting for time to pass. Looped %d times", runs));
                     }
                     return update;
                 }
@@ -74,8 +74,13 @@ public final class HazelcastTimestamper {
         try {
             final MapConfig cfg = instance.getConfig().findMapConfig(regionName);
             if (cfg.getTimeToLiveSeconds() > 0) {
-                // TTL in ms.
-                return cfg.getTimeToLiveSeconds() * SEC_TO_MS;
+                // TTL in ms. Added extra check for overflow.
+                // Since TTL value cannot take negative values, if timeout is negative,
+                // integer overflow occurs and timeout value is set to default cache timeout value.
+                int timeout = cfg.getTimeToLiveSeconds() * SEC_TO_MS;
+                if (timeout > 0) {
+                    return timeout;
+                }
             }
         } catch (UnsupportedOperationException e) {
             // HazelcastInstance is instance of HazelcastClient.
