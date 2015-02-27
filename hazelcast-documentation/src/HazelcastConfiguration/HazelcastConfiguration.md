@@ -6,6 +6,7 @@ This chapter covers all the elements and attributes used to configure Hazelcast.
 
 - [Configuration Overview](#configuration-overview): Provides the options used to configure Hazelcast.
 - [Using Wildcard](#using-wildcard): Describes the usage of the wildcard character (`*`) while configuring Hazelcast.
+- [Using Variables](#using-variables): Describes how to use variables in declarative configurations.
 - [Composing XML Configuration](#composing-xml-configuration): Describes how to produce a declarative configuration file out of several configuration files.
 
 
