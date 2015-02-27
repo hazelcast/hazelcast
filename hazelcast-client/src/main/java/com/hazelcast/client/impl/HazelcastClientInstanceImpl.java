@@ -223,9 +223,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         connectionManager.start();
         try {
             clusterService.start();
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             lifecycleService.shutdown();
-            throw e;
+            throw ExceptionUtil.rethrow(e);
         }
         loadBalancer.init(getCluster(), config);
         partitionService.start();

@@ -251,6 +251,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private void notifyMasterToAssignPartitions() {
+        if (initialized) {
+            return;
+        }
         if (lock.tryLock()) {
             try {
                 if (!initialized && !node.isMaster() && node.getMasterAddress() != null && node.joined()) {
@@ -269,6 +272,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public void firstArrangement() {
         if (!node.isMaster() || !node.isActive()) {
+            notifyMasterToAssignPartitions();
             return;
         }
         if (!initialized) {
@@ -1765,7 +1769,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         private void doRun() throws InterruptedException {
-            for (;;) {
+            for (; ; ) {
                 if (!isMigrationActive()) {
                     break;
                 }

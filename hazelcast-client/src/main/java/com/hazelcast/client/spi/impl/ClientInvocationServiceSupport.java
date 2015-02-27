@@ -84,7 +84,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
         registerInvocation(invocation);
-        invocation.setConnection(connection);
+        invocation.setSendConnection(connection);
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(invocation.getRequest());
         Packet packet = new Packet(data, invocation.getPartitionId(), ss.getPortableContext());
@@ -152,7 +152,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientInvocation> entry = iter.next();
             final ClientInvocation invocation = entry.getValue();
-            if (invocation.getConnection().equals(connection)) {
+            if (invocation.getSendConnection().equals(connection)) {
                 iter.remove();
                 invocation.notify(responseCtor.createNew(null));
                 eventHandlerMap.remove(entry.getKey());
@@ -161,7 +161,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         final Iterator<ClientInvocation> iterator = eventHandlerMap.values().iterator();
         while (iterator.hasNext()) {
             final ClientInvocation invocation = iterator.next();
-            if (invocation.getConnection().equals(connection)) {
+            if (invocation.getSendConnection().equals(connection)) {
                 iterator.remove();
                 invocation.notify(responseCtor.createNew(null));
             }
@@ -185,7 +185,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
         while (iterator.hasNext()) {
             final ClientInvocation clientInvocation = iterator.next();
-            if (clientInvocation.getConnection().equals(connection)) {
+            if (clientInvocation.getSendConnection().equals(connection)) {
                 iterator.remove();
                 clientInvocation.notify(response);
             }

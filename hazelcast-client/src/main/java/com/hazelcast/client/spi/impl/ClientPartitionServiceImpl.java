@@ -23,7 +23,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -32,7 +31,6 @@ import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
 
-import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -47,6 +45,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
     private static final long PERIOD = 10;
     private static final long INITIAL_DELAY = 10;
+    private static final int PARTITION_WAIT_TIME = 1000;
 
     private final HazelcastClientInstanceImpl client;
 
@@ -61,7 +60,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void start() {
-        getInitialPartitions();
         ClientExecutionService clientExecutionService = client.getClientExecutionService();
         clientExecutionService.scheduleWithFixedDelay(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
@@ -74,18 +72,25 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private void getInitialPartitions() {
-        ClientClusterService clusterService = client.getClientClusterService();
-        Collection<MemberImpl> memberList = clusterService.getMemberList();
-        for (MemberImpl member : memberList) {
-            Address target = member.getAddress();
-            PartitionsResponse response = getPartitionsFrom(target);
-            if (response != null) {
-                processPartitionResponse(response);
-                return;
+    private void getPartitionsBlocking() {
+        while (!getPartitions()) {
+            try {
+                Thread.sleep(PARTITION_WAIT_TIME);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-        throw new IllegalStateException("Cannot get initial partitions!");
+    }
+
+    private boolean getPartitions() {
+        ClientClusterService clusterService = client.getClientClusterService();
+        Address master = clusterService.getMasterAddress();
+        PartitionsResponse response = getPartitionsFrom(master);
+        if (response != null) {
+            processPartitionResponse(response);
+            return true;
+        }
+        return false;
     }
 
     private PartitionsResponse getPartitionsFrom(Address address) {
@@ -121,12 +126,16 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     @Override
     public Address getPartitionOwner(int partitionId) {
+        Address address = partitions.get(partitionId);
+        if (address == null) {
+            getPartitionsBlocking();
+        }
         return partitions.get(partitionId);
     }
 
     @Override
     public int getPartitionId(Data key) {
-        final int pc = partitionCount;
+        final int pc = getPartitionCount();
         if (pc <= 0) {
             return 0;
         }
@@ -142,6 +151,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     @Override
     public int getPartitionCount() {
+        if (partitionCount == 0) {
+            getPartitionsBlocking();
+        }
         return partitionCount;
     }
 
@@ -188,12 +200,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             }
 
             try {
-                ClientClusterService clusterService = client.getClientClusterService();
-                Address master = clusterService.getMasterAddress();
-                PartitionsResponse response = getPartitionsFrom(master);
-                if (response != null) {
-                    processPartitionResponse(response);
-                }
+                getPartitions();
             } catch (HazelcastInstanceNotActiveException ignored) {
                 EmptyStatement.ignore(ignored);
             } finally {
