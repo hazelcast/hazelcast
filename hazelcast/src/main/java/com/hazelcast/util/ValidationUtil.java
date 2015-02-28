@@ -23,7 +23,8 @@ import static java.lang.String.format;
  */
 public final class ValidationUtil {
 
-    private ValidationUtil(){}
+    private ValidationUtil() {
+    }
 
     /**
      * Tests if an argument is not null.
