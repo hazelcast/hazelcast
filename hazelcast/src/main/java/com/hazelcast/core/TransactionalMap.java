@@ -195,7 +195,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      *
      * @see com.hazelcast.core.IMap#keySet()
      */
-    Set<K> keySet();
+    //Set<K> keySet();
 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)} .
@@ -203,7 +203,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      *
      * @see IMap#keySet(com.hazelcast.query.Predicate)
      */
-    Set<K> keySet(Predicate predicate);
+    //Set<K> keySet(Predicate predicate);
 
     /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#values()}.
