@@ -16,6 +16,11 @@
 
 package com.hazelcast.core;
 
+import java.util.Map;
+import java.util.Set;
+
+import com.hazelcast.query.Predicate;
+
 /**
  * Base interface for Hazelcast distributed maps.
  *
@@ -44,6 +49,26 @@ public interface BaseMap<K, V> extends DistributedObject {
     V get(Object key);
 
     /**
+     * Returns the entries for the given keys. If any keys are not present in the Map, it will
+     * call {@link MapStore#loadAll(java.util.Collection)}.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * The returned map is <b>NOT</b> backed by the original map,
+     * so changes to the original map are <b>NOT</b> reflected in the returned map, and vice-versa.
+     * <p/>
+     * <p><b>Warning-2:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>keys</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     * <p/>
+     *
+     * @param keys keys to get
+     * @return map of entries
+     * @throws NullPointerException if any of the specified keys are null
+     */
+    Map<K, V> getAll(Set<K> keys);
+
+    /**
      * Associates the specified value with the specified key in this map.
      * If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.
@@ -54,6 +79,15 @@ public interface BaseMap<K, V> extends DistributedObject {
      * if there was no mapping for {@code key}.
      */
     V put(K key, V value);
+
+    /**
+     * Copies all of the mappings from the specified map to this map. 
+     * The effect of this call is equivalent to that of calling put(k, v) on this map once
+     * for each mapping from key k to value v in the specified map. The behavior of this
+     * operation is undefined if the specified map is modified while the operation is in progress.
+     * 
+     */
+    void putAll(Map<? extends K,? extends V> entries);
 
     /**
      * Associates the specified value with the specified key in this map.
@@ -172,4 +206,29 @@ public interface BaseMap<K, V> extends DistributedObject {
      * @return the number of entries in this map.
      */
     int size();
+
+    /**
+     * Returns a set clone of the keys contained in this map.
+     * The set is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     *
+     * @return a set clone of the keys contained in this map
+     */
+    Set<K> keySet();
+
+    /**
+     * Queries the map based on the specified predicate and
+     * returns the keys of matching entries.
+     * <p/>
+     * Specified predicate runs on all members in parallel.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * The set is <b>NOT</b> backed by the map,
+     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
+     *
+     * @param predicate specified query criteria
+     * @return result key set of the query
+     */
+    Set<K> keySet(Predicate predicate);
+
 }

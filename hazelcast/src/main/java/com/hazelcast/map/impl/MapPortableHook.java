@@ -61,6 +61,8 @@ import com.hazelcast.map.impl.client.MapTryRemoveRequest;
 import com.hazelcast.map.impl.client.MapUnlockRequest;
 import com.hazelcast.map.impl.client.MapValuesRequest;
 import com.hazelcast.map.impl.client.TxnMapRequest;
+import com.hazelcast.map.impl.client.TxnMapRequestWithDataMap;
+import com.hazelcast.map.impl.client.TxnMapRequestWithKeySet;
 import com.hazelcast.map.impl.client.TxnMapRequestWithSQLQuery;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
@@ -124,6 +126,8 @@ public class MapPortableHook implements PortableHook {
     public static final int LOAD_ALL_KEYS = 48;
     public static final int IS_EMPTY = 49;
     public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
+    public static final int TXN_REQUEST_WITH_KEYSET = 51;
+    public static final int TXN_REQUEST_WITH_DATAMAP = 52;
 
     public int getFactoryId() {
         return F_ID;
@@ -132,7 +136,7 @@ public class MapPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable>[] constructors
-                    = new ConstructorFunction[ADD_NEAR_CACHE_ENTRY_LISTENER + 1];
+                    = new ConstructorFunction[TXN_REQUEST_WITH_DATAMAP + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -407,6 +411,18 @@ public class MapPortableHook implements PortableHook {
                 constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapAddNearCacheEntryListenerRequest();
+                    }
+                };
+
+                constructors[TXN_REQUEST_WITH_KEYSET] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new TxnMapRequestWithKeySet();
+                    }
+                };
+
+                constructors[TXN_REQUEST_WITH_DATAMAP] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new TxnMapRequestWithDataMap();
                     }
                 };
             }

@@ -202,26 +202,6 @@ public interface IMap<K, V>
     void flush();
 
     /**
-     * Returns the entries for the given keys. If any keys are not present in the Map, it will
-     * call {@link MapStore#loadAll(java.util.Collection)}.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * The returned map is <b>NOT</b> backed by the original map,
-     * so changes to the original map are <b>NOT</b> reflected in the returned map, and vice-versa.
-     * <p/>
-     * <p><b>Warning-2:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>keys</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
-     * <p/>
-     *
-     * @param keys keys to get
-     * @return map of entries
-     * @throws NullPointerException if any of the specified keys are null
-     */
-    Map<K, V> getAll(Set<K> keys);
-
-    /**
      * Loads all keys into the store. This is a batch load operation so that an implementation can
      * optimize the multiple loads.
      *
@@ -928,15 +908,6 @@ public interface IMap<K, V>
     void evictAll();
 
     /**
-     * Returns a set clone of the keys contained in this map.
-     * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
-     *
-     * @return a set clone of the keys contained in this map
-     */
-    Set<K> keySet();
-
-    /**
      * Returns a collection clone of the values contained in this map.
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
@@ -953,21 +924,6 @@ public interface IMap<K, V>
      * @return a set clone of the keys mappings in this map
      */
     Set<Map.Entry<K, V>> entrySet();
-
-    /**
-     * Queries the map based on the specified predicate and
-     * returns the keys of matching entries.
-     * <p/>
-     * Specified predicate runs on all members in parallel.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
-     *
-     * @param predicate specified query criteria
-     * @return result key set of the query
-     */
-    Set<K> keySet(Predicate predicate);
 
     /**
      * Queries the map based on the specified predicate and
