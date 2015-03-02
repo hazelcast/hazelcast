@@ -94,7 +94,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
-            handleAnnotationDrivenConfig(element);
             handleClientAttributes(element);
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
@@ -116,6 +115,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLoadBalancer(node);
                 } else if ("near-cache".equals(nodeName)) {
                     handleNearCache(node);
+                } else if ("spring-aware".equals(nodeName)) {
+                    handleSpringAware();
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());

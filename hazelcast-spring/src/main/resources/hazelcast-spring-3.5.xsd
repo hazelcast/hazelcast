@@ -26,7 +26,7 @@
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
-                        <xs:element name="annotation-driven" type="annotation-driven" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -947,7 +947,7 @@
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
-                        <xs:element name="annotation-driven" type="annotation-driven" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="network" type="network-client" minOccurs="0" maxOccurs="1"/>
@@ -1790,9 +1790,4 @@
         <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
     </xs:complexType>
-
-    <xs:complexType name="annotation-driven">
-        <xs:attribute name="enabled" type="xs:string" default="true" use="optional"/>
-    </xs:complexType>
-
 </xs:schema>

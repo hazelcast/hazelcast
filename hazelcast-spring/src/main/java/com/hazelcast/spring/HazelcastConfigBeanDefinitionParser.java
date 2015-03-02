@@ -158,7 +158,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleConfig(final Element element) {
             handleCommonBeanAttributes(element, configBuilder, parserContext);
-            handleAnnotationDrivenConfig(element);
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("network".equals(nodeName)) {
@@ -210,6 +209,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleManagementCenter(node);
                 } else if ("services".equals(nodeName)) {
                     handleServices(node);
+                } else if ("spring-aware".equals(nodeName)) {
+                    handleSpringAware();
                 }
             }
         }

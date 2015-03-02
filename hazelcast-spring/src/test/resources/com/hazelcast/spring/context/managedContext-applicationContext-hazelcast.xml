@@ -37,7 +37,7 @@
 
     <hz:hazelcast id="instance1">
         <hz:config>
-            <hz:annotation-driven />
+            <hz:spring-aware />
             <hz:group name="dev" password="dev-pass"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
@@ -56,7 +56,7 @@
 
     <hz:hazelcast id="instance2">
         <hz:config>
-            <hz:annotation-driven />
+            <hz:spring-aware />
             <hz:group name="dev" password="dev-pass"/>
             <hz:network port="5702" port-auto-increment="false">
                 <hz:join>

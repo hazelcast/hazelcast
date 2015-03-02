@@ -336,18 +336,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             beanDefinitionBuilder.addPropertyValue("properties", properties);
         }
 
-        protected void handleAnnotationDrivenConfig(final Node node) {
-            for (org.w3c.dom.Node element : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                final String nodeName = cleanNodeName(element.getNodeName());
-                if ("annotation-driven".equals(nodeName)) {
-                    String enabled = getTextContent(element.getAttributes().getNamedItem("enabled")).trim();
-                    if ("true".equals(enabled)) {
-                        BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
-                        configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
-                    }
-                    break;
-                }
-            }
+        protected void handleSpringAware() {
+            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
+            configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
     }
 }
