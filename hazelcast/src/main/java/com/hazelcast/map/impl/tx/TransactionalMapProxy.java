@@ -123,6 +123,27 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     }
 
     @Override
+    public Map getAll(Set keys) {
+        checkTransactionState();
+        final MapService service = getService();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        Map result = new HashMap(keys.size());
+        for (Object key: keys) {
+            Data keyData = mapServiceContext.toData(key, partitionStrategy);
+            TxnValueWrapper currentValue = txMap.get(keyData);
+            if (currentValue != null) {
+                result.put(key, checkIfRemoved(currentValue));
+            } else {
+                Object data = getInternal(keyData);
+                if (data != null) {
+                    result.put(key, mapServiceContext.toObject(data));
+                }
+            }
+        }
+        // todo: optimize it via getAllInternal ?
+        return result;
+    }
+
     public Object put(Object key, Object value) {
         checkTransactionState();
         MapService service = getService();
@@ -160,6 +181,24 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     }
 
     @Override
+    public void putAll(Map entries) {
+        checkTransactionState();
+        MapService service = getService();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
+        for (Object e: entries.entrySet()) {
+            final Map.Entry entry = (Map.Entry) e;
+            Data keyData = mapServiceContext.toData(entry.getKey(), partitionStrategy);
+            final Object valueBeforeTxn = mapServiceContext.toObject(putInternal(keyData,
+                    mapServiceContext.toData(entry.getValue())));
+            if (entry.getValue() != null) {
+                TxnValueWrapper wrapper = valueBeforeTxn == null
+                        ? new TxnValueWrapper(entry.getValue(), TxnValueWrapper.Type.NEW)
+                        : new TxnValueWrapper(entry.getValue(), TxnValueWrapper.Type.UPDATED);
+                txMap.put(keyData, wrapper);
+            }
+        }
+    }
+
     public void set(Object key, Object value) {
         checkTransactionState();
         MapService service = getService();

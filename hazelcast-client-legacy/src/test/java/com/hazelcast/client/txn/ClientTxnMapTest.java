@@ -36,6 +36,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -545,5 +547,25 @@ public class ClientTxnMapTest {
         final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
 
         txMap.values(null);
+    }
+
+    @Test
+    public void testTxnMapPutGetAll() throws Exception {
+        final String mapName = randomString();
+        final IMap map = client.getMap(mapName);
+
+        final TransactionContext context = client.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+        Map<String, String> values = new HashMap<String, String>(3);
+        values.put("key1", "value1");
+        values.put("key2", "value2");
+        values.put("key3", "value3");
+        txnMap.putAll(values);
+        context.commitTransaction();
+        Map<String, String> result = map.getAll(values.keySet());
+        for (String key: values.keySet()) {
+            assertEquals(values.get(key), result.get(key));
+        }
     }
 }
