@@ -26,8 +26,6 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.InternalPartitionService;
-import org.junit.After;
-import org.junit.ComparisonFailure;
 
 import java.util.Collection;
 import java.util.Map;
@@ -38,9 +36,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.After;
+import org.junit.ComparisonFailure;
 
 public abstract class HazelcastTestSupport {
 
@@ -447,11 +450,10 @@ public abstract class HazelcastTestSupport {
 
     public static boolean isAllInSafeState() {
         final Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
-        final HazelcastInstance[] nodes = nodeSet.toArray(new HazelcastInstance[nodeSet.size()]);
-        return isAllInSafeState(nodes);
+        return isAllInSafeState(nodeSet);
     }
 
-    public static boolean isAllInSafeState(HazelcastInstance[] nodes) {
+    public static boolean isAllInSafeState(Collection<HazelcastInstance> nodes) {
         for (HazelcastInstance node : nodes) {
             if (!isInstanceInSafeState(node)) {
                 return false;
@@ -468,12 +470,16 @@ public abstract class HazelcastTestSupport {
         });
     }
 
-    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+    public static void waitAllForSafeState(final Collection<HazelcastInstance> nodes) {
         assertTrueEventually(new AssertTask() {
             public void run() {
                 assertTrue(isAllInSafeState(nodes));
             }
         });
+    }
+
+    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+        waitAllForSafeState(asList(nodes));
     }
 
     public static void assertExactlyOneSuccessfulRun(AssertTask task) {
