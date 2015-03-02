@@ -218,13 +218,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 return fromBackup;
             }
         }
+
+        // remember invalidate count before fetching new value
+        final long invalidateCountBefore = getNearCacheInvalidateCount();
         final GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         final Data value = (Data) invokeOperation(key, operation);
 
         if (nearCacheEnabled) {
             if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
-                return putNearCache(key, value);
+                return putNearCache(key, value, invalidateCountBefore);
             }
         }
         return value;
@@ -243,13 +246,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return getMapConfig().getNearCacheConfig().isCacheLocalEntries();
     }
 
-    private Object putNearCache(Data key, Data value) {
+    private Object putNearCache(Data key, Data value, long invalidateCountBefore) {
         final MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        return nearCacheProvider.putNearCache(name, key, value);
+        return nearCacheProvider.putNearCache(name, key, value, invalidateCountBefore);
     }
 
+    private long getNearCacheInvalidateCount() {
+        if (!getMapConfig().isNearCacheEnabled()) {
+            return -1L;
+        }
+        final MapService mapService = getService();
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        return nearCacheProvider.getNearCacheInvalidateCount(name);
+    }
 
     private Object getFromNearCache(Data key) {
         if (!getMapConfig().isNearCacheEnabled()) {
@@ -330,6 +342,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             }
         }
 
+        final long invalidateCountBefore = getNearCacheInvalidateCount();
         GetOperation operation = new GetOperation(name, key);
         try {
             final OperationService operationService = nodeEngine.getOperationService();
@@ -345,7 +358,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                         if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
                                 .equals(nodeEngine.getClusterService().getThisAddress())
                                 || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
+                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response, invalidateCountBefore);
                         }
                     }
                 }
@@ -682,6 +695,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses;
         try {
+            final long invalidateCountBefore = getNearCacheInvalidateCount();
             responses = nodeEngine.getOperationService()
                     .invokeOnPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys), partitions);
             for (Object response : responses.values()) {
@@ -693,7 +707,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (nearCacheEnabled) {
                         if (notOwnerPartitionForKey(entry.getKey())
                                 || cacheKeyAnyway()) {
-                            putNearCache(entry.getKey(), entry.getValue());
+                            putNearCache(entry.getKey(), entry.getValue(), invalidateCountBefore);
                         }
                     }
                 }

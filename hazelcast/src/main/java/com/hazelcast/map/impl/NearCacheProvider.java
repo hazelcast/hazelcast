@@ -60,13 +60,13 @@ public class NearCacheProvider {
 
     // this operation returns the given value in near-cache memory format (data or object)
     // if near-cache is not enabled, it returns null
-    public Object putNearCache(String mapName, Data key, Data value) {
+    public Object putNearCache(String mapName, Data key, Data value, long invalidateCountBefore) {
         // todo assert near-cache is enabled might be better
         if (!isNearCacheEnabled(mapName)) {
             return null;
         }
         NearCache nearCache = getNearCache(mapName);
-        return nearCache.put(key, value);
+        return nearCache.put(key, value, invalidateCountBefore);
     }
 
     public void invalidateNearCache(String mapName, Data key) {
@@ -160,6 +160,14 @@ public class NearCacheProvider {
         }
         NearCache nearCache = getNearCache(mapName);
         return nearCache.get(key);
+    }
+
+    public long getNearCacheInvalidateCount(String mapName) {
+        if (!isNearCacheEnabled(mapName)) {
+            return -1L;
+        }
+        NearCache nearCache = getNearCache(mapName);
+        return nearCache.getInvalidateCount();
     }
 }
 
