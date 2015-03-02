@@ -183,10 +183,10 @@ public class ClientRegressionTest
     @Test(timeout = 60000)
     public void testOperationRedo() throws Exception {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final Thread thread = new Thread() {
