@@ -83,8 +83,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
         return innerCallInternal(map);
     }
 
-
-    private Object innerCallInternal(final TransactionalMap map) {
+    protected Object innerCallInternal(final TransactionalMap map) {
         Object result = null;
         switch (requestType) {
             case CONTAINS_KEY:
@@ -303,7 +302,20 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
             Permission getRequiredPermission(String name) {
                 return getMapLockedWritePermission(name);
             }
+        },
+        GET_ALL(18) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapReadPermission(name);
+            }
+        },
+        PUT_ALL(19) {
+            @Override
+            Permission getRequiredPermission(String name) {
+                return getMapLockedWritePermission(name);
+            }
         };
+        
         int type;
 
         TxnMapRequestType(int i) {
