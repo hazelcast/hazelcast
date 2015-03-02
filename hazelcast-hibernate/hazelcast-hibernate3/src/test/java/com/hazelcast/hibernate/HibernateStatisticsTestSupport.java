@@ -158,12 +158,12 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         final int entityCount = 10;
         final int queryCount = 3;
         insertDummyEntities(entityCount);
-        sleep(1);
+        sleep(2);
         List<DummyEntity> list = null;
         for (int i = 0; i < queryCount; i++) {
             list = executeQuery(sf);
             assertEquals(entityCount, list.size());
-            sleep(1);
+            sleep(2);
         }
 
         assertNotNull(list);

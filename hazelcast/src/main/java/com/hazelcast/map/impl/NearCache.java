@@ -48,8 +48,7 @@ public class NearCache {
      */
     public static final Object NULL_OBJECT = new Object();
     public static final String NEAR_CACHE_EXECUTOR_NAME = "hz:near-cache";
-    private static final int HUNDRED_PERCENT = 100;
-    private static final int EVICTION_PERCENTAGE = 20;
+    private static final double EVICTION_FACTOR = 0.2;
     private static final int CLEANUP_INTERVAL = 5000;
     private final int maxSize;
     private volatile long lastCleanup;
@@ -144,7 +143,7 @@ public class NearCache {
                         try {
                             TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
                             records.addAll(cache.values());
-                            int evictSize = cache.size() * EVICTION_PERCENTAGE / HUNDRED_PERCENT;
+                            int evictSize = (int) (cache.size() * EVICTION_FACTOR);
                             int i = 0;
                             for (NearCacheRecord record : records) {
                                 cache.remove(record.getKey());

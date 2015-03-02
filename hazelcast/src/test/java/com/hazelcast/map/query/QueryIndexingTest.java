@@ -1,12 +1,10 @@
 package com.hazelcast.map.query;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.mock.MockUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -16,7 +14,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,25 +31,33 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import org.mockito.Mockito;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class QueryIndexingTest extends HazelcastTestSupport {
 
-    private int count = 5000;
-    private Map<Integer, Employee> employees = newEmployees(count);
-    private Config conf = newConfig(employees);
+    private int count = 2000;
+    private Map<Integer, Employee> employees;
+    private Config conf;
 
-    private TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-    private HazelcastInstance h1 = nodeFactory.newHazelcastInstance(conf);
-    private HazelcastInstance h2 = nodeFactory.newHazelcastInstance(conf);
+    private TestHazelcastInstanceFactory nodeFactory;
+    private HazelcastInstance h1;
+    private HazelcastInstance h2;
 
-    private EntryObject e = new PredicateBuilder().getEntryObject();
-    private Predicate predicate = e.get("name").equal(null).and(e.get("city").isNull());
+    private EntryObject e;
+    private Predicate predicate;
 
     @Before
     public void waitForCluster() {
+        employees = newEmployees(count);
+        conf = newConfig(employees);
+
+        nodeFactory = createHazelcastInstanceFactory(2);
+        h1 = nodeFactory.newHazelcastInstance(conf);
+        h2 = nodeFactory.newHazelcastInstance(conf);
+
+        e = new PredicateBuilder().getEntryObject();
+        predicate = e.get("name").equal(null).and(e.get("city").isNull());
+
         assertClusterSizeEventually(2, h1);
     }
 
@@ -114,14 +119,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
 
     private static Config newConfig(final Map<Integer, Employee> employees) {
         Config conf = new Config();
-        conf.getMapConfig("employees").setBackupCount(0);
-
-        SerializerConfig serializerConfig = new SerializerConfig();
-        serializerConfig.setTypeClass(Employee.class);
-        // serialize list index because employees are wrapped in Mockito.spy
-        serializerConfig.setImplementation(new EmployeeIdSerializer(employees));
-
-        conf.getSerializationConfig().addSerializerConfig(serializerConfig);
+        conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
         return conf;
     }
 
@@ -134,41 +132,10 @@ public class QueryIndexingTest extends HazelcastTestSupport {
             } else {
                 val = new Employee(i, "name" + i, "city" + i, 0, true, i);
             }
-            employees.put(i, Mockito.spy(val));
+            Employee spy = MockUtil.serializableSpy(Employee.class, val);
+            employees.put(i, spy);
         }
         return employees;
-    }
-
-    /**
-     * Serializes only employee id and deserializes to existing instance.
-     * For testing purposes does not serialize actual objects.
-     */
-    static class EmployeeIdSerializer implements StreamSerializer<Employee> {
-
-        private Map<Integer, Employee> employees;
-
-        public EmployeeIdSerializer(Map<Integer, Employee> employees) {
-            this.employees = employees;
-        }
-
-        @Override
-        public void write(ObjectDataOutput out, Employee employee) throws IOException {
-            out.writeInt((int)employee.getId());
-        }
-
-        @Override
-        public Employee read(ObjectDataInput in) throws IOException {
-            return employees.get(in.readInt());
-        }
-
-        @Override
-        public int getTypeId() {
-            return 123;
-        }
-
-        @Override
-        public void destroy() {
-        }
     }
 
 }

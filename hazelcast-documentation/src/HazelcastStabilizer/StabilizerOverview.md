@@ -38,3 +38,4 @@ The following are the key concepts mentioned with Hazelcast Stabilizer.
 - **Provisioner** -  It is responsible for spawning and terminating EC2 instances and installing Agents on the remote machines. It can be used in combination with EC2 (or any other cloud), but it can also be used in a static setup like a local machine or a cluster of machines in your data center.
 
 - **Communicator** -  A JVM that enables the communication between the agents and workers.
+- `stabilizer.properties` - The configuration file used to adapt the Hazelcast Stabilizer tests to your business needs.

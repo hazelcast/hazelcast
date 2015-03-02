@@ -582,6 +582,7 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
+                triggerEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
@@ -601,6 +602,7 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
+                triggerEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
@@ -620,6 +622,7 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
+                triggerEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
@@ -639,6 +642,7 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
+                triggerEviction(map);
                 assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
@@ -660,6 +664,10 @@ public class ClientMapNearCacheTest {
                 assertEquals(MAX_CACHE_SIZE, stats.getOwnedEntryCount());
             }
         });
+    }
+
+    private void triggerEviction(IMap map) {
+        populateNearCache(map, 1);
     }
 
     private void populateNearCache(IMap map, int size) {

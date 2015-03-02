@@ -75,8 +75,7 @@ public final class EvictionOperator {
         return maxSizeChecker;
     }
 
-    public void removeEvictableRecords(final RecordStore recordStore, int evictableSize, final MapConfig mapConfig,
-                                       boolean backup) {
+    public void removeEvictableRecords(RecordStore recordStore, int evictableSize, MapConfig mapConfig, boolean backup) {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
         // criteria is a long value, like last access times or hits,
@@ -90,6 +89,7 @@ public final class EvictionOperator {
         final int evictableBaseIndex = getEvictionStartIndex(criterias, evictableSize);
         final long criteriaValue = criterias[evictableBaseIndex];
         int evictedRecordCounter = 0;
+        String mapName = recordStore.getName();
         final Iterator<Record> iterator = recordStore.iterator();
         while (iterator.hasNext()) {
             final Record record = iterator.next();
@@ -99,9 +99,7 @@ public final class EvictionOperator {
                 final Object tmpValue = record.getValue();
                 if (evictIfNotLocked(tmpKey, recordStore, backup)) {
                     evictedRecordCounter++;
-                    final String mapName = mapConfig.getName();
                     if (!backup) {
-
                         mapServiceContext.interceptAfterRemove(mapName, value);
                         fireEvent(tmpKey, tmpValue, mapName, mapServiceContext);
                     }
