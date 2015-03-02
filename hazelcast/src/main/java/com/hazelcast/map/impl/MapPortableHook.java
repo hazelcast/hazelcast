@@ -438,6 +438,7 @@ public class MapPortableHook implements PortableHook {
                         return new TxnMapRequestWithDataMap();
                     }
                 };
+
             }
 
             public Portable create(int classId) {
