@@ -582,8 +582,8 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
                 triggerEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
@@ -602,8 +602,8 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
                 triggerEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
@@ -622,8 +622,8 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
                 triggerEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
@@ -642,8 +642,8 @@ public class ClientMapNearCacheTest {
             public void run() throws Exception {
                 final NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
                 triggerEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, MAX_CACHE_SIZE > ownedEntryCount);
             }
         });
     }
