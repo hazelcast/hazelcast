@@ -182,6 +182,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         }
 
         Statistics stats = sf.getStatistics();
+        stats.setStatisticsEnabled(true);
         assertEquals(1, stats.getQueryCachePutCount());
         assertEquals(1, stats.getQueryCacheMissCount());
         assertEquals(queryCount - 1, stats.getQueryCacheHitCount());
