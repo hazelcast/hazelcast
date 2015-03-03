@@ -1,6 +1,6 @@
 
 
-## Executing Example Test
+## Executing a Stabilizer Test
 
 
 Probably you want to write your own test. The easiest way to do that is to make use of the Stabilizer archetype which
