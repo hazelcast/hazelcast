@@ -382,24 +382,26 @@
     <suppress checks="ReturnCount" files="com.hazelcast.executor.impl.ExecutorPortableHook"/>
 
     <!-- Collections -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionContainer"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionPortableHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionPortableHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocPackage" files="com.hazelcast.collection.impl[\\/]"/>
+
+    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.collection.CollectionContainer"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.impl.collection.CollectionPortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.impl.collection.CollectionPortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
 
     <!-- List -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.collection.list[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl.list[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection.impl.list[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl.list[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection.impl.list[\\/]"/>
 
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com.hazelcast.multimap[\\/]"/>

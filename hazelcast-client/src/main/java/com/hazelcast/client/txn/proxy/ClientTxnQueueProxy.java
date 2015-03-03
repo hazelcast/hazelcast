@@ -19,11 +19,11 @@ package com.hazelcast.client.txn.proxy;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.impl.QueueService;
-import com.hazelcast.queue.impl.client.TxnOfferRequest;
-import com.hazelcast.queue.impl.client.TxnPeekRequest;
-import com.hazelcast.queue.impl.client.TxnPollRequest;
-import com.hazelcast.queue.impl.client.TxnSizeRequest;
+import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.collection.impl.txnqueue.client.TxnOfferRequest;
+import com.hazelcast.collection.impl.txnqueue.client.TxnPeekRequest;
+import com.hazelcast.collection.impl.txnqueue.client.TxnPollRequest;
+import com.hazelcast.collection.impl.txnqueue.client.TxnSizeRequest;
 
 
 import java.util.concurrent.TimeUnit;

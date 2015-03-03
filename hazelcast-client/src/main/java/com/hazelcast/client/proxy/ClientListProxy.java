@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.collection.client.ListAddAllRequest;
-import com.hazelcast.collection.client.ListGetRequest;
-import com.hazelcast.collection.client.ListAddRequest;
-import com.hazelcast.collection.client.ListSetRequest;
-import com.hazelcast.collection.client.ListRemoveRequest;
-import com.hazelcast.collection.client.ListIndexOfRequest;
-import com.hazelcast.collection.client.ListSubRequest;
+import com.hazelcast.collection.impl.list.client.ListAddAllRequest;
+import com.hazelcast.collection.impl.list.client.ListGetRequest;
+import com.hazelcast.collection.impl.list.client.ListAddRequest;
+import com.hazelcast.collection.impl.list.client.ListSetRequest;
+import com.hazelcast.collection.impl.list.client.ListRemoveRequest;
+import com.hazelcast.collection.impl.list.client.ListIndexOfRequest;
+import com.hazelcast.collection.impl.list.client.ListSubRequest;
 import com.hazelcast.core.IList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;

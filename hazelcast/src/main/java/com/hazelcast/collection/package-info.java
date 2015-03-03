@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains classes related to Collections (IList,ISet etc..) <br/>
+ * This package is currently a dummy package for collections. There is nothing interesting to find here.
  */
 package com.hazelcast.collection;
