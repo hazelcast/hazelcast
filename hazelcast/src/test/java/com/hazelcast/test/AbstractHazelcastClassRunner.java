@@ -89,14 +89,13 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
     protected Statement withAfters(FrameworkMethod method, Object target,
                                    Statement statement) {
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
+        if (!DISABLE_THREAD_DUMP_ON_FAILURE) {
+            return new ThreadDumpAwareRunAfters(method, statement, afters, target);
+        }
         if (afters.isEmpty()) {
             return statement;
         } else {
-            if (!DISABLE_THREAD_DUMP_ON_FAILURE) {
-                return new ThreadDumpAwareRunAfters(method, statement, afters, target);
-            } else {
-                return new RunAfters(statement, afters, target);
-            }
+            return new RunAfters(statement, afters, target);
         }
     }
 
