@@ -205,12 +205,12 @@ Hazelcast Distributed Objects could be marked with @SpringAware if the object wa
 - to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware`,
 - to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`.
 
-Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` as explained in the [Spring Configuration section](#spring-configuration).
+Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` using *hazelcast* namespace as explained in the [Spring Configuration section](#spring-configuration) and add `<hz:spring-aware />` tag.
 
 #### SpringAware Examples
 
 - Configure a Hazelcast Instance (3.3.x) via Spring Configuration and define *someBean* as Spring Bean.
-
+- Add `<hz:spring-aware />` to Hazelcast configuration to enable @SpringAware
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -228,6 +228,7 @@ Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed
 
   <hz:hazelcast id="instance">
     <hz:config>
+      <hz:spring-aware />
       <hz:group name="dev" password="password"/>
       <hz:network port="5701" port-auto-increment="false">
         <hz:join>

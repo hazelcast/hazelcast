@@ -28,7 +28,6 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedMap;
@@ -87,9 +86,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
-
-            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
-            this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
@@ -119,6 +115,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLoadBalancer(node);
                 } else if ("near-cache".equals(nodeName)) {
                     handleNearCache(node);
+                } else if ("spring-aware".equals(nodeName)) {
+                    handleSpringAware();
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());

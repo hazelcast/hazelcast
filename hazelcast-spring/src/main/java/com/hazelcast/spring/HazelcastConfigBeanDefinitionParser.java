@@ -65,7 +65,6 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
-import com.hazelcast.spring.context.SpringManagedContext;
 import com.hazelcast.util.ExceptionUtil;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -145,9 +144,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
-
-            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
-            this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
         private ManagedMap createManagedMap(String configName) {
@@ -213,6 +209,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleManagementCenter(node);
                 } else if ("services".equals(nodeName)) {
                     handleServices(node);
+                } else if ("spring-aware".equals(nodeName)) {
+                    handleSpringAware();
                 }
             }
         }
