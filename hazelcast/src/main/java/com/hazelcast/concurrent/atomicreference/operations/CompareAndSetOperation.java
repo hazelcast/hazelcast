@@ -42,14 +42,24 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer reference = getReference();
-        returnValue = reference.compareAndSet(expect, update);
+        ReferenceContainer referenceContainer = getReferenceContainer();
+        returnValue = referenceContainer.compareAndSet(expect, update);
         shouldBackup = !returnValue;
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return shouldBackup;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, update);
     }
 
     @Override
@@ -69,16 +79,6 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
         super.readInternal(in);
         expect = in.readData();
         update = in.readData();
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return shouldBackup;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, update);
     }
 }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -30,7 +31,8 @@ public class AvailableOperation extends SemaphoreOperation implements Identified
 
     @Override
     public void run() throws Exception {
-        response = getPermit().getAvailable();
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        response = semaphoreContainer.getAvailable();
     }
 
     @Override

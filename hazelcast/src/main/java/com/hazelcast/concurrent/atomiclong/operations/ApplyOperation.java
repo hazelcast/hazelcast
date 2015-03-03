@@ -39,15 +39,14 @@ public class ApplyOperation<R> extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        LongContainer number = getNumber();
-        returnValue = function.apply(number.get());
+        LongContainer longContainer = getLongContainer();
+        returnValue = function.apply(longContainer.get());
     }
 
     @Override
     public R getResponse() {
         return returnValue;
     }
-
 
     @Override
     public int getId() {

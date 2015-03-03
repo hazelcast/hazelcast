@@ -39,8 +39,8 @@ public class SetBackupOperation extends AtomicReferenceBaseOperation implements 
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer reference = getReference();
-        reference.set(newValue);
+        ReferenceContainer referenceContainer = getReferenceContainer();
+        referenceContainer.set(newValue);
     }
 
     @Override

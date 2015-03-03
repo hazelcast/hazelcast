@@ -36,14 +36,14 @@ public class AlterOperation extends AbstractAlterOperation {
 
     @Override
     public void run() throws Exception {
-        LongContainer reference = getNumber();
+        LongContainer longContainer = getLongContainer();
 
-        long input = reference.get();
+        long input = longContainer.get();
         long output = function.apply(input);
         shouldBackup = input != output;
         if (shouldBackup) {
             backup = output;
-            reference.set(backup);
+            longContainer.set(backup);
         }
     }
 }

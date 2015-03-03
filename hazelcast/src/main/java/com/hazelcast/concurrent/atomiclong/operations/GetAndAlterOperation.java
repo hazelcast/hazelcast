@@ -30,21 +30,21 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public int getId() {
-        return AtomicLongDataSerializerHook.GET_AND_ALTER;
-    }
-
-    @Override
     public void run() throws Exception {
-        LongContainer number = getNumber();
+        LongContainer longContainer = getLongContainer();
 
-        long input = number.get();
+        long input = longContainer.get();
         response = input;
         long output = function.apply(input);
         shouldBackup = input != output;
         if (shouldBackup) {
             backup = output;
-            number.set(output);
+            longContainer.set(output);
         }
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.GET_AND_ALTER;
     }
 }

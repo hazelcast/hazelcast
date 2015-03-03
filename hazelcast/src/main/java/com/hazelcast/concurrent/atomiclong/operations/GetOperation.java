@@ -32,17 +32,17 @@ public class GetOperation extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        LongContainer number = getNumber();
-        returnValue = number.get();
-    }
-
-    @Override
-    public int getId() {
-        return AtomicLongDataSerializerHook.GET;
+        LongContainer longContainer = getLongContainer();
+        returnValue = longContainer.get();
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.GET;
     }
 }

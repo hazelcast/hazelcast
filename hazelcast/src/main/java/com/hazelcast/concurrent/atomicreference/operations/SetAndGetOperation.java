@@ -40,14 +40,19 @@ public class SetAndGetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer reference = getReference();
-        reference.getAndSet(newValue);
+        ReferenceContainer referenceContainer = getReferenceContainer();
+        referenceContainer.getAndSet(newValue);
         returnValue = newValue;
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, newValue);
     }
 
     @Override
@@ -65,10 +70,5 @@ public class SetAndGetOperation extends AtomicReferenceBackupAwareOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         newValue = in.readData();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, newValue);
     }
 }

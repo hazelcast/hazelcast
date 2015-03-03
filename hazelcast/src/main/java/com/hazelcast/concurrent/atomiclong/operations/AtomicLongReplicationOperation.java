@@ -45,9 +45,9 @@ public class AtomicLongReplicationOperation extends AbstractOperation
         AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
             String name = longEntry.getKey();
-            LongContainer number = atomicLongService.getNumber(name);
+            LongContainer longContainer = atomicLongService.getLongContainer(name);
             Long value = longEntry.getValue();
-            number.set(value);
+            longContainer.set(value);
         }
     }
 
@@ -81,8 +81,8 @@ public class AtomicLongReplicationOperation extends AbstractOperation
         migrationData = new HashMap<String, Long>(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            Long number = in.readLong();
-            migrationData.put(name, number);
+            Long longContainer = in.readLong();
+            migrationData.put(name, longContainer);
         }
     }
 }

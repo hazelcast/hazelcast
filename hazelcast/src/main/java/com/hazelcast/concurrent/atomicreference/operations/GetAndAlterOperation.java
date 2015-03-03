@@ -35,16 +35,16 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        ReferenceContainer reference = getReference();
+        ReferenceContainer referenceContainer = getReferenceContainer();
 
-        Object input = nodeEngine.toObject(reference.get());
+        Object input = nodeEngine.toObject(referenceContainer.get());
         response = input;
         //noinspection unchecked
         Object output = f.apply(input);
         shouldBackup = !isEquals(input, output);
         if (shouldBackup) {
             backup = nodeEngine.toData(output);
-            reference.set(backup);
+            referenceContainer.set(backup);
         }
     }
 

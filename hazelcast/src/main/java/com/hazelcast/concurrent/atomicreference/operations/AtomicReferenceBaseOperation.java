@@ -33,7 +33,6 @@ public abstract class AtomicReferenceBaseOperation extends Operation
     protected String name;
 
     public AtomicReferenceBaseOperation() {
-        super();
     }
 
     public AtomicReferenceBaseOperation(String name) {
@@ -45,9 +44,27 @@ public abstract class AtomicReferenceBaseOperation extends Operation
         return AtomicReferenceService.SERVICE_NAME;
     }
 
-    public ReferenceContainer getReference() {
+    public ReferenceContainer getReferenceContainer() {
         AtomicReferenceService service = getService();
-        return service.getReference(name);
+        return service.getReferenceContainer(name);
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public Object getResponse() {
+        return null;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
@@ -63,23 +80,5 @@ public abstract class AtomicReferenceBaseOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 }

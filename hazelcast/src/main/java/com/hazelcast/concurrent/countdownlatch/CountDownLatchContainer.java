@@ -22,15 +22,15 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class CountDownLatchInfo implements DataSerializable {
+public class CountDownLatchContainer implements DataSerializable {
 
     private String name;
     private int count;
 
-    public CountDownLatchInfo() {
+    public CountDownLatchContainer() {
     }
 
-    public CountDownLatchInfo(String name) {
+    public CountDownLatchContainer(String name) {
         this.name = name;
     }
 

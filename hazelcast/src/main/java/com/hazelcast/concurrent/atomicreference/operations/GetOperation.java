@@ -32,16 +32,16 @@ public class GetOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        returnValue = getReference().get();
-    }
-
-    @Override
-    public int getId() {
-        return AtomicReferenceDataSerializerHook.GET;
+        returnValue = getReferenceContainer().get();
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.GET;
     }
 }

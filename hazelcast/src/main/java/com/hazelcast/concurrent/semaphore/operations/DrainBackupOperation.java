@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -31,8 +31,8 @@ public class DrainBackupOperation extends SemaphoreBackupOperation implements Id
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        permit.drain(firstCaller);
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        semaphoreContainer.drain(firstCaller);
         response = true;
     }
 

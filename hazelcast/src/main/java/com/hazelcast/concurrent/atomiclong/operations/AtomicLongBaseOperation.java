@@ -39,29 +39,9 @@ public abstract class AtomicLongBaseOperation extends Operation
         this.name = name;
     }
 
-    public LongContainer getNumber() {
+    public LongContainer getLongContainer() {
         AtomicLongService service = getService();
-        return service.getNumber(name);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return AtomicLongDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public String getServiceName() {
-        return AtomicLongService.SERVICE_NAME;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        return service.getLongContainer(name);
     }
 
     @Override
@@ -81,4 +61,25 @@ public abstract class AtomicLongBaseOperation extends Operation
     public boolean returnsResponse() {
         return true;
     }
+
+    @Override
+    public String getServiceName() {
+        return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AtomicLongDataSerializerHook.F_ID;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+    }
+
 }

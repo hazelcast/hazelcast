@@ -38,8 +38,8 @@ public class SetBackupOperation extends AtomicLongBaseOperation implements Backu
 
     @Override
     public void run() throws Exception {
-        LongContainer number = getNumber();
-        number.set(newValue);
+        LongContainer longContainer = getLongContainer();
+        longContainer.set(newValue);
     }
 
     @Override

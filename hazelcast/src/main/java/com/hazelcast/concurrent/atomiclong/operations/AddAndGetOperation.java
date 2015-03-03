@@ -39,13 +39,18 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        LongContainer number = getNumber();
-        returnValue = number.addAndGet(delta);
+        LongContainer longContainer = getLongContainer();
+        returnValue = longContainer.addAndGet(delta);
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new AddBackupOperation(name, delta);
     }
 
     @Override
@@ -63,10 +68,5 @@ public class AddAndGetOperation extends AtomicLongBackupAwareOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         delta = in.readLong();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new AddBackupOperation(name, delta);
     }
 }
