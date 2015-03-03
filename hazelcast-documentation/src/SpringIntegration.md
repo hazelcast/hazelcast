@@ -210,7 +210,7 @@ Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed
 #### SpringAware Examples
 
 - Configure a Hazelcast Instance (3.3.x) via Spring Configuration and define *someBean* as Spring Bean.
-- Add `<hz:spring-aware />` to Hazelcast configuration to enable @SpringAware
+- Add `<hz:spring-aware />` to Hazelcast configuration to enable @SpringAware.
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
