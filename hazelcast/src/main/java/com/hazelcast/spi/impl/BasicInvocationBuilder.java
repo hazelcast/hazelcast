@@ -31,7 +31,7 @@ public class BasicInvocationBuilder extends InvocationBuilder {
     }
 
     public BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, Address target) {
-        this(nodeEngine, serviceName, op, -1, target);
+        this(nodeEngine, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
     }
 
     private BasicInvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,

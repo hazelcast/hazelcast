@@ -30,8 +30,8 @@ public abstract class PartitionSpecificCallable<E> implements PartitionSpecificR
     public void run() {
         try {
             result = call();
-        } catch (Throwable e) {
-
+        } catch (Throwable t) {
+            throwable = t;
         }
     }
 

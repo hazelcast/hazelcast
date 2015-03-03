@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NormalResponse;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.test.AssertTask;
@@ -73,7 +74,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
     public void test_whenGenericOperationPacket() {
         initExecutor();
 
-        final DummyOperation operation = new DummyOperation(-1);
+        final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         Data data = serializationService.toData(operation);
         final Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);

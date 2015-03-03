@@ -130,7 +130,8 @@ final class BasicOperationService implements InternalOperationService {
     private final long backupOperationTimeoutMillis;
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
-    private final BasicResponsePacketHandler responsePacketHandler;
+    private final SlowOperationDetector slowOperationDetector;
+
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -146,7 +147,6 @@ final class BasicOperationService implements InternalOperationService {
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-        this.responsePacketHandler = new BasicResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
 
         this.operationExecutor = new ClassicOperationExecutor(
@@ -154,12 +154,17 @@ final class BasicOperationService implements InternalOperationService {
                 node.loggingService,
                 node.getThisAddress(),
                 new BasicOperationRunnerFactory(),
-                responsePacketHandler, node.getHazelcastThreadGroup(), node.getNodeExtension()
+                new BasicResponsePacketHandler(),
+                node.getHazelcastThreadGroup(),
+                node.getNodeExtension()
         );
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
+
+        this.slowOperationDetector = new SlowOperationDetector(operationExecutor.getGenericOperationRunners(),
+                operationExecutor.getPartitionOperationRunners(), node.groupProperties, node.getHazelcastThreadGroup());
 
         startCleanupThread();
     }
@@ -172,6 +177,11 @@ final class BasicOperationService implements InternalOperationService {
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
         operationExecutor.dumpPerformanceMetrics(sb);
+    }
+
+    @Override
+    public Collection<SlowOperationLog> getSlowOperationLogs() {
+        return slowOperationDetector.getSlowOperationLogs();
     }
 
     @Override
@@ -405,7 +415,6 @@ final class BasicOperationService implements InternalOperationService {
         return false;
     }
 
-
     /**
      * Checks if an operation is still running.
      * <p/>
@@ -490,6 +499,7 @@ final class BasicOperationService implements InternalOperationService {
         }
         invocations.clear();
         operationExecutor.shutdown();
+        slowOperationDetector.shutdown();
     }
 
     /**
@@ -645,7 +655,7 @@ final class BasicOperationService implements InternalOperationService {
 
         @Override
         public OperationRunner createGenericRunner() {
-            return new BasicOperationRunner(-1);
+            return new BasicOperationRunner(Operation.GENERIC_PARTITION_ID);
         }
     }
 
@@ -653,15 +663,15 @@ final class BasicOperationService implements InternalOperationService {
      * Responsible for processing an Operation.
      */
     private class BasicOperationRunner extends OperationRunner {
-        private static final int AD_HOC_PARTITION_ID = -2;
+        static final int AD_HOC_PARTITION_ID = -2;
 
         // This field doesn't need additional synchronization, since a partition-specific OperationRunner
         // will never be called concurrently.
         private InternalPartition internalPartition;
 
         // When partitionId >= 0, it is a partition specific
-        // when partitionId =-1, it is generic
-        // when partitionId =-2, it is ad hoc
+        // when partitionId = -1, it is generic
+        // when partitionId = -2, it is ad hoc
         // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
         // and therefor the {@link OperationRunner#currentTask()} always returns null
         public BasicOperationRunner(int partitionId) {
@@ -686,12 +696,12 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private boolean publishCurrentTask() {
-            return getPartitionId() != AD_HOC_PARTITION_ID && currentTask == null;
+            return (getPartitionId() != AD_HOC_PARTITION_ID && currentTask == null);
         }
 
         @Override
         public void run(Operation op) {
-            // TODO: We need to think about replacing this contended counter.
+            // TODO: We need to think about replacing this contended counter
             executedOperationsCount.incrementAndGet();
 
             boolean publishCurrentTask = publishCurrentTask();

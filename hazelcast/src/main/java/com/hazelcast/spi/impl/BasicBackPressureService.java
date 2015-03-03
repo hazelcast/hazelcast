@@ -98,7 +98,7 @@ public class BasicBackPressureService {
         if (syncDelays == null) {
             return null;
         }
-        partitionId = partitionId == -1 ? partitionCount : partitionId;
+        partitionId = (partitionId == Operation.GENERIC_PARTITION_ID) ? partitionCount : partitionId;
         return syncDelays[partitionId];
     }
 

@@ -35,6 +35,7 @@ public abstract class OperationRunner {
 
     protected final int partitionId;
     protected volatile Object currentTask;
+
     private volatile Thread currentThread;
 
     public OperationRunner(int partitionId) {

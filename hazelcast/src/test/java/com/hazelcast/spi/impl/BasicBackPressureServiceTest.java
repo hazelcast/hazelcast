@@ -142,7 +142,7 @@ public class BasicBackPressureServiceTest {
             op = partitionOp;
         } else {
             op = new GenericOperation();
-            op.setPartitionId(-1);
+            op.setPartitionId(Operation.GENERIC_PARTITION_ID);
         }
 
         Connection connection = null;

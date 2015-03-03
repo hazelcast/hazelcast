@@ -22,6 +22,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
+import java.util.Collection;
+
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
  * InternalOperationService: {@link com.hazelcast.spi.impl.BasicOperationService}, but in the future others can be added.
@@ -63,6 +65,15 @@ public interface InternalOperationService extends OperationService {
     boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier);
 
     boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId);
+
+    /**
+     * Returns information about long running operations.
+     * <p/>
+     * Do not modify this collection, because it is the original data structure used by the {@link SlowOperationDetector}.
+     *
+     * @return collection of long running operation logs.
+     */
+    Collection<SlowOperationLog> getSlowOperationLogs();
 
     /**
      * Shuts down this InternalOperationService.
