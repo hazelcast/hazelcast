@@ -21,7 +21,10 @@ import static java.lang.String.format;
 /**
  * A utility class for validating arguments and state.
  */
-public abstract class ValidationUtil {
+public final class ValidationUtil {
+
+    private ValidationUtil() {
+    }
 
     /**
      * Tests if an argument is not null.
