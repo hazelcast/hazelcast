@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Permit implements DataSerializable {
+public class SemaphoreContainer implements DataSerializable {
 
     public static final int INITIAL_CAPACITY = 10;
 
@@ -36,10 +36,10 @@ public class Permit implements DataSerializable {
     private int asyncBackupCount;
     private boolean initialized;
 
-    public Permit() {
+    public SemaphoreContainer() {
     }
 
-    public Permit(int partitionId, SemaphoreConfig config) {
+    public SemaphoreContainer(int partitionId, SemaphoreConfig config) {
         this.partitionId = partitionId;
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
@@ -148,6 +148,10 @@ public class Permit implements DataSerializable {
         this.initialized = true;
     }
 
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(available);
@@ -194,7 +198,4 @@ public class Permit implements DataSerializable {
         return sb.toString();
     }
 
-    public int getTotalBackupCount() {
-        return backupCount + asyncBackupCount;
-    }
 }

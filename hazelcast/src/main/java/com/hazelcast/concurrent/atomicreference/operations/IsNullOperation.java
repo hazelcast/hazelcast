@@ -24,7 +24,6 @@ public class IsNullOperation extends AtomicReferenceBaseOperation {
     private boolean returnValue;
 
     public IsNullOperation() {
-        super();
     }
 
     public IsNullOperation(String name) {
@@ -33,8 +32,8 @@ public class IsNullOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer reference = getReference();
-        returnValue = reference.isNull();
+        ReferenceContainer referenceContainer = getReferenceContainer();
+        returnValue = referenceContainer.isNull();
     }
 
     @Override

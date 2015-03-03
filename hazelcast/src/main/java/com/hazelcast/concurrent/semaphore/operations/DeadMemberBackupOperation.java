@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -32,8 +32,8 @@ public class DeadMemberBackupOperation extends SemaphoreBackupOperation
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        permit.memberRemoved(firstCaller);
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        semaphoreContainer.memberRemoved(firstCaller);
         response = true;
     }
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,45 +30,27 @@ import java.util.Map;
 
 public class SemaphoreReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
-    Map<String, Permit> migrationData;
+    private Map<String, SemaphoreContainer> migrationData;
 
     public SemaphoreReplicationOperation() {
     }
 
-    public SemaphoreReplicationOperation(Map<String, Permit> migrationData) {
+    public SemaphoreReplicationOperation(Map<String, SemaphoreContainer> migrationData) {
         this.migrationData = migrationData;
     }
 
     @Override
     public void run() throws Exception {
         SemaphoreService service = getService();
-        for (Permit permit : migrationData.values()) {
-            permit.setInitialized();
+        for (SemaphoreContainer semaphoreContainer : migrationData.values()) {
+            semaphoreContainer.setInitialized();
         }
         service.insertMigrationData(migrationData);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(migrationData.size());
-        for (Map.Entry<String, Permit> entry : migrationData.entrySet()) {
-            String key = entry.getKey();
-            Permit value = entry.getValue();
-            out.writeUTF(key);
-            value.writeData(out);
-        }
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        migrationData = new HashMap<String, Permit>(size);
-        for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
-            Permit permit = new Permit();
-            permit.readData(in);
-            migrationData.put(name, permit);
-        }
+    public String getServiceName() {
+        return SemaphoreService.SERVICE_NAME;
     }
 
     @Override
@@ -82,7 +64,25 @@ public class SemaphoreReplicationOperation extends AbstractOperation implements 
     }
 
     @Override
-    public String getServiceName() {
-        return SemaphoreService.SERVICE_NAME;
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeInt(migrationData.size());
+        for (Map.Entry<String, SemaphoreContainer> entry : migrationData.entrySet()) {
+            String key = entry.getKey();
+            SemaphoreContainer value = entry.getValue();
+            out.writeUTF(key);
+            value.writeData(out);
+        }
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        migrationData = new HashMap<String, SemaphoreContainer>(size);
+        for (int i = 0; i < size; i++) {
+            String name = in.readUTF();
+            SemaphoreContainer semaphoreContainer = new SemaphoreContainer();
+            semaphoreContainer.readData(in);
+            migrationData.put(name, semaphoreContainer);
+        }
     }
 }

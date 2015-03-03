@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.spi.BackupAwareOperation;
 
 public abstract class SemaphoreBackupAwareOperation extends SemaphoreOperation implements BackupAwareOperation {
@@ -30,13 +30,13 @@ public abstract class SemaphoreBackupAwareOperation extends SemaphoreOperation i
 
     @Override
     public int getAsyncBackupCount() {
-        Permit permit = getPermit();
-        return permit.getAsyncBackupCount();
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        return semaphoreContainer.getAsyncBackupCount();
     }
 
     @Override
     public int getSyncBackupCount() {
-        Permit permit = getPermit();
-        return permit.getSyncBackupCount();
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        return semaphoreContainer.getSyncBackupCount();
     }
 }

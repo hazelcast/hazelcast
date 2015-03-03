@@ -20,8 +20,8 @@ import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperatio
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -52,14 +52,16 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 
-    private final ConcurrentMap<String, Permit> permitMap = new ConcurrentHashMap<String, Permit>();
+    private final ConcurrentMap<String, SemaphoreContainer> containers = new ConcurrentHashMap<String, SemaphoreContainer>();
 
-    private final ConstructorFunction<String, Permit> permitConstructor = new ConstructorFunction<String, Permit>() {
-        public Permit createNew(String name) {
+    private final ConstructorFunction<String, SemaphoreContainer> containerConstructor
+            = new ConstructorFunction<String, SemaphoreContainer>() {
+        @Override
+        public SemaphoreContainer createNew(String name) {
             SemaphoreConfig config = nodeEngine.getConfig().findSemaphoreConfig(name);
             InternalPartitionService partitionService = nodeEngine.getPartitionService();
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
-            return new Permit(partitionId, new SemaphoreConfig(config));
+            return new SemaphoreContainer(partitionId, new SemaphoreConfig(config));
         }
     };
     private final NodeEngine nodeEngine;
@@ -68,13 +70,13 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         this.nodeEngine = nodeEngine;
     }
 
-    public Permit getOrCreatePermit(String name) {
-        return getOrPutIfAbsent(permitMap, name, permitConstructor);
+    public SemaphoreContainer getSemaphoreContainer(String name) {
+        return getOrPutIfAbsent(containers, name, containerConstructor);
     }
 
     // need for testing..
     public boolean containsSemaphore(String name) {
-        return permitMap.containsKey(name);
+        return containers.containsKey(name);
     }
 
     @Override
@@ -83,12 +85,12 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public void reset() {
-        permitMap.clear();
+        containers.clear();
     }
 
     @Override
     public void shutdown(boolean terminate) {
-        permitMap.clear();
+        containers.clear();
     }
 
     @Override
@@ -109,7 +111,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
 
-        for (String name : permitMap.keySet()) {
+        for (String name : containers.keySet()) {
             int partitionId = partitionService.getPartitionId(getPartitionKey(name));
             InternalPartition partition = partitionService.getPartition(partitionId);
             if (partition.isLocal()) {
@@ -131,7 +133,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public void destroyDistributedObject(String objectId) {
-        permitMap.remove(objectId);
+        containers.remove(objectId);
     }
 
     @Override
@@ -140,12 +142,13 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, Permit> migrationData = new HashMap<String, Permit>();
-        for (Map.Entry<String, Permit> entry : permitMap.entrySet()) {
+        Map<String, SemaphoreContainer> migrationData = new HashMap<String, SemaphoreContainer>();
+        for (Map.Entry<String, SemaphoreContainer> entry : containers.entrySet()) {
             String name = entry.getKey();
-            Permit permit = entry.getValue();
-            if (permit.getPartitionId() == event.getPartitionId() && permit.getTotalBackupCount() >= event.getReplicaIndex()) {
-                migrationData.put(name, permit);
+            SemaphoreContainer semaphoreContainer = entry.getValue();
+            if (semaphoreContainer.getPartitionId() == event.getPartitionId()
+                    && semaphoreContainer.getTotalBackupCount() >= event.getReplicaIndex()) {
+                migrationData.put(name, semaphoreContainer);
             }
         }
 
@@ -156,8 +159,8 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return new SemaphoreReplicationOperation(migrationData);
     }
 
-    public void insertMigrationData(Map<String, Permit> migrationData) {
-        permitMap.putAll(migrationData);
+    public void insertMigrationData(Map<String, SemaphoreContainer> migrationData) {
+        containers.putAll(migrationData);
     }
 
     @Override
@@ -168,10 +171,10 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     private void clearMigrationData(int partitionId) {
-        Iterator<Map.Entry<String, Permit>> it = permitMap.entrySet().iterator();
+        Iterator<Map.Entry<String, SemaphoreContainer>> it = containers.entrySet().iterator();
         while (it.hasNext()) {
-            Permit permit = it.next().getValue();
-            if (permit.getPartitionId() == partitionId) {
+            SemaphoreContainer semaphoreContainer = it.next().getValue();
+            if (semaphoreContainer.getPartitionId() == partitionId) {
                 it.remove();
             }
         }

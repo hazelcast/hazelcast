@@ -65,11 +65,6 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     }
 
     @Override
-    public int getId() {
-        return LockDataSerializerHook.LOCK;
-    }
-
-    @Override
     public final void onWaitExpire() {
         Object response;
         long timeout = getWaitTimeout();
@@ -79,5 +74,10 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
             response = Boolean.FALSE;
         }
         getResponseHandler().sendResponse(response);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.LOCK;
     }
 }

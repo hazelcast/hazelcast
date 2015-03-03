@@ -46,9 +46,9 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation
         AtomicReferenceService atomicReferenceService = getService();
         for (Map.Entry<String, Data> entry : migrationData.entrySet()) {
             String name = entry.getKey();
-            ReferenceContainer reference = atomicReferenceService.getReference(name);
+            ReferenceContainer referenceContainer = atomicReferenceService.getReferenceContainer(name);
             Data value = entry.getValue();
-            reference.set(value);
+            referenceContainer.set(value);
         }
     }
 

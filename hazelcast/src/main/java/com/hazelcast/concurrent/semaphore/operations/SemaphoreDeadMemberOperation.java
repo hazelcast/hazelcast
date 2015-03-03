@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,13 +43,8 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        response = permit.memberRemoved(firstCaller);
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        response = semaphoreContainer.memberRemoved(firstCaller);
     }
 
     @Override
@@ -58,20 +53,13 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
     }
 
     @Override
+    public boolean shouldBackup() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    @Override
     public Operation getBackupOperation() {
         return new DeadMemberBackupOperation(name, firstCaller);
-    }
-
-    @Override
-    public void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(firstCaller);
-    }
-
-    @Override
-    public void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        firstCaller = in.readUTF();
     }
 
     @Override
@@ -92,5 +80,17 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation
     @Override
     public int getId() {
         return SemaphoreDataSerializerHook.SEMAPHORE_DEAD_MEMBER_OPERATION;
+    }
+
+    @Override
+    public void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeUTF(firstCaller);
+    }
+
+    @Override
+    public void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        firstCaller = in.readUTF();
     }
 }

@@ -32,7 +32,6 @@ public class ApplyOperation extends AtomicReferenceBaseOperation {
     protected Data returnValue;
 
     public ApplyOperation() {
-        super();
     }
 
     public ApplyOperation(String name, Data function) {
@@ -44,9 +43,9 @@ public class ApplyOperation extends AtomicReferenceBaseOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        ReferenceContainer reference = getReference();
+        ReferenceContainer referenceContainer = getReferenceContainer();
 
-        Object input = nodeEngine.toObject(reference.get());
+        Object input = nodeEngine.toObject(referenceContainer.get());
         //noinspection unchecked
         Object output = f.apply(input);
         returnValue = nodeEngine.toData(output);
@@ -55,6 +54,11 @@ public class ApplyOperation extends AtomicReferenceBaseOperation {
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.APPLY;
     }
 
     @Override
@@ -67,10 +71,5 @@ public class ApplyOperation extends AtomicReferenceBaseOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         function = in.readData();
-    }
-
-    @Override
-    public int getId() {
-        return AtomicReferenceDataSerializerHook.APPLY;
     }
 }

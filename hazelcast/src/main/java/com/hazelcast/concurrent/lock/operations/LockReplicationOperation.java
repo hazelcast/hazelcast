@@ -63,6 +63,10 @@ public class LockReplicationOperation extends AbstractOperation
         return LockServiceImpl.SERVICE_NAME;
     }
 
+    public boolean isEmpty() {
+        return locks.isEmpty();
+    }
+
     @Override
     public int getFactoryId() {
         return LockDataSerializerHook.F_ID;
@@ -96,9 +100,5 @@ public class LockReplicationOperation extends AbstractOperation
                 locks.add(ls);
             }
         }
-    }
-
-    public boolean isEmpty() {
-        return locks.isEmpty();
     }
 }

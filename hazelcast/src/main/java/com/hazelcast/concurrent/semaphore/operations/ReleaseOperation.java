@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -35,8 +35,8 @@ public class ReleaseOperation extends SemaphoreBackupAwareOperation implements N
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        permit.release(permitCount, getCallerUuid());
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        semaphoreContainer.release(permitCount, getCallerUuid());
         response = true;
     }
 

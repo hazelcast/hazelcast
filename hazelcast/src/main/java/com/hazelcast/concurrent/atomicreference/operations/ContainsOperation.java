@@ -39,8 +39,8 @@ public class ContainsOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer reference = getReference();
-        returnValue = reference.contains(contains);
+        ReferenceContainer referenceContainer = getReferenceContainer();
+        returnValue = referenceContainer.contains(contains);
     }
 
     @Override

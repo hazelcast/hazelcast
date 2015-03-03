@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,9 +49,9 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation
         return response;
     }
 
-    public Permit getPermit() {
+    public SemaphoreContainer getSemaphoreContainer() {
         SemaphoreService service = getService();
-        return service.getOrCreatePermit(name);
+        return service.getSemaphoreContainer(name);
     }
 
     @Override

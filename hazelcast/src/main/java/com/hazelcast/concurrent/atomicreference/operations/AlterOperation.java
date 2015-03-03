@@ -35,7 +35,7 @@ public class AlterOperation extends AbstractAlterOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        ReferenceContainer reference = getReference();
+        ReferenceContainer reference = getReferenceContainer();
 
         Object input = nodeEngine.toObject(reference.get());
         //noinspection unchecked
