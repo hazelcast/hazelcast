@@ -25,7 +25,7 @@ mkdir ~/tests
 
 ### Setting Public/Private Key Pair
 
-Having set up Hazelcast Stabilizer as described in the previous section, make sure you have the file `id_rsa.pub` in your `~/.ssh` directory. The [Provisioner](#provisioner) terminates when it needs to access the cloud and realizes that the public/private key pair is missing. If you do not have any, you can generate a public/private key pair using the following command.
+Having installed Hazelcast Stabilizer as described in the previous section, make sure you have the file `id_rsa.pub` in your `~/.ssh` directory. The [Provisioner](#provisioner) terminates when it needs to access the cloud and realizes that the public/private key pair is missing. If you do not have any, you can generate a public/private key pair using the following command.
 
 ```
 ssh-keygen -t rsa -C "your_email@example.com"
