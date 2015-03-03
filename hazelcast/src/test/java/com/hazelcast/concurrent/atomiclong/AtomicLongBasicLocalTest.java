@@ -8,7 +8,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class AtomicLongBasicLocalTest extends BasicAtomicLongTest {
+public class AtomicLongBasicLocalTest extends AtomicLongBasicTest {
 
     @Override
     protected HazelcastInstance[] newInstances() {
