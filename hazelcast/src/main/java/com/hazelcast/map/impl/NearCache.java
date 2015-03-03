@@ -131,7 +131,7 @@ public class NearCache {
     }
 
     // this operation returns the given value in near-cache memory format (data or object)
-    public Object put(Data key, Data data, long invalidateOpCountBefore) {
+    public Object put(Data key, Data data, long invalidateCountBefore) {
         fireTtlCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
             // no more space in near-cache -> return given value in near-cache format
@@ -162,7 +162,7 @@ public class NearCache {
             } else {
                 // ignore put since someone else already updated this value
             }
-        } else if (record.invalidateCount < invalidateOpCountBefore) {
+        } else if (record.invalidateCount < invalidateCountBefore) {
             CacheRecord recordNew = new CacheRecord(key, value, invalidateCounter.get());
             if (cache.replace(key, record, recordNew)) {
                 // good, old value updated
@@ -297,6 +297,7 @@ public class NearCache {
         CacheRecord recordPrev = cache.putIfAbsent(key, record);
         if (recordPrev != null) {
             recordPrev.invalid = true;
+            recordPrev.value = null;
         }
     }
 
@@ -327,11 +328,11 @@ public class NearCache {
      */
     public class CacheRecord {
         final Data key;
-        final Object value;
+        Object value;
         final long creationTime;
         final AtomicInteger hit;
         volatile long lastAccessTime;
-        long invalidateCount;
+        final long invalidateCount;
         boolean invalid;
 
         CacheRecord(Data key, Object value, long invalidateCount) {
