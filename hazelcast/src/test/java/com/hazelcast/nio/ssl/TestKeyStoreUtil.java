@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.ssl;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import java.io.*;
 import java.util.Properties;
 
@@ -32,6 +34,7 @@ public class TestKeyStoreUtil {
 
     private static String keyStore;
     private static String trustStore;
+    private static ILogger logger = Logger.getLogger(TestKeyStoreUtil.class.getName());
 
     private TestKeyStoreUtil() {
     }
@@ -63,6 +66,8 @@ public class TestKeyStoreUtil {
         out.close();
         in.close();
         file.deleteOnExit();
+        logger.warning("Keystore file path: " + file.getAbsolutePath()
+                +", length = " + file.length());
         return file;
     }
 
