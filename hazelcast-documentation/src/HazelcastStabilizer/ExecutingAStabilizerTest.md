@@ -223,6 +223,12 @@ This script performs the following.
  
 This test runs for 2 minutes. After it is completed, the artifacts (log files) are downloaded in the `workers` directory. Then, it terminates the 4 instances. If you do not want to start/terminate the instances for every run, just comment out the line `provisioner --terminate` in the script `run.sh`. This prevents the machines from being terminated. Please see the [Provisioner section](#provisioner) for more information.
 
+<br></br>
+***RELATED INFORMATION***
+
+*Please see the [Provisioner section](#provisioner) and the [Coordinator section](#coordinator) for the `provisioner` and `coordinator` commands you see in the script `run.sh`.*
+<br></br>
+
 The output of the test looks like the following.
 
 ```
