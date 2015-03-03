@@ -65,7 +65,7 @@ provisioner --clean
 ### Accessing the provisioned machine
 
 When a machine is provisioned, by default a user with the name `stabilizer` is created on the remote machine and added
-to the sudoers list. Also, the public key of your local user is copied to the remote machine and added to the file 
+to the sudousers list. Also, the public key of your local user is copied to the remote machine and added to the file 
 `~/.ssh/authorized_keys`. You can login to that machine using the following command.
 
 ```

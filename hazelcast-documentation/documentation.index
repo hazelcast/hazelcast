@@ -178,6 +178,10 @@ src/HazelcastStabilizer/StabilizerOverview.md
 	src/HazelcastStabilizer/InstallingStabilizer.md
 	src/HazelcastStabilizer/SettingUpForEC2.md
 	src/HazelcastStabilizer/SettingUpForGCE.md
+	src/HazelcastStabilizer/ExecutingAStabilizerTest.md
+	src/HazelcastStabilizer/Provisoner.md
+	src/HazelcastStabilizer/Coordinator.md
+	src/HazelcastStabilizer/Communicator.md
 	src/HazelcastStabilizer/StabilizerProperties.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
