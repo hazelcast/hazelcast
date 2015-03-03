@@ -398,11 +398,11 @@
 
     <!-- Queue -->
     <suppress checks="MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
-              files="com.hazelcast.collections.impl.queue.QueuePortableHook"/>
+              files="com.hazelcast.collection.impl.queue.QueuePortableHook"/>
     <suppress checks="MethodCount|MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
-              files="com.hazelcast.collections.impl.queue.QueueDataSerializerHook"/>
+              files="com.hazelcast.collection.impl.queue.QueueDataSerializerHook"/>
     <!--<suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>-->
-    <suppress checks="MethodCount" files="com.hazelcast.collections.impl.queue.QueueContainer"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.queue.QueueContainer"/>
 
 
     <!-- Multimap -->
