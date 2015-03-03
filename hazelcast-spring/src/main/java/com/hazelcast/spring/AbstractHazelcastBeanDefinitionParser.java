@@ -21,6 +21,7 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -333,6 +334,24 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 properties.put(propertyName, value);
             }
             beanDefinitionBuilder.addPropertyValue("properties", properties);
+        }
+
+        protected void handleSpringAware(final Node node) {
+            boolean annotationDriven = true;
+            for (org.w3c.dom.Node element : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(element.getNodeName());
+                if ("spring-aware".equals(nodeName)) {
+                    String enabled = getTextContent(element.getAttributes().getNamedItem("enabled")).trim();
+                    if ("false".equals(enabled)) {
+                        annotationDriven = false;
+                    }
+                    break;
+                }
+            }
+            if (annotationDriven) {
+                BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
+                configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
+            }
         }
     }
 }
