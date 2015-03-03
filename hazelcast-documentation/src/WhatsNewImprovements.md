@@ -5,7 +5,7 @@
 
 This section lists the enhancements performed for Hazelcast 3.4.2 release.
 
-- The method `contains` for ISet scans all items [[#4620]](https://github.com/hazelcast/hazelcast/issues/4620).
+- The method `contains` for ISet scans all the items [[#4620]](https://github.com/hazelcast/hazelcast/issues/4620).
 
 
 **3.4.1 Enhancements**

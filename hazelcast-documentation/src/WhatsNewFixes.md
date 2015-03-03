@@ -6,6 +6,9 @@
 
 This section lists issues solved for Hazelcast 3.4.2 release.
 
+- A strange `mapName` parameter occurred when using wildcard configuration for a custom `MapStoreFacory` [[#4667]](https://github.com/hazelcast/hazelcast/issues/4667).
+- The method `IExecutorService.submitToKeyOwner` encountered two errors: the `onResponse` method is invoked with null and a cast exception is thrown in a Hazelcast thread [[#4627]](https://github.com/hazelcast/hazelcast/issues/4627).
+- The method `init` in an implementation of the `MapLoaderLifecyleSupport` interface is not invoked [[#4623]](https://github.com/hazelcast/hazelcast/issues/4623).
 - The method `readData` in `NearCacheConfig` reads the `maxSize` twice [[#4609]](https://github.com/hazelcast/hazelcast/issues/4609).
 - The system property `hazelcast.client.request.retry.count` is not handled properly [[#4592]](https://github.com/hazelcast/hazelcast/issues/4592).
 
