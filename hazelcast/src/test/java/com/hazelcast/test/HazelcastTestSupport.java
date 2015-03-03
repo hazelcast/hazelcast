@@ -269,11 +269,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
-        return generateKeyInternal(instance, true);
+        return generateKeyOwnedBy(instance, true);
     }
 
     public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
-        return generateKeyInternal(instance, false);
+        return generateKeyOwnedBy(instance, false);
     }
 
     /**
@@ -284,7 +284,7 @@ public abstract class HazelcastTestSupport {
      *                         set to <code>false</code> which means generated key will not be owned by the given instance.
      * @return generated string.
      */
-    private static String generateKeyInternal(HazelcastInstance instance, boolean generateOwnedKey) {
+    protected static String generateKeyOwnedBy(HazelcastInstance instance, boolean generateOwnedKey) {
         Cluster cluster = instance.getCluster();
         checkMemberCount(generateOwnedKey, cluster);
 

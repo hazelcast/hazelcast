@@ -6,27 +6,33 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
+import com.hazelcast.core.ICountDownLatch;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-public class IdGeneratorTest extends HazelcastTestSupport {
+public abstract class IdGeneratorBasicTest extends HazelcastTestSupport {
 
-    private HazelcastInstance hz;
+    protected HazelcastInstance[] instances;
+    protected IdGenerator idGenerator;
 
     @Before
-    public void setUp() {
-        hz = createHazelcastInstance();
+    public void setup() {
+        instances = newInstances();
+        idGenerator = newInstance();
     }
+
+    protected IdGenerator newInstance(){
+        HazelcastInstance local = instances[0];
+        HazelcastInstance target = instances[instances.length - 1];
+        String name = generateKeyOwnedBy(target);
+        return local.getIdGenerator(name);
+    }
+
+    protected abstract HazelcastInstance[] newInstances();
 
     @Test
     public void testInit() {
@@ -37,7 +43,7 @@ public class IdGeneratorTest extends HazelcastTestSupport {
     }
 
     private void testInit(int initialValue, boolean expected, long expectedValue) {
-        IdGenerator idGenerator = createIdGenerator();
+        IdGenerator idGenerator = newInstance();
 
         boolean initialized = idGenerator.init(initialValue);
         assertEquals(expected, initialized);
@@ -46,13 +52,8 @@ public class IdGeneratorTest extends HazelcastTestSupport {
         assertEquals(expectedValue, newId);
     }
 
-    private IdGenerator createIdGenerator() {
-        return hz.getIdGenerator("id-" + UUID.randomUUID().toString());
-    }
-
     @Test
     public void testInitWhenAlreadyInitialized() {
-        IdGenerator idGenerator = createIdGenerator();
         long first = idGenerator.newId();
 
         boolean initialized = idGenerator.init(10);
@@ -64,7 +65,6 @@ public class IdGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testNewId_withExplicitInit() {
-        IdGenerator idGenerator =createIdGenerator();
         assertTrue(idGenerator.init(10));
 
         long result = idGenerator.newId();
@@ -73,15 +73,12 @@ public class IdGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testNewId_withoutExplictInit() {
-        IdGenerator idGenerator = createIdGenerator();
         long result = idGenerator.newId();
         assertEquals(0, result);
     }
 
     @Test
     public void testGeneratingMultipleBlocks() {
-        IdGenerator idGenerator = createIdGenerator();
-
         long expected = 0;
         for (int k = 0; k < 3 * IdGeneratorProxy.BLOCK_SIZE; k++) {
             assertEquals(expected, idGenerator.newId());
@@ -91,14 +88,13 @@ public class IdGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testDestroy() {
-        IdGenerator idGenerator = createIdGenerator();
         String id = idGenerator.getName();
         idGenerator.newId();
         idGenerator.newId();
 
         idGenerator.destroy();
 
-        IdGenerator newIdGenerator = hz.getIdGenerator(id);
+        IdGenerator newIdGenerator = instances[0].getIdGenerator(id);
         long actual = newIdGenerator.newId();
         assertEquals(0, actual);
     }

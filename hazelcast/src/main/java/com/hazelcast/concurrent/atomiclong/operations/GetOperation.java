@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.LongContainer;
 
 public class GetOperation extends AtomicLongBaseOperation {
 
@@ -32,7 +32,7 @@ public class GetOperation extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        LongWrapper number = getNumber();
+        LongContainer number = getNumber();
         returnValue = number.get();
     }
 

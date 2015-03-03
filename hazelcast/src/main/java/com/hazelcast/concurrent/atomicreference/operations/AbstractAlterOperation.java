@@ -58,13 +58,13 @@ public abstract class AbstractAlterOperation extends AtomicReferenceBackupAwareO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(function);
+        out.writeData(function);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        function = in.readObject();
+        function = in.readData();
     }
 
     @Override

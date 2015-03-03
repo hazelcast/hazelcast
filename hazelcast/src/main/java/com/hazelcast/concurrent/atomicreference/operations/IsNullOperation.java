@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.ReferenceContainer;
 
 public class IsNullOperation extends AtomicReferenceBaseOperation {
 
@@ -33,7 +33,7 @@ public class IsNullOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        ReferenceWrapper reference = getReference();
+        ReferenceContainer reference = getReference();
         returnValue = reference.isNull();
     }
 

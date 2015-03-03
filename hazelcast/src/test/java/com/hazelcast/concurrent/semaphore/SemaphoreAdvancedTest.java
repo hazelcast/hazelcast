@@ -18,7 +18,16 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class AdvancedSemaphoreTest extends HazelcastTestSupport {
+public class SemaphoreAdvancedTest extends HazelcastTestSupport {
+
+    @Test(expected = IllegalStateException.class, timeout = 30000)
+    public void testAcquire_whenInstanceShutdown() throws InterruptedException {
+        HazelcastInstance hz = createHazelcastInstance();
+        final ISemaphore semaphore = hz.getSemaphore(randomString());
+        hz.shutdown();
+        semaphore.acquire();
+    }
+
 
     @Test(timeout = 300000)
     public void testSemaphoreWithFailures() throws InterruptedException {

@@ -46,18 +46,18 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
 
     private NodeEngine nodeEngine;
-    private final ConcurrentMap<String, LongWrapper> numbers = new ConcurrentHashMap<String, LongWrapper>();
-    private final ConstructorFunction<String, LongWrapper> atomicLongConstructorFunction =
-            new ConstructorFunction<String, LongWrapper>() {
-                public LongWrapper createNew(String key) {
-                    return new LongWrapper();
+    private final ConcurrentMap<String, LongContainer> numbers = new ConcurrentHashMap<String, LongContainer>();
+    private final ConstructorFunction<String, LongContainer> atomicLongConstructorFunction =
+            new ConstructorFunction<String, LongContainer>() {
+                public LongContainer createNew(String key) {
+                    return new LongContainer();
                 }
             };
 
     public AtomicLongService() {
     }
 
-    public LongWrapper getNumber(String name) {
+    public LongContainer getNumber(String name) {
         return getOrPutIfAbsent(numbers, name, atomicLongConstructorFunction);
     }
 
@@ -105,7 +105,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         int partitionId = event.getPartitionId();
         for (String name : numbers.keySet()) {
             if (partitionId == getPartitionId(name)) {
-                LongWrapper number = numbers.get(name);
+                LongContainer number = numbers.get(name);
                 data.put(name, number.get());
             }
         }

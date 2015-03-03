@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.ReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,7 +46,7 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation
         AtomicReferenceService atomicReferenceService = getService();
         for (Map.Entry<String, Data> entry : migrationData.entrySet()) {
             String name = entry.getKey();
-            ReferenceWrapper reference = atomicReferenceService.getReference(name);
+            ReferenceContainer reference = atomicReferenceService.getReference(name);
             Data value = entry.getValue();
             reference.set(value);
         }
