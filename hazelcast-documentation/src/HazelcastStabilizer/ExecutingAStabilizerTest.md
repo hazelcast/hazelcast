@@ -206,7 +206,7 @@ When you are in your working directory, execute the following command to start t
 ./run.sh
 ```
 
-The following is the content of this example `run.sh` script.
+The script `run.sh` is for your convenience which gathers all commands used to perform a test in one script. The following is the content of this example `run.sh` script.
 
 ```
 ???
@@ -380,3 +380,6 @@ INFO  08:51:16 ==============================================================
 INFO  08:51:16 Finished terminating 4 aws-ec2 machines, 0 machines remaining.
 INFO  08:51:16 ==============================================================
 ```
+
+
+??? Post-test information ??? agents.txt ???
