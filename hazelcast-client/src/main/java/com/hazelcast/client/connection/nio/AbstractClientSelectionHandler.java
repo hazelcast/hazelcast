@@ -28,15 +28,10 @@ import java.nio.channels.SelectionKey;
 public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {
 
     protected final ILogger logger;
-
     protected final SocketChannelWrapper socketChannel;
-
     protected final ClientConnection connection;
-
     protected final ClientConnectionManager connectionManager;
-
-    protected final IOSelector ioSelector;
-
+    private final IOSelector ioSelector;
     private SelectionKey sk;
 
     public AbstractClientSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {

@@ -103,8 +103,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
             // already in the task queue.
             // we can have a counter to check this later on.
             // for now, wake up regardless.
-            ioSelector.addTask(this);
-            ioSelector.wakeup();
+            register();
         }
     }
 
