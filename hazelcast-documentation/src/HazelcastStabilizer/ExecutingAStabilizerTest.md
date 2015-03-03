@@ -7,69 +7,223 @@ After you install and prepare the Hazelcast Stabilizer for your environment, it 
 The following steps wrap up the whole procedure for executing a Stabilizer Test.
 
 1. Install the Hazelcast Stabilizer.
-2. Create a directory for your tests, let's call it as the Test Directory.
-3. Copy the `stabilizer.properties` file from the `/conf` directory of Hazelcast Stabilizer to your Test Directory.
+2. Create a directory for your tests, let's call it as the working directory.
+3. Copy the `stabilizer.properties` file from the `/conf` directory of Hazelcast Stabilizer to your working directory.
 4. Edit the `stabilizer.properties` file according to your needs.
-5. Execute the `run.sh` script to perform the Hazelcast Stabilizer tests.
+5. Copy the `test.properties` file from the `/stabilizer-tests` directory of Hazelcast Stabilizer to your working directory.
+6. Edit the `test.properties` file according to your needs.
+5. Execute the `run.sh` script while you are in your working directory to perform your Stabilizer test.
 
+In the following sections, we provide an example test and its output along with the required file (`stabilizer.properties` and `test.properties`) edits.
 
+### An Example Stabilizer Test
 
-
-Probably you want to write your own test. The easiest way to do that is to make use of the Stabilizer archetype which
-will generate a project for you.
-
-```
-mvn archetype:generate  \
-    -DarchetypeGroupId=com.hazelcast.stabilizer \
-    -DarchetypeArtifactId=archetype \
-    -DarchetypeVersion=0.3 \
-    -DgroupId=yourgroupid  \
-    -DartifactId=yourproject
-```
-
-This will create fully working stabilizer project including a very basic test: see ExampleTest that Increments an
-IAtomicLong. When the test has completed, a verification is done if the actual number of increments is equal to the
-expected number of increments. In your case you probably want to do something more interesting.
-
-After this project is generated, go to the created directory and run:
+The following example is a test where a counter is being incremented. When the test is completed, a verification is done if the actual number of increments is equal to the expected number of increments.
 
 ```
-mvn clean install
+package yourGroupId;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.stabilizer.probes.probes.IntervalProbe;
+import com.hazelcast.stabilizer.test.TestContext;
+import com.hazelcast.stabilizer.test.TestRunner;
+import com.hazelcast.stabilizer.test.annotations.Performance;
+import com.hazelcast.stabilizer.test.annotations.Run;
+import com.hazelcast.stabilizer.test.annotations.Setup;
+import com.hazelcast.stabilizer.test.annotations.Teardown;
+import com.hazelcast.stabilizer.test.annotations.Verify;
+import com.hazelcast.stabilizer.test.utils.ThreadSpawner;
+import com.hazelcast.stabilizer.worker.selector.OperationSelector;
+import com.hazelcast.stabilizer.worker.selector.OperationSelectorBuilder;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.junit.Assert.assertEquals;
+
+public class ExampleTest {
+
+    private enum Operation {
+        PUT,
+        GET
+    }
+
+    private final static ILogger log = Logger.getLogger(ExampleTest.class);
+
+    // properties
+    public int threadCount = 1;
+    public int logFrequency = 10000;
+    public int performanceUpdateFrequency = 10000;
+    public double putProb = 0.2;
+
+    // probes
+    public IntervalProbe putLatencyProbe;
+    public IntervalProbe getLatencyProbe;
+
+    private IAtomicLong totalCounter;
+    private AtomicLong operations = new AtomicLong();
+    private IAtomicLong counter;
+    private TestContext testContext;
+
+    private OperationSelectorBuilder<Operation> operationSelectorBuilder = new OperationSelectorBuilder<Operation>();
+
+    @Setup
+    public void setup(TestContext testContext) throws Exception {
+        this.testContext = testContext;
+        HazelcastInstance targetInstance = testContext.getTargetInstance();
+
+        totalCounter = targetInstance.getAtomicLong("totalCounter");
+        counter = targetInstance.getAtomicLong("counter");
+
+        operationSelectorBuilder.addOperation(Operation.PUT, putProb).addDefaultOperation(Operation.GET);
+    }
+
+    @Run
+    public void run() {
+        ThreadSpawner spawner = new ThreadSpawner(testContext.getTestId());
+        for (int k = 0; k < threadCount; k++) {
+            spawner.spawn(new Worker());
+        }
+        spawner.awaitCompletion();
+    }
+
+    @Verify
+    public void verify() {
+        long expected = totalCounter.get();
+        long actual = counter.get();
+
+        assertEquals(expected, actual);
+    }
+
+    @Teardown
+    public void teardown() throws Exception {
+        counter.destroy();
+        totalCounter.destroy();
+    }
+
+    @Performance
+    public long getOperationCount() {
+        return operations.get();
+    }
+
+    private class Worker implements Runnable {
+        private final OperationSelector<Operation> selector = operationSelectorBuilder.build();
+
+        @Override
+        public void run() {
+            long iteration = 0;
+            while (!testContext.isStopped()) {
+                Operation operation = selector.select();
+                switch (operation) {
+                    case PUT:
+                        putLatencyProbe.started();
+                        counter.incrementAndGet();
+                        putLatencyProbe.done();
+                        break;
+                    case GET:
+                        getLatencyProbe.started();
+                        counter.get();
+                        getLatencyProbe.done();
+                        break;
+                    default:
+                        throw new UnsupportedOperationException("Unknown operation" + operation);
+                }
+
+                if (iteration % logFrequency == 0) {
+                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
+                }
+
+                if (iteration % performanceUpdateFrequency == 0) {
+                    operations.addAndGet(performanceUpdateFrequency);
+                }
+                iteration++;
+            }
+
+            operations.addAndGet(iteration % performanceUpdateFrequency);
+            totalCounter.addAndGet(iteration);
+        }
+    }
+
+    public static void main(String[] args) throws Throwable {
+        ExampleTest test = new ExampleTest();
+        new TestRunner<ExampleTest>(test).run();
+    }
+}
 ```
 
-And then go to workdir:
+
+### Editing `Stabilizer.Properties`
+
  
-```
-cd workdir
-```
- 
-Edit the stabilizer.properties file. In case of EC2, you only need to have a look at the following 2 properties:
+In the case of Amazon EC2, you need to consider the following properties.
 
 ```
 CLOUD_IDENTITY=~/ec2.identity
 CLOUD_CREDENTIAL=~/ec2.credential
 ```
 
-So create these two text files in your home directory. The ec2.identity text-file should contain your access key and the 
-ec2.credential text-file your secret key. For a full listing of options and explanation of the options, read the 
-STABILIZER_HOME/conf/stabilizer.properties. This file contains all the default values that are used as soon as 
-a specific stabilizer.properties doesn't contain a specific property.
+Create two text files in your home directory. The file `ec2.identity` should contain your access key and the file 
+`ec2.credential` should contain your secret key. 
 
-And finally you can run the test from the workdir directory:
+***NOTE:*** *For a full description of the file `stabilizer.properties`, please see the [Stabilizer.Properties File Description section](#stabilizer-properties-file-description).*
+
+### Editing `test.properties`
+
+You need to give the classpath of `Example` test in the file `test.properties` as shown below.
+
+
+```
+class=yourgroupid.ExampleTest
+threadCount=1
+logFrequency=10000
+performanceUpdateFrequency=10000
+```
+
+The property `class` defines the actual test case and the rest are the properties you want to bind in your test. If a
+property is not defined in this file, the default value of the property given in your test code is used. Please see the `properties` comment in the example code above.
+
+You can also define multiple tests in the file `test.properties` as shown below.
+
+```
+foo.class=yourgroupid.ExampleTest
+foo.threadCount=1
+
+bar.class=yourgroupid.ExampleTest
+bar.threadCount=1
+
+```
+
+This is useful if you want to run multiple tests sequentially, or tests in parallel using the `coordinator --parallel` option. Please see the [Coordinator section](#coordinator) for more information.
+
+### Running the Test
+
+When you are in your working directory, execute the following command to start the test.
+
 
 ```
 ./run.sh
 ```
 
-This script will:
- * start 4 EC2 instances, install Java, install the agents.
- * upload your jars, run the test using a 2 node test cluster and 2 client machines (the clients generate the load).
-   This test will run for 2 minutes.
- * After the test completes the the artifacts (log files) are downloaded in the 'workers' directory
- * terminate the 4 created instances. If you don't want to start/terminate the instances for every run, just comment out
-   'provisioner --terminate' line.  This prevents the machines from being terminated.
+The following is the content of this example `run.sh` script.
 
-The output will look something like this:
+```
+???
+???
+???
+???
+```
+
+This script performs the following.
+
+ * Start 4 EC2 instances, install Java and the agents.
+ * Upload your JARs, run the test using a 2 node test cluster and 2 client machines (the clients generate the load).
+ 
+ 
+This test runs for 2 minutes. After it is completed, the artifacts (log files) are downloaded in the `workers` directory. Then, it terminates the 4 instances. If you do not want to start/terminate the instances for every run, just comment out the line `provisioner --terminate` in the script `run.sh`. This prevents the machines from being terminated. Please see the [Provisioner section](#provisioner) for more information.
+
+The output of the test looks like the following.
 
 ```
 INFO  08:40:10 Hazelcast Stabilizer Provisioner
