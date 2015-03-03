@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.spring.springaware;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.spring.context.SpringManagedContext;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -36,9 +37,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"springAware-disabled-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestBeansApplicationContext {
+public class TestDisabledSpringAwareAnnotation {
 
     @BeforeClass
     @AfterClass
@@ -51,29 +52,12 @@ public class TestBeansApplicationContext {
     private ApplicationContext context;
 
     @Test
-    public void testApplicationContext() {
-        assertTrue(Hazelcast.getAllHazelcastInstances().isEmpty());
-        assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
-
-        context.getBean("map2");
-
-        assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
-        assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
-
-        HazelcastInstance hazelcast = Hazelcast.getAllHazelcastInstances().iterator().next();
-        assertEquals(2, hazelcast.getDistributedObjects().size());
-
-        context.getBean("client");
-        context.getBean("client");
-        assertEquals(3, HazelcastClient.getAllHazelcastClients().size());
-        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.getAllHazelcastClients().iterator().next();
-        assertNull(client.getClientConfig().getManagedContext());
-
-
+    public void testDisabledSpringManagedContext() {
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
-        assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
-        assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
         assertNull(instance.getConfig().getManagedContext());
+
+        HazelcastClientProxy client = (HazelcastClientProxy) context.getBean("client");
+        assertNull(client.getClientConfig().getManagedContext());
     }
 
 }
