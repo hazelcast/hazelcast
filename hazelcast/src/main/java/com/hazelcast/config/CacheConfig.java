@@ -56,6 +56,8 @@ public class CacheConfig<K, V>
 
     private NearCacheConfig nearCacheConfig;
 
+    private WanReplicationRef wanReplicationRef;
+
     public CacheConfig() {
         super();
     }
@@ -76,6 +78,9 @@ public class CacheConfig<K, V>
             }
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
+            }
+            if (config.wanReplicationRef != null) {
+                this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
             }
         }
     }
@@ -107,6 +112,9 @@ public class CacheConfig<K, V>
         // Eviction config cannot be null
         if (simpleConfig.getEvictionConfig() != null) {
             this.evictionConfig = simpleConfig.getEvictionConfig();
+        }
+        if (simpleConfig.getWanReplicationRef() != null) {
+            this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
         }
         for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
@@ -314,6 +322,15 @@ public class CacheConfig<K, V>
         return this;
     }
 
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRef;
+    }
+
+    public CacheConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        this.wanReplicationRef = wanReplicationRef;
+        return this;
+    }
+
     /**
      * Gets the data type that will be used for storing records.
      *
@@ -352,6 +369,7 @@ public class CacheConfig<K, V>
 
         out.writeObject(nearCacheConfig);
 
+        out.writeObject(wanReplicationRef);
         //SUPER
         out.writeObject(keyType);
         out.writeObject(valueType);
@@ -386,10 +404,11 @@ public class CacheConfig<K, V>
 
         String resultInMemoryFormat = in.readUTF();
         inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
-
         evictionConfig = in.readObject();
 
         nearCacheConfig = in.readObject();
+
+        wanReplicationRef = in.readObject();
 
         //SUPER
         keyType = in.readObject();

@@ -548,6 +548,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
     }
 
+    @Test
+    public void testMapWanReplicationRef() {
+        String mapName = "testMapWanReplicationRef";
+        String refName = "test";
+        String mergePolicy = "TestMergePolicy";
+        String xml =
+                "<hazelcast>\n" +
+                        "  <map name=\"" + mapName + "\">\n" +
+                        "    <wan-replication-ref name=\"test\">\n" +
+                        "      <merge-policy>TestMergePolicy</merge-policy>\n" +
+                        "    </wan-replication-ref>\n" +
+                        "  </map>\n" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        WanReplicationRef wanRef = config.getMapConfig(mapName).getWanReplicationRef();
+        assertEquals(refName, wanRef.getName());
+        assertEquals(mergePolicy, wanRef.getMergePolicy());
+    }
+
     @Test(expected = HazelcastException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =

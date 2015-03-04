@@ -587,6 +587,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     }
                     cacheConfigBuilder.addPropertyValue("cacheEntryListeners", listeners);
                 }
+                if ("wan-replication-ref".equals(cleanNodeName(childNode))) {
+                    final BeanDefinitionBuilder wanReplicationRefBuilder = createBeanBuilder(WanReplicationRef.class);
+                    final AbstractBeanDefinition wanReplicationRefBeanDefinition = wanReplicationRefBuilder
+                            .getBeanDefinition();
+                    fillValues(childNode, wanReplicationRefBuilder);
+                    cacheConfigBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);
+                }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());
         }

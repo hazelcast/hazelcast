@@ -73,6 +73,7 @@ public class CacheSimpleConfig {
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
     private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private WanReplicationRef wanReplicationRef;
 
     private CacheSimpleConfig readOnly;
 
@@ -95,6 +96,7 @@ public class CacheSimpleConfig {
         if (evictionConfig != null) {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
+        this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
     }
 
     public CacheSimpleConfig() {
@@ -251,5 +253,13 @@ public class CacheSimpleConfig {
             this.evictionConfig = evictionConfig;
         }
         return this;
+    }
+
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRef;
+    }
+
+    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        this.wanReplicationRef = wanReplicationRef;
     }
 }
