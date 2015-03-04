@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster.impl;
 
-import com.hazelcast.cluster.ClusterClock;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
@@ -865,6 +864,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         service.reset();
                     }
                     node.onRestart();
+                    node.nodeEngine.reset();
                     node.connectionManager.restart();
                     node.rejoin();
                     final Collection<Future> futures = new LinkedList<Future>();

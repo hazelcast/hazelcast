@@ -155,6 +155,15 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         return mapWaitingOps.size();
     }
 
+    // for testing purposes only
+    int getTotalWaitingOperationCount() {
+        int count = 0;
+        for (Queue<WaitingOp> queue : mapWaitingOps.values()) {
+            count += queue.size();
+        }
+        return count;
+    }
+
     // invalidated waiting ops will removed from queue eventually by notifiers.
     void onMemberLeft(MemberImpl leftMember) {
         invalidateWaitingOps(leftMember.getUuid());
@@ -215,6 +224,11 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 }
             }
         }
+    }
+
+    void reset() {
+        delayQueue.clear();
+        mapWaitingOps.clear();
     }
 
     void shutdown() {
