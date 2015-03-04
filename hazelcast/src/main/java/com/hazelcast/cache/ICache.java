@@ -786,6 +786,13 @@ public interface ICache<K, V>
     void destroy();
 
     /**
+     * Determines whether this Cache instance has been destroyed.
+     *
+     * @return <code>true</code> if this Cache instance is destroyed; <code>false</code> if it is still open
+     */
+    boolean isDestroyed();
+
+    /**
      * Directly access local Cache Statistics.
      *
      * @return CacheStatistics instance or an empty statistics if not enabled
