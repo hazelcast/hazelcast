@@ -826,6 +826,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         service.reset();
                     }
                     node.onRestart();
+                    node.nodeEngine.reset();
                     node.connectionManager.restart();
                     node.rejoin();
                     final Collection<Future> futures = new LinkedList<Future>();
