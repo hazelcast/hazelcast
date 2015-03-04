@@ -1,9 +1,12 @@
 
 
-## Upgrading from 2.x versions
+## Upgrading Hazelcast
 
 
-In this section, we list the changes what users should take into account before upgrading to latest Hazelcast from earlier versions.
+### Upgrading from 2.x
+
+
+In this section, we list the changes what users should take into account before upgrading to latest Hazelcast from 2.x.
 
 - **Removal of deprecated static methods:**
 The static methods of Hazelcast class reaching Hazelcast data components have been removed. The functionality of these methods can be reached from HazelcastInstance interface. Namely you should replace following:
@@ -104,6 +107,18 @@ The lifecycle has been simplified. `pause()`, `resume()`, `restart()` methods ha
 - **ISemaphore API:**
 The `ISemaphore` has been substantially changed. `attach()`, `detach()` methods have been removed.
 - In 2.x releases, the default value for `max-size` eviction policy was **cluster_wide_map_size**. In 3.x releases, default is **PER_NODE**. After upgrading, the `max-size` should be set according to this new default, if it is not changed. Otherwise, it is likely that OutOfMemory exception may be thrown.
+
+### Upgrading from 3.x
+
+
+In this section, we list the changes what users should take into account before upgrading to latest Hazelcast from 3.x versions.
+
+- **Introducing the `spring-aware` element:**
+By default, Hazelcast uses `SpringManagedContext` to scan `SpringAware` annotations. This may cause some performance penalties even if the users do not use `SpringAware`. 
+By introducing the `spring-aware` element, now it is possible to disable it by adding the `<hz:spring-aware enabled="false"/>` tag to the configuration. Please see the [Spring Integration section](#spring-integration).
+
+
+
 
 
 
