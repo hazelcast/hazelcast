@@ -81,11 +81,29 @@ public class LocalReplicatedMapStatsImpl
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
 
+    private volatile long creationTime;
     private long ownedEntryCount;
-    private long creationTime;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+    public LocalReplicatedMapStatsImpl(LocalReplicatedMapStatsImpl other) {
+        this.creationTime = other.creationTime;
+        this.lastAccessTime = other.lastAccessTime;
+        this.lastUpdateTime = other.lastUpdateTime;
+        this.numberOfOtherOperations = other.numberOfOtherOperations;
+        this.numberOfEvents = other.numberOfEvents;
+        this.numberOfReplicationEvents = other.numberOfReplicationEvents;
+        this.getCount = other.getCount;
+        this.putCount = other.putCount;
+        this.removeCount = other.removeCount;
+        this.totalGetLatencies = other.totalGetLatencies;
+        this.totalPutLatencies = other.totalPutLatencies;
+        this.totalRemoveLatencies = other.totalRemoveLatencies;
+        this.maxGetLatency = other.maxGetLatency;
+        this.maxPutLatency = other.maxPutLatency;
+        this.maxRemoveLatency = other.maxRemoveLatency;
     }
 
     @Override

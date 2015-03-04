@@ -51,7 +51,7 @@ public class LocalMapStatsProvider {
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         final NodeEngine nodeEngine = this.nodeEngine;
         final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        final LocalMapStatsImpl localMapStats = getLocalMapStatsImpl(mapName);
+        final LocalMapStatsImpl localMapStats = new LocalMapStatsImpl(getLocalMapStatsImpl(mapName));
         if (!mapContainer.getMapConfig().isStatisticsEnabled()) {
             return localMapStats;
         }
@@ -60,7 +60,6 @@ public class LocalMapStatsProvider {
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         final Address thisAddress = clusterService.getThisAddress();
 
-        localMapStats.init();
         localMapStats.setBackupCount(backupCount);
         addNearCacheStats(localMapStats, mapContainer);
 

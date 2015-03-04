@@ -77,7 +77,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long maxRemoveLatency;
 
 
-    private long creationTime;
+    private volatile long creationTime;
     private long ownedEntryCount;
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
@@ -96,25 +96,21 @@ public class LocalMapStatsImpl implements LocalMapStats {
         creationTime = Clock.currentTimeMillis();
     }
 
-
-    /**
-     * Only init these fields for every {@link com.hazelcast.map.impl.LocalMapStatsProvider#createLocalMapStats}
-     * call since they represent current map state.
-     * However other fields hold historical data from the creation of a map like {@link #putCount#getCount}
-     * and they should not be touched here.
-     *
-     * @see com.hazelcast.map.impl.LocalMapStatsProvider#createLocalMapStats
-     */
-    public void init() {
-        ownedEntryCount = 0;
-        backupEntryCount = 0;
-        ownedEntryMemoryCost = 0;
-        backupEntryMemoryCost = 0;
-        heapCost = 0;
-        lockedEntryCount = 0;
-        dirtyEntryCount = 0;
-        backupCount = 0;
-        hits = 0;
+    public LocalMapStatsImpl(LocalMapStatsImpl other) {
+        this.creationTime = other.creationTime;
+        this.lastAccessTime = other.lastAccessTime;
+        this.lastUpdateTime = other.lastUpdateTime;
+        this.numberOfOtherOperations = other.numberOfOtherOperations;
+        this.numberOfEvents = other.numberOfEvents;
+        this.getCount = other.getCount;
+        this.putCount = other.putCount;
+        this.removeCount = other.removeCount;
+        this.totalGetLatencies = other.totalGetLatencies;
+        this.totalPutLatencies = other.totalPutLatencies;
+        this.totalRemoveLatencies = other.totalRemoveLatencies;
+        this.maxGetLatency = other.maxGetLatency;
+        this.maxPutLatency = other.maxPutLatency;
+        this.maxRemoveLatency = other.maxRemoveLatency;
     }
 
     @Override

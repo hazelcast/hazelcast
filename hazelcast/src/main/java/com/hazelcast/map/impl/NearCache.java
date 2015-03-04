@@ -158,6 +158,7 @@ public class NearCache {
     }
 
     private NearCacheStatsImpl createNearCacheStats() {
+        final NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl(this.nearCacheStats);
         long ownedEntryCount = 0;
         long ownedEntryMemoryCost = 0;
         for (CacheRecord record : cache.values()) {
