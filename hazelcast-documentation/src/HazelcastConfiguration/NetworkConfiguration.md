@@ -236,6 +236,9 @@ It includes parameters to fine tune the TCP/IP join mechanism.
 - `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
 - `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
 - `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` element.
+
+![image](images/NoteSmall.jpg)***NOTE:*** *`tcp-ip` element also accepts the `interface` parameter. Please refer to the [Interfaces element description](#interfaces).*
+
 - `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 
 #### aws element 
