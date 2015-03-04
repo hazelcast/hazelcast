@@ -19,8 +19,9 @@
 |[Chapter 20 - Hazelcast Stabilizer](#hazelcast-stabilizer)||Added as a new chapter providing comprehensive information on the Hazelcast Stabilizer feature.|
 |[Chapter 22 - Hazelcast Configuration](#hazelcast-configuration)||Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
 ||[Using Variables](#using-variables)| Added as a new section explaining how to use variables in declarative configuration.|
-|[Chapter 24 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
-|[Chapter 25 - Glossary](#glossary)||Added new glossary items.|
+|[Chapter 24 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
+|[Chapter 25 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
+|[Chapter 26 - Glossary](#glossary)||Added new glossary items.|
 
 
 
