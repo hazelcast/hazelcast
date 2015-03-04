@@ -140,6 +140,10 @@ abstract class AbstractCacheProxyBase<K, V> {
         return isClosed.get();
     }
 
+    public boolean isDestroyed() {
+        return isDestroyed.get();
+    }
+
     protected abstract void closeListeners();
     //endregion close&destroy
 
