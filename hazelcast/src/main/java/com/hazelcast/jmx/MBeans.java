@@ -16,8 +16,8 @@
 
 package com.hazelcast.jmx;
 
-import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -39,7 +39,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.topic.impl.TopicService;

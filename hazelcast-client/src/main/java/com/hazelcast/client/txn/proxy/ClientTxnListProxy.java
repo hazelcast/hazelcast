@@ -17,10 +17,10 @@
 package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.client.TxnListAddRequest;
-import com.hazelcast.collection.client.TxnListRemoveRequest;
-import com.hazelcast.collection.client.TxnListSizeRequest;
-import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.impl.txnlist.client.TxnListAddRequest;
+import com.hazelcast.collection.impl.txnlist.client.TxnListRemoveRequest;
+import com.hazelcast.collection.impl.txnlist.client.TxnListSizeRequest;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 

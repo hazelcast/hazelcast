@@ -48,7 +48,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
 
