@@ -19,17 +19,19 @@ package com.hazelcast.cluster.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
-import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.core.InitialMembershipEvent;
+import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 
 import java.security.Permission;
+import java.util.Collection;
 
-public final class RegisterMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
+public final class RegisterMembershipListenerRequest extends CallableClientRequest {
 
     public RegisterMembershipListenerRequest() {
     }
@@ -64,11 +66,19 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
         return null;
     }
 
-    private class MembershipListenerImpl implements MembershipListener {
+    private class MembershipListenerImpl implements InitialMembershipListener {
         private final ClientEndpoint endpoint;
 
         public MembershipListenerImpl(ClientEndpoint endpoint) {
             this.endpoint = endpoint;
+        }
+
+        @Override
+        public void init(InitialMembershipEvent membershipEvent) {
+            ClusterService service = getService();
+            Collection<MemberImpl> memberList = service.getMemberList();
+            ClientInitialMembershipEvent event = new ClientInitialMembershipEvent(memberList);
+            endpoint.sendEvent(null, event, getCallId());
         }
 
         @Override
@@ -78,7 +88,8 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMembershipEvent event = new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED);
+            ClientInitialMembershipEvent event =
+                    new ClientInitialMembershipEvent(member, ClientInitialMembershipEvent.MEMBER_ADDED);
             endpoint.sendEvent(null, event, getCallId());
         }
 
@@ -89,7 +100,8 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMembershipEvent event = new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED);
+            ClientInitialMembershipEvent event =
+                    new ClientInitialMembershipEvent(member, ClientInitialMembershipEvent.MEMBER_REMOVED);
             endpoint.sendEvent(null, event, getCallId());
         }
 
@@ -105,7 +117,7 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             String key = memberAttributeEvent.getKey();
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            ClientMembershipEvent event = new ClientMembershipEvent(member, memberAttributeChange);
+            ClientInitialMembershipEvent event = new ClientInitialMembershipEvent(member, memberAttributeChange);
             endpoint.sendEvent(null, event, getCallId());
         }
     }

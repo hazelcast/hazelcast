@@ -150,7 +150,7 @@ public class ClientMapReduceProxy
                     }
                 });
 
-                Address runningMember = clientInvocation.getConnection().getRemoteEndpoint();
+                Address runningMember = clientInvocation.getSendConnection().getRemoteEndpoint();
                 trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, runningMember, completableFuture));
                 return completableFuture;
             } catch (Exception e) {

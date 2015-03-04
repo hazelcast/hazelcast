@@ -209,7 +209,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         return listeners.remove(registrationId) != null;
     }
 
-    public void start() {
+    public void start() throws Exception {
         clusterListenerSupport.init(client);
         clusterListenerSupport.connectToCluster();
         initMembershipListener();

@@ -42,10 +42,10 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationFuture clientInvocationFuture;
     private final int heartBeatInterval;
     private final AtomicInteger reSendCount = new AtomicInteger();
-    private final boolean isBindToSingleConnection;
     private final Address address;
     private final int partitionId;
-    private volatile ClientConnection connection;
+    private final Connection connection;
+    private volatile ClientConnection sendConnection;
 
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -59,8 +59,7 @@ public class ClientInvocation implements Runnable {
         this.request = request;
         this.partitionId = partitionId;
         this.address = address;
-        this.connection = (ClientConnection) connection;
-        this.isBindToSingleConnection = connection != null;
+        this.connection = connection;
         final ClientProperties clientProperties = client.getClientProperties();
 
         int waitTime = clientProperties.getInvocationTimeoutSeconds().getInteger();
@@ -89,6 +88,12 @@ public class ClientInvocation implements Runnable {
         this(client, handler, request, UNASSIGNED_PARTITION, address, null);
     }
 
+    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
+                            ClientRequest request, Connection connection) {
+        this(client, handler, request, UNASSIGNED_PARTITION, null, connection);
+
+    }
+
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request) {
         this(client, null, request);
     }
@@ -105,7 +110,7 @@ public class ClientInvocation implements Runnable {
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request,
                             Connection connection) {
-        this(client, null, request, UNASSIGNED_PARTITION, null, connection);
+        this(client, null, request, connection);
     }
 
 
@@ -119,10 +124,6 @@ public class ClientInvocation implements Runnable {
 
     public EventHandler getHandler() {
         return handler;
-    }
-
-    public ClientInvocationFuture getFuture() {
-        return clientInvocationFuture;
     }
 
     public ClientInvocationFuture invoke() {
@@ -140,8 +141,8 @@ public class ClientInvocation implements Runnable {
     }
 
     private void invokeOnSelection() throws IOException {
-        if (isBindToSingleConnection) {
-            invocationService.invokeOnConnection(this, connection);
+        if (isBindToSingleConnection()) {
+            invocationService.invokeOnConnection(this, (ClientConnection) connection);
         } else if (partitionId != -1) {
             invocationService.invokeOnPartitionOwner(this, partitionId);
         } else if (address != null) {
@@ -236,15 +237,15 @@ public class ClientInvocation implements Runnable {
     }
 
     private boolean isBindToSingleConnection() {
-        return isBindToSingleConnection;
+        return connection != null;
     }
 
     boolean isConnectionHealthy(long elapsed) {
         if (elapsed >= heartBeatInterval) {
-            if (connection != null) {
-                return connection.isHeartBeating();
+            if (sendConnection != null) {
+                return sendConnection.isHeartBeating();
             } else {
-                return false;
+                return true;
             }
         }
         return true;
@@ -254,11 +255,11 @@ public class ClientInvocation implements Runnable {
         return heartBeatInterval;
     }
 
-    public void setConnection(ClientConnection connection) {
-        this.connection = connection;
+    public void setSendConnection(ClientConnection connection) {
+        this.sendConnection = connection;
     }
 
-    public ClientConnection getConnection() {
-        return connection;
+    public ClientConnection getSendConnection() {
+        return sendConnection;
     }
 }
