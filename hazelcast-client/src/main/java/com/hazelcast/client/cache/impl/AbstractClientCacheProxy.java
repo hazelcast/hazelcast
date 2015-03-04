@@ -98,7 +98,7 @@ abstract class AbstractClientCacheProxy<K, V>
                 }
             });
         }
-        return new DelegatingFuture<V>(future, clientContext.getSerializationService());
+        return registerReturnedValueTypeCheck(new DelegatingFuture<V>(future, clientContext.getSerializationService()));
     }
 
     @Override

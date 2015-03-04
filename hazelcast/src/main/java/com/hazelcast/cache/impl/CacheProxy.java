@@ -78,7 +78,7 @@ public class CacheProxy<K, V>
                          HazelcastServerCacheManager cacheManager) {
         super(cacheConfig, nodeEngine, cacheService);
         this.cacheManager = cacheManager;
-        logger = getNodeEngine().getLogger(getClass());
+        this.logger = getNodeEngine().getLogger(getClass());
     }
 
     @Override
@@ -109,7 +109,7 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(keys);
         for (K key : keys) {
-            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
+            CacheProxyUtil.validateConfiguredKeyType(cacheConfig, key);
         }
         validateCacheLoader(completionListener);
         HashSet<Data> keysData = new HashSet<Data>();

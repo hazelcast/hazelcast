@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.TypeCheckingOperationResultVerifier;
 import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -23,13 +24,16 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.OperationResultVerifier;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.Factory;
@@ -63,6 +67,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
     private final CacheLoader<K, V> cacheLoader;
 
+    private final OperationResultVerifier operationResultVerifier;
+
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
@@ -71,12 +77,23 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.clientContext = clientContext;
+        this.operationResultVerifier = new TypeCheckingOperationResultVerifier<K, V>(cacheConfig);
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         } else {
             cacheLoader = null;
         }
+    }
+
+    protected <T> ClientInvocationFuture<T> registerReturnedValueTypeCheck(ClientInvocationFuture<T> future) {
+        future.setOperationResultVerifier(operationResultVerifier);
+        return future;
+    }
+
+    protected <T> DelegatingFuture<T> registerReturnedValueTypeCheck(DelegatingFuture<T> future) {
+        future.setOperationResultVerifier(operationResultVerifier);
+        return future;
     }
 
     //region close&destroy
