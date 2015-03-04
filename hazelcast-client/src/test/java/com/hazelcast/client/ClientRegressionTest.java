@@ -50,12 +50,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -64,6 +58,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.assertEquals;
@@ -159,22 +158,11 @@ public class ClientRegressionTest
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
-
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final ILock lock = client.getLock("lock");
-
-        for (int k = 0; k < 10; k++) {
-            lock.lock();
-            try {
-                Thread.sleep(100);
-            } finally {
-                lock.unlock();
-            }
-        }
-
+        final ILock lock = client.getLock(generateKeyOwnedBy(hz1));
         lock.lock();
         hz1.shutdown();
         lock.unlock();

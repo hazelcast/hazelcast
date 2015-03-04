@@ -239,12 +239,12 @@ public class ClientInvocation implements Runnable {
         return isBindToSingleConnection;
     }
 
-    boolean isConnectionHealthy(long elapsed) {
+    boolean shouldContinueWaiting(long elapsed) {
         if (elapsed >= heartBeatInterval) {
             if (connection != null) {
                 return connection.isHeartBeating();
             } else {
-                return false;
+                return true;
             }
         }
         return true;
