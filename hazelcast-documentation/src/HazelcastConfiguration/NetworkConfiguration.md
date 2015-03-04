@@ -252,7 +252,7 @@ It includes parameters to allow the nodes form a cluster on Amazon EC2 environme
 - `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
 - `access-key`, `secret-key`: Access and secret keys of your account on EC2.
 - `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
-- `host-header`: ???. It is optional.
+- `host-header`: The URL that is the entry point for a web service. It is optional.
 - `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
 - `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
 - `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
