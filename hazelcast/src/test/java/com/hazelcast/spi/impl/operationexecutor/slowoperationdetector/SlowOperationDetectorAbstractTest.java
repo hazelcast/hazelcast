@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.management.TimedMemberStateFactory;
+import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.TimedMemberState;

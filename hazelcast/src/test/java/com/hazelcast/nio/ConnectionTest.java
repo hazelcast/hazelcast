@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.management.ThreadDumpGenerator;
+import com.hazelcast.internal.management.ThreadDumpGenerator;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Ignore;

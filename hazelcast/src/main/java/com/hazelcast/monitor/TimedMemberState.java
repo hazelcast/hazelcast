@@ -19,7 +19,7 @@ package com.hazelcast.monitor;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
 import java.util.ArrayList;
