@@ -773,7 +773,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    void prepareToMerge(final Address newTargetAddress) {
+    public void prepareToMerge(final Address newTargetAddress) {
         preparingToMerge.set(true);
         node.getJoiner().setTargetAddress(newTargetAddress);
         nodeEngine.getExecutionService().schedule(new Runnable() {
@@ -783,7 +783,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }, 10, TimeUnit.SECONDS);
     }
 
-    void merge(Address newTargetAddress) {
+    public void merge(Address newTargetAddress) {
         if (preparingToMerge.compareAndSet(true, false)) {
             node.getJoiner().setTargetAddress(newTargetAddress);
             final LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
@@ -804,6 +804,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         service.reset();
                     }
                     node.onRestart();
+                    node.nodeEngine.reset();
                     node.connectionManager.restart();
                     node.rejoin();
                     final Collection<Future> futures = new LinkedList<Future>();
