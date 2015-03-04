@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -170,10 +170,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     }
 
     protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
-        final LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        final ClientExecutionService executionService = clientContext.getExecutionService();
+        LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
-        final ICompletableFuture<?> future = executionService.submit(loadAllTask);
+        final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
         loadAllTasks.add(future);
         future.andThen(new ExecutionCallback() {
             @Override

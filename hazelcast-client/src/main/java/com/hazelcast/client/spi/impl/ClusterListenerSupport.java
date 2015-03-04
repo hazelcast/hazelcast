@@ -318,9 +318,10 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
 
     @Override
     public void connectionRemoved(Connection connection) {
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
             if (client.getLifecycleService().isRunning()) {
-                client.getClientExecutionService().execute(new Runnable() {
+                executionService.executeInternal(new Runnable() {
                     @Override
                     public void run() {
                         try {

@@ -67,8 +67,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void refreshPartitions() {
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         try {
-            client.getClientExecutionService().execute(new RefreshTask());
+            executionService.executeInternal(new RefreshTask());
         } catch (RejectedExecutionException ignored) {
             EmptyStatement.ignore(ignored);
         }

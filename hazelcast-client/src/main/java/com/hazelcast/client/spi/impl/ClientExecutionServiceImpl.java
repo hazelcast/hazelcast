@@ -75,10 +75,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     }
 
-    public <T> ICompletableFuture<T> submitInternal(final Callable<T> command) {
-        CompletableFutureTask futureTask = new CompletableFutureTask<T>(command, internalExecutor);
-        internalExecutor.submit(futureTask);
+    public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
+        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, getAsyncExecutor());
+        executor.submit(futureTask);
         return futureTask;
+    }
+
+    public void executeInternal(Runnable runnable) {
+        internalExecutor.execute(runnable);
     }
 
     @Override
@@ -122,7 +126,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternal(command);
             }
         }, initialDelay, period, unit);
     }
