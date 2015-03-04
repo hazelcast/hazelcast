@@ -41,7 +41,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
-        protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
+    protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<String, CacheOperationProvider>();
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
             new ConstructorFunction<String, CacheStatisticsImpl>() {
@@ -62,7 +62,10 @@ public abstract class AbstractCacheService implements ICacheService {
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = new CachePartitionSegment(this, i);
         }
+        postInit(nodeEngine, properties);
     }
+
+    protected void postInit(NodeEngine nodeEngine, Properties properties) { };
 
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
 
@@ -248,7 +251,8 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
-                             Data dataOldValue, boolean isOldValueAvailable, int orderKey, int completionId) {
+                             Data dataOldValue, boolean isOldValueAvailable, int orderKey,
+                             int completionId, long expirationTime) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 

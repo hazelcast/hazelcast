@@ -148,7 +148,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
 
         switch (state) {
             case ACCESS:
-                cacheRecordStore.accessRecord(record, expiryPolicy, now);
+                cacheRecordStore.accessRecord(keyData, record, expiryPolicy, now);
                 break;
             case UPDATE:
                 cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false, completionId);
@@ -171,7 +171,8 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true, completionId);
                 break;
             case NONE:
-                cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false, completionId);
+                cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false,
+                        completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
                 break;
             default:
                 break;
