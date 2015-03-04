@@ -16,12 +16,14 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,22 +54,14 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_ADD_ALL;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         if (!hasEnoughCapacity(valueList.size())) {
             response = false;
             return;
         }
 
-        valueMap = getOrCreateContainer().addAll(valueList);
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        valueMap = collectionContainer.addAll(valueList);
         response = !valueMap.isEmpty();
     }
 
@@ -79,6 +73,11 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
         for (Data value : valueMap.values()) {
             publishEvent(ItemEventType.ADDED, value);
         }
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_ADD_ALL;
     }
 
     @Override

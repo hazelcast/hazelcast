@@ -170,7 +170,7 @@ public abstract class CollectionContainer implements DataSerializable {
         return sub;
     }
 
-    protected boolean hasEnoughCapacity(int delta) {
+    public boolean hasEnoughCapacity(int delta) {
         return getCollection().size() + delta <= getConfig().getMaxSize();
     }
 

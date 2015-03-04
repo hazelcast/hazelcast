@@ -26,13 +26,10 @@ import java.io.IOException;
 
 public class CollectionEvent implements IdentifiedDataSerializable {
 
-    String name;
-
-    Data data;
-
-    ItemEventType eventType;
-
-    Address caller;
+    private String name;
+    private Data data;
+    private ItemEventType eventType;
+    private Address caller;
 
     public CollectionEvent() {
     }
@@ -42,6 +39,32 @@ public class CollectionEvent implements IdentifiedDataSerializable {
         this.data = data;
         this.eventType = eventType;
         this.caller = caller;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Data getData() {
+        return data;
+    }
+
+    public ItemEventType getEventType() {
+        return eventType;
+    }
+
+    public Address getCaller() {
+        return caller;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_EVENT;
     }
 
     @Override
@@ -61,13 +84,4 @@ public class CollectionEvent implements IdentifiedDataSerializable {
         data = in.readData();
     }
 
-    @Override
-    public int getFactoryId() {
-        return CollectionDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_EVENT;
-    }
 }

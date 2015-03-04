@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.core.ItemEventType;
@@ -39,13 +40,10 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         response = false;
-        final CollectionItem item = getOrCreateContainer().remove(value);
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        CollectionItem item = collectionContainer.remove(value);
         if (item != null) {
             response = true;
             itemId = item.getItemId();

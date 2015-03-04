@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,7 +44,8 @@ public class ContainsOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().contains(dataList);
+        QueueContainer queueContainer = getOrCreateContainer();
+        response = queueContainer.contains(dataList);
     }
 
     @Override

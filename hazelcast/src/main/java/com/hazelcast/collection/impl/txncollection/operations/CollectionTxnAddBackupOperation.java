@@ -16,8 +16,9 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,7 +28,6 @@ import java.io.IOException;
 public class CollectionTxnAddBackupOperation extends CollectionOperation implements BackupOperation {
 
     private long itemId;
-
     private Data value;
 
     public CollectionTxnAddBackupOperation() {
@@ -40,22 +40,15 @@ public class CollectionTxnAddBackupOperation extends CollectionOperation impleme
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_TXN_ADD_BACKUP;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        getOrCreateContainer().commitAddBackup(itemId, value);
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.commitAddBackup(itemId, value);
         response = true;
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_TXN_ADD_BACKUP;
     }
 
     @Override

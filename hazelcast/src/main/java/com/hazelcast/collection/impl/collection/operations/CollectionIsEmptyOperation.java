@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
 
 public class CollectionIsEmptyOperation extends CollectionOperation {
 
@@ -29,16 +29,9 @@ public class CollectionIsEmptyOperation extends CollectionOperation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().size() == 0;
-    }
-
-    @Override
-    public void afterRun() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        response = collectionContainer.size() == 0;
     }
 
     @Override

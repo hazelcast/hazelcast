@@ -81,6 +81,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int COLLECTION_REMOVE_LISTENER = 23;
     public static final int COLLECTION_IS_EMPTY = 24;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
@@ -170,7 +171,6 @@ public class CollectionPortableHook implements PortableHook {
                 return new ListSubRequest();
             }
         };
-
 
         constructors[TXN_LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {

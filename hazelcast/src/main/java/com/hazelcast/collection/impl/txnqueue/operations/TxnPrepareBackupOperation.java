@@ -46,8 +46,13 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        response = container.txnEnsureReserve(itemId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        response = queueContainer.txnEnsureReserve(itemId);
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_PREPARE_BACKUP;
     }
 
     @Override
@@ -65,10 +70,4 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
         pollOperation = in.readBoolean();
         transactionId = in.readUTF();
     }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_PREPARE_BACKUP;
-    }
-
 }

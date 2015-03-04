@@ -17,7 +17,8 @@
 package com.hazelcast.collection.impl.list.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,7 +27,6 @@ import java.io.IOException;
 public class ListIndexOfOperation extends CollectionOperation {
 
     private boolean last;
-
     private Data value;
 
     public ListIndexOfOperation() {
@@ -38,18 +38,12 @@ public class ListIndexOfOperation extends CollectionOperation {
         this.value = value;
     }
 
-      @Override
-    public void beforeRun() throws Exception {
-    }
-
     @Override
     public void run() throws Exception {
-        response = getOrCreateListContainer().indexOf(last, value);
+        ListContainer listContainer = getOrCreateListContainer();
+        response = listContainer.indexOf(last, value);
     }
 
-    @Override
-    public void afterRun() throws Exception {
-    }
     @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_INDEX_OF;

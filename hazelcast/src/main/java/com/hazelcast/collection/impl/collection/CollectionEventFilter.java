@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public class CollectionEventFilter implements EventFilter, IdentifiedDataSerializable {
 
-    boolean includeValue;
+    private boolean includeValue;
 
     public CollectionEventFilter() {
     }
@@ -41,27 +41,6 @@ public class CollectionEventFilter implements EventFilter, IdentifiedDataSeriali
     public boolean eval(Object arg) {
         return false;
     }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(includeValue);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        includeValue = in.readBoolean();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CollectionDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_EVENT_FILTER;
-    }
-
 
     @Override
     public boolean equals(Object o) {
@@ -81,5 +60,25 @@ public class CollectionEventFilter implements EventFilter, IdentifiedDataSeriali
     @Override
     public int hashCode() {
         return (includeValue ? 1 : 0);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_EVENT_FILTER;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(includeValue);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        includeValue = in.readBoolean();
     }
 }

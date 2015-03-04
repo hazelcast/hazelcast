@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -27,7 +27,7 @@ import java.util.Set;
 
 public class CollectionClearBackupOperation extends CollectionOperation implements BackupOperation {
 
-    Set<Long> itemIdSet;
+    private Set<Long> itemIdSet;
 
     public CollectionClearBackupOperation() {
     }
@@ -38,21 +38,14 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
     }
 
     @Override
+    public void run() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.clearBackup(itemIdSet);
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_CLEAR_BACKUP;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void run() throws Exception {
-        getOrCreateContainer().clearBackup(itemIdSet);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

@@ -29,7 +29,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOper
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
-import com.hazelcast.collection.impl.collection.operations.CollectionTransactionRollbackOperation;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddOperation;
 import com.hazelcast.collection.impl.list.operations.ListGetOperation;
@@ -60,7 +60,6 @@ import com.hazelcast.util.ConstructorFunction;
 public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -20);
-
 
     public static final int COLLECTION_ADD = 1;
     public static final int COLLECTION_ADD_BACKUP = 2;
@@ -263,8 +262,6 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new CollectionTxnRemoveBackupOperation();
             }
         };
-
-
         constructors[COLLECTION_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionPrepareOperation();

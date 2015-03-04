@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -42,7 +43,8 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
 
     @Override
     public void run() {
-        dataMap = getOrCreateContainer().clear();
+        QueueContainer queueContainer = getOrCreateContainer();
+        dataMap = queueContainer.clear();
         response = true;
     }
 

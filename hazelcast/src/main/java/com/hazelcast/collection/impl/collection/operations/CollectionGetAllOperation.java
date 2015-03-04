@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;
 import java.util.Collection;
@@ -32,21 +32,14 @@ public class CollectionGetAllOperation extends CollectionOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_GET_ALL;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        final Collection<Data> all = getOrCreateContainer().getAll();
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        final Collection<Data> all = collectionContainer.getAll();
         response = new SerializableCollection(all);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_GET_ALL;
     }
 }

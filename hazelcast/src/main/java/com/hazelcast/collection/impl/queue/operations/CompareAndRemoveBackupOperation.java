@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
@@ -42,7 +43,8 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().compareAndRemoveBackup(keySet);
+        QueueContainer queueContainer = getOrCreateContainer();
+        queueContainer.compareAndRemoveBackup(keySet);
         response = true;
     }
 
@@ -69,5 +71,4 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
             keySet.add(in.readLong());
         }
     }
-
 }

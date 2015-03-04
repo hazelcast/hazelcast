@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,7 +27,6 @@ import java.io.IOException;
 public class CollectionRollbackOperation extends CollectionBackupAwareOperation {
 
     private long itemId;
-
     private boolean removeOperation;
 
     public CollectionRollbackOperation() {
@@ -49,25 +49,18 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_ROLLBACK;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
         if (removeOperation) {
-            getOrCreateContainer().rollbackRemove(itemId);
+            collectionContainer.rollbackRemove(itemId);
         } else {
-            getOrCreateContainer().rollbackAdd(itemId);
+            collectionContainer.rollbackAdd(itemId);
         }
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_ROLLBACK;
     }
 
     @Override

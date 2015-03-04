@@ -23,10 +23,8 @@ import java.io.IOException;
 
 public class TxCollectionItem extends CollectionItem {
 
-    String transactionId;
-
-    boolean removeOperation;
-
+    private String transactionId;
+    private boolean removeOperation;
 
     public TxCollectionItem() {
     }

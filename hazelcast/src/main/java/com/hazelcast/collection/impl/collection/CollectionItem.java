@@ -26,9 +26,7 @@ import java.io.IOException;
 public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDataSerializable {
 
     protected long itemId;
-
     protected Data value;
-
     protected final long creationTime;
 
     public CollectionItem() {

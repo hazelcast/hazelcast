@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,22 +39,14 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
     }
 
     @Override
+    public void run() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.addAllBackup(valueMap);
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_ADD_ALL_BACKUP;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-
-    }
-
-    @Override
-    public void run() throws Exception {
-        getOrCreateContainer().addAllBackup(valueMap);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

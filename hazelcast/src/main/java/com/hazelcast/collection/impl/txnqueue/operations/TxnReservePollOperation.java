@@ -47,25 +47,37 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        response = container.txnPollReserve(reservedOfferId, transactionId);
+        QueueContainer createContainer = getOrCreateContainer();
+        response = createContainer.txnPollReserve(reservedOfferId, transactionId);
     }
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        QueueContainer container = getOrCreateContainer();
-        return container.getPollWaitNotifyKey();
+        QueueContainer queueContainer = getOrCreateContainer();
+        return queueContainer.getPollWaitNotifyKey();
     }
 
     @Override
     public boolean shouldWait() {
-        final QueueContainer container = getOrCreateContainer();
-        return getWaitTimeout() != 0 && (container.size() + container.txMapSize()) == 0;
+        final QueueContainer queueContainer = getOrCreateContainer();
+        return getWaitTimeout() != 0 && (queueContainer.size() + queueContainer.txMapSize()) == 0;
     }
 
     @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return response != null;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        final QueueItem item = (QueueItem) response;
+        long itemId = item.getItemId();
+        return new TxnReservePollBackupOperation(name, itemId, transactionId);
     }
 
     @Override
@@ -87,15 +99,4 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
         transactionId = in.readUTF();
     }
 
-    @Override
-    public boolean shouldBackup() {
-        return response != null;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        final QueueItem item = (QueueItem) response;
-        long itemId = item.getItemId();
-        return new TxnReservePollBackupOperation(name, itemId, transactionId);
-    }
 }

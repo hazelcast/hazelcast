@@ -49,6 +49,11 @@ public abstract class CollectionReplicationOperation extends AbstractOperation i
     }
 
     @Override
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
@@ -57,10 +62,4 @@ public abstract class CollectionReplicationOperation extends AbstractOperation i
             container.writeData(out);
         }
     }
-
-    @Override
-    public int getFactoryId() {
-        return CollectionDataSerializerHook.F_ID;
-    }
-
 }

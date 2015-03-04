@@ -48,8 +48,8 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        response = container.txnEnsureReserve(itemId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        response = queueContainer.txnEnsureReserve(itemId);
     }
 
     @Override
@@ -60,6 +60,11 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     @Override
     public Operation getBackupOperation() {
         return new TxnPrepareBackupOperation(name, itemId, pollOperation, transactionId);
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_PREPARE;
     }
 
     @Override
@@ -76,10 +81,5 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
         itemId = in.readLong();
         pollOperation = in.readBoolean();
         transactionId = in.readUTF();
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_PREPARE;
     }
 }

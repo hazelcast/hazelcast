@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,7 +27,7 @@ import java.util.Set;
 
 public class CollectionContainsOperation extends CollectionOperation {
 
-    Set<Data> valueSet;
+    private Set<Data> valueSet;
 
     public CollectionContainsOperation() {
     }
@@ -38,21 +38,14 @@ public class CollectionContainsOperation extends CollectionOperation {
     }
 
     @Override
+    public void run() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        response = collectionContainer.contains(valueSet);
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_CONTAINS;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void run() throws Exception {
-        response = getOrCreateContainer().contains(valueSet);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

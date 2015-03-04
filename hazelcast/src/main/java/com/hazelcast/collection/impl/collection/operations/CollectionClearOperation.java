@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
@@ -44,17 +45,9 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_CLEAR;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        itemIdMap = getOrCreateContainer().clear();
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        itemIdMap = collectionContainer.clear();
     }
 
     @Override
@@ -62,5 +55,10 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
         for (Data value : itemIdMap.values()) {
             publishEvent(ItemEventType.REMOVED, value);
         }
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_CLEAR;
     }
 }

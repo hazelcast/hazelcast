@@ -33,7 +33,6 @@ import java.io.IOException;
 public class TxnReserveOfferOperation extends QueueBackupAwareOperation implements WaitSupport {
 
     private int txSize;
-
     private String transactionId;
 
     public TxnReserveOfferOperation() {
@@ -47,27 +46,37 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity(txSize + 1)) {
-            response = container.txnOfferReserve(transactionId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        if (queueContainer.hasEnoughCapacity(txSize + 1)) {
+            response = queueContainer.txnOfferReserve(transactionId);
         }
     }
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        QueueContainer container = getOrCreateContainer();
-        return container.getOfferWaitNotifyKey();
+        QueueContainer queueContainer = getOrCreateContainer();
+        return queueContainer.getOfferWaitNotifyKey();
     }
 
     @Override
     public boolean shouldWait() {
-        QueueContainer container = getOrCreateContainer();
-        return getWaitTimeout() != 0 && !container.hasEnoughCapacity(txSize + 1);
+        QueueContainer queueContainer = getOrCreateContainer();
+        return getWaitTimeout() != 0 && !queueContainer.hasEnoughCapacity(txSize + 1);
     }
 
     @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return response != null;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new TxnReserveOfferBackupOperation(name, (Long) response, transactionId);
     }
 
     @Override
@@ -87,15 +96,5 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
         super.readInternal(in);
         txSize = in.readInt();
         transactionId = in.readUTF();
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return response != null;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new TxnReserveOfferBackupOperation(name, (Long) response, transactionId);
     }
 }

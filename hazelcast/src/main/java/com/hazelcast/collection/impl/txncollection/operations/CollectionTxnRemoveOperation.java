@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
@@ -29,7 +30,6 @@ import java.io.IOException;
 public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation {
 
     private long itemId;
-
     private transient CollectionItem item;
 
     public CollectionTxnRemoveOperation() {
@@ -51,24 +51,21 @@ public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_TXN_REMOVE;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        item = getOrCreateContainer().commitRemove(itemId);
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        item = collectionContainer.commitRemove(itemId);
     }
 
     @Override
     public void afterRun() throws Exception {
         if (item != null) {
-            publishEvent(ItemEventType.REMOVED, (Data) item.getValue());
+            publishEvent(ItemEventType.REMOVED, item.getValue());
         }
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_TXN_REMOVE;
     }
 
     @Override

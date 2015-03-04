@@ -50,9 +50,9 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     @Override
     public void run() {
-        QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity()) {
-            itemId = container.offer(data);
+        QueueContainer queueContainer = getOrCreateContainer();
+        if (queueContainer.hasEnoughCapacity()) {
+            itemId = queueContainer.offer(data);
             response = true;
         } else {
             response = false;
