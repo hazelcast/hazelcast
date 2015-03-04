@@ -33,7 +33,7 @@ import java.util.Collection;
 public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstractTest {
 
     @Test
-    public void testPurging() {
+    public void testPurging_Invocation() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "3");
@@ -60,10 +60,33 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         assertEntryProcessorOperation(firstLog);
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
 
-        Collection<SlowOperationLog.Invocation> invocations = firstLog.getInvocations();
+        Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
         assertEqualsStringFormat("Expected %d invocations, but was %d", 2, invocations.size());
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertDurationBetween(invocation.getDurationNanos(), 1000, 3500);
+            assertInvocationDurationBetween(invocation, 1000, 3500);
         }
+    }
+
+    @Test
+    public void testPurging_SlowOperationLog() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "2");
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
+
+        HazelcastInstance instance = getSingleNodeCluster(config);
+        IMap<String, String> map = getMapWithSingleElement(instance);
+
+        // all of these entry processors are executed after each other, not in parallel
+        // so none of them will survive the purging
+        for (int i = 0; i < 2; i++) {
+            map.executeOnEntries(new SlowEntryProcessor(2));
+        }
+        sleepSeconds(2);
+
+        getInternalOperationService(instance).shutdown();
+
+        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
+        assertNumberOfSlowOperationLogs(logs, 0);
     }
 }

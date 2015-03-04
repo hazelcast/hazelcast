@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
@@ -178,8 +179,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public Collection<SlowOperationLog> getSlowOperationLogs() {
-        return slowOperationDetector.getSlowOperationLogs();
+    public Collection<JsonSerializable> getSlowOperations() {
+        return slowOperationDetector.getSlowOperations();
     }
 
     @Override

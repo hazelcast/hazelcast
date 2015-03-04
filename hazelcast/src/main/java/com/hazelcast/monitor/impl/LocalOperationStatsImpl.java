@@ -19,9 +19,9 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.Node;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.spi.impl.InternalOperationService;
-import com.hazelcast.spi.impl.SlowOperationLog;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -34,16 +34,17 @@ import static com.hazelcast.util.JsonUtil.getLong;
 public class LocalOperationStatsImpl implements LocalOperationStats {
 
     private long creationTime;
-    private Collection<SlowOperationLog> logs;
+    private Collection<JsonSerializable> slowOperations;
     private long maxVisibleSlowOperationCount;
 
     public LocalOperationStatsImpl() {
-        this.logs = new ConcurrentLinkedQueue<SlowOperationLog>();
+        this.slowOperations = new ConcurrentLinkedQueue<JsonSerializable>();
         this.maxVisibleSlowOperationCount = Long.MAX_VALUE;
     }
 
     public LocalOperationStatsImpl(Node node) {
-        this.logs = ((InternalOperationService) node.nodeEngine.getOperationService()).getSlowOperationLogs();
+        InternalOperationService operationService = (InternalOperationService) node.nodeEngine.getOperationService();
+        this.slowOperations = operationService.getSlowOperations();
         this.maxVisibleSlowOperationCount = node.groupProperties.MC_MAX_SLOW_OPERATION_COUNT.getInteger();
     }
 
@@ -57,14 +58,14 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
         JsonObject root = new JsonObject();
         root.add("creationTime", creationTime);
         root.add("maxVisibleSlowOperationCount", maxVisibleSlowOperationCount);
-        JsonArray slowOperationLogs = new JsonArray();
+        JsonArray slowOperationArray = new JsonArray();
         int logCount = 0;
-        for (SlowOperationLog log : logs) {
+        for (JsonSerializable slowOperation : slowOperations) {
             if (logCount++ < maxVisibleSlowOperationCount) {
-                slowOperationLogs.add(log.toJson());
+                slowOperationArray.add(slowOperation.toJson());
             }
         }
-        root.add("slowOperationLogs", slowOperationLogs);
+        root.add("slowOperations", slowOperationArray);
         return root;
     }
 
@@ -89,17 +90,17 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
         if (maxVisibleSlowOperationCount != that.maxVisibleSlowOperationCount) {
             return false;
         }
-        if (logs != null ? !isEqualLogs(that.logs) : that.logs != null) {
+        if (slowOperations != null ? !isEqualSlowOperations(that.slowOperations) : that.slowOperations != null) {
             return false;
         }
         return true;
     }
 
-    private boolean isEqualLogs(Collection<SlowOperationLog> thatLogs) {
-        if (logs.size() != thatLogs.size()) {
+    private boolean isEqualSlowOperations(Collection<JsonSerializable> thatSlowOperations) {
+        if (slowOperations.size() != thatSlowOperations.size()) {
             return false;
         }
-        if (!logs.containsAll(thatLogs)) {
+        if (!slowOperations.containsAll(thatSlowOperations)) {
             return false;
         }
         return true;
@@ -107,7 +108,7 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
 
     @Override
     public int hashCode() {
-        int result = logs != null ? logs.hashCode() : 0;
+        int result = slowOperations != null ? slowOperations.hashCode() : 0;
         result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         result = 31 * result + (int) (maxVisibleSlowOperationCount ^ (maxVisibleSlowOperationCount >>> 32));
         return result;
@@ -117,7 +118,7 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     public String toString() {
         return "LocalOperationStatsImpl{"
                 + "creationTime=" + creationTime
-                + ", logs=" + logs
+                + ", slowOperations=" + slowOperations
                 + ", maxVisibleSlowOperationCount=" + maxVisibleSlowOperationCount
                 + '}';
     }

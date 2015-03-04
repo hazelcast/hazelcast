@@ -33,6 +33,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -81,16 +82,26 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static void waitForAllOperationsToComplete(final HazelcastInstance instance) {
         sleepSeconds(1);
+        final InternalOperationService operationService = getInternalOperationService(instance);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(((BasicOperationService) getInternalOperationService(instance)).getRunningOperationsCount() == 0);
+                assertTrue(operationService.getRunningOperationsCount() == 0);
             }
         });
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
-        return getInternalOperationService(instance).getSlowOperationLogs();
+        InternalOperationService operationService = getInternalOperationService(instance);
+        SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
+        Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
+
+        return slowOperationLogs.values();
+    }
+
+    static Collection<SlowOperationLog.Invocation> getInvocations(SlowOperationLog log) {
+        Map<Integer, SlowOperationLog.Invocation> invocationMap = getFieldFromObject(log, "invocations");
+        return invocationMap.values();
     }
 
     static InternalOperationService getInternalOperationService(HazelcastInstance instance) {
@@ -102,7 +113,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static JsonArray getSlowOperationLogsJsonArray(HazelcastInstance instance) {
-        return getOperationStats(instance).get("slowOperationLogs").asArray();
+        return getOperationStats(instance).get("slowOperations").asArray();
     }
 
     private static JsonObject getOperationStats(HazelcastInstance instance) {
@@ -123,23 +134,25 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void assertEntryProcessorOperation(SlowOperationLog log) {
-        assertEqualsStringFormat("Expected operation %s, but was %s", "PartitionWideEntryWithPredicateOperation{}",
-                log.getOperation());
+        String operation = getFieldFromObject(log, "operation");
+        assertEqualsStringFormat("Expected operation %s, but was %s", "PartitionWideEntryWithPredicateOperation{}", operation);
     }
 
     static void assertOperationContainsClassName(SlowOperationLog log, String className) {
-        assertTrue(format("Expected operation to contain '%s'%n%s", className, log.getOperation()),
-                log.getOperation().contains("$" + className));
+        String operation = getFieldFromObject(log, "operation");
+        assertTrue(format("Expected operation to contain '%s'%n%s", className, operation), operation.contains("$" + className));
     }
 
     static void assertStackTraceContainsClassName(SlowOperationLog log, String className) {
-        assertTrue(format("Expected stacktrace to contain className '%s'%n%s", className, log.getStackTrace()),
-                log.getStackTrace().contains("$" + className + "."));
+        String stackTrace = log.getStackTrace();
+        assertTrue(format("Expected stacktrace to contain className '%s'%n%s", className, stackTrace),
+                stackTrace.contains("$" + className + "."));
     }
 
     static void assertStackTraceNotContainsClassName(SlowOperationLog log, String className) {
-        assertFalse(format("Expected stacktrace to not contain className '%s'%n%s", className, log.getStackTrace()),
-                log.getStackTrace().contains(className));
+        String stackTrace = log.getStackTrace();
+        assertFalse(format("Expected stacktrace to not contain className '%s'%n%s", className, stackTrace),
+                stackTrace.contains(className));
     }
 
     static void assertJSONContainsClassName(JsonObject jsonObject, String className) {
@@ -155,9 +168,22 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
                 firstClassFound ^ secondClassFound);
     }
 
-    static void assertDurationBetween(long duration, int min, int max) {
+    static void assertInvocationDurationBetween(SlowOperationLog.Invocation invocation, int min, int max) {
+        Integer duration = getFieldFromObject(invocation, "durationMs");
+
         assertTrue(format("Duration of invocation should be >= %d, but was %d", min, duration), duration >= min);
         assertTrue(format("Duration of invocation should be <= %d, but was %d", max, duration), duration <= max);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <E> E getFieldFromObject(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return (E) field.get(object);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static class SlowEntryProcessor implements EntryProcessor<String, String> {

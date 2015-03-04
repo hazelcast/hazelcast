@@ -20,17 +20,19 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 
 /**
- * Monitors the operation threads to find and collect data of long running operations.
+ * Monitors {@link OperationRunner} instances to find and collect data of long running operations.
  */
 final class SlowOperationDetector {
 
@@ -57,7 +59,7 @@ final class SlowOperationDetector {
 
     private volatile boolean running = true;
 
-    public SlowOperationDetector(OperationRunner[] genericOperationRunners, OperationRunner[] partitionOperationRunners,
+    SlowOperationDetector(OperationRunner[] genericOperationRunners, OperationRunner[] partitionOperationRunners,
                                  GroupProperties groupProperties, HazelcastThreadGroup hazelcastThreadGroup) {
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
@@ -70,8 +72,11 @@ final class SlowOperationDetector {
         logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
 
         slowOperationDetectorThread = new SlowOperationDetectorThread(hazelcastThreadGroup);
-
-        slowOperationDetectorThread.start();
+        if (groupProperties.SLOW_OPERATION_DETECTOR_ENABLED.getBoolean()) {
+            slowOperationDetectorThread.start();
+        } else {
+            LOGGER.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
+        }
     }
 
     void shutdown() {
@@ -83,8 +88,9 @@ final class SlowOperationDetector {
         }
     }
 
-    Collection<SlowOperationLog> getSlowOperationLogs() {
-        return slowOperationLogs.values();
+    @SuppressWarnings("unchecked")
+    Collection<JsonSerializable> getSlowOperations() {
+        return ((Map) slowOperationLogs).values();
     }
 
     private CurrentOperationData[] initCurrentOperationData(OperationRunner[] operationRunners) {
@@ -104,15 +110,9 @@ final class SlowOperationDetector {
         return TimeUnit.SECONDS.toNanos(groupProperty.getInteger());
     }
 
-    private static class CurrentOperationData {
-        int operationHashCode;
-        long startNanos;
-        SlowOperationLog.Invocation invocation;
-    }
+    private final class SlowOperationDetectorThread extends Thread {
 
-    private class SlowOperationDetectorThread extends Thread {
-
-        public SlowOperationDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
+        private SlowOperationDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
             super(hazelcastThreadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
         }
 
@@ -162,11 +162,9 @@ final class SlowOperationDetector {
                 return;
             }
 
-            SlowOperationLog.Invocation invocation = operationData.invocation;
-            if (invocation != null) {
+            if (operationData.invocation != null) {
                 // update existing invocation to avoid creation of stack trace
-                invocation.durationNanos = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-                invocation.lastAccessNanos = nowNanos;
+                operationData.invocation.update(nowNanos, (int) TimeUnit.NANOSECONDS.toMillis(durationNanos));
                 return;
             }
 
@@ -184,7 +182,7 @@ final class SlowOperationDetector {
                 prefix = "\n";
             }
 
-            final String stackTraceString = stackTraceStringBuilder.toString();
+            String stackTraceString = stackTraceStringBuilder.toString();
             stackTraceStringBuilder.setLength(0);
 
             Integer hashCode = stackTraceString.hashCode();
@@ -200,7 +198,7 @@ final class SlowOperationDetector {
         }
 
         private void logSlowOperation(OperationRunner operationRunner, SlowOperationLog log) {
-            // log a warning and print the full stack trace each 100 invocations
+            // log a warning and print the full stack trace each FULL_LOG_FREQUENCY invocations
             Object operation = operationRunner.currentTask();
             int totalInvocations = log.getTotalInvocations();
             if (totalInvocations == 1) {
@@ -220,8 +218,7 @@ final class SlowOperationDetector {
                 if (!running) {
                     return false;
                 }
-                log.purgeInvocations(nowNanos, logRetentionNanos);
-                if (log.isEmpty()) {
+                if (log.purgeInvocations(nowNanos, logRetentionNanos)) {
                     slowOperationLogs.remove(log.getStackTrace().hashCode());
                 }
             }
@@ -235,5 +232,11 @@ final class SlowOperationDetector {
                 EmptyStatement.ignore(ignored);
             }
         }
+    }
+
+    private static class CurrentOperationData {
+        private int operationHashCode;
+        private long startNanos;
+        private SlowOperationLog.Invocation invocation;
     }
 }

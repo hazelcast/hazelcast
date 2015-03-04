@@ -20,10 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.JsonSerializable;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -34,23 +31,17 @@ import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
- * Data structure for slow operation logs.
+ * Internal data structure for {@link SlowOperationDetector}.
  * <p/>
- * A single instance of this class is created by {@link SlowOperationDetector} and shared with
- * {@link com.hazelcast.monitor.impl.LocalOperationStatsImpl} to deliver a JSON representation for the Management Center.
+ * A collection of this class is created by {@link SlowOperationDetector} and shared as <code>Collection<JsonSerializable></code>
+ * with {@link com.hazelcast.monitor.impl.LocalOperationStatsImpl} to deliver a JSON representation for the Management Center.
  * <p/>
- * Data is exclusively written by {@link SlowOperationDetector} and just read by other threads.
+ * All data is exclusively written by {@link SlowOperationDetector.SlowOperationDetectorThread} and maybe read by other threads.
+ * Only fields which are exposed via the {@link #toJson()} method need synchronization. All other fields are used single threaded.
  */
-public final class SlowOperationLog implements JsonSerializable {
-    private static final int SHORT_STACKTRACE_LENGTH = 200;
+final class SlowOperationLog implements JsonSerializable {
 
-    private static final ConstructorFunction<Integer, Invocation> INVOCATION_CONSTRUCTOR_FUNCTION
-            = new ConstructorFunction<Integer, Invocation>() {
-        @Override
-        public Invocation createNew(Integer arg) {
-            return new Invocation();
-        }
-    };
+    private static final int SHORT_STACKTRACE_LENGTH = 200;
 
     private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<Integer, Invocation>();
 
@@ -58,84 +49,68 @@ public final class SlowOperationLog implements JsonSerializable {
     private String operation;
     private String stackTrace;
 
-    // this field will be incremented by SlowOperationDetectorThread only (it can be read by multiple threads)
+    // this field will be incremented by single SlowOperationDetectorThread (it can be read by multiple threads)
     private volatile int totalInvocations;
 
-    // only accessed by a single SlowOperationDetectorThread, no need for synchronization
+    // only accessed by single SlowOperationDetectorThread, no need for synchronization
     private transient String shortStackTrace;
 
-    public SlowOperationLog(String stackTrace, Object operation) {
+    SlowOperationLog(String stackTrace, Object operation) {
         this.operation = operation.toString();
         this.stackTrace = stackTrace;
         this.totalInvocations = 0;
+        if (stackTrace.length() <= SHORT_STACKTRACE_LENGTH) {
+            this.shortStackTrace = stackTrace;
+        } else {
+            this.shortStackTrace = stackTrace.substring(0, stackTrace.indexOf('\n', SHORT_STACKTRACE_LENGTH)) + "\n(...)";
+        }
     }
 
-    String getOperation() {
-        return operation;
+    SlowOperationLog(JsonObject json) {
+        fromJson(json);
     }
 
     String getStackTrace() {
+        // method is used by a single SlowOperationDetectorThread only
         return stackTrace;
     }
 
     String getShortStackTrace() {
-        if (shortStackTrace == null) {
-            shortStackTrace = stackTrace.substring(0, stackTrace.indexOf('\n', SHORT_STACKTRACE_LENGTH)) + "\n(...)";
-        }
+        // method is used by a single SlowOperationDetectorThread only
         return shortStackTrace;
     }
 
     int getTotalInvocations() {
+        // method is used by a single SlowOperationDetectorThread only
         return totalInvocations;
     }
 
-    Collection<Invocation> getInvocations() {
-        return invocations.values();
-    }
-
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT", justification =
-            "method can be accessed by a single SlowOperationDetectorThread only")
-    Invocation getOrCreateInvocation(int operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
+            "method is used by a single SlowOperationDetectorThread only")
+    Invocation getOrCreateInvocation(Integer operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
         totalInvocations++;
 
-        Invocation invocation = ConcurrencyUtil.getOrPutIfAbsent(invocations, operationHashCode, INVOCATION_CONSTRUCTOR_FUNCTION);
-        invocation.id = operationHashCode;
-        invocation.startedAt = nowMillis - invocation.durationNanos;
-        invocation.durationNanos = TimeUnit.NANOSECONDS.toMillis(lastDurationNanos);
-        invocation.lastAccessNanos = nowNanos;
+        Invocation candidate = invocations.get(operationHashCode);
+        if (candidate != null) {
+            return candidate;
+        }
 
-        return invocation;
+        int durationMs = (int) TimeUnit.NANOSECONDS.toMillis(lastDurationNanos);
+        long startedAt = nowMillis - durationMs;
+        candidate = new Invocation(operationHashCode, startedAt, nowNanos, durationMs);
+        invocations.put(operationHashCode, candidate);
+
+        return candidate;
     }
 
-    void purgeInvocations(long nowNanos, long slowOperationLogLifetimeNanos) {
+    boolean purgeInvocations(long nowNanos, long slowOperationLogLifetimeNanos) {
+        // method is used by a single SlowOperationDetectorThread only
         for (Map.Entry<Integer, Invocation> invocationEntry : invocations.entrySet()) {
             if (nowNanos - invocationEntry.getValue().lastAccessNanos > slowOperationLogLifetimeNanos) {
                 invocations.remove(invocationEntry.getKey());
             }
         }
-    }
-
-    boolean isEmpty() {
         return invocations.isEmpty();
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("SlowOperationLog{operation='").append(operation)
-          .append("', stackTrace='").append(stackTrace)
-          .append("', totalInvocations=").append(totalInvocations)
-          .append(", invocations='");
-
-        String prefix = "";
-        for (Invocation log : invocations.values()) {
-            sb.append(prefix).append(log.toString());
-            prefix = ", ";
-        }
-
-        sb.append("'}");
-        return sb.toString();
     }
 
     @Override
@@ -146,7 +121,6 @@ public final class SlowOperationLog implements JsonSerializable {
         root.add("totalInvocations", totalInvocations);
         JsonArray invocationArray = new JsonArray();
         for (Map.Entry<Integer, Invocation> invocation : invocations.entrySet()) {
-            invocation.getValue().id = invocation.getKey();
             JsonObject json = invocation.getValue().toJson();
             if (json != null) {
                 invocationArray.add(json);
@@ -164,52 +138,48 @@ public final class SlowOperationLog implements JsonSerializable {
 
         JsonArray invocationArray = getArray(json, "invocations");
         for (JsonValue jsonValue : invocationArray) {
-            Invocation invocation = new Invocation();
-            invocation.fromJson(jsonValue.asObject());
+            Invocation invocation = new Invocation(jsonValue.asObject());
             invocations.put(invocation.id, invocation);
         }
     }
 
-    static final class Invocation implements JsonSerializable {
-        int id;
-        long startedAt;
-        long durationNanos;
-        volatile long lastAccessNanos;
+    static final class Invocation {
 
-        public long getDurationNanos() {
-            return durationNanos;
+        private final int id;
+        private final long startedAt;
+
+        // field is written by a single SlowOperationDetectorThread only (it can be read by multiple threads)
+        private volatile int durationMs;
+
+        // field is used by a single SlowOperationDetectorThread only
+        private transient long lastAccessNanos;
+
+        private Invocation(int id, long startedAt, long lastAccessNanos, int durationMs) {
+            this.id = id;
+            this.startedAt = startedAt;
+            this.durationMs = durationMs;
+            this.lastAccessNanos = lastAccessNanos;
         }
 
-        @Override
-        public String toString() {
-            // NOP to read lastAccess to update local thread values
-            if (lastAccessNanos < 0) {
-                assert true;
-            }
-
-            return "Invocation{" + "id=" + id + ", startedAt=" + startedAt + ", durationNanos=" + durationNanos + '}';
+        private Invocation(JsonObject json) {
+            id = getInt(json, "id");
+            startedAt = getLong(json, "startedAt");
+            durationMs = getInt(json, "durationMs");
+            lastAccessNanos = System.nanoTime();
         }
 
-        @Override
-        public JsonObject toJson() {
-            // NOP to read lastAccess to update local thread values
-            if (lastAccessNanos < 0) {
-                assert true;
-            }
+        void update(long lastAccessNanos, int durationMs) {
+            // method is used by a single SlowOperationDetectorThread only
+            this.durationMs = durationMs;
+            this.lastAccessNanos = lastAccessNanos;
+        }
 
+        private JsonObject toJson() {
             JsonObject root = new JsonObject();
             root.add("id", id);
             root.add("startedAt", startedAt);
-            root.add("duration", durationNanos);
+            root.add("durationMs", durationMs);
             return root;
-        }
-
-        @Override
-        public void fromJson(JsonObject json) {
-            id = getInt(json, "id");
-            startedAt = getLong(json, "startedAt");
-            durationNanos = getLong(json, "duration");
-            lastAccessNanos = System.nanoTime();
         }
     }
 }
