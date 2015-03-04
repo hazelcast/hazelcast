@@ -5,6 +5,7 @@
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
 |[Chapter 1 - Preface](#preface)||Added as a new chapter as the front matter of this manual.|
+|[Chapter 2 - What's New in Hazelcast 3.4](#what-s-new-in-hazelcast-3-4)|[Upgrading from 3.x](#upgrading-from-3-x)|Added as a new section.|
 |[Chapter 4 - Overview](#overview)||Separated from [Getting Started](#getting-started) as a new chapter.|
 ||[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 5 - Hazelcast Clusters](#hazelcast-clusters)||Added as a new chapter to explain the Hazelcast clusters and their features.|
