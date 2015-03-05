@@ -54,6 +54,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 abstract class AbstractClientCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
+
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
@@ -114,7 +115,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
             final ClientInvocation clientInvocation =
                     new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                            request, partitionId);
+                                         request, partitionId);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -124,6 +125,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     public boolean isClosed() {
         return isClosed.get();
+    }
+
+    public boolean isDestroyed() {
+        return isDestroyed.get();
     }
 
     protected abstract void closeListeners();
@@ -169,9 +174,11 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
+    protected void submitLoadAllTask(final CacheLoadAllRequest request,
+                                     final CompletionListener completionListener) {
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
+        ClientExecutionServiceImpl executionService =
+                (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
         final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
         loadAllTasks.add(future);
