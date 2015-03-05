@@ -27,8 +27,10 @@ public class LocalMapStatsProvider {
     private static final int WAIT_PARTITION_TABLE_UPDATE_MILLIS = 100;
     private static final int RETRY_COUNT = 3;
 
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
-    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction = new ConstructorFunction<String, LocalMapStatsImpl>() {
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap
+            = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction
+            = new ConstructorFunction<String, LocalMapStatsImpl>() {
         public LocalMapStatsImpl createNew(String key) {
             return new LocalMapStatsImpl();
         }
@@ -73,8 +75,8 @@ public class LocalMapStatsProvider {
             if (owner.equals(thisAddress)) {
                 addOwnerPartitionStats(localMapStats, localMapOnDemandCalculatedStats, mapName, partitionId);
             } else {
-                addReplicaPartitionStats(localMapOnDemandCalculatedStats, mapName, partitionId, partition, partitionService, backupCount,
-                        thisAddress);
+                addReplicaPartitionStats(localMapOnDemandCalculatedStats, mapName, partitionId,
+                        partition, partitionService, backupCount, thisAddress);
             }
         }
 
@@ -87,7 +89,8 @@ public class LocalMapStatsProvider {
      * Calculates and adds owner partition stats.
      */
     private void addOwnerPartitionStats(LocalMapStatsImpl localMapStats,
-                                        LocalMapOnDemandCalculatedStats localMapOnDemandCalculatedStats, String mapName, int partitionId) {
+                                        LocalMapOnDemandCalculatedStats localMapOnDemandCalculatedStats,
+                                        String mapName, int partitionId) {
         final RecordStore recordStore = getRecordStoreOrNull(mapName, partitionId);
         if (!hasRecords(recordStore)) {
             return;
@@ -137,8 +140,9 @@ public class LocalMapStatsProvider {
     /**
      * Calculates and adds replica partition stats.
      */
-    private void addReplicaPartitionStats(LocalMapOnDemandCalculatedStats localMapOnDemandCalculatedStats, String mapName, int partitionId,
-                                          InternalPartition partition, InternalPartitionService partitionService, int backupCount,
+    private void addReplicaPartitionStats(LocalMapOnDemandCalculatedStats localMapOnDemandCalculatedStats,
+                                          String mapName, int partitionId, InternalPartition partition,
+                                          InternalPartitionService partitionService, int backupCount,
                                           Address thisAddress) {
         long heapCost = 0;
         long backupEntryCount = 0;
