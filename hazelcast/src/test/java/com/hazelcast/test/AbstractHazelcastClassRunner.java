@@ -38,10 +38,6 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
 
-/**
- * User: ahmetmircik
- * Date: 11/27/13
- */
 public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunner {
 
     protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE =
@@ -67,6 +63,12 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
         int g2 = rand.nextInt(255);
         int g3 = rand.nextInt(255);
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+    }
+
+    protected static final ThreadLocal<FrameworkMethod> FRAMEWORK_METHOD_THREAD_LOCAL = new ThreadLocal<FrameworkMethod>();
+
+    public static FrameworkMethod getThreadLocalFrameworkMethod(){
+        return FRAMEWORK_METHOD_THREAD_LOCAL.get();
     }
 
     /**
