@@ -845,6 +845,7 @@ public class ClientMapTest {
     public void testMapStatistics() throws Exception {
         String name = randomString();
         final IMap map = client.getMap(name);
+        final LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
 
         final int operationCount = 1000;
         for (int i = 0; i < operationCount; i++) {
@@ -852,8 +853,6 @@ public class ClientMapTest {
             map.get(i);
             map.remove(i);
         }
-
-        final LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
 
         assertEquals("put count", operationCount, localMapStats.getPutOperationCount());
         assertEquals("get count", operationCount, localMapStats.getGetOperationCount());

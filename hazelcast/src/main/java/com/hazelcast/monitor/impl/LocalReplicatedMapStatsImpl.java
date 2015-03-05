@@ -82,28 +82,10 @@ public class LocalReplicatedMapStatsImpl
     private volatile long maxRemoveLatency;
 
     private volatile long creationTime;
-    private long ownedEntryCount;
+    private volatile long ownedEntryCount;
 
     public LocalReplicatedMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
-    }
-
-    public LocalReplicatedMapStatsImpl(LocalReplicatedMapStatsImpl other) {
-        this.creationTime = other.creationTime;
-        this.lastAccessTime = other.lastAccessTime;
-        this.lastUpdateTime = other.lastUpdateTime;
-        this.numberOfOtherOperations = other.numberOfOtherOperations;
-        this.numberOfEvents = other.numberOfEvents;
-        this.numberOfReplicationEvents = other.numberOfReplicationEvents;
-        this.getCount = other.getCount;
-        this.putCount = other.putCount;
-        this.removeCount = other.removeCount;
-        this.totalGetLatencies = other.totalGetLatencies;
-        this.totalPutLatencies = other.totalPutLatencies;
-        this.totalRemoveLatencies = other.totalRemoveLatencies;
-        this.maxGetLatency = other.maxGetLatency;
-        this.maxPutLatency = other.maxPutLatency;
-        this.maxRemoveLatency = other.maxRemoveLatency;
     }
 
     @Override
@@ -131,23 +113,23 @@ public class LocalReplicatedMapStatsImpl
 
     @Override
     public void fromJson(JsonObject json) {
-        GET_COUNT_UPDATER.set(this, getLong(json, "getCount", -1L));
-        PUT_COUNT_UPDATER.set(this, getLong(json, "putCount", -1L));
-        REMOVE_COUNT_UPDATER.set(this, getLong(json, "removeCount", -1L));
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
-        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
-        NUMBER_OF_REPLICATION_EVENTS_UPDATER.set(this, getLong(json, "numberOfReplicationEvents", -1L));
-        LAST_ACCESS_TIME_UPDATER.set(this, getLong(json, "lastAccessTime", -1L));
-        LAST_UPDATE_TIME_UPDATER.set(this, getLong(json, "lastUpdateTime", -1L));
-        HITS_UPDATER.set(this, getLong(json, "hits", -1L));
+        getCount = getLong(json, "getCount", -1L);
+        putCount = getLong(json, "putCount", -1L);
+        removeCount = getLong(json, "removeCount", -1L);
+        numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
+        numberOfEvents = getLong(json, "numberOfEvents", -1L);
+        numberOfReplicationEvents = getLong(json, "numberOfReplicationEvents", -1L);
+        lastAccessTime = getLong(json, "lastAccessTime", -1L);
+        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
+        hits = getLong(json, "hits", -1L);
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
         creationTime = getLong(json, "creationTime", -1L);
-        TOTAL_GET_LATENCIES_UPDATER.set(this, getLong(json, "totalGetLatencies", -1L));
-        TOTAL_PUT_LATENCIES_UPDATER.set(this, getLong(json, "totalPutLatencies", -1L));
-        TOTAL_REMOVE_LATENCIES_UPDATER.set(this, getLong(json, "totalRemoveLatencies", -1L));
-        MAX_GET_LATENCY_UPDATER.set(this, getLong(json, "maxGetLatency", -1L));
-        MAX_PUT_LATENCY_UPDATER.set(this, getLong(json, "maxPutLatency", -1L));
-        MAX_REMOVE_LATENCY_UPDATER.set(this, getLong(json, "maxRemoveLatency", -1L));
+        totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
+        totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
+        totalRemoveLatencies = getLong(json, "totalRemoveLatencies", -1L);
+        maxGetLatency = getLong(json, "maxGetLatency", -1L);
+        maxPutLatency = getLong(json, "maxPutLatency", -1L);
+        maxRemoveLatency = getLong(json, "maxRemoveLatency", -1L);
     }
 
     @Override

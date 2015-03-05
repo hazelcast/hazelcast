@@ -124,7 +124,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     }
 
     public LocalReplicatedMapStats createReplicatedMapStats() {
-        LocalReplicatedMapStatsImpl stats = new LocalReplicatedMapStatsImpl(getReplicatedMapStats());
+        LocalReplicatedMapStatsImpl stats = getReplicatedMapStats();
         stats.setOwnedEntryCount(storage.size());
 
         List<ReplicatedRecord<K, V>> records = new ArrayList<ReplicatedRecord<K, V>>(storage.values());
