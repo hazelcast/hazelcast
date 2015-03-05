@@ -15,7 +15,6 @@ import org.junit.Ignore;
 @Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class AtomicReferenceBasicClientTest extends AtomicReferenceBasicTest {
 
     @Override

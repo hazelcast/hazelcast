@@ -42,7 +42,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 @Ignore
-@Ignore
 public class ClientManagerTest {
 
     //TODO fix these URL so that they work for both local and CI builds

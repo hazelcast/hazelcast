@@ -54,7 +54,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 @Ignore
-@Ignore
 public class ClientXaTest {
 
     static final Random random = new Random(System.currentTimeMillis());
