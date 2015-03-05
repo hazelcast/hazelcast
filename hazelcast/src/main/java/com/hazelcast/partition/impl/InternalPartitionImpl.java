@@ -111,6 +111,15 @@ class InternalPartitionImpl implements InternalPartition {
         return false;
     }
 
+    int getReplicaIndex(Address address) {
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            if (address.equals(getReplicaAddress(i))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     void reset() {
         addresses = new Address[MAX_REPLICA_COUNT];
         setMigrating(false);

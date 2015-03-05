@@ -34,6 +34,7 @@ import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -107,6 +108,11 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
         }
 
         if (currentVersion == 0) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Current replica version = 0, sending empty response for partition: "
+                        + getPartitionId() + ", replica: " + getReplicaIndex() + ", versions: "
+                        + Arrays.toString(replicaVersions));
+            }
             sendEmptyResponse();
             return false;
         }

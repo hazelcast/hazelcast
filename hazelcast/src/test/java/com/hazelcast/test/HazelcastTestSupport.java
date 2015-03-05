@@ -25,6 +25,7 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 
 import java.util.Collection;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -295,6 +297,16 @@ public abstract class HazelcastTestSupport {
         assertEquals(String.format(message, expected, actual), expected, actual);
     }
 
+
+    public static <E> void assertEqualsEventually(final Callable<E> task, final E value) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(value, task.call());
+            }
+        });
+    }
+
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
         if (factory != null) {
             throw new IllegalStateException("Node factory is already created!");
@@ -329,6 +341,31 @@ public abstract class HazelcastTestSupport {
             throw new RuntimeException(e);
         }
     }
+
+    public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return node.partitionService;
+    }
+
+     /**
+     * Gets a partition id owned by this particular member.
+      *
+     * @param hz
+     * @return
+     */
+     public static int getPartitionId(HazelcastInstance hz) {
+         warmUpPartitions(hz);
+         Node node = getNode(hz);
+
+         InternalPartitionService partitionService = getPartitionService(hz);
+         for (InternalPartition p : partitionService.getPartitions()) {
+             if (node.getThisAddress().equals(p.getOwnerOrNull())) {
+                 return p.getPartitionId();
+             }
+         }
+
+         throw new RuntimeException("No local partitions are found for hz: " + hz.getName());
+     }
 
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         return generateKeyInternal(instance, true);

@@ -26,7 +26,9 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.io.IOException;
+import java.util.Arrays;
 
 // runs locally...
 final class PromoteFromBackupOperation extends AbstractOperation
@@ -36,10 +38,47 @@ final class PromoteFromBackupOperation extends AbstractOperation
     public void run() throws Exception {
         logPromotingPartition();
         try {
+            setMissingReplicaVersions();
             PartitionMigrationEvent event = createPartitionMigrationEvent();
             sendToAllMigrationAwareServices(event);
         } finally {
             clearPartitionMigratingFlag();
+        }
+    }
+
+    private void setMissingReplicaVersions() {
+        InternalPartitionServiceImpl service = getService();
+        // InternalPartitionService.getPartitionReplicaVersions() returns internal version array
+        long[] versions = service.getPartitionReplicaVersions(getPartitionId());
+        // first non-zero version inside version array
+        long version = 0L;
+        // index of first non-zero version
+        int ix = -1;
+        for (int i = 0; i < versions.length; i++) {
+            if (versions[i] > 0) {
+                version = versions[i];
+                ix = i;
+                break;
+            }
+        }
+
+        ILogger logger = getLogger();
+        boolean loggable = ix > 0 && logger.isFinestEnabled();
+        String log = null;
+
+        if (loggable) {
+            log = "Setting missing replica versions for partition: " + getPartitionId()
+                    + " Changed from " + Arrays.toString(versions);
+        }
+
+        // set all zero versions to first non-zero
+        for (int i = 0; i < ix; i++) {
+            versions[i] = version;
+        }
+
+        if (loggable) {
+            log += " to " + Arrays.toString(versions);
+            logger.finest(log);
         }
     }
 

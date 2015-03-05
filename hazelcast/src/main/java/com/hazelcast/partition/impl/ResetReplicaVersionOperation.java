@@ -18,12 +18,14 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 // runs locally...
 final class ResetReplicaVersionOperation extends AbstractOperation
@@ -34,6 +36,10 @@ final class ResetReplicaVersionOperation extends AbstractOperation
         int partitionId = getPartitionId();
         InternalPartitionService partitionService = getService();
         long[] versions = partitionService.getPartitionReplicaVersions(partitionId);
+        // InternalPartitionService.getPartitionReplicaVersions() returns internal
+        // version array, we need to clone it here
+        versions = Arrays.copyOf(versions, InternalPartition.MAX_BACKUP_COUNT);
+
         // clear and set replica versions back to ensure backup replica does not have
         // version numbers of prior replicas
         partitionService.clearPartitionReplicaVersions(partitionId);

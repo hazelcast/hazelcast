@@ -84,6 +84,11 @@ public class ServiceConfig {
         return this;
     }
 
+    public ServiceConfig addProperty(String propertyName, String value) {
+        properties.setProperty(propertyName, value);
+        return this;
+    }
+
     public ServiceConfig setConfigObject(Object configObject) {
         this.configObject = configObject;
         return this;

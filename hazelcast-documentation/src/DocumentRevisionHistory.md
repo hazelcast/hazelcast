@@ -5,6 +5,7 @@
 |Chapter|Section|Description|
 |:-------|:-------|:-----------|
 |[Chapter 1 - Preface](#preface)||Added as a new chapter as the front matter of this manual.|
+|[Chapter 2 - What's New in Hazelcast 3.4](#what-s-new-in-hazelcast-3-4)|[Upgrading from 3.x](#upgrading-from-3-x)|Added as a new section.|
 |[Chapter 4 - Overview](#overview)||Separated from [Getting Started](#getting-started) as a new chapter.|
 ||[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 5 - Hazelcast Clusters](#hazelcast-clusters)||Added as a new chapter to explain the Hazelcast clusters and their features.|
@@ -23,8 +24,9 @@
 ||[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
 |[Chapter 21 - Hazelcast Configuration](#hazelcast-configuration)|[Composing XML Configuration](#composing-xml-configuration)|Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets.|
 |||The whole (formerly known as the *Configuration* chapter) chapter redesigned to include all the Hazelcast configuration elements and attributes.|
-|[Chapter 23 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
-|[Chapter 24 - Glossary](#glossary)||Added as a new chapter.|
+|[Chapter 23 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
+|[Chapter 24 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
+|[Chapter 25 - Glossary](#glossary)||Added as a new chapter.|
 
 
 
