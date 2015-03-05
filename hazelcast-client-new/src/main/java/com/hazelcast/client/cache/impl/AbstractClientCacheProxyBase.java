@@ -54,6 +54,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 abstract class AbstractClientCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
+
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
@@ -126,6 +127,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         return isClosed.get();
     }
 
+    public boolean isDestroyed() {
+        return isDestroyed.get();
+    }
+
     protected abstract void closeListeners();
     //endregion close&destroy
 
@@ -169,9 +174,11 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
+    protected void submitLoadAllTask(final CacheLoadAllRequest request,
+                                     final CompletionListener completionListener) {
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
+        ClientExecutionServiceImpl executionService =
+                (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
         final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
         loadAllTasks.add(future);
