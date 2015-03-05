@@ -14,12 +14,12 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,37 +28,55 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
-    private final String name = "fooMap";
-
     @Test
-    public void testPutAndGetExpectHitsGenerated() throws Exception {
+    public void testHitsGenerated() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
-        IMap<Integer, Integer> map = h1.getMap("hits");
+        IMap<Integer, Integer> map = h1.getMap(randomMapName());
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
             map.get(i);
         }
         LocalMapStats localMapStats = map.getLocalMapStats();
         assertEquals(100, localMapStats.getHits());
-        assertEquals(100, localMapStats.getPutOperationCount());
-        assertEquals(100, localMapStats.getGetOperationCount());
     }
 
     @Test
-    public void testPutAndGetExpectHitsGenerated_updatedConcurrently() throws Exception {
+    public void testPutAndHitsGenerated() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
-        final IMap<Integer, Integer> map = h1.getMap("hits");
+        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(100, localMapStats.getPutOperationCount());
+        assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testGetAndHitsGenerated() throws Exception {
+        HazelcastInstance h1 = createHazelcastInstance();
+        IMap<Integer, Integer> map = h1.getMap(randomMapName());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(100, localMapStats.getGetOperationCount());
+        assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testHitsGenerated_updatedConcurrently() throws Exception {
+        HazelcastInstance h1 = createHazelcastInstance();
+        final IMap<Integer, Integer> map = h1.getMap(randomMapName());
         final int actionCount = 100;
         for (int i = 0; i < actionCount; i++) {
             map.put(i, i);
             map.get(i);
         }
         LocalMapStats localMapStats = map.getLocalMapStats();
-
-        assertEquals(actionCount, localMapStats.getHits());
-        assertEquals(actionCount, localMapStats.getPutOperationCount());
-        assertEquals(actionCount, localMapStats.getGetOperationCount());
-
+        final long initialHits = localMapStats.getHits();
 
         final Thread updatingThread = new Thread(new Runnable() {
             @Override
@@ -73,16 +91,16 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         updatingThread.start();
         updatingThread.join();
 
+        assertEquals(actionCount, initialHits);
         assertEquals(actionCount * 2, localMapStats.getHits());
     }
 
     @Test
     public void testLastAccessTime() throws InterruptedException {
-        final TimeUnit timeUnit = TimeUnit.NANOSECONDS;
-        final long startTime = timeUnit.toMillis(System.nanoTime());
+        final long startTime = Clock.currentTimeMillis();
 
         HazelcastInstance h1 = createHazelcastInstance();
-        IMap<String, String> map1 = h1.getMap(name);
+        IMap<String, String> map1 = h1.getMap(randomMapName());
 
         String key = "key";
         map1.put(key, "value");
@@ -98,18 +116,16 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
-        final TimeUnit timeUnit = TimeUnit.NANOSECONDS;
-        final long startTime = timeUnit.toMillis(System.nanoTime());
+        final long startTime = Clock.currentTimeMillis();
 
         final HazelcastInstance h1 = createHazelcastInstance();
-        final IMap<String, String> map1 = h1.getMap(name);
+        final IMap<String, String> map1 = h1.getMap(randomMapName());
 
         final String key = "key";
         map1.put(key, "value");
 
         final LocalMapStats localMapStats = map1.getLocalMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
-        assertTrue(lastUpdateTime >= startTime);
 
         final Thread updatingThread = new Thread(new Runnable() {
             @Override
@@ -122,16 +138,15 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         updatingThread.start();
         updatingThread.join();
 
-        Thread.sleep(5);
-
         long lastUpdateTime2 = localMapStats.getLastUpdateTime();
+        assertTrue(lastUpdateTime >= startTime);
         assertTrue(lastUpdateTime2 > lastUpdateTime);
     }
 
     @Test
     public void testEvictAll() throws Exception {
         HazelcastInstance h1 = createHazelcastInstance();
-        IMap<String, String> map = h1.getMap(name);
+        IMap<String, String> map = h1.getMap(randomMapName());
         map.put("key", "value");
         map.evictAll();
 
