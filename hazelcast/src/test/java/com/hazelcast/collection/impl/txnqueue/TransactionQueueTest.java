@@ -257,7 +257,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         while (count.get() < numberOfMessages / 2) {
             sleepMillis(1);
         }
-        instance2.getLifecycleService().terminate();
+//        instance2.getLifecycleService().terminate();
+        instance2.getLifecycleService().shutdown();
         moveMessage2.active = false;
         moveMessage2.join(10000);
         moveMessage1.join(10000);
