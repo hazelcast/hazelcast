@@ -42,10 +42,38 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(100, localMapStats.getHits());
         assertEquals(100, localMapStats.getPutOperationCount());
         assertEquals(100, localMapStats.getGetOperationCount());
-        localMapStats = map.getLocalMapStats(); // to ensure stats are recalculated correct.
-        assertEquals(100, localMapStats.getHits());
-        assertEquals(100, localMapStats.getPutOperationCount());
-        assertEquals(100, localMapStats.getGetOperationCount());
+    }
+
+    @Test
+    public void testPutAndGetExpectHitsGenerated_updatedConcurrently() throws Exception {
+        HazelcastInstance h1 = createHazelcastInstance();
+        final IMap<Integer, Integer> map = h1.getMap("hits");
+        final int actionCount = 100;
+        for (int i = 0; i < actionCount; i++) {
+            map.put(i, i);
+            map.get(i);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+
+        assertEquals(actionCount, localMapStats.getHits());
+        assertEquals(actionCount, localMapStats.getPutOperationCount());
+        assertEquals(actionCount, localMapStats.getGetOperationCount());
+
+
+        final Thread updatingThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < actionCount; i++) {
+                    map.get(i);
+                }
+                map.getLocalMapStats(); // causes the local stats object to update
+            }
+        });
+
+        updatingThread.start();
+        updatingThread.join();
+
+        assertEquals(actionCount * 2, localMapStats.getHits());
     }
 
     @Test
@@ -65,6 +93,38 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         Thread.sleep(5);
         map1.put(key, "value2");
         long lastUpdateTime2 = map1.getLocalMapStats().getLastUpdateTime();
+        assertTrue(lastUpdateTime2 > lastUpdateTime);
+    }
+
+    @Test
+    public void testLastAccessTime_updatedConcurrently() throws InterruptedException {
+        final TimeUnit timeUnit = TimeUnit.NANOSECONDS;
+        final long startTime = timeUnit.toMillis(System.nanoTime());
+
+        final HazelcastInstance h1 = createHazelcastInstance();
+        final IMap<String, String> map1 = h1.getMap(name);
+
+        final String key = "key";
+        map1.put(key, "value");
+
+        final LocalMapStats localMapStats = map1.getLocalMapStats();
+        final long lastUpdateTime = localMapStats.getLastUpdateTime();
+        assertTrue(lastUpdateTime >= startTime);
+
+        final Thread updatingThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                map1.put(key, "value2");
+                map1.getLocalMapStats(); // causes the local stats object to update
+            }
+        });
+
+        updatingThread.start();
+        updatingThread.join();
+
+        Thread.sleep(5);
+
+        long lastUpdateTime2 = localMapStats.getLastUpdateTime();
         assertTrue(lastUpdateTime2 > lastUpdateTime);
     }
 
