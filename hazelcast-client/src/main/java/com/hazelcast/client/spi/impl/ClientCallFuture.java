@@ -145,7 +145,7 @@ public class ClientCallFuture<V> implements ICompletableFuture<V>, Callback {
 
     private boolean isConnectionHealthy(long elapsed) {
         if (elapsed >= heartBeatInterval) {
-            return connection.isHeartBeating();
+            return connection.isAlive() && connection.isHeartBeating();
         }
         return true;
     }

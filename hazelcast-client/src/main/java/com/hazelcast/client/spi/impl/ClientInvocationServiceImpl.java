@@ -146,6 +146,9 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
     }
 
     private void sendInternal(ClientCallFuture future, ClientConnection connection, int partitionId) {
+        if (connection == null || !connection.isAlive()) {
+            throw new IllegalStateException("Connection is not active");
+        }
         connection.registerCallId(future);
         future.setConnection(connection);
         final SerializationService ss = client.getSerializationService();
