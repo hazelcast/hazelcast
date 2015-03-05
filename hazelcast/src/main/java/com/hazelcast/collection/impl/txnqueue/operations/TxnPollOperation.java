@@ -33,7 +33,6 @@ import java.io.IOException;
 /**
  * Poll operation for the transactional queue.
  */
-
 public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
 
     private long itemId;
@@ -49,19 +48,19 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        data = container.txnCommitPoll(itemId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        data = queueContainer.txnCommitPoll(itemId);
         response = data != null;
     }
 
     @Override
     public void afterRun() throws Exception {
         LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
-        if (response != null) {
+        if (response == null) {
+            queueStats.incrementEmptyPolls();
+        } else {
             queueStats.incrementPolls();
             publishEvent(ItemEventType.REMOVED, data);
-        } else {
-            queueStats.incrementEmptyPolls();
         }
     }
 
@@ -87,6 +86,11 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
     }
 
     @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_POLL;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
@@ -96,10 +100,5 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_POLL;
     }
 }

@@ -16,8 +16,9 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -36,21 +37,14 @@ public class CollectionTxnRemoveBackupOperation extends CollectionOperation impl
     }
 
     @Override
+    public void run() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.commitRemoveBackup(itemId);
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_TXN_REMOVE_BACKUP;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void run() throws Exception {
-        getOrCreateContainer().commitRemoveBackup(itemId);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

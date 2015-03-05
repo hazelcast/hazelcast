@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 
@@ -33,7 +34,8 @@ public class IsEmptyOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().size() == 0;
+        QueueContainer queueContainer = getOrCreateContainer();
+        response = queueContainer.size() == 0;
     }
 
     @Override

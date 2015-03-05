@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
@@ -28,7 +29,6 @@ import java.io.IOException;
 public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
 
     private long itemId;
-
     private Data value;
 
     public CollectionTxnAddOperation() {
@@ -51,23 +51,20 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_TXN_ADD;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        getOrCreateContainer().commitAdd(itemId, value);
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.commitAdd(itemId, value);
         response = true;
     }
 
     @Override
     public void afterRun() throws Exception {
         publishEvent(ItemEventType.ADDED, value);
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_TXN_ADD;
     }
 
     @Override

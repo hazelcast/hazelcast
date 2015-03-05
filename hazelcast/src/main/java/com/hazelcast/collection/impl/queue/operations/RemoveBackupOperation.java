@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
@@ -41,7 +42,8 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().removeBackup(itemId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        queueContainer.removeBackup(itemId);
         response = true;
     }
 

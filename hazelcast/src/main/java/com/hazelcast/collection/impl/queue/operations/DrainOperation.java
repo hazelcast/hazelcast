@@ -50,8 +50,8 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        dataMap = container.drain(maxSize);
+        QueueContainer queueContainer = getOrCreateContainer();
+        dataMap = queueContainer.drain(maxSize);
         response = new SerializableCollection(new ArrayList<Data>(dataMap.values()));
     }
 

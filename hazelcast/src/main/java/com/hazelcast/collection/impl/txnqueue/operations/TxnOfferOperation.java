@@ -50,8 +50,8 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        response = container.txnCommitOffer(itemId, data, false);
+        QueueContainer createContainer = getOrCreateContainer();
+        response = createContainer.txnCommitOffer(itemId, data, false);
     }
 
     @Override
@@ -86,6 +86,11 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
     }
 
     @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_OFFER;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
@@ -97,10 +102,5 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
         super.readInternal(in);
         itemId = in.readLong();
         data = in.readData();
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_OFFER;
     }
 }

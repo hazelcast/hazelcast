@@ -16,8 +16,9 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,7 +26,7 @@ import java.io.IOException;
 
 public class CollectionReserveRemoveOperation extends CollectionOperation {
 
-    String transactionId;
+    private String transactionId;
     private Data value;
     private long reservedItemId = -1;
 
@@ -45,16 +46,9 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().reserveRemove(reservedItemId, value, transactionId);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        response = collectionContainer.reserveRemove(reservedItemId, value, transactionId);
     }
 
     @Override

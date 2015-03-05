@@ -40,14 +40,19 @@ public class QueueTransactionRollbackOperation extends QueueOperation {
     }
 
     @Override
-    public int getId() {
-        return QueueDataSerializerHook.TRANSACTION_ROLLBACK;
+    public void run() throws Exception {
+        QueueContainer queueContainer = getOrCreateContainer();
+        queueContainer.rollbackTransaction(transactionId);
     }
 
     @Override
-    public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        container.rollbackTransaction(transactionId);
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TRANSACTION_ROLLBACK;
     }
 
     @Override
@@ -60,10 +65,5 @@ public class QueueTransactionRollbackOperation extends QueueOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         transactionId = in.readUTF();
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
     }
 }

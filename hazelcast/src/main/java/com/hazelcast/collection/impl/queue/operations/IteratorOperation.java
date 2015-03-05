@@ -16,9 +16,13 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;
+
+import java.util.List;
 
 /**
  * Provides iterator functionality for Queue.
@@ -34,7 +38,9 @@ public class IteratorOperation extends QueueOperation {
 
     @Override
     public void run() {
-        response = new SerializableCollection(getOrCreateContainer().getAsDataList());
+        QueueContainer queueContainer = getOrCreateContainer();
+        List<Data> dataList = queueContainer.getAsDataList();
+        response = new SerializableCollection(dataList);
     }
 
     @Override

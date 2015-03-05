@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.impl.collection;
+package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
+import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.impl.collection.CollectionEvent;
+import com.hazelcast.collection.impl.collection.CollectionEventFilter;
+import com.hazelcast.collection.impl.collection.CollectionService;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.ItemEventType;
@@ -49,6 +54,14 @@ public abstract class CollectionOperation extends Operation
         this.name = name;
     }
 
+    @Override
+    public void beforeRun() throws Exception {
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
     protected final ListContainer getOrCreateListContainer() {
         if (container == null) {
             ListService service = getService();
@@ -73,13 +86,12 @@ public abstract class CollectionOperation extends Operation
         return container;
     }
 
-
     protected void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        final Address address = getNodeEngine().getThisAddress();
         for (EventRegistration registration : registrations) {
             CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
-            final Address address = getNodeEngine().getThisAddress();
             final boolean includeValue = filter.isIncludeValue();
             CollectionEvent event = new CollectionEvent(name, includeValue ? data : null, eventType, address);
             eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
@@ -90,12 +102,7 @@ public abstract class CollectionOperation extends Operation
         return getOrCreateContainer().hasEnoughCapacity(delta);
     }
 
-    @Override
-    public int getFactoryId() {
-        return CollectionDataSerializerHook.F_ID;
-    }
-
-    @Override
+     @Override
     public boolean returnsResponse() {
         return true;
     }
@@ -103,6 +110,11 @@ public abstract class CollectionOperation extends Operation
     @Override
     public Object getResponse() {
         return response;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
     }
 
     @Override

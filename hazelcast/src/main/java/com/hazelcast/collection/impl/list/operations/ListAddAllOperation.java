@@ -18,6 +18,7 @@ package com.hazelcast.collection.impl.list.operations;
 
 import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -37,18 +38,19 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.LIST_ADD_ALL;
-    }
-
-    @Override
     public void run() throws Exception {
         if (!hasEnoughCapacity(valueList.size())) {
             response = false;
             return;
         }
-        valueMap = getOrCreateListContainer().addAll(index, valueList);
+        ListContainer listContainer = getOrCreateListContainer();
+        valueMap = listContainer.addAll(index, valueList);
         response = !valueMap.isEmpty();
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.LIST_ADD_ALL;
     }
 
     @Override

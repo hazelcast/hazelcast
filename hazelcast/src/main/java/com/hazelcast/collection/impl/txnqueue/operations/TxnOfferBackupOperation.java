@@ -45,8 +45,13 @@ public class TxnOfferBackupOperation extends QueueOperation implements BackupOpe
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        container.txnCommitOffer(itemId, data, true);
+        QueueContainer queueContainer = getOrCreateContainer();
+        queueContainer.txnCommitOffer(itemId, data, true);
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_OFFER_BACKUP;
     }
 
     @Override
@@ -61,10 +66,5 @@ public class TxnOfferBackupOperation extends QueueOperation implements BackupOpe
         super.readInternal(in);
         itemId = in.readLong();
         data = in.readData();
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_OFFER_BACKUP;
     }
 }

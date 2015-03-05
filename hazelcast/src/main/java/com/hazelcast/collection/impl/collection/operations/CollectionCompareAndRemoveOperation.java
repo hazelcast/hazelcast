@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
@@ -53,17 +54,9 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_COMPARE_AND_REMOVE;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        itemIdMap = getOrCreateContainer().compareAndRemove(retain, valueSet);
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        itemIdMap = collectionContainer.compareAndRemove(retain, valueSet);
         response = !itemIdMap.isEmpty();
     }
 
@@ -72,6 +65,11 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         for (Data value : itemIdMap.values()) {
             publishEvent(ItemEventType.REMOVED, value);
         }
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_COMPARE_AND_REMOVE;
     }
 
     @Override

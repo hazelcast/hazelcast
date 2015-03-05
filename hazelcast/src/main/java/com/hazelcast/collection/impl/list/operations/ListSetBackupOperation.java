@@ -17,7 +17,8 @@
 package com.hazelcast.collection.impl.list.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,21 +42,14 @@ public class ListSetBackupOperation extends CollectionOperation implements Backu
     }
 
     @Override
+    public void run() throws Exception {
+        ListContainer listContainer = getOrCreateListContainer();
+        listContainer.setBackup(oldItemId, itemId, value);
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.LIST_SET_BACKUP;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void run() throws Exception {
-        getOrCreateListContainer().setBackup(oldItemId, itemId, value);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

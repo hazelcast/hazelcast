@@ -46,11 +46,11 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
+        QueueContainer queueContainer = getOrCreateContainer();
         if (pollOperation) {
-            response = container.txnRollbackPoll(itemId, false);
+            response = queueContainer.txnRollbackPoll(itemId, false);
         } else {
-            response = container.txnRollbackOffer(itemId);
+            response = queueContainer.txnRollbackOffer(itemId);
         }
     }
 
@@ -65,6 +65,25 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     }
 
     @Override
+    public boolean shouldNotify() {
+        return true;
+    }
+
+    @Override
+    public WaitNotifyKey getNotifiedKey() {
+        QueueContainer queueContainer = getOrCreateContainer();
+        if (pollOperation) {
+            return queueContainer.getPollWaitNotifyKey();
+        }
+        return queueContainer.getOfferWaitNotifyKey();
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_ROLLBACK;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
@@ -76,23 +95,5 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_ROLLBACK;
-    }
-
-    @Override
-    public boolean shouldNotify() {
-        return true;
-    }
-
-    @Override
-    public WaitNotifyKey getNotifiedKey() {
-        if (pollOperation) {
-            return getOrCreateContainer().getPollWaitNotifyKey();
-        }
-        return getOrCreateContainer().getOfferWaitNotifyKey();
     }
 }

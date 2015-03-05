@@ -44,12 +44,17 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
 
     @Override
     public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
+        QueueContainer queueContainer = getOrCreateContainer();
         if (pollOperation) {
-            response = container.txnRollbackPoll(itemId, true);
+            response = queueContainer.txnRollbackPoll(itemId, true);
         } else {
-            response = container.txnRollbackOfferBackup(itemId);
+            response = queueContainer.txnRollbackOfferBackup(itemId);
         }
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 
     @Override
@@ -64,10 +69,5 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
-    }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 }

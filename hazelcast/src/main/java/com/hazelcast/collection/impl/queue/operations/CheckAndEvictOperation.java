@@ -34,8 +34,8 @@ public class CheckAndEvictOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        final QueueContainer container = getOrCreateContainer();
-        if (container.isEvictable()) {
+        final QueueContainer queueContainer = getOrCreateContainer();
+        if (queueContainer.isEvictable()) {
             ProxyService proxyService = getNodeEngine().getProxyService();
             proxyService.destroyDistributedObject(getServiceName(), name);
         }

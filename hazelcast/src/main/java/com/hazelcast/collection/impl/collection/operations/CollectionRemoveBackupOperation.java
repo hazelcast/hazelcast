@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
@@ -36,16 +36,9 @@ public class CollectionRemoveBackupOperation extends CollectionOperation impleme
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        getOrCreateContainer().removeBackup(itemId);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.removeBackup(itemId);
     }
 
     @Override

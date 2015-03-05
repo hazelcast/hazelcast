@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,7 +28,6 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
     private boolean removeOperation;
     private String transactionId;
-
     private long itemId = -1;
 
     public CollectionPrepareOperation() {
@@ -51,21 +51,14 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
+    public void run() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.ensureReserve(itemId);
+    }
+
+    @Override
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_PREPARE;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public void run() throws Exception {
-        getOrCreateContainer().ensureReserve(itemId);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

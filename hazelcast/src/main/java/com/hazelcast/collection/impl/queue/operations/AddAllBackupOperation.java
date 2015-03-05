@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -43,7 +44,8 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().addAllBackup(dataMap);
+        QueueContainer queueContainer = getOrCreateContainer();
+        queueContainer.addAllBackup(dataMap);
     }
 
     @Override
@@ -74,5 +76,4 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
             dataMap.put(itemId, value);
         }
     }
-
 }

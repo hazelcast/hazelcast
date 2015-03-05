@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.impl.collection.operations;
+package com.hazelcast.collection.impl.txncollection.operations;
 
+import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 public class CollectionTransactionRollbackOperation extends CollectionOperation {
 
-    String transactionId;
+    private String transactionId;
 
     public CollectionTransactionRollbackOperation() {
     }
@@ -35,26 +36,19 @@ public class CollectionTransactionRollbackOperation extends CollectionOperation 
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.TX_ROLLBACK;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        getOrCreateContainer().rollbackTransaction(transactionId);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
+        CollectionContainer collectionContainer = getOrCreateContainer();
+        collectionContainer.rollbackTransaction(transactionId);
     }
 
     @Override
     public boolean returnsResponse() {
         return false;
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.TX_ROLLBACK;
     }
 
     @Override

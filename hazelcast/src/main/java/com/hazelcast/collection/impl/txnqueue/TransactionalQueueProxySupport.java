@@ -160,10 +160,12 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public final String getServiceName() {
         return QueueService.SERVICE_NAME;
     }

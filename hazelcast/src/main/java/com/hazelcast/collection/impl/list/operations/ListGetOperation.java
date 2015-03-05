@@ -18,7 +18,8 @@ package com.hazelcast.collection.impl.list.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
@@ -36,17 +37,10 @@ public class ListGetOperation extends CollectionOperation {
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        final CollectionItem item = getOrCreateListContainer().get(index);
+        ListContainer listContainer = getOrCreateListContainer();
+        CollectionItem item = listContainer.get(index);
         response = item.getValue();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override

@@ -50,9 +50,9 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
 
     @Override
     public void run() {
-        QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity()) {
-            dataMap = container.addAll(dataList);
+        QueueContainer queueContainer = getOrCreateContainer();
+        if (queueContainer.hasEnoughCapacity()) {
+            dataMap = queueContainer.addAll(dataList);
             response = true;
         } else {
             response = false;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,7 +34,6 @@ public class TxnPeekOperation extends QueueOperation {
     private String transactionId;
 
     public TxnPeekOperation() {
-
     }
 
     public TxnPeekOperation(String name, long timeoutMillis, long itemId, String transactionId) {
@@ -44,7 +44,8 @@ public class TxnPeekOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        response = getOrCreateContainer().txnPeek(itemId, transactionId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        response = queueContainer.txnPeek(itemId, transactionId);
     }
 
     @Override

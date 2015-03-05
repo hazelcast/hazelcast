@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
@@ -28,7 +29,7 @@ import java.io.IOException;
  */
 public class TxnPollBackupOperation extends QueueOperation {
 
-    long itemId;
+    private long itemId;
 
     public TxnPollBackupOperation() {
     }
@@ -40,8 +41,14 @@ public class TxnPollBackupOperation extends QueueOperation {
 
     @Override
     public void run() throws Exception {
-        getOrCreateContainer().txnCommitPollBackup(itemId);
+        QueueContainer queueContainer = getOrCreateContainer();
+        queueContainer.txnCommitPollBackup(itemId);
         response = true;
+    }
+
+    @Override
+    public int getId() {
+        return QueueDataSerializerHook.TXN_POLL_BACKUP;
     }
 
     @Override
@@ -55,10 +62,4 @@ public class TxnPollBackupOperation extends QueueOperation {
         super.readInternal(in);
         itemId = in.readLong();
     }
-
-    @Override
-    public int getId() {
-        return QueueDataSerializerHook.TXN_POLL_BACKUP;
-    }
-
 }

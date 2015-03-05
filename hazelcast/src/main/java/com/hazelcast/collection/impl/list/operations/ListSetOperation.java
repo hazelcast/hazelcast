@@ -54,19 +54,10 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.LIST_SET;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        final ListContainer container = getOrCreateListContainer();
-        itemId = container.nextId();
-        final CollectionItem item = container.set(index, itemId, value);
+        ListContainer listContainer = getOrCreateListContainer();
+        itemId = listContainer.nextId();
+        CollectionItem item = listContainer.set(index, itemId, value);
         oldItemId = item.getItemId();
         response = item.getValue();
     }
@@ -75,6 +66,11 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     public void afterRun() throws Exception {
         publishEvent(ItemEventType.REMOVED, (Data) response);
         publishEvent(ItemEventType.ADDED, value);
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.LIST_SET;
     }
 
     @Override

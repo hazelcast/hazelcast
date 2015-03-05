@@ -17,7 +17,8 @@
 package com.hazelcast.collection.impl.list.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
+import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,22 +41,15 @@ public class ListSubOperation extends CollectionOperation {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.LIST_SUB;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
-        final List<Data> sub = getOrCreateListContainer().sub(from, to);
+        ListContainer listContainer = getOrCreateListContainer();
+        List<Data> sub = listContainer.sub(from, to);
         response = new SerializableCollection(sub);
     }
 
     @Override
-    public void afterRun() throws Exception {
+    public int getId() {
+        return CollectionDataSerializerHook.LIST_SUB;
     }
 
     @Override

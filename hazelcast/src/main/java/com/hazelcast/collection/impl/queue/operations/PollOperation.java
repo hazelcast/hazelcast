@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -43,7 +44,8 @@ public final class PollOperation extends QueueBackupAwareOperation
 
     @Override
     public void run() {
-        item = getOrCreateContainer().poll();
+        QueueContainer queueContainer = getOrCreateContainer();
+        item = queueContainer.poll();
         if (item != null) {
             response = item.getData();
         }

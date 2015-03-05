@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.collection;
 
-import com.hazelcast.collection.impl.collection.operations.CollectionTransactionRollbackOperation;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
@@ -83,16 +83,16 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     @Override
     public void dispatchEvent(CollectionEvent event, ItemListener listener) {
-        final MemberImpl member = nodeEngine.getClusterService().getMember(event.caller);
-        ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data,
+        final MemberImpl member = nodeEngine.getClusterService().getMember(event.getCaller());
+        ItemEvent itemEvent = new DataAwareItemEvent(event.getName(), event.getEventType(), event.getData(),
                 member, nodeEngine.getSerializationService());
         if (member == null) {
             if (logger.isLoggable(Level.INFO)) {
-                logger.info("Dropping event " + itemEvent + " from unknown address:" + event.caller);
+                logger.info("Dropping event " + itemEvent + " from unknown address:" + event.getCaller());
             }
             return;
         }
-        if (event.eventType.equals(ItemEventType.ADDED)) {
+        if (event.getEventType().equals(ItemEventType.ADDED)) {
             listener.itemAdded(itemEvent);
         } else {
             listener.itemRemoved(itemEvent);

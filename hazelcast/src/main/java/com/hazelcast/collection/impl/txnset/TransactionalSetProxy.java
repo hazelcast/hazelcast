@@ -50,6 +50,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
         if (!getCollection().add(new CollectionItem(-1, value))) {
             return false;
         }
+
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), value);
         try {
             Future<Long> f = nodeEngine.getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
@@ -68,7 +69,6 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
             throw ExceptionUtil.rethrow(t);
         }
         return false;
-
     }
 
     @Override

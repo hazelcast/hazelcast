@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 
@@ -33,7 +34,8 @@ public class SizeOperation extends QueueOperation {
 
     @Override
     public void run() {
-        response = getOrCreateContainer().size();
+        QueueContainer queueContainer = getOrCreateContainer();
+        response = queueContainer.size();
     }
 
     @Override
