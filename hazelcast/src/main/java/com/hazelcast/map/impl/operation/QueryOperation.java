@@ -104,7 +104,7 @@ public class QueryOperation extends AbstractMapOperation {
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             final MapServiceContext mapServiceContext = ((MapService) getService()).getMapServiceContext();
             mapServiceContext
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+                    .getLocalMapStatsProvider().getInstantLocalMapStats(name).incrementOtherOperations();
         }
 
         checkPartitionStateChanges(partitionService, partitionStateVersion);

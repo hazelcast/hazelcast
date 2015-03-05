@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.InstantLocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
@@ -106,10 +106,10 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
         return mapServiceContext.getMapEventPublisher();
     }
 
-    protected LocalMapStatsImpl getLocalMapStats() {
+    protected InstantLocalMapStats getLocalMapStats() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-        return localMapStatsProvider.getLocalMapStatsImpl(name);
+        return localMapStatsProvider.getInstantLocalMapStats(name);
     }
 
     private EntryEventType pickEventTypeOrNull(Map.Entry entry, Object oldValue) {

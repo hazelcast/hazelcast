@@ -39,7 +39,7 @@ public class MapKeySetOperation extends AbstractMapOperation implements Partitio
         keySet = recordStore.keySet();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             ((MapService) getService()).getMapServiceContext()
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+                    .getLocalMapStatsProvider().getInstantLocalMapStats(name).incrementOtherOperations();
         }
     }
 

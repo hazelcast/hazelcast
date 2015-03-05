@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.monitor.impl.InstantNearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -60,7 +62,7 @@ public class NearCache {
     private final AtomicBoolean canCleanUp;
     private final AtomicBoolean canEvict;
     private final ConcurrentMap<Data, NearCacheRecord> cache;
-    private final NearCacheStatsImpl nearCacheStats;
+    private final InstantNearCacheStats instantNearCacheStats;
     private final SerializationService serializationService;
     private final Comparator<NearCacheRecord> selectedComparator;
 
@@ -83,7 +85,7 @@ public class NearCache {
         cache = new ConcurrentHashMap<Data, NearCacheRecord>();
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
-        nearCacheStats = new NearCacheStatsImpl();
+        instantNearCacheStats = new InstantNearCacheStats();
         lastCleanup = Clock.currentTimeMillis();
         serializationService = nodeEngine.getSerializationService();
     }
@@ -118,11 +120,8 @@ public class NearCache {
         }
     }
 
-    public NearCacheStatsImpl getNearCacheStats() {
-        return createNearCacheStats();
-    }
-
-    private NearCacheStatsImpl createNearCacheStats() {
+    public NearCacheStats getNearCacheStats() {
+        final NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl(instantNearCacheStats);
         long ownedEntryCount = 0;
         long ownedEntryMemoryCost = 0;
         for (NearCacheRecord record : cache.values()) {
@@ -214,14 +213,14 @@ public class NearCache {
             if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
                 cache.remove(key);
                 updateSizeEstimator(-calculateCost(record));
-                nearCacheStats.incrementMisses();
+                instantNearCacheStats.incrementMisses();
                 return null;
             }
-            nearCacheStats.incrementHits();
+            instantNearCacheStats.incrementHits();
             record.access();
             return record.getValue();
         } else {
-            nearCacheStats.incrementMisses();
+            instantNearCacheStats.incrementMisses();
             return null;
         }
     }
