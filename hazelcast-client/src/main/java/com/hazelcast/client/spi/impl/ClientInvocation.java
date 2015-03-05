@@ -31,6 +31,7 @@ public class ClientInvocation implements Runnable {
     private static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     private static final int UNASSIGNED_PARTITION = -1;
     private static final ILogger LOGGER = Logger.getLogger(ClientInvocation.class);
+
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
@@ -46,7 +47,6 @@ public class ClientInvocation implements Runnable {
     private final int partitionId;
     private final Connection connection;
     private volatile ClientConnection sendConnection;
-
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
                              ClientRequest request, int partitionId, Address address,
@@ -75,7 +75,6 @@ public class ClientInvocation implements Runnable {
 
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientRequest request) {
         this(client, handler, request, UNASSIGNED_PARTITION, null, null);
-
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -91,7 +90,6 @@ public class ClientInvocation implements Runnable {
     public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
                             ClientRequest request, Connection connection) {
         this(client, handler, request, UNASSIGNED_PARTITION, null, connection);
-
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientRequest request) {
@@ -112,7 +110,6 @@ public class ClientInvocation implements Runnable {
                             Connection connection) {
         this(client, null, request, connection);
     }
-
 
     public int getPartitionId() {
         return partitionId;
@@ -136,8 +133,8 @@ public class ClientInvocation implements Runnable {
         } catch (Exception e) {
             notify(e);
         }
-        return clientInvocationFuture;
 
+        return clientInvocationFuture;
     }
 
     private void invokeOnSelection() throws IOException {
@@ -165,11 +162,11 @@ public class ClientInvocation implements Runnable {
         }
     }
 
-
     public void notify(Object response) {
         if (response == null) {
             throw new IllegalArgumentException("response can't be null");
         }
+
         if (!(response instanceof Exception)) {
             clientInvocationFuture.setResponse(response);
             return;
@@ -181,7 +178,6 @@ public class ClientInvocation implements Runnable {
             return;
         }
         notifyException(exception);
-
     }
 
     private void notifyException(Exception exception) {
@@ -202,7 +198,6 @@ public class ClientInvocation implements Runnable {
 
 
     private boolean handleRetry() {
-
         if (isBindToSingleConnection()) {
             return false;
         }
@@ -243,7 +238,7 @@ public class ClientInvocation implements Runnable {
     boolean isConnectionHealthy(long elapsed) {
         if (elapsed >= heartBeatInterval) {
             if (sendConnection != null) {
-                return sendConnection.isHeartBeating();
+                return sendConnection.isAlive() && sendConnection.isHeartBeating();
             } else {
                 return true;
             }

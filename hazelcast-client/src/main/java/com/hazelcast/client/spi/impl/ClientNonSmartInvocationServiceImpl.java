@@ -17,7 +17,6 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
         clusterListenerSupport = clusterService.getClusterListenerSupport();
     }
 
-
     @Override
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
         sendToOwner(invocation);
@@ -27,6 +26,9 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
     public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {
         if (connection == null) {
             throw new NullPointerException("Connection can not be null");
+        }
+        if (!connection.isAlive()) {
+            throw new IllegalStateException("Connection is not active");
         }
         send(invocation, connection);
     }

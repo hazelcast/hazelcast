@@ -179,15 +179,12 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     private void innerClose() throws IOException {
-
         if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
         readHandler.shutdown();
         writeHandler.shutdown();
-
     }
-
 
     public void close(Throwable t) {
         if (!live.compareAndSet(true, false)) {
