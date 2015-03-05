@@ -573,8 +573,6 @@ public abstract class HazelcastTestSupport {
             }
             sleepMillis(sleepMillis);
         }
-
-        printAllStackTraces();
         throw error;
     }
 
