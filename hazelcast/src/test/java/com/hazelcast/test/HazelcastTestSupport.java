@@ -209,7 +209,7 @@ public abstract class HazelcastTestSupport {
         for (; ; ) {
             String id = prefix + randomString();
             Partition partition = partitionService.getPartition(id);
-            if (comparePartitionOwnership(true, localMember, partition)) {
+            if (comparePartitionOwnership(false, localMember, partition)) {
                 return id;
             }
         }
