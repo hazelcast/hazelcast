@@ -31,6 +31,7 @@
     <modules>
         <module>hazelcast</module>
         <module>hazelcast-client</module>
+        <module>hazelcast-client-new</module>
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
         <module>hazelcast-spring</module>
@@ -77,7 +78,7 @@
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
-        <animal.sniffer.plugin.version>1.11</animal.sniffer.plugin.version>
+        <animal.sniffer.plugin.version>1.14</animal.sniffer.plugin.version>
         <jsr107.api.version>1.0.0</jsr107.api.version>
         <CacheManagerImpl>com.hazelcast.cache.HazelcastCacheManager</CacheManagerImpl>
         <CacheImpl>com.hazelcast.cache.ICache</CacheImpl>
@@ -241,6 +242,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
+                        <exclude>**/client/**Request.*</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -382,6 +384,7 @@
                                 <exclude>**HibernateStatisticsTestSupport**</exclude>
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
+                                <exclude>**/client/**Request.*</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -583,6 +586,17 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.3</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>release-repository</serverId>
+                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
                     </plugin>
                 </plugins>
 

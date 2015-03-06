@@ -85,14 +85,18 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
         @Override
         public void run() {
-            long start = System.currentTimeMillis();
-            String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-            System.out.println("Started Running Test: " + testName);
-            HazelcastParallelClassRunner.super.runChild(method, notifier);
-            numThreads.decrementAndGet();
-            float took = (float) (System.currentTimeMillis() - start) / 1000;
-            System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+            FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
+            try {
+                long start = System.currentTimeMillis();
+                String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+                System.out.println("Started Running Test: " + testName);
+                HazelcastParallelClassRunner.super.runChild(method, notifier);
+                numThreads.decrementAndGet();
+                float took = (float) (System.currentTimeMillis() - start) / 1000;
+                System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+            }finally {
+                FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+            }
         }
     }
-
 }

@@ -72,7 +72,8 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
     <suppress checks="MethodCount|ParameterNumber|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
-    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
+    <suppress checks="MethodCount|ParameterNumber" files="com.hazelcast.cache.impl.AbstractCacheService"/>
+    <suppress checks="ParameterNumber" files="com.hazelcast.cache.impl.ICacheService"/>
     <suppress checks="NPathComplexity"
               files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
 
@@ -214,13 +215,6 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
 
-    <!-- Queue -->
-    <suppress checks="MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
-              files="com.hazelcast.queue.impl.QueuePortableHook"/>
-    <suppress checks="MethodCount|MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
-              files="com.hazelcast.queue.impl.QueueDataSerializerHook"/>
-    <!--<suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>-->
-    <suppress checks="MethodCount" files="com.hazelcast.queue.impl.QueueContainer"/>
 
     <!-- jca -->
     <suppress checks="ClassFanOutComplexityCheck" files="HazelcastConnectionImpl.java"/>
@@ -382,24 +376,35 @@
     <suppress checks="ReturnCount" files="com.hazelcast.executor.impl.ExecutorPortableHook"/>
 
     <!-- Collections -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.collection[\\/]"/>
-    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionContainer"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionPortableHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionPortableHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
-    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.CollectionDataSerializerHook"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection.impl[\\/]"/>
+    <suppress checks="JavadocPackage" files="com.hazelcast.collection.impl[\\/]"/>
+
+    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.collection.CollectionContainer"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.impl.collection.CollectionPortableHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.impl.collection.CollectionPortableHook"/>
+    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="MethodLength" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
+    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
 
     <!-- List -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.collection.list[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.collection.list[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.collection.list[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl.list[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.collection.impl.list[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl.list[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.collection.impl.list[\\/]"/>
+
+    <!-- Queue -->
+    <suppress checks="MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
+              files="com.hazelcast.collection.impl.queue.QueuePortableHook"/>
+    <suppress checks="MethodCount|MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
+              files="com.hazelcast.collection.impl.queue.QueueDataSerializerHook"/>
+    <!--<suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>-->
+    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.queue.QueueContainer"/>
+
 
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com.hazelcast.multimap[\\/]"/>
@@ -506,7 +511,7 @@
 
     <!-- Spring-->
     <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="CyclomaticComplexity|NPathComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
 
     <!-- Spring Framework breaks the rule IllegalTypeCheck in its own implementation -->
     <suppress checks="IllegalType" files="com.hazelcast.spring.HazelcastClientBeanDefinitionParser"/>

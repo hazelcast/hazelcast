@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 
+/**
+ * An {@link ItemEvent} that is able to store a {@link Data}.
+ */
 public class DataAwareItemEvent extends ItemEvent {
 
     private static final long serialVersionUID = 1;

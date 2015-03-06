@@ -22,6 +22,7 @@ import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -111,6 +112,10 @@ public class CacheConfigTest extends HazelcastTestSupport {
                 listenerConfig1.getCacheEntryListenerFactory());
         assertEquals("com.hazelcast.cache.CacheConfigTest$MySyncEntryEventFilterFactory",
                 listenerConfig1.getCacheEntryEventFilterFactory());
+
+        WanReplicationRef wanRefCacheConfig = config1.getCacheConfig("wanRefTestCache").getWanReplicationRef();
+        assertEquals("testWanRef", wanRefCacheConfig.getName());
+        assertEquals("TestMergePolicy", wanRefCacheConfig.getMergePolicy());
     }
 
     @Test

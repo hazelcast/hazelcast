@@ -153,7 +153,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private void verifyJoiner(ConfigCheck found) {
         if (!equals(joinerType, found.joinerType)) {
-            throw new ConfigMismatchException("Incompatible joiners! expected: " + joinerType + ", found" + found.joinerType);
+            throw new ConfigMismatchException("Incompatible joiners! expected: " + joinerType + ", found: " + found.joinerType);
         }
     }
 

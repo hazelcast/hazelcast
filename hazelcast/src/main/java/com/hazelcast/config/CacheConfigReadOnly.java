@@ -115,11 +115,25 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
+    public CacheConfig setWanReplicationRef(final WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
     public NearCacheConfig getNearCacheConfig() {
         final NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
         if (nearCacheConfig == null) {
             return null;
         }
         return nearCacheConfig.getAsReadOnly();
+    }
+
+    @Override
+    public WanReplicationRef getWanReplicationRef() {
+        final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
+        if (wanReplicationRef == null) {
+            return null;
+        }
+        return wanReplicationRef.getAsReadOnly();
     }
 }

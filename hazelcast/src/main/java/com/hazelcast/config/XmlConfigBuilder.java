@@ -945,6 +945,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheConfig.setBackupCount(getIntegerValue("backup-count", value, CacheSimpleConfig.DEFAULT_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
                 cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, CacheSimpleConfig.MIN_BACKUP_COUNT));
+            } else if ("wan-replication-ref".equals(nodeName)) {
+                cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
                 final CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
                 final Node size = n.getAttributes().getNamedItem("size");
@@ -969,6 +971,20 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         this.config.addCacheConfig(cacheConfig);
+    }
+
+    private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {
+        WanReplicationRef wanReplicationRef = new WanReplicationRef();
+        final String wanName = getAttribute(n, "name");
+        wanReplicationRef.setName(wanName);
+        for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
+            final String wanChildName = cleanNodeName(wanChild.getNodeName());
+            final String wanChildValue = getTextContent(n);
+            if ("merge-policy".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicy(wanChildValue);
+            }
+        }
+        cacheConfig.setWanReplicationRef(wanReplicationRef);
     }
 
     private void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {

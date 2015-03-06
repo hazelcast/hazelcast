@@ -174,15 +174,15 @@ src/Performance.md
 		src/ThreadingOperation.md
 	src/BackPressure.md
 	src/HazelcastPerformanceOnAWS.md
-src/HazelcastStabilizer/StabilizerOverview.md
-	src/HazelcastStabilizer/InstallingStabilizer.md
-	src/HazelcastStabilizer/SettingUpForEC2.md
-	src/HazelcastStabilizer/SettingUpForGCE.md
-	src/HazelcastStabilizer/ExecutingAStabilizerTest.md
-	src/HazelcastStabilizer/Provisoner.md
-	src/HazelcastStabilizer/Coordinator.md
-	src/HazelcastStabilizer/Communicator.md
-	src/HazelcastStabilizer/StabilizerProperties.md
+src/HazelcastSimulator/SimulatorOverview.md
+	src/HazelcastSimulator/InstallingSimulator.md
+	src/HazelcastSimulator/SettingUpForEC2.md
+	src/HazelcastSimulator/SettingUpForGCE.md
+	src/HazelcastSimulator/ExecutingASimulatorTest.md
+	src/HazelcastSimulator/Provisioner.md
+	src/HazelcastSimulator/Coordinator.md
+	src/HazelcastSimulator/Communicator.md
+	src/HazelcastSimulator/SimulatorProperties.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 #src/Config.md
@@ -216,5 +216,6 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/Logging.md
 	src/ConfigurationProperties.md
 src/NetworkPartitioning.md
+src/Licenses.md
 src/FAQ.md
 src/Glossary.md

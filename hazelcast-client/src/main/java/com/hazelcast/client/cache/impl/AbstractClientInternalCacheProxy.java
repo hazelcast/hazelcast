@@ -106,7 +106,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     protected <T> ICompletableFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
-
         Integer completionId = null;
         if (completionOperation) {
             completionId = registerCompletionLatch(1);
@@ -143,8 +142,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     //region internal base operations
-    protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue, boolean isGet,
-                                                            boolean withCompletionEvent) {
+    protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
+                                                            boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue);
@@ -173,7 +172,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                             boolean hasOldValue, boolean isGet, boolean withCompletionEvent) {
+                                                             boolean hasOldValue, boolean isGet,
+                                                             boolean withCompletionEvent) {
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue, newValue);
@@ -189,9 +189,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         ClientRequest request;
         if (isGet) {
-            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData, expiryPolicy, inMemoryFormat);
+            request = new CacheGetAndReplaceRequest(nameWithPrefix, keyData, newValueData,
+                                                    expiryPolicy, inMemoryFormat);
         } else {
-            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicy, inMemoryFormat);
+            request = new CacheReplaceRequest(nameWithPrefix, keyData, oldValueData, newValueData,
+                                              expiryPolicy, inMemoryFormat);
         }
         ICompletableFuture future;
         try {
@@ -201,18 +203,18 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             throw ExceptionUtil.rethrow(e);
         }
         return new DelegatingFuture<T>(future, clientContext.getSerializationService());
-
     }
 
-    protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
-                                                         boolean withCompletionEvent) {
+    protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
+                                                         boolean isGet, boolean withCompletionEvent) {
         ensureOpen();
         validateNotNull(key, value);
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
-        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData, expiryPolicy, isGet, inMemoryFormat);
+        CachePutRequest request = new CachePutRequest(nameWithPrefix, keyData, valueData,
+                                                      expiryPolicy, isGet, inMemoryFormat);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -234,8 +236,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, value);
         final Data keyData = toData(key);
         final Data valueData = toData(value);
-        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData, expiryPolicy,
-                cacheConfig.getInMemoryFormat());
+        CachePutIfAbsentRequest request = new CachePutIfAbsentRequest(nameWithPrefix, keyData, valueData,
+                                                                      expiryPolicy, cacheConfig.getInMemoryFormat());
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -248,7 +250,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             throw ExceptionUtil.rethrow(e);
         }
         return new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
-
     }
 
     protected void removeAllInternal(Set<? extends K> keys, boolean isRemoveAll) {
@@ -321,7 +322,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
     //endregion internal base operations
 
-    protected void addListenerLocally(String regId, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+    protected void addListenerLocally(String regId,
+                                      CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration.isSynchronous()) {
             syncListenerRegistrations.putIfAbsent(cacheEntryListenerConfiguration, regId);
         } else {
@@ -341,7 +343,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         for (String regId : listenerRegistrations) {
-            CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
+            CacheRemoveEntryListenerRequest removeReq =
+                    new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
             clientContext.getListenerService().stopListening(removeReq, regId);
         }
     }
@@ -418,6 +421,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
             // Call latch await in small steps to be able to check if node is still active.
             // If not active then throw HazelcastInstanceNotActiveException,
+            // If closed or destroyed then throw IllegalStateException,
             // otherwise continue to wait until `MAX_COMPLETION_LATCH_WAIT_TIME` passes.
             //
             // Warning: Silently ignoring if latch does not countDown in time.
@@ -426,6 +430,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
                 if (!clientContext.isActive()) {
                     throw new HazelcastInstanceNotActiveException();
+                } else if (isClosed()) {
+                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed !");
+                } else if (isDestroyed()) {
+                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed !");
                 }
             }
         } catch (InterruptedException e) {
@@ -453,7 +461,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected ICompletableFuture createCompletedFuture(Object value) {
         return new CompletedFuture(clientContext.getSerializationService(), value,
-                clientContext.getExecutionService().getAsyncExecutor());
+                                   clientContext.getExecutionService().getAsyncExecutor());
     }
 
 }

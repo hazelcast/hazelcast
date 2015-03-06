@@ -52,6 +52,10 @@ public class MultiMapConfig {
     public MultiMapConfig() {
     }
 
+    public MultiMapConfig(String name) {
+        setName(name);
+    }
+
     public MultiMapConfig(MultiMapConfig defConfig) {
         this.name = defConfig.getName();
         this.valueCollectionType = defConfig.valueCollectionType;

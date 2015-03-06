@@ -12,6 +12,7 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void clientsConsume_withNodeShutdown() throws InterruptedException {
 
         final int initial = 2000, max = 8000;

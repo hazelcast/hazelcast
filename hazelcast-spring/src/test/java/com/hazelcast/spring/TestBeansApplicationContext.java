@@ -17,8 +17,10 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spring.context.SpringManagedContext;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,6 +32,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
@@ -48,7 +51,7 @@ public class TestBeansApplicationContext {
     private ApplicationContext context;
 
     @Test
-    public void test() {
+    public void testApplicationContext() {
         assertTrue(Hazelcast.getAllHazelcastInstances().isEmpty());
         assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
 
@@ -63,10 +66,14 @@ public class TestBeansApplicationContext {
         context.getBean("client");
         context.getBean("client");
         assertEquals(3, HazelcastClient.getAllHazelcastClients().size());
+        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.getAllHazelcastClients().iterator().next();
+        assertNull(client.getClientConfig().getManagedContext());
+
 
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
+        assertNull(instance.getConfig().getManagedContext());
     }
 
 }

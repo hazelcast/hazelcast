@@ -88,20 +88,18 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
 
-        final ClientConfig clientConfig = new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "10");
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        final IMap<String, String> m = client.getMap("m");
 
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IMap<String, String> map = client.getMap(randomMapName());
 
-        m.put("elif", "Elif");
-        m.put("ali", "Ali");
-        m.put("alev", "Alev");
-
+        map.put(randomString(), randomString());
 
         instance1.getLifecycleService().terminate();
         instance2.getLifecycleService().terminate();
@@ -110,8 +108,9 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         new Thread() {
             public void run() {
                 try {
-                    m.get("ali");
+                    map.get(randomString());
                 } catch (Exception ignored) {
+                } finally {
                     latch.countDown();
                 }
             }
@@ -119,6 +118,39 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         assertOpenEventually(latch);
 
+    }
+
+    @Test
+    public void testOperationNotBlockingAfterClusterShutdown_withOneExecutorPoolSize() throws InterruptedException {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setExecutorPoolSize(1);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "10");
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IMap<String, String> map = client.getMap(randomMapName());
+
+        map.put(randomString(), randomString());
+
+        instance1.getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                try {
+                    map.get(randomString());
+                } catch (Exception ignored) {
+                } finally {
+                    latch.countDown();
+                }
+            }
+        }.start();
+
+        assertOpenEventually(latch);
     }
 
     @Test

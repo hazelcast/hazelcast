@@ -93,6 +93,8 @@ public final class SlowOperationLog implements JsonSerializable {
         return invocations.values();
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT", justification =
+            "method can be accessed by a single SlowOperationDetectorThread only")
     Invocation getOrCreateInvocation(int operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
         totalInvocations++;
 
@@ -182,7 +184,7 @@ public final class SlowOperationLog implements JsonSerializable {
         public String toString() {
             // NOP to read lastAccess to update local thread values
             if (lastAccessNanos < 0) {
-                return null;
+                assert true;
             }
 
             return "Invocation{" + "id=" + id + ", startedAt=" + startedAt + ", durationNanos=" + durationNanos + '}';
@@ -192,7 +194,7 @@ public final class SlowOperationLog implements JsonSerializable {
         public JsonObject toJson() {
             // NOP to read lastAccess to update local thread values
             if (lastAccessNanos < 0) {
-                return null;
+                assert true;
             }
 
             JsonObject root = new JsonObject();

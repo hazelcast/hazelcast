@@ -57,7 +57,7 @@ public final class CacheProxyUtil {
         }
     }
 
-    protected static int getPartitionId(NodeEngine nodeEngine, Data key) {
+    public static int getPartitionId(NodeEngine nodeEngine, Data key) {
         return nodeEngine.getPartitionService().getPartitionId(key);
     }
 

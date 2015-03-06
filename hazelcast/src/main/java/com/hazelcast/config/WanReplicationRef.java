@@ -15,10 +15,18 @@
  */
 
 package com.hazelcast.config;
+
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+import java.io.Serializable;
+
 /**
  * Configuration for Wan target replication reference
  */
-public class WanReplicationRef {
+public class WanReplicationRef implements DataSerializable, Serializable {
     private String name;
     private String mergePolicy;
 
@@ -61,6 +69,18 @@ public class WanReplicationRef {
     public WanReplicationRef setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
         return this;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeUTF(mergePolicy);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        mergePolicy = in.readUTF();
     }
 
     @Override

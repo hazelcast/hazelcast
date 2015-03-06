@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -54,6 +54,16 @@
         <value-type class-name="java.lang.String"/>
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
+    </cache>
+
+    <cache name="wanRefTestCache">
+        <key-type class-name="java.lang.Integer"/>
+        <value-type class-name="java.lang.String"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+        <wan-replication-ref name="testWanRef">
+            <merge-policy>TestMergePolicy</merge-policy>
+        </wan-replication-ref>
     </cache>
 
     <cache name="j">

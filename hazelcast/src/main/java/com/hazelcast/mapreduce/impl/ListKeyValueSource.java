@@ -16,9 +16,9 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.collection.list.ListContainer;
-import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.impl.collection.CollectionItem;
+import com.hazelcast.collection.impl.list.ListContainer;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
