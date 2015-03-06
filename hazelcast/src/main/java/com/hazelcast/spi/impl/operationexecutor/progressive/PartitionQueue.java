@@ -78,6 +78,10 @@ public class PartitionQueue {
         return partitionId;
     }
 
+    PartitionQueueState state() {
+        return head.get().state;
+    }
+
     public void errorCheck() {
         if (scheduleQueue.error) {
             throw new RuntimeException(this.toString());
@@ -425,18 +429,15 @@ public class PartitionQueue {
     }
 
     /**
-     * Puts this PartitionQueue back into its unparked state. This is needed to deal with priority operations because
-     * you want to be able to stop processing a partition-queue, so you can start working on one with a high priority.
+     * Suspends this PartitionQueue by reverting from Executing/ExecutingPriority to Unparked/UnparkedPriority.
      * <p/>
-     * It is important that the ProgressiveScheduleQueue still knows about the PartitionQueue, because it is put back
-     * into the Unparked state, no PorgressiveScheduleQueue.unpark is called.
      * <p/>
      * This method should only be called by the partition owner.
      *
      * @throws IllegalStateException if the caller is not the partition owner, or if the partitionqueue isn't
      *                               in executing mode.
      */
-    public void backToUnparked() {
+    public void suspend() {
         scheduleQueue.assertCallingThreadIsOwner();
 
         final AtomicReference<Node> head = this.head;
@@ -452,7 +453,7 @@ public class PartitionQueue {
                     nextState = UnparkedPriority;
                     break;
                 default:
-                    throw new IllegalStateException("Unexpected state for backToUnparked: " + prev);
+                    throw new IllegalStateException("Unexpected state for suspend: " + prev);
             }
 
             if (newNode == null) {
@@ -471,110 +472,34 @@ public class PartitionQueue {
 
 
     /**
-     * Makes sure this PartitionQueue is currently in the 'executing' state.
+     * Makes sure this PartitionQueue is currently in the 'Executing' or 'Executing_Priority' state.
      * <p/>
      * This method is only called by the partition-thread.
      * <p/>
-     * It is safe to call this method of the partition-buffer already is an 'executing' state.
-     * <p/>
-     * <p/>
-     * todo: this method assumes that when this method is called and it fails, that the caller
-     * has no further normal unpark and therefor it reverts the state to UNPARKED.
-     * The problem is with priority execution; it can overtake a normal operation and
      *
-     * @return true if it can be put in the executing headUnparked, false otherwise.
+     * @return true if it can be put in the executing mode, false otherwise.
      */
     boolean execute() {
         final AtomicReference<Node> head = this.head;
 
-        Node newNode = null;
         for (; ; ) {
             final Node prev = head.get();
-
             switch (prev.state) {
                 case Parked:
                 case Stolen:
+                case StolenUnparked:
                     return false;
                 case Executing:
                 case ExecutingPriority:
                     throw new IllegalStateException("Unexpected state:" + prev.state);
                 case Unparked:
-                    // There is pending work, so lets try to put this partition-buffer in EXECUTING mode
-                    // to indicate that no other threads should try to execute this partition.
-
-                    if (!cas(prev, EXECUTING)) {
-                        // we failed to move to the prev headUnparked, so lets try again.
-                        continue;
-                    }
-
-                    // We have just become the owner.
-                    appendToBuffers(prev);
-                    return true;
-                case UnparkedPriority:
-                    if (!cas(prev, EXECUTING_PRIORITY)) {
-                        continue;
-                    }
-
-                    appendToBuffers(prev);
-                    return true;
-                case StolenUnparked:
-                    // a thief has stolen the unparked partition-buffer and is currently processing it.
-                    // Currently the head is 'stolen unparked' so a stealer should not call unpark
-                    // again. The problem is that the executing thread just has removed the partition-buffer
-                    // from its unparked set. So we are going to revert from StolenUnparked to Stolen to indicate
-                    // that an unpark is needed again. If you don't do this, you will end up with work in a partition-buffer
-                    // which never gets picked by a partition-thread.
-                    // When the stealing thread is going to drop the partition-buffer and it sees that the state has
-                    // changed to Stolen, it knows that it can revert the partition buffer to Parked.
-
-                    Node next;
-                    if (prev.size() == 0) {
-                        next = STOLEN;
-                    } else {
-                        if (newNode == null) {
-                            newNode = new Node();
-                        }
-                        next = newNode;
-                        next.withNewState(prev, Stolen);
-                    }
-
-                    if (!cas(prev, next)) {
-                        // we failed to move to the prev headUnparked to STOLEN, lets try again.
-                        continue;
-                    }
-
-                    return false;
-                default:
-                    throw new IllegalStateException("Illegal state: " + prev.state);
-            }
-        }
-    }
-
-    boolean executePriority() {
-        final AtomicReference<Node> head = this.head;
-
-        for (; ; ) {
-            final Node prev = head.get();
-
-            switch (prev.state) {
-                case Parked:
-                case Stolen:
-                case StolenUnparked:
-                    return false;
-                case Executing:
-                case ExecutingPriority:
-                    throw new IllegalStateException("Unexpected state:" + prev.state);
-                case Unparked: {
                     if (!cas(prev, EXECUTING)) {
                         continue;
                     }
 
                     appendToBuffers(prev);
                     return true;
-                }
                 case UnparkedPriority:
-                    assert prev.normalSize == 0;
-
                     if (!cas(prev, EXECUTING_PRIORITY)) {
                         continue;
                     }
@@ -604,34 +529,71 @@ public class PartitionQueue {
         Node newNode = null;
         for (; ; ) {
             final Node prev = head.get();
+            switch (prev.state) {
+                case Stolen:
+                case UnparkedPriority:
+                case ExecutingPriority:
+                case Parked:
+                    return true;
+                case Unparked:
+                    return false;
+                case Executing: {
+                    // if there is any normal work, the park fails.
+                    if (bufferPos != bufferSize || prev.normalSize > 0) {
+                        return false;
+                    }
 
-            if (prev.state != Executing) {
-                throw new IllegalStateException("Unexpected state:" + prev + " bufferSize=" + bufferSize + " bufferPos=" + bufferPos);
-            }
+                    Node next;
+                    if (prev.prioritySize > 0) {
+                        if (newNode == null) {
+                            newNode = new Node();
+                        }
+                        next = newNode;
+                        next.withNewState(prev, UnparkedPriority);
+                    } else if (priorityBufferPos != priorityBufferSize) {
+                        next = UNPARKED_PRIORITY;
+                    } else {
+                        next = PARKED;
+                    }
 
-            // if there is any normal work, the park fails.
-            if (bufferPos != bufferSize || prev.normalSize > 0) {
-                return false;
-            }
+                    if (!cas(prev, next)) {
+                        continue;
+                    }
 
-            Node next;
-            if (prev.prioritySize > 0) {
-                if (newNode == null) {
-                    newNode = new Node();
+                    return true;
                 }
-                next = newNode;
-                next.withNewState(prev, UnparkedPriority);
-            } else if (priorityBufferPos != priorityBufferSize) {
-                next = UNPARKED_PRIORITY;
-            } else {
-                next = PARKED;
+                case StolenUnparked: {
+                    // a thief has stolen the unparked partition-buffer and is currently processing it.
+                    // Currently the head is 'stolen unparked' so a stealer should not call unpark
+                    // again. The problem is that the executing thread just has removed the partition-buffer
+                    // from its unparked set. So we are going to revert from StolenUnparked to Stolen to indicate
+                    // that an unpark is needed again. If you don't do this, you will end up with work in a partition-buffer
+                    // which never gets picked by a partition-thread.
+                    // When the stealing thread is going to drop the partition-buffer and it sees that the state has
+                    // changed to Stolen, it knows that it can revert the partition buffer to Parked.
+
+                    Node next;
+                    if (prev.size() == 0) {
+                        next = STOLEN;
+                    } else {
+                        if (newNode == null) {
+                            newNode = new Node();
+                        }
+                        next = newNode;
+                        next.withNewState(prev, Stolen);
+                    }
+
+                    if (!cas(prev, next)) {
+                        // we failed to move to the prev headUnparked to STOLEN, lets try again.
+                        continue;
+                    }
+
+                    return false;
+                }
+                default:
+                    throw new IllegalStateException("Unexpected state: " + prev);
             }
 
-            if (!cas(prev, next)) {
-                continue;
-            }
-
-            return true;
         }
     }
 

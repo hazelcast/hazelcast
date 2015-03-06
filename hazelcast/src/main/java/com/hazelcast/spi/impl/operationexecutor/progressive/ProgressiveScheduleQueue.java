@@ -5,6 +5,7 @@ import com.hazelcast.spi.impl.operationexecutor.classic.ScheduleQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
+import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Executing;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static java.lang.System.arraycopy;
 
@@ -121,11 +122,11 @@ public final class ProgressiveScheduleQueue implements ScheduleQueue {
                 return null;
             }
 
-            // this approach is not very efficient, because we are still going to call backToUnparked/execute if
+            // this approach is not very efficient, because we are still going to call suspend/execute if
             // we get a priority message from the the same queue we are using in a low priority approach
 
             if (activeQueue != null) {
-                activeQueue.backToUnparked();
+                activeQueue.suspend();
 
                 if (!activeQueueHasPriority) {
                     assert suspendedQueue == null;
@@ -136,7 +137,7 @@ public final class ProgressiveScheduleQueue implements ScheduleQueue {
                 activeQueueHasPriority = false;
             }
 
-            if (!priorityQueue.executePriority()) {
+            if (!priorityQueue.execute()) {
                 continue;
             }
 
@@ -145,7 +146,7 @@ public final class ProgressiveScheduleQueue implements ScheduleQueue {
 
             Object item = pollActiveQueue(true);
             if (item != null) {
-                activeQueue.backToUnparked();
+                activeQueue.suspend();
                 activeQueue = null;
                 return item;
             }
@@ -160,7 +161,6 @@ public final class ProgressiveScheduleQueue implements ScheduleQueue {
                 return item;
             }
 
-            PartitionQueue oldSuspendedQueue = suspendedQueue;
             PartitionQueue partitionQueue = next();
             if (partitionQueue == null) {
                 // this call blocks till any work comes available
@@ -169,31 +169,17 @@ public final class ProgressiveScheduleQueue implements ScheduleQueue {
                 return null;
             }
 
-            PartitionQueueState old = partitionQueue.head.get().state;
-            assert old != PartitionQueueState.Parked : "Parked detected, oldSuspendedQueue.isNull: " + (oldSuspendedQueue == null);
+            for (; ; ) {
+                if (partitionQueue.execute()) {
+                    assert partitionQueue.state() == Executing : "expecting Executing, but found " + partitionQueue.state();
+                    activeQueue = partitionQueue;
+                    activeQueueHasPriority = false;
+                    break;
+                }
 
-            if(old==PartitionQueueState.Stolen){
-                error = true;
-            }
-
-            assert old != PartitionQueueState.Stolen : "Stolen detected, oldSuspendedQueue.isNull: " + (oldSuspendedQueue == null);
-            assert old != PartitionQueueState.UnparkedPriority : "Unparked priority detected, oldSuspendedQueue.isNull: " + (oldSuspendedQueue == null);
-
-            if (partitionQueue.execute()) {
-                //assert partitionQueue.registered;
-
-                PartitionQueueState state = partitionQueue.head.get().state;
-                assert state == PartitionQueueState.Executing
-                        : "expecting Executing, but found " + state
-                        + "\nactiveQueue=" + activeQueue
-                        + "\nsuspendedQueue=" + suspendedQueue
-                        + "\npartitionQueue=" + partitionQueue;
-                // we managed to put the PartitionQueue in 'execute' mode, so we can now start using it.
-                activeQueue = partitionQueue;
-                activeQueueHasPriority = false;
-            } else {
-                // because we don't use the partitionQueue variable, it is now completely unregistered because
-                // it isn't available in the lowPriority buffer
+                if (partitionQueue.park()) {
+                    break;
+                }
             }
         }
     }
@@ -219,12 +205,12 @@ public final class ProgressiveScheduleQueue implements ScheduleQueue {
         }
 
         if (activeQueueHasPriority) {
-            activeQueue.backToUnparked();
+            activeQueue.suspend();
         } else {
             if (priorityTasks) {
                 // so we asked for a priority task, but the activeQueue has nothing to offer
                 // so we we suspend this queue
-                activeQueue.backToUnparked();
+                activeQueue.suspend();
                 assert suspendedQueue == null;
                 suspendedQueue = activeQueue;
             } else if (!activeQueue.park()) {
