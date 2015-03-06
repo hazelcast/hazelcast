@@ -26,6 +26,10 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     public SetConfig() {
     }
 
+    public SetConfig(String name) {
+        setName(name);
+    }
+
     public SetConfig(SetConfig config) {
         super(config);
     }

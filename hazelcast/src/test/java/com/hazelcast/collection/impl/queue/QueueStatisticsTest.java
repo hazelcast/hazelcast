@@ -1,11 +1,14 @@
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -18,7 +21,20 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class QueueStatisticsTest extends AbstractQueueTest {
+public class QueueStatisticsTest extends HazelcastTestSupport {
+
+    protected IQueue newQueue() {
+        HazelcastInstance instance = createHazelcastInstance();
+        return instance.getQueue(randomString());
+    }
+
+    protected IQueue newQueue_WithMaxSizeConfig(int maxSize) {
+        Config config = new Config();
+        final String name = randomString();
+        config.getQueueConfig(name).setMaxSize(maxSize);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        return instance.getQueue(name);
+    }
 
     @Test
     public void testItemCount() {

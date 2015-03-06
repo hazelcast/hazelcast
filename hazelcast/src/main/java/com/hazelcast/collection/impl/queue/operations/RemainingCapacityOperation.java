@@ -13,13 +13,13 @@ public class RemainingCapacityOperation extends QueueOperation {
     public RemainingCapacityOperation() {
     }
 
-    public RemainingCapacityOperation(final String name) {
+    public RemainingCapacityOperation(String name) {
         super(name);
     }
 
     @Override
     public void run() {
-        final QueueContainer queueContainer = getOrCreateContainer();
+        QueueContainer queueContainer = getOrCreateContainer();
         response = queueContainer.getConfig().getMaxSize() - queueContainer.size();
     }
 

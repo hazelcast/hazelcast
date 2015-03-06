@@ -26,10 +26,15 @@ public class ListConfig extends CollectionConfig<ListConfig> {
     public ListConfig() {
     }
 
+    public ListConfig(String name) {
+        setName(name);
+    }
+
     public ListConfig(ListConfig config) {
         super(config);
     }
 
+    @Override
     public ListConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new ListConfigReadOnly(this);

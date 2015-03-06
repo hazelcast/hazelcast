@@ -73,7 +73,6 @@ public abstract class HazelcastTestSupport {
         return futureTask;
     }
 
-
     public static <E> Future<E> spawn(Callable<E> task) {
         FutureTask futureTask = new FutureTask(task);
         new Thread(futureTask).start();

@@ -54,6 +54,15 @@ public class ReplicatedMapConfig {
     public ReplicatedMapConfig() {
     }
 
+    /**
+     * Creates a ReplicatedMapConfig with the given name.
+     *
+     * @param name the name of the ReplicatedMap.
+     */
+    public ReplicatedMapConfig(String name) {
+        setName(name);
+    }
+
     public ReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
         this.name = replicatedMapConfig.name;
         this.inMemoryFormat = replicatedMapConfig.inMemoryFormat;
