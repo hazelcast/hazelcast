@@ -174,7 +174,7 @@ src/Performance.md
 		src/ThreadingOperation.md
 	src/BackPressure.md
 	src/HazelcastPerformanceOnAWS.md
-src/HazelcastStabilizer/StabilizerOverview.md
+src/HazelcastSimulator/SimulatorOverview.md
 	src/HazelcastSimulator/InstallingSimulator.md
 	src/HazelcastSimulator/SettingUpForEC2.md
 	src/HazelcastSimulator/SettingUpForGCE.md
