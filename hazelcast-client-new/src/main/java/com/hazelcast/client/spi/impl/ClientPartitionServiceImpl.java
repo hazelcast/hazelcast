@@ -74,7 +74,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private void getPartitionsBlocking() {
-        while (!getPartitions()) {
+        while (!getPartitions() && client.getConnectionManager().isAlive()) {
             try {
                 Thread.sleep(PARTITION_WAIT_TIME);
             } catch (InterruptedException e) {

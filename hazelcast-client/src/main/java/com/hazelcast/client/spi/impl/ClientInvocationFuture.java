@@ -58,10 +58,8 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     private volatile Object response;
 
-
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
                                   ClientRequest request, EventHandler handler) {
-
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();
@@ -116,7 +114,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         return resolveResponse();
     }
 
-
     void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
@@ -136,6 +133,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                 return;
             }
             this.response = response;
+
             this.notifyAll();
             for (ExecutionCallbackNode node : callbackNodeList) {
                 runAsynchronous(node.callback, node.executor, node.deserialized);

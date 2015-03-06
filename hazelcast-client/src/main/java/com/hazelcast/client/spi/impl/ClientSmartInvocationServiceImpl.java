@@ -73,7 +73,6 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
-
     @Override
     public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {
         send(invocation, connection);
