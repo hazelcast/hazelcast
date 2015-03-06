@@ -36,6 +36,7 @@ final class SlowOperationDetector {
 
     private static final int FULL_LOG_FREQUENCY = 100;
     private static final long ONE_SECOND_IN_NANOS = TimeUnit.SECONDS.toNanos(1);
+    private static final long SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
     private static final ILogger LOGGER = Logger.getLogger(SlowOperationDetector.class);
 
     private final ConcurrentHashMap<Integer, SlowOperationLog> slowOperationLogs
@@ -52,6 +53,8 @@ final class SlowOperationDetector {
     private final long logPurgeIntervalNanos;
     private final long logRetentionNanos;
 
+    private final SlowOperationDetectorThread slowOperationDetectorThread;
+
     private volatile boolean running = true;
 
     public SlowOperationDetector(OperationRunner[] genericOperationRunners, OperationRunner[] partitionOperationRunners,
@@ -66,11 +69,18 @@ final class SlowOperationDetector {
         logPurgeIntervalNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
         logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
 
-        new SlowOperationDetectorThread(hazelcastThreadGroup).start();
+        slowOperationDetectorThread = new SlowOperationDetectorThread(hazelcastThreadGroup);
+
+        slowOperationDetectorThread.start();
     }
 
     void shutdown() {
         running = false;
+        try {
+            slowOperationDetectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
+        } catch (InterruptedException e) {
+            EmptyStatement.ignore(e);
+        }
     }
 
     Collection<SlowOperationLog> getSlowOperationLogs() {
@@ -119,13 +129,15 @@ final class SlowOperationDetector {
                     lastLogPurge = nowNanos;
                 }
 
-                sleepInterval(nowNanos);
+                if (running) {
+                    sleepInterval(nowNanos);
+                }
             }
         }
 
         private void scan(long nowNanos, long nowMillis, OperationRunner[] operationRunners,
                           CurrentOperationData[] currentOperationDataArray) {
-            for (int i = 0; i < operationRunners.length; i++) {
+            for (int i = 0; i < operationRunners.length && running; i++) {
                 if (operationRunners[i].currentTask() == null) {
                     continue;
                 }
@@ -205,6 +217,9 @@ final class SlowOperationDetector {
             }
 
             for (SlowOperationLog log : slowOperationLogs.values()) {
+                if (!running) {
+                    return false;
+                }
                 log.purgeInvocations(nowNanos, logRetentionNanos);
                 if (log.isEmpty()) {
                     slowOperationLogs.remove(log.getStackTrace().hashCode());
