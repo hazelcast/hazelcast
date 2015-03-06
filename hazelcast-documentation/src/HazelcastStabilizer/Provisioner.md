@@ -3,10 +3,10 @@
 ## Provisioner
 
 The provisioner is responsible for provisioning (starting/stopping) instances in a cloud. It will start an Operating
-System instance, install Java, open firewall ports and install Stabilizer Agents.
+System instance, install Java, open firewall ports and install Simulator Agents.
 
 The behavior of the cluster like cloud, operating system, hardware, JVM version, Hazelcast version or region can be configured through
-the file `stabilizer.properties`. Please see the [Stabilizer.Properties File Description section](#stabilizer-properties-file-description) for more information. 
+the file `simulator.properties`. Please see the [Simulator.Properties File Description section](#simulator-properties-file-description) for more information. 
 
 The following are the arguments you can use with the `provisioner`.
 
@@ -62,9 +62,9 @@ To remove all the worker home directories
 provisioner --clean
 ```
 
-### Accessing the provisioned machine
+### Accessing the Provisioned Machine
 
-When a machine is provisioned, by default a user with the name `stabilizer` is created on the remote machine and added
+When a machine is provisioned, by default a user with the name `simulator` is created on the remote machine and added
 to the sudousers list. Also, the public key of your local user is copied to the remote machine and added to the file 
 `~/.ssh/authorized_keys`. You can login to that machine using the following command.
 
@@ -72,5 +72,5 @@ to the sudousers list. Also, the public key of your local user is copied to the 
 ssh stabilizer@ip
 ```
 
-You can change the name of the created user to something else by setting the `USER=<somename>` property in the file `stabilizer.properties`. Be careful not to pick a name that is used on the target image, e.g. if you use `ec2-user/ubuntu`, and the
+You can change the name of the created user to something else by setting the `USER=<somename>` property in the file `simulator.properties`. Be careful not to pick a name that is used on the target image, e.g. if you use `ec2-user/ubuntu`, and the
 default user of that image is `ec2-user/ubuntu`, then you can run into authentication problems.

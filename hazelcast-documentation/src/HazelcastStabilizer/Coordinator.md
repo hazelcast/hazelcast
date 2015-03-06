@@ -10,14 +10,14 @@ You can deploy your test on the workers using the following command.
 coordinator yourtest.properties.
 ```
 
-This creates a single worker per agent and runs the test for 60 seconds. This is the default duration for a Stabilizer test.
+This creates a single worker per agent and runs the test for 60 seconds. This is the default duration for a Hazelcast Simulator test.
 
 If your test properties file is called `test.properties`, then the coordinator picks it up automatically, using just the command `coordinator`.
 
 
 ### Controlling Hazelcast Declarative Configuration
 
-By default, the coordinator makes use of the files `STABILIZER_HOME/conf/hazelcast.xml` and `STABILIZER_HOME/conf/client-hazelcast.xml`
+By default, the coordinator makes use of the files `SIMULATOR_HOME/conf/hazelcast.xml` and `SIMULATOR_HOME/conf/client-hazelcast.xml`
 to generate the correct Hazelcast configuration. You can use your own configuration by overriding these files using the following arguments:
 
 ```

@@ -1,21 +1,21 @@
 
 
-## Executing a Stabilizer Test
+## Executing a Simulator Test
 
 
-Probably you want to write your own test. The easiest way to do that is to make use of the Stabilizer archetype which
+Probably you want to write your own test. The easiest way to do that is to make use of the Simulator archetype which
 will generate a project for you.
 
 ```
 mvn archetype:generate  \
-    -DarchetypeGroupId=com.hazelcast.stabilizer \
+    -DarchetypeGroupId=com.hazelcast.simulator \
     -DarchetypeArtifactId=archetype \
     -DarchetypeVersion=0.3 \
     -DgroupId=yourgroupid  \
     -DartifactId=yourproject
 ```
 
-This will create fully working stabilizer project including a very basic test: see ExampleTest that Increments an
+This will create fully working simulator project including a very basic test: see ExampleTest that Increments an
 IAtomicLong. When the test has completed, a verification is done if the actual number of increments is equal to the
 expected number of increments. In your case you probably want to do something more interesting.
 
@@ -31,7 +31,7 @@ And then go to workdir:
 cd workdir
 ```
  
-Edit the stabilizer.properties file. In case of EC2, you only need to have a look at the following 2 properties:
+Edit the simulator.properties file. In case of EC2, you only need to have a look at the following 2 properties:
 
 ```
 CLOUD_IDENTITY=~/ec2.identity
@@ -40,8 +40,8 @@ CLOUD_CREDENTIAL=~/ec2.credential
 
 So create these two text files in your home directory. The ec2.identity text-file should contain your access key and the 
 ec2.credential text-file your secret key. For a full listing of options and explanation of the options, read the 
-STABILIZER_HOME/conf/stabilizer.properties. This file contains all the default values that are used as soon as 
-a specific stabilizer.properties doesn't contain a specific property.
+SIMULATOR_HOME/conf/simulator.properties. This file contains all the default values that are used as soon as 
+a specific simulator.properties doesn't contain a specific property.
 
 And finally you can run the test from the workdir directory:
 

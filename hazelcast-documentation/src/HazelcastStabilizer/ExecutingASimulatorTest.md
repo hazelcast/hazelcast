@@ -1,22 +1,22 @@
 
 
-## Executing a Stabilizer Test
+## Executing a Simulator Test
 
-After you install and prepare the Hazelcast Stabilizer for your environment, it is time to perform a test.
+After you install and prepare the Hazelcast Simulator for your environment, it is time to perform a test.
 
-The following steps wrap up the whole procedure for executing a Stabilizer Test.
+The following steps wrap up the whole procedure for executing a Hazelcast Simulator test.
 
-1. Install the Hazelcast Stabilizer.
+1. Install the Hazelcast Simulator.
 2. Create a directory for your tests, let's call it as the working directory.
-3. Copy the `stabilizer.properties` file from the `/conf` directory of Hazelcast Stabilizer to your working directory.
-4. Edit the `stabilizer.properties` file according to your needs.
-5. Copy the `test.properties` file from the `/stabilizer-tests` directory of Hazelcast Stabilizer to your working directory.
+3. Copy the `simulator.properties` file from the `/conf` directory of Hazelcast Simulator to your working directory.
+4. Edit the `simulator.properties` file according to your needs.
+5. Copy the `test.properties` file from the `/simulator-tests` directory of Hazelcast Simulator to your working directory.
 6. Edit the `test.properties` file according to your needs.
-5. Execute the `run.sh` script while you are in your working directory to perform your Stabilizer test.
+5. Execute the `run.sh` script while you are in your working directory to perform your Simulator test.
 
-In the following sections, we provide an example test and its output along with the required file (`stabilizer.properties` and `test.properties`) edits.
+In the following sections, we provide an example test and its output along with the required file (`simulator.properties` and `test.properties`) edits.
 
-### An Example Stabilizer Test
+### An Example Simulator Test
 
 The following example is a test where a counter is being incremented. When the test is completed, a verification is done if the actual number of increments is equal to the expected number of increments.
 
@@ -27,17 +27,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.stabilizer.probes.probes.IntervalProbe;
-import com.hazelcast.stabilizer.test.TestContext;
-import com.hazelcast.stabilizer.test.TestRunner;
-import com.hazelcast.stabilizer.test.annotations.Performance;
-import com.hazelcast.stabilizer.test.annotations.Run;
-import com.hazelcast.stabilizer.test.annotations.Setup;
-import com.hazelcast.stabilizer.test.annotations.Teardown;
-import com.hazelcast.stabilizer.test.annotations.Verify;
-import com.hazelcast.stabilizer.test.utils.ThreadSpawner;
-import com.hazelcast.stabilizer.worker.selector.OperationSelector;
-import com.hazelcast.stabilizer.worker.selector.OperationSelectorBuilder;
+import com.hazelcast.simulator.probes.probes.IntervalProbe;
+import com.hazelcast.simulator.test.TestContext;
+import com.hazelcast.simulator.test.TestRunner;
+import com.hazelcast.simulator.test.annotations.Performance;
+import com.hazelcast.simulator.test.annotations.Run;
+import com.hazelcast.simulator.test.annotations.Setup;
+import com.hazelcast.simulator.test.annotations.Teardown;
+import com.hazelcast.simulator.test.annotations.Verify;
+import com.hazelcast.simulator.test.utils.ThreadSpawner;
+import com.hazelcast.simulator.worker.selector.OperationSelector;
+import com.hazelcast.simulator.worker.selector.OperationSelectorBuilder;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -154,7 +154,7 @@ public class ExampleTest {
 ```
 
 
-### Editing `Stabilizer.Properties`
+### Editing `Simulator.Properties`
 
  
 In the case of Amazon EC2, you need to consider the following properties.
@@ -167,7 +167,7 @@ CLOUD_CREDENTIAL=~/ec2.credential
 Create two text files in your home directory. The file `ec2.identity` should contain your access key and the file 
 `ec2.credential` should contain your secret key. 
 
-***NOTE:*** *For a full description of the file `stabilizer.properties`, please see the [Stabilizer.Properties File Description section](#stabilizer-properties-file-description).*
+***NOTE:*** *For a full description of the file `simulator.properties`, please see the [Simulator.Properties File Description section](#simulator-properties-file-description).*
 
 ### Editing `test.properties`
 
@@ -232,23 +232,23 @@ This test runs for 2 minutes. After it is completed, the artifacts (log files) a
 The output of the test looks like the following.
 
 ```
-INFO  08:40:10 Hazelcast Stabilizer Provisioner
+INFO  08:40:10 Hazelcast Simulator Provisioner
 INFO  08:40:10 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:40:10 STABILIZER_HOME: /home/alarmnummer/hazelcast-stabilizer-0.3
-INFO  08:40:10 Loading stabilizer.properties: /tmp/yourproject/workdir/stabilizer.properties
+INFO  08:40:10 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
+INFO  08:40:10 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
 INFO  08:40:10 ==============================================================
 INFO  08:40:10 Provisioning 4 aws-ec2 machines
 INFO  08:40:10 ==============================================================
 INFO  08:40:10 Current number of machines: 0
 INFO  08:40:10 Desired number of machines: 4
-INFO  08:40:10 GroupName: stabilizer-agent
+INFO  08:40:10 GroupName: simulator-agent
 INFO  08:40:10 JDK spec: oracle 7
 INFO  08:40:10 Hazelcast version-spec: outofthebox
 INFO  08:40:12 Created compute
 INFO  08:40:12 Machine spec: hardwareId=m3.medium,locationId=us-east-1,imageId=us-east-1/ami-fb8e9292
-INFO  08:40:19 Security group: 'stabilizer' is found in region 'us-east-1'
+INFO  08:40:19 Security group: 'simulator' is found in region 'us-east-1'
 INFO  08:40:27 Created template
-INFO  08:40:27 Loginname to the remote machines: stabilizer
+INFO  08:40:27 Loginname to the remote machines: simulator
 INFO  08:40:27 Creating machines (can take a few minutes)
 INFO  08:42:10 	54.91.98.103 LAUNCHED
 INFO  08:42:10 	54.237.144.164 LAUNCHED
@@ -258,23 +258,23 @@ INFO  08:42:24 	54.196.60.36 JAVA INSTALLED
 INFO  08:42:25 	54.237.144.164 JAVA INSTALLED
 INFO  08:42:27 	54.91.98.103 JAVA INSTALLED
 INFO  08:42:30 	54.226.58.200 JAVA INSTALLED
-INFO  08:42:57 	54.196.60.36 STABILIZER AGENT INSTALLED
-INFO  08:42:59 	54.237.144.164 STABILIZER AGENT INSTALLED
-INFO  08:43:01 	54.196.60.36 STABILIZER AGENT STARTED
-INFO  08:43:02 	54.237.144.164 STABILIZER AGENT STARTED
-INFO  08:43:06 	54.91.98.103 STABILIZER AGENT INSTALLED
-INFO  08:43:09 	54.91.98.103 STABILIZER AGENT STARTED
-INFO  08:43:21 	54.226.58.200 STABILIZER AGENT INSTALLED
-INFO  08:43:25 	54.226.58.200 STABILIZER AGENT STARTED
+INFO  08:42:57 	54.196.60.36 SIMULATOR AGENT INSTALLED
+INFO  08:42:59 	54.237.144.164 SIMULATOR AGENT INSTALLED
+INFO  08:43:01 	54.196.60.36 SIMULATOR AGENT STARTED
+INFO  08:43:02 	54.237.144.164 SIMULATOR AGENT STARTED
+INFO  08:43:06 	54.91.98.103 SIMULATOR AGENT INSTALLED
+INFO  08:43:09 	54.91.98.103 SIMULATOR AGENT STARTED
+INFO  08:43:21 	54.226.58.200 SIMULATOR AGENT INSTALLED
+INFO  08:43:25 	54.226.58.200 SIMULATOR AGENT STARTED
 INFO  08:43:25 Duration: 00d 00h 03m 15s
 INFO  08:43:25 ==============================================================
 INFO  08:43:25 Successfully provisioned 4 aws-ec2 machines
 INFO  08:43:25 ==============================================================
 INFO  08:43:25 Pausing for Machine Warm up... (10 sec)
-INFO  08:43:36 Hazelcast Stabilizer Coordinator
+INFO  08:43:36 Hazelcast Simulator Coordinator
 INFO  08:43:36 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:43:36 STABILIZER_HOME: /home/alarmnummer/hazelcast-stabilizer-0.3
-INFO  08:43:36 Loading stabilizer.properties: /tmp/yourproject/workdir/stabilizer.properties
+INFO  08:43:36 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
+INFO  08:43:36 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
 INFO  08:43:36 Loading testsuite file: /tmp/yourproject/workdir/../conf/test.properties
 INFO  08:43:36 Loading Hazelcast configuration: /tmp/yourproject/workdir/../conf/hazelcast.xml
 INFO  08:43:36 Loading Hazelcast client configuration: /tmp/yourproject/workdir/../conf/client-hazelcast.xml
@@ -353,10 +353,10 @@ INFO  08:49:45 Total running time: 340 seconds
 INFO  08:49:45 -----------------------------------------------------------------------------
 INFO  08:49:45 No failures have been detected!
 INFO  08:49:45 -----------------------------------------------------------------------------
-INFO  08:49:46 Hazelcast Stabilizer Provisioner
+INFO  08:49:46 Hazelcast Simulator Provisioner
 INFO  08:49:46 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:49:46 STABILIZER_HOME: /home/alarmnummer/hazelcast-stabilizer-0.3
-INFO  08:49:46 Loading stabilizer.properties: /tmp/yourproject/workdir/stabilizer.properties
+INFO  08:49:46 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
+INFO  08:49:46 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
 INFO  08:49:46 ==============================================================
 INFO  08:49:46 Download artifacts of 4 machines
 INFO  08:49:46 ==============================================================
@@ -367,10 +367,10 @@ INFO  08:49:53 Downloading from 54.226.58.200
 INFO  08:49:56 ==============================================================
 INFO  08:49:56 Finished Downloading Artifacts of 4 machines
 INFO  08:49:56 ==============================================================
-INFO  08:49:56 Hazelcast Stabilizer Provisioner
+INFO  08:49:56 Hazelcast Simulator Provisioner
 INFO  08:49:56 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:49:56 STABILIZER_HOME: /home/alarmnummer/hazelcast-stabilizer-0.3
-INFO  08:49:56 Loading stabilizer.properties: /tmp/yourproject/workdir/stabilizer.properties
+INFO  08:49:56 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
+INFO  08:49:56 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
 INFO  08:49:56 ==============================================================
 INFO  08:49:56 Terminating 4 aws-ec2 machines (can take some time)
 INFO  08:49:56 ==============================================================
