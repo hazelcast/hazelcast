@@ -238,7 +238,7 @@ public class ClientInvocation implements Runnable {
     boolean isConnectionHealthy(long elapsed) {
         if (elapsed >= heartBeatInterval) {
             if (sendConnection != null) {
-                return sendConnection.isAlive() && sendConnection.isHeartBeating();
+                return sendConnection.isHeartBeating();
             } else {
                 return true;
             }

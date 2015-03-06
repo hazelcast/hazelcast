@@ -47,9 +47,6 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         }
         ClientConnection connection =
                 (ClientConnection) connectionManager.getOrConnect(owner, authenticator);
-        if (connection == null || !connection.isAlive()) {
-            throw new IllegalStateException("Connection is not active");
-        }
         send(invocation, connection);
     }
 

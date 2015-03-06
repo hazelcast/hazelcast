@@ -216,7 +216,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public boolean isHeartBeating() {
-        return heartBeating;
+        return live.get() && heartBeating;
     }
 
     @Override

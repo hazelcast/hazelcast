@@ -27,9 +27,6 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
         if (connection == null) {
             throw new NullPointerException("Connection can not be null");
         }
-        if (!connection.isAlive()) {
-            throw new IllegalStateException("Connection is not active");
-        }
         send(invocation, connection);
     }
 
