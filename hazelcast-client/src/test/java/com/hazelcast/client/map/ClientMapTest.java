@@ -844,8 +844,8 @@ public class ClientMapTest {
     @Test
     public void testMapStatistics() throws Exception {
         String name = randomString();
-        final LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
         final IMap map = client.getMap(name);
+        final LocalMapStats localMapStats = server.getMap(name).getLocalMapStats();
 
         final int operationCount = 1000;
         for (int i = 0; i < operationCount; i++) {

@@ -15,9 +15,9 @@ public class NearCacheStatsImpl
             .newUpdater(NearCacheStatsImpl.class, "hits");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(NearCacheStatsImpl.class, "misses");
-    private long ownedEntryCount;
-    private long ownedEntryMemoryCost;
-    private long creationTime;
+    private volatile long ownedEntryCount;
+    private volatile long ownedEntryMemoryCost;
+    private volatile long creationTime;
 
     // These fields are only accessed through the updaters
     private volatile long hits;
@@ -94,8 +94,8 @@ public class NearCacheStatsImpl
         ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
         ownedEntryMemoryCost = getLong(json, "ownedEntryMemoryCost", -1L);
         creationTime = getLong(json, "creationTime", -1L);
-        HITS_UPDATER.set(this, getLong(json, "hits", -1L));
-        MISSES_UPDATER.set(this, getLong(json, "misses", -1L));
+        hits = getLong(json, "hits", -1L);
+        misses = getLong(json, "misses", -1L);
     }
 
     @Override
