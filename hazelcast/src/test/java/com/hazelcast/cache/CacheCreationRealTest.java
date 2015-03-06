@@ -21,11 +21,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -34,20 +31,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
-import javax.cache.CacheManager;
-import javax.cache.Caching;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 
-import static junit.framework.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class CacheCreationRealTest {
 
-    private final URL configUrl1 = getClass().getClassLoader().getResource("test-hazelcast-jcache.xml");
-
+    private final URL configUrl1 = getClass().getClassLoader().getResource("test-hazelcast-real-jcache.xml");
     Config hzConfig;
 
     @Before
@@ -60,6 +53,17 @@ public class CacheCreationRealTest {
     @After
     public void cleanup() throws Exception{
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void play0() throws URISyntaxException {
+
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
+        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
+                .createCachingProvider(hazelcastInstance);
+
+        Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("c" + 1);
+        cache.get(1);
     }
 
 
@@ -77,7 +81,7 @@ public class CacheCreationRealTest {
                     HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
                             .createCachingProvider(hazelcastInstance);
 
-                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("c" + finalI);
+                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("c" );
                     cache.get(1);
                     latch.countDown();
                 }
@@ -86,5 +90,26 @@ public class CacheCreationRealTest {
         HazelcastTestSupport.assertOpenEventually(latch);
     }
 
+    @Test
+    public void play2() throws URISyntaxException {
 
+        int threadCount=4;
+
+        final CountDownLatch latch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            final int finalI = i;
+            new Thread() {
+                public void run() {
+                    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
+                    HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
+                            .createCachingProvider(hazelcastInstance);
+
+                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("c"+finalI);
+                    cache.get(1);
+                    latch.countDown();
+                }
+            }.start();
+        }
+        HazelcastTestSupport.assertOpenEventually(latch);
+    }
 }
