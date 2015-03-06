@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.slowoperationdetector;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.management.JsonSerializable;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
@@ -28,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -98,7 +98,7 @@ public final class SlowOperationLog implements JsonSerializable {
     Invocation getOrCreateInvocation(int operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
         totalInvocations++;
 
-        Invocation invocation = ConcurrencyUtil.getOrPutIfAbsent(invocations, operationHashCode, INVOCATION_CONSTRUCTOR_FUNCTION);
+        Invocation invocation = getOrPutIfAbsent(invocations, operationHashCode, INVOCATION_CONSTRUCTOR_FUNCTION);
         invocation.id = operationHashCode;
         invocation.startedAt = nowMillis - invocation.durationNanos;
         invocation.durationNanos = TimeUnit.NANOSECONDS.toMillis(lastDurationNanos);
@@ -124,9 +124,9 @@ public final class SlowOperationLog implements JsonSerializable {
         StringBuilder sb = new StringBuilder();
 
         sb.append("SlowOperationLog{operation='").append(operation)
-          .append("', stackTrace='").append(stackTrace)
-          .append("', totalInvocations=").append(totalInvocations)
-          .append(", invocations='");
+                .append("', stackTrace='").append(stackTrace)
+                .append("', totalInvocations=").append(totalInvocations)
+                .append(", invocations='");
 
         String prefix = "";
         for (Invocation log : invocations.values()) {

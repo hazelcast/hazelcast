@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -22,24 +22,32 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.concurrent.TimeoutException;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstractTest {
 
-    @Test
-    public void testPurging() {
+    private HazelcastInstance instance;
+
+    @Before
+    public void setup(){
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "3");
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
 
-        HazelcastInstance instance = getSingleNodeCluster(config);
+        instance = getSingleNodeCluster(config);
+    }
+
+    @Test
+    public void testPurging() throws InterruptedException, TimeoutException {
         IMap<String, String> map = getMapWithSingleElement(instance);
 
         // all of these entry processors are executed after each other, not in parallel

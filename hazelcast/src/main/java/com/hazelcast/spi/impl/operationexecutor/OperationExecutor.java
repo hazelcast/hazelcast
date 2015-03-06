@@ -4,18 +4,20 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
+import java.util.concurrent.TimeoutException;
+
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations) to be executed. It can be compared
  * to a {@link java.util.concurrent.Executor} with the big difference that it is designed for assigning packets,
  * operations and PartitionSpecificRunnable to a thread instead of only runnables.
- *
+ * <p/>
  * It depends on the implementation if an operation is executed on the calling thread or not. For example the
  * {@link com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor} will always offload a partition specific
  * Operation to the correct partition-operation-thread.
- *
+ * <p/>
  * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the
  * {@link OperationRunner}.
- *
+ * <p/>
  * In case of a response packet, the {@link ResponsePacketHandler} is used to handle the response.
  */
 public interface OperationExecutor {
@@ -142,4 +144,13 @@ public interface OperationExecutor {
      */
     void shutdown();
 
+    /**
+     * Awaits for this OperationExecutor to be fully terminated.
+     * <p/>
+     * Normally this method is called by the same thread that calls {@link #shutdown()}
+     *
+     * @throws java.lang.InterruptedException if the thread is interrupted while waiting.
+     * @throws java.util.concurrent.TimeoutException if the thread didn't manage to complete within the given timeout.
+     */
+    void awaitTermination(long timeoutMs) throws InterruptedException, TimeoutException;
 }

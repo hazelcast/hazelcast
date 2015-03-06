@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.slowoperationdetector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;

@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
@@ -402,7 +403,13 @@ public class Node {
             connectionManager.shutdown();
 
             logger.info("Shutting down node engine...");
-            nodeEngine.shutdown(terminate);
+            try {
+                nodeEngine.shutdown(terminate);
+            } catch (TimeoutException e) {
+                logger.warning("Failed do terminate NodeEngine due to a timeout");
+            } catch (InterruptedException e) {
+                logger.warning("Failed do terminate NodeEngine, the calling thread was interrupted");
+            }
 
             if (securityContext != null) {
                 securityContext.destroy();

@@ -49,6 +49,7 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.TimeoutException;
 
 public class NodeEngineImpl implements NodeEngine {
 
@@ -309,7 +310,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
-    public void shutdown(final boolean terminate) {
+    public void shutdown(final boolean terminate) throws TimeoutException, InterruptedException {
         logger.finest("Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();

@@ -16,14 +16,43 @@
 
 package com.hazelcast.util;
 
+import java.util.concurrent.TimeoutException;
+
+import static java.lang.String.format;
+
 /**
- * Utility class to manipulate and query thread id
+ * Utility class for threads.
  */
 public final class ThreadUtil {
 
     private static final ThreadLocal<Long> THREAD_LOCAL = new ThreadLocal<Long>();
 
+    // we don't want any instances
     private ThreadUtil() {
+    }
+
+    /**
+     * Await for threads to complete termination.
+     * <p/>
+     * Each thread is given the timeout. So if there are 10 threads, and the timeout is 1 second, in theory to wait
+     * for termination of all the thread, one could wait 10 seconds.
+     *
+     * @param timeoutMs the timeout in ms. A timeout of 0 means waiting indefinitely.
+     * @param threads   the threads to wait for completion.
+     * @throws java.lang.InterruptedException        if the calling thread was interrupted while waiting.
+     * @throws java.util.concurrent.TimeoutException if the thread has not terminated within the given timeout.
+     * @throws IllegalArgumentException              if timeout smaller than 0.
+     */
+    public static void awaitTermination(long timeoutMs, Thread... threads) throws InterruptedException, TimeoutException {
+        for (Thread thread : threads) {
+            thread.join(timeoutMs);
+
+            if (!thread.isAlive()) {
+                continue;
+            }
+
+            throw new TimeoutException(format("Thread %s failed to complete within %s ms", thread.getName(), timeoutMs));
+        }
     }
 
     /**
