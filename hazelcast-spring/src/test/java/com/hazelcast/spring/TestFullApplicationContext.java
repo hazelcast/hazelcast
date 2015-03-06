@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -45,6 +46,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
@@ -190,6 +192,18 @@ public class TestFullApplicationContext {
     }
 
     @Test
+    public void testCacheConfig() {
+        assertNotNull(config);
+        assertEquals(1, config.getCacheConfigs().size());
+        CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
+        assertEquals("testCache", cacheConfig.getName());
+
+        WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
+        assertEquals("testWan", wanRef.getName());
+        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+    }
+
+    @Test
     public void testMapConfig() {
         assertNotNull(config);
         assertEquals(9, config.getMapConfigs().size());
@@ -241,6 +255,7 @@ public class TestFullApplicationContext {
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, testMapConfig2.getMapStoreConfig().getInitialLoadMode());
         assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
+        assertEquals("PUT_IF_ABSENT", testMapConfig2.getWanReplicationRef().getMergePolicy());
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());

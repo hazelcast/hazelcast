@@ -183,14 +183,7 @@
             <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1"/>
-                    </xs:sequence>
-                    <xs:attribute name="name" type="xs:string" use="required"/>
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
             <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -373,6 +366,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1306,6 +1300,13 @@
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
         <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="wan-replication-ref">
+        <xs:sequence>
+            <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
 
 </xs:schema>

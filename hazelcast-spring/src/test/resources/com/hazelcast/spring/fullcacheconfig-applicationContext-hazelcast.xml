@@ -14,12 +14,11 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:p="http://www.springframework.org/schema/p"
-       xmlns:hz="http://www.hazelcast.com/schema/spring"
        xmlns:s="http://www.hazelcast.com/schema/sample"
+       xmlns:hz="http://www.hazelcast.com/schema/spring"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
@@ -205,7 +204,11 @@
             <hz:map name="mapWithOptimizedQueries" optimize-queries="true"/>
             <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
-
+            
+            <hz:cache name="testCache">
+                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
+            </hz:cache>
+            
             <hz:multimap name="testMultimap"
                          value-collection-type="LIST">
 
