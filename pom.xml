@@ -242,6 +242,7 @@
                     </includes>
                     <excludes>
                         <exclude>**/jsr/**.java</exclude>
+                        <exclude>**/client/**Request.*</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -383,6 +384,7 @@
                                 <exclude>**HibernateStatisticsTestSupport**</exclude>
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
+                                <exclude>**/client/**Request.*</exclude>
                             </excludes>
                         </configuration>
                         <executions>
