@@ -56,4 +56,12 @@
         <management-enabled>false</management-enabled>
     </cache>
 
+    <cache name="j">
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+    </cache>
+
+    <cache name="c*">
+    </cache>
+
 </hazelcast>
