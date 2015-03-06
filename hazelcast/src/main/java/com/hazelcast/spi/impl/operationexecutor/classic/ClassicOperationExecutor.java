@@ -25,13 +25,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.util.ThreadUtil;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
@@ -55,8 +56,6 @@ import java.util.concurrent.TimeUnit;
  * </ol>
  */
 public final class ClassicOperationExecutor implements OperationExecutor {
-
-    public static final int TERMINATION_TIMEOUT_SECONDS = 3;
 
     private final ILogger logger;
 
@@ -411,48 +410,43 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private int toPartitionThreadIndex(int partitionId) {
         return partitionId % partitionOperationThreads.length;
     }
-
-    @Override
-    public void shutdown() {
-        responseThread.shutdown();
-        shutdownAll(partitionOperationThreads);
-        shutdownAll(genericOperationThreads);
-        awaitTermination(partitionOperationThreads);
-        awaitTermination(genericOperationThreads);
-    }
-
-    private static void shutdownAll(OperationThread[] operationThreads) {
-        for (OperationThread thread : operationThreads) {
-            thread.shutdown();
-        }
-    }
-
-    private static void awaitTermination(OperationThread[] operationThreads) {
-        for (OperationThread thread : operationThreads) {
-            try {
-                thread.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
         for (PartitionOperationThread operationThread : partitionOperationThreads) {
             sb.append(operationThread.getName())
-              .append(" processedCount=").append(operationThread.processedCount)
-              .append(" pendingCount=").append(operationThread.scheduleQueue.size())
-              .append('\n');
+                    .append(" processedCount=").append(operationThread.processedCount)
+                    .append(" pendingCount=").append(operationThread.scheduleQueue.size())
+                    .append('\n');
         }
         sb.append("pending generic operations ").append(genericScheduleQueue.size()).append('\n');
         for (GenericOperationThread operationThread : genericOperationThreads) {
             sb.append(operationThread.getName())
-              .append(" processedCount=").append(operationThread.processedCount).append('\n');
+                    .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
         sb.append(responseThread.getName())
                 .append(" processedCount=").append(responseThread.processedResponses)
                 .append(" pendingCount=").append(responseThread.workQueue.size()).append('\n');
+    }
+
+
+    @Override
+    public void shutdown() {
+        responseThread.shutdown();
+
+        for (OperationThread thread : partitionOperationThreads) {
+            thread.shutdown();
+        }
+
+        for (OperationThread thread : genericOperationThreads) {
+            thread.shutdown();
+        }
+    }
+
+    @Override
+    public void awaitTermination(long timeoutMs) throws InterruptedException, TimeoutException {
+        ThreadUtil.awaitTermination(timeoutMs, responseThread);
+        ThreadUtil.awaitTermination(timeoutMs, partitionOperationThreads);
+        ThreadUtil.awaitTermination(timeoutMs, genericOperationThreads);
     }
 
     @Override

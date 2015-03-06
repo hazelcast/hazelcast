@@ -55,6 +55,8 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
+import com.hazelcast.spi.impl.slowoperationdetector.SlowOperationDetector;
+import com.hazelcast.spi.impl.slowoperationdetector.SlowOperationLog;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -72,6 +74,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -81,6 +84,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
+import static com.hazelcast.util.ThreadUtil.awaitTermination;
 import static java.lang.Math.min;
 
 /**
@@ -105,7 +109,9 @@ import static java.lang.Math.min;
  * @see com.hazelcast.spi.impl.BasicPartitionInvocation
  * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
-final class BasicOperationService implements InternalOperationService {
+public final class BasicOperationService implements InternalOperationService {
+
+    public static final long TERMINATION_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(3);
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -131,8 +137,7 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
     private final SlowOperationDetector slowOperationDetector;
-
-    private volatile boolean shutdown;
+    private final CleanupThread cleanupThread;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -166,12 +171,13 @@ final class BasicOperationService implements InternalOperationService {
         this.slowOperationDetector = new SlowOperationDetector(operationExecutor.getGenericOperationRunners(),
                 operationExecutor.getPartitionOperationRunners(), node.groupProperties, node.getHazelcastThreadGroup());
 
-        startCleanupThread();
+        this.cleanupThread = initCleanupThread();
     }
 
-    private void startCleanupThread() {
+    private CleanupThread initCleanupThread() {
         CleanupThread t = new CleanupThread();
         t.start();
+        return t;
     }
 
     @Override
@@ -499,8 +505,7 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public void shutdown() {
-        shutdown = true;
+    public void shutdown() throws InterruptedException, TimeoutException {
         logger.finest("Stopping operation threads...");
         for (BasicInvocation invocation : invocations.values()) {
             try {
@@ -510,8 +515,14 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
         invocations.clear();
+
         operationExecutor.shutdown();
         slowOperationDetector.shutdown();
+        cleanupThread.shutdown();
+
+        operationExecutor.awaitTermination(TERMINATION_TIMEOUT_MS);
+        slowOperationDetector.awaitTermination(TERMINATION_TIMEOUT_MS);
+        awaitTermination(TERMINATION_TIMEOUT_MS, cleanupThread);
     }
 
     /**
@@ -1090,6 +1101,8 @@ final class BasicOperationService implements InternalOperationService {
 
         public static final int DELAY_MILLIS = 1000;
 
+        private volatile boolean shutdown;
+
         private CleanupThread() {
             super(node.getHazelcastThreadGroup().getThreadNamePrefix("CleanupThread"));
         }
@@ -1102,11 +1115,15 @@ final class BasicOperationService implements InternalOperationService {
                     backPressureService.cleanup();
                     sleep();
                 }
-
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
             }
+        }
+
+        private void shutdown() {
+            shutdown = true;
+            interrupt();
         }
 
         private void sleep() {
@@ -1124,12 +1141,17 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             for (BasicInvocation invocation : invocations.values()) {
+                if(shutdown){
+                    return;
+                }
+
                 try {
                     invocation.handleOperationTimeout();
                 } catch (Throwable t) {
                     inspectOutputMemoryError(t);
                     logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
                 }
+
                 try {
                     invocation.handleBackupTimeout(backupOperationTimeoutMillis);
                 } catch (Throwable t) {
@@ -1139,5 +1161,4 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
     }
-
 }

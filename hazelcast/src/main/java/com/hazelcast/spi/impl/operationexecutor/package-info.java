@@ -15,6 +15,10 @@
  */
 
 /**
- * Contains the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} code.
+ * Contains the logic for executing/running Operations.
+ *
+ * This logic has been pulled out of the {@link com.hazelcast.spi.OperationService} so you get a separation of concerns. The
+ * actual processing can be done there, while the assignment of an operation to a thread is the responsibility of the
+ * {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor}.
  */
 package com.hazelcast.spi.impl.operationexecutor;

@@ -21,8 +21,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.slowoperationdetector.SlowOperationLog;
 
 import java.util.Collection;
+import java.util.concurrent.TimeoutException;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -69,7 +71,7 @@ public interface InternalOperationService extends OperationService {
     /**
      * Returns information about long running operations.
      * <p/>
-     * Do not modify this collection, because it is the original data structure used by the {@link SlowOperationDetector}.
+     * Do not modify this collection.
      *
      * @return collection of long running operation logs.
      */
@@ -84,5 +86,5 @@ public interface InternalOperationService extends OperationService {
     /**
      * Shuts down this InternalOperationService.
      */
-    void shutdown();
+    void shutdown() throws InterruptedException, TimeoutException;
 }

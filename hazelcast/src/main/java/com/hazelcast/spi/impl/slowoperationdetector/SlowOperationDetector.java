@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.slowoperationdetector;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
@@ -22,17 +22,19 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static java.lang.String.format;
 
 /**
  * Monitors the operation threads to find and collect data of long running operations.
  */
-final class SlowOperationDetector {
+public final class SlowOperationDetector {
 
     private static final int FULL_LOG_FREQUENCY = 100;
     private static final long ONE_SECOND_IN_NANOS = TimeUnit.SECONDS.toNanos(1);
@@ -51,8 +53,7 @@ final class SlowOperationDetector {
     private final long slowOperationThresholdNanos;
     private final long logPurgeIntervalNanos;
     private final long logRetentionNanos;
-
-    private volatile boolean running = true;
+    private final SlowOperationDetectorThread thread;
 
     public SlowOperationDetector(OperationRunner[] genericOperationRunners, OperationRunner[] partitionOperationRunners,
                                  GroupProperties groupProperties, HazelcastThreadGroup hazelcastThreadGroup) {
@@ -66,14 +67,11 @@ final class SlowOperationDetector {
         logPurgeIntervalNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
         logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
 
-        new SlowOperationDetectorThread(hazelcastThreadGroup).start();
+        thread = new SlowOperationDetectorThread(hazelcastThreadGroup);
+        thread.start();
     }
 
-    void shutdown() {
-        running = false;
-    }
-
-    Collection<SlowOperationLog> getSlowOperationLogs() {
+    public Collection<SlowOperationLog> getSlowOperationLogs() {
         return slowOperationLogs.values();
     }
 
@@ -94,6 +92,14 @@ final class SlowOperationDetector {
         return TimeUnit.SECONDS.toNanos(groupProperty.getInteger());
     }
 
+    public void shutdown() {
+        thread.shutdown();
+    }
+
+    public void awaitTermination(long timeoutMs) throws InterruptedException, TimeoutException {
+        ThreadUtil.awaitTermination(timeoutMs, thread);
+    }
+
     private static class CurrentOperationData {
         int operationHashCode;
         long startNanos;
@@ -101,11 +107,18 @@ final class SlowOperationDetector {
     }
 
     private class SlowOperationDetectorThread extends Thread {
+        private volatile boolean running = true;
 
-        public SlowOperationDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
-            super(hazelcastThreadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
+        public SlowOperationDetectorThread(HazelcastThreadGroup threadGroup) {
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
         }
 
+        private void shutdown() {
+            running = false;
+            thread.interrupt();
+        }
+
+        @Override
         public void run() {
             long lastLogPurge = System.nanoTime();
             while (running) {
