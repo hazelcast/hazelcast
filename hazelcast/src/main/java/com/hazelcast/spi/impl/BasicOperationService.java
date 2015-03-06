@@ -111,6 +111,7 @@ final class BasicOperationService implements InternalOperationService {
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
+    private static final long CLEANUP_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final BasicOperationScheduler scheduler;
@@ -133,6 +134,8 @@ final class BasicOperationService implements InternalOperationService {
     private final OperationPacketHandler operationPacketHandler;
     private final ResponsePacketHandler responsePacketHandler;
     private final BasicBackPressureService backPressureService;
+    private final CleanupThread cleanupThread;
+
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -161,12 +164,8 @@ final class BasicOperationService implements InternalOperationService {
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        startCleanupThread();
-    }
-
-    private void startCleanupThread() {
-        CleanupThread t = new CleanupThread();
-        t.start();
+        this.cleanupThread = new CleanupThread();
+        this.cleanupThread.start();
     }
 
     @Override
@@ -457,6 +456,11 @@ final class BasicOperationService implements InternalOperationService {
         }
         invocations.clear();
         scheduler.shutdown();
+        try {
+            cleanupThread.join(CLEANUP_THREAD_MAX_WAIT_TIME_TO_FINISH);
+        } catch (InterruptedException e) {
+            EmptyStatement.ignore(e);
+        }
     }
 
     /**
@@ -1096,10 +1100,13 @@ final class BasicOperationService implements InternalOperationService {
             try {
                 while (!shutdown) {
                     scanHandleOperationTimeout();
-                    backPressureService.cleanup();
-                    sleep();
+                    if (!shutdown) {
+                        backPressureService.cleanup();
+                    }
+                    if (!shutdown) {
+                        sleep();
+                    }
                 }
-
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
@@ -1121,6 +1128,9 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             for (BasicInvocation invocation : invocations.values()) {
+                if (shutdown) {
+                    return;
+                }
                 try {
                     invocation.handleOperationTimeout();
                 } catch (Throwable t) {
