@@ -168,8 +168,8 @@ final class BasicOperationService implements InternalOperationService {
         this.slowOperationDetector = new SlowOperationDetector(operationExecutor.getGenericOperationRunners(),
                 operationExecutor.getPartitionOperationRunners(), node.groupProperties, node.getHazelcastThreadGroup());
 
-        cleanupThread = new CleanupThread();
-        cleanupThread.start();
+        this.cleanupThread = new CleanupThread();
+        this.cleanupThread.start();
     }
 
     @Override
@@ -1109,7 +1109,6 @@ final class BasicOperationService implements InternalOperationService {
                         sleep();
                     }
                 }
-
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
