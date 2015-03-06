@@ -73,7 +73,6 @@ public abstract class HazelcastTestSupport {
         return futureTask;
     }
 
-
     public static <E> Future<E> spawn(Callable<E> task) {
         FutureTask futureTask = new FutureTask(task);
         new Thread(futureTask).start();
@@ -209,7 +208,7 @@ public abstract class HazelcastTestSupport {
         for (; ; ) {
             String id = prefix + randomString();
             Partition partition = partitionService.getPartition(id);
-            if (comparePartitionOwnership(false, localMember, partition)) {
+            if (comparePartitionOwnership(true, localMember, partition)) {
                 return id;
             }
         }

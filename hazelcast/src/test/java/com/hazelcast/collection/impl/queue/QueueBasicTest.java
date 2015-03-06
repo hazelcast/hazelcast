@@ -19,34 +19,57 @@ package com.hazelcast.collection.impl.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getThreadLocalFrameworkMethod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+public abstract class QueueBasicTest extends HazelcastTestSupport {
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-public class BasicQueueTest extends AbstractQueueTest {
+    protected HazelcastInstance[] instances;
+    protected IAtomicLong atomicLong;
+    private IQueue<String> queue;
+    private QueueConfig queueConfig;
 
+    @Before
+    public void setup() {
+        Config config = new Config();
+        config.addQueueConfig(new QueueConfig("testOffer_whenFull*").setMaxSize(100));
+        config.addQueueConfig(new QueueConfig("testOfferWithTimeout*").setMaxSize(100));
+
+        instances = newInstances(config);
+        HazelcastInstance local = instances[0];
+        HazelcastInstance target = instances[instances.length - 1];
+        String methodName = getThreadLocalFrameworkMethod().getMethod().getName();
+        String name = randomNameOwnedBy(target, methodName);
+        queueConfig = config.getQueueConfig(name);
+        queue = local.getQueue(name);
+    }
+
+    protected abstract HazelcastInstance[] newInstances(Config config);
 
     // ================ offer ==============================
 
     @Test
     public void testOffer() throws Exception {
         int count = 100;
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < count; i++) {
             queue.offer("item" + i);
         }
@@ -55,26 +78,18 @@ public class BasicQueueTest extends AbstractQueueTest {
     }
 
     @Test
-    public void testOffer_whenNoCapacity() {
-        final String name = randomString();
-        int count = 100;
-        Config config = new Config();
-        QueueConfig queueConfig = config.getQueueConfig(name);
-        queueConfig.setMaxSize(count);
-        HazelcastInstance instance = createHazelcastInstance(config);
-        IQueue<String> queue = instance.getQueue(name);
-        for (int i = 0; i < count; i++) {
+    public void testOffer_whenFull() {
+        for (int i = 0; i < queueConfig.getMaxSize(); i++) {
             queue.offer("item" + i);
         }
 
         boolean accepted = queue.offer("rejected");
         assertFalse(accepted);
-        assertEquals(count, queue.size());
+        assertEquals(queueConfig.getMaxSize(), queue.size());
     }
 
     @Test
     public void testOffer_whenNullArgument() {
-        IQueue<String> queue = newQueue();
         try {
             queue.offer(null);
             fail();
@@ -86,21 +101,15 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testOfferWithTimeout() throws InterruptedException {
-        final String name = randomString();
-        Config config = new Config();
-        final int count = 100;
-        config.getQueueConfig(name).setMaxSize(count);
-        HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue<String> queue = instance.getQueue(name);
         OfferThread offerThread = new OfferThread(queue);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < queueConfig.getMaxSize(); i++) {
             queue.offer("item" + i);
         }
 
         assertFalse(queue.offer("rejected"));
         offerThread.start();
         queue.poll();
-        assertSizeEventually(100, queue);
+        assertSizeEventually(queueConfig.getMaxSize(), queue);
         assertTrue(queue.contains("waiting"));
     }
 
@@ -109,7 +118,6 @@ public class BasicQueueTest extends AbstractQueueTest {
     @Test
     public void testPoll() {
         int count = 100;
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < count; i++) {
             queue.offer("item" + i);
         }
@@ -123,7 +131,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testPoll_whenQueueEmpty() {
-        IQueue<String> queue = newQueue();
         assertNull(queue.poll());
     }
 
@@ -132,7 +139,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testPollWithTimeout() throws Exception {
-        final IQueue<String> queue = newQueue();
         PollThread pollThread = new PollThread(queue);
         pollThread.start();
         queue.offer("offer");
@@ -146,7 +152,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRemove() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -157,7 +162,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRemove_whenElementNotExists() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -168,13 +172,11 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRemove_whenQueueEmpty() {
-        IQueue<String> queue = newQueue();
         assertFalse(queue.remove("not in Queue"));
     }
 
     @Test
     public void testRemove_whenArgNull() {
-        IQueue<String> queue = newQueue();
         queue.add("foo");
 
         try {
@@ -190,7 +192,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testDrainTo() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -205,7 +206,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testDrainTo_whenQueueEmpty() {
-        IQueue<String> queue = newQueue();
         List list = new ArrayList();
 
         assertEquals(0, queue.drainTo(list));
@@ -213,7 +213,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testDrainTo_whenCollectionNull() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -228,7 +227,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testDrainToWithMaxElement() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -242,7 +240,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testDrainToWithMaxElement_whenCollectionNull() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -258,7 +255,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testDrainToWithMaxElement_whenMaxArgNegative() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -272,7 +268,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testContains_whenExists() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -283,7 +278,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testContains_whenNotExists() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -296,8 +290,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testAddAll_whenCollectionContainsNull() {
-        HazelcastInstance instance = createHazelcastInstance();
-        IQueue<String> queue = instance.getQueue(randomString());
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -313,7 +305,6 @@ public class BasicQueueTest extends AbstractQueueTest {
     }
 
     public void testContainsAll_whenExists() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -327,7 +318,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testContainsAll_whenNoneExists() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -341,7 +331,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testContainsAll_whenSomeExists() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -356,10 +345,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test(expected = NullPointerException.class)
     public void testContainsAll_whenNull() {
-        IQueue<String> queue = newQueue();
-        for (int i = 0; i < 10; i++) {
-            queue.offer("item" + i);
-        }
         queue.containsAll(null);
     }
 
@@ -367,7 +352,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testAddAll() {
-        IQueue<String> queue = newQueue();
         List<String> list = new ArrayList<String>();
         for (int i = 0; i < 10; i++) {
             list.add("item" + i);
@@ -379,8 +363,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testAddAll_whenNullCollection() {
-        IQueue<String> queue = newQueue();
-
         try {
             queue.addAll(null);
             fail();
@@ -392,7 +374,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testAddAll_whenEmptyCollection() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -405,7 +386,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testAddAll_whenDuplicateItems() {
-        IQueue<String> queue = newQueue();
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -421,7 +401,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRetainAll() {
-        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -436,7 +415,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRetainAll_whenCollectionNull() {
-        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -451,7 +429,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRetainAll_whenCollectionEmpty() {
-        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -463,7 +440,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRetainAll_whenCollectionContainsNull() {
-        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -478,7 +454,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testRemoveAll() {
-        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -491,25 +466,13 @@ public class BasicQueueTest extends AbstractQueueTest {
         assertEquals(queue.size(), 0);
     }
 
-    @Test
+    @Test(expected = NullPointerException.class)
     public void testRemoveAll_whenCollectionNull() {
-        IQueue<String> queue = newQueue();
-        queue.add("item3");
-        queue.add("item4");
-        queue.add("item5");
-
-        try {
-            queue.removeAll(null);
-            fail();
-        } catch (NullPointerException expected) {
-        }
-
-        assertEquals(3, queue.size());
+        queue.removeAll(null);
     }
 
     @Test
     public void testRemoveAll_whenCollectionEmpty() {
-        IQueue<String> queue = newQueue();
         queue.add("item3");
         queue.add("item4");
         queue.add("item5");
@@ -523,9 +486,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test
     public void testToArray() {
-        final String name = randomString();
-        HazelcastInstance instance = createHazelcastInstance();
-        IQueue<String> queue = instance.getQueue(name);
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
         }
@@ -536,8 +496,7 @@ public class BasicQueueTest extends AbstractQueueTest {
             assertEquals(o, "item" + i++);
         }
         String[] arr = new String[5];
-        IQueue<String> q = instance.getQueue(name);
-        arr = q.toArray(arr);
+        arr = queue.toArray(arr);
         assertEquals(arr.length, 10);
         for (int i = 0; i < arr.length; i++) {
             Object o = arr[i];
@@ -547,7 +506,6 @@ public class BasicQueueTest extends AbstractQueueTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testQueueRemoveFromIterator() {
-        IQueue<String> queue = createHazelcastInstance().getQueue(randomString());
         queue.add("one");
         Iterator<String> iterator = queue.iterator();
         iterator.next();

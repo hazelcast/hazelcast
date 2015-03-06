@@ -28,7 +28,7 @@ import java.io.IOException;
 
 public class ListGetRequest extends CollectionRequest {
 
-    int index = -1;
+    private int index = -1;
 
     public ListGetRequest() {
     }
@@ -48,11 +48,13 @@ public class ListGetRequest extends CollectionRequest {
         return CollectionPortableHook.LIST_GET;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeInt("i", index);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         index = reader.readInt("i");

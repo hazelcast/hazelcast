@@ -48,7 +48,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClusterQueueTest extends HazelcastTestSupport {
+public class QueueAdvancedTest extends HazelcastTestSupport {
 
     @Test
     public void testOffer() throws Exception {

@@ -57,7 +57,10 @@ public class CacheConfig<K, V>
     private NearCacheConfig nearCacheConfig;
 
     public CacheConfig() {
-        super();
+    }
+
+    public CacheConfig(String name) {
+        setName(name);
     }
 
     public CacheConfig(CompleteConfiguration<K, V> configuration) {
