@@ -17,7 +17,6 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
 
