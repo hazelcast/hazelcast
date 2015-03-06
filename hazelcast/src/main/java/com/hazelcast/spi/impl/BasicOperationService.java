@@ -1141,12 +1141,17 @@ public final class BasicOperationService implements InternalOperationService {
             }
 
             for (BasicInvocation invocation : invocations.values()) {
+                if(shutdown){
+                    return;
+                }
+
                 try {
                     invocation.handleOperationTimeout();
                 } catch (Throwable t) {
                     inspectOutputMemoryError(t);
                     logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
                 }
+
                 try {
                     invocation.handleBackupTimeout(backupOperationTimeoutMillis);
                 } catch (Throwable t) {
