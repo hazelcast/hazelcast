@@ -426,7 +426,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
 
             if (promote) {
-                final Operation op = new PromoteFromBackupOperation();
+                final Operation op = new PromoteFromBackupOperation(deadAddress);
                 op.setPartitionId(partition.getPartitionId())
                         .setNodeEngine(nodeEngine)
                         .setValidateTarget(false)
