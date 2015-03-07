@@ -1,8 +1,8 @@
 
 
-### Multicast Auto-discovery
+### Multicast Auto-Discovery
 
-With the multicast auto-discovery mechanism, Hazelcast allows cluster members to find each other using multicast communication. The cluster members do not need to know concrete addresses of each other, they just multicast to everyone for listening. It depends on your environment if multicast is possible or allowed.
+With the multicast auto-discovery mechanism, Hazelcast allows cluster members to find each other using multicast communication. The cluster members do not need to know the concrete addresses of the other members, they just multicast to all the other members for listening. It depends on your environment if multicast is possible or allowed.
 
 The following is an example declarative configuration.
 
@@ -26,7 +26,7 @@ The following is an example declarative configuration.
    <network>     
 ```
 
-You should pay attention to the `multicast-timeout-seconds` element. This element specifies the time in seconds that a node should wait for a valid multicast response from another node running in the network before declaring itself as the leader node (first node joined to the cluster) and creating its own cluster. This only applies to the startup of nodes where no leader has been assigned yet. If you specify a high value for the `multicast-timeout-seconds` like 60 seconds, it means until a leader is selected, each node is going to wait 60 seconds before moving on. Therefore, be careful when providing a high value. If the value is too low, the nodes might give up too early and create their own cluster.
+Pay attention to the `multicast-timeout-seconds` element. `multicast-timeout-seconds` specifies the time in seconds that a node should wait for a valid multicast response from another node running in the network before declaring itself as the leader node (the first node joined to the cluster) and creating its own cluster. This only applies to the startup of nodes where no leader has been assigned yet. If you specify a high value to `multicast-timeout-seconds`, such as 60 seconds, it means that until a leader is selected, each node will wait 60 seconds before moving on. Be careful when providing a high value. Also be careful to not set the value too low, or the nodes might give up too early and create their own cluster.
 
 <br></br>
 ***RELATED INFORMATION***
