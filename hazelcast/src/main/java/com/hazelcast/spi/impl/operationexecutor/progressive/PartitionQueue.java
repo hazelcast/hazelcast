@@ -200,7 +200,7 @@ public class PartitionQueue {
      * @param task the task to add.
      * @throws java.lang.NullPointerException if task is null.
      */
-    public void runOrAdd(Object task) {
+    public void runOrAdd(final Object task) {
         if (task == null) {
             throw new NullPointerException("task can't be null");
         }
