@@ -74,7 +74,7 @@ abstract class AbstractPartitionsMessageHandler extends AbstractMessageHandler {
         return response;
     }
 
-    private class CallbackImpl implements Callback<Object> {
+    private static class CallbackImpl implements Callback<Object> {
         private final ClientEndpoint endpoint;
         private final MessageHandlerContext context;
 
