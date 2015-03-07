@@ -118,13 +118,13 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             if (currentValue != null) {
                 result.put(key, checkIfRemoved(currentValue));
             } else {
-            	// todo: optimize it via getAllInternal ?
             	Object data = getInternal(keyData);
             	if (data != null) {
             		result.put(key, mapServiceContext.toObject(data));
             	}
             }
         }
+    	// todo: optimize it via getAllInternal ?
         return result;
     }
 
@@ -184,24 +184,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 txMap.put(keyData, wrapper);
             }
         }
-
-        //Map<Data, Data> dataMap = new HashMap<Data, Data>(entries.size());
-        //for (final Object e: entries.entrySet()) {
-        //	final Map.Entry entry = (Map.Entry) e;
-        //	dataMap.put(mapServiceContext.toData(entry.getKey(), partitionStrategy), 
-        //			mapServiceContext.toData(entry.getValue()));
-        //}
-        //Map<Data, Data> oldDataMap = putAllInternal(dataMap);
-        //for (final Object e: entries.entrySet()) {
-        //	final Map.Entry entry = (Map.Entry) e;
-        //  if (entry.getValue() != null) {
-        //    	final Data key = mapServiceContext.toData(entry.getKey(), partitionStrategy);
-        //        TxnValueWrapper wrapper = oldDataMap.get(key) == null
-        //                ? new TxnValueWrapper(entry.getValue(), TxnValueWrapper.Type.NEW)
-        //                : new TxnValueWrapper(entry.getValue(), TxnValueWrapper.Type.UPDATED);
-        //        txMap.put(key, wrapper);
-        //    }
-        //}
+    	// todo: optimize it via putAllInternal ?
     }
 
     public void set(Object key, Object value) {
