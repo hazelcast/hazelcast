@@ -78,7 +78,7 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             ClusterService service = getService();
             Collection<MemberImpl> memberList = service.getMemberList();
             ClientInitialMembershipEvent event = new ClientInitialMembershipEvent(memberList);
-            endpoint.sendEvent(null, event, getCallId());
+            endpoint.sendEvent(endpoint.getUuid(), event, getCallId());
         }
 
         @Override
@@ -90,7 +90,7 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
             ClientInitialMembershipEvent event =
                     new ClientInitialMembershipEvent(member, ClientInitialMembershipEvent.MEMBER_ADDED);
-            endpoint.sendEvent(null, event, getCallId());
+            endpoint.sendEvent(endpoint.getUuid(), event, getCallId());
         }
 
         @Override
@@ -102,7 +102,7 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
             ClientInitialMembershipEvent event =
                     new ClientInitialMembershipEvent(member, ClientInitialMembershipEvent.MEMBER_REMOVED);
-            endpoint.sendEvent(null, event, getCallId());
+            endpoint.sendEvent(endpoint.getUuid(), event, getCallId());
         }
 
         @Override
@@ -118,7 +118,7 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
             ClientInitialMembershipEvent event = new ClientInitialMembershipEvent(member, memberAttributeChange);
-            endpoint.sendEvent(null, event, getCallId());
+            endpoint.sendEvent(endpoint.getUuid(), event, getCallId());
         }
     }
 }

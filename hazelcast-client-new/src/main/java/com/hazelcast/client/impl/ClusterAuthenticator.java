@@ -37,7 +37,7 @@ public class ClusterAuthenticator implements Authenticator {
     @Override
     public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-        final ClientPrincipal principal = clusterService.getClusterListenerSupport().getPrincipal();
+        final ClientPrincipal principal = clusterService.getPrincipal();
         final SerializationService ss = client.getSerializationService();
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         connection.init();
