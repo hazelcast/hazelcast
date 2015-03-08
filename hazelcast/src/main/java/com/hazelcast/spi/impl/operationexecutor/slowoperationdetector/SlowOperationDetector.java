@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;
 
@@ -30,15 +30,17 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.String.format;
 
 /**
- * Monitors the operation threads to find and collect data of long running operations.
+ * Monitors the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} instances of the
+ * {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} to see if operations are slow. Slow
+ * Operations are logged and can be accessed e.g. to write to a log file or report to management center.
  */
-final class SlowOperationDetector {
+public final class SlowOperationDetector {
 
     private static final int FULL_LOG_FREQUENCY = 100;
     private static final long ONE_SECOND_IN_NANOS = TimeUnit.SECONDS.toNanos(1);
     private static final long SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
-    private static final ILogger LOGGER = Logger.getLogger(SlowOperationDetector.class);
 
+    private final ILogger logger;
     private final ConcurrentHashMap<Integer, SlowOperationLog> slowOperationLogs
             = new ConcurrentHashMap<Integer, SlowOperationLog>();
     private final StringBuilder stackTraceStringBuilder = new StringBuilder();
@@ -53,37 +55,38 @@ final class SlowOperationDetector {
     private final long logPurgeIntervalNanos;
     private final long logRetentionNanos;
 
-    private final SlowOperationDetectorThread slowOperationDetectorThread;
+    private final DetectorThread detectorThread;
 
-    private volatile boolean running = true;
-
-    public SlowOperationDetector(OperationRunner[] genericOperationRunners, OperationRunner[] partitionOperationRunners,
-                                 GroupProperties groupProperties, HazelcastThreadGroup hazelcastThreadGroup) {
+    public SlowOperationDetector(LoggingService loggingServices,
+                                 OperationRunner[] genericOperationRunners,
+                                 OperationRunner[] partitionOperationRunners,
+                                 GroupProperties groupProperties,
+                                 HazelcastThreadGroup hazelcastThreadGroup) {
+        this.logger = loggingServices.getLogger(SlowOperationDetector.class);
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
 
-        genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
-        partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
+        this.slowOperationThresholdNanos = getGroupPropertyMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
+        this.logPurgeIntervalNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
+        this.logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
 
-        slowOperationThresholdNanos = getGroupPropertyMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
-        logPurgeIntervalNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
-        logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
+        this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
+        this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
 
-        slowOperationDetectorThread = new SlowOperationDetectorThread(hazelcastThreadGroup);
-
-        slowOperationDetectorThread.start();
+        this.detectorThread = initDetectorThread(hazelcastThreadGroup);
     }
 
-    void shutdown() {
-        running = false;
-        try {
-            slowOperationDetectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
-        } catch (InterruptedException e) {
-            EmptyStatement.ignore(e);
-        }
+    private DetectorThread initDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
+        DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
+        thread.start();
+        return thread;
     }
 
-    Collection<SlowOperationLog> getSlowOperationLogs() {
+    public void shutdown() {
+        detectorThread.shutdown();
+    }
+
+    public Collection<SlowOperationLog> getSlowOperationLogs() {
         return slowOperationLogs.values();
     }
 
@@ -110,12 +113,14 @@ final class SlowOperationDetector {
         SlowOperationLog.Invocation invocation;
     }
 
-    private class SlowOperationDetectorThread extends Thread {
+    private class DetectorThread extends Thread {
+        private volatile boolean running = true;
 
-        public SlowOperationDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
-            super(hazelcastThreadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
+        public DetectorThread(HazelcastThreadGroup threadGroup) {
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
         }
 
+        @Override
         public void run() {
             long lastLogPurge = System.nanoTime();
             while (running) {
@@ -181,10 +186,10 @@ final class SlowOperationDetector {
             String prefix = "";
             for (StackTraceElement stackTraceElement : operationRunner.currentThread().getStackTrace()) {
                 stackTraceStringBuilder.append(prefix).append(stackTraceElement.toString());
-                prefix = "\n";
+                prefix = "\n\t";
             }
 
-            final String stackTraceString = stackTraceStringBuilder.toString();
+            String stackTraceString = stackTraceStringBuilder.toString();
             stackTraceStringBuilder.setLength(0);
 
             Integer hashCode = stackTraceString.hashCode();
@@ -204,9 +209,9 @@ final class SlowOperationDetector {
             Object operation = operationRunner.currentTask();
             int totalInvocations = log.getTotalInvocations();
             if (totalInvocations == 1) {
-                LOGGER.warning(format("Slow operation detected: %s%n%s", operation, log.getStackTrace()));
+                logger.warning(format("Slow operation detected: %s%n%s", operation, log.getStackTrace()));
             } else {
-                LOGGER.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
+                logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
                         (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.getStackTrace() : log.getShortStackTrace()));
             }
         }
@@ -233,6 +238,17 @@ final class SlowOperationDetector {
                 TimeUnit.NANOSECONDS.sleep(ONE_SECOND_IN_NANOS - (System.nanoTime() - nowNanos));
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
+            }
+        }
+
+        private void shutdown() {
+            running = false;
+            detectorThread.interrupt();
+            try {
+                detectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+                //TODO: You are consuming interrupt flag here.
             }
         }
     }

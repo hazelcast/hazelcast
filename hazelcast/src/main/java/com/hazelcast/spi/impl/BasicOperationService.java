@@ -55,6 +55,8 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
+import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationLog;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -105,7 +107,7 @@ import static java.lang.Math.min;
  * @see com.hazelcast.spi.impl.BasicPartitionInvocation
  * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
-final class BasicOperationService implements InternalOperationService {
+public final class BasicOperationService implements InternalOperationService {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -165,11 +167,18 @@ final class BasicOperationService implements InternalOperationService {
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        this.slowOperationDetector = new SlowOperationDetector(operationExecutor.getGenericOperationRunners(),
-                operationExecutor.getPartitionOperationRunners(), node.groupProperties, node.getHazelcastThreadGroup());
+        this.slowOperationDetector = initSlowOperationDetector();
 
         this.cleanupThread = new CleanupThread();
         this.cleanupThread.start();
+    }
+
+    private SlowOperationDetector initSlowOperationDetector() {
+        return  new SlowOperationDetector(node.loggingService,
+                operationExecutor.getGenericOperationRunners(),
+                operationExecutor.getPartitionOperationRunners(),
+                node.groupProperties,
+                node.getHazelcastThreadGroup());
     }
 
     @Override
