@@ -66,9 +66,9 @@ public final class SlowOperationDetector {
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
 
-        this.slowOperationThresholdNanos = getGroupPropertyMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
-        this.logPurgeIntervalNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
-        this.logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
+        this.slowOperationThresholdNanos = getMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
+        this.logPurgeIntervalNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
+        this.logRetentionNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
 
         this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
         this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
@@ -99,11 +99,11 @@ public final class SlowOperationDetector {
         return currentOperationDataArray;
     }
 
-    private long getGroupPropertyMillisAsNanos(GroupProperties.GroupProperty groupProperty) {
+    private long getMillisAsNanos(GroupProperties.GroupProperty groupProperty) {
         return TimeUnit.MILLISECONDS.toNanos(groupProperty.getInteger());
     }
 
-    private long getGroupPropertySecAsNanos(GroupProperties.GroupProperty groupProperty) {
+    private long getSecAsNanos(GroupProperties.GroupProperty groupProperty) {
         return TimeUnit.SECONDS.toNanos(groupProperty.getInteger());
     }
 
