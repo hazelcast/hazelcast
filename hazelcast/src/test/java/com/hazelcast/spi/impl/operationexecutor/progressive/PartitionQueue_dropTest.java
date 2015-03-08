@@ -65,7 +65,7 @@ public class PartitionQueue_dropTest extends PartitionQueueAbstractTest {
     }
 
     @Test
-    public void whenStolen_andMoreWork_thenUnpark() {
+    public void whenStolen_andMoreWork_thenUnparked() {
         Node node = new Node();
         node.normalSize = 1;
         node.state = Stolen;
@@ -76,7 +76,7 @@ public class PartitionQueue_dropTest extends PartitionQueueAbstractTest {
         boolean result = partitionQueue.drop();
 
         assertTrue(result);
-        assertNodeAdded(Unparked, null);
+        assertHeadStateChanged(Unparked);
         assertUnparkNodeAdded();
     }
 
@@ -110,7 +110,7 @@ public class PartitionQueue_dropTest extends PartitionQueueAbstractTest {
     }
 
     @Test
-    public void whenStolenParked_andNormalPendingWork_thenUnpark() {
+    public void whenStolenUnparked_andNormalPendingWork_thenUnparked() {
         Node node = new Node();
         node.normalSize = 1;
         node.state = StolenUnparked;
@@ -121,7 +121,7 @@ public class PartitionQueue_dropTest extends PartitionQueueAbstractTest {
         boolean result = partitionQueue.drop();
 
         assertTrue(result);
-        assertNodeAdded(Unparked, null);
+        assertHeadStateChanged(Unparked);
         assertNoNewUnparks();
     }
 

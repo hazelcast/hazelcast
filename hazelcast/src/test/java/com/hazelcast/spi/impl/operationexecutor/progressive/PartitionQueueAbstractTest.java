@@ -2,12 +2,7 @@ package com.hazelcast.spi.impl.operationexecutor.progressive;
 
 import org.junit.Before;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public abstract class PartitionQueueAbstractTest {
 
@@ -49,7 +44,7 @@ public abstract class PartitionQueueAbstractTest {
 
     public void assertHead(Node expected) {
         Node actual = partitionQueue.head.get();
-        assertSame("head is not the same",expected, actual);
+        assertSame("head is not the same", expected, actual);
     }
 
     public void assertPriorityUnparkNodeAdded() {
@@ -117,6 +112,17 @@ public abstract class PartitionQueueAbstractTest {
 
         int expectedPrioritySize = previousUnparkNode == null ? 0 : previousUnparkNode.prioritySize + 0;
         assertEquals(expectedPrioritySize, unparkNode.prioritySize);
+    }
+
+    public void assertHeadStateChanged(PartitionQueueState expectedState) {
+        Node node = partitionQueue.head.get();
+        assertNotSame(node, previousNode);
+        assertEquals(previousNode.hasPriority, node.hasPriority);
+        assertEquals(previousNode.normalSize, node.normalSize);
+        assertEquals(previousNode.prioritySize, node.prioritySize);
+        assertEquals(previousNode.task, node.task);
+        assertEquals(previousNode.prev, node.prev);
+        assertEquals(expectedState, node.state);
     }
 
     public void assertNoNewUnparks() {

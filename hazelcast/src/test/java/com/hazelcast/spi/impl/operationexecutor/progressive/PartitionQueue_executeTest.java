@@ -6,10 +6,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.EXECUTING;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.PARKED;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.EXECUTING_PRIORITY;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.STOLEN;
+import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.*;
 import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -73,20 +70,20 @@ public class PartitionQueue_executeTest extends PartitionQueueAbstractTest {
     }
 
     @Test
-    public void whenUnparked_andNoWork_thenReturnToParked() {
+    public void whenUnparked_andNoWork_thenSuccess() {
         partitionQueue.head.set(Node.UNPARKED);
 
         beforeTest();
         boolean result = partitionQueue.execute();
 
-        assertFalse(result);
-        assertHead(PARKED);
+        assertTrue(result);
+        assertHeadStateChanged(Executing);
         assertBuffersUnchanged();
         assertNoNewUnparks();
     }
 
     @Test
-    public void whenUnparked_andWork_thenExecute() {
+    public void whenUnparked_andWork_thenSuccess() {
         MockPartitionOperation op = new MockPartitionOperation();
         partitionQueue.add(op);
 
@@ -122,9 +119,7 @@ public class PartitionQueue_executeTest extends PartitionQueueAbstractTest {
         boolean result = partitionQueue.execute();
 
         assertFalse(result);
-        // it needs to revert back to stolen because the schedule queue is removing the
-        // partition-queue from its parked-set. By removing to stolen, you get unparks again.
-        assertHead(STOLEN);
+        assertHead(STOLEN_UNPARKED);
         assertBuffersUnchanged();
         assertNoNewUnparks();
     }

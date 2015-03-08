@@ -531,6 +531,7 @@ public class PartitionQueue {
             final Node prev = head.get();
             switch (prev.state) {
                 case Stolen:
+                    throw new IllegalStateException("Unexpected state: "+prev.state);
                 case UnparkedPriority:
                 case ExecutingPriority:
                 case Parked:
