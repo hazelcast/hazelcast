@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -29,6 +29,8 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.BasicOperationService;
+import com.hazelcast.spi.impl.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
