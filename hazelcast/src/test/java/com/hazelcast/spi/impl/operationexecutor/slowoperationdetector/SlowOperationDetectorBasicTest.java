@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -23,6 +23,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;

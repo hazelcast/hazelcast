@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;
 
@@ -32,18 +33,25 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.String.format;
 
 /**
- * Monitors {@link OperationRunner} instances to find and collect data of long running operations.
+ * Monitors the {@link OperationRunner} instances of the {@link OperationExecutor} to see if operations are slow.
+ * <p/>
+ * Slow operations are logged and can be accessed e.g. to write to a log file or report to management center.
  */
-final class SlowOperationDetector {
+public final class SlowOperationDetector {
 
     private static final int FULL_LOG_FREQUENCY = 100;
     private static final long ONE_SECOND_IN_NANOS = TimeUnit.SECONDS.toNanos(1);
     private static final long SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
-    private static final ILogger LOGGER = Logger.getLogger(SlowOperationDetector.class);
 
     private final ConcurrentHashMap<Integer, SlowOperationLog> slowOperationLogs
             = new ConcurrentHashMap<Integer, SlowOperationLog>();
     private final StringBuilder stackTraceStringBuilder = new StringBuilder();
+
+    private final ILogger logger;
+
+    private final long slowOperationThresholdNanos;
+    private final long logPurgeIntervalNanos;
+    private final long logRetentionNanos;
 
     private final OperationRunner[] genericOperationRunners;
     private final OperationRunner[] partitionOperationRunners;
@@ -51,46 +59,45 @@ final class SlowOperationDetector {
     private final CurrentOperationData[] genericCurrentOperationData;
     private final CurrentOperationData[] partitionCurrentOperationData;
 
-    private final long slowOperationThresholdNanos;
-    private final long logPurgeIntervalNanos;
-    private final long logRetentionNanos;
+    private final DetectorThread detectorThread;
 
-    private final SlowOperationDetectorThread slowOperationDetectorThread;
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP2" })
+    public SlowOperationDetector(LoggingService loggingServices,
+                                 OperationRunner[] genericOperationRunners,
+                                 OperationRunner[] partitionOperationRunners,
+                                 GroupProperties groupProperties,
+                                 HazelcastThreadGroup hazelcastThreadGroup) {
 
-    private volatile boolean running = true;
+        this.logger = loggingServices.getLogger(SlowOperationDetector.class);
 
-    SlowOperationDetector(OperationRunner[] genericOperationRunners, OperationRunner[] partitionOperationRunners,
-                                 GroupProperties groupProperties, HazelcastThreadGroup hazelcastThreadGroup) {
+        this.slowOperationThresholdNanos = getMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
+        this.logPurgeIntervalNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
+        this.logRetentionNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
+
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
 
-        genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
-        partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
+        this.genericCurrentOperationData = initCurrentOperationData(genericOperationRunners);
+        this.partitionCurrentOperationData = initCurrentOperationData(partitionOperationRunners);
 
-        slowOperationThresholdNanos = getGroupPropertyMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
-        logPurgeIntervalNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
-        logRetentionNanos = getGroupPropertySecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
-
-        slowOperationDetectorThread = new SlowOperationDetectorThread(hazelcastThreadGroup);
-        if (groupProperties.SLOW_OPERATION_DETECTOR_ENABLED.getBoolean()) {
-            slowOperationDetectorThread.start();
-        } else {
-            LOGGER.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
-        }
-    }
-
-    void shutdown() {
-        running = false;
-        try {
-            slowOperationDetectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
-        } catch (InterruptedException e) {
-            EmptyStatement.ignore(e);
-        }
+        this.detectorThread = initDetectorThread(hazelcastThreadGroup, groupProperties);
     }
 
     @SuppressWarnings("unchecked")
-    Collection<JsonSerializable> getSlowOperations() {
+    public Collection<JsonSerializable> getSlowOperations() {
         return ((Map) slowOperationLogs).values();
+    }
+
+    public void shutdown() {
+        detectorThread.shutdown();
+    }
+
+    private long getMillisAsNanos(GroupProperties.GroupProperty groupProperty) {
+        return TimeUnit.MILLISECONDS.toNanos(groupProperty.getInteger());
+    }
+
+    private long getSecAsNanos(GroupProperties.GroupProperty groupProperty) {
+        return TimeUnit.SECONDS.toNanos(groupProperty.getInteger());
     }
 
     private CurrentOperationData[] initCurrentOperationData(OperationRunner[] operationRunners) {
@@ -102,18 +109,23 @@ final class SlowOperationDetector {
         return currentOperationDataArray;
     }
 
-    private long getGroupPropertyMillisAsNanos(GroupProperties.GroupProperty groupProperty) {
-        return TimeUnit.MILLISECONDS.toNanos(groupProperty.getInteger());
+    private DetectorThread initDetectorThread(HazelcastThreadGroup hazelcastThreadGroup,
+                                                           GroupProperties groupProperties) {
+        DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
+        if (groupProperties.SLOW_OPERATION_DETECTOR_ENABLED.getBoolean()) {
+            thread.start();
+        } else {
+            logger.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
+        }
+        return thread;
     }
 
-    private long getGroupPropertySecAsNanos(GroupProperties.GroupProperty groupProperty) {
-        return TimeUnit.SECONDS.toNanos(groupProperty.getInteger());
-    }
+    private final class DetectorThread extends Thread {
 
-    private final class SlowOperationDetectorThread extends Thread {
+        private volatile boolean running = true;
 
-        private SlowOperationDetectorThread(HazelcastThreadGroup hazelcastThreadGroup) {
-            super(hazelcastThreadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
+        private DetectorThread(HazelcastThreadGroup threadGroup) {
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
         }
 
         public void run() {
@@ -179,7 +191,7 @@ final class SlowOperationDetector {
             String prefix = "";
             for (StackTraceElement stackTraceElement : operationRunner.currentThread().getStackTrace()) {
                 stackTraceStringBuilder.append(prefix).append(stackTraceElement.toString());
-                prefix = "\n";
+                prefix = "\n\t";
             }
 
             String stackTraceString = stackTraceStringBuilder.toString();
@@ -202,9 +214,9 @@ final class SlowOperationDetector {
             Object operation = operationRunner.currentTask();
             int totalInvocations = log.getTotalInvocations();
             if (totalInvocations == 1) {
-                LOGGER.warning(format("Slow operation detected: %s%n%s", operation, log.getStackTrace()));
+                logger.warning(format("Slow operation detected: %s%n%s", operation, log.getStackTrace()));
             } else {
-                LOGGER.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
+                logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
                         (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.getStackTrace() : log.getShortStackTrace()));
             }
         }
@@ -230,6 +242,17 @@ final class SlowOperationDetector {
                 TimeUnit.NANOSECONDS.sleep(ONE_SECOND_IN_NANOS - (System.nanoTime() - nowNanos));
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
+            }
+        }
+
+        private void shutdown() {
+            running = false;
+            detectorThread.interrupt();
+            try {
+                detectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+                // TODO: Interrupt flag is consumed here
             }
         }
     }

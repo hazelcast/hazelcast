@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -36,8 +36,8 @@ import static com.hazelcast.util.JsonUtil.getString;
  * A collection of this class is created by {@link SlowOperationDetector} and shared as <code>Collection<JsonSerializable></code>
  * with {@link com.hazelcast.monitor.impl.LocalOperationStatsImpl} to deliver a JSON representation for the Management Center.
  * <p/>
- * All data is exclusively written by {@link SlowOperationDetector.SlowOperationDetectorThread} and maybe read by other threads.
- * Only fields which are exposed via the {@link #toJson()} method need synchronization. All other fields are used single threaded.
+ * All data is exclusively written by {@link SlowOperationDetector.DetectorThread} and maybe read by other threads. Only fields
+ * which are exposed via the {@link #toJson()} method need synchronization. All other fields are used single threaded.
  */
 final class SlowOperationLog implements JsonSerializable {
 

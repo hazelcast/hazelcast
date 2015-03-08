@@ -70,7 +70,7 @@ public interface InternalOperationService extends OperationService {
     /**
      * Returns information about long running operations.
      * <p/>
-     * Do not modify this collection, because it is the original data structure used by the {@link SlowOperationDetector}.
+     * Do not modify this collection; it should only be read.
      *
      * @return collection of long running operation logs.
      */
