@@ -19,7 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.Node;
-import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.spi.impl.InternalOperationService;
 
