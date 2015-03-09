@@ -16,7 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
+import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -26,6 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -166,6 +169,28 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
+    public CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean createAlsoOnOthers,
+                                                 boolean syncCreate) {
+        CacheConfig cacheConfig = createCacheConfigIfAbsent(config);
+        if (createAlsoOnOthers) {
+            OperationService operationService = nodeEngine.getOperationService();
+            // Create cache config on other nodes, but not current node.
+            // Because, it is already created on current node with "addCacheConfigIfAbsent(config);" above.
+            CacheCreateConfigOperation op =
+                    new CacheCreateConfigOperation(cacheConfig == null ? config : cacheConfig, false, true);
+            // Run "CacheCreateConfigOperation" on this node. Its itself handles interaction with other nodes.
+            // This operation doesn't block operation thread even "syncCreate" is specified.
+            // In that case, scheduled thread is used not operation thread.
+            InternalCompletableFuture future =
+                    operationService.invokeOnTarget(SERVICE_NAME, op, nodeEngine.getThisAddress());
+            if (syncCreate) {
+                future.getSafely();
+            }
+        }
+        return cacheConfig;
+    }
+
+    @Override
     public CacheConfig deleteCacheConfig(String name) {
         return configs.remove(name);
     }
@@ -220,7 +245,19 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     public CacheSimpleConfig findCacheConfig(String simpleName) {
+        if (simpleName == null) {
+            return null;
+        }
         return nodeEngine.getConfig().findCacheConfig(simpleName);
+    }
+
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
+        //remote check
+        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
+        final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+        return f.getSafely();
     }
 
     public Collection<CacheConfig> getCacheConfigs() {

@@ -106,7 +106,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig) {
         configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
     }
 

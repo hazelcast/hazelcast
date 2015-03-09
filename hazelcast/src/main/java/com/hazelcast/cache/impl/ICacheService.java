@@ -45,6 +45,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CacheConfig createCacheConfigIfAbsent(CacheConfig config);
 
+    CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean createAlsoOnOthers, boolean syncCreate);
+
     CacheConfig deleteCacheConfig(String name);
 
     CacheStatisticsImpl createCacheStatIfAbsent(String name);

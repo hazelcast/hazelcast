@@ -121,8 +121,9 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig) {
-        cacheService.createCacheConfigIfAbsent(cacheConfig);
+    protected <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig) {
+        // Create also on other nodes and waits them to create
+        cacheService.createCacheConfigIfAbsent(cacheConfig, true, true);
     }
 
     @Override

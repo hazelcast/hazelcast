@@ -99,8 +99,7 @@ public abstract class AbstractHazelcastCacheManager
         CacheConfig<K, V> current = createConfigOnPartition(newCacheConfig);
         if (current == null) {
             //single thread region because createConfigOnPartition is single threaded by partition thread
-            //UPDATE LOCAL MEMBER
-            addCacheConfigIfAbsentToLocal(newCacheConfig);
+            addCacheConfigIfAbsent(newCacheConfig);
             //no need to a putIfAbsent as this is a single threaded region
             caches.put(newCacheConfig.getNameWithPrefix(), cacheProxy);
             //REGISTER LISTENERS
@@ -369,7 +368,7 @@ public abstract class AbstractHazelcastCacheManager
 
     protected abstract <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig);
 
-    protected abstract <K, V> void addCacheConfigIfAbsentToLocal(CacheConfig<K, V> cacheConfig);
+    protected abstract <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig);
 
     protected abstract <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
 
