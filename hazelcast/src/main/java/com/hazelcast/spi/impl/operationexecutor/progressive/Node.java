@@ -16,6 +16,8 @@ import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueu
  */
 class Node {
 
+    public final static int HISTORY = 10;
+
     static final Node PARKED = new Node(Parked);
     static final Node UNPARKED = new Node(Unparked);
     static final Node UNPARKED_PRIORITY = new Node(UnparkedPriority);
@@ -32,6 +34,8 @@ class Node {
     boolean hasPriority;
     PartitionQueueState previousState;
 
+    Node[] history;
+
     Node() {
     }
 
@@ -41,6 +45,10 @@ class Node {
 
     int size() {
         return normalSize + prioritySize;
+    }
+
+    void parked(Node prev){
+
     }
 
     //todo:

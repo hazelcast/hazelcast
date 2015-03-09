@@ -128,6 +128,7 @@ public class PartitionQueue {
                     nextState = Executing;
                     break;
                 case Stolen:
+                    //todo: why are we not doing an unpark + upgrade to StolenUnparked?
                     unpark = false;
                     nextState = Stolen;
                     break;
@@ -335,7 +336,8 @@ public class PartitionQueue {
      * This method should only be called by the thief that stole it.
      * <p/>
      *
-     * @return true if the park was a success, false if high priority work has been found
+     * @return true if the park was a success, false if high priority work has been found. If only low priority work
+     * is found and the state is stolen (so it isn't unparked), then unpark is called and the state transforms to StolenUnparked.
      * @throws java.lang.IllegalStateException if the state is not Stolen/StolenUnparked.
      */
     boolean drop() {
@@ -531,7 +533,7 @@ public class PartitionQueue {
             final Node prev = head.get();
             switch (prev.state) {
                 case Stolen:
-                    throw new IllegalStateException("Unexpected state: "+prev.state);
+                    throw new IllegalStateException("Unexpected state: "+prev);
                 case UnparkedPriority:
                 case ExecutingPriority:
                 case Parked:
@@ -749,7 +751,7 @@ public class PartitionQueue {
     /**
      * Pull in work
      *
-     * @param priority true if priority work should be pulled on, false of non priority work should be pulled in
+     * @param priority true if priority work should be pulled on, false if non priority work should be pulled in
      * @return true if any work was pulled in, false if no work was pulled on.
      * @throws IllegalStateException if this PartitionQueue isn't stolen/executing.
      */
