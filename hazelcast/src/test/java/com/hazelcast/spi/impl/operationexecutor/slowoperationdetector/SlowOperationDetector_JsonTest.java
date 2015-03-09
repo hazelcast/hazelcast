@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -26,15 +26,51 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
 import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
-public class SlowOperationDetector_jsonTest extends SlowOperationDetectorAbstractTest {
+public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstractTest {
 
     @Test
-    public void testJSON() {
+    public void testJSON() throws InterruptedException {
+        String stackTrace = "stackTrace";
+        String operation = "fakeOperation";
+        int id = 5;
+        int durationMs = 4444;
+        long nowMillis = System.currentTimeMillis();
+        long nowNanos = System.nanoTime();
+        long durationNanos = TimeUnit.MILLISECONDS.toNanos(durationMs);
+
+        SlowOperationLog log = new SlowOperationLog(stackTrace, operation);
+        log.getOrCreateInvocation(id, durationNanos, nowNanos, nowMillis);
+
+        JsonObject json = log.toJson();
+        SlowOperationLog actual = new SlowOperationLog(json);
+
+        System.out.println(json);
+
+        assertEqualsStringFormat("Expected stack trace '%s', but was '%s'", stackTrace, actual.getStackTrace());
+        assertEqualsStringFormat("Expected operation '%s', but was '%s'", operation, getFieldFromObject(actual, "operation"));
+        assertEqualsStringFormat("Expected totalInvocations '%d', but was '%d'", 1, getFieldFromObject(actual,
+                "totalInvocations"));
+
+        ConcurrentHashMap<Integer, SlowOperationLog.Invocation> invocations = getFieldFromObject(actual, "invocations");
+        SlowOperationLog.Invocation invocation = invocations.values().iterator().next();
+
+        assertEqualsStringFormat("Expected id '%d', but was '%d'", id, getFieldFromObject(invocation, "id"));
+        assertEqualsStringFormat("Expected startedAt '%d', but was '%d'", nowMillis - durationMs, getFieldFromObject(invocation,
+                "startedAt"));
+        assertEqualsStringFormat("Expected durationMs '%d', but was '%d'", durationMs, getFieldFromObject(invocation,
+                "durationMs"));
+    }
+
+    @Test
+    public void testJSON_SlowEntryProcessor() {
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
@@ -49,12 +85,11 @@ public class SlowOperationDetector_jsonTest extends SlowOperationDetectorAbstrac
 
         JsonObject firstLogJsonObject = getSlowOperationLogsJsonArray(instance).get(0).asObject();
         assertJSONContainsClassName(firstLogJsonObject, "SlowEntryProcessor");
-        assertEqualsStringFormat("Expected %d invocations, but was %d", 4,
-                firstLogJsonObject.get("invocations").asArray().size());
+        assertEqualsStringFormat("Expected %d invocations, but was %d", 4, firstLogJsonObject.get("invocations").asArray().size());
     }
 
     @Test
-    public void testJSONMultipleEntryProcessorClasses() throws InterruptedException {
+    public void testJSON_multipleEntryProcessorClasses() throws InterruptedException {
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 

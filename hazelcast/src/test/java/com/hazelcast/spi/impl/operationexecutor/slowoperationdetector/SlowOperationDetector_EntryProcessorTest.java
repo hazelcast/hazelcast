@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -56,10 +56,10 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         assertEntryProcessorOperation(firstLog);
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
 
-        Collection<SlowOperationLog.Invocation> invocations = firstLog.getInvocations();
+        Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
         assertEqualsStringFormat("Expected %d invocations, but was %d", 4, invocations.size());
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertDurationBetween(invocation.getDurationNanos(), 2000, 6500);
+            assertInvocationDurationBetween(invocation, 2000, 6500);
         }
     }
 
@@ -79,8 +79,8 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         assertNumberOfSlowOperationLogs(logs, 2);
 
         Iterator<SlowOperationLog> iterator = logs.iterator();
-        int firstSize = iterator.next().getInvocations().size();
-        int secondSize = iterator.next().getInvocations().size();
+        int firstSize = getInvocations(iterator.next()).size();
+        int secondSize = getInvocations(iterator.next()).size();
         assertTrue(format("Expected to find 1 and 4 invocations in logs, but was %d and %d", firstSize, secondSize),
                 (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -69,11 +70,11 @@ public interface InternalOperationService extends OperationService {
     /**
      * Returns information about long running operations.
      * <p/>
-     * Do not modify this collection, because it is the original data structure used by the {@link SlowOperationDetector}.
+     * Do not modify this collection; it should only be read.
      *
      * @return collection of long running operation logs.
      */
-    Collection<SlowOperationLog> getSlowOperationLogs();
+    Collection<JsonSerializable> getSlowOperations();
 
     /**
      * Resets internal state of InternalOperationService.

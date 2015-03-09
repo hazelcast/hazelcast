@@ -142,6 +142,11 @@ public class GroupProperties {
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
 
     /**
+     * Enables or disables the {@link com.hazelcast.spi.impl.SlowOperationDetector}.
+     */
+    public static final String PROP_SLOW_OPERATION_DETECTOR_ENABLED = "hazelcast.slow.operation.detector.enabled";
+
+    /**
      * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered as slow.
      * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stack trace.
      */
@@ -339,6 +344,7 @@ public class GroupProperties {
 
     public final GroupProperty SYSTEM_LOG_ENABLED;
 
+    public final GroupProperty SLOW_OPERATION_DETECTOR_ENABLED;
     public final GroupProperty SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
     public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
     public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
@@ -457,6 +463,8 @@ public class GroupProperties {
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
 
+        SLOW_OPERATION_DETECTOR_ENABLED
+                = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_ENABLED, "true");
         SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "10000");
         SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS

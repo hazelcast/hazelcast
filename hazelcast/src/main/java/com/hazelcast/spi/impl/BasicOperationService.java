@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
@@ -55,6 +56,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -165,11 +167,18 @@ final class BasicOperationService implements InternalOperationService {
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        this.slowOperationDetector = new SlowOperationDetector(operationExecutor.getGenericOperationRunners(),
-                operationExecutor.getPartitionOperationRunners(), node.groupProperties, node.getHazelcastThreadGroup());
+        this.slowOperationDetector = initSlowOperationDetector();
 
         this.cleanupThread = new CleanupThread();
         this.cleanupThread.start();
+    }
+
+    private SlowOperationDetector initSlowOperationDetector() {
+        return new SlowOperationDetector(node.loggingService,
+                operationExecutor.getGenericOperationRunners(),
+                operationExecutor.getPartitionOperationRunners(),
+                node.groupProperties,
+                node.getHazelcastThreadGroup());
     }
 
     @Override
@@ -178,8 +187,8 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
-    public Collection<SlowOperationLog> getSlowOperationLogs() {
-        return slowOperationDetector.getSlowOperationLogs();
+    public Collection<JsonSerializable> getSlowOperations() {
+        return slowOperationDetector.getSlowOperations();
     }
 
     @Override
