@@ -5,6 +5,7 @@
 
 This section lists issues solved for **Hazelcast 3.5** release.
 
+- The `size()` method for a replicated map should return `0` when the entry is removed [[#4666]](https://github.com/hazelcast/hazelcast/issues/4666).
 - There have been Hazelcast AWS exceptions after the version of AWS signer had changed (from v2 to v4) [[#4571]](https://github.com/hazelcast/hazelcast/issues/4571).
 - In the declarative configuration; when a variable is used to specify the value of an element or attribute,
 Hazelcast ignores the strings that come before the variable
