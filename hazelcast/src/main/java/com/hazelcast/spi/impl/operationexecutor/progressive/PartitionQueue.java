@@ -6,20 +6,9 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.EXECUTING;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.EXECUTING_PRIORITY;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.PARKED;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.STOLEN;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.STOLEN_UNPARKED;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.UNPARKED;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.UNPARKED_PRIORITY;
+import static com.hazelcast.spi.impl.operationexecutor.progressive.Node.*;
 import static com.hazelcast.spi.impl.operationexecutor.progressive.OperationRunnerThreadLocal.getThreadLocalOperationRunnerHolder;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Executing;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Parked;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Stolen;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.StolenUnparked;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Unparked;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.UnparkedPriority;
+import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.*;
 import static java.lang.System.arraycopy;
 
 /**
@@ -114,10 +103,10 @@ public class PartitionQueue {
                     unpark = false;
                     nextState = Unparked;
                     break;
-                case UnparkedPriority:
-                    unpark = true;
-                    nextState = Unparked;
-                    break;
+//                case UnparkedPriority:
+//                    unpark = true;
+//                    nextState = Unparked;
+//                    break;
                 case ExecutingPriority:
                     unpark = true;
                     nextState = Executing;
@@ -170,11 +159,7 @@ public class PartitionQueue {
         for (; ; ) {
             final Node prev = head.get();
 
-            if (prev.state == Parked) {
-                next.priorityInit(task, UnparkedPriority, prev);
-            } else {
-                next.priorityInit(task, prev.state, prev);
-            }
+            next.priorityInit(task, Parked, prev);
 
             if (!cas(prev, next)) {
                 // we did not manage to move to the prev, so lets try again.
@@ -208,8 +193,7 @@ public class PartitionQueue {
         for (; ; ) {
             Node prev = head.get();
             switch (prev.state) {
-                case Parked:
-                case UnparkedPriority: {
+                case Parked: {
                     if (!cas(prev, STOLEN)) {
                         continue;
                     }
@@ -445,7 +429,7 @@ public class PartitionQueue {
                     nextState = Unparked;
                     break;
                 case ExecutingPriority:
-                    nextState = UnparkedPriority;
+                    nextState = Parked;
                     break;
                 default:
                     throw new IllegalStateException("Unexpected state for suspend: " + prev);
@@ -478,7 +462,7 @@ public class PartitionQueue {
         for (; ; ) {
             final Node prev = head.get();
             switch (prev.state) {
-                case Parked:
+                //case Parked:
                 case Stolen:
                 case StolenUnparked:
                     return false;
@@ -492,7 +476,7 @@ public class PartitionQueue {
 
                     appendToBuffers(prev);
                     return true;
-                case UnparkedPriority:
+                case Parked:
                     if (!cas(prev, EXECUTING_PRIORITY)) {
                         continue;
                     }
@@ -523,8 +507,8 @@ public class PartitionQueue {
             final Node prev = head.get();
             switch (prev.state) {
                 case Stolen:
-                    throw new IllegalStateException("Unexpected state: "+prev);
-                case UnparkedPriority:
+  //                  throw new IllegalStateException("Unexpected state: " + prev);
+                //case UnparkedPriority:
                 case ExecutingPriority:
                 case Parked:
                     return true;
@@ -542,7 +526,7 @@ public class PartitionQueue {
                             newNode = new Node();
                         }
                         next = newNode;
-                        next.withNewState(prev, UnparkedPriority);
+                        next.withNewState(prev, Parked);
                     } else if (priorityBufferPos != priorityBufferSize) {
                         next = UNPARKED_PRIORITY;
                     } else {
