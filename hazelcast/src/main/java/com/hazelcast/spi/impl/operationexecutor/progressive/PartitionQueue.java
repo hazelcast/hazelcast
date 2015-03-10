@@ -99,7 +99,6 @@ public class PartitionQueue {
             throw new NullPointerException("task can't be null");
         }
 
-        final AtomicReference<Node> head = this.head;
         final Node next = new Node();
         for (; ; ) {
             final Node prev = head.get();
@@ -128,7 +127,7 @@ public class PartitionQueue {
                     nextState = Executing;
                     break;
                 case Stolen:
-                    //todo: why are we not doing an unpark + upgrade to StolenUnparked?
+                    // the drop will take care of unparking if needed.
                     unpark = false;
                     nextState = Stolen;
                     break;
@@ -167,7 +166,6 @@ public class PartitionQueue {
             throw new NullPointerException("task can't be null");
         }
 
-        final AtomicReference<Node> head = this.head;
         final Node next = new Node();
         for (; ; ) {
             final Node prev = head.get();
@@ -206,7 +204,6 @@ public class PartitionQueue {
             throw new NullPointerException("task can't be null");
         }
 
-        AtomicReference<Node> head = this.head;
         Node newNode = null;
         for (; ; ) {
             Node prev = head.get();
@@ -240,9 +237,7 @@ public class PartitionQueue {
                     return;
                 }
                 case ExecutingPriority: {
-                    if (prev.normalSize > 0) {
-                        throw new IllegalStateException("unexpected normalSize:" + prev);
-                    }
+                    assert prev.normalSize == 0;
 
                     // When a task is added to a priority executing, we need to upgrade to 'executing' since
                     // only priority tasks have been registered before.
@@ -341,7 +336,6 @@ public class PartitionQueue {
      * @throws java.lang.IllegalStateException if the state is not Stolen/StolenUnparked.
      */
     boolean drop() {
-        final AtomicReference<Node> head = this.head;
         Node newNode = null;
         for (; ; ) {
             Node prev = head.get();
@@ -442,7 +436,6 @@ public class PartitionQueue {
     public void suspend() {
         scheduleQueue.assertCallingThreadIsOwner();
 
-        final AtomicReference<Node> head = this.head;
         Node newNode = null;
         for (; ; ) {
             Node prev = head.get();
@@ -482,8 +475,6 @@ public class PartitionQueue {
      * @return true if it can be put in the executing mode, false otherwise.
      */
     boolean execute() {
-        final AtomicReference<Node> head = this.head;
-
         for (; ; ) {
             final Node prev = head.get();
             switch (prev.state) {
@@ -527,7 +518,6 @@ public class PartitionQueue {
     boolean park() {
         scheduleQueue.assertCallingThreadIsOwner();
 
-        final AtomicReference<Node> head = this.head;
         Node newNode = null;
         for (; ; ) {
             final Node prev = head.get();
