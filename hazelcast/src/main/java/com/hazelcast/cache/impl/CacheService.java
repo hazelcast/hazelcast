@@ -62,11 +62,6 @@ public class CacheService extends AbstractCacheService implements ICacheService 
                 partitionSegment.clear();
             }
         }
-        //TODO: near cache not implemented yet. enable wen ready
-        //        for (NearCache nearCache : nearCacheMap.values()) {
-        //            nearCache.clear();
-        //        }
-
     }
 
     @Override

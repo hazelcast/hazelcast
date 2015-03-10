@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
@@ -43,9 +44,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     void destroyCache(String objectName, boolean isLocal, String callerUuid);
 
-    CacheConfig createCacheConfigIfAbsent(CacheConfig config);
+    CacheSimpleConfig findCacheConfig(String simpleName);
 
-    CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean createAlsoOnOthers, boolean syncCreate);
+    CacheConfig createCacheConfigIfAbsent(CacheConfig config);
 
     CacheConfig deleteCacheConfig(String name);
 

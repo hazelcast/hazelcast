@@ -58,9 +58,7 @@ public class CacheGetConfigOperation
                     CacheConfig cacheConfigFromSimpleConfig = new CacheConfig(simpleConfig);
                     cacheConfigFromSimpleConfig.setName(simpleName);
                     cacheConfigFromSimpleConfig.setManagerPrefix(name.substring(0, name.lastIndexOf(simpleName)));
-                    // Create cache config also on other nodes, but it is not needed to wait response from them.
-                    // So creation on other nodes is async not sync.
-                    if (service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig, true, false) == null) {
+                    if (service.createCacheConfigIfAbsent(cacheConfigFromSimpleConfig) == null) {
                         response = cacheConfigFromSimpleConfig;
                         return;
                     }

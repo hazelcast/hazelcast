@@ -76,6 +76,7 @@
     <suppress checks="ParameterNumber" files="com.hazelcast.cache.impl.ICacheService"/>
     <suppress checks="NPathComplexity"
               files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractHazelcastCacheManager"/>
 
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
