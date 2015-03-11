@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Executing;
+import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.ExecutingPriority;
+import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Parked;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static java.lang.System.arraycopy;
 

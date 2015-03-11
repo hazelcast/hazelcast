@@ -103,10 +103,6 @@ public class PartitionQueue {
                     unpark = false;
                     nextState = Unparked;
                     break;
-//                case UnparkedPriority:
-//                    unpark = true;
-//                    nextState = Unparked;
-//                    break;
                 case ExecutingPriority:
                     unpark = true;
                     nextState = Executing;
@@ -159,7 +155,7 @@ public class PartitionQueue {
         for (; ; ) {
             final Node prev = head.get();
 
-            next.priorityInit(task, Parked, prev);
+            next.priorityInit(task, prev.state, prev);
 
             if (!cas(prev, next)) {
                 // we did not manage to move to the prev, so lets try again.
@@ -507,8 +503,8 @@ public class PartitionQueue {
             final Node prev = head.get();
             switch (prev.state) {
                 case Stolen:
-  //                  throw new IllegalStateException("Unexpected state: " + prev);
-                //case UnparkedPriority:
+                    //                  throw new IllegalStateException("Unexpected state: " + prev);
+                    //case UnparkedPriority:
                 case ExecutingPriority:
                 case Parked:
                     return true;
@@ -527,8 +523,6 @@ public class PartitionQueue {
                         }
                         next = newNode;
                         next.withNewState(prev, Parked);
-                    } else if (priorityBufferPos != priorityBufferSize) {
-                        next = UNPARKED_PRIORITY;
                     } else {
                         next = PARKED;
                     }
@@ -565,7 +559,7 @@ public class PartitionQueue {
                         continue;
                     }
 
-                    return false;
+                    return true;
                 }
                 default:
                     throw new IllegalStateException("Unexpected state: " + prev);
@@ -576,7 +570,14 @@ public class PartitionQueue {
 
     private boolean cas(Node expected, Node update) {
         errorCheck();
-        return head.compareAndSet(expected, update);
+        boolean success = head.compareAndSet(expected, update);
+
+        if(success) {
+//            if (expected.state == ExecutingPriority && update.state == Parked) {
+//                    throw new RuntimeException();
+//            }
+        }
+        return success;
     }
 
     // ================ buffers ===========================================

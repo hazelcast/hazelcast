@@ -16,8 +16,6 @@ enum PartitionQueueState {
      */
     Unparked,
 
-    UnparkedPriority,
-
     /**
      * Executing means that the partition-buffer currently is being executed by the partition-thread
      * (so the rightful owner of a partition).
@@ -53,5 +51,11 @@ enum PartitionQueueState {
      *
      */
     StolenUnparked
+
+
+
+    //delete this
+    ,UnparkedPriority,
+
 
 }

@@ -1,12 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.progressive;
 
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Executing;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.ExecutingPriority;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Parked;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Stolen;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.StolenUnparked;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.Unparked;
-import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.UnparkedPriority;
+import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueueState.*;
 
 /**
  * A node stores work. It is single-linked-list.  So work is first stored in a stack, and later
@@ -15,8 +9,6 @@ import static com.hazelcast.spi.impl.operationexecutor.progressive.PartitionQueu
  * State of this object is considered immutable after publication in the PartitionQueue.
  */
 class Node {
-
-    public final static int HISTORY = 10;
 
     static final Node PARKED = new Node(Parked);
     static final Node UNPARKED = new Node(Unparked);
@@ -34,8 +26,6 @@ class Node {
     boolean hasPriority;
     PartitionQueueState previousState;
 
-    Node[] history;
-
     Node() {
     }
 
@@ -47,7 +37,7 @@ class Node {
         return normalSize + prioritySize;
     }
 
-    void parked(Node prev){
+    void parked(Node prev) {
 
     }
 
@@ -64,11 +54,11 @@ class Node {
         this.task = node.task;
         this.prev = node.prev;
         this.hasPriority = node.hasPriority;
-
-        if (state == PartitionQueueState.Parked) {
-            assert normalSize == 0;
-            assert prioritySize == 0;
-        }
+//
+//        if (state == PartitionQueueState.Parked) {
+//            assert normalSize == 0;
+//            assert prioritySize == 0;
+//        }
     }
 
     void init(Object task, PartitionQueueState state, Node prev) {
@@ -89,11 +79,11 @@ class Node {
             this.prioritySize = prev.prioritySize;
 
         }
-
-        if (state == PartitionQueueState.Parked) {
-            assert normalSize == 0;
-            assert prioritySize == 0;
-        }
+//
+//        if (state == PartitionQueueState.Parked) {
+//            assert normalSize == 0;
+//            assert prioritySize == 0;
+//        }
     }
 
     void priorityInit(Object task, PartitionQueueState state, Node prev) {
@@ -112,11 +102,11 @@ class Node {
             this.normalSize = prev.normalSize;
             this.prioritySize = prev.prioritySize + taskSize;
         }
-
-        if (state == PartitionQueueState.Parked) {
-            assert normalSize == 0;
-            assert prioritySize == 0;
-        }
+//
+//        if (state == PartitionQueueState.Parked) {
+//            assert normalSize == 0;
+//            assert prioritySize == 0;
+//        }
     }
 
     @Override
