@@ -34,7 +34,7 @@ public class PartitionQueue_addStressTest {
     public static final int DURATION_MS = 30 * 1000;
     public static final int MAX_ADD_BURST = 100;
     //number of partitions handled by the operation-thread.
-    public static final int PARTITION_COUNT = 1;
+    public static final int PARTITION_COUNT = 4;
 
     public int priorityPercentage = 0;
     private PartitionQueue[] partitionQueues;
