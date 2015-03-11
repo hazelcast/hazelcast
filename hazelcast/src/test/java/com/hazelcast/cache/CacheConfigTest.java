@@ -202,6 +202,42 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertNull(testCache);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenTooSmall(){
+        CacheConfig config = new CacheConfig();
+        config.setAsyncBackupCount(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenItsZero (){
+        CacheConfig config = new CacheConfig();
+        config.setAsyncBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenTooLarge (){
+        CacheConfig config = new CacheConfig();
+        config.setAsyncBackupCount(200); //max allowed is 6.. I need to look up the constant
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_whenTooSmall(){
+        CacheConfig config = new CacheConfig();
+        config.setBackupCount(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_whenItsZero(){
+        CacheConfig config = new CacheConfig();
+        config.setBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_whenTooLarge(){
+        CacheConfig config = new CacheConfig();
+        config.setBackupCount(200); //max allowed is 6.. I need to look up the constant
+    }
+
     @Test
     public void testGetPreConfiguredCache() {
         Config config = new Config();
