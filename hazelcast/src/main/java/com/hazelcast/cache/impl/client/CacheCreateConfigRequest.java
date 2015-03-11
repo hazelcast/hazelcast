@@ -44,15 +44,18 @@ public class CacheCreateConfigRequest
     private static final int TRY_COUNT = 100;
 
     private CacheConfig cacheConfig;
-    private boolean create;
+    private boolean createAlsoOnOthers = true;
+    private boolean ignoreLocal;
     private int partitionId;
 
     public CacheCreateConfigRequest() {
     }
 
-    public CacheCreateConfigRequest(CacheConfig cacheConfig, boolean create, int partitionId) {
+    public CacheCreateConfigRequest(CacheConfig cacheConfig, boolean createAlsoOnOthers, boolean ignoreLocal,
+                                    int partitionId) {
         this.cacheConfig = cacheConfig;
-        this.create = create;
+        this.createAlsoOnOthers = createAlsoOnOthers;
+        this.ignoreLocal = ignoreLocal;
         this.partitionId = partitionId;
     }
 
@@ -72,7 +75,7 @@ public class CacheCreateConfigRequest
     }
 
     protected Operation prepareOperation() {
-        return new CacheCreateConfigOperation(cacheConfig);
+        return new CacheCreateConfigOperation(cacheConfig, createAlsoOnOthers, ignoreLocal);
     }
 
     public final int getFactoryId() {
@@ -90,7 +93,8 @@ public class CacheCreateConfigRequest
 
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeBoolean("c", create);
+        writer.writeBoolean("o", createAlsoOnOthers);
+        writer.writeBoolean("l", ignoreLocal);
         writer.writeInt("p", partitionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(cacheConfig);
@@ -98,7 +102,8 @@ public class CacheCreateConfigRequest
 
     public void read(PortableReader reader)
             throws IOException {
-        create = reader.readBoolean("c");
+        createAlsoOnOthers = reader.readBoolean("o");
+        ignoreLocal = reader.readBoolean("l");
         partitionId = reader.readInt("p");
         final ObjectDataInput in = reader.getRawDataInput();
         cacheConfig = in.readObject();
