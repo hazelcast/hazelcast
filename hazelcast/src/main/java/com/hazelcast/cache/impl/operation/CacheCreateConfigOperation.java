@@ -51,7 +51,8 @@ public class CacheCreateConfigOperation
         implements IdentifiedDataSerializable {
 
     private CacheConfig config;
-    private boolean isLocal;
+    private boolean createAlsoOnOthers = true;
+    private boolean ignoreLocal;
 
     private boolean returnsResponse = true;
     private transient Object response;
@@ -60,13 +61,18 @@ public class CacheCreateConfigOperation
     }
 
     public CacheCreateConfigOperation(CacheConfig config) {
-        this(config, false);
+        this(config, true);
     }
 
-    public CacheCreateConfigOperation(CacheConfig config, boolean isLocal) {
+    public CacheCreateConfigOperation(CacheConfig config, boolean createAlsoOnOthers) {
+        this(config, createAlsoOnOthers, false);
+    }
+
+    public CacheCreateConfigOperation(CacheConfig config, boolean createAlsoOnOthers, boolean ignoreLocal) {
         super(config.getNameWithPrefix());
         this.config = config;
-        this.isLocal = isLocal;
+        this.createAlsoOnOthers = createAlsoOnOthers;
+        this.ignoreLocal = ignoreLocal;
     }
 
     @Override
@@ -77,9 +83,10 @@ public class CacheCreateConfigOperation
     @Override
     public void run() throws Exception {
         AbstractCacheService service = getService();
-        response = service.createCacheConfigIfAbsent(config);
-
-        if (!isLocal && response == null) {
+        if (!ignoreLocal) {
+            response = service.createCacheConfigIfAbsent(config);
+        }
+        if (createAlsoOnOthers && response == null) {
             NodeEngine nodeEngine = getNodeEngine();
             Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
             int remoteNodeCount = members.size() - 1;
@@ -141,7 +148,8 @@ public class CacheCreateConfigOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(config);
-        out.writeBoolean(isLocal);
+        out.writeBoolean(createAlsoOnOthers);
+        out.writeBoolean(ignoreLocal);
     }
 
     @Override
@@ -149,7 +157,8 @@ public class CacheCreateConfigOperation
             throws IOException {
         super.readInternal(in);
         config = in.readObject();
-        isLocal = in.readBoolean();
+        createAlsoOnOthers = in.readBoolean();
+        ignoreLocal = in.readBoolean();
     }
 
     @Override
