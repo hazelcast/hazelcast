@@ -15,5 +15,7 @@
  */
 /**
  * <p>This package contains Ascii functionality for Hazelcast.<br/>
+ *
+ * This is required for Memcached and the REST api.
  */
 package com.hazelcast.internal.ascii;
