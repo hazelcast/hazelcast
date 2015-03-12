@@ -2,10 +2,10 @@
 ## Network Configuration
 
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *When explaining configuration elements and attributes, most of the sections below use the tags used in the declarative configurations. We assume that the reader is familiar with these tags' programmatic equivalents, since declarative and programmatic approaches have the similar tag/method names (e.g. `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *When explaining configuration elements and attributes, most of the sections below use the tags used in the declarative configurations. We assume that the reader is familiar with these tags' programmatic equivalents, since declarative and programmatic approaches have the similar tag/method names. For example, the `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration.*
 
 
-All network related configuration is performed via `network` element in the Hazelcast XML configuration file or the class `NetworkConfig` when using programmatic configuration. Let's first give the examples for these two approaches. Then we will look at its sub-elements and attributes.
+All network related configuration is performed via the `network` element in the Hazelcast XML configuration file or the class `NetworkConfig` when using programmatic configuration. Let's first give the examples for these two approaches. Then we will look at its sub-elements and attributes.
 
 **Declarative:**
 
@@ -60,25 +60,25 @@ AwsConfig awsConfig = new AwsConfig();
 awsConfig.setTagKey( "5551234" ).setTagValue( "Node1234" );
 ```
 
-It has below sub-elements which are described in the following sections.
+It has the following sub-elements which are described in the following sections.
 
-- public-address
-- port
-- outbound-ports
-- reuse-address
-- join
-- interfaces
-- ssl
-- socket-interceptor
-- symmetric-encryption
+- [Public Address](#public-address)
+- [Port](#port)
+- [Outbound Ports](#outbound-ports)
+- [Reuse Address](#reuse-address)
+- [Join](#join)
+- [Interfaces](#interfaces)
+- [SSL](#ssl)
+- [Socket Interceptor](#socket-interceptor)
+- [Symmetric Encryption](#symmetric-encryption)
 
 ### Public Address
 
-It is used to override public address of a node. By default, a node selects its socket address as its public address. But behind a network address translation (NAT), two endpoints (nodes) may not be able to see/access each other. If both nodes set their public addresses to their defined addresses on NAT, then that way they can communicate with each other. In this case, their public addresses are not an address of a local network interface but a virtual address defined by NAT. It is optional to set and useful when you have a private cloud.
+`public-address` overrides the public address of a node. By default, a node selects its socket address as its public address. But behind a network address translation (NAT), two endpoints (nodes) may not be able to see/access each other. If both nodes set their public addresses to their defined addresses on NAT, then that way they can communicate with each other. In this case, their public addresses are not an address of a local network interface but a virtual address defined by NAT. It is optional to set and useful when you have a private cloud.
 
 ### Port
 
-You can specify the ports which Hazelcast will use to communicate between cluster members. Its default value is `5701`. The following are example configurations.
+You can specify the ports that Hazelcast will use to communicate between cluster members. Its default value is `5701`. The following are example configurations.
 
 **Declarative:**
 
@@ -96,13 +96,13 @@ config.getNetworkConfig().setPort( "5701" );
              .setPortCount( "20" ).setPortAutoIncrement( false );
 ```
 
-It has below attributes.
+`port` has the following attributes.
 
 - `port-count`: By default, Hazelcast will try 100 ports to bind. Meaning that, if you set the value of port as 5701, as members are joining to the cluster, Hazelcast tries to find ports between 5701 and 5801. You can choose to change the port count in the cases like having large instances on a single machine or willing to have only a few ports to be assigned. The parameter `port-count` is used for this purpose, whose default value is 100.
 
 
 
-- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port` by setting its value as `false`.
+- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5701 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port` by setting `auto-increment` to `false`.
 
 
 The parameter `port-count` is ignored when the above configuration is made.
@@ -110,7 +110,7 @@ The parameter `port-count` is ignored when the above configuration is made.
 ### Outbound Ports
 
 
-By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. The following are example configurations.
+By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation. But security policies/firewalls may require you to restrict outbound ports to be used by Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. The following are example configurations.
 
 
 **Declarative:**
@@ -143,9 +143,9 @@ networkConfig.addOutboundPort(37001);
 
 ***Note:*** *You can use port ranges and/or comma separated ports.*
 
-As you can see in the programmatic configuration, if you want to add only one port you use the method `addOutboundPort`. If a group of ports needs to be added, then the method `addOutboundPortDefinition` is used. 
+As shown in the programmatic configuration, you use the method `addOutboundPort` to add only one port. If you need to add a group of ports, then use the method `addOutboundPortDefinition`. 
 
-In the declarative one, the element `ports` can be used for both (for single and multiple port definitions).
+In the declarative configuration, the element `ports` can be used for both single and multiple port definitions.
 
 ### Reuse Address
 
@@ -174,7 +174,7 @@ networkConfig.setReuseAddress( true );
 
 ### Join
 
-This configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP and multicast, and discovery on AWS (EC2 auto-discovery). The following are example configurations.
+The `join` configuration element is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: discovery by TCP/IP, by multicast, and by discovery on AWS (EC2 auto-discovery). The following are example configurations.
 
 **Declarative:**
 
@@ -224,18 +224,18 @@ The `join` element has the following sub-elements and attributes.
 
 #### multicast element 
 
-It includes parameters to fine tune the multicast join mechanism.
+The `multicast` element includes parameters to fine tune the multicast join mechanism.
 
-- `enabled`: Specifies whether the multicast discovery is enabled or not. Values can be `true` or `false`.
-- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3
-- `multicast-port`: The multicast socket port which Hazelcast member listens to and sends discovery messages through it. Default value is 54327.
-- `multicast-time-to-live`: Time-to-live value for multicast packets sent out to control the scope of multicasts. You can have more information [here](http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html).
+- `enabled`: Specifies whether the multicast discovery is enabled or not, `true` or `false`.
+- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3.
+- `multicast-port`: The multicast socket port that the Hazelcast member listens to and sends discovery messages through. Default value is 54327.
+- `multicast-time-to-live`: Time-to-live value for multicast packets sent out to control the scope of multicasts. See more information [here](http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html).
 - `multicast-timeout-seconds`: Only when the nodes are starting up, this timeout (in seconds) specifies the period during which a node waits for a multicast response from another node. For example, if you set it as 60 seconds, each node will wait for 60 seconds until a leader node is selected. Its default value is 2 seconds. 
 - `trusted-interfaces`: Includes IP addresses of trusted members. When a node wants to join to the cluster, its join request will be rejected if it is not a trusted member. You can give an IP addresses range using the wildcard (\*) on the last digit of IP address (e.g. 192.168.1.\* or 192.168.1.100-110).
 	
 #### tcp-ip element 
 
-It includes parameters to fine tune the TCP/IP join mechanism.
+The `tcp-ip` element includes parameters to fine tune the TCP/IP join mechanism.
 
 - `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
 - `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
@@ -247,15 +247,15 @@ It includes parameters to fine tune the TCP/IP join mechanism.
 
 #### aws element 
 
-It includes parameters to allow the nodes form a cluster on Amazon EC2 environment.
+The `aws` element includes parameters to allow the nodes to form a cluster on the Amazon EC2 environment.
 
-- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
+- `enabled`: Specifies whether the EC2 discovery is enabled or not, `true` or `false`.
 - `access-key`, `secret-key`: Access and secret keys of your account on EC2.
-- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
+- `region`: The region where your nodes are running. Default value is `us-east-1`. You need to specify this if the region is other than the default one.
 - `host-header`: The URL that is the entry point for a web service. It is optional.
 - `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
 - `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
-- `connection-timeout-seconds`: Defines the connection timeout. This is the maximum amount of time Hazelcast is going to try to connect to a well known member before giving up. Setting it to a too low value could mean that a member is not able to connect to a cluster. Setting it to a too high value means that member startup could slow down because of longer timeouts (e.g. when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
+- `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If you are using a cloud provider other than AWS, you can use the programmatic configuration to specify a TCP/IP cluster. The members will need to be retrieved from that provider (e.g. JClouds).*
@@ -263,7 +263,7 @@ It includes parameters to allow the nodes form a cluster on Amazon EC2 environme
 
 ##### AWSClient Configuration
 
-To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Give the values of the parameters you specified in the `aws` element to this class, as shown below. You will see whether your EC2 instances are found.
+To make sure EC2 instances are found correctly, you can use the `AWSClient` class. It determines the private IP addresses of EC2 instances to be connected. Give the `AWSClient` class the values for the parameters that you specified in the `aws` element, as shown below. You will see whether your EC2 instances are found.
 
 ```java
 public static void main( String[] args )throws Exception{ 
@@ -287,7 +287,7 @@ public static void main( String[] args )throws Exception{
 
 ### Interfaces
 
-You can specify which network interfaces that Hazelcast should use. Servers mostly have more than one network interface so you may want to list the valid IPs. Range characters ('\*' and '-') can be used for simplicity. So 10.3.10.\*, for instance, refers to IPs between 10.3.10.0 and 10.3.10.255. Interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (disabled by default) and if Hazelcast cannot find an matching interface, then it will print a message on console and will not start on that node.
+You can specify which network interfaces that Hazelcast should use. Servers mostly have more than one network interface, so you may want to list the valid IPs. Range characters ('\*' and '-') can be used for simplicity. For instance, 10.3.10.\* refers to IPs between 10.3.10.0 and 10.3.10.255. Interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (it is disabled by default) and if Hazelcast cannot find an matching interface, then it will print a message on the console and will not start on that node.
 
 The following are example configurations.
 
@@ -337,7 +337,7 @@ This is a Hazelcast Enterprise feature, please see the [Security chapter](#secur
 
 Hazelcast supports IPv6 addresses seamlessly (This support is switched off by default, please see the note at the end of this section).
 
-All you need is to define IPv6 addresses or interfaces in [network configuration](#network-configuration). Only limitation at the moment is that you cannot define wildcard IPv6 addresses in TCP/IP join configuration (`tcp-ip` element). [Interfaces](#interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces in the same way as IPv4 interfaces.
+All you need is to define IPv6 addresses or interfaces in [network configuration](#network-configuration). The only current limitation is that you cannot define wildcard IPv6 addresses in the TCP/IP join configuration (`tcp-ip` element). [Interfaces](#interfaces) configuration does not have this limitation, you can configure wildcard IPv6 interfaces in the same way as IPv4 interfaces.
 
 ```xml
 <hazelcast>
@@ -368,9 +368,9 @@ All you need is to define IPv6 addresses or interfaces in [network configuration
 </hazelcast>
 ```
 
-JVM has two system properties for setting the preferred protocol stack (IPv4 or IPv6) as well as the preferred address family types (inet4 or inet6). On a dual stack machine, IPv6 stack is preferred by default, this can be changed through `java.net.preferIPv4Stack=<true|false>` system property. And when querying name services, JVM prefers IPv4 addressed over IPv6 addresses and will return an IPv4 address if possible. This can be changed through `java.net.preferIPv6Addresses=<true|false>` system property.
+JVM has two system properties for setting the preferred protocol stack (IPv4 or IPv6) as well as the preferred address family types (inet4 or inet6). On a dual stack machine, IPv6 stack is preferred by default, you can change this through the `java.net.preferIPv4Stack=<true|false>` system property. When querying name services, JVM prefers IPv4 addresses over IPv6 addresses and will return an IPv4 address if possible. You can change this through `java.net.preferIPv6Addresses=<true|false>` system property.
 
 Also see additional [details on IPv6 support in Java](http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/query.html#details).
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *IPv6 support has been switched off by default, since some platforms have issues in use of IPv6 stack. Some other platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property `hazelcast.prefer.ipv4.stack` to *false*. See [Advanced Configuration Properties](#advanced-configuration-properties).*
+![image](images/NoteSmall.jpg) ***NOTE:*** *IPv6 support has been switched off by default, since some platforms have issues using the IPv6 stack. Some other platforms such as Amazon AWS have no support at all. To enable IPv6 support, just set configuration property `hazelcast.prefer.ipv4.stack` to *false*. See [Advanced Configuration Properties](#advanced-configuration-properties).*
 <br></br>

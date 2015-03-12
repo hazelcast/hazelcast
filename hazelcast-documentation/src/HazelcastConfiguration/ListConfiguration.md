@@ -1,7 +1,7 @@
 
 ## List Configuration
 
-The following are the example configurations.
+The following are example list configurations.
 
 **Declarative:**
 
@@ -29,14 +29,14 @@ collectionList.setName( "MyList" ).setBackupCount( "1" )
 ```
    
 
-It has below elements.
+List configuration has the following elements.
 
 
-- `backup-count`: Count of synchronous backups. Remember that, List is a non-partitioned data structure, i.e. all entries of a List resides in one partition. When this parameter is '1', it means there will be a backup of that List in another node in the cluster. When it is '2', 2 nodes will have the backup.
-- `async-backup-count`: Count of asynchronous backups.
-- `statistics-enabled`: If set as `true`, you can retrieve statistics for this List.
-- `max-size`: It is the maximum entry size for this List.
-- `item-listeners`: This element lets you add listeners (listener classes) for the list items. You can also set the attributes `include-value` to `true` if you want the item event to contain the item values and `local` to `true` if you want to listen the items on the local node.
+- `backup-count`: Number of synchronous backups. List is a non-partitioned data structure, so all entries of a List reside in one partition. When this parameter is '1', there will be 1 backup of that List in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Number of asynchronous backups.
+- `statistics-enabled`: If set to `true`, you can retrieve statistics for this List.
+- `max-size`: The maximum number of entries for this List.
+- `item-listeners`: Lets you add listeners (listener classes) for the list items. You can also set the attribute `include-value` to `true` if you want the item event to contain the item values, and you can set the attribute `local` to `true` if you want to listen the items on the local node.
 
 
 

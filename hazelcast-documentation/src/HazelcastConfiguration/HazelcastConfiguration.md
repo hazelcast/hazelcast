@@ -10,29 +10,29 @@ This chapter covers all the elements and attributes used to configure Hazelcast.
 - [Composing XML Configuration](#composing-xml-configuration): Describes how to produce a declarative configuration file out of several configuration files.
 
 
-Rest of the chapter explains the configuration items listed below.
+The rest of the chapter explains the configuration items listed below.
 
-- Network 
-- Group
-- Map
-- MultiMap
-- Queue
-- Topic
-- List
-- Set
-- Semaphore
-- Executor Service
-- Serialization
-- MapReduce Jobtracker
-- Services
-- Management Center
-- WAN Replication
-- Partition Group
-- Listeners
-- Logging
+- [Network](#network-configuration) 
+- [Group](#group-configuration)
+- [Map](#map-configuration)
+- [MultiMap](#multimap-configuration)
+- [Queue](#queue-configuration)
+- [Topic](#topic-configuration)
+- [List](#list-configuration)
+- [Set](#set-configuration)
+- [Semaphore](#semaphore-configuration)
+- [Executor Service](#executor-service-configuration)
+- [Serialization](#serialization-configuration)
+- [MapReduce Jobtracker](#mapreduce-jobtracker-configuration)
+- [Services](#services-configuration)
+- [Management Center](#management-center-configuration)
+- [WAN Replication](#wan-replication-configuration)
+- [Partition Group](#partition-group-configuration)
+- [Listeners](#listener-configurations)
+- [Logging](#logging-configuration)
 
 
-The chapter ends with the advanced system property definitions.
+The chapter ends with the [advanced system property definitions](#advanced-configuration-properties).
 
 
 

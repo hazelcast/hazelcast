@@ -22,7 +22,7 @@ Yes. All Hazelcast data structures are thread safe.
 When a node is started in a cluster, it will dynamically and automatically be discovered. There are three types of discovery.
 
 -	Multicast discovery: nodes in a cluster discover each other by multicast, by default. 
--	Discovery by TCP/IP: the first node created in the cluster (leader) will form a list of IP addresses of other joining nodes and send this list to these nodes so the nodes will know each other.
+-	Discovery by TCP/IP: the first node created in the cluster (leader) will form a list of IP addresses of other joining nodes and will send this list to these nodes so the nodes will know each other.
 -	If your application is placed on Amazon EC2, Hazelcast has an automatic discovery mechanism. You will give your Amazon credentials and the joining node will be discovered automatically.
 
 Once nodes are discovered, all the communication between them will be via TCP/IP.
@@ -35,7 +35,7 @@ Once nodes are discovered, all the communication between them will be via TCP/IP
 
 ## What happens when a node goes down?
 
-Once a node is gone (e.g. crashes) and since data in each node has a backup in other nodes:
+Once a node is gone (crashes), the following happens since data in each node has a backup in other nodes.
 
 -	First, the backups in other nodes are restored.
 -	Then, data from these restored backups are recovered.
@@ -47,7 +47,7 @@ So eventually, no data is lost.
 
 ## How do I test the connectivity?
 
-If you notice that there is a problem with a node joining to a cluster, you may want to perform a connectivity test between the node to be joined and a node from the cluster. You can use the `iperf` tool for this purpose. For example, you can execute the below command on one node (i.e. listening on port 5701).
+If you notice that there is a problem with a node joining a cluster, you may want to perform a connectivity test between the node to be joined and a node from the cluster. You can use the `iperf` tool for this purpose. For example, you can execute the below command on one node (i.e. listening on port 5701).
 
 `iperf -s -p 5701`
 
@@ -55,14 +55,14 @@ And you can execute the below command on the other node.
 
 `iperf -c` *`<IP address>`* `-d -p 5701`
 
-The output should include connection information such as the IP addresses, transfer speed, and bandwidth. Otherwise, if the output says `No route to host`, it means a network connection problem exists.
+The output should include connection information, such as the IP addresses, transfer speed, and bandwidth. Otherwise, if the output says `No route to host`, it means a network connection problem exists.
 
 <br></br>
 
 
 ## How do I choose keys properly?
 
-When you store a key & value in a distributed Map, Hazelcast serializes the key and value, and stores the byte array version of them in local ConcurrentHashMaps. These ConcurrentHashMaps use `equals` and `hashCode` methods of byte array version of your key. It does not take into account the actual `equals` and `hashCode` implementations of your objects. So it is important that you choose your keys in a proper way. 
+When you store a key and value in a distributed Map, Hazelcast serializes the key and value, and stores the byte array version of them in local ConcurrentHashMaps. These ConcurrentHashMaps use `equals` and `hashCode` methods of byte array version of your key. It does not take into account the actual `equals` and `hashCode` implementations of your objects. So it is important that you choose your keys in a proper way. 
 
 Implementing `equals` and `hashCode` is not enough, it is also important that the object is always serialized into the same byte array. All primitive types like String, Long, Integer, etc. are good candidates for keys to be used in Hazelcast. An unsorted Set is an example of a very bad candidate because Java Serialization may serialize the same unsorted set in two different byte arrays.
 
@@ -78,13 +78,13 @@ value.updateSomeProperty();
 map.put( key, value );
 ```
 
-Collections which return values of methods —such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`— contain cloned values. These collections are NOT backed up by related Hazelcast objects. Therefore, changes to them are **NOT** reflected in the originals, and vice-versa.
+Collections which return values of methods (such as `IMap.keySet`, `IMap.values`, `IMap.entrySet`, `MultiMap.get`, `MultiMap.remove`, `IMap.keySet`, `IMap.values`) contain cloned values. These collections are NOT backed up by related Hazelcast objects. Therefore, changes to them are **NOT** reflected in the originals, and vice-versa.
 
 <br></br>
 
 ## How do I test my Hazelcast cluster?
 
-Hazelcast allows you to create more than one instance on the same JVM. Each member is called `HazelcastInstance` and each will have its own configuration, socket and threads, i.e. you can treat them as totally separate instances. 
+Hazelcast allows you to create more than one instance on the same JVM. Each member is called `HazelcastInstance` and each will have its own configuration, socket and threads, so you can treat them as totally separate instances. 
 
 This enables you to write and to run cluster unit tests on a single JVM. Because you can use this feature for creating separate members different applications running on the same JVM (imagine running multiple web applications on the same JVM), you can also use this feature for testing your Hazelcast cluster.
 
@@ -178,7 +178,7 @@ Yes. Hazelcast performed a successful test on Amazon EC2 with 200 nodes.
 
 ## Does Hazelcast support thousands of clients?
 
-Yes. However, there are some points you should consider. The environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If the number of nodes is high, the client type should be selected as Dummy, not Smart Client. In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (e.g. more cores) to handle hundreds or thousands of connections and client requests. Also, you should consider using near caches in clients to lower the network traffic. And you should use the Hazelcast releases with the NIO implementation (which starts with 3.2).
+Yes. However, there are some points you should consider. The environment should be LAN with a high stability and the network speed should be 10 Gbps or higher. If the number of nodes is high, the client type should be selected as Dummy, not Smart Client. In the case of Smart Clients, since each client will open a connection to the nodes, these nodes should be powerful enough (for example, more cores) to handle hundreds or thousands of connections and client requests. Also, you should consider using near caches in clients to lower the network traffic. And you should use the Hazelcast releases with the NIO implementation (which starts with Hazelcast 3.2).
 
 Also, you should configure the clients attentively. Please refer to the [Java Client section](#java-client) section for configuration notes.
 
@@ -186,13 +186,13 @@ Also, you should configure the clients attentively. Please refer to the [Java Cl
 
 ## What is the difference between old LiteMember and new Smart Client?
 
-LiteMember supports task execution (distributed executor service), smart client does not. Also LiteMember is highly coupled with cluster, smart client is not.
+LiteMember supports task execution (distributed executor service), smart client does not. Also, LiteMember is highly coupled with cluster, smart client is not.
 
 <br></br>
 
 ## How do you give support?
 
-Support services are divided into two: community and commercial support. Community support is provided through our [Mail Group](https://groups.google.com/forum/#!forum/hazelcast) and StackOverflow web site. For information on support subscriptions, please see [Hazelcast.com](http://hazelcast.com/support/commercial/).
+We have two support services: community and commercial support. Community support is provided through our [Mail Group](https://groups.google.com/forum/#!forum/hazelcast) and StackOverflow web site. For information on support subscriptions, please see [Hazelcast.com](http://hazelcast.com/support/commercial/).
 
 <br></br>
 
@@ -218,7 +218,7 @@ Moreover, JMX monitoring is also provided. Please see the [Monitoring with JMX s
 
 ## How can I see debug level logs?
 
-By changing the log level to "Debug". Below sample lines are for **log4j** logging framework. Please see the [Logging Configuration section](#logging-configuration) to learn how to set logging types.
+By changing the log level to "Debug". Below are sample lines for **log4j** logging framework. Please see the [Logging Configuration section](#logging-configuration) to learn how to set logging types.
 
 First, set the logging type as follows.
 
@@ -267,7 +267,7 @@ In the embedded topology, nodes include both the data and application. This type
 
 In the client-server topology, you create a cluster of nodes and scale the cluster independently. Your applications are hosted on the clients, and the clients communicate with the nodes in the cluster to reach data. 
 
-Client-server topology fits better if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (e.g. 500 application servers vs. 10 node cluster).
+Client-server topology fits better if there are multiple applications sharing the same data or if application deployment is significantly greater than the cluster size (for example, 500 application servers vs. 10 node cluster).
 
 <br></br>
 
@@ -282,7 +282,7 @@ if (partitionService().isClusterSafe()) {
 }
 ```
 
-Or, declaratively:
+Or declaratively:
 
 ```java
 PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
@@ -299,10 +299,10 @@ if (partitionService().isLocalMemberSafe()) {
 
 ## When do I need Native Memory solutions?
 
-Native Memory solutions can be preferred;
+Native Memory solutions can be preferred:
 
-- When the amount of data per node is large enough to create significant garbage collection pauses,
-- When your application requires predictable latency.
+- when the amount of data per node is large enough to create significant garbage collection pauses.
+- when your application requires predictable latency.
 
 <br></br>
 
@@ -314,20 +314,20 @@ The only disadvantage when using Near Cache is that it may cause stale reads.
 
 ## Is Hazelcast secure?
 
-Hazelcast supports symmetric encryption, secure sockets layer (SSL) and Java Authentication and Authorization Service (JAAS). Please see the [Security chapter](#security) for more information.
+Hazelcast supports symmetric encryption, secure sockets layer (SSL), and Java Authentication and Authorization Service (JAAS). Please see the [Security chapter](#security) for more information.
 
 <br></br>
 
 
 ## How can I set socket options?
 
-Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained at the [Advanced Configuration Properties section](#advanced-configuration-properties).
+Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, and `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained in the [Advanced Configuration Properties section](#advanced-configuration-properties).
 
 <br></br>
 
 ## I periodically see client disconnections during idle time?
 
-In Hazelcast, socket connections are created with `SO_KEEPALIVE` option enabled by default. In most operating systems, default keep-alive time is 2 hours. If you have a firewall between clients and servers which is configured to reset idle connections/sessions, make sure that firewall's idle timeout is greater than TCP keep-alive defined in OS.
+In Hazelcast, socket connections are created with the `SO_KEEPALIVE` option enabled by default. In most operating systems, default keep-alive time is 2 hours. If you have a firewall between clients and servers which is configured to reset idle connections/sessions, make sure that the firewall's idle timeout is greater than the TCP keep-alive defined in the OS.
 
 For additional information please see:
 
@@ -340,9 +340,9 @@ For additional information please see:
 
 If you encounter an error of `java.lang.OutOfMemoryError: unable to create new native thread`, it may be caused by exceeding the available file descriptors on your operating system, especially if it is Linux. This exception is usually thrown on a running node, after a period of time when the thread count exhausts the file descriptor availability.
 
-The JVM on Linux consumes a file descriptor for each thread created.  The default number of file descriptors available in Linux is usually 1024. If you have many JVMs running on a single machine it is possible to exceed this default number.
+The JVM on Linux consumes a file descriptor for each thread created.  The default number of file descriptors available in Linux is usually 1024. If you have many JVMs running on a single machine, it is possible to exceed this default number.
 
-You can view the limit using the following command
+You can view the limit using the following command.
 
 `# ulimit -a`
 
@@ -373,7 +373,7 @@ The default number of process per users is 1024. Adding the following to your `$
 
 ## Does repartitioning wait for Entry Processor?
 
-Repartitioning is the process of redistributing the partition ownerships. Hazelcast performs the repartitioning in the cases where a node leaves the cluster or joins to the cluster. If  a repartitioning is to be happen while an entry processor is active in a node processing on an entry object, the repartitioning waits for the entry processor to complete its job.
+Repartitioning is the process of redistributing the partition ownerships. Hazelcast performs the repartitioning in the cases where a node leaves the cluster or joins the cluster. If a repartitioning will happen while an entry processor is active in a node processing on an entry object, the repartitioning waits for the entry processor to complete its job.
 
 ## Why do Hazelcast instances on different machines not see each other?
 
@@ -390,13 +390,13 @@ join.getTcpIpConfig().addMember("IP1")
 network.getInterfaces().setEnabled(true)
     .addInterface("IP1").addInterface("IP2");
 ```    
-When you create the Hazelcast instance, you have to pass the configuration to the instance. If you create the instances without passing the configuration, each instance starts but cannot see each other. Therefore, the correct way to create the instance is like the following:
+When you create the Hazelcast instance, you have to pass the configuration to the instance. If you create the instances without passing the configuration, each instance starts but cannot see each other. Therefore, a correct way to create the instance is the following:
 
 ```
 HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
 ```
 
-The following is the incorrect one:
+The following is an incorrect way:
 
 ```
 HazelcastInstance instance = Hazelcast.newHazelcastInstance();

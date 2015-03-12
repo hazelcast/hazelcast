@@ -70,7 +70,7 @@ This feature also applies to the declarative configuration of Hazelcast Client. 
 </hazelcast-client>
 ```
 
-The get your example Hazelcast Client declarative configuration out of the above two, use the `<import/>` element as shown below.
+To get a Hazelcast Client declarative configuration from the above two examples, use the `<import/>` element as shown below.
 
 ```xml
 <hazelcast-client>

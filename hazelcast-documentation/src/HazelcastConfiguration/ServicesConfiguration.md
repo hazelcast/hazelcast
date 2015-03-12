@@ -2,7 +2,7 @@
 
 ## Services Configuration
 
-This configuration is used for Hazelcast Service Provider Interface (SPI). The following are the example configurations.
+This configuration is used for Hazelcast Service Provider Interface (SPI). The following are example configurations.
 
 
 **Declarative:**
@@ -39,11 +39,11 @@ svcConfig.setProperty( "com.property.foo", "value" );
 ```
    
 
-It has below elements.
+SPI configuration has the following elements.
 
 - `name`: Name of the service to be registered.
 - `class-name`: Name of the class that you develop for your service.
-- `properties`: This element includes the custom properties that you can add to your service. You enable/disable
+- `properties`: The custom properties that you can add to your service. You enable/disable
  these properties and set their values using this element.
 - `configuration`: You can include configuration items which you develop using the `Config` object in your code.
 

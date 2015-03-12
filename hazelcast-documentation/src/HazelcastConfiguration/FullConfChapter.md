@@ -2,7 +2,7 @@
 
 ## Configuration
 
-Hazelcast can be configured declaratively (XML) or programmatically (API) or even by the mix of both.
+Hazelcast can be configured declaratively (XML) or programmatically (API) or even by a mix of both.
 
 **1- Declarative Configuration**
 
@@ -12,7 +12,7 @@ If you are creating new Hazelcast instance with passing `null` parameter to `Haz
 
 -   **Classpath:** If config file is not set as a system property, Hazelcast will check classpath for `hazelcast.xml` file.
 
-If Hazelcast does not find any configuration file, it will happily start with default configuration (`hazelcast-default.xml`) located in `hazelcast.jar`. (Before configuring Hazelcast, please try to work with default configuration to see if it works for you. Default should be just fine for most of the users. If not, then consider custom configuration for your environment.)
+If Hazelcast does not find any configuration file, it will start with the default configuration (`hazelcast-default.xml`) located in `hazelcast.jar`. (Before configuring Hazelcast, please try to work with the default configuration to see if it works for you. Default should be just fine for most users. If not, then consider custom configuration for your environment.)
 
 If you want to specify your own configuration file to create `Config`, Hazelcast supports several ways including filesystem, classpath, InputStream, URL, etc.:
 
@@ -32,7 +32,7 @@ If you want to specify your own configuration file to create `Config`, Hazelcast
 
 **2- Programmatic Configuration**
 
-To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes due to your needs. Just to give an idea, below is a sample code in which some network, map, map store and near cache attributes are configured for a Hazelcast instance.
+To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes to your needs. Below is a code sample in which some network, map, map store and near cache attributes are configured for a Hazelcast instance.
 
 ```java
 Config config = new Config();
@@ -65,7 +65,7 @@ mapConfig.setNearCacheConfig( nearCacheConfig );
 config.addMapConfig( mapConfig );
 ```
 
-After creating `Config` object, you can use it to create a new Hazelcast instance.
+After creating a `Config` object, you can use it to create a new Hazelcast instance.
 
 -   `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance( config );`
 
@@ -87,7 +87,7 @@ After creating `Config` object, you can use it to create a new Hazelcast instanc
 
 
 
-Rest of the chapter will first explain the configuration items listed below.
+The rest of the chapter will explain the configuration items listed below.
 
 - Network 
 - Group
@@ -108,11 +108,11 @@ Rest of the chapter will first explain the configuration items listed below.
 
 Then, it will talk about Listener and Logging configurations. And finally, the chapter will end with the advanced system property definitions.
 
-***ATTENTION:*** *Most of the sections below use the tags used in declarative configuration when explaining configuration items. We are assuming that the reader is familiar with their programmatic equivalents, since both approaches have the similar tag/method names (e.g. `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration).*
+***ATTENTION:*** *Most of the sections below explain configuration items with the declarative configuration tags. We are assuming that the reader is familiar with their programmatic equivalents, since both approaches have the similar tag/method names (e.g. `port-count` tag in declarative configuration is equivalent to `setPortCount` in programmatic configuration).*
 
 ### Network Configuration
 
-All network related configuration is performed via `network` tag in the XML file or the class `NetworkConfig` when using programmatic configuration. Let's first give the samples for these two approaches. Then we will look at its parameters, which are a lot.
+All network related configuration is performed via `network` tag in the XML file or the class `NetworkConfig` when using programmatic configuration. Let's first give the samples for these two approaches. Then we will look at its parameters.
 
 **Declarative:**
 
@@ -177,7 +177,11 @@ It has below parameters which are briefly described in the following subsections
 
 ##### Public Address
 
-It is used to override public address of a node. By default, a node selects its socket address as its public address. But behind a network address translation (NAT), two endpoints (nodes) may not be able to see/access each other. If both nodes set their public addresses to their defined addresses on NAT, then that way they can communicate with each other. In this case, their public addresses are not an address of a local network interface but a virtual address defined by NAT. It is optional to set and useful when you have a private cloud.
+You can override the public address of a node. By default, a node selects its socket address as its public address. But behind a network address translation (NAT), two endpoints (nodes) may not be able to see/access each other. If both nodes set their public addresses to their defined addresses on NAT, then that way they can communicate with each other. In this case, their public addresses are not an address of a local network interface but a virtual address defined by NAT. It is optional to set and useful when you have a private cloud.
+
+**Declarative:**
+
+`<public-address> ??? </public-address>`
 
 ##### Port
 
@@ -199,13 +203,13 @@ config.getNetworkConfig().setPort( "5900" );
              .setPortCount( "20" ).setPortAutoIncrement( "false" );
 ```
 
-It has below attributes.
+It has the following attributes.
 
-- `port-count`: By default, Hazelcast will try 100 ports to bind. Meaning that, if you set the value of port as 5701, as members are joining to the cluster, Hazelcast tries to find ports between 5701 and 5801. You can choose to change the port count in the cases like having large instances on a single machine or willing to have only a few ports to be assigned. The parameter `port-count` is used for this purpose, whose default value is 100.
+- `port-count`: By default, Hazelcast will try 100 ports to bind. If you set the value of `port` to 5701, then as members join the cluster, Hazelcast tries to find ports between 5701 and 5801. You can choose to change the port count in cases like having large instances on a single machine or you are willing to have only a few ports assigned. The parameter `port-count` is used for this purpose. Its default value is 100.
 
 
 
-- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5781 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port` by setting its value as `false`.
+- `auto-increment`: According to the above example, Hazelcast will try to find free ports between 5701 and 5801. Normally, you will not need to change this value, but it will come very handy when needed. You may also want to choose to use only one port. In that case, you can disable the auto-increment feature of `port` by setting its value as `false`.
 
 
 Naturally, the parameter `port-count` is ignored when the above configuration is made.
@@ -213,7 +217,7 @@ Naturally, the parameter `port-count` is ignored when the above configuration is
 ##### Outbound Ports
 
 
-By default, Hazelcast lets the system to pick up an ephemeral port during socket bind operation. But security policies/firewalls may require to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. Sample configurations are shown below.
+By default, Hazelcast lets the system pick an ephemeral port during socket bind operation. But security policies/firewalls may require you to restrict outbound ports to be used by Hazelcast enabled applications. To fulfill this requirement, you can configure Hazelcast to use only defined outbound ports. Sample configurations are shown below.
 
 
 **Declarative:**
@@ -246,14 +250,14 @@ networkConfig.addOutboundPort(37001);
 
 ***Note:*** *You can use port ranges and/or comma separated ports.*
 
-As you can see in the programmatic configuration, if you want to add only one port you use the method `addOutboundPort`. If a group of ports needs to be added, then the method `addOutboundPortDefinition` is used. 
+As you can see in the programmatic configuration, if you want to add only one port, you use the method `addOutboundPort`. If a group of ports needs to be added, then you use the method `addOutboundPortDefinition`. 
 
-In the declarative one, the tag `ports` can be used for both (for single and multiple port definitions).
+In the declarative configuration, the tag `ports` can be used for both single and multiple port definitions.
 
 
 ##### Join
 
-This configuration parameter is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. Three ways can be used to join the members: TCP/IP, multicast and AWS (EC2). Below are sample configurations.
+This configuration parameter is used to enable the Hazelcast instances to form a cluster, i.e. to join the members. There are three ways to join the members: TCP/IP, multicast and AWS (EC2). Below are sample configurations.
 
 **Declarative:**
 
@@ -299,32 +303,32 @@ join.getTcpIpConfig().addMember( "10.45.67.32" ).addMember( "10.45.67.100" )
             .setRequiredMember( "192.168.10.100" ).setEnabled( true );
 ```
 
-It has below elements and attributes.
+It has the following elements and attributes.
 
-- `multicast`: It includes parameters to fine tune the multicast join mechanism.
+- `multicast`: These parameters fine tune the multicast join mechanism.
 	- `enabled`: Specifies whether the multicast discovery is enabled or not. Values can be `true` or `false`.
-	- `multicast-group`: The multicast group IP address. Specify it when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3
-	- `multicast-port`: The multicast socket port which Hazelcast member listens to and sends discovery messages through it. Default value is 54327.
-	- `multicast-time-to-live`: Time-to-live value for multicast packets sent out to control the scope of multicasts. You can have more information [here](http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html).
+	- `multicast-group`: The multicast group IP address. Specify this when you want to create clusters within the same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3.
+	- `multicast-port`: The multicast socket port through to which a Hazelcast member listens and sends discovery messages. Default value is 54327.
+	- `multicast-time-to-live`: Time-to-live value for multicast packets sent out to control the scope of multicasts. You can read more information [here](http://www.tldp.org/HOWTO/Multicast-HOWTO-2.html).
 	- `multicast-timeout-seconds`: Only when the nodes are starting up, this timeout (in seconds) specifies the period during which a node waits for a multicast response from another node. For example, if you set it as 60 seconds, each node will wait for 60 seconds until a leader node is selected. Its default value is 2 seconds. 
-	- `trusted-interfaces`: Includes IP addresses of trusted members. When a node wants to join to the cluster, its join request will be rejected if it is not a trusted member. You can give an IP addresses range using the wildcard (\*) on the last digit of IP address (e.g. 192.168.1.\* or 192.168.1.100-110).
+	- `trusted-interfaces`: Includes the IP addresses of trusted members. When a node wants to join to the cluster, its join request will be rejected if it is not a trusted member. You can give an IP address range using the wildcard (\*) on the last digit of the IP address (e.g. 192.168.1.\* or 192.168.1.100-110).
 	
-- `tcp-ip`: It includes parameters to fine tune the TCP/IP join mechanism.
+- `tcp-ip`: These parameters fine tune the TCP/IP join mechanism.
 	- `enabled`: Specifies whether the TCP/IP discovery is enabled or not. Values can be `true` or `false`.
-	- `required-member`: IP address of the required member. Cluster will only formed if the member with this IP address is found.
-	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known ones, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` tag.
+	- `required-member`: IP address of the required member. The cluster will form only if the member with this IP address is found.
+	- `member`: IP address(es) of one or more well known members. Once members are connected to these well known members, all member addresses will be communicated with each other. You can also give comma separated IP addresses using the `members` tag.
 
-- `aws`: It includes parameters to allow the nodes form a cluster on Amazon EC2 environment.
+- `aws`: These parameters allow the nodes to form a cluster on an Amazon EC2 environment.
 	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
 	- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
-	- `region`: The region where your nodes are running. Default value is `us-east-1`. Needs to be specified if the region is other than the default one.
-	- `host-header`: ???. It is optional.
-	- `security-group-name`:Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast nodes to be within this group. It is optional.
-	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. They are optional.
+	- `region`: The region where your nodes are running. Default value is `us-east-1`. Must be specified if the region is other than the default one.
+	- `host-header`: ???. This is optional.
+	- `security-group-name`: Name of the security group you specified at the EC2 management console. This narrows the Hazelcast nodes to be within this group. This parameter is optional.
+	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. These parameters are optional.
 
 ##### Interfaces
 
-You can specify which network interfaces that Hazelcast should use. Servers mostly have more than one network interface so you may want to list the valid IPs. Range characters ('\*' and '-') can be used for simplicity. So 10.3.10.\*, for instance, refers to IPs between 10.3.10.0 and 10.3.10.255. Interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (disabled by default) and if Hazelcast cannot find an matching interface, then it will print a message on console and will not start on that node.
+You can specify which network interfaces Hazelcast should use. Servers usually have more than one network interface, so you may want to list the valid IPs. You can use range characters ('\*' and '-') for simplicity: for instance, 10.3.10.\* refers to IPs between 10.3.10.0 and 10.3.10.255, and interface 10.3.10.4-18 refers to IPs between 10.3.10.4 and 10.3.10.18 (4 and 18 included). If network interface configuration is enabled (it is disabled by default) and if Hazelcast cannot find a matching interface, then it will print a message on the console and will not start on that node.
 
 **Declarative:**
 
@@ -358,21 +362,48 @@ interface.setEnabled( "true" )
 
 ##### SSL
 
-This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+This is a Hazelcast Enterprise feature, please see the [Security](#security) chapter.
 
 ##### Socket Interceptor
 
-This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+This is a Hazelcast Enterprise feature, please see the [Security](#security) chapter.
 
 ##### Symmetric Encryption
 
-This is a Hazelcast Enterprise feature, please see [Security](#security) chapter.
+This is a Hazelcast Enterprise feature, please see the [Security](#security) chapter.
 
 
 
 ### Group Configuration
 
-This configuration is to create multiple Hazelcast clusters. Each cluster will have its own group and it will not interfere with other clusters. Sample configurations are shown below.
+This configuration creates multiple Hazelcast clusters. Each cluster will have its own group and it will not interfere with other clusters. 
+
+It has the following parameters.
+
+- `name`: Name of the group to be created.
+- `password`: Password of the group to be created.
+
+Sample configurations are shown below.
+
+**Declarative:**
+
+```xml
+<group>
+   <name>MyGroup</name>
+   <password>5551234</password>
+</group>
+```
+
+**Programmatic:**
+
+```java
+Config config = new Config();
+config.getGroupConfig().setName( "MyGroup" ).setPassword( "5551234" );
+
+
+### Map Configuration
+
+Sample map configurations are shown below.
 
 **Declarative:**
 
@@ -436,81 +467,54 @@ mapIndexConfig.setAttribute("name").setOrdered("false");
 EntryListenerConfig entryListenerConfig = mapConfig.getEntryListenerConfig();
 entryListenerConfig.setLocal("false").setClassName("com.hazelcast.examples.EntryListener");
 ```
-   
 
-It has below parameters.
+Map configuration has the following attributes.
 
-
-- `name`: Name of the group to be created.
-- `password`: Password of the group to be created.
-
-
-### Map Configuration
-
-**Declarative:**
-
-```xml
-<group>
-   <name>MyGroup</name>
-   <password>5551234</password>
-</group>
-```
-
-**Programmatic:**
-
-```java
-Config config = new Config();
-config.getGroupConfig().setName( "MyGroup" ).setPassword( "5551234" );
-```
-
-
-It has below attributes.
-
-- in-memory-format: It is used to determine how the data will be stored in memory. It has two values: BINARY and OBJECT. BINARY is the default option and enables to store the data in serialized binary format. If OBJECT is set as the value, data will be stored in deserialized form.
-- backup-count: Defines the count of synchronous backups. If it is set as 1, for example, backup of a partition will be placed on another node. If it is 2, it will be placed on 2 other nodes.
-- async-backup-count: Defines the count of synchronous backups. Count behavior is the same as that of `backup-count` parameter.
-- read-backup-data: This boolean parameter enables reading local backup entries when set as `true`.
-- time-to-live-seconds: Maximum time in seconds for each entry to stay in the map.
-- max-idle-seconds: Maximum time in seconds for each entry to stay idle in the map.
-- eviction-policy: Policy for evicting entries. It has three values: NONE, LRU (Least Recently Used) and LFU (Least Frequently Used). If set as NONE, no items will be evicted.
-- max-size:Maximum size of the map (i.e. maximum entry count of the map).  When maximum size is reached, map is evicted based on the eviction policy defined. It has four attributes: PER_NODE (Maximum number of map entries in each JVM), PER_PARTITION (Maximum number of map entries within each partition), USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM). 
-- eviction-percentage: When `max-size` is reached, specified percentage of the map will be evicted.
-- merge-policy: Policy for merging maps after a split-brain syndrome was detected and the different network partitions need to be merged. Available merge policy classes are explained below:
-	- HigherHitsMapMergePolicy causes the merging entry to be merged from source to destination map if source entry has more hits than the destination one.
-	- LatestUpdateMapMergePolicy causes the merging entry to be merged from source to destination map if source entry has updated more recently than the destination entry. This policy can only be used of the clocks of the machines are in sync.
-	- PassThroughMergePolicy causes the merging entry to be merged from source to destination map unless merging entry is null.
-PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to destination map if it does not exist in the destination map.
-- statistics-enabled: You can retrieve some statistics like owned entry count, backup entry count, last update time, locked entry count by setting this parameter's value as "true". The method for retrieving the statistics is `getLocalMapStats()`.
-- wan-replication-ref: Hazelcast can replicate some or all of the cluster data. For example, you can have 5 different maps but you want only one of these maps replicating across clusters. To achieve this you mark the maps to be replicated by adding this element in the map configuration.
-- partition-strategy: ???
-- optimize-queries: This parameter is used to increase the speed of query processes in the map. It only works when `in-memory-format` is set as `BINARY` and performs a pre-caching on the entries queried.
+- `in-memory-format`: It is used to determine how the data will be stored in memory. It has two values: BINARY and OBJECT. BINARY is the default option and enables to store the data in serialized binary format. If OBJECT is set as the value, data will be stored in deserialized form.
+- `backup-count`: Defines the count of synchronous backups. If it is set as 1, for example, backup of a partition will be placed on another node. If it is 2, it will be placed on 2 other nodes.
+- `async-backup-count`: Defines the count of synchronous backups. Count behavior is the same as that of `backup-count` parameter.
+- `read-backup-data`: This boolean parameter enables reading local backup entries when set as `true`.
+- `time-to-live-seconds`: Maximum time in seconds for each entry to stay in the map.
+- `max-idle-seconds`: Maximum time in seconds for each entry to stay idle in the map.
+- `eviction-policy`: Policy for evicting entries. It has three values: NONE, LRU (Least Recently Used) and LFU (Least Frequently Used). If set as NONE, no items will be evicted.
+- `max-size`: Maximum size of the map (i.e. maximum entry count of the map).  When maximum size is reached, map is evicted based on the eviction policy defined. It has four attributes: PER_NODE (Maximum number of map entries in each JVM), PER_PARTITION (Maximum number of map entries within each partition), USED_HEAP_SIZE (Maximum used heap size in megabytes for each JVM) and USED_HEAP_PERCENTAGE (Maximum used heap size percentage for each JVM). 
+- `eviction-percentage`: When `max-size` is reached, specified percentage of the map will be evicted.
+- `merge-policy`: Policy for merging maps after a split-brain syndrome was detected and the different network partitions need to be merged. Available merge policy classes are explained below:
+	- `HigherHitsMapMergePolicy` causes the merging entry to be merged from the source map to the destination map if the source entry has more hits than the destination one.
+	- `LatestUpdateMapMergePolicy` causes the merging entry to be merged from source to destination map if source entry has updated more recently than the destination entry. This policy can only be used of the clocks of the machines are in sync.
+	- `PassThroughMergePolicy` causes the merging entry to be merged from source to destination map unless merging entry is null.
+    - `PutIfAbsentMapMergePolicy` causes the merging entry to be merged from source to destination map if it does not exist in the destination map.
+- `statistics-enabled`: By setting this to "true", you can retrieve some statistics like owned entry count, backup entry count, last update time, and locked entry count. The method for retrieving these statistics is `getLocalMapStats()`.
+- `wan-replication-ref`: Hazelcast can replicate some or all of the cluster data. For example, you could have 5 different maps but you want only one of these maps to replicate across clusters. To achieve this, you mark the maps to be replicated by adding this element in the map configuration.
+- `partition-strategy`: ???
+- `optimize-queries`: This parameter is used to increase the speed of query processes in the map. It only works when `in-memory-format` is set as `BINARY` and performs a pre-caching on the entries queried.
 
 #### Map Store
 
-- class-name: Name of the class implementing MapLoader and/or MapStore.
-- write-delay-seconds: Number of seconds to delay to call the MapStore.store(key, value). If the value is zero then it is write-through so MapStore.store(key, value) will be called as soon as the entry is updated. Otherwise it is write-behind so updates will be stored after write-delay-seconds value by calling Hazelcast.storeAll(map). Default value is 0.
-- write-batch-size: Used to create batch chunks when writing map store. In default mode all entries will be tried to persist in one go. To create batch chunks, minimum meaningful value for write-batch-size is 2. For values smaller than 2, it works as in default mode.
+- `class-name`: Name of the class implementing MapLoader and/or MapStore.
+- `write-delay-seconds`: Number of seconds to delay in calling `MapStore.store(key, value)`. If the value is zero then it is write-through, so updates are stored by calling `MapStore.store(key, value)` as soon as the entry is updated. Otherwise it is write-behind, so updates will be stored by calling `Hazelcast.storeAll(map)` after the write-delay-seconds time has passed. Default value is 0.
+- `write-batch-size`: Creates batch chunks when writing map store. In default mode (no `write-batch-size`), all entries will be tried to persist in one go. To create batch chunks, the minimum meaningful value for `write-batch-size` is 2. For values smaller than 2, it works as in default mode.
 
 #### Near Cache
 
-Most of map near cache properties have the same names and tasks explained in map properties above. Below are the ones specific to near cache.
+Most of the map near cache properties have the same names and tasks that are explained in the [Map Configuration](#map-configuration) properties above. Below are the properties specific to near cache.
 
-- invalidate-on-change: Determines whether the cached entries get evicted if the entries are updated or removed).
-- cache-local-entries: If you want the local entries to be cached, set this parameter's value as "true".
+- `invalidate-on-change`: Determines whether the cached entries get evicted if the entries are updated or removed).
+- `cache-local-entries`: If you want the local entries to be cached, set this parameter's value as "true".
 
 #### Indexes
-This configuration lets you index the attributes and also order them. See the above sample declarative and programmatic configuration.
+This configuration lets you index the attributes and order them. See the sample declarative and programmatic configuration above for [Map Configuration](#map-configuration) properties.
 
 #### Entry Listeners
 This configuration lets you add listeners (listener classes) for the map entries. You can also set the attributes `include-value` to `true` if you want the entry event to contain the entry values and `local` to `true` if you want to listen the entries on the local node.
 
 
-### Multimap Configuration
+### MultiMap Configuration
 
-Most of MultiMap configuration parameters have the same names and tasks explained in map properties above. Below are the ones specific to MultiMap.
+Most of the MultiMap configuration parameters have the same names and tasks that are explained in the [Map Configuration](#map-configuration) properties above. Below are the properties specific to MultiMap.
 
-- statistics-enabled: You can retrieve some statistics like owned entry count, backup entry count, last update time, locked entry count by setting this parameter's value as "true". The method for retrieving the statistics is `getLocalMultiMapStats()`.
-- value-collection-type: Type of value collection. It can be Set or List.
+- `statistics-enabled`: You can retrieve some statistics like owned entry count, backup entry count, last update time, locked entry count by setting this parameter's value as "true". The method for retrieving the statistics is `getLocalMultiMapStats()`.
+- `value-collection-type`: Type of value collection. It can be Set or List.
 
 
 ### Queue Configuration
@@ -550,15 +554,15 @@ queueConfig.getQueueStoreConfig()
         .setProperty( "binary", "false" );
 ```
 
-It has below attributes and parameters.
+Queue configuration has the following attributes and parameters.
 
-- `max-size`: Value of maximum size of items in the Queue.
-- `backup-count`: Count of synchronous backups. Remember that, Queue is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
-- `async-backup-count`: Count of asynchronous backups.
+- `max-size`: Maximum number of items in the Queue.
+- `backup-count`: Number of synchronous backups. Queue is a non-partitioned data structure, so all entries of a Set resides in one partition. When this parameter is '1', there will be 1 backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Number of asynchronous backups.
 - `empty-queue-ttl`: Value of time to live to empty the Queue.
 - `item-listeners`: ???
 - `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queue Persistence](#queue-persistence).
-- `statistics-enabled`: If set as `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
+- `statistics-enabled`: If set to `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
 
 ### Topic Configuration
 
@@ -596,7 +600,7 @@ HazelcastInstance instance = Hazelcast.newHazelcastInstance()
 ```
 
 
-It has below attributes.
+Topic configuration has the following attributes.
 
 - statistics-enabled: By default, it is **true**, meaning statistics are calculated.
 - global-ordering-enabled: By default, it is **false**, meaning there is no global order guarantee by default.???
@@ -604,7 +608,7 @@ It has below attributes.
 
 
 
-Topic related but not topic specific configuration parameters
+These are topic-related but not topic-specific configuration parameters.
 
    - `hazelcast.event.queue.capacity`: default value is 1,000,000.
    - `hazelcast.event.queue.timeout.millis`: default value is 250.
@@ -645,13 +649,13 @@ collectionSet.setName( "MySet" ).setBackupCount( "1" )
 ```
    
 
-It has below parameters.
+Set configuration has the following parameters.
 
 
-- `backup-count`: Count of synchronous backups. Remember that, Set is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
-- `async-backup-count`: Count of asynchronous backups.
-- `statistics-enabled`: If set as `true`, you can retrieve statistics for this Set.
-- `max-size`: It is the maximum entry size for this Set.
+- `backup-count`: Number of synchronous backups. Set is a non-partitioned data structure, so all entries of a Set reside in one partition. When this parameter is '1', there will be 1 backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Number of asynchronous backups.
+- `statistics-enabled`: If set to `true`, you can retrieve statistics for this Set.
+- `max-size`: Maximum number of entries for this Set.
 - `item-listeners`: ???
 
 
@@ -682,13 +686,13 @@ collectionList.setName( "MyList" ).setBackupCount( "1" )
 ```
    
 
-It has below parameters.
+List configuration has the following parameters.
 
 
-- `backup-count`: Count of synchronous backups. Remember that, List is a non-partitioned data structure, i.e. all entries of a List resides in one partition. When this parameter is '1', it means there will be a backup of that List in another node in the cluster. When it is '2', 2 nodes will have the backup.
-- `async-backup-count`: Count of asynchronous backups.
-- `statistics-enabled`: If set as `true`, you can retrieve statistics for this List.
-- `max-size`: It is the maximum entry size for this List.
+- `backup-count`: Number of synchronous backups. List is a non-partitioned data structure, so all entries of a List resides in one partition. When this parameter is '1', there will be 1 backup of that List in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `async-backup-count`: Number of asynchronous backups.
+- `statistics-enabled`: If set to `true`, you can retrieve statistics for this List.
+- `max-size`: The maximum number of entries for this List.
 - `item-listeners`: ???
 
 
@@ -715,11 +719,11 @@ semaphoreConfig.setName( "semaphore" ).setBackupCount( "1" )
         .setInitialPermits( "3" );
 ```
 
-It has below attributes.
+Semaphore configuration has the following attributes.
 
-- initial-permits: It is the thread count which the concurrent access is limited to. For example, if it is set as "3", concurrent access to the object is limited to 3 thread.
-- backup-count: Count of synchronous backups. ???
-- async-backup-count: Count of asynchronous backups. ???
+- `initial-permits`: The thread count to which the concurrent access is limited. For example, if it is set as "3", concurrent access to the object is limited to 3 threads.
+- `backup-count`: Number of synchronous backups. ???
+- `async-backup-count`: Number of asynchronous backups. ???
 
 ### Executor Service Configuration
 
@@ -742,11 +746,11 @@ executorConfig.setPoolSize( "1" ).setQueueCapacity( "10" )
           .setStatisticsEnabled( "true" );
 ```
 
-It has below attributes.
+Executor service configuration has the following attributes.
 
-- pool-size: The number of executor threads per Member for the Executor.
-- queue-capacity: Executor's task queue capacity.
-- statistics-enabled: Some statistics like pending operations count, started operations count, completed operations count, cancelled operations count can be retrieved by setting this parameter's value as "true". The method for retrieving the statistics is `getLocalExecutorStats()`.
+- `pool-size`: The number of executor threads per member for the Executor.
+- `queue-capacity`: Executor's task queue capacity.
+- `statistics-enabled`: Some statistics like pending operations count, started operations count, completed operations count, cancelled operations count can be retrieved by setting this parameter's value to "true". The method for retrieving the statistics is `getLocalExecutorStats()`.
 
 ### ReplicatedMap Configuration
 
@@ -765,7 +769,7 @@ This configuration is for ???. It has below attributes.
 
 When you enable partition grouping, Hazelcast presents three choices to configure partition groups at the moment.
 
--   First one is to group nodes automatically using IP addresses of nodes, so nodes sharing same network interface will be grouped together. All members on the same host (IP address or domain name) will be a single partition group. This helps to avoid data loss when a physical server crashes by not storing multiple replicas of the same partition on the same host. But if there are multiple network interfaces or domain names per physical machine, that will make this assumption invalid.
+-   First partition group configuration choice: Group nodes automatically using IP addresses of nodes, so nodes sharing the same network interface will be grouped together. All members on the same host (IP address or domain name) will be a single partition group. This helps to avoid data loss when a physical server crashes because multiple replicas are not stored on the same partition on the same host. But if there are multiple network interfaces or domain names per physical machine, that will make this assumption invalid.
 
 ```xml
 <partition-group enabled="true" group-type="HOST_AWARE" />
@@ -778,7 +782,7 @@ partitionGroupConfig.setEnabled( true )
     .setGroupType( MemberGroupType.HOST_AWARE );
 ```
 
--   Second one is custom grouping using Hazelcast's interface matching configuration. This way, you can add different and multiple interfaces to a group. You can also use wildcards in interface addresses. For example, the users can create rack aware or data warehouse partition groups using custom partition grouping.
+-   Second partition group configuration choice: Custom grouping using Hazelcast's interface matching configuration. This way, you can add different and multiple interfaces to a group. You can also use wildcards in interface addresses. For example, the users can create rack aware or data warehouse partition groups using custom partition grouping.
 
 ```xml
 <partition-group enabled="true" group-type="CUSTOM">
@@ -813,7 +817,7 @@ partitionGroupConfig.addMemberGroupConfig( memberGroupConfig );
 partitionGroupConfig.addMemberGroupConfig( memberGroupConfig2 );
 ```
 
--   Third one is to give every member their own group. Meaning that, each member is a group of its own and primary and backup partitions are distributed randomly (not on the same physical member). This gives the least amount of protection and is the default configuration for a Hazelcast cluster.
+-   Third partition group configuration choice: Give every member its own group. Each member is a group of its own and primary and backup partitions are distributed randomly (not on the same physical member). This gives the least amount of protection and is the default configuration for a Hazelcast cluster.
 
 ```xml
 <partition-group enabled="true" group-type="PER_MEMBER" />
@@ -860,16 +864,16 @@ JTcfg.setName( "default" ).setQueueSize( "0" )
 ```
    
 
-It has below parameters.
+Jobtracker configuration has the following parameters.
 
 
-- `max-thread-size`: Configures the maximum thread pool size of the JobTracker.
-- `queue-size`: Defines the maximum number of tasks that are able to wait to be processed. A value of 0 means unbounded queue. Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate chunks are lost.
-- `retry-count`: Currently not used but reserved for later use where the framework will automatically try to restart / retry operations from an available save point.
-- `chunk-size`: Defines the number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate transmission but remember that low values mean higher traffic costs. A very high value might cause an OutOfMemoryError to occur if emitted values not fit into heap memory before
+- `max-thread-size`: The maximum thread pool size of the JobTracker.
+- `queue-size`: The maximum number of tasks that can wait to be processed. A value of 0 means an unbounded queue. Very low numbers can prevent successful execution, since the job might not be correctly scheduled or intermediate chunks could be lost.
+- `retry-count`: Currently not used; reserved for later use where the framework will automatically try to restart / retry operations from an available save point.
+- `chunk-size`: The number of emitted values before a chunk is sent to the reducers. If your emitted values are big or you want to better balance your work, you might want to change this to a lower or higher value. A value of 0 means immediate transmission but remember that low values mean higher traffic costs. A very high value might cause an OutOfMemoryError to occur if emitted values not fit into heap memory before
 being sent to reducers. To prevent this, you might want to use a combiner to pre-reduce values on mapping nodes.
-- `communicate-stats`: Defines if statistics (for example about processed entries) are transmitted to the job emitter. This might be used to show any kind of progress to a user inside of an UI system but produces additional traffic. If not needed, you might want to deactivate this.
-- `topology-changed-strategy`: Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`). DISCARD_AND_RESTART ???
+- `communicate-stats`: Defines if statistics (for example, statistics about processed entries) are transmitted to the job emitter. This can be used to show any kind of progress to a user inside of an UI system, but it produces additional traffic. If not needed, you might want to deactivate this.
+- `topology-changed-strategy`: Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`). DISCARD_AND_RESTART ???
 
 
 
@@ -904,13 +908,13 @@ JobTrackerConfig JTcfg = config.getJobTrackerConfig()
 ```
    
 
-It has below parameters.
+Services configuration has the following parameters.
 
 
 
 ### Management Center Configuration
 
-This configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. Sample configurations are shown below.
+This configuration is used to enable/disable Hazelcast Management Center and to specify a time frequency for which the tool is updated with the cluster information. Sample configurations are shown below.
 
 **Declarative:**
 
@@ -928,15 +932,12 @@ config.getManagementCenterConfig().setEnabled( "true" )
 ```
    
 
-It has below parameters.
+Management configuration has the following parameters.
 
 
-- `enabled`: This attribute should be set to `true` to be enable to run Management Center.
-- `url`: It is the URL where Management Center will work.
-- `updateInterval`: It specifies the time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
-
-
-
+- `enabled`: Set to `true` to enable Management Center.
+- `url`: The URL where Management Center will run.
+- `updateInterval`: The time frequency (in seconds) for which Management Center will take information from the Hazelcast cluster.
 
 
 
@@ -945,7 +946,10 @@ It has below parameters.
 
 
 
-Below is the `hazelcast.xml` configuration file that comes with the release, located at `bin` folder.
+
+
+
+Below is the `hazelcast.xml` configuration file that comes with the release, located in the `bin` folder.
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"

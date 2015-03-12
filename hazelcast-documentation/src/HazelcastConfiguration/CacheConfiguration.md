@@ -1,7 +1,7 @@
 
 ## Cache Configuration
 
-The following are the example configurations.
+Following are examples of cache configurations.
 
 
 **Declarative:**
@@ -46,7 +46,7 @@ cacheEvictionConfig.setSize( "10000" ).setMaxSizePolicy( CacheMaxSizePolicy.ENTR
 ```
    
 
-It has below elements.
+Cache configuration has the following elements.
 
 - `name`: Name of the cache.
 - `key-type`: Type of the keys provided as a full class name.

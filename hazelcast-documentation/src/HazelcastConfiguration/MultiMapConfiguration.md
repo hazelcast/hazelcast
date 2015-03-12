@@ -1,7 +1,7 @@
 
-## Multimap Configuration
+## MultiMap Configuration
 
-The following are the example configurations.
+The following are the example MultiMap configurations.
 
 **Declarative:**
 
@@ -32,7 +32,7 @@ mmConfig.setValueCollectionType( "SET" );
 ```
 
 
-Most of MultiMap configuration elements and attributes  have the same names and functionalities explained in the [Map Configuration section](#map-configuration). Below are the ones specific to MultiMap.
+Most of the MultiMap configuration elements and attributes have the same names and functionalities explained in the [Map Configuration section](#map-configuration). Below are the ones specific to MultiMap.
 
 - `statistics-enabled`: You can retrieve some statistics like owned entry count, backup entry count, last update time, locked entry count by setting this parameter's value as "true". The method for retrieving the statistics is `getLocalMultiMapStats()`.
 - `value-collection-type`: Type of the value collection. It can be `Set` or `List`.

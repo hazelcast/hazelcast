@@ -1,6 +1,6 @@
 ## Management Center Configuration
 
-This configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. 
+Management Center configuration is used to enable/disable Hazelcast Management Center and specify a time frequency for which the tool is updated with the cluster information. 
 
 The example configurations are shown below.
 
@@ -20,11 +20,11 @@ config.getManagementCenterConfig().setEnabled( "true" )
 ```
    
 
-It has below attributes.
+Management Center configuration has the following attributes.
 
 
-- `enabled`: This attribute should be set to `true` to be enable to run Management Center.
-- `url`: It is the URL where Management Center will work.
-- `updateInterval`: It specifies the time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
+- `enabled`: Set to `true` to enable Management Center.
+- `url`: The URL where Management Center will work.
+- `updateInterval`: The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
 
 

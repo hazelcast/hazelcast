@@ -1,6 +1,6 @@
 ## Advanced Configuration Properties
 
-Hazelcast has advanced configuration properties to tune some aspects of it. These can be set as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
+Hazelcast has advanced configuration properties to tune some aspects of Hazelcast. You can set them as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
 
 **Declarative Configuration**
 
@@ -30,7 +30,7 @@ config.setProperty( "hazelcast.property.foo", "value" );
 
 2. Using System class: `System.setProperty( "hazelcast.property.foo", "value" );`
 
-Below table lists the advanced configuration properties with their descriptions in alphabetical order.
+The table below lists the advanced configuration properties with their descriptions in alphabetical order.
 
 
 
@@ -42,23 +42,23 @@ Property Name | Default Value | Type | Description
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
 `hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
-`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If there is not any message passing between client and member within the given time via this property in milliseconds the connection will be closed.
+`hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If no messages pass between client and member within the given time via this property in milliseconds, the connection will be closed.
 `hazelcast.client.invocation.timeout.seconds`|120|string|Time to give up the invocation when a member in the member list is not reachable.
 `hazelcast.client.shuffle.member.list`|true|string|The client shuffles the given member list to prevent all clients to connect to the same node when this property is `false`. When it is set to `true`, the client tries to connect to the nodes in the given order.
 `hazelcast.connect.all.wait.seconds` | 120 | int | Timeout to connect all other cluster members when a member is joining to a cluster.
-`hazelcast.connection.monitor.interval` | 100 | int  |   Minimum interval to consider a connection error as critical in milliseconds.
+`hazelcast.connection.monitor.interval` | 100 | int  |   Minimum interval in milliseconds to consider a connection error as critical.
 `hazelcast.connection.monitor.max.faults` | 3 | int  |   Maximum IO error count before disconnecting from a node.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
 `hazelcast.enterprise.wanrep.queuesize`|100000|int| Queue size for the WAN replication.
 `hazelcast.event.queue.capacity` | 1000000 | int | Capacity of internal event queue.
 `hazelcast.event.queue.timeout.millis` | 250 | int | Timeout to enqueue events to event queue.
 `hazelcast.event.thread.count` | 5 | int | Number of event handler threads.
-`hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait seconds during graceful shutdown.
+`hazelcast.graceful.shutdown.max.wait` | 600 | int  |   Maximum wait in seconds during graceful shutdown.
 `hazelcast.health.monitoring.delay.seconds`|30|int|Health monitoring logging interval in seconds.
 `hazelcast.health.monitoring.level`|SILENT|string|Health monitoring log level. When *SILENT*, logs are printed only when values exceed some predefined threshold. When *NOISY*, logs are always printed periodically. Set *OFF* to turn off completely.
 `hazelcast.heartbeat.interval.seconds` | 1 | int  |   Heartbeat send interval in seconds.
 `hazelcast.icmp.enabled` | false | bool  |   Enable ICMP ping.
-`hazelcast.icmp.timeout` | 1000 | int |   ICMP timeout in ms.
+`hazelcast.icmp.timeout` | 1000 | int |   ICMP timeout in milliseconds.
 `hazelcast.icmp.ttl` | 0 | int |   ICMP TTL (maximum numbers of hops to try).
 `hazelcast.initial.min.cluster.size` | 0 | int  |   Initial expected cluster size to wait before node to start completely.
 `hazelcast.initial.wait.seconds` | 0 | int  |   Initial time in seconds to wait before node to start completely.

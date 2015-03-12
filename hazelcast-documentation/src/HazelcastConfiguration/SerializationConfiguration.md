@@ -1,7 +1,7 @@
 
 ## Serialization Configuration
 
-The following are the example configurations.
+The following are example serialization configurations.
 
 **Declarative:**
 
@@ -49,19 +49,19 @@ serializerConfig.setTypeClass( "Employee" )
                 .setClassName( "com.EmployeeSerializer" );
 ```
 
-It has below elements.
+Serialization configuration has the following elements.
 
-- `portable-version`: Defines the versioning of the portable serialization. Portable version will be used to differentiate two same classes that have changes on it like adding/removing field or changing a type of a field.
-- `use-native-byte-order`: Set to true to use native byte order of the underlying platform. 
-- `byte-order`: Defines the byte order that the serialization will use. Available values are `BIG_ENDIAN` and `LITTLE_ENDIAN`. The default value is `BIG_ENDIAN`.
+- `portable-version`: Defines versioning of the portable serialization. Portable version differentiates two of the same classes that have changes, such as adding/removing field or changing a type of a field.
+- `use-native-byte-order`: Set to `true` to use native byte order for the underlying platform. 
+- `byte-order`: Defines the byte order that the serialization will use: `BIG_ENDIAN` or `LITTLE_ENDIAN`. The default value is `BIG_ENDIAN`.
 - `enable-compression`: Enables compression if default Java serialization is used. 
 - `enable-shared-object`: Enables shared object if default Java serialization is used. 
-- `allow-unsafe`: Set to `true` to allow the usage of `unsafe`. 
-- `data-serializable-factory`: DataSerializableFactory class to be registered.
-- `portable-factory`: PortableFactory class to be registered.
-- `global-serializer`: Global serializer class to be registered if no other serializer is applicable.
-- `serializer`: Defines the class name of the serializer implementation.
-- `check-class-def-errors`: When enabled, serialization system will check class definitions error at start and throw an Serialization Exception with error definition.
+- `allow-unsafe`: Set to `true` to allow `unsafe` to be used. 
+- `data-serializable-factory`: The DataSerializableFactory class to be registered.
+- `portable-factory`: The PortableFactory class to be registered.
+- `global-serializer`: The global serializer class to be registered if no other serializer is applicable.
+- `serializer`: The class name of the serializer implementation.
+- `check-class-def-errors`: When set to `true`, the serialization system will check for class definitions error at start and will throw a Serialization Exception with an error definition.
 
 
 
