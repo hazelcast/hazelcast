@@ -322,7 +322,7 @@ It has the following elements and attributes.
 	- `enabled`: Specifies whether the EC2 discovery is enabled or not. Values can be `true` or `false`.
 	- `access-key`, `secret-key`: Access and secret keys of your account on EC2.
 	- `region`: The region where your nodes are running. Default value is `us-east-1`. Must be specified if the region is other than the default one.
-	- `host-header`: ???. This is optional.
+	- `host-header`: The URL that is the entry point for the web service. This is optional.
 	- `security-group-name`: Name of the security group you specified at the EC2 management console. This narrows the Hazelcast nodes to be within this group. This parameter is optional.
 	- `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast nodes, you can set these parameters as the ones you specified in the EC2 console. These parameters are optional.
 
@@ -442,7 +442,6 @@ Sample map configurations are shown below.
          com.hazelcast.examples.EntryListener
       </entry-listener>
    </entry-listeners>
-   <partition-strategy>???</partition-strategy>
 </map>
 ```
 
