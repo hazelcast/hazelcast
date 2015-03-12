@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.ReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -42,33 +42,14 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        ReferenceWrapper reference = getReference();
-        returnValue = reference.compareAndSet(expect, update);
+        ReferenceContainer referenceContainer = getReferenceContainer();
+        returnValue = referenceContainer.compareAndSet(expect, update);
         shouldBackup = !returnValue;
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
-    }
-
-    @Override
-    public int getId() {
-        return AtomicReferenceDataSerializerHook.COMPARE_AND_SET;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(expect);
-        out.writeObject(update);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        expect = in.readObject();
-        update = in.readObject();
     }
 
     @Override
@@ -79,6 +60,25 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
     @Override
     public Operation getBackupOperation() {
         return new SetBackupOperation(name, update);
+    }
+
+    @Override
+    public int getId() {
+        return AtomicReferenceDataSerializerHook.COMPARE_AND_SET;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeData(expect);
+        out.writeData(update);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        expect = in.readData();
+        update = in.readData();
     }
 }
 

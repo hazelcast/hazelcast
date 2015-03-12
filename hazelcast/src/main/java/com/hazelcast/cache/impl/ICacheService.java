@@ -60,7 +60,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     Collection<CacheConfig> getCacheConfigs();
 
     void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
-            boolean isOldValueAvailable, int orderKey, int completionId);
+                      boolean isOldValueAvailable, int orderKey, int completionId, long expirationTime);
 
     void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey);
 
@@ -78,7 +78,5 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
-
-    void sendInvalidationEvent(String name, Data key, String sourceUuid);
 
 }

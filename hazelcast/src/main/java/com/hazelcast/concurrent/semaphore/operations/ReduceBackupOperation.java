@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -31,8 +31,8 @@ public class ReduceBackupOperation extends SemaphoreBackupOperation implements I
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        permit.reduce(permitCount);
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        semaphoreContainer.reduce(permitCount);
         response = true;
     }
 

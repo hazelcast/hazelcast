@@ -16,8 +16,8 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -45,7 +45,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

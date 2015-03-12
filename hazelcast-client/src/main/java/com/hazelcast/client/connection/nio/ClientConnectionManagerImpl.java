@@ -43,7 +43,6 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.InSelectorImpl;
-import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
@@ -120,13 +119,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         inSelector = new InSelectorImpl(
                 client.getThreadGroup(),
-                "InSelector",
+                "ClientInSelector",
                 Logger.getLogger(InSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
-        outSelector = new OutSelectorImpl(
+        outSelector = new ClientOutSelectorImpl(
                 client.getThreadGroup(),
-                "OutSelector",
-                Logger.getLogger(OutSelectorImpl.class),
+                "ClientOutSelector",
+                Logger.getLogger(ClientOutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
 
         socketOptions = networkConfig.getSocketOptions();

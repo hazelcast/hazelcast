@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.LongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -39,13 +39,18 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        LongWrapper number = getNumber();
-        returnValue = number.getAndAdd(delta);
+        LongContainer longContainer = getLongContainer();
+        returnValue = longContainer.getAndAdd(delta);
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new AddBackupOperation(name, delta);
     }
 
     @Override
@@ -63,9 +68,5 @@ public class GetAndAddOperation extends AtomicLongBackupAwareOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         delta = in.readLong();
-    }
-
-    public Operation getBackupOperation() {
-        return new AddBackupOperation(name, delta);
     }
 }

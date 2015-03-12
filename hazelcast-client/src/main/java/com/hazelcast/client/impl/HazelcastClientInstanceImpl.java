@@ -33,8 +33,8 @@ import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -77,7 +77,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -225,9 +225,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         connectionManager.start();
         try {
             clusterService.start();
-        } catch (IllegalStateException e) {
+        } catch (Exception e) {
             lifecycleService.shutdown();
-            throw e;
+            throw ExceptionUtil.rethrow(e);
         }
         loadBalancer.init(getCluster(), config);
         partitionService.start();

@@ -40,6 +40,8 @@ import static com.hazelcast.util.EmptyStatement.ignore;
  */
 public abstract class Operation implements DataSerializable {
 
+    public static final int GENERIC_PARTITION_ID = -1;
+
     static final int BITMASK_VALIDATE_TARGET = 1;
     static final int BITMASK_CALLER_UUID_SET = 1 << 1;
     static final int BITMASK_REPLICA_INDEX_SET = 1 << 2;
@@ -50,7 +52,7 @@ public abstract class Operation implements DataSerializable {
 
     // serialized
     private String serviceName;
-    private int partitionId = -1;
+    private int partitionId = GENERIC_PARTITION_ID;
     private int replicaIndex;
     private long callId;
     private short flags;
@@ -88,7 +90,7 @@ public abstract class Operation implements DataSerializable {
 
     public abstract Object getResponse();
 
-    // Gets the actual service name witout looking at overriding methods. This method only exists for testing purposes.
+    // Gets the actual service name without looking at overriding methods. This method only exists for testing purposes.
     String getRawServiceName() {
         return serviceName;
     }

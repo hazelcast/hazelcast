@@ -12,7 +12,7 @@ You can specify the ports that Hazelcast will use to communicate between cluster
 
 By default, Hazelcast will try 100 ports to bind: if you set the value of `port` as 5701, as members join the cluster, Hazelcast will try to find ports between 5701 and 5801. 
 
-You can change the port count. You might have cases like having large instances on a single machine or having only a few ports to be assigned. Use the parameter `port-count` for this purpose. Its default value is 100.
+You can change the port count. You might have cases like having large instances on a single machine or having only a few ports to be assigned. Use the parameter `port-count` to set the port count. Its default value is 100.
 
 ```xml
 <network>

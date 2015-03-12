@@ -17,10 +17,13 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+
+import java.util.Collection;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -63,6 +66,21 @@ public interface InternalOperationService extends OperationService {
     boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier);
 
     boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId);
+
+    /**
+     * Returns information about long running operations.
+     * <p/>
+     * Do not modify this collection; it should only be read.
+     *
+     * @return collection of long running operation logs.
+     */
+    Collection<JsonSerializable> getSlowOperations();
+
+    /**
+     * Resets internal state of InternalOperationService.
+     * Notifies registered invocations with an error message.
+     */
+    void reset();
 
     /**
      * Shuts down this InternalOperationService.

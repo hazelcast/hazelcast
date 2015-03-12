@@ -16,6 +16,8 @@
 
 package com.hazelcast.partition.impl;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
@@ -44,11 +46,22 @@ public class ReplicaSyncRetryResponse extends Operation
 
         partitionService.clearReplicaSync(partitionId, replicaIndex);
 
-        InternalPartitionImpl partition = partitionService.getPartition(partitionId, false);
-        boolean isBackup = partition.isOwnerOrBackup(getNodeEngine().getThisAddress());
-        if (isBackup) {
-            partitionService.triggerPartitionReplicaSync(partitionId, replicaIndex,
+        InternalPartitionImpl partition = partitionService.getPartitionImpl(partitionId);
+        Address thisAddress = getNodeEngine().getThisAddress();
+        ILogger logger = getLogger();
+
+        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
+        if (currentReplicaIndex > 0) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Retrying replica sync request for partition: " + partitionId
+                    + ", initial-replica: " + replicaIndex + ", current-replica: " + currentReplicaIndex);
+            }
+            partitionService.triggerPartitionReplicaSync(partitionId, currentReplicaIndex,
                     InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
+
+        } else if (logger.isFinestEnabled()) {
+            logger.finest("No need to retry replica sync request for partition: " + partitionId
+                    + ", initial-replica: " + replicaIndex + ", current-replica: " + currentReplicaIndex);
         }
     }
 

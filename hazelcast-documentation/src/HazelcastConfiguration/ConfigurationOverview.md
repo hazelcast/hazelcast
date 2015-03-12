@@ -3,17 +3,17 @@
 
 ## Configuration Overview
 
-Hazelcast can be configured declaratively (XML) or programmatically (API) or even by the mix of both.
+Hazelcast can be configured declaratively (XML) or programmatically (API) or even by a mix of both.
 
 **1- Declarative Configuration**
 
-If you are creating new Hazelcast instance with passing `null` parameter to `Hazelcast.newHazelcastInstance(null)` or just using empty factory method (`Hazelcast.newHazelcastInstance()`), Hazelcast will look into two places for the configuration file:
+If you are creating new Hazelcast instance by passing the `null` parameter to `Hazelcast.newHazelcastInstance(null)` or just using an empty factory method (`Hazelcast.newHazelcastInstance()`), Hazelcast will look in two places for the configuration file.
 
 -   **System property:** Hazelcast will first check if "`hazelcast.config`" system property is set to a file path. Example: `-Dhazelcast.config=C:/myhazelcast.xml`.
 
 -   **Classpath:** If config file is not set as a system property, Hazelcast will check classpath for `hazelcast.xml` file.
 
-If Hazelcast does not find any configuration file, it will happily start with default configuration (`hazelcast-default.xml`) located in `hazelcast.jar`. (Before configuring Hazelcast, please try to work with default configuration to see if it works for you. Default should be just fine for most of the users. If not, then consider custom configuration for your environment.)
+If Hazelcast does not find any configuration file, it will start with the default configuration (`hazelcast-default.xml`) located in `hazelcast.jar`. (Before configuring Hazelcast, please try to work with the default configuration to see if it works for you. Default should be just fine for most users. If not, then consider custom configuration for your environment.)
 
 If you want to specify your own configuration file to create `Config`, Hazelcast supports several ways including filesystem, classpath, InputStream, URL, etc.:
 
@@ -33,7 +33,7 @@ If you want to specify your own configuration file to create `Config`, Hazelcast
 
 **2- Programmatic Configuration**
 
-To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes due to your needs. Just to give an idea, below is a sample code in which some network, map, map store and near cache attributes are configured for a Hazelcast instance.
+To configure Hazelcast programmatically, just instantiate a `Config` object and set/change its properties/attributes to your needs. Below is a code sample in which some network, map, map store, and near cache attributes are configured for a Hazelcast instance.
 
 ```java
 Config config = new Config();
@@ -66,7 +66,7 @@ mapConfig.setNearCacheConfig( nearCacheConfig );
 config.addMapConfig( mapConfig );
 ```
 
-After creating `Config` object, you can use it to create a new Hazelcast instance.
+After creating a `Config` object, you can use it to create a new Hazelcast instance.
 
 -   `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance( config );`
 

@@ -21,6 +21,7 @@ import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -39,10 +40,10 @@ import java.util.HashSet;
  * Base class of all Hazelcast BeanDefinitionParser implementations.
  * <p/>
  * <ul>
- *     <li>{@link com.hazelcast.spring.HazelcastClientBeanDefinitionParser}</li>
- *     <li>{@link com.hazelcast.spring.HazelcastConfigBeanDefinitionParser}</li>
- *     <li>{@link com.hazelcast.spring.HazelcastInstanceDefinitionParser}</li>
- *     <li>{@link com.hazelcast.spring.HazelcastTypeBeanDefinitionParser}</li>
+ *     <li>{@link HazelcastClientBeanDefinitionParser}</li>
+ *     <li>{@link HazelcastConfigBeanDefinitionParser}</li>
+ *     <li>{@link HazelcastInstanceDefinitionParser}</li>
+ *     <li>{@link HazelcastTypeBeanDefinitionParser}</li>
  * </ul>
  *
  */
@@ -333,6 +334,11 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 properties.put(propertyName, value);
             }
             beanDefinitionBuilder.addPropertyValue("properties", properties);
+        }
+
+        protected void handleSpringAware() {
+            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
+            configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
     }
 }

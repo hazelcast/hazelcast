@@ -512,8 +512,8 @@ public class NearCacheTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
                 triggerNearCacheEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
             }
         });
     }
@@ -532,8 +532,8 @@ public class NearCacheTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
                 triggerNearCacheEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
             }
         });
     }
@@ -552,8 +552,8 @@ public class NearCacheTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
                 long ownedEntryCount = stats.getOwnedEntryCount();
-                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
                 triggerNearCacheEviction(map);
+                assertTrue("owned entry count " + ownedEntryCount, maxSize > ownedEntryCount);
             }
         });
     }

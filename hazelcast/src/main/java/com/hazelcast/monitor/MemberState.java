@@ -47,6 +47,12 @@ public interface MemberState extends JsonSerializable {
 
     LocalMemoryStats getLocalMemoryStats();
 
+    /**
+     * Returns the local operation statistics.
+     * @return LocalOperationStats statistics
+     */
+    LocalOperationStats getOperationStats();
+
     MemberPartitionState getMemberPartitionState();
 
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.ReferenceContainer;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -35,16 +35,16 @@ public class GetAndAlterOperation extends AbstractAlterOperation {
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
         IFunction f = nodeEngine.toObject(function);
-        ReferenceWrapper reference = getReference();
+        ReferenceContainer referenceContainer = getReferenceContainer();
 
-        Object input = nodeEngine.toObject(reference.get());
+        Object input = nodeEngine.toObject(referenceContainer.get());
         response = input;
         //noinspection unchecked
         Object output = f.apply(input);
         shouldBackup = !isEquals(input, output);
         if (shouldBackup) {
             backup = nodeEngine.toData(output);
-            reference.set(backup);
+            referenceContainer.set(backup);
         }
     }
 

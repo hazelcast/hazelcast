@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -54,6 +54,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 abstract class AbstractClientCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
+
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
@@ -114,7 +115,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
             final ClientInvocation clientInvocation =
                     new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                            request, partitionId);
+                                         request, partitionId);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -124,6 +125,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     public boolean isClosed() {
         return isClosed.get();
+    }
+
+    public boolean isDestroyed() {
+        return isDestroyed.get();
     }
 
     protected abstract void closeListeners();
@@ -169,11 +174,13 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
-        final LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        final ClientExecutionService executionService = clientContext.getExecutionService();
+    protected void submitLoadAllTask(final CacheLoadAllRequest request,
+                                     final CompletionListener completionListener) {
+        LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
+        ClientExecutionServiceImpl executionService =
+                (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
-        final ICompletableFuture<?> future = executionService.submit(loadAllTask);
+        final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
         loadAllTasks.add(future);
         future.andThen(new ExecutionCallback() {
             @Override

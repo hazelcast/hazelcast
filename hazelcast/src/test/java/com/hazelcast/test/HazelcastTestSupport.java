@@ -34,6 +34,9 @@ import org.junit.After;
 import org.junit.ComparisonFailure;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -45,6 +48,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -68,7 +72,6 @@ public abstract class HazelcastTestSupport {
         new Thread(futureTask).start();
         return futureTask;
     }
-
 
     public static <E> Future<E> spawn(Callable<E> task) {
         FutureTask futureTask = new FutureTask(task);
@@ -186,8 +189,50 @@ public abstract class HazelcastTestSupport {
         return randomString();
     }
 
-    public static String randomMapName(String mapNamePrefix) {
-        return mapNamePrefix + randomString();
+    public static String randomMapName(String namePrefix) {
+        return namePrefix + randomString();
+    }
+
+    public static String randomName() {
+        return randomString();
+    }
+
+    public static String randomNameOwnedBy(HazelcastInstance hz) {
+        return randomNameOwnedBy(hz, "");
+    }
+
+    public static String randomNameOwnedBy(HazelcastInstance instance, String prefix) {
+        Cluster cluster = instance.getCluster();
+        Member localMember = cluster.getLocalMember();
+        PartitionService partitionService = instance.getPartitionService();
+        for (; ; ) {
+            String id = prefix + randomString();
+            Partition partition = partitionService.getPartition(id);
+            if (comparePartitionOwnership(true, localMember, partition)) {
+                return id;
+            }
+        }
+    }
+
+    public static Partition randomPartitionOwnedBy(HazelcastInstance hz) {
+        Cluster cluster = hz.getCluster();
+
+        Member localMember = cluster.getLocalMember();
+        PartitionService partitionService = hz.getPartitionService();
+        List<Partition> partitions = new LinkedList<Partition>();
+
+        for (Partition partition : partitionService.getPartitions()) {
+            if (partition.getOwner().localMember()) {
+                partitions.add(partition);
+            }
+        }
+
+        if (partitions.isEmpty()) {
+            throw new IllegalStateException("No partitions found for hzinstance:" + hz.getName());
+        }
+
+        Collections.shuffle(partitions);
+        return partitions.get(0);
     }
 
     public static void printAllStackTraces() {
@@ -246,9 +291,9 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-     /**
+    /**
      * Gets a partition id owned by this particular member.
-      *
+     *
      * @param hz
      * @return
      */
@@ -256,21 +301,21 @@ public abstract class HazelcastTestSupport {
         warmUpPartitions(hz);
 
         InternalPartitionService partitionService = getPartitionService(hz);
-        for(InternalPartition p: partitionService.getPartitions() ){
-            if(p.isLocal()){
+        for (InternalPartition p : partitionService.getPartitions()) {
+            if (p.isLocal()) {
                 return p.getPartitionId();
             }
         }
 
-        throw new RuntimeException("No local partitions are found for hz: "+hz.getName());
+        throw new RuntimeException("No local partitions are found for hz: " + hz.getName());
     }
 
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
-        return generateKeyInternal(instance, true);
+        return generateKeyOwnedBy(instance, true);
     }
 
     public static String generateKeyNotOwnedBy(HazelcastInstance instance) {
-        return generateKeyInternal(instance, false);
+        return generateKeyOwnedBy(instance, false);
     }
 
     /**
@@ -281,7 +326,7 @@ public abstract class HazelcastTestSupport {
      *                         set to <code>false</code> which means generated key will not be owned by the given instance.
      * @return generated string.
      */
-    private static String generateKeyInternal(HazelcastInstance instance, boolean generateOwnedKey) {
+    protected static String generateKeyOwnedBy(HazelcastInstance instance, boolean generateOwnedKey) {
         Cluster cluster = instance.getCluster();
         checkMemberCount(generateOwnedKey, cluster);
 
@@ -348,11 +393,10 @@ public abstract class HazelcastTestSupport {
 
     public static boolean isAllInSafeState() {
         final Set<HazelcastInstance> nodeSet = HazelcastInstanceFactory.getAllHazelcastInstances();
-        final HazelcastInstance[] nodes = nodeSet.toArray(new HazelcastInstance[nodeSet.size()]);
-        return isAllInSafeState(nodes);
+        return isAllInSafeState(nodeSet);
     }
 
-    public static boolean isAllInSafeState(HazelcastInstance[] nodes) {
+    public static boolean isAllInSafeState(Collection<HazelcastInstance> nodes) {
         for (HazelcastInstance node : nodes) {
             if (!isInstanceInSafeState(node)) {
                 return false;
@@ -369,12 +413,16 @@ public abstract class HazelcastTestSupport {
         });
     }
 
-    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+    public static void waitAllForSafeState(final Collection<HazelcastInstance> nodes) {
         assertTrueEventually(new AssertTask() {
             public void run() {
                 assertTrue(isAllInSafeState(nodes));
             }
         });
+    }
+
+    public static void waitAllForSafeState(final HazelcastInstance... nodes) {
+        waitAllForSafeState(asList(nodes));
     }
 
     public static void assertStartsWith(String expected, String actual) {
@@ -458,6 +506,15 @@ public abstract class HazelcastTestSupport {
             public void run() throws Exception {
                 assertTrue("FutureTask is not complete", task.isDone());
                 assertEquals(value, task.get());
+            }
+        });
+    }
+
+    public static <E> void assertEqualsEventually(final Callable<E> task, final E value) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(value, task.call());
             }
         });
     }
@@ -558,8 +615,6 @@ public abstract class HazelcastTestSupport {
             }
             sleepMillis(sleepMillis);
         }
-
-        printAllStackTraces();
         throw error;
     }
 
@@ -584,9 +639,9 @@ public abstract class HazelcastTestSupport {
      * This method executes the normal assertEquals with expected and actual values.
      * In addition it formats the given string with those values to provide a good assert message.
      *
-     * @param message     assert message which is formatted with expected and actual values
-     * @param expected    expected value which is used for assert
-     * @param actual      actual value which is used for assert
+     * @param message  assert message which is formatted with expected and actual values
+     * @param expected expected value which is used for assert
+     * @param actual   actual value which is used for assert
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
         assertEquals(String.format(message, expected, actual), expected, actual);

@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicOperationExe
         final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 executor.runOnCallingThread(genericOperation);
@@ -123,7 +124,7 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicOperationExe
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        PartitionSpecificCallable task = new PartitionSpecificCallable(-1) {
+        PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
                 try {

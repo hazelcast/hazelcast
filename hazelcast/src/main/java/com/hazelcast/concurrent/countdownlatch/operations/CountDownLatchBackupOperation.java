@@ -38,6 +38,7 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
         this.count = count;
     }
 
+    @Override
     public void run() throws Exception {
         CountDownLatchService service = getService();
         service.setCountDirect(name, count);
@@ -46,6 +47,16 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
     @Override
     public Object getResponse() {
         return Boolean.TRUE;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CountDownLatchDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 
     @Override
@@ -58,15 +69,5 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         count = in.readInt();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 }

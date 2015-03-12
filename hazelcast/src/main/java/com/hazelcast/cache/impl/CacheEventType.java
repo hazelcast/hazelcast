@@ -58,7 +58,12 @@ public enum CacheEventType {
     /**
      * An event type indicating that the cache operation has completed.
      */
-    COMPLETED(7);
+    COMPLETED(7),
+
+    /**
+     * An event type indicationg that the expiration time of cache record has been updated
+     */
+    EXPIRATION_TIME_UPDATED(8);
 
     private int type;
 

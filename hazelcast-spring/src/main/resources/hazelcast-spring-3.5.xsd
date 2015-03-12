@@ -26,6 +26,7 @@
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
+                        <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
@@ -175,7 +176,7 @@
                                         </xs:complexType>
                                     </xs:element>
                                     <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
-                                    <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 Hazelcast can replicate some or all of the cluster data. For example,
@@ -184,10 +185,6 @@
                                                 to be replicated by adding this element.
                                             </xs:documentation>
                                         </xs:annotation>
-                                        <xs:complexType>
-                                            <xs:attribute name="name" use="required" type="xs:string"/>
-                                            <xs:attribute name="merge-policy" use="required" type="xs:string"/>
-                                        </xs:complexType>
                                     </xs:element>
                                     <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
@@ -430,6 +427,16 @@
                                                             maxOccurs="unbounded"/>
                                             </xs:sequence>
                                         </xs:complexType>
+                                    </xs:element>
+                                    <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Hazelcast can replicate some or all of the cluster data. For example,
+                                                you can have 5 different caches but you want only one of these caches
+                                                replicating across clusters. To achieve this you mark the caches
+                                                to be replicated by adding this element.
+                                            </xs:documentation>
+                                        </xs:annotation>
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
@@ -946,6 +953,7 @@
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
+                        <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="network" type="network-client" minOccurs="0" maxOccurs="1"/>
@@ -1789,4 +1797,8 @@
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
     </xs:complexType>
 
+    <xs:complexType name="wan-replication-ref">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="merge-policy" use="required" type="xs:string"/>
+    </xs:complexType>
 </xs:schema>

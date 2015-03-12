@@ -3,7 +3,7 @@
 
 Hazelcast supports EC2 Auto Discovery. It is useful when you do not want or cannot provide the list of possible IP addresses. To configure your cluster to use EC2 Auto Discovery, disable join over multicast and TCP/IP, enable AWS, and provide your credentials (access and secret keys). 
 
-You need to add *hazelcast-cloud.jar* dependency to your project. Note that it is also bundled inside *hazelcast-all.jar*. The Hazelcast cloud module does not depend on any other third party modules.
+You need to add the *hazelcast-cloud.jar* dependency to your project. Note that it is also bundled inside *hazelcast-all.jar*. The Hazelcast cloud module does not depend on any other third party modules.
 
 The following is an example declarative configuration.
 
@@ -34,7 +34,7 @@ The following is an example declarative configuration.
 
 #### Debugging
 
-When and if needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to FINEST or DEBUG. After this change, you can also see whether the instances are accepted or rejected, and the reason the instances were rejected in the generated log. Note that changing the log level to one of the mentioned levels may affect the performance of the cluster. Please see the [Logging Configuration section](#logging-configuration) for information on logging mechanisms.
+When needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to `FINEST` or `DEBUG`. After this change, you can also see in the generated log whether the instances are accepted or rejected, and the reason the instances were rejected. Note that changing the log level in this way may affect the performance of the cluster. Please see the [Logging Configuration section](#logging-configuration) for information on logging mechanisms.
 
 <br> </br>
 ***RELATED INFORMATION***

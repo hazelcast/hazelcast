@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}
  */
@@ -51,6 +52,10 @@ public class QueueConfig {
     private QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
+    }
+
+    public QueueConfig(String name) {
+        setName(name);
     }
 
     public QueueConfig(QueueConfig config) {

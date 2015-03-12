@@ -1,7 +1,7 @@
 
 ## Configuration Wrap-Up
 
-Below is the `hazelcast.xml` configuration file that comes with the release, located at `bin` folder.
+Below is the `hazelcast.xml` configuration file that comes with the release, located in the `bin` folder.
 
 ```xml
 <hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.3.xsd"

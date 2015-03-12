@@ -1,7 +1,7 @@
 
 ## Using Variables
 
-In your Hazelcast and/or Hazelcast Client declarative configuration, you can use variables to set the values of the elements. This is valid when you set a system property programmatically or using the command line interface. Then, you can use a variable in the declarative configuration to access to those values of the system properties you set.
+In your Hazelcast and/or Hazelcast Client declarative configuration, you can use variables to set the values of the elements. This is valid when you set a system property programmatically or you use the command line interface. You can use a variable in the declarative configuration to access the values of the system properties you set.
 
 For example, see the following command that sets two system properties.
 
@@ -9,7 +9,7 @@ For example, see the following command that sets two system properties.
 -Dgroup.name=dev -Dgroup.password=somepassword
 ```
 
-Let's reach to the values of these system properties in the declarative configuration of Hazelcast as shown below.
+Let's get the values of these system properties in the declarative configuration of Hazelcast, as shown below.
 
 ```xml
 <hazelcast>
@@ -20,7 +20,7 @@ Let's reach to the values of these system properties in the declarative configur
 </hazelcast>
 ```
 
-This also applies to the declarative configuration of Hazelcast Client as shown below.
+This also applies to the declarative configuration of Hazelcast Client, as shown below.
 
 ```xml
 <hazelcast-client>
@@ -31,7 +31,7 @@ This also applies to the declarative configuration of Hazelcast Client as shown 
 </hazelcast-client>
 ```
 
-If you do not want to rely on the system properties, you can use the `XmlConfigBuilder` and set a `Properties` instance explicitly as shown below.
+If you do not want to rely on the system properties, you can use the `XmlConfigBuilder` and explicitly set a `Properties` instance, as shown below.
 
  
 ```java

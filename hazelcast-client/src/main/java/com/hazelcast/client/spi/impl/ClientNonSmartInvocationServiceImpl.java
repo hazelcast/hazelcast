@@ -17,7 +17,6 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
         clusterListenerSupport = clusterService.getClusterListenerSupport();
     }
 
-
     @Override
     public void invokeOnRandomTarget(ClientInvocation invocation) throws IOException {
         sendToOwner(invocation);

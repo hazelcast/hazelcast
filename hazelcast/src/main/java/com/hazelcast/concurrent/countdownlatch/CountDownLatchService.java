@@ -42,24 +42,24 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
      */
     public static final String SERVICE_NAME = "hz:impl:countDownLatchService";
 
-    private final ConcurrentMap<String, CountDownLatchInfo> latches
-            = new ConcurrentHashMap<String, CountDownLatchInfo>();
+    private final ConcurrentMap<String, CountDownLatchContainer> containers
+            = new ConcurrentHashMap<String, CountDownLatchContainer>();
     private NodeEngine nodeEngine;
 
     public int getCount(String name) {
-        CountDownLatchInfo latch = latches.get(name);
+        CountDownLatchContainer latch = containers.get(name);
         return latch != null ? latch.getCount() : 0;
     }
 
     public boolean setCount(String name, int count) {
         if (count < 0) {
-            latches.remove(name);
+            containers.remove(name);
             return false;
         } else {
-            CountDownLatchInfo latch = latches.get(name);
+            CountDownLatchContainer latch = containers.get(name);
             if (latch == null) {
-                latch = new CountDownLatchInfo(name);
-                latches.put(name, latch);
+                latch = new CountDownLatchContainer(name);
+                containers.put(name, latch);
             }
             return latch.setCount(count);
         }
@@ -67,28 +67,28 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     public void setCountDirect(String name, int count) {
         if (count < 0) {
-            latches.remove(name);
+            containers.remove(name);
         } else {
-            CountDownLatchInfo latch = latches.get(name);
+            CountDownLatchContainer latch = containers.get(name);
             if (latch == null) {
-                latch = new CountDownLatchInfo(name);
-                latches.put(name, latch);
+                latch = new CountDownLatchContainer(name);
+                containers.put(name, latch);
             }
             latch.setCountDirect(count);
         }
     }
 
     public void countDown(String name) {
-        CountDownLatchInfo latch = latches.get(name);
+        CountDownLatchContainer latch = containers.get(name);
         if (latch != null) {
             if (latch.countDown() == 0) {
-                latches.remove(name);
+                containers.remove(name);
             }
         }
     }
 
     public boolean shouldWait(String name) {
-        CountDownLatchInfo latch = latches.get(name);
+        CountDownLatchContainer latch = containers.get(name);
         return latch != null && latch.getCount() > 0;
     }
 
@@ -99,12 +99,12 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     @Override
     public void reset() {
-        latches.clear();
+        containers.clear();
     }
 
     @Override
     public void shutdown(boolean terminate) {
-        latches.clear();
+        containers.clear();
     }
 
     @Override
@@ -114,7 +114,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     @Override
     public void destroyDistributedObject(String name) {
-        latches.remove(name);
+        containers.remove(name);
     }
 
     @Override
@@ -127,11 +127,11 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
             return null;
         }
 
-        Collection<CountDownLatchInfo> data = new LinkedList<CountDownLatchInfo>();
-        for (Map.Entry<String, CountDownLatchInfo> latchEntry : latches.entrySet()) {
+        Collection<CountDownLatchContainer> data = new LinkedList<CountDownLatchContainer>();
+        for (Map.Entry<String, CountDownLatchContainer> latchEntry : containers.entrySet()) {
             String name = latchEntry.getKey();
             if (getPartitionId(name) == event.getPartitionId()) {
-                CountDownLatchInfo value = latchEntry.getValue();
+                CountDownLatchContainer value = latchEntry.getValue();
                 data.add(value);
             }
         }
@@ -155,7 +155,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     }
 
     private void clearPartition(int partitionId) {
-        final Iterator<String> iter = latches.keySet().iterator();
+        final Iterator<String> iter = containers.keySet().iterator();
         while (iter.hasNext()) {
             final String name = iter.next();
             if (getPartitionId(name) == partitionId) {
@@ -174,17 +174,17 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         clearPartition(partitionId);
     }
 
-    public CountDownLatchInfo getLatch(String name) {
-        return latches.get(name);
+    public CountDownLatchContainer getCountDownLatchContainer(String name) {
+        return containers.get(name);
     }
 
     // need for testing..
     public boolean containsLatch(String name) {
-        return latches.containsKey(name);
+        return containers.containsKey(name);
     }
 
-    public void add(CountDownLatchInfo latch) {
+    public void add(CountDownLatchContainer latch) {
         String name = latch.getName();
-        latches.put(name, latch);
+        containers.put(name, latch);
     }
 }

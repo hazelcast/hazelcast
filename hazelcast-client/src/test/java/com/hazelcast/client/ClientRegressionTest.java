@@ -47,11 +47,13 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -154,6 +156,7 @@ public class ClientRegressionTest
      * Test for issues #267 and #493
      */
     @Test
+    @Ignore
     public void testIssue493() throws Exception {
 
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
@@ -183,10 +186,10 @@ public class ClientRegressionTest
     @Test(timeout = 60000)
     public void testOperationRedo() throws Exception {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final Thread thread = new Thread() {
@@ -568,6 +571,7 @@ public class ClientRegressionTest
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         final String mapName = randomMapName();
 
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -586,7 +590,13 @@ public class ClientRegressionTest
         instance.shutdown();
         Hazelcast.newHazelcastInstance();
 
-        assertEquals(null, map.get("a"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(null, map.get("a"));
+            }
+        });
+
     }
 
     @Test
@@ -610,7 +620,6 @@ public class ClientRegressionTest
         for (int i = 0; i < tryCount; i++) {
             final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
             final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
             final ILock lock = client.getLock("lock");
             assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
             client.getLifecycleService().terminate(); //with client is dead, lock should be released.

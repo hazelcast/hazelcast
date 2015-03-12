@@ -1,7 +1,7 @@
 
 ## Set Configuration
 
-The following are the example configurations.
+The following are the example set configurations.
 
 
 **Declarative:**
@@ -30,14 +30,14 @@ collectionSet.setName( "MySet" ).setBackupCount( "1" )
 ```
    
 
-It has below elements.
+Set configuration has the following elements.
 
 
-- `backup-count`: Count of synchronous backups. Remember that, Set is a non-partitioned data structure, i.e. all entries of a Set resides in one partition. When this parameter is '1', it means there will be a backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
+- `backup-count`: Count of synchronous backups. Set is a non-partitioned data structure, so all entries of a Set reside in one partition. When this parameter is '1', it means there will be 1 backup of that Set in another node in the cluster. When it is '2', 2 nodes will have the backup.
 - `async-backup-count`: Count of asynchronous backups.
-- `statistics-enabled`: If set as `true`, you can retrieve statistics for this Set.
-- `max-size`: It is the maximum entry size for this Set.
-- `item-listeners`: This element lets you add listeners (listener classes) for the list items. You can also set the attributes `include-value` to `true` if you want the item event to contain the item values and `local` to `true` if you want to listen the items on the local node.
+- `statistics-enabled`: If set to `true`, you can retrieve statistics for this Set.
+- `max-size`: The maximum number of entries for this Set.
+- `item-listeners`: Lets you add listeners (listener classes) for the list items. You can also set the attributes `include-value` to `true` if you want the item event to contain the item values, and you can set `local` to `true` if you want to listen to the items on the local node.
 
 
 

@@ -3,7 +3,7 @@
 
 Hazelcast seamlessly supports IPv6 addresses. (This support is switched off by default, please see the note at the end of this section.)
 
-You only need to define the IPv6 addresses or interfaces in [network configuration](#network-configuration). The only limitation at the moment is that you cannot define wildcard IPv6 addresses in the [TCP-IP](#configuring-tcp-ip-cluster) join configuration. The [Interfaces section](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces the same as IPv4 interfaces.
+To do this, you only need to define the IPv6 addresses or interfaces in [network configuration](#network-configuration). The only limitation at the moment is that you cannot define wildcard IPv6 addresses in the [TCP-IP](#configuring-tcp-ip-cluster) join configuration. The [Interfaces section](#specifying-network-interfaces) section does not have this limitation, you can configure wildcard IPv6 interfaces as well as IPv4 interfaces.
 
 ```xml
 <hazelcast>
@@ -34,7 +34,10 @@ You only need to define the IPv6 addresses or interfaces in [network configurati
 </hazelcast>
 ```
 
-JVM has two system properties you can use to set the preferred protocol stack (IPv4 or IPv6) and the preferred address family types (inet4 or inet6). On a dual stack machine, IPv6 stack is preferred by default. You can change this with the `java.net.preferIPv4Stack=<true|false>` system property. When querying name services, JVM prefers IPv4 addresses over IPv6 addresses and it will return an IPv4 address if possible. You can change this with the `java.net.preferIPv6Addresses=<true|false>` system property.
+JVM has two system properties you can use to set the preferred protocol stack (IPv4 or IPv6) and the preferred address family types (inet4 or inet6). 
+
+ - On a dual stack machine, IPv6 stack is preferred by default. You can change this with the `java.net.preferIPv4Stack=<true|false>` system property. 
+ - When querying name services, JVM prefers IPv4 addresses over IPv6 addresses and it will return an IPv4 address if possible. You can change this with the `java.net.preferIPv6Addresses=<true|false>` system property.
 
 Also see additional [details on IPv6 support in Java](http://docs.oracle.com/javase/1.5.0/docs/guide/net/ipv6_guide/query.html#details).
 

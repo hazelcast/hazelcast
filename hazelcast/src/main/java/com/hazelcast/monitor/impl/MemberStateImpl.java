@@ -26,6 +26,7 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.MemberPartitionState;
@@ -54,6 +55,7 @@ public class MemberStateImpl implements MemberState {
     private SerializableMXBeans beans = new SerializableMXBeans();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
+    private LocalOperationStats operationStats = new LocalOperationStatsImpl();
 
     public MemberStateImpl() {
     }
@@ -104,6 +106,7 @@ public class MemberStateImpl implements MemberState {
         root.add("clients", clientsArray);
         root.add("beans", beans.toJson());
         root.add("memoryStats", memoryStats.toJson());
+        root.add("operationStats", operationStats.toJson());
         root.add("memberPartitionState", memberPartitionState.toJson());
         return root;
     }
@@ -155,6 +158,10 @@ public class MemberStateImpl implements MemberState {
         JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
         if (jsonMemoryStats != null) {
             memoryStats.fromJson(jsonMemoryStats);
+        }
+        JsonObject jsonOperationStats = getObject(json, "operationStats", null);
+        if (jsonOperationStats != null) {
+            operationStats.fromJson(jsonOperationStats);
         }
         JsonObject jsonMemberPartitionState = getObject(json, "memberPartitionState", null);
         if (jsonMemberPartitionState != null) {
@@ -262,12 +269,17 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
-    public MemberPartitionState getMemberPartitionState() {
-        return memberPartitionState;
+    public LocalOperationStats getOperationStats() {
+        return operationStats;
     }
 
-    public void setMemberPartitionState(MemberPartitionState memberPartitionState) {
-        this.memberPartitionState = memberPartitionState;
+    public void setOperationStats(LocalOperationStats operationStats) {
+        this.operationStats = operationStats;
+    }
+
+    @Override
+    public MemberPartitionState getMemberPartitionState() {
+        return memberPartitionState;
     }
 
     @Override
@@ -321,14 +333,15 @@ public class MemberStateImpl implements MemberState {
         if (memoryStats != null ? !memoryStats.equals(that.memoryStats) : that.memoryStats != null) {
             return false;
         }
+        if (operationStats != null ? !operationStats.equals(that.operationStats) : that.operationStats != null) {
+            return false;
+        }
         if (memberPartitionState != null
                 ? !memberPartitionState.equals(that.memberPartitionState) : that.memberPartitionState != null) {
             return false;
         }
-
         return true;
     }
-
 
     @Override
     public String toString() {
@@ -342,6 +355,7 @@ public class MemberStateImpl implements MemberState {
                 + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
                 + ", memoryStats=" + memoryStats
+                + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
                 + '}';
     }

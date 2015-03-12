@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
@@ -55,6 +56,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
@@ -114,6 +116,7 @@ final class BasicOperationService implements InternalOperationService {
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
+    private static final long CLEANUP_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
 
     final ConcurrentMap<Long, BasicInvocation> invocations;
     final OperationExecutor operationExecutor;
@@ -130,7 +133,9 @@ final class BasicOperationService implements InternalOperationService {
     private final long backupOperationTimeoutMillis;
     private final OperationBackupHandler operationBackupHandler;
     private final BasicBackPressureService backPressureService;
-    private final BasicResponsePacketHandler responsePacketHandler;
+    private final SlowOperationDetector slowOperationDetector;
+    private final CleanupThread cleanupThread;
+
     private volatile boolean shutdown;
 
     BasicOperationService(NodeEngineImpl nodeEngine) {
@@ -146,7 +151,6 @@ final class BasicOperationService implements InternalOperationService {
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
         this.invocations = new ConcurrentHashMap<Long, BasicInvocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-        this.responsePacketHandler = new BasicResponsePacketHandler();
         this.operationBackupHandler = new OperationBackupHandler();
 
         this.operationExecutor = new ClassicOperationExecutor(
@@ -154,24 +158,37 @@ final class BasicOperationService implements InternalOperationService {
                 node.loggingService,
                 node.getThisAddress(),
                 new BasicOperationRunnerFactory(),
-                responsePacketHandler, node.getHazelcastThreadGroup(), node.getNodeExtension()
+                new BasicResponsePacketHandler(),
+                node.getHazelcastThreadGroup(),
+                node.getNodeExtension()
         );
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
-        startCleanupThread();
+        this.slowOperationDetector = initSlowOperationDetector();
+
+        this.cleanupThread = new CleanupThread();
+        this.cleanupThread.start();
     }
 
-    private void startCleanupThread() {
-        CleanupThread t = new CleanupThread();
-        t.start();
+    private SlowOperationDetector initSlowOperationDetector() {
+        return new SlowOperationDetector(node.loggingService,
+                operationExecutor.getGenericOperationRunners(),
+                operationExecutor.getPartitionOperationRunners(),
+                node.groupProperties,
+                node.getHazelcastThreadGroup());
     }
 
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
         operationExecutor.dumpPerformanceMetrics(sb);
+    }
+
+    @Override
+    public Collection<JsonSerializable> getSlowOperations() {
+        return slowOperationDetector.getSlowOperations();
     }
 
     @Override
@@ -405,7 +422,6 @@ final class BasicOperationService implements InternalOperationService {
         return false;
     }
 
-
     /**
      * Checks if an operation is still running.
      * <p/>
@@ -478,6 +494,18 @@ final class BasicOperationService implements InternalOperationService {
     }
 
     @Override
+    public void reset() {
+        for (BasicInvocation invocation : invocations.values()) {
+            try {
+                invocation.notify(new MemberLeftException());
+            } catch (Throwable e) {
+                logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
+            }
+        }
+        invocations.clear();
+    }
+
+    @Override
     public void shutdown() {
         shutdown = true;
         logger.finest("Stopping operation threads...");
@@ -490,6 +518,12 @@ final class BasicOperationService implements InternalOperationService {
         }
         invocations.clear();
         operationExecutor.shutdown();
+        slowOperationDetector.shutdown();
+        try {
+            cleanupThread.join(CLEANUP_THREAD_MAX_WAIT_TIME_TO_FINISH);
+        } catch (InterruptedException e) {
+            EmptyStatement.ignore(e);
+        }
     }
 
     /**
@@ -645,7 +679,7 @@ final class BasicOperationService implements InternalOperationService {
 
         @Override
         public OperationRunner createGenericRunner() {
-            return new BasicOperationRunner(-1);
+            return new BasicOperationRunner(Operation.GENERIC_PARTITION_ID);
         }
     }
 
@@ -653,15 +687,15 @@ final class BasicOperationService implements InternalOperationService {
      * Responsible for processing an Operation.
      */
     private class BasicOperationRunner extends OperationRunner {
-        private static final int AD_HOC_PARTITION_ID = -2;
+        static final int AD_HOC_PARTITION_ID = -2;
 
         // This field doesn't need additional synchronization, since a partition-specific OperationRunner
         // will never be called concurrently.
         private InternalPartition internalPartition;
 
         // When partitionId >= 0, it is a partition specific
-        // when partitionId =-1, it is generic
-        // when partitionId =-2, it is ad hoc
+        // when partitionId = -1, it is generic
+        // when partitionId = -2, it is ad hoc
         // an ad-hoc OperationRunner can only process generic operations, but it can be shared between threads
         // and therefor the {@link OperationRunner#currentTask()} always returns null
         public BasicOperationRunner(int partitionId) {
@@ -686,12 +720,12 @@ final class BasicOperationService implements InternalOperationService {
         }
 
         private boolean publishCurrentTask() {
-            return getPartitionId() != AD_HOC_PARTITION_ID && currentTask == null;
+            return (getPartitionId() != AD_HOC_PARTITION_ID && currentTask == null);
         }
 
         @Override
         public void run(Operation op) {
-            // TODO: We need to think about replacing this contended counter.
+            // TODO: We need to think about replacing this contended counter
             executedOperationsCount.incrementAndGet();
 
             boolean publishCurrentTask = publishCurrentTask();
@@ -1077,10 +1111,13 @@ final class BasicOperationService implements InternalOperationService {
             try {
                 while (!shutdown) {
                     scanHandleOperationTimeout();
-                    backPressureService.cleanup();
-                    sleep();
+                    if (!shutdown) {
+                        backPressureService.cleanup();
+                    }
+                    if (!shutdown) {
+                        sleep();
+                    }
                 }
-
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe("Failed to run", t);
@@ -1102,6 +1139,9 @@ final class BasicOperationService implements InternalOperationService {
             }
 
             for (BasicInvocation invocation : invocations.values()) {
+                if (shutdown) {
+                    return;
+                }
                 try {
                     invocation.handleOperationTimeout();
                 } catch (Throwable t) {

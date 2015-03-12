@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.instance.MemberImpl;
@@ -36,6 +37,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     // client
     public static final int MEMBERSHIP_EVENT = 8;
+    public static final int INITIAL_MEMBERSHIP_EVENT = 9;
 
     @Override
     public int getFactoryId() {
@@ -60,6 +62,8 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                         return new BindMessage();
                     case MEMBERSHIP_EVENT:
                         return new ClientMembershipEvent();
+                    case INITIAL_MEMBERSHIP_EVENT:
+                        return new ClientInitialMembershipEvent();
                     default:
                         return null;
                 }

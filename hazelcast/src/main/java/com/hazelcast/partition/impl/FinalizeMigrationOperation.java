@@ -58,6 +58,12 @@ final class FinalizeMigrationOperation extends AbstractOperation
             finishMigration(event, service);
         }
 
+        if (endpoint == MigrationEndpoint.SOURCE && success) {
+            partitionService.clearPartitionReplicaVersions(partitionId);
+        } else if (endpoint == MigrationEndpoint.DESTINATION && !success) {
+            partitionService.clearPartitionReplicaVersions(partitionId);
+        }
+
         partitionService.removeActiveMigration(partitionId);
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);

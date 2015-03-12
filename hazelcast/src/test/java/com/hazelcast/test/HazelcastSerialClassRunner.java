@@ -31,12 +31,16 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
 
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
-        long start = System.currentTimeMillis();
-        String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-        System.out.println("Started Running Test: " + testName);
-        super.runChild(method, notifier);
-        float took = (float) (System.currentTimeMillis() - start) / 1000;
-        System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+        FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
+        try {
+            long start = System.currentTimeMillis();
+            String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+            System.out.println("Started Running Test: " + testName);
+            super.runChild(method, notifier);
+            float took = (float) (System.currentTimeMillis() - start) / 1000;
+            System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+        }finally {
+            FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+        }
     }
-
 }

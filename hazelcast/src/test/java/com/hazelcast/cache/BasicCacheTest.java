@@ -28,7 +28,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import org.junit.After;
 import org.junit.Before;
@@ -105,9 +104,7 @@ public class BasicCacheTest
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
-
+            public void run() throws Exception {
                 CacheManager cm2 = cachingProvider2.getCacheManager();
                 assertNotNull(cm2.getCache(cacheName));
             }
@@ -176,9 +173,10 @@ public class BasicCacheTest
         CacheManager cacheManager = cachingProvider1.getCacheManager();
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
-        SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
-        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration = new MutableCacheEntryListenerConfiguration<Integer, String>(
-                FactoryBuilder.factoryOf(listener), null, true, true);
+        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
 
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
@@ -188,20 +186,33 @@ public class BasicCacheTest
         Integer key1 = 1;
         String value1 = "value1";
         cache.put(key1, value1);
-        assertEquals(1, listener.created.get());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, listener.created.get());
+            }
+        });
 
         Integer key2 = 2;
         String value2 = "value2";
         cache.put(key2, value2);
-        assertEquals(2, listener.created.get());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, listener.created.get());
+            }
+        });
 
         Set<Integer> keys = new HashSet<Integer>();
         keys.add(key1);
         keys.add(key2);
         cache.removeAll(keys);
-
-        assertEquals(2, listener.removed.get());
-
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, listener.removed.get());
+            }
+        });
     }
 
     @Test
@@ -266,8 +277,7 @@ public class BasicCacheTest
         cacheManager.destroyCache("c1");
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 try {
                     c2.get("key");
                     throw new AssertionError("get should throw IllegalStateException");
@@ -290,8 +300,7 @@ public class BasicCacheTest
         cacheManager.close();
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() throws Exception {
                 c2.get("key");
             }
         }, 10);
@@ -299,13 +308,13 @@ public class BasicCacheTest
 
     @Test
     public void testIterator() {
-
         CacheManager cacheManager = cachingProvider1.getCacheManager();
 
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         config.setName("SimpleCache");
 
-        ICache<Integer, String> cache = (ICache<Integer, String>) cacheManager.createCache("simpleCache", config);
+        ICache<Integer, String> cache =
+                (ICache<Integer, String>) cacheManager.createCache("simpleCache", config);
 
         int testSize = 1007;
         for (int i = 0; i < testSize; i++) {
@@ -330,7 +339,6 @@ public class BasicCacheTest
             c++;
         }
         assertEquals(testSize, c);
-
     }
 
     @Test
@@ -371,15 +379,20 @@ public class BasicCacheTest
         config.setTypes(Integer.class, Long.class);
 
         Cache<Integer, Long> cache = cacheManager.createCache(cacheName, config);
-        Cache<Integer, Long> cache2 = cacheManager.getCache(cacheName, config.getKeyType(), config.getValueType());
+        Cache<Integer, Long> cache2 =
+                cacheManager.getCache(cacheName, config.getKeyType(), config.getValueType());
 
         assertNotNull(cache);
         assertNotNull(cache2);
     }
 
     public static class SimpleEntryListener<K, V>
-            implements CacheEntryListener<K, V>, CacheEntryCreatedListener<K, V>, CacheEntryUpdatedListener<K, V>,
-                       CacheEntryRemovedListener<K, V>, CacheEntryExpiredListener<K, V>, Serializable {
+            implements  CacheEntryListener<K, V>,
+                        CacheEntryCreatedListener<K, V>,
+                        CacheEntryUpdatedListener<K, V>,
+                        CacheEntryRemovedListener<K, V>,
+                        CacheEntryExpiredListener<K, V>,
+                        Serializable {
 
         public AtomicInteger created = new AtomicInteger();
         public AtomicInteger expired = new AtomicInteger();
@@ -392,11 +405,6 @@ public class BasicCacheTest
         @Override
         public void onCreated(Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
                 created.incrementAndGet();
             }

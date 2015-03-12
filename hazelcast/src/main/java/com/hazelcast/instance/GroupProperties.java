@@ -126,6 +126,7 @@ public class GroupProperties {
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
     public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
+    public static final String PROP_MC_MAX_VISIBLE_SLOW_OPERATION_COUNT = "hazelcast.mc.max.visible.slow.operations.count";
     public static final String PROP_MC_URL_CHANGE_ENABLED = "hazelcast.mc.url.change.enabled";
     public static final String PROP_CONNECTION_MONITOR_INTERVAL = "hazelcast.connection.monitor.interval";
     public static final String PROP_CONNECTION_MONITOR_MAX_FAULTS = "hazelcast.connection.monitor.max.faults";
@@ -139,6 +140,34 @@ public class GroupProperties {
     public static final String PROP_PARTITIONING_STRATEGY_CLASS = "hazelcast.partitioning.strategy.class";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
+
+    /**
+     * Enables or disables the {@link com.hazelcast.spi.impl.SlowOperationDetector}.
+     */
+    public static final String PROP_SLOW_OPERATION_DETECTOR_ENABLED = "hazelcast.slow.operation.detector.enabled";
+
+    /**
+     * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered as slow.
+     * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stack trace.
+     */
+    public static final String PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
+            = "hazelcast.slow.operation.detector.threshold.millis";
+    /**
+     * This value defines the retention time of slow operation log invocations.
+     * If an invocation is older than this value, it will be purged from the log to prevent unlimited memory usage.
+     * When all invocations are purged from a log, the log itself will be deleted.
+     * <p/>
+     * @see com.hazelcast.instance.GroupProperties#PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS
+     */
+    public static final String PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS
+            = "hazelcast.slow.operation.detector.log.retention.seconds";
+    /**
+     * Purge interval for slow operation logs.
+     * <p/>
+     * @see com.hazelcast.instance.GroupProperties#PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS
+     */
+    public static final String PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS
+            = "hazelcast.slow.operation.detector.log.purge.interval.seconds";
 
     // OLD ELASTIC MEMORY PROPS
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
@@ -289,6 +318,8 @@ public class GroupProperties {
 
     public final GroupProperty MC_MAX_INSTANCE_COUNT;
 
+    public final GroupProperty MC_MAX_SLOW_OPERATION_COUNT;
+
     public final GroupProperty MC_URL_CHANGE_ENABLED;
 
     public final GroupProperty CONNECTION_MONITOR_INTERVAL;
@@ -312,6 +343,11 @@ public class GroupProperties {
     public final GroupProperty GRACEFUL_SHUTDOWN_MAX_WAIT;
 
     public final GroupProperty SYSTEM_LOG_ENABLED;
+
+    public final GroupProperty SLOW_OPERATION_DETECTOR_ENABLED;
+    public final GroupProperty SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
+    public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
+    public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
 
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
@@ -413,6 +449,7 @@ public class GroupProperties {
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
+        MC_MAX_SLOW_OPERATION_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_SLOW_OPERATION_COUNT, "10");
         MC_URL_CHANGE_ENABLED = new GroupProperty(config, PROP_MC_URL_CHANGE_ENABLED, "true");
         CONNECTION_MONITOR_INTERVAL = new GroupProperty(config, PROP_CONNECTION_MONITOR_INTERVAL, "100");
         CONNECTION_MONITOR_MAX_FAULTS = new GroupProperty(config, PROP_CONNECTION_MONITOR_MAX_FAULTS, "3");
@@ -425,6 +462,16 @@ public class GroupProperties {
         PARTITIONING_STRATEGY_CLASS = new GroupProperty(config, PROP_PARTITIONING_STRATEGY_CLASS, "");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
+
+        SLOW_OPERATION_DETECTOR_ENABLED
+                = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_ENABLED, "true");
+        SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
+                = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "10000");
+        SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS
+                = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "3600");
+        SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS
+                = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "300");
+
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");

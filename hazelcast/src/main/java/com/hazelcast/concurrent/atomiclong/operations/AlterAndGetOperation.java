@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.LongContainer;
 import com.hazelcast.core.IFunction;
 
 public class AlterAndGetOperation extends AbstractAlterOperation {
@@ -30,22 +30,22 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public int getId() {
-        return AtomicLongDataSerializerHook.ALTER_AND_GET;
-    }
-
-    @Override
     public void run() throws Exception {
-        LongWrapper number = getNumber();
+        LongContainer longContainer = getLongContainer();
 
-        long input = number.get();
+        long input = longContainer.get();
         long output = function.apply(input);
         shouldBackup = input != output;
         if (shouldBackup) {
             backup = output;
-            number.set(output);
+            longContainer.set(output);
         }
 
         response = output;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.ALTER_AND_GET;
     }
 }
