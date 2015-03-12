@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
+package com.hazelcast.internal.management;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.eclipsesource.json.JsonObject;
 
-public interface LocalInstanceStats extends JsonSerializable {
+/**
+ * JsonSerializable is a serialization interface that serializes/de-serializes to/from JSON.
+ */
+public interface JsonSerializable {
 
-    /**
-     * Fill a stat value with this if it is not available
-     */
-    long STAT_NOT_AVAILABLE = -99L;
+    JsonObject toJson();
 
-    long getCreationTime();
-
+    void fromJson(JsonObject json);
 }

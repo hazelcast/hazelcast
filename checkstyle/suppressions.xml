@@ -522,9 +522,9 @@
     <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
 
     <!-- Management -->
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.management.ManagementCenterService"/>
-    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.management.TimedMemberStateFactory"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.management.request.ConsoleRequestConstants"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.internal.management.ManagementCenterService"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.internal.management.TimedMemberStateFactory"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.management.request.ConsoleRequestConstants"/>
 
 
     <!-- Map -->

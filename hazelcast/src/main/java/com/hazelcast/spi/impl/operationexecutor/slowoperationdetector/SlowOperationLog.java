@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.internal.management.JsonSerializable;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

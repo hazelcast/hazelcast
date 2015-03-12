@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.monitor;
-
-import com.hazelcast.internal.management.JsonSerializable;
-
-public interface LocalInstanceStats extends JsonSerializable {
-
-    /**
-     * Fill a stat value with this if it is not available
-     */
-    long STAT_NOT_AVAILABLE = -99L;
-
-    long getCreationTime();
-
-}
+/**
+ * Contains classes to provide data/operation interface for Management Center.
+ */
+package com.hazelcast.internal.management;
