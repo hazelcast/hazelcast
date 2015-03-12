@@ -18,7 +18,7 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.ascii.rest.HttpCommand;
+import com.hazelcast.internal.ascii.rest.HttpCommand;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.LifecycleEvent;

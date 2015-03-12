@@ -16,8 +16,8 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.impl.ConfigCheck;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
