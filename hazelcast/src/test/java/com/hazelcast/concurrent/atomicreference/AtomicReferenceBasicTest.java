@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.ExpectedException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
@@ -176,7 +175,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (ExpectedException expected) {
+        } catch (WoohaaException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -194,7 +193,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (ExpectedException expected) {
+        } catch (WoohaaException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -225,7 +224,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (ExpectedException expected) {
+        } catch (WoohaaException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -256,7 +255,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (ExpectedException expected) {
+        } catch (WoohaaException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -298,8 +297,12 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
     private static class FailingFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
-            throw new ExpectedException();
+            throw new WoohaaException();
         }
+    }
+
+    private static class WoohaaException extends RuntimeException {
+
     }
 
     @Test
