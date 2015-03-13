@@ -6,6 +6,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
 import com.hazelcast.cluster.client.MemberAttributeChange;
+import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -22,17 +23,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-class ClientMembershipEventHandler implements EventHandler<ClientInitialMembershipEvent> {
+class ClientMembershipListener implements EventHandler<ClientInitialMembershipEvent> {
 
-    private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(ClientMembershipEventHandler.class);
+    public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
+    private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(ClientMembershipListener.class);
     private final List<MemberImpl> members = new LinkedList<MemberImpl>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientConnectionManagerImpl connectionManager;
 
-    public ClientMembershipEventHandler(HazelcastClientInstanceImpl client) {
+    private volatile CountDownLatch initialListFetchedLatch;
+
+    public ClientMembershipListener(HazelcastClientInstanceImpl client) {
         this.client = client;
         connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
@@ -44,6 +50,7 @@ class ClientMembershipEventHandler implements EventHandler<ClientInitialMembersh
         final MemberImpl member = (MemberImpl) event.getMember();
         if (event.getEventType() == ClientInitialMembershipEvent.INITIAL_MEMBERS) {
             initialMembers(event);
+            initialListFetchedLatch.countDown();
         } else if (event.getEventType() == ClientInitialMembershipEvent.MEMBER_ADDED) {
             memberAdded(member);
             partitionService.refreshPartitions();
@@ -63,6 +70,40 @@ class ClientMembershipEventHandler implements EventHandler<ClientInitialMembersh
     @Override
     public void onListenerRegister() {
 
+    }
+
+    void listenMembershipEvents(Address ownerConnectionAddress) {
+        initialListFetchedLatch = new CountDownLatch(1);
+        try {
+            RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest();
+
+            Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+            if (connection == null) {
+                System.out.println("FATAL connection null " + ownerConnectionAddress);
+                throw new IllegalStateException("Can not load initial members list because owner connection is null. "
+                        + "Address " + ownerConnectionAddress);
+            }
+            ClientInvocation invocation = new ClientInvocation(client, this, request, connection);
+            invocation.invoke().get();
+            waitInitialMemberListFetched();
+
+        } catch (Exception e) {
+            if (client.getLifecycleService().isRunning()) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
+                } else {
+                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress
+                            + ", Error: " + e.toString());
+                }
+            }
+        }
+    }
+
+    private void waitInitialMemberListFetched() throws InterruptedException {
+        boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        if (success) {
+            LOGGER.warning("Error while getting initial member list from cluster!");
+        }
     }
 
     void initialMembers(ClientInitialMembershipEvent event) {

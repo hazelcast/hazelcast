@@ -90,4 +90,11 @@ public interface ClientClusterService {
      */
     boolean removeMembershipListener(String registrationId);
 
+    /**
+     * Owner connection is opened to owner member of the client in the cluster.
+     * If owner member dies, other members of the cluster assumes this client dead.
+     *
+     * @return address of owner connection
+     */
+    Address getOwnerConnectionAddress();
 }

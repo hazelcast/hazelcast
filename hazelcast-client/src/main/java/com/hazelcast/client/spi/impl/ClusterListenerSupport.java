@@ -16,15 +16,17 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -51,35 +53,47 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-public class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener {
+public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener,
+        ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
 
-    protected ClientClusterServiceImpl clusterService;
-
+    protected final HazelcastClientInstanceImpl client;
     private final Collection<AddressProvider> addressProviders;
     private final ManagerAuthenticator managerAuthenticator = new ManagerAuthenticator();
     private final boolean shuffleMemberList;
-    private Credentials credentials;
 
-    private HazelcastClientInstanceImpl client;
+    private Credentials credentials;
     private ClientConnectionManager connectionManager;
     private ClientListenerServiceImpl clientListenerService;
-    private ClientMembershipEventHandler clientMembershipEventHandler;
+    private ClientMembershipListener clientMembershipListener;
     private volatile Address ownerConnectionAddress;
     private volatile ClientPrincipal principal;
 
-    public ClusterListenerSupport(Collection<AddressProvider> addressProviders, boolean shuffleMemberList) {
-        this.addressProviders = addressProviders;
-        this.shuffleMemberList = shuffleMemberList;
+    public ClusterListenerSupport(HazelcastClientInstanceImpl client) {
+        this.client = client;
+
+        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        addressProviders = new LinkedList<AddressProvider>();
+
+        addressProviders.add(new DefaultAddressProvider(networkConfig));
+
+        if (awsConfig != null && awsConfig.isEnabled()) {
+            try {
+                addressProviders.add(new AwsAddressProvider(awsConfig));
+            } catch (NoClassDefFoundError e) {
+                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
+                throw e;
+            }
+        }
+        shuffleMemberList = client.getClientProperties().getShuffleMemberList().getBoolean();
     }
 
-    public void init(HazelcastClientInstanceImpl client) {
-        this.client = client;
+    protected void init() {
         this.connectionManager = client.getConnectionManager();
-        this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
-        this.clientMembershipEventHandler = new ClientMembershipEventHandler(client);
+        this.clientMembershipListener = new ClientMembershipListener(client);
         connectionManager.addConnectionListener(this);
         connectionManager.addConnectionHeartbeatListener(this);
         credentials = client.getCredentials();
@@ -89,7 +103,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
         return ownerConnectionAddress;
     }
 
-    public class ManagerAuthenticator implements Authenticator {
+    private class ManagerAuthenticator implements Authenticator {
 
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
@@ -115,41 +129,16 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
         }
     }
 
-    void connectToCluster() throws Exception {
+    protected void connectToCluster() throws Exception {
         connectToOne();
-        listenMembershipEvents();
+        clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
         clientListenerService.triggerFailedListeners();
-    }
-
-    private void listenMembershipEvents() {
-        try {
-            RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest();
-
-            Connection connection = connectionManager.getConnection(ownerConnectionAddress);
-            if (connection == null) {
-                System.out.println("FATAL connection null " + ownerConnectionAddress);
-                throw new IllegalStateException("Can not load initial members list because owner connection is null. "
-                        + "Address " + ownerConnectionAddress);
-            }
-            ClientInvocation invocation =
-                    new ClientInvocation(client, clientMembershipEventHandler, request, connection);
-            invocation.invoke().get();
-        } catch (Exception e) {
-            if (client.getLifecycleService().isRunning()) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
-                } else {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress
-                            + ", Error: " + e.toString());
-                }
-            }
-        }
     }
 
     private Collection<InetSocketAddress> getSocketAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
 
-        Collection<MemberImpl> memberList = clusterService.getMemberList();
+        Collection<MemberImpl> memberList = getMemberList();
         for (MemberImpl member : memberList) {
             socketAddresses.add(member.getInetSocketAddress());
         }
@@ -164,7 +153,6 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
 
         return socketAddresses;
     }
-
 
     public ClientPrincipal getPrincipal() {
         return principal;
@@ -222,7 +210,7 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
                     LOGGER.finest("Trying to connect to " + address);
                 }
                 final Connection connection = connectionManager.getOrConnect(address, managerAuthenticator);
-                clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
+                fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
                 return true;
             } catch (Exception e) {
@@ -231,6 +219,11 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
             }
         }
         return false;
+    }
+
+    private void fireConnectionEvent(LifecycleEvent.LifecycleState state) {
+        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) client.getLifecycleService();
+        lifecycleService.fireLifecycleEvent(state);
     }
 
     @Override
@@ -247,8 +240,8 @@ public class ClusterListenerSupport implements ConnectionListener, ConnectionHea
                     @Override
                     public void run() {
                         try {
-                            clusterService.fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
-                            clusterService.getClusterListenerSupport().connectToCluster();
+                            fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED);
+                            connectToCluster();
                         } catch (Exception e) {
                             LOGGER.warning("Could not re-connect to cluster shutting down the client", e);
                             client.getLifecycleService().shutdown();
