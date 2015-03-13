@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.ExpectedException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -26,6 +27,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -43,10 +46,41 @@ import java.lang.reflect.Field;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class BasicOperationServiceTest extends HazelcastTestSupport {
+
+    @Test
+    public void testOperationReturnsExceptionalResponseNoMatterNoResponseSetting() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance();
+        HazelcastInstance remote = factory.newHazelcastInstance();
+        warmUpPartitions(local, remote);
+
+        InternalOperationService operationService = getOperationService(local);
+        InternalCompletableFuture f = operationService.invokeOnTarget(
+                null, new ErrorAndNoReturnsResponseOperation(), getAddress(remote));
+        try {
+            f.getSafely();
+            fail();
+        } catch (ExpectedException expected) {
+        }
+    }
+
+    public static class ErrorAndNoReturnsResponseOperation extends AbstractOperation {
+        @Override
+        public void run() throws Exception {
+            throw new ExpectedException();
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+    }
+
 
     // there was a memory leak caused by the invocation not releasing the backup registration
     // when Future.get() is not called.
