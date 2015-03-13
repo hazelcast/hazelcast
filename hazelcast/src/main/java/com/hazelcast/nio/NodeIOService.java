@@ -27,7 +27,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
@@ -262,11 +261,6 @@ public class NodeIOService implements IOService {
     @Override
     public SerializationService getSerializationService() {
         return node.getSerializationService();
-    }
-
-    @Override
-    public PortableContext getPortableContext() {
-        return node.getSerializationService().getPortableContext();
     }
 
     @Override
