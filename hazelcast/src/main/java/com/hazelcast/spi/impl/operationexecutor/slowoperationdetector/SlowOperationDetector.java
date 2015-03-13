@@ -18,9 +18,9 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.management.JsonSerializable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;

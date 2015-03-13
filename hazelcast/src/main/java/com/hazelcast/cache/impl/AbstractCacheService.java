@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
+import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -219,8 +221,21 @@ public abstract class AbstractCacheService implements ICacheService {
         return configs.get(name);
     }
 
+    @Override
     public CacheSimpleConfig findCacheConfig(String simpleName) {
+        if (simpleName == null) {
+            return null;
+        }
         return nodeEngine.getConfig().findCacheConfig(simpleName);
+    }
+
+    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
+        //remote check
+        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
+        final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
+                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+        return f.getSafely();
     }
 
     public Collection<CacheConfig> getCacheConfigs() {

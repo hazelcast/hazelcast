@@ -78,9 +78,6 @@
               files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractHazelcastCacheManager"/>
 
-    <!-- Near-Cache-->
-    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.nearcache.impl.store.AbstractNearCacheRecordStore"/>
-
     <!-- Core-->
     <suppress checks="JavadocMethod" files="com.hazelcast.core[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.core[\\/]"/>
@@ -206,8 +203,6 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
-
-    <suppress checks="ClassFanOutComplexity|MethodCount" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
 
 
     <!-- Monitor -->
@@ -527,9 +522,9 @@
     <suppress checks="IllegalType" files="com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser"/>
 
     <!-- Management -->
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.management.ManagementCenterService"/>
-    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.management.TimedMemberStateFactory"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.management.request.ConsoleRequestConstants"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.internal.management.ManagementCenterService"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.internal.management.TimedMemberStateFactory"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.management.request.ConsoleRequestConstants"/>
 
 
     <!-- Map -->

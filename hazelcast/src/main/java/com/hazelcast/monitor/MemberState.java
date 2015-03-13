@@ -16,9 +16,9 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.management.JsonSerializable;
-import com.hazelcast.management.SerializableClientEndPoint;
-import com.hazelcast.management.SerializableMXBeans;
+import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.SerializableClientEndPoint;
+import com.hazelcast.internal.management.SerializableMXBeans;
 
 import java.util.Collection;
 import java.util.Map;

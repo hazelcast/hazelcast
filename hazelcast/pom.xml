@@ -112,7 +112,7 @@
                         </goals>
                         <configuration>
                             <instructions>
-                                <Bundle-Activator>com.hazelcast.osgi.Activator</Bundle-Activator>
+                                <Bundle-Activator>com.hazelcast.internal.osgi.Activator</Bundle-Activator>
                                 <Export-Package>
                                     com.hazelcast.*
                                 </Export-Package>

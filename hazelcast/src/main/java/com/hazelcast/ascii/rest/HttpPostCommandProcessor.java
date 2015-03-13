@@ -17,7 +17,7 @@
 package com.hazelcast.ascii.rest;
 
 import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.internal.management.ManagementCenterService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
