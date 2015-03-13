@@ -1,6 +1,6 @@
 ### Cluster Quorum
 
-Hazelcast Cluster Quorum enables you to define the minimum number of machines required in a cluster to remain in an operational state. If the number of machines is below the defined minimum at any time, the operations are rejected and the rejected operations return a `QuorumException` to their callers.
+Hazelcast Cluster Quorum enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. If the number of machines is below the defined minimum at any time, the operations are rejected and the rejected operations return a `QuorumException` to their callers.
 
 When a network partitioning happens, Hazelcast behaves as an AP solution (Availability and Partitioning Tolerance). With Cluster Quorum, you can tune your Hazelcast instance towards a CP solution (Consistency and Partitioning Tolerance), by rejecting updates with a minimum threshold.
 
@@ -11,9 +11,9 @@ By default, Hazelcast invokes Cluster Quorum when any change happens on the memb
 
 #### Configuration
 
-You can set up Cluster Quorum either using declarative or programmatic configuration.
+You can set up Cluster Quorum using either declarative or programmatic configuration.
 
-Assume that you have a 5-node Hazelcast Cluster and you want to set the minimum number of 3 nodes for cluster to continue operating. The following are the example configurations for this scenario.
+Assume that you have a 5-node Hazelcast Cluster and you want to set the minimum number of 3 nodes for cluster to continue operating. The following are example configurations for this scenario.
 
 ##### Declarative Configuration
 
@@ -51,9 +51,9 @@ config.addMapConfig(mapConfig);
 
 
 #### Custom Quorum Resolvers
-Cluster Quorum gives an ability to provide custom quorum resolvers. With custom resolvers, instead of sticking to a fixed size, you can implement any quorum resolution logic of your own. Cluster Quorum will call your quorum resolver when a quorum happens on the member.
+Cluster Quorum lets you provide custom quorum resolvers. With custom resolvers, instead of sticking to a fixed size (as in calling `quorumConfig.setSize()` in the example above), you can implement any quorum resolution logic of your own to resolve the size. Cluster Quorum will call your quorum resolver when a quorum happens on the member.
 
-Your custom resolver must implement `QuorumResolver` interface that can be seen below.
+Your custom resolver must implement the `QuorumResolver` interface that can be seen below.
 
 ```java
 public interface QuorumResolver {
@@ -92,7 +92,7 @@ config.addMapConfig(mapConfig);
 #### Quorum Listeners
 You can register quorum listeners to be notified about quorum results. Quorum listeners are local to the node that they are registered, so they receive only events occurred on that local node. 
 
-Quorum listeners can be configured via declarative or programmatic configuration. The following are the example configurations.
+You can configure quorum listeners via declarative or programmatic configuration. The following are example configurations.
  
 ##### Declarative Configuration
 
@@ -127,7 +127,7 @@ listenerConfig.setImplementation(new QuorumListener() {
             public void onQuorumFailure(QuorumEvent quorumEvent) {
             }
         });
-// Or you can give name of the class that implements QuorumListener interface.
+// Or you can give the name of the class that implements QuorumListener interface.
 listenerConfig.setClassName("com.company.quorum.ThreeNodeQuorumListener");
 
 QuorumConfig quorumConfig = new QuorumConfig();
