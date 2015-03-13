@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
@@ -656,7 +657,7 @@ final class BasicOperationService implements InternalOperationService {
             BasicInvocation invocation = invocations.get(response.getCallId());
             if (invocation == null) {
                 if (nodeEngine.isActive()) {
-                    logger.warning("No invocation for response: " + response);
+                    throw new HazelcastException("No invocation for response: " + response);
                 }
                 return;
             }
@@ -797,7 +798,7 @@ final class BasicOperationService implements InternalOperationService {
                 }
                 com.hazelcast.spi.ResponseHandler responseHandler = op.getResponseHandler();
                 if (responseHandler == null) {
-                    throw new IllegalStateException("ResponseHandler should not be null for operation: " + op);
+                    throw new IllegalStateException("ResponseHandler should not be null!");
                 }
                 responseHandler.sendResponse(response);
             }
@@ -856,20 +857,17 @@ final class BasicOperationService implements InternalOperationService {
                 OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
             }
             operation.logError(e);
-
             com.hazelcast.spi.ResponseHandler responseHandler = operation.getResponseHandler();
-            if (responseHandler == null) {
-                return;
-            }
-
-            try {
-                if (node.isActive()) {
-                    responseHandler.sendResponse(e);
-                } else if (responseHandler.isLocal()) {
-                    responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
+            if (operation.returnsResponse() && responseHandler != null) {
+                try {
+                    if (node.isActive()) {
+                        responseHandler.sendResponse(e);
+                    } else if (responseHandler.isLocal()) {
+                        responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
+                    }
+                } catch (Throwable t) {
+                    logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
                 }
-            } catch (Throwable t) {
-                logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
             }
         }
 
