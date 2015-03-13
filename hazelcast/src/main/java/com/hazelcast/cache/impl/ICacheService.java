@@ -82,4 +82,6 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
 
+    void sendInvalidationEvent(String name, Data key, String sourceUuid);
+
 }
