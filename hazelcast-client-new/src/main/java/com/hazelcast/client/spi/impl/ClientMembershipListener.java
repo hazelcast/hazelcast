@@ -101,7 +101,7 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
     private void waitInitialMemberListFetched() throws InterruptedException {
         boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        if (success) {
+        if (!success) {
             LOGGER.warning("Error while getting initial member list from cluster!");
         }
     }
