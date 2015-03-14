@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.ascii;
 
-import com.hazelcast.ascii.TextCommand;
+import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 

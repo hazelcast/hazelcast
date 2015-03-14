@@ -335,16 +335,16 @@
 
     <!-- Ascii-->
 
-    <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.ascii[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.ascii[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.internal.ascii[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.ascii[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.ascii[\\/]"/>
 
-    <suppress checks="ExecutableStatement" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.ascii.memcache.MemcacheCommandProcessor"/>
-    <suppress checks="MethodCount" files="com.hazelcast.ascii.memcache.Stats"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.internal.ascii.TextCommandServiceImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.internal.ascii.TextCommandServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.internal.ascii.TextCommandServiceImpl"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor"/>
+    <suppress checks="MethodCount" files="com.hazelcast.internal.ascii.memcache.Stats"/>
 
     <!-- Executor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
