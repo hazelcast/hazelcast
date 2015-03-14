@@ -76,10 +76,10 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.put(i, i);
             map.get(i);
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
+        final LocalMapStats localMapStats = map.getLocalMapStats();
         final long initialHits = localMapStats.getHits();
 
-        final Thread updatingThread = new Thread(new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 for (int i = 0; i < actionCount; i++) {
@@ -87,13 +87,16 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 }
                 map.getLocalMapStats(); // causes the local stats object to update
             }
-        });
-
-        updatingThread.start();
-        updatingThread.join();
+        }).start();
 
         assertEquals(actionCount, initialHits);
-        assertEquals(actionCount * 2, localMapStats.getHits());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(actionCount * 2, localMapStats.getHits());
+            }
+        });
     }
 
     @Test
@@ -129,21 +132,23 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final LocalMapStats localMapStats = map1.getLocalMapStats();
         final long lastUpdateTime = localMapStats.getLastUpdateTime();
 
-        final Thread updatingThread = new Thread(new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                sleepMillis(1);
+                sleepAtLeastMillis(1);
                 map1.put(key, "value2");
                 map1.getLocalMapStats(); // causes the local stats object to update
             }
-        });
+        }).start();
 
-        updatingThread.start();
-        updatingThread.join();
-
-        long lastUpdateTime2 = localMapStats.getLastUpdateTime();
         assertTrue(lastUpdateTime >= startTime);
-        assertTrue(lastUpdateTime2 > lastUpdateTime);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertTrue(localMapStats.getLastUpdateTime() > lastUpdateTime);
+            }
+        });
     }
 
     @Test
@@ -262,4 +267,12 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         }
         return memberGroupConfig;
     }
+
+    private void sleepAtLeastMillis(long ms) {
+        final long sleepUntil = System.currentTimeMillis() + ms;
+        while (System.currentTimeMillis() < sleepUntil) {
+            sleepMillis(1);
+        }
+    }
+
 }
