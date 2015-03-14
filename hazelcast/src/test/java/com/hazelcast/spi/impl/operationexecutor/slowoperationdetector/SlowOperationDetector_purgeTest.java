@@ -82,7 +82,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         for (int i = 0; i < 2; i++) {
             map.executeOnEntries(new SlowEntryProcessor(2));
         }
-        sleepSeconds(2);
+        sleepSeconds(3);
 
         getInternalOperationService(instance).shutdown();
 
