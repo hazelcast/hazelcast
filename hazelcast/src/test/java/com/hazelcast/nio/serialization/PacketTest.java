@@ -72,13 +72,13 @@ public class PacketTest {
         SerializationService ss = createSerializationServiceBuilder().build();
         Data data1 = ss.toData(object);
 
-        ByteBuffer buffer = ByteBuffer.allocate(Packet.getDataSize(data1, ss.getPortableContext()) * 2);
-        Packet packet1 = new Packet(data1, ss.getPortableContext());
+        ByteBuffer buffer = ByteBuffer.allocate(data1.dataSize() * 2);
+        Packet packet1 = new Packet(data1);
         assertTrue(packet1.writeTo(buffer));
         buffer.flip();
 
         SerializationService ss2 = createSerializationServiceBuilder().build();
-        Packet packet2 = new Packet(ss2.getPortableContext());
+        Packet packet2 = new Packet();
         assertTrue(packet2.readFrom(buffer));
 
         Data data2 = packet2.getData();
