@@ -132,6 +132,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         final Thread updatingThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                sleepMillis(1);
                 map1.put(key, "value2");
                 map1.getLocalMapStats(); // causes the local stats object to update
             }
