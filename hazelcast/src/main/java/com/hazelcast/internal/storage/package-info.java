@@ -17,4 +17,4 @@
 /**
  * <p>This package contains storage functionality for Hazelcast.<br/>
  */
-package com.hazelcast.storage;
+package com.hazelcast.internal.storage;
