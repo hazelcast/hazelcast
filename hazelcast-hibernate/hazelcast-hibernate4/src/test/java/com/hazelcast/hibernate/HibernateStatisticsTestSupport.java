@@ -23,6 +23,7 @@ import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -32,6 +33,7 @@ import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -258,6 +260,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         assertEquals(entityCount - 1, executeQuery(sf2).size());
     }
 
+    @Category(NightlyTest.class)
     @Test
     public void testQueryCacheCleanup() {
 
