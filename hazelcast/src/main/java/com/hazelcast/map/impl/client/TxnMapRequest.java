@@ -25,13 +25,9 @@ import com.hazelcast.query.Predicate;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 6/10/13
- */
-
 public class TxnMapRequest extends AbstractTxnMapRequest {
 
-    Predicate predicate;
+    private Predicate predicate;
 
     public TxnMapRequest() {
     }

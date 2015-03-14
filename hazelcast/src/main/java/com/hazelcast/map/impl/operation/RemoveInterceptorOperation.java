@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -24,22 +26,24 @@ import java.io.IOException;
 
 public class RemoveInterceptorOperation extends AbstractOperation {
 
-    MapService mapService;
-    String mapName;
-    String id;
+    private MapService mapService;
+    private String mapName;
+    private String id;
+
+    public RemoveInterceptorOperation() {
+    }
 
     public RemoveInterceptorOperation(String mapName, String id) {
         this.mapName = mapName;
         this.id = id;
     }
 
-    public RemoveInterceptorOperation() {
-    }
-
     @Override
     public void run() {
-        mapService = (MapService) getService();
-        mapService.getMapServiceContext().getMapContainer(mapName).removeInterceptor(id);
+        mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.removeInterceptor(id);
     }
 
     @Override

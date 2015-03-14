@@ -50,7 +50,6 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
     protected EntryBackupProcessor backupProcessor;
     protected transient RecordStore recordStore;
 
-
     protected AbstractMultipleEntryOperation() {
     }
 

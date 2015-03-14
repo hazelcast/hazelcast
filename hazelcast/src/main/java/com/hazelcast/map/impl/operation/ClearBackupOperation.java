@@ -24,8 +24,8 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, DataSerializable {
 
-    MapService mapService;
-    RecordStore recordStore;
+    private MapService mapService;
+    private RecordStore recordStore;
 
     public ClearBackupOperation() {
     }
@@ -45,14 +45,13 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
         recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
     }
 
+    @Override
     public void run() {
         recordStore.clear();
     }
 
     @Override
     public String toString() {
-        return "ClearBackupOperation{"
-                + '}';
-
+        return "ClearBackupOperation{}";
     }
 }

@@ -36,7 +36,8 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
     @Override
     public void run() throws Exception {
         final int partitionId = getPartitionId();
-        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         keys = selectThisPartitionsKeys(this.keys);
         recordStore.loadAllFromStore(keys, replaceExistingValues);
     }

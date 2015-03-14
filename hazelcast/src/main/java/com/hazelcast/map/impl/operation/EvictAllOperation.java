@@ -1,5 +1,6 @@
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,9 +29,10 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
     public void run() throws Exception {
 
         // TODO this also clears locked keys from near cache which should be preserved.
-        mapService.getMapServiceContext().getNearCacheProvider().clearNearCache(name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.getNearCacheProvider().clearNearCache(name);
 
-        final RecordStore recordStore = mapService.getMapServiceContext().getExistingRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapServiceContext.getExistingRecordStore(getPartitionId(), name);
         if (recordStore == null) {
             return;
         }
@@ -50,12 +52,14 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
 
     @Override
     public int getSyncBackupCount() {
-        return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapContainer(name).getBackupCount();
     }
 
     @Override
     public int getAsyncBackupCount() {
-        return mapService.getMapServiceContext().getMapContainer(name).getAsyncBackupCount();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.getMapContainer(name).getAsyncBackupCount();
     }
 
     @Override

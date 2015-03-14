@@ -22,13 +22,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
+    public PutOperation() {
+    }
+
     public PutOperation(String name, Data dataKey, Data value, long ttl) {
         super(name, dataKey, value, ttl);
     }
 
-    public PutOperation() {
-    }
-
+    @Override
     public void run() {
         dataOldValue = mapService.getMapServiceContext().toData(recordStore.put(dataKey, dataValue, ttl));
     }
@@ -43,10 +44,12 @@ public final class PutOperation extends BasePutOperation implements IdentifiedDa
         return "PutOperation{" + name + "}";
     }
 
+    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return MapDataSerializerHook.PUT;
     }

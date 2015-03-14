@@ -36,16 +36,16 @@ import java.util.Iterator;
 
 public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
-    String attributeName;
-    boolean ordered;
+    private String attributeName;
+    private boolean ordered;
+
+    public AddIndexOperation() {
+    }
 
     public AddIndexOperation(String name, String attributeName, boolean ordered) {
         super(name);
         this.attributeName = attributeName;
         this.ordered = ordered;
-    }
-
-    public AddIndexOperation() {
     }
 
     @Override

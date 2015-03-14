@@ -95,30 +95,16 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        entryProcessor = in.readObject();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(entryProcessor);
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryOperation{}";
-    }
-
     public boolean shouldBackup() {
         return entryProcessor.getBackupProcessor() != null;
     }
 
+    @Override
     public int getSyncBackupCount() {
         return 0;
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return mapContainer.getTotalBackupCount();
     }
@@ -141,4 +127,22 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     protected Predicate getPredicate() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryOperation{}";
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        entryProcessor = in.readObject();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(entryProcessor);
+    }
+
 }

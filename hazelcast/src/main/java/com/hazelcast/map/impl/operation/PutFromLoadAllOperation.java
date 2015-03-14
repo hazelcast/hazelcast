@@ -6,6 +6,7 @@ import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -44,16 +45,17 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         }
         final int partitionId = getPartitionId();
         final MapService mapService = this.mapService;
-        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data dataValue = keyValueSequence.get(i + 1);
             // here object conversion is for interceptors.
-            final Object objectValue = mapService.getMapServiceContext().toObject(dataValue);
+            final Object objectValue = mapServiceContext.toObject(dataValue);
             final Object previousValue = recordStore.putFromLoad(key, objectValue);
 
             callAfterPutInterceptors(objectValue);
-            publishEntryEvent(key, mapService.getMapServiceContext().toData(previousValue), dataValue);
+            publishEntryEvent(key, mapServiceContext.toData(previousValue), dataValue);
             publishWanReplicationEvent(key, dataValue, recordStore.getRecord(key));
         }
     }
@@ -73,12 +75,14 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
         if (record == null) {
             return;
         }
+
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             final EntryView entryView = EntryViews.createSimpleEntryView(key, value, record);
-            mapService.getMapServiceContext().getMapEventPublisher().publishWanReplicationUpdate(name, entryView);
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
         }
     }
-
 
     @Override
     public void afterRun() throws Exception {
@@ -92,12 +96,38 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
             final Data key = keyValueSequence.get(i);
             dataKeys.add(key);
         }
-        mapService.getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, dataKeys);
+        NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
+        nearCacheProvider.invalidateNearCache(name, dataKeys);
     }
 
     @Override
     public Object getResponse() {
         return true;
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return !keyValueSequence.isEmpty();
+    }
+
+    @Override
+    public final int getAsyncBackupCount() {
+        return mapContainer.getAsyncBackupCount();
+    }
+
+    @Override
+    public final int getSyncBackupCount() {
+        return mapContainer.getBackupCount();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new PutFromLoadAllBackupOperation(name, keyValueSequence);
+    }
+
+    @Override
+    public String toString() {
+        return "PutFromLoadAllOperation{}";
     }
 
     @Override
@@ -125,28 +155,5 @@ public class PutFromLoadAllOperation extends AbstractMapOperation implements Par
             }
             keyValueSequence = tmpKeyValueSequence;
         }
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return !keyValueSequence.isEmpty();
-    }
-
-    public final int getAsyncBackupCount() {
-        return mapContainer.getAsyncBackupCount();
-    }
-
-    public final int getSyncBackupCount() {
-        return mapContainer.getBackupCount();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new PutFromLoadAllBackupOperation(name, keyValueSequence);
-    }
-
-    @Override
-    public String toString() {
-        return "PutFromLoadAllOperation{}";
     }
 }

@@ -24,9 +24,9 @@ import java.io.IOException;
 
 public class AddIndexOperationFactory implements OperationFactory {
 
-    String name;
-    String attributeName;
-    boolean ordered;
+    private String name;
+    private String attributeName;
+    private boolean ordered;
 
     public AddIndexOperationFactory() {
     }

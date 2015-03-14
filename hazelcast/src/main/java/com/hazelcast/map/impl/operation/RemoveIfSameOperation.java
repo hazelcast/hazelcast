@@ -27,18 +27,20 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     private Data testValue;
     private boolean successful;
 
+    public RemoveIfSameOperation() {
+    }
+
     public RemoveIfSameOperation(String name, Data dataKey, Data value) {
         super(name, dataKey);
         testValue = value;
     }
 
-    public RemoveIfSameOperation() {
-    }
-
+    @Override
     public void run() {
         successful = recordStore.remove(dataKey, testValue);
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             dataOldValue = testValue;
@@ -47,21 +49,11 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeData(testValue);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        testValue = in.readData();
-    }
-
     public Object getResponse() {
         return successful;
     }
 
+    @Override
     public boolean shouldBackup() {
         return successful;
     }
@@ -74,5 +66,17 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     @Override
     public String toString() {
         return "RemoveIfSameOperation{" + name + "}";
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeData(testValue);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        testValue = in.readData();
     }
 }

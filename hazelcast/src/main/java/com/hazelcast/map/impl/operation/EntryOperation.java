@@ -110,17 +110,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         getResponseHandler().sendResponse(null);
     }
 
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        entryProcessor = in.readObject();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(entryProcessor);
-    }
 
     @Override
     public Object getResponse() {
@@ -304,4 +293,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return mapServiceContext.getMapEventPublisher();
     }
 
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        entryProcessor = in.readObject();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(entryProcessor);
+    }
 }

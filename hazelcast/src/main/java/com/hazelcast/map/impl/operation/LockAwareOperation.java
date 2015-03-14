@@ -25,6 +25,9 @@ import com.hazelcast.spi.WaitSupport;
 
 public abstract class LockAwareOperation extends KeyBasedMapOperation implements WaitSupport {
 
+    protected LockAwareOperation() {
+    }
+
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
@@ -37,15 +40,15 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
         super(name, dataKey, dataValue, ttl);
     }
 
-    protected LockAwareOperation() {
-    }
-
+    @Override
     public boolean shouldWait() {
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
+    @Override
     public abstract void onWaitExpire();
 
+    @Override
     public final WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }

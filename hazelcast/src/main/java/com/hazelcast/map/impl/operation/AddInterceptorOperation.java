@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,11 +26,13 @@ import java.io.IOException;
 
 public class AddInterceptorOperation extends AbstractOperation {
 
-    MapService mapService;
-    String id;
-    MapInterceptor mapInterceptor;
-    String mapName;
+    private MapService mapService;
+    private String id;
+    private MapInterceptor mapInterceptor;
+    private String mapName;
 
+    public AddInterceptorOperation() {
+    }
 
     public AddInterceptorOperation(String id, MapInterceptor mapInterceptor, String mapName) {
         this.id = id;
@@ -37,19 +40,19 @@ public class AddInterceptorOperation extends AbstractOperation {
         this.mapName = mapName;
     }
 
-    public AddInterceptorOperation() {
-    }
-
     @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public void run() {
         mapService = getService();
-        mapService.getMapServiceContext().getMapContainer(mapName).addInterceptor(id, mapInterceptor);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
+        mapContainer.addInterceptor(id, mapInterceptor);
     }
 
+    @Override
     public Object getResponse() {
         return true;
     }

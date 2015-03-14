@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -43,13 +44,17 @@ public class MergeOperation extends BasePutOperation {
     public MergeOperation() {
     }
 
+    @Override
     public void run() {
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
-        if (merged) {
-            Record record = recordStore.getRecord(dataKey);
-            if (record != null) {
-                dataValue = mapService.getMapServiceContext().toData(record.getValue());
-            }
+        if (!merged) {
+            return;
+        }
+
+        Record record = recordStore.getRecord(dataKey);
+        if (record != null) {
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            dataValue = mapServiceContext.toData(record.getValue());
         }
     }
 
@@ -58,12 +63,13 @@ public class MergeOperation extends BasePutOperation {
         return merged;
     }
 
-
+    @Override
     public boolean shouldBackup() {
         final Record record = recordStore.getRecord(dataKey);
         return merged && record != null;
     }
 
+    @Override
     public void afterRun() {
         if (merged) {
             invalidateNearCaches();
@@ -71,6 +77,7 @@ public class MergeOperation extends BasePutOperation {
         }
     }
 
+    @Override
     public Operation getBackupOperation() {
         if (dataValue == null) {
             return new RemoveBackupOperation(name, dataKey);
