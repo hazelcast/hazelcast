@@ -12,7 +12,7 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.eventservice.impl.EmptyFilter;
 import com.hazelcast.wan.ReplicationEventObject;
 import com.hazelcast.wan.WanReplicationPublisher;
 
@@ -147,7 +147,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
             filter = syntheticEventFilter.getFilter();
         }
 
-        if (filter instanceof EventServiceImpl.EmptyFilter) {
+        if (filter instanceof EmptyFilter) {
             return Result.VALUE_INCLUDED;
         }
 

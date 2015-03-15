@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.transceiver;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

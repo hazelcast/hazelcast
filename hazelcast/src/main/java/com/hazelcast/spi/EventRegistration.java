@@ -21,12 +21,12 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * The result of a Event Registration.
- *
  */
 public interface EventRegistration extends DataSerializable {
 
     /**
      * Returns the event registration id.
+     *
      * @return the event registration id
      */
     String getId();

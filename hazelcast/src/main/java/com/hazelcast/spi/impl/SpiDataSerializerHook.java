@@ -20,22 +20,22 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
+import com.hazelcast.spi.impl.eventservice.impl.EventPacket;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
 
-    static final int NORMAL_RESPONSE = 0;
-    static final int BACKUP = 1;
-    static final int BACKUP_RESPONSE = 2;
-    static final int PARTITION_ITERATOR = 3;
-    static final int PARTITION_RESPONSE = 4;
-    static final int PARALLEL_OPERATION_FACTORY = 5;
-    static final int EVENT_PACKET = 6;
-    static final int COLLECTION = 7;
-    static final int CALL_TIMEOUT_RESPONSE = 8;
+    public static final int NORMAL_RESPONSE = 0;
+    public static final int BACKUP = 1;
+    public static final int BACKUP_RESPONSE = 2;
+    public static final int PARTITION_ITERATOR = 3;
+    public static final int PARTITION_RESPONSE = 4;
+    public static final int PARALLEL_OPERATION_FACTORY = 5;
+    public static final int EVENT_PACKET = 6;
+    public static final int COLLECTION = 7;
+    public static final int CALL_TIMEOUT_RESPONSE = 8;
 
     @Override
     public DataSerializableFactory createFactory() {
