@@ -132,10 +132,10 @@
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
 
     <!-- Storage -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.storage[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.storage[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.storage[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.internal.storage[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.storage[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.storage[\\/]"/>
 
 
     <!-- client -->

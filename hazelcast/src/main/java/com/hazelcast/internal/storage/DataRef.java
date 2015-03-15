@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.storage;
+package com.hazelcast.internal.storage;
 
 public interface DataRef {
 
