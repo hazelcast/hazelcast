@@ -20,7 +20,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.management.MapConfigAdapter;
+import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.operation.GetMapConfigOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import java.util.Set;
@@ -35,13 +35,13 @@ import static com.hazelcast.util.JsonUtil.getString;
 public class MapConfigRequest implements ConsoleRequest {
 
     private String mapName;
-    private MapConfigAdapter config;
+    private MapConfigDTO config;
     private boolean update;
 
     public MapConfigRequest() {
     }
 
-    public MapConfigRequest(String mapName, MapConfigAdapter config, boolean update) {
+    public MapConfigRequest(String mapName, MapConfigDTO config, boolean update) {
         this.mapName = mapName;
         this.config = config;
         this.update = update;
@@ -66,7 +66,7 @@ public class MapConfigRequest implements ConsoleRequest {
             MapConfig cfg = (MapConfig) mcs.callOnThis(new GetMapConfigOperation(mapName));
             if (cfg != null) {
                 result.add("hasMapConfig", true);
-                result.add("mapConfig", new MapConfigAdapter(cfg).toJson());
+                result.add("mapConfig", new MapConfigDTO(cfg).toJson());
             } else {
                 result.add("hasMapConfig", false);
             }
@@ -80,7 +80,7 @@ public class MapConfigRequest implements ConsoleRequest {
         if (!update) {
             boolean hasMapConfig = getBoolean(json, "hasMapConfig", false);
             if (hasMapConfig) {
-                final MapConfigAdapter adapter = new MapConfigAdapter();
+                final MapConfigDTO adapter = new MapConfigDTO();
                 adapter.fromJson(getObject(json, "mapConfig"));
                 return adapter.getMapConfig();
             } else {
@@ -103,7 +103,7 @@ public class MapConfigRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         mapName = getString(json, "mapName");
         update = getBoolean(json, "update");
-        config = new MapConfigAdapter();
+        config = new MapConfigDTO();
         config.fromJson(getObject(json, "config"));
     }
 }

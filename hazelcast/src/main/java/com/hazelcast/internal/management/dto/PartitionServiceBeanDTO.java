@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import java.net.InetSocketAddress;
@@ -27,16 +28,16 @@ import static com.hazelcast.util.JsonUtil.getInt;
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.PartitionServiceMBean}.
  */
-public class SerializablePartitionServiceBean implements JsonSerializable {
+public class PartitionServiceBeanDTO implements JsonSerializable {
 
     private int partitionCount;
     private int activePartitionCount;
 
-    public SerializablePartitionServiceBean() {
+    public PartitionServiceBeanDTO() {
     }
 
-    public SerializablePartitionServiceBean(InternalPartitionService partitionService,
-                                            HazelcastInstanceImpl hazelcastInstance) {
+    public PartitionServiceBeanDTO(InternalPartitionService partitionService,
+                                   HazelcastInstanceImpl hazelcastInstance) {
         InetSocketAddress address = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
         this.partitionCount = partitionService.getPartitionCount();
         this.activePartitionCount = partitionService.getMemberPartitions(new Address(address)).size();

@@ -483,6 +483,7 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.internal.management.ManagementCenterService"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.internal.management.TimedMemberStateFactory"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.internal.management.request.ConsoleRequestConstants"/>
+    <suppress checks="JavadocVariable|VisibilityModifier" files="com.hazelcast.internal.management.dto.*"/>
 
 
     <!-- Map -->

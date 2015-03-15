@@ -19,8 +19,8 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.internal.management.SerializableClientEndPoint;
-import com.hazelcast.internal.management.SerializableMXBeans;
+import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.MXBeansDTO;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -51,8 +51,8 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
     private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
-    private Collection<SerializableClientEndPoint> clients = new HashSet<SerializableClientEndPoint>();
-    private SerializableMXBeans beans = new SerializableMXBeans();
+    private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
+    private MXBeansDTO beans = new MXBeansDTO();
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
@@ -100,7 +100,7 @@ public class MemberStateImpl implements MemberState {
         }
         root.add("runtimeProps", runtimePropsObject);
         JsonArray clientsArray = new JsonArray();
-        for (SerializableClientEndPoint client : clients) {
+        for (ClientEndPointDTO client : clients) {
             clientsArray.add(client.toJson());
         }
         root.add("clients", clientsArray);
@@ -149,11 +149,11 @@ public class MemberStateImpl implements MemberState {
         }
         final JsonArray jsonClients = getArray(json, "clients");
         for (JsonValue jsonClient : jsonClients) {
-            final SerializableClientEndPoint client = new SerializableClientEndPoint();
+            final ClientEndPointDTO client = new ClientEndPointDTO();
             client.fromJson(jsonClient.asObject());
             clients.add(client);
         }
-        beans = new SerializableMXBeans();
+        beans = new MXBeansDTO();
         beans.fromJson(getObject(json, "beans"));
         JsonObject jsonMemoryStats = getObject(json, "memoryStats", null);
         if (jsonMemoryStats != null) {
@@ -242,20 +242,20 @@ public class MemberStateImpl implements MemberState {
         cacheStats.put(name, localCacheStats);
     }
 
-    public Collection<SerializableClientEndPoint> getClients() {
+    public Collection<ClientEndPointDTO> getClients() {
         return clients;
     }
 
     @Override
-    public SerializableMXBeans getMXBeans() {
+    public MXBeansDTO getMXBeans() {
         return beans;
     }
 
-    public void setBeans(SerializableMXBeans beans) {
+    public void setBeans(MXBeansDTO beans) {
         this.beans = beans;
     }
 
-    public void setClients(Collection<SerializableClientEndPoint> clients) {
+    public void setClients(Collection<ClientEndPointDTO> clients) {
         this.clients = clients;
     }
 

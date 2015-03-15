@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.spi.OperationService;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -25,74 +26,25 @@ import static com.hazelcast.util.JsonUtil.getLong;
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.OperationServiceMBean}.
  */
-public class SerializableOperationServiceBean implements JsonSerializable {
+public class OperationServiceDTO implements JsonSerializable {
 
+    public int responseQueueSize;
+    public int operationExecutorQueueSize;
+    public int runningOperationsCount;
+    public int remoteOperationCount;
+    public long executedOperationCount;
+    public long operationThreadCount;
 
-    private int responseQueueSize;
-    private int operationExecutorQueueSize;
-    private int runningOperationsCount;
-    private int remoteOperationCount;
-    private long executedOperationCount;
-    private long operationThreadCount;
-
-    public SerializableOperationServiceBean() {
+    public OperationServiceDTO() {
     }
 
-    public SerializableOperationServiceBean(OperationService os) {
+    public OperationServiceDTO(OperationService os) {
         responseQueueSize = os.getResponseQueueSize();
         operationExecutorQueueSize = os.getOperationExecutorQueueSize();
         runningOperationsCount = os.getRunningOperationsCount();
         remoteOperationCount = os.getRemoteOperationsCount();
         executedOperationCount = os.getExecutedOperationCount();
         operationThreadCount = os.getPartitionOperationThreadCount();
-    }
-
-    public int getResponseQueueSize() {
-        return responseQueueSize;
-    }
-
-    public void setResponseQueueSize(int responseQueueSize) {
-        this.responseQueueSize = responseQueueSize;
-    }
-
-    public int getOperationExecutorQueueSize() {
-        return operationExecutorQueueSize;
-    }
-
-    public void setOperationExecutorQueueSize(int operationExecutorQueueSize) {
-        this.operationExecutorQueueSize = operationExecutorQueueSize;
-    }
-
-    public int getRunningOperationsCount() {
-        return runningOperationsCount;
-    }
-
-    public void setRunningOperationsCount(int runningOperationsCount) {
-        this.runningOperationsCount = runningOperationsCount;
-    }
-
-    public int getRemoteOperationCount() {
-        return remoteOperationCount;
-    }
-
-    public void setRemoteOperationCount(int remoteOperationCount) {
-        this.remoteOperationCount = remoteOperationCount;
-    }
-
-    public long getExecutedOperationCount() {
-        return executedOperationCount;
-    }
-
-    public void setExecutedOperationCount(long executedOperationCount) {
-        this.executedOperationCount = executedOperationCount;
-    }
-
-    public long getOperationThreadCount() {
-        return operationThreadCount;
-    }
-
-    public void setOperationThreadCount(long operationThreadCount) {
-        this.operationThreadCount = operationThreadCount;
     }
 
     @Override
