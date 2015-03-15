@@ -168,7 +168,7 @@ public class ProxyServiceImpl
             service.destroyDistributedObject(name);
         }
         Throwable cause = new DistributedObjectDestroyedException(serviceName, name);
-        nodeEngine.waitNotifyService.cancelWaitingOps(serviceName, name, cause);
+        nodeEngine.getWaitNotifyService().cancelWaitingOps(serviceName, name, cause);
     }
 
     @Override
@@ -176,6 +176,7 @@ public class ProxyServiceImpl
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
         }
+
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {

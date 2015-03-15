@@ -22,8 +22,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
@@ -39,10 +39,11 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
-import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -55,7 +56,7 @@ public class NodeEngineImpl implements NodeEngine {
     final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
-    final WaitNotifyServiceImpl waitNotifyService;
+    private final WaitNotifyServiceImpl waitNotifyService;
 
     private final Node node;
     private final ILogger logger;
@@ -160,7 +161,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public WaitNotifyService getWaitNotifyService() {
+    public InternalWaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 
