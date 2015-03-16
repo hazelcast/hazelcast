@@ -69,7 +69,7 @@ public interface OperationExecutor {
     OperationRunner[] getGenericOperationRunners();
 
     /**
-     * Executes an Operation.
+     * Executes an Operation to be executed.
      *
      * @param op the operation to execute.
      * @throws java.lang.NullPointerException if op is null.
@@ -77,7 +77,7 @@ public interface OperationExecutor {
     void execute(Operation op);
 
     /**
-     * Executes a PartitionSpecificRunnable.
+     * Executes a PartitionSpecificRunnable to be executed.
      *
      * @param task the task the execute.
      * @throws java.lang.NullPointerException if task is null.
@@ -85,7 +85,7 @@ public interface OperationExecutor {
     void execute(PartitionSpecificRunnable task);
 
     /**
-     * Executes a Operation/Response-packet.
+     * Executes a packet to be executed.
      *
      * @param packet the packet to execute.
      * @throws java.lang.NullPointerException if packet is null
@@ -136,6 +136,8 @@ public interface OperationExecutor {
      * @return true if allowed, false otherwise.
      */
     boolean isInvocationAllowedFromCurrentThread(Operation op);
+
+    void start();
 
     /**
      * Shuts down this OperationExecutor.

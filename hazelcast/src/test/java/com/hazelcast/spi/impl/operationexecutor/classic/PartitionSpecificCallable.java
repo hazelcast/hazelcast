@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.util.ExceptionUtil;
 
 public abstract class PartitionSpecificCallable<E> implements PartitionSpecificRunnable {
     public static final Object NO_RESPONSE = new Object() {
@@ -13,6 +14,7 @@ public abstract class PartitionSpecificCallable<E> implements PartitionSpecificR
     private int partitionId;
     private volatile E result;
     private volatile Throwable throwable;
+    private volatile Thread callingThread;
 
     public PartitionSpecificCallable() {
     }
@@ -26,12 +28,38 @@ public abstract class PartitionSpecificCallable<E> implements PartitionSpecificR
         return partitionId;
     }
 
+    public Thread getCallingThread(){
+        return callingThread;
+    }
+
+    public E get() throws Throwable {
+        synchronized (this){
+            while (result == NO_RESPONSE && throwable == null){
+                wait();
+            }
+        }
+
+        if(result != NO_RESPONSE){
+            return result;
+        }
+
+        ExceptionUtil.fixRemoteStackTrace(throwable, Thread.currentThread().getStackTrace());
+        throw throwable;
+    }
+
     @Override
     public void run() {
+        System.out.println("Run");
+        callingThread = Thread.currentThread();
+
         try {
             result = call();
-        } catch (Throwable t) {
-            throwable = t;
+        } catch (Throwable cause) {
+            throwable = cause;
+        }
+
+        synchronized (this){
+            notifyAll();
         }
     }
 

@@ -24,9 +24,10 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  */
 public final class ResponseThread extends Thread {
 
-    final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
     // field is only written by the response-thread itself, but can be read by other threads.
     volatile long processedResponses;
+
+    private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
 
     private final ILogger logger;
     private final ResponsePacketHandler responsePacketHandler;
@@ -38,6 +39,14 @@ public final class ResponseThread extends Thread {
         setContextClassLoader(threadGroup.getClassLoader());
         this.logger = logger;
         this.responsePacketHandler = responsePacketHandler;
+    }
+
+    public void add(Packet packet) {
+        workQueue.add(packet);
+    }
+
+    public BlockingQueue<Packet> getWorkQueue() {
+        return workQueue;
     }
 
     @Override
