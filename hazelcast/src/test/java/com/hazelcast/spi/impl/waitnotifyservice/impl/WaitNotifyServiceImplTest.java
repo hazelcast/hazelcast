@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.waitnotifyservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,7 +34,7 @@ import java.util.concurrent.locks.LockSupport;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class WaitNotifyServiceTest extends HazelcastTestSupport {
+public class WaitNotifyServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void testAwaitQueueCount_shouldNotExceedBlockedThreadCount() {
