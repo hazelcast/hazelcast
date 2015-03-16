@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public class MapFlushOperationFactory implements OperationFactory {
 
-    String name;
+    private String name;
 
     public MapFlushOperationFactory() {
     }

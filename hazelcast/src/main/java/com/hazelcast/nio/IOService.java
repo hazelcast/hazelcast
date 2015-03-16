@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;

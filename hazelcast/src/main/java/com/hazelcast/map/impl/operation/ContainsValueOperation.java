@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,13 +40,15 @@ public class ContainsValueOperation extends AbstractMapOperation implements Part
     public ContainsValueOperation() {
     }
 
+    @Override
     public void run() {
         MapService mapService = getService();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         contains = recordStore.containsValue(testValue);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getMapServiceContext().getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

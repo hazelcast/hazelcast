@@ -22,15 +22,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -39,10 +38,15 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
-import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.storage.DataRef;
-import com.hazelcast.storage.Storage;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.transceiver.impl.PacketTransceiverImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -50,16 +54,25 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 
+/**
+ * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
+ * compared to a Spring ApplicationContext. It is fine that we refer to concrete types, and it is fine
+ * that we cast to a concrete type within this class (e.g. to call shutdown). In an application context
+ * you get exactly the same behavior.
+ * <p/>
+ * But the crucial thing is that we don't want to leak concrete dependencies to the outside. For example
+ * we don't leak {@link BasicOperationService} to the outside.
+ */
 public class NodeEngineImpl implements NodeEngine {
 
     final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
-    final EventServiceImpl eventService;
-    final WaitNotifyServiceImpl waitNotifyService;
 
     private final Node node;
     private final ILogger logger;
 
+    private final WaitNotifyServiceImpl waitNotifyService;
+    private final EventServiceImpl eventService;
     private final ServiceManager serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
@@ -117,7 +130,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public EventService getEventService() {
+    public InternalEventService getEventService() {
         return eventService;
     }
 
@@ -160,7 +173,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public WaitNotifyService getWaitNotifyService() {
+    public InternalWaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 
@@ -212,13 +225,13 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getGroupProperties();
     }
 
-
     @PrivateApi
     public <T> T getService(String serviceName) {
         final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
     }
 
+    @Override
     public <T extends SharedService> T getSharedService(String serviceName) {
         final Object service = getService(serviceName);
         if (service == null) {
@@ -287,7 +300,8 @@ public class NodeEngineImpl implements NodeEngine {
             if (postJoinOperation != null) {
                 if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(
-                            "Post-join operations cannot implement PartitionAwareOperation! Service: " + service + ", Operation: "
+                            "Post-join operations cannot implement PartitionAwareOperation! Service: "
+                                    + service + ", Operation: "
                                     + postJoinOperation);
                     continue;
                 }

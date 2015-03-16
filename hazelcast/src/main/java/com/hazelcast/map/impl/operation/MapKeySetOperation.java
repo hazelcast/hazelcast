@@ -16,15 +16,18 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import java.util.Set;
 
 public class MapKeySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    Set<Data> keySet;
+    private Set<Data> keySet;
 
     public MapKeySetOperation(String name) {
         super(name);
@@ -33,13 +36,16 @@ public class MapKeySetOperation extends AbstractMapOperation implements Partitio
     public MapKeySetOperation() {
     }
 
+    @Override
     public void run() {
         MapService mapService = getService();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         keySet = recordStore.keySet();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getMapServiceContext()
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            LocalMapStatsImpl localMapStatsImpl = localMapStatsProvider.getLocalMapStatsImpl(name);
+            localMapStatsImpl.incrementOtherOperations();
         }
     }
 

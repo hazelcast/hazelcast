@@ -1,15 +1,14 @@
 
 ### Replicated Map Configuration
 
-Replicated Map can be configured using the following ways, as the most other features in Hazelcast:
+Replicated Map can be configured using the following two ways (as with most other features in Hazelcast):
 
 - Programmatic: the typical Hazelcast way, using the Config API seen above.
 - Declarative: using `hazelcast.xml`.
 
 #### Replicated Map Declarative Configuration
 
-You can declare your Replicated Map configuration in the Hazelcast configuration file `hazelcast.xml`. The configuration can be
-used to tune the behavior of the internal replication algorithm such as the replication delay which is used to batch up the replication
+You can declare your Replicated Map configuration in the Hazelcast configuration file `hazelcast.xml`. You can use the configuration to tune the behavior of the internal replication algorithm, such as the replication delay which batches up the replication
 for better network utilization. See the following example declarative configuration.
 
 ```xml
@@ -28,18 +27,17 @@ for better network utilization. See the following example declarative configurat
 ```
 
 - `in-memory-format`: Defines the internal storage format.  Please see the [In-Memory Format section](#in-memory-format-on-replicated-map). The default value is `BINARY`.
-- `concurrency-level`: Number of parallel mutexes to minimize the contention on the keys. The default value is 32 which is a good number for lots of applications. If higher contention is seen on writes to values inside the replicated map, this value can be adjusted according to the needs.
-- `replication-delay-millis`: Defines the period in milliseconds after a put is executed, before the value is replicated to other nodes. During this time, multiple puts can be operated and are cached up to be sent at once. This increases the latency for eventual consistency but lowers the I/O operations. The default value is 100ms before a replication is operated. If it is set to 0, no delay is used and all values are replicated one by one.
-- `async-fillup`: Defines if the replicated map is available for reads before the initial replication is completed. The default value is `true`. If it is set to `false`, no exception will be thrown when replicated map is not yet ready but the call will block until it is finished.
-- `statistics-enabled`: If it is set to `true`, the statistics like cache hits and misses are collected. The default value is `false`.
+- `concurrency-level`: Number of parallel mutexes to minimize the contention on the keys. The default value is 32, which is a good number for lots of applications. If higher contention is seen on writes to values inside the replicated map, this value can be adjusted according to the needs.
+- `replication-delay-millis`: Defines the period in milliseconds after a put is executed that the put value is replicated to other nodes. During this time, multiple puts can be operated and the values are cached up to be sent all at once. This increases the latency for eventual consistency, but it lowers the I/O operations. The default value is 100ms before a replication is operated. If `replication-delay-millis` is set to 0, no delay is used (not cached) and all values are replicated one by one.
+- `async-fillup`: Defines if the replicated map is available for reads before the initial replication is completed. The default value is `true`. If set to `false`, no exception will be thrown when the replicated map is not yet ready, but the call will block until it is finished.
+- `statistics-enabled`: If set to `true`, the statistics such as cache hits and misses are collected. The default value is `false`.
 - `entry-listener`: The value of this element is the full canonical classname of the `EntryListener` implementation.
   - `entry-listener#include-value`: This attribute defines if the event will include the value or not. Sometimes the key is enough to react on an event. In those situations, setting this value to `false` will save a deserialization cycle. The default value is `true`.
   - `entry-listener#local`: This attribute is not used for Replicated Map since listeners are always local.
 
 #### Replicated Map Programmatic Configuration
 
-The Config API is used for programmatic configuration as for all other data structures in Hazelcast. The configuration must be
-created upfront instantiating the `HazelcastInstance`.
+You can use the Config API for programmatic configuration, as you can for all other data structures in Hazelcast. You must create the configuration upfront, when you instantiate the `HazelcastInstance`.
 
 A basic example on how to configure the Replicated Map using the programmatic approach is shown in the following snippet.
 

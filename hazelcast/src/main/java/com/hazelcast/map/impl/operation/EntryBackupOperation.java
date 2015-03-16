@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
@@ -45,7 +46,8 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     @Override
     public void innerBeforeRun() {
         if (entryProcessor instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+            HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
+            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(hazelcastInstance);
         }
     }
 
@@ -75,18 +77,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     @Override
     public void afterRun() throws Exception {
         evict(true);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        entryProcessor = in.readObject();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(entryProcessor);
     }
 
     @Override
@@ -131,7 +121,6 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
     }
 
-
     private Map.Entry createMapEntry(Object key, Object value) {
         return new MapEntrySimple(key, value);
     }
@@ -150,4 +139,15 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         return Clock.currentTimeMillis();
     }
 
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        entryProcessor = in.readObject();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(entryProcessor);
+    }
 }

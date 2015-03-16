@@ -49,6 +49,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     public PutBackupOperation() {
     }
 
+    @Override
     public void run() {
         ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
         final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
@@ -70,6 +71,17 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return Boolean.TRUE;
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_BACKUP;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
@@ -81,6 +93,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         }
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
@@ -95,14 +108,4 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     public String toString() {
         return "PutBackupOperation{" + name + "}";
     }
-
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.PUT_BACKUP;
-    }
-
-
 }

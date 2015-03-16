@@ -21,8 +21,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.storage.DataRef;
-import com.hazelcast.storage.Storage;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 
 public class NativeRecordFactory implements RecordFactory<Data> {
 

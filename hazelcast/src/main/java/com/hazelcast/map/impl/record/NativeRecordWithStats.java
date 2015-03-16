@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.storage.DataRef;
-import com.hazelcast.storage.Storage;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 
 class NativeRecordWithStats extends AbstractRecordWithStats<Data> {
 

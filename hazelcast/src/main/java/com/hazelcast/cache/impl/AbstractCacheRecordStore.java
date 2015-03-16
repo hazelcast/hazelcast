@@ -32,11 +32,10 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.nio.serialization.DefaultData;
+import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -52,7 +51,6 @@ import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessor;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,7 +93,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     //CHECKSTYLE:OFF
     public AbstractCacheRecordStore(final String name, final int partitionId, final NodeEngine nodeEngine,
-            final AbstractCacheService cacheService) {
+                                    final AbstractCacheService cacheService) {
         this.name = name;
         this.partitionId = partitionId;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
@@ -569,7 +567,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onDeleteRecordError(Data key, R record, Data dataValue,
-            boolean deleted, Throwable error) {
+                                       boolean deleted, Throwable error) {
     }
 
     protected boolean deleteRecord(Data key, int completionId) {
@@ -759,7 +757,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onGetError(Data key, ExpiryPolicy expiryPolicy, Object value,
-            R record, Throwable error) {
+                              R record, Throwable error) {
     }
 
     @Override
@@ -807,17 +805,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onPut(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean getValue, boolean disableWriteThrough, R record, Object oldValue,
-            boolean isExpired, boolean isNewPut, boolean isSaveSucceed) {
+                         boolean getValue, boolean disableWriteThrough, R record, Object oldValue,
+                         boolean isExpired, boolean isNewPut, boolean isSaveSucceed) {
     }
 
     protected void onPutError(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean getValue, boolean disableWriteThrough, R record,
-            Object oldValue, boolean wouldBeNewPut, Throwable error) {
+                              boolean getValue, boolean disableWriteThrough, R record,
+                              Object oldValue, boolean wouldBeNewPut, Throwable error) {
     }
 
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean getValue, boolean disableWriteThrough, int completionId) {
+                         boolean getValue, boolean disableWriteThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -861,7 +859,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean getValue, int completionId) {
+                         boolean getValue, int completionId) {
         return put(key, value, expiryPolicy, caller, getValue, false, completionId);
     }
 
@@ -872,20 +870,20 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object getAndPut(Data key, Object value, ExpiryPolicy expiryPolicy,
-            String caller, int completionId) {
+                            String caller, int completionId) {
         return put(key, value, expiryPolicy, caller, true, false, completionId);
     }
 
     protected void onPutIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean disableWriteThrough, R record, boolean isExpired, boolean isSaveSucceed) {
+                                 boolean disableWriteThrough, R record, boolean isExpired, boolean isSaveSucceed) {
     }
 
     protected void onPutIfAbsentError(Data key, Object value, ExpiryPolicy expiryPolicy,
-            String caller, boolean disableWriteThrough, R record, Throwable error) {
+                                      String caller, boolean disableWriteThrough, R record, Throwable error) {
     }
 
     protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            boolean disableWriteThrough, int completionId) {
+                                  boolean disableWriteThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -924,21 +922,22 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy,
-            String caller, int completionId) {
+                               String caller, int completionId) {
         return putIfAbsent(key, value, expiryPolicy, caller, false, completionId);
     }
 
     protected void onReplace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
-            String caller, boolean getValue, R record, boolean isExpired, boolean replaced) {
+                             String caller, boolean getValue, R record, boolean isExpired, boolean replaced) {
     }
 
     protected void onReplaceError(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
-            String caller, boolean getValue, R record, boolean isExpired, boolean replaced, Throwable error) {
+                                  String caller, boolean getValue, R record, boolean isExpired, boolean replaced,
+                                  Throwable error) {
     }
 
     @Override
     public boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy,
-            String caller, int completionId) {
+                           String caller, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -983,7 +982,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
-            String caller, int completionId) {
+                           String caller, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -1030,7 +1029,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller,
-            int completionId) {
+                                int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         final long now = Clock.currentTimeMillis();
@@ -1080,11 +1079,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onRemove(Data key, Object value, String caller, boolean getValue,
-            R record, boolean removed) {
+                            R record, boolean removed) {
     }
 
     protected void onRemoveError(Data key, Object value, String caller, boolean getValue,
-            R record, boolean removed, Throwable error) {
+                                 R record, boolean removed, Throwable error) {
     }
 
     @Override
@@ -1383,18 +1382,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void closeListeners() {
         // Close the configured CacheEntryListeners
-        EventService eventService = cacheService.getNodeEngine().getEventService();
+        InternalEventService eventService = (InternalEventService) cacheService.getNodeEngine().getEventService();
         Collection<EventRegistration> candidates =
                 eventService.getRegistrations(CacheService.SERVICE_NAME, name);
 
-        for (EventRegistration registration : candidates) {
-            if (((EventServiceImpl.Registration) registration).getListener() instanceof Closeable) {
-                try {
-                    ((Closeable) registration).close();
-                } catch (IOException e) {
-                    EmptyStatement.ignore(e);
-                }
-            }
+        for (EventRegistration eventRegistration : candidates) {
+            eventService.close(eventRegistration);
         }
     }
 

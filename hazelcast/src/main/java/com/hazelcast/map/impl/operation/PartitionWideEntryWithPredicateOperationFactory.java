@@ -24,10 +24,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
-/**
- * date: 9/16/13
- * author: eminn
- */
 public class PartitionWideEntryWithPredicateOperationFactory implements OperationFactory {
     private String name;
     private EntryProcessor entryProcessor;
@@ -52,7 +48,6 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Operatio
         out.writeUTF(name);
         out.writeObject(entryProcessor);
         out.writeObject(predicate);
-
     }
 
     @Override

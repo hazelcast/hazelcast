@@ -24,7 +24,7 @@ import java.io.IOException;
 
 public class SizeOperationFactory implements OperationFactory {
 
-    String name;
+    private String name;
 
     public SizeOperationFactory() {
     }

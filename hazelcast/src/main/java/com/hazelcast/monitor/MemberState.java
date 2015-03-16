@@ -17,8 +17,8 @@
 package com.hazelcast.monitor;
 
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.internal.management.SerializableClientEndPoint;
-import com.hazelcast.internal.management.SerializableMXBeans;
+import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.MXBeansDTO;
 
 import java.util.Collection;
 import java.util.Map;
@@ -41,9 +41,9 @@ public interface MemberState extends JsonSerializable {
 
     LocalCacheStats getLocalCacheStats(String cacheName);
 
-    Collection<SerializableClientEndPoint> getClients();
+    Collection<ClientEndPointDTO> getClients();
 
-    SerializableMXBeans getMXBeans();
+    MXBeansDTO getMXBeans();
 
     LocalMemoryStats getLocalMemoryStats();
 

@@ -11,7 +11,7 @@ writes take place on local nodes, eventually being replicated to all other nodes
 
 Weak consistency compared to eventually consistency means that replication is done on a best efforts basis. Lost or missing updates
 are neither tracked nor resent. This kind of data structure is suitable for immutable
-objects, catalogue data or idempotent calculable data (like HTML pages).
+objects, catalogue data, or idempotent calculable data (like HTML pages).
 
 Replicated map nearly fully implements the `java.util.Map` interface, but it lacks the methods from `java.util.concurrent.ConcurrentMap` since
 there are no atomic guarantees to writes or reads.

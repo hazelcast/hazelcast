@@ -31,6 +31,9 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
 
     private boolean unlockKey;
 
+    public RemoveBackupOperation() {
+    }
+
     public RemoveBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
@@ -40,9 +43,7 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         this.unlockKey = unlockKey;
     }
 
-    public RemoveBackupOperation() {
-    }
-
+    @Override
     public void run() {
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -64,22 +65,26 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         return Boolean.TRUE;
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.REMOVE_BACKUP;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-    }
-
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.REMOVE_BACKUP;
     }
 
 }

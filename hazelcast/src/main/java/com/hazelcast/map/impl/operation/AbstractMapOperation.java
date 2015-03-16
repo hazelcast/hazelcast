@@ -29,7 +29,6 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     }
 
     public AbstractMapOperation(String name) {
-        super();
         this.name = name;
     }
 

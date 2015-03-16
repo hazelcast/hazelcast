@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -35,7 +35,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketTransceiver;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 
 import java.util.Collection;
 import java.util.Collections;

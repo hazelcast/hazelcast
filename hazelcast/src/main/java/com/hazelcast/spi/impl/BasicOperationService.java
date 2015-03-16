@@ -763,7 +763,7 @@ final class BasicOperationService implements InternalOperationService {
             if (op instanceof WaitSupport) {
                 WaitSupport waitSupport = (WaitSupport) op;
                 if (waitSupport.shouldWait()) {
-                    nodeEngine.waitNotifyService.await(waitSupport);
+                    nodeEngine.getWaitNotifyService().await(waitSupport);
                     return true;
                 }
             }
@@ -810,7 +810,7 @@ final class BasicOperationService implements InternalOperationService {
                 if (op instanceof Notifier) {
                     final Notifier notifier = (Notifier) op;
                     if (notifier.shouldNotify()) {
-                        nodeEngine.waitNotifyService.notify(notifier);
+                        nodeEngine.getWaitNotifyService().notify(notifier);
                     }
                 }
             } catch (Throwable e) {

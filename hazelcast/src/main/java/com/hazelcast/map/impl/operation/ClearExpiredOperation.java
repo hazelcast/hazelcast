@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.Address;
@@ -49,7 +50,8 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     @Override
     public void run() throws Exception {
         final MapService mapService = getService();
-        final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         final ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
         final boolean backup = !isOwner();
         for (final RecordStore recordStore : recordStores.values()) {
@@ -68,7 +70,8 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     @Override
     public void afterRun() throws Exception {
         final MapService mapService = getService();
-        final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         partitionContainer.setHasRunningCleanup(false);
         partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
     }

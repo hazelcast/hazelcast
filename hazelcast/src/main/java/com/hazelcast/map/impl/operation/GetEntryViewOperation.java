@@ -21,10 +21,12 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -32,20 +34,22 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements WaitS
 
     private EntryView<Data, Data> result;
 
+    public GetEntryViewOperation() {
+    }
+
     public GetEntryViewOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public GetEntryViewOperation() {
-    }
-
+    @Override
     public void run() {
         MapService mapService = getService();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record != null) {
-            result = EntryViews.createSimpleEntryView(record.getKey(),
-                    mapService.getMapServiceContext().toData(record.getValue()), record);
+            Data value = mapServiceContext.toData(record.getValue());
+            result = EntryViews.createSimpleEntryView(record.getKey(), value, record);
         }
     }
 
@@ -61,7 +65,8 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements WaitS
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
     @Override
@@ -71,9 +76,6 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements WaitS
 
     @Override
     public String toString() {
-        return "GetEntryViewOperation{"
-                + '}';
-
+        return "GetEntryViewOperation{}";
     }
-
 }

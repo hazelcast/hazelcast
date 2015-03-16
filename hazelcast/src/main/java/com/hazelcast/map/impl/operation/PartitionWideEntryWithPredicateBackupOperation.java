@@ -30,9 +30,19 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     public PartitionWideEntryWithPredicateBackupOperation() {
     }
 
-    public PartitionWideEntryWithPredicateBackupOperation(String name, EntryBackupProcessor entryProcessor, Predicate predicate) {
+    public PartitionWideEntryWithPredicateBackupOperation(String name, EntryBackupProcessor entryProcessor,
+                                                          Predicate predicate) {
         super(name, entryProcessor);
         this.predicate = predicate;
+    }
+
+    protected Predicate getPredicate() {
+        return predicate;
+    }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryWithPredicateBackupOperation{}";
     }
 
     @Override
@@ -46,14 +56,4 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
         super.writeInternal(out);
         out.writeObject(predicate);
     }
-
-    protected Predicate getPredicate() {
-        return predicate;
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryWithPredicateBackupOperation{}";
-    }
-
 }

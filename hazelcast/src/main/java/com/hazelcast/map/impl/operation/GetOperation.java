@@ -20,10 +20,12 @@ import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -39,12 +41,16 @@ public final class GetOperation extends KeyBasedMapOperation
         super(name, dataKey);
     }
 
+    @Override
     public void run() {
-        result = mapService.getMapServiceContext().toData(recordStore.get(dataKey, false));
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        result = mapServiceContext.toData(recordStore.get(dataKey, false));
     }
 
+    @Override
     public void afterRun() {
-        mapService.getMapServiceContext().interceptAfterGet(name, result);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.interceptAfterGet(name, result);
     }
 
     @Override
@@ -52,6 +58,7 @@ public final class GetOperation extends KeyBasedMapOperation
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 
+    @Override
     public boolean shouldWait() {
         if (recordStore.isTransactionallyLocked(dataKey)) {
             return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
@@ -61,7 +68,8 @@ public final class GetOperation extends KeyBasedMapOperation
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
     @Override
     public Object getResponse() {
@@ -73,10 +81,12 @@ public final class GetOperation extends KeyBasedMapOperation
         return "GetOperation{}";
     }
 
+    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return MapDataSerializerHook.GET;
     }

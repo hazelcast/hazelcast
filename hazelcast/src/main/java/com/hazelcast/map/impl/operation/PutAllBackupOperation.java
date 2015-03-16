@@ -47,6 +47,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
     public PutAllBackupOperation() {
     }
 
+    @Override
     public void run() {
         int partitionId = getPartitionId();
         recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
@@ -65,8 +66,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
 
     @Override
     public String toString() {
-        return "PutAllBackupOperation{" + '}';
-
+        return "PutAllBackupOperation{}";
     }
 
     @Override
@@ -97,7 +97,5 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
-
     }
-
 }
