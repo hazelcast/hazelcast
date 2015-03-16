@@ -145,6 +145,17 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     }
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
+        resolveException();
+        if (response == ClientInvocation.NULL_RESPONSE) {
+            return null;
+        }
+        if (response == null) {
+            throw new TimeoutException();
+        }
+        return (V) response;
+    }
+
+    private void resolveException() throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
             ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
@@ -161,10 +172,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             }
             throw new ExecutionException((Throwable) response);
         }
-        if (response == null) {
-            throw new TimeoutException();
-        }
-        return (V) response;
     }
 
     @Override

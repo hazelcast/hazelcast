@@ -360,7 +360,7 @@ final class TestNodeRegistry {
         }
 
         private Packet readFromPacket(Packet packet) {
-            Packet newPacket = new Packet(nodeEngine.getSerializationService().getPortableContext());
+            Packet newPacket = new Packet();
             ByteBuffer buffer = ByteBuffer.allocate(4096);
             boolean writeDone;
             boolean readDone;

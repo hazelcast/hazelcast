@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
@@ -27,7 +28,15 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
     int readInt(int position) throws IOException;
 
+    int readInt(ByteOrder byteOrder) throws IOException;
+
+    int readInt(int position, ByteOrder byteOrder) throws IOException;
+
     long readLong(int position) throws IOException;
+
+    long readLong(ByteOrder byteOrder) throws IOException;
+
+    long readLong(int position, ByteOrder byteOrder) throws IOException;
 
     boolean readBoolean(int position) throws IOException;
 
@@ -37,9 +46,21 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
     double readDouble(int position) throws IOException;
 
+    double readDouble(ByteOrder byteOrder) throws IOException;
+
+    double readDouble(int position, ByteOrder byteOrder) throws IOException;
+
     float readFloat(int position) throws IOException;
 
+    float readFloat(ByteOrder byteOrder) throws IOException;
+
+    float readFloat(int position, ByteOrder byteOrder) throws IOException;
+
     short readShort(int position) throws IOException;
+
+    short readShort(ByteOrder byteOrder) throws IOException;
+
+    short readShort(int position, ByteOrder byteOrder) throws IOException;
 
     int position();
 

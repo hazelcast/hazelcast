@@ -348,7 +348,7 @@ public class EventServiceImpl implements InternalEventService {
                 ignore(ignored);
             }
         } else {
-            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey, nodeEngine.getPortableContext());
+            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey);
             packet.setHeader(Packet.HEADER_EVENT);
             if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {
                 if (nodeEngine.isActive()) {
