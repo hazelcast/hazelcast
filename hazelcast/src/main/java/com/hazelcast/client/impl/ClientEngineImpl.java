@@ -173,7 +173,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return nodeEngine.getProxyService();
     }
 
-    public void sendResponse(ClientEndpoint endpoint, Data key, Object response, int callId, boolean isError, boolean isEvent) {
+    public void sendResponse(ClientEndpoint endpoint, Object key, Object response, int callId, boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
         Data responseData = serializationService.toData(clientResponse);

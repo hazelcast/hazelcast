@@ -155,10 +155,8 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
                                                   boolean syncCreate) {
         CacheConfig<K, V> config = configs.get(cacheName);
         if (config == null) {
-            if (config == null) {
-                // If cache config not found, try to find it from partition
-                config = getCacheConfigFromPartition(cacheName, simpleCacheName);
-            }
+            // If cache config not found, try to find it from partition
+            config = getCacheConfigFromPartition(cacheName, simpleCacheName);
             if (config != null) {
                 // Cache config possibly is not exist on other nodes, so create also on them if absent
                 createConfig(cacheName, config, createAlsoOnOthers, syncCreate);

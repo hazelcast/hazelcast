@@ -9,6 +9,26 @@
     <!-- Suppress duplicate checking of copyright notice -->
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
+    <!-- Suppressing warnings on the PortableHook -->
+    <suppress checks="MethodLength" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="MethodCount" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="ClassDataAbstractionCoupling" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="ReturnCount" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="ExecutableStatementCount" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="AnonInnerLength" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="ClassFanOutComplexityCheck" files=".*(?:PortableHook)\.java$"/>
+    <suppress checks="CyclomaticComplexityCheck" files=".*(?:PortableHook)\.java$"/>
+
+    <!-- Suppressing warnings on the SerializerHook -->
+    <suppress checks="MethodLength" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="MethodCount" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="ClassDataAbstractionCoupling" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="ReturnCount" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="ExecutableStatementCount" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="AnonInnerLength" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="ClassFanOutComplexityCheck" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="CyclomaticComplexityCheck" files=".*(?:SerializerHook)\.java$"/>
+    <suppress checks="IllegalType" files=".*(?:SerializerHook)\.java$"/>
 
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
     <suppress checks="FileLengthCheck" files="ConsoleApp.java"/>
@@ -31,7 +51,6 @@
     <suppress checks="JavadocType" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cluster[\\/]"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.cluster.impl.ClusterDataSerializerHook"/>
     <!-- TODO: Needs to be fixed -->
     <suppress checks="" files="com.hazelcast.cluster.impl.ClusterServiceImpl"/>
     <suppress checks="" files="com.hazelcast.cluster.impl.MulticastService"/>
@@ -44,7 +63,6 @@
     <suppress checks="JavadocType" files="com.hazelcast.cluster.impl.operations[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster.impl.operations[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.cluster.impl.operations[\\/]"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.cluster.impl.ClusterDataSerializerHook"/>
     <!-- TODO: Needs to be fixed -->
     <suppress checks="" files="com.hazelcast.cluster.impl.operations.FinalizeJoinOperation"/>
     <suppress checks="" files="com.hazelcast.cluster.impl.operations.JoinCheckOperation"/>
@@ -59,13 +77,6 @@
               files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheRecordStore"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheService"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.CacheDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.cache.impl.CachePortableHook"/>
-    <suppress checks="ExecutableStatementCount" files="com.hazelcast.cache.impl.CachePortableHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
-    <suppress checks="AnonInnerLength" files="com.hazelcast.cache.impl.CachePortableHook"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.config.CacheConfig"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.cache.impl.HazelcastServerCachingProvider"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.client.cache.impl.HazelcastClientCachingProvider"/>
@@ -114,44 +125,18 @@
 
     <!-- concurrent.atomiclong-->
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongProxy"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
-    <suppress checks="AnonInnerLength" files="com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook"/>
-
-    <!-- concurrent.atomicreference -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity"
-              files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-    <suppress checks="AnonInnerLength"
-              files="com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook"/>
-
-    <!-- concurrent.countdownlatch -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook"/>
-
-    <!-- concurrent.semaphore -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook"/>
 
     <!-- concurrent.lock -->
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.client.LockPortableHook.java"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockResourceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.concurrent.lock.LockStoreImpl"/>
     <suppress checks="Todo" files="com.hazelcast.concurrent.lock.ConditionImpl"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.concurrent.lock.LockDataSerializerHook"/>
 
     <!-- Storage -->
-    <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.storage[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.storage[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.storage[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.storage[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.internal.storage[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.storage[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.storage[\\/]"/>
 
 
     <!-- client -->
@@ -186,7 +171,6 @@
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientExecutorServiceProxy"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.HazelcastClientProxy"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.impl.client.ClientPortableFactory"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.client.impl.client.ClientPortableHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.config.ClientConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.connection.nio.ClientConnection"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.ClientEngineImpl"/>
@@ -227,9 +211,6 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.jca[\\/]"/>
 
     <suppress checks="EmptyStatement" files="com.hazelcast.jca.ResourceAdapterImpl"/>
-    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HzConnectionEvent"/>
-    <suppress checks="FileTabCharacter" files="com.hazelcast.jca.HazelcastConnectionFactory"/>
-
 
     <!-- Query -->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.query.SqlPredicate"/>
@@ -277,8 +258,6 @@
     <suppress checks="MethodCount|NPathComplexity|MagicNumber" files="com.hazelcast.spi.Operation"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.NodeEngineImpl"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiDataSerializerHook"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.SpiPortableHook"/>
     <!-- since this class needs to manage services, it knows about them. So it is fine to have lots
          of dependencies on these classes-->
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.ServiceManager"/>
@@ -304,7 +283,6 @@
     <suppress checks="JavadocType" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.transaction[\\/]"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.transaction.client.ClientTxnPortableHook"/>
 
     <!-- Security -->
     <suppress checks="JavadocMethod" files="com.hazelcast.security[\\/]"/>
@@ -358,16 +336,16 @@
 
     <!-- Ascii-->
 
-    <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.ascii[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.ascii[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.ascii[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.internal.ascii[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.ascii[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.ascii[\\/]"/>
 
-    <suppress checks="ExecutableStatement" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.ascii.TextCommandServiceImpl"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.ascii.memcache.MemcacheCommandProcessor"/>
-    <suppress checks="MethodCount" files="com.hazelcast.ascii.memcache.Stats"/>
+    <suppress checks="ExecutableStatement" files="com.hazelcast.internal.ascii.TextCommandServiceImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.internal.ascii.TextCommandServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.internal.ascii.TextCommandServiceImpl"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor"/>
+    <suppress checks="MethodCount" files="com.hazelcast.internal.ascii.memcache.Stats"/>
 
     <!-- Executor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
@@ -375,7 +353,6 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="ClassFanOutComplexity|MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.executor.impl.ExecutorPortableHook"/>
 
     <!-- Collections -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl[\\/]"/>
@@ -385,13 +362,6 @@
     <suppress checks="JavadocPackage" files="com.hazelcast.collection.impl[\\/]"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.collection.impl.collection.CollectionContainer"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.impl.collection.CollectionPortableHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.collection.impl.collection.CollectionPortableHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
-    <suppress checks="DeclarationOrder" files="com.hazelcast.collection.impl.collection.CollectionDataSerializerHook"/>
 
     <!-- List -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl.list[\\/]"/>
@@ -399,11 +369,6 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl.list[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.collection.impl.list[\\/]"/>
 
-    <!-- Queue -->
-    <suppress checks="MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
-              files="com.hazelcast.collection.impl.queue.QueuePortableHook"/>
-    <suppress checks="MethodCount|MethodLength|ClassFanOutComplexity|JavadocVariable|ClassDataAbstractionCoupling"
-              files="com.hazelcast.collection.impl.queue.QueueDataSerializerHook"/>
     <!--<suppress checks="" files="com.hazelcast.queue.DataAwareItemEvent"/>-->
     <suppress checks="MethodCount" files="com.hazelcast.collection.impl.queue.QueueContainer"/>
 
@@ -413,11 +378,6 @@
     <suppress checks="JavadocType" files="com.hazelcast.multimap[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.multimap[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.multimap[\\/]"/>
-    <suppress checks="MethodLength" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
-    <suppress checks="MethodCount" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
-    <suppress checks="MethodLength" files="com.hazelcast.multimap.impl.MultiMapPortableHook"/>
-    <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.impl.MultiMapPortableHook"/>
     <suppress checks="ReturnCount" files="com.hazelcast.multimap.impl.operations.MultiMapOperationFactory"/>
     <!-- todo: needs to be fixed -->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.impl.MultiMapService"/>
@@ -460,8 +420,6 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
-    <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.ArrayListSerializerHook"/>
-    <suppress checks="IllegalType" files="com.hazelcast.nio.serialization.serializers.LinkedListSerializerHook"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
 
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
@@ -534,13 +492,6 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.map[\\/]"/>
 
-    <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
-    <suppress checks="AnonInnerLengthCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
-    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
-    <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.MapPortableHook"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.MapPortableHook"/>
-    <suppress checks="ExecutableStatementCount" files="com.hazelcast.map.impl.MapPortableHook"/>
-    <suppress checks="MethodLengthCheck" files="com.hazelcast.map.impl.MapDataSerializerHook"/>
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.RecordStore"/>
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.DefaultRecordStore"/>
     <suppress checks="MethodCountCheck" files="com.hazelcast.map.impl.proxy.MapProxyImpl"/>

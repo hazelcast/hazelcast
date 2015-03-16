@@ -25,7 +25,6 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
@@ -270,7 +269,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     }
 
     @Override
-    public void sendEvent(Data key, Object event, int callId) {
+    public void sendEvent(Object key, Object event, int callId) {
         clientEngine.sendResponse(this, key, event, callId, false, true);
     }
 

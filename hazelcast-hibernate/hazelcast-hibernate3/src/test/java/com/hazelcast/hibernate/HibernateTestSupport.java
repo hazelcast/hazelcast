@@ -38,7 +38,6 @@ public abstract class HibernateTestSupport {
         Hazelcast.shutdownAll();
     }
 
-
     @After
     public final void cleanup() {
         Hazelcast.shutdownAll();
