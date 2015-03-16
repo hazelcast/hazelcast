@@ -23,6 +23,11 @@ import java.nio.ByteOrder;
 
 public interface PortableContext {
 
+    int HEADER_ENTRY_LENGTH = 12;
+    int HEADER_FACTORY_OFFSET = 0;
+    int HEADER_CLASS_OFFSET = 4;
+    int HEADER_VERSION_OFFSET = 8;
+
     int getVersion();
 
     int getClassVersion(int factoryId, int classId);
@@ -31,7 +36,13 @@ public interface PortableContext {
 
     ClassDefinition lookupClassDefinition(int factoryId, int classId, int version);
 
-    ClassDefinition lookupClassDefinition(Data data) throws IOException;
+    ClassDefinition lookupClassDefinition(Data data);
+
+    boolean hasClassDefinition(Data data);
+
+    ClassDefinition[] getClassDefinitions(Data data);
+
+    ClassDefinition createClassDefinition(int factoryId, byte[] binary) throws IOException;
 
     ClassDefinition registerClassDefinition(ClassDefinition cd);
 

@@ -17,6 +17,9 @@
 package com.hazelcast.nio.serialization;
 
 
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -39,6 +42,30 @@ class StreamSerializerAdapter implements SerializerAdapter {
 
     public Object read(ObjectDataInput in) throws IOException {
         return serializer.read(in);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Data toData(Object object, int partitionHash) throws IOException {
+        final BufferObjectDataOutput out = service.pop();
+        try {
+            serializer.write(out, object);
+            byte[] header = null;
+            if (out instanceof PortableDataOutput) {
+                header = ((PortableDataOutput) out).getPortableHeader();
+            }
+            return new DefaultData(serializer.getTypeId(), out.toByteArray(), partitionHash, header);
+        } finally {
+            service.push(out);
+        }
+    }
+
+    public Object toObject(Data data) throws IOException {
+        final BufferObjectDataInput in = service.createObjectDataInput(data);
+        try {
+            return serializer.read(in);
+        } finally {
+            IOUtil.closeResource(in);
+        }
     }
 
     public int getTypeId() {

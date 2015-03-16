@@ -38,10 +38,20 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
 
     public Object read(ObjectDataInput in) throws IOException {
         byte[] bytes = in.readByteArray();
-        if (bytes == null) {
+        if (bytes == null || bytes.length == 0) {
             return null;
         }
         return serializer.read(bytes);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Data toData(Object object, int partitionHash) throws IOException {
+        byte[] data = serializer.write(object);
+        return new DefaultData(serializer.getTypeId(), data, partitionHash);
+    }
+
+    public Object toObject(Data data) throws IOException {
+        return serializer.read(data.getData());
     }
 
     public int getTypeId() {

@@ -178,7 +178,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
         Data responseData = serializationService.toData(clientResponse);
         int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
-        final Packet packet = new Packet(responseData, partitionId);
+        final Packet packet = new Packet(responseData, partitionId, serializationService.getPortableContext());
         if (isEvent) {
             packet.setHeader(Packet.HEADER_EVENT);
         }

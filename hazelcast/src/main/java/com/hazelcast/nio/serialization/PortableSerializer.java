@@ -18,20 +18,21 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.DynamicByteBuffer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 final class PortableSerializer implements StreamSerializer<Portable> {
 
-    private final PortableContextImpl context;
+    private final PortableContext context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
 
-    PortableSerializer(PortableContextImpl context, Map<Integer, ? extends PortableFactory> portableFactories) {
+    PortableSerializer(PortableContext context, Map<Integer, ? extends PortableFactory> portableFactories) {
         this.context = context;
         factories.putAll(portableFactories);
     }
@@ -41,46 +42,49 @@ final class PortableSerializer implements StreamSerializer<Portable> {
     }
 
     public void write(ObjectDataOutput out, Portable p) throws IOException {
-        if (!(out instanceof BufferObjectDataOutput)) {
-            throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
+        if (!(out instanceof PortableDataOutput)) {
+            throw new IllegalArgumentException("ObjectDataOutput must be instance of PortableDataOutput!");
         }
         if (p.getClassId() == 0) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
 
-        out.writeInt(p.getFactoryId());
-        out.writeInt(p.getClassId());
-        writeInternal((BufferObjectDataOutput) out, p);
-    }
-
-    void writeInternal(BufferObjectDataOutput out, Portable p) throws IOException {
-
         ClassDefinition cd = context.lookupOrRegisterClassDefinition(p);
-        out.writeInt(cd.getVersion());
 
-        DefaultPortableWriter writer = new DefaultPortableWriter(this, out, cd);
+        PortableDataOutput output = (PortableDataOutput) out;
+        DynamicByteBuffer headerBuffer = output.getHeaderBuffer();
+
+        int pos = headerBuffer.position();
+        out.writeInt(pos);
+
+        headerBuffer.putInt(cd.getFactoryId());
+        headerBuffer.putInt(cd.getClassId());
+        headerBuffer.putInt(cd.getVersion());
+
+        DefaultPortableWriter writer = new DefaultPortableWriter(this, output, cd);
         p.writePortable(writer);
         writer.end();
     }
 
     public Portable read(ObjectDataInput in) throws IOException {
-        if (!(in instanceof BufferObjectDataInput)) {
-            throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
+        if (!(in instanceof PortableDataInput)) {
+            throw new IllegalArgumentException("ObjectDataInput must be instance of PortableDataInput!");
         }
 
-        int factoryId = in.readInt();
-        int classId = in.readInt();
-        return read((BufferObjectDataInput) in, factoryId, classId);
-    }
+        PortableDataInput input = (PortableDataInput) in;
+        ByteBuffer headerBuffer = input.getHeaderBuffer();
 
-    private Portable read(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
-        int version = in.readInt();
+        int pos = input.readInt();
+        headerBuffer.position(pos);
+
+        int factoryId = headerBuffer.getInt();
+        int classId = headerBuffer.getInt();
+        int version = headerBuffer.getInt();
 
         Portable portable = createNewPortableInstance(factoryId, classId);
         int portableVersion = findPortableVersion(factoryId, classId, portable);
 
-        DefaultPortableReader reader = createReader(in, factoryId, classId,
-                version, portableVersion);
+        DefaultPortableReader reader = createReader(input, factoryId, classId, version, portableVersion);
         portable.readPortable(reader);
         reader.end();
         return portable;
@@ -109,22 +113,27 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         return portable;
     }
 
-    Portable readAndInitialize(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
-        Portable p = read(in, factoryId, classId);
+    Portable readAndInitialize(BufferObjectDataInput in) throws IOException {
+        Portable p = read(in);
         final ManagedContext managedContext = context.getManagedContext();
         return managedContext != null ? (Portable) managedContext.initialize(p) : p;
     }
 
     DefaultPortableReader createReader(BufferObjectDataInput in) throws IOException {
-        int factoryId = in.readInt();
-        int classId = in.readInt();
-        int version = in.readInt();
+        ByteBuffer headerBuffer = ((PortableDataInput) in).getHeaderBuffer();
+
+        int pos = in.readInt();
+        headerBuffer.position(pos);
+
+        int factoryId = headerBuffer.getInt();
+        int classId = headerBuffer.getInt();
+        int version = headerBuffer.getInt();
 
         return createReader(in, factoryId, classId, version, version);
     }
 
     private DefaultPortableReader createReader(BufferObjectDataInput in, int factoryId, int classId, int version,
-            int portableVersion) throws IOException {
+            int portableVersion) {
 
         int effectiveVersion = version;
         if (version < 0) {
@@ -133,9 +142,8 @@ final class PortableSerializer implements StreamSerializer<Portable> {
 
         ClassDefinition cd = context.lookupClassDefinition(factoryId, classId, effectiveVersion);
         if (cd == null) {
-            int begin = in.position();
-            cd = context.readClassDefinition(in, factoryId, classId, effectiveVersion);
-            in.position(begin);
+            throw new HazelcastSerializationException("Could not find class-definition for "
+                    + "factory-id: " + factoryId + ", class-id: " + classId + ", version: " + effectiveVersion);
         }
 
         DefaultPortableReader reader;

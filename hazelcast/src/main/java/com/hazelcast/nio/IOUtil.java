@@ -54,7 +54,7 @@ public final class IOUtil {
      * format is ever changed this extraction method needs to be changed too!
      */
     public static long extractOperationCallId(Data data, SerializationService serializationService) throws IOException {
-        ObjectDataInput input = serializationService.createObjectDataInput(data);
+        ObjectDataInput input = serializationService.createObjectDataInput(data.getData());
         boolean identified = input.readBoolean();
         if (identified) {
             // read factoryId

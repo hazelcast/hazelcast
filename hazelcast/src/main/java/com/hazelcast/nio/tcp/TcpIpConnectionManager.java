@@ -28,6 +28,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -117,6 +118,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
 
+    private final PortableContext portableContext;
+
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
@@ -145,6 +148,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
             outboundPorts.addAll(ports);
         }
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
+        this.portableContext = ioService.getPortableContext();
+
         this.selectorImbalanceWorkaroundEnabled = isSelectorImbalanceEnabled();
         this.selectorIndexPerHostMap = selectorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
     }
@@ -212,6 +217,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     public void incrementTextConnections() {
         allTextConnections.incrementAndGet();
+    }
+
+    public PortableContext getPortableContext() {
+        return portableContext;
     }
 
     public IOService getIOHandler() {
@@ -313,7 +322,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
         Data bindData = ioService.toData(bind);
-        Packet packet = new Packet(bindData);
+        Packet packet = new Packet(bindData, portableContext);
         packet.setHeader(Packet.HEADER_BIND);
         connection.write(packet);
         //now you can send anything...

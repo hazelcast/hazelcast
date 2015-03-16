@@ -16,25 +16,17 @@
 
 package com.hazelcast.nio.serialization;
 
+interface MutableData extends Data {
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+    byte[] getData();
 
-import java.io.IOException;
+    void setData(byte[] data);
 
-interface SerializerAdapter {
+    void setType(int type);
 
-    void write(ObjectDataOutput out, Object object) throws IOException;
+    void setPartitionHash(int partitionHash);
 
-    Object read(ObjectDataInput in) throws IOException;
+    byte[] getHeader();
 
-    Data toData(Object object, int partitionHash) throws IOException;
-
-    Object toObject(Data data) throws IOException;
-
-    int getTypeId();
-
-    void destroy();
-
-    Serializer getImpl();
+    void setHeader(byte[] header);
 }

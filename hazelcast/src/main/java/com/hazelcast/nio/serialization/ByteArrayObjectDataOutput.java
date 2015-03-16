@@ -18,6 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.DynamicByteBuffer;
 import com.hazelcast.nio.UTFEncoderDecoder;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput {
+class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, PortableDataOutput {
 
     final int initialSize;
 
@@ -37,17 +38,19 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     int pos;
 
+    DynamicByteBuffer header;
+
     final SerializationService service;
 
     private byte[] utfBuffer;
 
-    private final boolean isBigEndian;
+    private final boolean bigEndian;
 
     ByteArrayObjectDataOutput(int size, SerializationService service, ByteOrder byteOrder) {
         this.initialSize = size;
         this.buffer = new byte[size];
         this.service = service;
-        isBigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+        bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
 
     public void write(int b) {
@@ -103,12 +106,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeChar(final int v) throws IOException {
         ensureAvailable(CHAR_SIZE_IN_BYTES);
-        Bits.writeChar(buffer, pos, (char) v, isBigEndian);
+        Bits.writeChar(buffer, pos, (char) v, bigEndian);
         pos += CHAR_SIZE_IN_BYTES;
     }
 
     public void writeChar(int position, final int v) throws IOException {
-        Bits.writeChar(buffer, position, (char) v, isBigEndian);
+        Bits.writeChar(buffer, position, (char) v, bigEndian);
     }
 
     public void writeChars(final String s) throws IOException {
@@ -129,16 +132,6 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         writeLong(position, Double.doubleToLongBits(v));
     }
 
-    @Override
-    public void writeDouble(double v, ByteOrder byteOrder) throws IOException {
-        writeLong(Double.doubleToLongBits(v), byteOrder);
-    }
-
-    @Override
-    public void writeDouble(int position, double v, ByteOrder byteOrder) throws IOException {
-        writeLong(position, Double.doubleToLongBits(v), byteOrder);
-    }
-
     public void writeFloat(final float v) throws IOException {
         writeInt(Float.floatToIntBits(v));
     }
@@ -147,80 +140,34 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         writeInt(position, Float.floatToIntBits(v));
     }
 
-    @Override
-    public void writeFloat(float v, ByteOrder byteOrder) throws IOException {
-        writeInt(Float.floatToIntBits(v), byteOrder);
-    }
-
-    @Override
-    public void writeFloat(int position, float v, ByteOrder byteOrder) throws IOException {
-        writeInt(position, Float.floatToIntBits(v), byteOrder);
-    }
-
     public void writeInt(final int v) throws IOException {
         ensureAvailable(INT_SIZE_IN_BYTES);
-        Bits.writeInt(buffer, pos, v, isBigEndian);
+        Bits.writeInt(buffer, pos, v, bigEndian);
         pos += INT_SIZE_IN_BYTES;
     }
 
     public void writeInt(int position, int v) throws IOException {
-        Bits.writeInt(buffer, position, v, isBigEndian);
-    }
-
-    @Override
-    public void writeInt(int v, ByteOrder byteOrder) throws IOException {
-        ensureAvailable(INT_SIZE_IN_BYTES);
-        Bits.writeInt(buffer, pos, v, byteOrder == ByteOrder.BIG_ENDIAN);
-        pos += INT_SIZE_IN_BYTES;
-    }
-
-    @Override
-    public void writeInt(int position, int v, ByteOrder byteOrder) throws IOException {
-        Bits.writeInt(buffer, position, v, byteOrder == ByteOrder.BIG_ENDIAN);
+        Bits.writeInt(buffer, position, v, bigEndian);
     }
 
     public void writeLong(final long v) throws IOException {
         ensureAvailable(LONG_SIZE_IN_BYTES);
-        Bits.writeLong(buffer, pos, v, isBigEndian);
+        Bits.writeLong(buffer, pos, v, bigEndian);
         pos += LONG_SIZE_IN_BYTES;
     }
 
     public void writeLong(int position, final long v) throws IOException {
-        Bits.writeLong(buffer, position, v, isBigEndian);
-    }
-
-    @Override
-    public void writeLong(long v, ByteOrder byteOrder) throws IOException {
-        ensureAvailable(LONG_SIZE_IN_BYTES);
-        Bits.writeLong(buffer, pos, v, byteOrder == ByteOrder.BIG_ENDIAN);
-        pos += LONG_SIZE_IN_BYTES;
-    }
-
-    @Override
-    public void writeLong(int position, long v, ByteOrder byteOrder) throws IOException {
-        Bits.writeLong(buffer, position, v, byteOrder == ByteOrder.BIG_ENDIAN);
+        Bits.writeLong(buffer, position, v, bigEndian);
     }
 
     public void writeShort(final int v) throws IOException {
         ensureAvailable(SHORT_SIZE_IN_BYTES);
-        Bits.writeShort(buffer, pos, (short) v, isBigEndian);
+        Bits.writeShort(buffer, pos, (short) v, bigEndian);
         pos += SHORT_SIZE_IN_BYTES;
     }
 
     public void writeShort(int position, final int v) throws IOException {
-        Bits.writeShort(buffer, position, (short) v, isBigEndian);
-    }
-
-    @Override
-    public void writeShort(int v, ByteOrder byteOrder) throws IOException {
-        ensureAvailable(SHORT_SIZE_IN_BYTES);
-        Bits.writeShort(buffer, pos, (short) v, byteOrder == ByteOrder.BIG_ENDIAN);
-        pos += SHORT_SIZE_IN_BYTES;
-    }
-
-    @Override
-    public void writeShort(int position, int v, ByteOrder byteOrder) throws IOException {
-        Bits.writeShort(buffer, position, (short) v, byteOrder == ByteOrder.BIG_ENDIAN);
+        Bits.writeShort(buffer, position, (short) v, bigEndian);
     }
 
     public void writeUTF(final String str) throws IOException {
@@ -352,15 +299,45 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         if (buffer != null && buffer.length > initialSize * 8) {
             buffer = new byte[initialSize * 8];
         }
+        if (header != null) {
+            header.clear();
+        }
     }
 
     public void close() {
         pos = 0;
         buffer = null;
+        if (header != null) {
+            header.close();
+            header = null;
+        }
     }
 
     public ByteOrder getByteOrder() {
-        return isBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+        return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    @Override
+    public DynamicByteBuffer getHeaderBuffer() {
+        if (header == null) {
+            header = new DynamicByteBuffer(new byte[64]).order(getByteOrder());
+        }
+        return header;
+    }
+
+    @Override
+    public byte[] getPortableHeader() {
+        if (header == null) {
+            return null;
+        }
+        header.flip();
+        if (!header.hasRemaining()) {
+            return null;
+        }
+        final byte[] buff = new byte[header.limit()];
+        header.get(buff);
+        header.clear();
+        return buff;
     }
 
     @Override
