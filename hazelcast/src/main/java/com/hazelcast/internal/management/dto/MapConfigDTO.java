@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -35,14 +36,14 @@ import static com.hazelcast.util.JsonUtil.getString;
 /**
  * Serializable adapter for {@link com.hazelcast.config.MapConfig}
  */
-public class MapConfigAdapter implements JsonSerializable, DataSerializable {
+public class MapConfigDTO implements JsonSerializable, DataSerializable {
 
     private MapConfig config;
 
-    public MapConfigAdapter() {
+    public MapConfigDTO() {
     }
 
-    public MapConfigAdapter(MapConfig mapConfig) {
+    public MapConfigDTO(MapConfig mapConfig) {
         this.config = mapConfig;
     }
 

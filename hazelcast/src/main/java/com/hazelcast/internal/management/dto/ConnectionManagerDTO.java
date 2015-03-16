@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.ConnectionManager;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -24,43 +25,19 @@ import static com.hazelcast.util.JsonUtil.getInt;
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.ConnectionManagerMBean}.
  */
-public class SerializableConnectionManagerBean implements JsonSerializable {
+public class ConnectionManagerDTO implements JsonSerializable {
 
-    private int clientConnectionCount;
-    private int activeConnectionCount;
-    private int connectionCount;
+    public int clientConnectionCount;
+    public int activeConnectionCount;
+    public int connectionCount;
 
-    public SerializableConnectionManagerBean() {
+    public ConnectionManagerDTO() {
     }
 
-    public SerializableConnectionManagerBean(ConnectionManager cm) {
+    public ConnectionManagerDTO(ConnectionManager cm) {
         this.clientConnectionCount = cm.getCurrentClientConnections();
         this.activeConnectionCount = cm.getActiveConnectionCount();
         this.connectionCount = cm.getConnectionCount();
-    }
-
-    public int getClientConnectionCount() {
-        return clientConnectionCount;
-    }
-
-    public void setClientConnectionCount(int clientConnectionCount) {
-        this.clientConnectionCount = clientConnectionCount;
-    }
-
-    public int getActiveConnectionCount() {
-        return activeConnectionCount;
-    }
-
-    public void setActiveConnectionCount(int activeConnectionCount) {
-        this.activeConnectionCount = activeConnectionCount;
-    }
-
-    public int getConnectionCount() {
-        return connectionCount;
-    }
-
-    public void setConnectionCount(int connectionCount) {
-        this.connectionCount = connectionCount;
     }
 
     @Override

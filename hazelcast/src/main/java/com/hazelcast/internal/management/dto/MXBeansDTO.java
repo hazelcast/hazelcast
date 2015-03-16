@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -26,65 +28,65 @@ import static com.hazelcast.util.JsonUtil.getObject;
 /**
  * Holder class for serializable service beans.
  */
-public class SerializableMXBeans implements JsonSerializable {
+public class MXBeansDTO implements JsonSerializable {
 
-    private SerializableEventServiceBean eventServiceBean;
-    private SerializableOperationServiceBean operationServiceBean;
-    private SerializableConnectionManagerBean connectionManagerBean;
-    private SerializablePartitionServiceBean partitionServiceBean;
-    private SerializableProxyServiceBean proxyServiceBean;
-    private Map<String, SerializableManagedExecutorBean> managedExecutorBeans =
-            new HashMap<String, SerializableManagedExecutorBean>();
+    private EventServiceDTO eventServiceBean;
+    private OperationServiceDTO operationServiceBean;
+    private ConnectionManagerDTO connectionManagerBean;
+    private PartitionServiceBeanDTO partitionServiceBean;
+    private ProxyServiceDTO proxyServiceBean;
+    private Map<String, ManagedExecutorDTO> managedExecutorBeans =
+            new HashMap<String, ManagedExecutorDTO>();
 
 
-    public SerializableMXBeans() {
+    public MXBeansDTO() {
     }
 
-    public SerializableEventServiceBean getEventServiceBean() {
+    public EventServiceDTO getEventServiceBean() {
         return eventServiceBean;
     }
 
-    public void setEventServiceBean(SerializableEventServiceBean eventServiceBean) {
+    public void setEventServiceBean(EventServiceDTO eventServiceBean) {
         this.eventServiceBean = eventServiceBean;
     }
 
-    public SerializableOperationServiceBean getOperationServiceBean() {
+    public OperationServiceDTO getOperationServiceBean() {
         return operationServiceBean;
     }
 
-    public void setOperationServiceBean(SerializableOperationServiceBean operationServiceBean) {
+    public void setOperationServiceBean(OperationServiceDTO operationServiceBean) {
         this.operationServiceBean = operationServiceBean;
     }
 
-    public SerializableConnectionManagerBean getConnectionManagerBean() {
+    public ConnectionManagerDTO getConnectionManagerBean() {
         return connectionManagerBean;
     }
 
-    public void setConnectionManagerBean(SerializableConnectionManagerBean connectionManagerBean) {
+    public void setConnectionManagerBean(ConnectionManagerDTO connectionManagerBean) {
         this.connectionManagerBean = connectionManagerBean;
     }
 
-    public SerializablePartitionServiceBean getPartitionServiceBean() {
+    public PartitionServiceBeanDTO getPartitionServiceBean() {
         return partitionServiceBean;
     }
 
-    public void setPartitionServiceBean(SerializablePartitionServiceBean partitionServiceBean) {
+    public void setPartitionServiceBean(PartitionServiceBeanDTO partitionServiceBean) {
         this.partitionServiceBean = partitionServiceBean;
     }
 
-    public SerializableProxyServiceBean getProxyServiceBean() {
+    public ProxyServiceDTO getProxyServiceBean() {
         return proxyServiceBean;
     }
 
-    public void setProxyServiceBean(SerializableProxyServiceBean proxyServiceBean) {
+    public void setProxyServiceBean(ProxyServiceDTO proxyServiceBean) {
         this.proxyServiceBean = proxyServiceBean;
     }
 
-    public SerializableManagedExecutorBean getManagedExecutorBean(String name) {
+    public ManagedExecutorDTO getManagedExecutorBean(String name) {
         return managedExecutorBeans.get(name);
     }
 
-    public void putManagedExecutor(String name, SerializableManagedExecutorBean bean) {
+    public void putManagedExecutor(String name, ManagedExecutorDTO bean) {
         managedExecutorBeans.put(name, bean);
     }
 
@@ -92,7 +94,7 @@ public class SerializableMXBeans implements JsonSerializable {
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         JsonObject managedExecutors = new JsonObject();
-        for (Map.Entry<String, SerializableManagedExecutorBean> entry : managedExecutorBeans.entrySet()) {
+        for (Map.Entry<String, ManagedExecutorDTO> entry : managedExecutorBeans.entrySet()) {
             managedExecutors.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("managedExecutorBeans", managedExecutors);
@@ -109,19 +111,19 @@ public class SerializableMXBeans implements JsonSerializable {
         final Iterator<JsonObject.Member> managedExecutorsIteartor = getObject(json, "managedExecutorBeans").iterator();
         while (managedExecutorsIteartor.hasNext()) {
             final JsonObject.Member next = managedExecutorsIteartor.next();
-            SerializableManagedExecutorBean managedExecutorBean = new SerializableManagedExecutorBean();
+            ManagedExecutorDTO managedExecutorBean = new ManagedExecutorDTO();
             managedExecutorBean.fromJson(next.getValue().asObject());
             managedExecutorBeans.put(next.getName(), managedExecutorBean);
         }
-        eventServiceBean = new SerializableEventServiceBean();
+        eventServiceBean = new EventServiceDTO();
         eventServiceBean.fromJson(getObject(json, "eventServiceBean"));
-        operationServiceBean = new SerializableOperationServiceBean();
+        operationServiceBean = new OperationServiceDTO();
         operationServiceBean.fromJson(getObject(json, "operationServiceBean"));
-        connectionManagerBean = new SerializableConnectionManagerBean();
+        connectionManagerBean = new ConnectionManagerDTO();
         connectionManagerBean.fromJson(getObject(json, "connectionManagerBean"));
-        proxyServiceBean = new SerializableProxyServiceBean();
+        proxyServiceBean = new ProxyServiceDTO();
         proxyServiceBean.fromJson(getObject(json, "proxyServiceBean"));
-        partitionServiceBean = new SerializablePartitionServiceBean();
+        partitionServiceBean = new PartitionServiceBeanDTO();
         partitionServiceBean.fromJson(getObject(json, "partitionServiceBean"));
     }
 }

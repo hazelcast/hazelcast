@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.spi.EventService;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -24,43 +25,19 @@ import static com.hazelcast.util.JsonUtil.getInt;
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.EventServiceMBean}.
  */
-public class SerializableEventServiceBean implements JsonSerializable {
+public class EventServiceDTO implements JsonSerializable {
 
-    private int eventThreadCount;
-    private int eventQueueCapacity;
-    private int eventQueueSize;
+    public int eventThreadCount;
+    public int eventQueueCapacity;
+    public int eventQueueSize;
 
-    public SerializableEventServiceBean() {
+    public EventServiceDTO() {
     }
 
-    public SerializableEventServiceBean(EventService es) {
+    public EventServiceDTO(EventService es) {
         this.eventThreadCount = es.getEventThreadCount();
         this.eventQueueCapacity = es.getEventQueueCapacity();
         this.eventQueueSize = es.getEventQueueSize();
-    }
-
-    public int getEventThreadCount() {
-        return eventThreadCount;
-    }
-
-    public void setEventThreadCount(int eventThreadCount) {
-        this.eventThreadCount = eventThreadCount;
-    }
-
-    public int getEventQueueCapacity() {
-        return eventQueueCapacity;
-    }
-
-    public void setEventQueueCapacity(int eventQueueCapacity) {
-        this.eventQueueCapacity = eventQueueCapacity;
-    }
-
-    public int getEventQueueSize() {
-        return eventQueueSize;
-    }
-
-    public void setEventQueueSize(int eventQueueSize) {
-        this.eventQueueSize = eventQueueSize;
     }
 
     @Override

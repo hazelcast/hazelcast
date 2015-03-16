@@ -29,6 +29,7 @@ import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -128,9 +129,9 @@ public class TimedMemberStateFactory {
     private void createMemberState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
         Node node = instance.node;
 
-        HashSet<SerializableClientEndPoint> serializableClientEndPoints = new HashSet<SerializableClientEndPoint>();
+        HashSet<ClientEndPointDTO> serializableClientEndPoints = new HashSet<ClientEndPointDTO>();
         for (Client client : instance.node.clientEngine.getClients()) {
-            serializableClientEndPoints.add(new SerializableClientEndPoint(client));
+            serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
 

@@ -14,53 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.Client;
+import com.hazelcast.internal.management.JsonSerializable;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
  * A Serializable DTO for {@link com.hazelcast.client.ClientEndpoint}.
  */
-public class SerializableClientEndPoint implements JsonSerializable {
+public class ClientEndPointDTO implements JsonSerializable {
 
-    String uuid;
-    String address;
-    String clientType;
+    public String uuid;
+    public String address;
+    public String clientType;
 
-    public SerializableClientEndPoint() {
+    public ClientEndPointDTO() {
     }
 
-    public SerializableClientEndPoint(Client client) {
+    public ClientEndPointDTO(Client client) {
         this.uuid = client.getUuid();
         this.address = client.getSocketAddress().getHostName() + ":" + client.getSocketAddress().getPort();
         this.clientType = client.getClientType().toString();
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getClientType() {
-        return clientType;
-    }
-
-    public void setClientType(String clientType) {
-        this.clientType = clientType;
     }
 
     @Override

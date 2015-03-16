@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
@@ -27,20 +28,20 @@ import static com.hazelcast.util.JsonUtil.getString;
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.ManagedExecutorServiceMBean}.
  */
-public class SerializableManagedExecutorBean implements JsonSerializable {
+public class ManagedExecutorDTO implements JsonSerializable {
 
-    private String name;
-    private int queueSize;
-    private int poolSize;
-    private int remainingQueueCapacity;
-    private int maximumPoolSize;
-    private boolean isTerminated;
-    private long completedTaskCount;
+    public String name;
+    public int queueSize;
+    public int poolSize;
+    public int remainingQueueCapacity;
+    public int maximumPoolSize;
+    public boolean isTerminated;
+    public long completedTaskCount;
 
-    public SerializableManagedExecutorBean() {
+    public ManagedExecutorDTO() {
     }
 
-    public SerializableManagedExecutorBean(ManagedExecutorService executorService) {
+    public ManagedExecutorDTO(ManagedExecutorService executorService) {
         this.name = executorService.getName();
         this.queueSize = executorService.getQueueSize();
         this.poolSize = executorService.getPoolSize();
@@ -48,62 +49,6 @@ public class SerializableManagedExecutorBean implements JsonSerializable {
         this.maximumPoolSize = executorService.getMaximumPoolSize();
         this.isTerminated = executorService.isTerminated();
         this.completedTaskCount = executorService.getCompletedTaskCount();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public int getQueueSize() {
-        return queueSize;
-    }
-
-    public void setQueueSize(int queueSize) {
-        this.queueSize = queueSize;
-    }
-
-    public int getPoolSize() {
-        return poolSize;
-    }
-
-    public void setPoolSize(int poolSize) {
-        this.poolSize = poolSize;
-    }
-
-    public int getRemainingQueueCapacity() {
-        return remainingQueueCapacity;
-    }
-
-    public void setRemainingQueueCapacity(int remainingQueueCapacity) {
-        this.remainingQueueCapacity = remainingQueueCapacity;
-    }
-
-    public int getMaximumPoolSize() {
-        return maximumPoolSize;
-    }
-
-    public void setMaximumPoolSize(int maximumPoolSize) {
-        this.maximumPoolSize = maximumPoolSize;
-    }
-
-    public boolean isTerminated() {
-        return isTerminated;
-    }
-
-    public void setTerminated(boolean isTerminated) {
-        this.isTerminated = isTerminated;
-    }
-
-    public long getCompletedTaskCount() {
-        return completedTaskCount;
-    }
-
-    public void setCompletedTaskCount(long completedTaskCount) {
-        this.completedTaskCount = completedTaskCount;
     }
 
     @Override

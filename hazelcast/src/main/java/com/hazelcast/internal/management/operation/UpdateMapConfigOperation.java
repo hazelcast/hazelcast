@@ -17,7 +17,7 @@
 package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.management.MapConfigAdapter;
+import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -78,13 +78,13 @@ public class UpdateMapConfigOperation extends Operation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        new MapConfigAdapter(mapConfig).writeData(out);
+        new MapConfigDTO(mapConfig).writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        MapConfigAdapter adapter = new MapConfigAdapter();
+        MapConfigDTO adapter = new MapConfigDTO();
         adapter.readData(in);
         mapConfig = adapter.getMapConfig();
     }

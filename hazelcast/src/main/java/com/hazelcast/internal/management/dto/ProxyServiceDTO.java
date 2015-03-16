@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.management;
+package com.hazelcast.internal.management.dto;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.spi.ProxyService;
 
 import static com.hazelcast.util.JsonUtil.getInt;
@@ -24,23 +25,15 @@ import static com.hazelcast.util.JsonUtil.getInt;
 /**
  * A Serializable DTO for {@link com.hazelcast.jmx.ProxyServiceMBean}.
  */
-public class SerializableProxyServiceBean implements JsonSerializable {
+public class ProxyServiceDTO implements JsonSerializable {
 
-    private int proxyCount;
+    public int proxyCount;
 
-    public SerializableProxyServiceBean() {
+    public ProxyServiceDTO() {
     }
 
-    public SerializableProxyServiceBean(ProxyService proxyService) {
+    public ProxyServiceDTO(ProxyService proxyService) {
         this.proxyCount = proxyService.getProxyCount();
-    }
-
-    public int getProxyCount() {
-        return proxyCount;
-    }
-
-    public void setProxyCount(int proxyCount) {
-        this.proxyCount = proxyCount;
     }
 
     @Override
