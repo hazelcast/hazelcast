@@ -22,32 +22,37 @@ public class TryPutOperation extends BasePutOperation {
 
     private boolean successful;
 
+    public TryPutOperation() {
+    }
+
     public TryPutOperation(String name, Data dataKey, Data value, long timeout) {
         super(name, dataKey, value);
         setWaitTimeout(timeout);
     }
 
-    public TryPutOperation() {
-    }
-
+    @Override
     public void run() {
         successful = recordStore.tryPut(dataKey, dataValue, ttl);
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return successful && recordStore.getRecord(dataKey) != null;
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(false);
     }
 
+    @Override
     public Object getResponse() {
         return successful;
     }

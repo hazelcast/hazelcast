@@ -71,9 +71,6 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-/**
- * @author mdogan 5/2/13
- */
 public class MapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_PORTABLE_FACTORY, -10);

@@ -43,6 +43,20 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     }
 
     @Override
+    public Operation getBackupOperation() {
+        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        if (backupProcessor == null) {
+            return null;
+        }
+        return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+    }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryWithPredicateOperation{}";
+    }
+
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         predicate = in.readObject();
@@ -52,17 +66,5 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(predicate);
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryWithPredicateOperation{}";
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null
-                ? new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate) : null;
     }
 }

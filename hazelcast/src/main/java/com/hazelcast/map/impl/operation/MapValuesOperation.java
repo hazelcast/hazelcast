@@ -16,16 +16,18 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapValueCollection;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.util.Collection;
 
 public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    Collection<Data> values;
+    private Collection<Data> values;
 
     public MapValuesOperation(String name) {
         super(name);
@@ -35,12 +37,15 @@ public class MapValuesOperation extends AbstractMapOperation implements Partitio
     public MapValuesOperation() {
     }
 
+    @Override
     public void run() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         values = recordStore.valuesData();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            LocalMapStatsImpl localMapStatsImpl = localMapStatsProvider.getLocalMapStatsImpl(name);
+            localMapStatsImpl.incrementOtherOperations();
         }
     }
 

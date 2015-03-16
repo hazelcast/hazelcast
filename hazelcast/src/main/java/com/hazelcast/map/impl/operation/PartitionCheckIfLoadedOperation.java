@@ -16,23 +16,25 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-
     private boolean isFinished;
+
+    public PartitionCheckIfLoadedOperation() {
+    }
 
     public PartitionCheckIfLoadedOperation(String name) {
         super(name);
     }
 
-    public PartitionCheckIfLoadedOperation() {
-    }
-
+    @Override
     public void run() {
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         isFinished = recordStore.isLoaded();
     }
 
@@ -40,5 +42,4 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
     public Object getResponse() {
         return isFinished;
     }
-
 }

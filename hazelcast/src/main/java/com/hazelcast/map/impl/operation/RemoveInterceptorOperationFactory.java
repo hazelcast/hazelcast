@@ -24,8 +24,8 @@ import java.io.IOException;
 
 public class RemoveInterceptorOperationFactory implements OperationFactory {
 
-    String id;
-    String name;
+    private String id;
+    private String name;
 
     public RemoveInterceptorOperationFactory() {
     }

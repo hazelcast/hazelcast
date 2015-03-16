@@ -26,9 +26,8 @@ import java.io.IOException;
 
 public class MapPutAllOperationFactory implements OperationFactory {
 
-    String name;
-    MapEntrySet entrySet = new MapEntrySet();
-
+    private String name;
+    private MapEntrySet entrySet = new MapEntrySet();
 
     public MapPutAllOperationFactory() {
     }

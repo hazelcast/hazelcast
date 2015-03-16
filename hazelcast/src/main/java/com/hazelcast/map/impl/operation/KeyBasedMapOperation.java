@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -42,12 +43,10 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     protected transient PartitionContainer partitionContainer;
     protected transient RecordStore recordStore;
 
-
     public KeyBasedMapOperation() {
     }
 
     public KeyBasedMapOperation(String name, Data dataKey) {
-        super();
         this.dataKey = dataKey;
         this.name = name;
     }
@@ -122,9 +121,13 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     }
 
     protected final void invalidateNearCaches() {
-        if (mapContainer.isNearCacheEnabled()
-                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            mapService.getMapServiceContext().getNearCacheProvider().invalidateAllNearCaches(name, dataKey);
+        if (!mapContainer.isNearCacheEnabled()) {
+            return;
+        }
+
+        if (mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+            NearCacheProvider nearCacheProvider = mapService.getMapServiceContext().getNearCacheProvider();
+            nearCacheProvider.invalidateAllNearCaches(name, dataKey);
         }
     }
 
@@ -133,6 +136,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         recordStore.evictEntries(now, backup);
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeData(dataKey);
@@ -141,6 +145,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         out.writeLong(ttl);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         dataKey = in.readData();

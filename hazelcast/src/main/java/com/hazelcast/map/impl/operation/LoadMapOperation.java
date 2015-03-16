@@ -40,7 +40,6 @@ public class LoadMapOperation extends AbstractMapOperation {
 
     @Override
     public void run() throws Exception {
-
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
 

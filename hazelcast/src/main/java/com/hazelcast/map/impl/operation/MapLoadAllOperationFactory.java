@@ -20,7 +20,6 @@ public class MapLoadAllOperationFactory implements OperationFactory {
     private List<Data> keys;
     private boolean replaceExistingValues;
 
-
     public MapLoadAllOperationFactory() {
         keys = Collections.emptyList();
     }

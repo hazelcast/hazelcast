@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
@@ -57,9 +58,9 @@ public class QueryOperation extends AbstractMapOperation {
 
     private static final long QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
-    Predicate predicate;
-    QueryResult result;
-    PagingPredicate pagingPredicate;
+    private Predicate predicate;
+    private QueryResult result;
+    private PagingPredicate pagingPredicate;
 
     public QueryOperation(String mapName, Predicate predicate) {
         super(mapName);
@@ -74,6 +75,8 @@ public class QueryOperation extends AbstractMapOperation {
 
     public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
+        MapService service = getService();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
         int partitionStateVersion = partitionService.getPartitionStateVersion();
@@ -87,7 +90,9 @@ public class QueryOperation extends AbstractMapOperation {
         result = new QueryResult();
         if (entries != null) {
             for (QueryableEntry entry : entries) {
-                result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+                QueryResultEntryImpl resultEntry = new QueryResultEntryImpl(
+                        entry.getKeyData(), entry.getKeyData(), entry.getValueData());
+                result.add(resultEntry);
             }
         } else {
             // run in parallel
@@ -97,14 +102,14 @@ public class QueryOperation extends AbstractMapOperation {
                 runParallel(initialPartitions);
             }
         }
-        Collection<Integer> finalPartitions = mapService.getMapServiceContext().getOwnedPartitions();
+        Collection<Integer> finalPartitions = mapServiceContext.getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            final MapServiceContext mapServiceContext = ((MapService) getService()).getMapServiceContext();
-            mapServiceContext
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsImpl localMapStatsImpl = mapServiceContext
+                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name);
+            localMapStatsImpl.incrementOtherOperations();
         }
 
         checkPartitionStateChanges(partitionService, partitionStateVersion);
@@ -171,6 +176,7 @@ public class QueryOperation extends AbstractMapOperation {
         }
     }
 
+    @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
@@ -181,16 +187,19 @@ public class QueryOperation extends AbstractMapOperation {
         return super.onException(throwable);
     }
 
+    @Override
     public Object getResponse() {
         return result;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(name);
         out.writeObject(predicate);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         name = in.readUTF();
@@ -208,6 +217,7 @@ public class QueryOperation extends AbstractMapOperation {
             this.partition = partitionId;
         }
 
+        @Override
         public Collection<QueryableEntry> call() throws Exception {
             MapContextQuerySupport mapContextQuerySupport = mapService.getMapServiceContext()
                     .getMapContextQuerySupport();

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -69,8 +70,8 @@ public class PostJoinMapOperation extends AbstractOperation {
 
     static class InterceptorInfo implements DataSerializable {
 
-        String mapName;
-        final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
+        private String mapName;
+        private final List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
 
         InterceptorInfo(String mapName) {
             this.mapName = mapName;
@@ -105,75 +106,19 @@ public class PostJoinMapOperation extends AbstractOperation {
         }
     }
 
-    static class MapIndexInfo implements DataSerializable {
-        String mapName;
-        private List<MapIndexInfo.IndexInfo> lsIndexes = new LinkedList<MapIndexInfo.IndexInfo>();
-
-        public MapIndexInfo(String mapName) {
-            this.mapName = mapName;
-        }
-
-        public MapIndexInfo() {
-        }
-
-        static class IndexInfo implements DataSerializable {
-            String attributeName;
-            boolean ordered;
-
-            IndexInfo() {
-            }
-
-            IndexInfo(String attributeName, boolean ordered) {
-                this.attributeName = attributeName;
-                this.ordered = ordered;
-            }
-
-            public void writeData(ObjectDataOutput out) throws IOException {
-                out.writeUTF(attributeName);
-                out.writeBoolean(ordered);
-            }
-
-            public void readData(ObjectDataInput in) throws IOException {
-                attributeName = in.readUTF();
-                ordered = in.readBoolean();
-            }
-        }
-
-        public void addIndexInfo(String attributeName, boolean ordered) {
-            lsIndexes.add(new MapIndexInfo.IndexInfo(attributeName, ordered));
-        }
-
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(mapName);
-            out.writeInt(lsIndexes.size());
-            for (MapIndexInfo.IndexInfo indexInfo : lsIndexes) {
-                indexInfo.writeData(out);
-            }
-        }
-
-        public void readData(ObjectDataInput in) throws IOException {
-            mapName = in.readUTF();
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                MapIndexInfo.IndexInfo indexInfo = new MapIndexInfo.IndexInfo();
-                indexInfo.readData(in);
-                lsIndexes.add(indexInfo);
-            }
-        }
-    }
-
     @Override
     public void run() throws Exception {
         MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         for (MapIndexInfo mapIndex : indexInfoList) {
-            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapIndex.mapName);
+            final MapContainer mapContainer = mapServiceContext.getMapContainer(mapIndex.mapName);
             final IndexService indexService = mapContainer.getIndexService();
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
                 indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
             }
         }
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
-            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(interceptorInfo.mapName);
+            final MapContainer mapContainer = mapServiceContext.getMapContainer(interceptorInfo.mapName);
             Map<String, MapInterceptor> interceptorMap = mapContainer.getInterceptorMap();
             List<Map.Entry<String, MapInterceptor>> entryList = interceptorInfo.interceptors;
             for (Map.Entry<String, MapInterceptor> entry : entryList) {
@@ -211,6 +156,67 @@ public class PostJoinMapOperation extends AbstractOperation {
             InterceptorInfo info = new InterceptorInfo();
             info.readData(in);
             interceptorInfoList.add(info);
+        }
+    }
+
+    static class MapIndexInfo implements DataSerializable {
+        private String mapName;
+        private List<MapIndexInfo.IndexInfo> lsIndexes = new LinkedList<MapIndexInfo.IndexInfo>();
+
+        public MapIndexInfo(String mapName) {
+            this.mapName = mapName;
+        }
+
+        public MapIndexInfo() {
+        }
+
+        static class IndexInfo implements DataSerializable {
+            private String attributeName;
+            private boolean ordered;
+
+            IndexInfo() {
+            }
+
+            IndexInfo(String attributeName, boolean ordered) {
+                this.attributeName = attributeName;
+                this.ordered = ordered;
+            }
+
+            @Override
+            public void writeData(ObjectDataOutput out) throws IOException {
+                out.writeUTF(attributeName);
+                out.writeBoolean(ordered);
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) throws IOException {
+                attributeName = in.readUTF();
+                ordered = in.readBoolean();
+            }
+        }
+
+        public void addIndexInfo(String attributeName, boolean ordered) {
+            lsIndexes.add(new MapIndexInfo.IndexInfo(attributeName, ordered));
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(mapName);
+            out.writeInt(lsIndexes.size());
+            for (MapIndexInfo.IndexInfo indexInfo : lsIndexes) {
+                indexInfo.writeData(out);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            mapName = in.readUTF();
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                MapIndexInfo.IndexInfo indexInfo = new MapIndexInfo.IndexInfo();
+                indexInfo.readData(in);
+                lsIndexes.add(indexInfo);
+            }
         }
     }
 }
