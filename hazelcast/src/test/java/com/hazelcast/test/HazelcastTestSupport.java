@@ -150,7 +150,8 @@ public abstract class HazelcastTestSupport {
     public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance, long timeoutSeconds) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run()
+                    throws Exception {
                 assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
             }
         }, timeoutSeconds);
@@ -232,11 +233,9 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void sleepAtLeastMillis(int millis) {
-        final long sleepUntil = System.currentTimeMillis() + millis;
-        long remaining = millis;
-        while (remaining > 0) {
-            sleepMillis((int) remaining);
-            remaining = sleepUntil - System.currentTimeMillis();
+        final long targetTime = System.currentTimeMillis() + millis + 1;
+        while (System.currentTimeMillis() < targetTime) {
+            sleepMillis(1);
         }
     }
 
