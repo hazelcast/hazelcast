@@ -268,11 +268,4 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         return memberGroupConfig;
     }
 
-    private void sleepAtLeastMillis(long ms) {
-        final long sleepUntil = System.currentTimeMillis() + ms;
-        while (System.currentTimeMillis() < sleepUntil) {
-            sleepMillis(1);
-        }
-    }
-
 }

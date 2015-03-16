@@ -27,6 +27,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import org.junit.After;
+import org.junit.ComparisonFailure;
 
 import java.util.Collection;
 import java.util.Map;
@@ -39,13 +41,9 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.After;
-import org.junit.ComparisonFailure;
 
 public abstract class HazelcastTestSupport {
 
@@ -231,6 +229,19 @@ public abstract class HazelcastTestSupport {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
         }
+    }
+
+    public static void sleepAtLeastMillis(int millis) {
+        final long sleepUntil = System.currentTimeMillis() + millis;
+        long remaining = millis;
+        while (remaining > 0) {
+            sleepMillis((int) remaining);
+            remaining = sleepUntil - System.currentTimeMillis();
+        }
+    }
+
+    public static void sleepAtLeastSeconds(int seconds) {
+        sleepAtLeastMillis(seconds * 1000);
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
