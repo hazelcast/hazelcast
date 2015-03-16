@@ -171,8 +171,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true, completionId);
                 break;
             case NONE:
-                cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false,
-                        completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+                cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false, completionId);
                 break;
             default:
                 break;
