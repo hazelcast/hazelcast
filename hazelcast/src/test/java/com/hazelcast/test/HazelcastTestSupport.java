@@ -170,11 +170,9 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void sleepAtLeastMillis(int millis) {
-        final long sleepUntil = System.currentTimeMillis() + millis;
-        long remaining = millis;
-        while (remaining > 0) {
-            sleepMillis((int) remaining);
-            remaining = sleepUntil - System.currentTimeMillis();
+        final long targetTime = System.currentTimeMillis() + millis + 1;
+        while (System.currentTimeMillis() < targetTime) {
+            sleepMillis(1);
         }
     }
 
