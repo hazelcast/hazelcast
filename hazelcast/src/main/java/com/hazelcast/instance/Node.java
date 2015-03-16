@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.instance;
 
 import com.hazelcast.ascii.TextCommandService;
@@ -178,7 +177,7 @@ public class Node {
         }
     }
 
-    public HazelcastThreadGroup getHazelcastThreadGroup(){
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
         return hazelcastThreadGroup;
     }
 
@@ -200,10 +199,9 @@ public class Node {
                     // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
                     if (!bindAddress.getInetAddress().isLoopbackAddress()) {
                         multicastSocket.setInterface(bindAddress.getInetAddress());
-                    }
-                    else if (multicastConfig.isLoopbackModeEnabled()) {
+                    } else if (multicastConfig.isLoopbackModeEnabled()) {
                         multicastSocket.setLoopbackMode(true);
-			            multicastSocket.setInterface(bindAddress.getInetAddress());
+                        multicastSocket.setInterface(bindAddress.getInetAddress());
                     }
                 } catch (Exception e) {
                     logger.warning(e);
@@ -384,8 +382,9 @@ public class Node {
             setActive(false);
             setMasterAddress(null);
             try {
-            	if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean())
-            		Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+                if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
+                    Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+                }
             } catch (Throwable ignored) {
             }
             versionCheck.shutdown();
@@ -563,10 +562,20 @@ public class Node {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
+        } else if (join.getConsulConfig().isEnabled()) {
+            Class clazz;
+            try {
+                logger.info("Creating ConsulJoiner");
+                clazz = Class.forName("com.hazelcast.consul.TcpIpJoinerOverConsul");
+                Constructor constructor = clazz.getConstructor(Node.class);
+                return (Joiner) constructor.newInstance(this);                
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
+
         return null;
     }
-
 
     public void setAsMaster() {
         logger.finest("This node is being set as the master");

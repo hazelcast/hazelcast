@@ -550,6 +550,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleTcpIp(child);
             } else if ("aws".equals(name)) {
                 handleAWS(child);
+            } else if ("consul".equals(name)) {
+                handleConsul(child);
             }
         }
 
@@ -557,6 +559,31 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         joinConfig.verify();
     }
 
+     private void handleConsul(final org.w3c.dom.Node node) {
+        final NamedNodeMap atts = node.getAttributes();
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        final ConsulConfig consulConfig = join.getConsulConfig();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final org.w3c.dom.Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                consulConfig.setEnabled(checkTrue(value));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                consulConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
+            }
+        }
+        final NodeList nodelist = node.getChildNodes();
+        final Set<String> nameTags = new HashSet<String>(Arrays.asList("name"));
+        for (int i = 0; i < nodelist.getLength(); i++) {
+            final org.w3c.dom.Node n = nodelist.item(i);
+            final String value = getTextContent(n).trim();
+            if (nameTags.contains(cleanNodeName(n.getNodeName()))) {
+                consulConfig.setName(value);
+            }
+        }
+    }
+     
+     
     private void handleAWS(Node node) {
         final JoinConfig join = config.getNetworkConfig().getJoin();
         final NamedNodeMap atts = node.getAttributes();

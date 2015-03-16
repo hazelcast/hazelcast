@@ -29,6 +29,8 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
+    private ConsulConfig consulConfig = new ConsulConfig();
+
     /**
      * @return the multicastConfig join configuration
      */
@@ -76,7 +78,18 @@ public class JoinConfig {
         this.awsConfig = isNotNull(awsConfig, "awsConfig");
         return this;
     }
+   
+    
+    public ConsulConfig getConsulConfig() {
+        return consulConfig;
+    }
 
+    public JoinConfig setConsulConfig(final ConsulConfig consulConfig) {
+        this.consulConfig = isNotNull(consulConfig, "consulConfig");
+        return this;
+    }
+
+    
     /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
