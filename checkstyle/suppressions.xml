@@ -266,7 +266,8 @@
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.BasicOperationService"/>
     <suppress checks="MethodCount" files="com.hazelcast.spi.impl.BasicOperationService"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.EventServiceImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling|MethodCount"
+              files="com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl"/>
     <!-- the invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.BasicInvocation"/>
     <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->

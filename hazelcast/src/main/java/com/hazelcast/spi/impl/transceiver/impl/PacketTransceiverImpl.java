@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.transceiver.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -8,14 +8,17 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.impl.InternalOperationService;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.TimeUnit;
 
 
 /**
- * Default {@link com.hazelcast.spi.impl.PacketTransceiver} implementation.
+ * Default {@link com.hazelcast.spi.impl.transceiver.PacketTransceiver} implementation.
  */
 public class PacketTransceiverImpl implements PacketTransceiver {
 
@@ -25,14 +28,14 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     private final Node node;
     private final ExecutionService executionService;
     private final ILogger logger;
-    private final EventServiceImpl eventService;
+    private final InternalEventService eventService;
     private final WanReplicationService wanReplicationService;
     private final OperationExecutor operationExecutor;
 
     public PacketTransceiverImpl(Node node,
                                  ILogger logger,
                                  InternalOperationService operationService,
-                                 EventServiceImpl eventService,
+                                 InternalEventService eventService,
                                  WanReplicationService wanReplicationService,
                                  ExecutionService executionService) {
         this.node = node;

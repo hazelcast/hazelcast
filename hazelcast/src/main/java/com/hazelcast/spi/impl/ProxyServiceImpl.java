@@ -38,6 +38,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -350,7 +351,7 @@ public class ProxyServiceImpl
                         proxies.remove(name);
                         throw ExceptionUtil.rethrow(e);
                     }
-                    nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(CREATED, serviceName, proxy));
+                    nodeEngine.getEventService().executeEventCallback(new ProxyEventProcessor(CREATED, serviceName, proxy));
                     if (publishEvent) {
                         publish(new DistributedObjectEventPacket(CREATED, serviceName, name));
                     }
@@ -362,20 +363,23 @@ public class ProxyServiceImpl
 
         void destroyProxy(String name, boolean publishEvent) {
             final DistributedObjectFuture proxyFuture = proxies.remove(name);
-            if (proxyFuture != null) {
-                DistributedObject proxy;
-                try {
-                    proxy = proxyFuture.get();
-                } catch (Throwable t) {
-                    logger.warning("Cannot destroy proxy [" + serviceName + ":" + name
-                            + "], since it's creation is failed with "
-                            + t.getClass().getName() + ": " + t.getMessage());
-                    return;
-                }
-                nodeEngine.eventService.executeEventCallback(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
-                if (publishEvent) {
-                    publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
-                }
+            if (proxyFuture == null) {
+                return;
+            }
+
+            DistributedObject proxy;
+            try {
+                proxy = proxyFuture.get();
+            } catch (Throwable t) {
+                logger.warning("Cannot destroy proxy [" + serviceName + ":" + name
+                        + "], since it's creation is failed with "
+                        + t.getClass().getName() + ": " + t.getMessage());
+                return;
+            }
+            InternalEventService eventService = nodeEngine.getEventService();
+            eventService.executeEventCallback(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
+            if (publishEvent) {
+                publish(new DistributedObjectEventPacket(DESTROYED, serviceName, name));
             }
         }
 
