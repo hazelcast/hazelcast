@@ -66,7 +66,7 @@ public class QueueConfigTest {
         config.setAsyncBackupCount(-1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setAsyncBackupCount_whenItsZero(){
         QueueConfig config = new QueueConfig();
         config.setAsyncBackupCount(0);
@@ -84,7 +84,7 @@ public class QueueConfigTest {
         config.setBackupCount(-1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setBackupCount_whenItsZero(){
         QueueConfig config = new QueueConfig();
         config.setBackupCount(0);

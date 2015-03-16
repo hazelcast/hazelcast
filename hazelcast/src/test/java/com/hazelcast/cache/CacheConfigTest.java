@@ -208,7 +208,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         config.setAsyncBackupCount(-1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setAsyncBackupCount_whenItsZero (){
         CacheConfig config = new CacheConfig();
         config.setAsyncBackupCount(0);
@@ -226,7 +226,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         config.setBackupCount(-1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void setBackupCount_whenItsZero(){
         CacheConfig config = new CacheConfig();
         config.setBackupCount(0);
