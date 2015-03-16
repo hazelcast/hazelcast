@@ -30,6 +30,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.InternalOperationService;
+import org.junit.After;
+import org.junit.ComparisonFailure;
 
 import java.util.Collection;
 import java.util.Map;
@@ -44,13 +46,9 @@ import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.After;
-import org.junit.ComparisonFailure;
 
 @SuppressWarnings("unused")
 public abstract class HazelcastTestSupport {
@@ -169,6 +167,19 @@ public abstract class HazelcastTestSupport {
             TimeUnit.SECONDS.sleep(seconds);
         } catch (InterruptedException ignored) {
         }
+    }
+
+    public static void sleepAtLeastMillis(int millis) {
+        final long sleepUntil = System.currentTimeMillis() + millis;
+        long remaining = millis;
+        while (remaining > 0) {
+            sleepMillis((int) remaining);
+            remaining = sleepUntil - System.currentTimeMillis();
+        }
+    }
+
+    public static void sleepAtLeastSeconds(int seconds) {
+        sleepAtLeastMillis(seconds * 1000);
     }
 
     public static String generateRandomString(int length) {
