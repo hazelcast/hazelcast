@@ -28,10 +28,6 @@ import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERV
 
 public class ClientInvocation implements Runnable {
 
-    /**
-     * A response indicating the 'null' value.
-     */
-    static final Object NULL_RESPONSE = new InternalResponse("ClientInvocation::NULL_RESPONSE");
     private static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     private static final int UNASSIGNED_PARTITION = -1;
     private static final ILogger LOGGER = Logger.getLogger(ClientInvocation.class);
@@ -51,19 +47,6 @@ public class ClientInvocation implements Runnable {
     private final Connection connection;
     private volatile ClientConnection sendConnection;
 
-    static final class InternalResponse {
-
-        private String toString;
-
-        private InternalResponse(String toString) {
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
-    }
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
                              ClientRequest request, int partitionId, Address address,
@@ -185,7 +168,7 @@ public class ClientInvocation implements Runnable {
 
     public void notify(Object response) {
         if (response == null) {
-            response = NULL_RESPONSE;
+            throw new IllegalArgumentException("response can't be null");
         }
         if (!(response instanceof Exception)) {
             clientInvocationFuture.setResponse(response);

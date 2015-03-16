@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -45,11 +44,9 @@ public class DefaultPortableWriter implements PortableWriter {
         // room for final offset
         out.writeZeroBytes(4);
 
-        out.writeInt(cd.getFieldCount());
-
         this.offset = out.position();
         // one additional for raw data
-        int fieldIndexesLength = (cd.getFieldCount() + 1) * Bits.INT_SIZE_IN_BYTES;
+        int fieldIndexesLength = (cd.getFieldCount() + 1) * 4;
         out.writeZeroBytes(fieldIndexesLength);
     }
 
@@ -58,61 +55,57 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     public void writeInt(String fieldName, int value) throws IOException {
-        setPosition(fieldName, FieldType.INT);
+        setPosition(fieldName);
         out.writeInt(value);
     }
 
     public void writeLong(String fieldName, long value) throws IOException {
-        setPosition(fieldName, FieldType.LONG);
+        setPosition(fieldName);
         out.writeLong(value);
     }
 
     public void writeUTF(String fieldName, String str) throws IOException {
-        setPosition(fieldName, FieldType.UTF);
+        setPosition(fieldName);
         out.writeUTF(str);
     }
 
     public void writeBoolean(String fieldName, boolean value) throws IOException {
-        setPosition(fieldName, FieldType.BOOLEAN);
+        setPosition(fieldName);
         out.writeBoolean(value);
     }
 
     public void writeByte(String fieldName, byte value) throws IOException {
-        setPosition(fieldName, FieldType.BYTE);
+        setPosition(fieldName);
         out.writeByte(value);
     }
 
     public void writeChar(String fieldName, int value) throws IOException {
-        setPosition(fieldName, FieldType.CHAR);
+        setPosition(fieldName);
         out.writeChar(value);
     }
 
     public void writeDouble(String fieldName, double value) throws IOException {
-        setPosition(fieldName, FieldType.DOUBLE);
+        setPosition(fieldName);
         out.writeDouble(value);
     }
 
     public void writeFloat(String fieldName, float value) throws IOException {
-        setPosition(fieldName, FieldType.FLOAT);
+        setPosition(fieldName);
         out.writeFloat(value);
     }
 
     public void writeShort(String fieldName, short value) throws IOException {
-        setPosition(fieldName, FieldType.SHORT);
+        setPosition(fieldName);
         out.writeShort(value);
     }
 
     public void writePortable(String fieldName, Portable portable) throws IOException {
-        FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE);
+        FieldDefinition fd = setPosition(fieldName);
         final boolean isNull = portable == null;
         out.writeBoolean(isNull);
-
-        out.writeInt(fd.getFactoryId());
-        out.writeInt(fd.getClassId());
-
         if (!isNull) {
             checkPortableAttributes(fd, portable);
-            serializer.writeInternal(out, portable);
+            serializer.write(out, portable);
         }
     }
 
@@ -128,56 +121,49 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
-        setPosition(fieldName, FieldType.PORTABLE);
+        setPosition(fieldName);
         out.writeBoolean(true);
-
-        out.writeInt(factoryId);
-        out.writeInt(classId);
     }
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
-        setPosition(fieldName, FieldType.BYTE_ARRAY);
+        setPosition(fieldName);
         out.writeByteArray(values);
     }
 
     public void writeCharArray(String fieldName, char[] values) throws IOException {
-        setPosition(fieldName, FieldType.CHAR_ARRAY);
+        setPosition(fieldName);
         out.writeCharArray(values);
     }
 
     public void writeIntArray(String fieldName, int[] values) throws IOException {
-        setPosition(fieldName, FieldType.INT_ARRAY);
+        setPosition(fieldName);
         out.writeIntArray(values);
     }
 
     public void writeLongArray(String fieldName, long[] values) throws IOException {
-        setPosition(fieldName, FieldType.LONG_ARRAY);
+        setPosition(fieldName);
         out.writeLongArray(values);
     }
 
     public void writeDoubleArray(String fieldName, double[] values) throws IOException {
-        setPosition(fieldName, FieldType.DOUBLE_ARRAY);
+        setPosition(fieldName);
         out.writeDoubleArray(values);
     }
 
     public void writeFloatArray(String fieldName, float[] values) throws IOException {
-        setPosition(fieldName, FieldType.FLOAT_ARRAY);
+        setPosition(fieldName);
         out.writeFloatArray(values);
     }
 
     public void writeShortArray(String fieldName, short[] values) throws IOException {
-        setPosition(fieldName, FieldType.SHORT_ARRAY);
+        setPosition(fieldName);
         out.writeShortArray(values);
     }
 
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
-        FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE_ARRAY);
+        FieldDefinition fd = setPosition(fieldName);
         final int len = portables == null ? 0 : portables.length;
         out.writeInt(len);
-
-        out.writeInt(fd.getFactoryId());
-        out.writeInt(fd.getClassId());
-
         if (len > 0) {
             final int offset = out.position();
             out.writeZeroBytes(len * 4);
@@ -185,13 +171,13 @@ public class DefaultPortableWriter implements PortableWriter {
                 Portable portable = portables[i];
                 checkPortableAttributes(fd, portable);
                 int position = out.position();
-                out.writeInt(offset + i * Bits.INT_SIZE_IN_BYTES, position);
-                serializer.writeInternal(out, portable);
+                out.writeInt(offset + i * 4, position);
+                serializer.write(out, portable);
             }
         }
     }
 
-    private FieldDefinition setPosition(String fieldName, FieldType fieldType) throws IOException {
+    private FieldDefinition setPosition(String fieldName) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot write Portable fields after getRawDataOutput() is called!");
         }
@@ -203,10 +189,7 @@ public class DefaultPortableWriter implements PortableWriter {
         if (writtenFields.add(fieldName)) {
             int pos = out.position();
             int index = fd.getIndex();
-            out.writeInt(offset + index * Bits.INT_SIZE_IN_BYTES, pos);
-            out.writeShort(fieldName.length());
-            out.writeBytes(fieldName);
-            out.writeByte(fieldType.getId());
+            out.writeInt(offset + index * 4, pos);
         } else {
             throw new HazelcastSerializationException("Field '" + fieldName + "' has already been written!");
         }
@@ -218,7 +201,7 @@ public class DefaultPortableWriter implements PortableWriter {
             int pos = out.position();
             // last index
             int index = cd.getFieldCount();
-            out.writeInt(offset + index * Bits.INT_SIZE_IN_BYTES, pos);
+            out.writeInt(offset + index * 4, pos);
         }
         raw = true;
         return out;

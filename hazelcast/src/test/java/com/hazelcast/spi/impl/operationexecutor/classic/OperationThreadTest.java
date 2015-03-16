@@ -29,7 +29,7 @@ public class OperationThreadTest extends AbstractClassicOperationExecutorTest {
         DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         Data data = serializationService.toData(operation);
 
-        Packet packet = new Packet(data, operation.getPartitionId());
+        Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
         packet.setHeader(Packet.HEADER_OP);
 
         doThrow(new OutOfMemoryError()).when(handler).run(packet);

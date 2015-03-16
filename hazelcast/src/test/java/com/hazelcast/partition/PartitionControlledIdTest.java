@@ -41,7 +41,6 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -79,9 +78,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         config.getMapConfig("default")
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig(partitioningStrategy));
-
-        config.setProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS,
-                partitioningStrategy.getClass().getName());
 
         TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(4);
         instances = instanceFactory.newInstances(config);

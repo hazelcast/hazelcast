@@ -67,7 +67,7 @@ public class MockSimpleClient implements SimpleClient {
 
     public void send(Object o) throws IOException {
         Data data = serializationService.toData(o);
-        Packet packet = new Packet(data);
+        Packet packet = new Packet(data, serializationService.getPortableContext());
         packet.setConn(connection);
         clientEngine.handlePacket(packet);
     }

@@ -16,25 +16,12 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import java.nio.ByteBuffer;
 
-import java.io.IOException;
+interface PortableDataInput extends BufferObjectDataInput {
 
-interface SerializerAdapter {
+    ByteBuffer getHeaderBuffer();
 
-    void write(ObjectDataOutput out, Object object) throws IOException;
-
-    Object read(ObjectDataInput in) throws IOException;
-
-    Data toData(Object object, int partitionHash) throws IOException;
-
-    Object toObject(Data data) throws IOException;
-
-    int getTypeId();
-
-    void destroy();
-
-    Serializer getImpl();
 }

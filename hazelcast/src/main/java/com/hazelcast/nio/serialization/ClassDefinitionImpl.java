@@ -22,11 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-class ClassDefinitionImpl implements ClassDefinition {
+class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
-    private int factoryId;
-    private int classId;
-    private int version = -1;
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
 
     public ClassDefinitionImpl() {
@@ -50,10 +47,12 @@ class ClassDefinitionImpl implements ClassDefinition {
         if (fieldIndex < 0 || fieldIndex >= fieldDefinitionsMap.size()) {
             throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
         }
+        int count = 0;
         for (FieldDefinition fieldDefinition : fieldDefinitionsMap.values()) {
-            if (fieldIndex == fieldDefinition.getIndex()) {
+            if (fieldIndex == count) {
                 return fieldDefinition;
             }
+            count++;
         }
         throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
     }
@@ -89,18 +88,6 @@ class ClassDefinitionImpl implements ClassDefinition {
     @Override
     public int getFieldCount() {
         return fieldDefinitionsMap.size();
-    }
-
-    public final int getFactoryId() {
-        return factoryId;
-    }
-
-    public final int getClassId() {
-        return classId;
-    }
-
-    public final int getVersion() {
-        return version;
     }
 
     void setVersionIfNotSet(int version) {

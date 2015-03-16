@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 
@@ -140,7 +141,7 @@ public class CacheReplicationOperation extends AbstractOperation {
             // expired entries were found while serializing, since the
             // real subCount will then be different from the one written
             // before
-            out.writeData(null);
+            out.writeData(new DefaultData());
         }
     }
 
@@ -166,7 +167,7 @@ public class CacheReplicationOperation extends AbstractOperation {
                 // Empty data received so reading can be stopped here since
                 // since the real object subCount might be different from
                 // the number on the stream due to found expired entries
-                if (key == null) {
+                if (key.dataSize() == 0) {
                     break;
                 }
                 CacheRecord record = in.readObject();

@@ -16,25 +16,35 @@
 
 package com.hazelcast.nio.serialization;
 
+public abstract class BinaryClassDefinition implements ClassDefinition {
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+    int factoryId;
+    int classId;
+    int version = -1;
 
-import java.io.IOException;
+    private transient byte[] binary;
 
-interface SerializerAdapter {
+    public BinaryClassDefinition() {
+    }
 
-    void write(ObjectDataOutput out, Object object) throws IOException;
+    public final int getFactoryId() {
+        return factoryId;
+    }
 
-    Object read(ObjectDataInput in) throws IOException;
+    public final int getClassId() {
+        return classId;
+    }
 
-    Data toData(Object object, int partitionHash) throws IOException;
+    public final int getVersion() {
+        return version;
+    }
 
-    Object toObject(Data data) throws IOException;
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+    public final byte[] getBinary() {
+        return binary;
+    }
 
-    int getTypeId();
-
-    void destroy();
-
-    Serializer getImpl();
+    final void setBinary(byte[] binary) {
+        this.binary = binary;
+    }
 }

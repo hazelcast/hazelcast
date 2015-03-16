@@ -78,24 +78,6 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
-    @Override
-    public void writeInt(int v, ByteOrder byteOrder) throws IOException {
-        if (byteOrder != ByteOrder.nativeOrder()) {
-            writeInt(Integer.reverseBytes(v));
-        } else {
-            writeInt(v);
-        }
-    }
-
-    @Override
-    public void writeInt(int position, int v, ByteOrder byteOrder) throws IOException {
-        if (byteOrder != ByteOrder.nativeOrder()) {
-            writeInt(position, Integer.reverseBytes(v));
-        } else {
-            writeInt(position, v);
-        }
-    }
-
     public void writeLong(final long v) throws IOException {
         ensureAvailable(LONG_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
@@ -107,24 +89,6 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
-    @Override
-    public void writeLong(long v, ByteOrder byteOrder) throws IOException {
-        if (byteOrder != ByteOrder.nativeOrder()) {
-            writeLong(Long.reverseBytes(v));
-        } else {
-            writeLong(v);
-        }
-    }
-
-    @Override
-    public void writeLong(int position, long v, ByteOrder byteOrder) throws IOException {
-        if (byteOrder != ByteOrder.nativeOrder()) {
-            writeLong(position, Long.reverseBytes(v));
-        } else {
-            writeLong(position, v);
-        }
-    }
-
     public void writeShort(final int v) throws IOException {
         ensureAvailable(SHORT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (short) v);
@@ -134,26 +98,6 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
     public void writeShort(int position, final int v) throws IOException {
         checkAvailable(position, SHORT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (short) v);
-    }
-
-    @Override
-    public void writeShort(int v, ByteOrder byteOrder) throws IOException {
-        short s = (short) v;
-        if (byteOrder != ByteOrder.nativeOrder()) {
-            writeShort(Short.reverseBytes(s));
-        } else {
-            writeShort(v);
-        }
-    }
-
-    @Override
-    public void writeShort(int position, int v, ByteOrder byteOrder) throws IOException {
-        short s = (short) v;
-        if (byteOrder != ByteOrder.nativeOrder()) {
-            writeShort(position, Short.reverseBytes(s));
-        } else {
-            writeShort(position, v);
-        }
     }
 
     public void writeCharArray(char[] values) throws IOException {

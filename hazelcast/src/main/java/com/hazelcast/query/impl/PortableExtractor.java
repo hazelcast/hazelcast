@@ -58,6 +58,8 @@ final class PortableExtractor {
         FIELD_EXTRACTORS[FieldType.DOUBLE_ARRAY.getId()] = new PortableUnsupportedFieldExtractor();
     }
 
+    private static final FieldDefinition NULL_PORTABLE_FIELD_DEFINITION = createNullPortableFieldDefinition();
+
     private static final PortableFieldExtractor NULL_PORTABLE_FIELD_EXTRACTOR = createNullPortableFieldExtractor();
 
     private PortableExtractor() {
@@ -65,47 +67,79 @@ final class PortableExtractor {
 
     static Comparable extractValue(SerializationService serializationService, Data data, String fieldName)
             throws IOException {
-        PortableContext context = serializationService.getPortableContext();
-        PortableFieldExtractor fieldExtractor = getFieldExtractor(context, data, fieldName);
+        PortableContext portableContext = serializationService.getPortableContext();
+        PortableFieldExtractor fieldExtractor = getFieldExtractor(data, fieldName, portableContext);
         PortableReader reader = serializationService.createPortableReader(data);
         return fieldExtractor.extract(reader, fieldName);
     }
 
-    private static PortableFieldExtractor getFieldExtractor(PortableContext context, Data data, String fieldName)
-            throws IOException {
+    private static PortableFieldExtractor getFieldExtractor(Data data, String fieldName,
+                                                            PortableContext portableContext) {
 
-        ClassDefinition classDefinition = context.lookupClassDefinition(data);
-        FieldDefinition fieldDefinition = context.getFieldDefinition(classDefinition, fieldName);
-
-        if (fieldDefinition != null) {
-            FieldType fieldType = fieldDefinition.getType();
-            int fieldTypeId = fieldType.getId();
-            if (fieldTypeId < 0 || fieldTypeId >= FIELD_EXTRACTORS.length) {
-                throw new ArrayIndexOutOfBoundsException("Invalid fieldType: " + fieldTypeId);
-            }
-
-            PortableFieldExtractor fieldExtractor = FIELD_EXTRACTORS[fieldTypeId];
-            if (fieldExtractor == null) {
-                throw new QueryException("Field extractor is not defined: " + fieldTypeId);
-            }
-            return fieldExtractor;
-        } else {
+        FieldDefinition fieldDefinition = getFieldDefinition(data, fieldName, portableContext);
+        if (fieldDefinition instanceof NullPortableFieldDefinition) {
             return NULL_PORTABLE_FIELD_EXTRACTOR;
         }
+        int fieldType = fieldDefinition.getType().getId();
+        if (fieldType < 0 || fieldType >= FIELD_EXTRACTORS.length) {
+            throw new ArrayIndexOutOfBoundsException("Invalid fieldType: " + fieldType);
+        }
+
+        PortableFieldExtractor fieldExtractor = FIELD_EXTRACTORS[fieldType];
+        if (fieldExtractor == null) {
+            throw new QueryException("Field extractor is not defined: " + fieldType);
+        }
+        return fieldExtractor;
+    }
+
+    private static FieldDefinition getFieldDefinition(Data data, String fieldName, PortableContext portableContext) {
+        ClassDefinition classDefinition = portableContext.lookupClassDefinition(data);
+        FieldDefinition fieldDefinition = portableContext.getFieldDefinition(classDefinition, fieldName);
+        return fieldDefinition == null ? NULL_PORTABLE_FIELD_DEFINITION : fieldDefinition;
     }
 
     static AttributeType getAttributeType(PortableContext portableContext, Data data, String fieldName) {
-        PortableFieldExtractor fieldExtractor;
-        try {
-            fieldExtractor = getFieldExtractor(portableContext, data, fieldName);
-        } catch (IOException e) {
-            throw new QueryException(e);
-        }
+        PortableFieldExtractor fieldExtractor = getFieldExtractor(data, fieldName, portableContext);
         return fieldExtractor.getAttributeType();
     }
 
     private static PortableFieldExtractor createNullPortableFieldExtractor() {
         return new NullPortableFieldExtractor();
+    }
+
+    private static FieldDefinition createNullPortableFieldDefinition() {
+        return new NullPortableFieldDefinition();
+    }
+
+    /**
+     * Represent an unknown {@link com.hazelcast.nio.serialization.Portable} field.
+     */
+    private static final class NullPortableFieldDefinition implements FieldDefinition {
+
+        @Override
+        public FieldType getType() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String getName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getIndex() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getClassId() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getFactoryId() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private static class PortableIntegerFieldExtractor implements PortableFieldExtractor {
