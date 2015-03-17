@@ -18,14 +18,13 @@ You can use Hazelcast Simulator for the following use cases:
 
 Hazelcast Simulator is available as a downloadable package on the Hazelcast [web site](http://www.hazelcast.org/download). Please refer to the [Installing Simulator section](#installing-simulator) for more information.
 
-
 ## Key Concepts
 
 The following are the key concepts mentioned with Hazelcast Simulator.
 
 - **Test** -  A test class for the functionality you want to test, e.g. a Hazelcast map. It may seem like a JUnit test, but it uses custom annotations to define methods for different test phases (e.g. setup, warmup, run, verify).
 
-- **TestSuite** -  A property file that contains the name of the test class and the properties you want to set on that test class instance. In most cases, a `testsuite` contains a single test class, but you can configure multiple tests within a single `TestSuite`.
+- **TestSuite** -  A property file that contains the name of the test class and the properties you want to set on that test class instance. In most cases, a `TestSuite` contains a single test class, but you can configure multiple tests within a single `TestSuite`.
 
 - **Failure** -  An indication that something has gone wrong. Failures are picked up by the `Agent` and sent back to the `Coordinator`. Please see below for the descriptions of the `Agent` and `Coordinator`.
 
