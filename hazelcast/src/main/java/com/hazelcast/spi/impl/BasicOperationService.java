@@ -107,7 +107,7 @@ import static java.lang.Math.min;
  * @see com.hazelcast.spi.impl.BasicPartitionInvocation
  * @see com.hazelcast.spi.impl.BasicTargetInvocation
  */
-final class BasicOperationService implements InternalOperationService {
+public final class BasicOperationService implements InternalOperationService {
 
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -476,7 +476,6 @@ final class BasicOperationService implements InternalOperationService {
         return true;
     }
 
-    @Override
     public void onMemberLeft(final MemberImpl member) {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
@@ -493,7 +492,6 @@ final class BasicOperationService implements InternalOperationService {
         }, SCHEDULE_DELAY, TimeUnit.MILLISECONDS);
     }
 
-    @Override
     public void reset() {
         for (BasicInvocation invocation : invocations.values()) {
             try {
@@ -505,7 +503,6 @@ final class BasicOperationService implements InternalOperationService {
         invocations.clear();
     }
 
-    @Override
     public void shutdown() {
         shutdown = true;
         logger.finest("Stopping operation threads...");

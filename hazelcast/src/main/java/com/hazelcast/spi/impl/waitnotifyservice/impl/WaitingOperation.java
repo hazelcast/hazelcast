@@ -72,7 +72,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
 
     public boolean isCallTimedOut() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        InternalOperationService operationService = nodeEngine.getOperationService();
         if (operationService.isCallTimedOut(op)) {
             cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
             return true;

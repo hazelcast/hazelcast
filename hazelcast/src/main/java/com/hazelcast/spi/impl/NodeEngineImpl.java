@@ -33,7 +33,6 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
@@ -65,7 +64,6 @@ import java.util.LinkedList;
  */
 public class NodeEngineImpl implements NodeEngine {
 
-    final InternalOperationService operationService;
     final ExecutionServiceImpl executionService;
 
     private final Node node;
@@ -73,6 +71,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final WaitNotifyServiceImpl waitNotifyService;
     private final EventServiceImpl eventService;
+    private final BasicOperationService operationService;
     private final ServiceManager serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
@@ -144,7 +143,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public OperationService getOperationService() {
+    public InternalOperationService getOperationService() {
         return operationService;
     }
 
