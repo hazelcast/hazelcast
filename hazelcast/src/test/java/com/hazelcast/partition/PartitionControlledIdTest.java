@@ -44,8 +44,10 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -126,7 +128,8 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
         LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
-        assertTrue(lockStore.isLocked(node.getSerializationService().toData(lock.getName())));
+        Data key = node.getSerializationService().toData(lock.getName(), StringPartitioningStrategy.INSTANCE);
+        assertTrue(lockStore.isLocked(key));
     }
 
     @Test
