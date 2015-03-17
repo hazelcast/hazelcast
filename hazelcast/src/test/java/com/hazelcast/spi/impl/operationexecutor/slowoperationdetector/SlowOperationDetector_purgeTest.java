@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,15 +33,28 @@ import java.util.Collection;
 @Category(SlowTest.class)
 public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstractTest {
 
-    @Test
-    public void testPurging_Invocation() {
+    private HazelcastInstance instance;
+    private IMap<String, String> map;
+
+    private void setup(String logRetentionSeconds) {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "3");
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, logRetentionSeconds);
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
 
-        HazelcastInstance instance = getSingleNodeCluster(config);
-        IMap<String, String> map = getMapWithSingleElement(instance);
+        instance = getSingleNodeCluster(config);
+        map = getMapWithSingleElement(instance);
+    }
+
+    @After
+    public void teardown() {
+        shutdownOperationService(instance);
+        shutdownNodeFactory();
+    }
+
+    @Test
+    public void testPurging_Invocation() {
+        setup("3");
 
         // all of these entry processors are executed after each other, not in parallel
         // so only the last one will survive the purging
@@ -51,8 +64,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         map.executeOnEntries(new SlowEntryProcessor(3));
         map.executeOnEntries(new SlowEntryProcessor(2));
 
-        OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
-        operationService.shutdown();
+        shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 1);
@@ -71,13 +83,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
     @Test
     public void testPurging_SlowOperationLog() {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "2");
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
-
-        HazelcastInstance instance = getSingleNodeCluster(config);
-        IMap<String, String> map = getMapWithSingleElement(instance);
+        setup("2");
 
         // all of these entry processors are executed after each other, not in parallel
         // so none of them will survive the purging
@@ -86,8 +92,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         }
         sleepSeconds(3);
 
-        OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
-        operationService.shutdown();
+        shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 0);

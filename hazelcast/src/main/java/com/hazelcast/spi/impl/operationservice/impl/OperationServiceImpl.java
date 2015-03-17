@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -151,8 +151,8 @@ public final class OperationServiceImpl implements InternalOperationService {
     }
 
     @Override
-    public Collection<JsonSerializable> getSlowOperations() {
-        return slowOperationDetector.getSlowOperations();
+    public List<SlowOperationDTO> getSlowOperationDTOs() {
+        return slowOperationDetector.getSlowOperationDTOs();
     }
 
     public InvocationRegistry getInvocationsRegistry() {

@@ -26,5 +26,4 @@ public interface LocalInstanceStats extends JsonSerializable {
     long STAT_NOT_AVAILABLE = -99L;
 
     long getCreationTime();
-
 }
