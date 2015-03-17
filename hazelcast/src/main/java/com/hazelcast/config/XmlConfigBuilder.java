@@ -649,7 +649,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleMemberList(n);
             } else if (cleanNodeName(n.getNodeName()).equals("required-member")) {
                 if (tcpIpConfig.getRequiredMember() != null) {
-                    throw new InvalidConfigurationException("Duplicate required-member'" + "' definition found in XML configuration. ");
+                    throw new InvalidConfigurationException("Duplicate required-member"
+                            + " definition found in XML configuration. ");
                 }
                 tcpIpConfig.setRequiredMember(value);
             } else if (memberTags.contains(cleanNodeName(n.getNodeName()))) {
