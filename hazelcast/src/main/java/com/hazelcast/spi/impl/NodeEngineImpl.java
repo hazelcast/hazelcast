@@ -30,7 +30,6 @@ import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
@@ -46,6 +45,8 @@ import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 import com.hazelcast.spi.impl.transceiver.impl.PacketTransceiverImpl;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -64,14 +65,12 @@ import java.util.LinkedList;
  */
 public class NodeEngineImpl implements NodeEngine {
 
-    final ExecutionServiceImpl executionService;
-
     private final Node node;
     private final ILogger logger;
-
-    private final WaitNotifyServiceImpl waitNotifyService;
     private final EventServiceImpl eventService;
     private final BasicOperationService operationService;
+    private final ExecutionServiceImpl executionService;
+    private final WaitNotifyServiceImpl waitNotifyService;
     private final ServiceManager serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
@@ -80,16 +79,16 @@ public class NodeEngineImpl implements NodeEngine {
 
     public NodeEngineImpl(Node node) {
         this.node = node;
-        logger = node.getLogger(NodeEngine.class.getName());
-        proxyService = new ProxyServiceImpl(this);
-        serviceManager = new ServiceManager(this);
-        executionService = new ExecutionServiceImpl(this);
-        operationService = new BasicOperationService(this);
-        eventService = new EventServiceImpl(this);
-        waitNotifyService = new WaitNotifyServiceImpl(this);
-        transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-        packetTransceiver = new PacketTransceiverImpl(
+        this.logger = node.getLogger(NodeEngine.class.getName());
+        this.proxyService = new ProxyServiceImpl(this);
+        this.serviceManager = new ServiceManager(this);
+        this.executionService = new ExecutionServiceImpl(this);
+        this.operationService = new BasicOperationService(this);
+        this.eventService = new EventServiceImpl(this);
+        this.waitNotifyService = new WaitNotifyServiceImpl(this);
+        this.transactionManagerService = new TransactionManagerServiceImpl(this);
+        this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+        this.packetTransceiver = new PacketTransceiverImpl(
                 node, logger, operationService, eventService, wanReplicationService, executionService);
     }
 
@@ -148,7 +147,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public ExecutionService getExecutionService() {
+    public InternalExecutionService getExecutionService() {
         return executionService;
     }
 
