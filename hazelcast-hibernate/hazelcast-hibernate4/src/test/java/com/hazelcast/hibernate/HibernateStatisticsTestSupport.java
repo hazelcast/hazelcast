@@ -165,7 +165,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         for (int i = 0; i < queryCount; i++) {
             list = executeQuery(sf);
             assertEquals(entityCount, list.size());
-            sleep(2);
+            sleepAtLeastSeconds(1);
         }
 
         assertNotNull(list);
