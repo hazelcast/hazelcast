@@ -23,7 +23,7 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.ProxyServiceImpl;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
