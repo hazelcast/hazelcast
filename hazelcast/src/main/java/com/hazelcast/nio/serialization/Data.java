@@ -28,7 +28,7 @@ public interface Data {
      *
      * @return binary data
      */
-    byte[] getData();
+    byte[] toByteArray();
 
     /**
      * Returns serialization type of binary form. It's defined by

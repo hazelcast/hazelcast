@@ -58,10 +58,6 @@ public final class DefaultData implements Data {
 
     @Override
     public int getPartitionHash() {
-        if (totalSize() == 0) {
-            return 0;
-        }
-
         if (hasPartitionHash()) {
             return Bits.readIntB(data, data.length - Bits.INT_SIZE_IN_BYTES);
         }
@@ -74,7 +70,7 @@ public final class DefaultData implements Data {
     }
 
     @Override
-    public byte[] getData() {
+    public byte[] toByteArray() {
         return data;
     }
 
@@ -115,7 +111,7 @@ public final class DefaultData implements Data {
             return false;
         }
 
-        return dataSize == 0 || equals(this.data, data.getData());
+        return dataSize == 0 || equals(this.data, data.toByteArray());
     }
 
     // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
@@ -159,6 +155,7 @@ public final class DefaultData implements Data {
         sb.append("type=").append(getType());
         sb.append(", hashCode=").append(hashCode());
         sb.append(", partitionHash=").append(getPartitionHash());
+        sb.append(", totalSize=").append(totalSize());
         sb.append(", dataSize=").append(dataSize());
         sb.append(", heapCost=").append(getHeapCost());
         sb.append('}');

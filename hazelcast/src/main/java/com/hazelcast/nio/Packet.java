@@ -300,7 +300,7 @@ public final class Packet implements SocketWritable, SocketReadable {
                     done = false;
                 }
 
-                byte[] byteArray = data.getData();
+                byte[] byteArray = data.toByteArray();
                 destination.put(byteArray, valueOffset, bytesWrite);
                 valueOffset += bytesWrite;
 
@@ -320,7 +320,7 @@ public final class Packet implements SocketWritable, SocketReadable {
                 bytes = new byte[size];
                 data = new DefaultData(bytes);
             } else {
-                bytes = data.getData();
+                bytes = data.toByteArray();
             }
 
             if (size > 0) {

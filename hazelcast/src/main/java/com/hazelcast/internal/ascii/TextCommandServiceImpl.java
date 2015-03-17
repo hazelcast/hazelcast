@@ -131,7 +131,7 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public byte[] toByteArray(Object value) {
         Data data = node.getSerializationService().toData(value);
-        return data.getData();
+        return data.toByteArray();
     }
 
     @Override

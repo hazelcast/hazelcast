@@ -342,10 +342,7 @@ public class SerializationServiceImpl implements SerializationService {
     }
 
     protected void writeDataInternal(ObjectDataOutput out, Data data) throws IOException {
-        int size = data.dataSize() + DefaultData.DATA_OFFSET;
-        out.writeInt(size);
-        byte[] bytes = data.getData();
-        out.write(bytes);
+        out.writeByteArray(data.toByteArray());
     }
 
     @Override
@@ -355,17 +352,10 @@ public class SerializationServiceImpl implements SerializationService {
             if (isNull) {
                 return null;
             }
-            return readDataInternal(input);
+            return new DefaultData(input.readByteArray());
         } catch (Throwable e) {
             throw handleException(e);
         }
-    }
-
-    protected Data readDataInternal(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        byte[] bytes = new byte[size];
-        in.readFully(bytes);
-        return new DefaultData(bytes);
     }
 
     public void disposeData(Data data) {
