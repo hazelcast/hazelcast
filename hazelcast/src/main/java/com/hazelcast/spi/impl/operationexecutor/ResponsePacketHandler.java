@@ -1,7 +1,7 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.Response;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 /**
  * The {@link com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler} is responsible for handling

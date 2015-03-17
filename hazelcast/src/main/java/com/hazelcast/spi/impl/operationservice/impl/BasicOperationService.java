@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -50,7 +50,16 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
@@ -89,7 +98,7 @@ import static java.lang.Math.min;
  * This is the Basic InternalOperationService and depends on Java 6.
  * <p/>
  * All the classes that begin with 'Basic' are implementation detail that depend on the
- * {@link com.hazelcast.spi.impl.BasicOperationService}.
+ * {@link BasicOperationService}.
  * <p/>
  * <h1>System Operation</h1>
  * When a {@link com.hazelcast.spi.UrgentSystemOperation} is invoked on this OperationService, it will be executed with a
@@ -102,10 +111,10 @@ import static java.lang.Math.min;
  * needed, the operation is set on the urgent queue. So local and remote execution of System operations will obey
  * the urgency.
  *
- * @see com.hazelcast.spi.impl.BasicInvocation
- * @see com.hazelcast.spi.impl.BasicInvocationBuilder
- * @see com.hazelcast.spi.impl.BasicPartitionInvocation
- * @see com.hazelcast.spi.impl.BasicTargetInvocation
+ * @see BasicInvocation
+ * @see BasicInvocationBuilder
+ * @see BasicPartitionInvocation
+ * @see BasicTargetInvocation
  */
 public final class BasicOperationService implements InternalOperationService {
 
@@ -138,7 +147,7 @@ public final class BasicOperationService implements InternalOperationService {
 
     private volatile boolean shutdown;
 
-    BasicOperationService(NodeEngineImpl nodeEngine) {
+    public BasicOperationService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);

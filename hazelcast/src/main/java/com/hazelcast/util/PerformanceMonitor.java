@@ -4,7 +4,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.impl.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.concurrent.TimeUnit;
 

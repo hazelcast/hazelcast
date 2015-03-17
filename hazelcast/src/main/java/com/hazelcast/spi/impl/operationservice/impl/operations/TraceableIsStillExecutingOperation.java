@@ -1,9 +1,11 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.io.IOException;
 

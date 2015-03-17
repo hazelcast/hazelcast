@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
@@ -27,6 +27,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;

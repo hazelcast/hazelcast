@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
- * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link com.hazelcast.spi.impl.BasicOperationService}.
+ * An {@link com.hazelcast.spi.InvocationBuilder} that is tied to the {@link BasicOperationService}.
  */
 public class BasicInvocationBuilder extends InvocationBuilder {
 

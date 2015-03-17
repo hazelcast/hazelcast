@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
@@ -26,7 +26,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.spi.impl.BasicOperationServiceTest.assertNoLitterInOpService;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -47,7 +46,7 @@ public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        assertNoLitterInOpService(hz);
+        BasicOperationServiceTest.assertNoLitterInOpService(hz);
     }
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
@@ -63,8 +62,8 @@ public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        assertNoLitterInOpService(hz1);
-        assertNoLitterInOpService(hz2);
+        BasicOperationServiceTest.assertNoLitterInOpService(hz1);
+        BasicOperationServiceTest.assertNoLitterInOpService(hz2);
     }
 
     @Test
@@ -131,7 +130,7 @@ public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
         assertOpenEventually("Should throw OperationTimeoutException", latch);
 
         for (HazelcastInstance instance : instances) {
-            assertNoLitterInOpService(instance);
+            BasicOperationServiceTest.assertNoLitterInOpService(instance);
         }
     }
 
