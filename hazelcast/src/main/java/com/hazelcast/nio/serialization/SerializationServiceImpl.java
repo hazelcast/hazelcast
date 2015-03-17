@@ -330,7 +330,7 @@ public class SerializationServiceImpl implements SerializationService {
     @Override
     public final void writeData(ObjectDataOutput out, Data data) {
         try {
-            boolean isNull = data == null || isNullData(data);
+            boolean isNull = data == null;
             out.writeBoolean(isNull);
             if (isNull) {
                 return;
