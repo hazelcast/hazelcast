@@ -108,12 +108,13 @@ public class EventServiceImpl implements InternalEventService {
     public void close(EventRegistration eventRegistration) {
         Registration registration = (Registration) eventRegistration;
 
-        if (!(registration.getListener() instanceof Closeable)) {
+        Object listener = registration.getListener();
+        if (!(listener instanceof Closeable)) {
             return;
         }
 
         try {
-            ((Closeable) eventRegistration).close();
+            ((Closeable) listener).close();
         } catch (IOException e) {
             EmptyStatement.ignore(e);
         }
