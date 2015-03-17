@@ -33,7 +33,7 @@ public class PerformanceMonitor extends Thread {
         this.delaySeconds = delaySeconds;
         this.node = hazelcastInstance.node;
         this.logger = node.getLogger(PerformanceMonitor.class.getName());
-        this.operationService = (InternalOperationService) node.nodeEngine.getOperationService();
+        this.operationService = node.nodeEngine.getOperationService();
         this.connectionManager = node.connectionManager;
     }
 

@@ -43,7 +43,7 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     }
 
     public LocalOperationStatsImpl(Node node) {
-        InternalOperationService operationService = (InternalOperationService) node.nodeEngine.getOperationService();
+        InternalOperationService operationService = node.nodeEngine.getOperationService();
         this.slowOperations = operationService.getSlowOperations();
         this.maxVisibleSlowOperationCount = node.groupProperties.MC_MAX_SLOW_OPERATION_COUNT.getInteger();
     }
