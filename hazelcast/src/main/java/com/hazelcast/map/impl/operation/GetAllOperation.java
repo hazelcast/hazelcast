@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
 
@@ -30,24 +31,26 @@ import java.util.Set;
 
 public class GetAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    Set<Data> keys = new HashSet<Data>();
-    MapEntrySet entrySet;
+    private Set<Data> keys = new HashSet<Data>();
+    private MapEntrySet entrySet;
     private transient RecordStore recordStore;
+
+    public GetAllOperation() {
+    }
 
     public GetAllOperation(String name, Set<Data> keys) {
         super(name);
         this.keys = keys;
     }
 
-    public GetAllOperation() {
-    }
-
+    @Override
     public void run() {
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
         recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
-            if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
+            if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);
             }
         }
@@ -77,9 +80,7 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public String toString() {
-        return "GetAllOperation{"
-                + '}';
-
+        return "GetAllOperation{}";
     }
 
     @Override

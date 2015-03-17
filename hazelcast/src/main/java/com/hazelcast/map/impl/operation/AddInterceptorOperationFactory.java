@@ -25,9 +25,9 @@ import java.io.IOException;
 
 public class AddInterceptorOperationFactory implements OperationFactory {
 
-    String id;
-    String name;
-    MapInterceptor mapInterceptor;
+    private String id;
+    private String name;
+    private MapInterceptor mapInterceptor;
 
     public AddInterceptorOperationFactory() {
     }

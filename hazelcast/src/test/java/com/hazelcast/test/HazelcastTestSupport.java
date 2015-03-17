@@ -171,6 +171,17 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void sleepAtLeastMillis(int millis) {
+        final long targetTime = System.currentTimeMillis() + millis + 1;
+        while (System.currentTimeMillis() < targetTime) {
+            sleepMillis(1);
+        }
+    }
+
+    public static void sleepAtLeastSeconds(int seconds) {
+        sleepAtLeastMillis(seconds * 1000);
+    }
+
     public static String generateRandomString(int length) {
         StringBuilder sb = new StringBuilder(length);
         Random random = new Random();

@@ -36,7 +36,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketTransceiver;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 
 import java.util.Collection;
 import java.util.Collections;

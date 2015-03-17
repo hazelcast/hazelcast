@@ -17,34 +17,36 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-/**
- * @author enesakar 1/17/13
- */
 public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
-    boolean successful;
+    private boolean successful;
+
+    public RemoveOperation() {
+    }
 
     public RemoveOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public RemoveOperation() {
-    }
-
+    @Override
     public void run() {
-        dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey));
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return successful;
     }
@@ -54,10 +56,12 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
         return "RemoveOperation{" + name + "}";
     }
 
+    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return MapDataSerializerHook.REMOVE;
     }

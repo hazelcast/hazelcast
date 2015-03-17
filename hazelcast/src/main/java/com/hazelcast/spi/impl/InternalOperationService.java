@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
@@ -35,15 +34,13 @@ import java.util.Collection;
  */
 public interface InternalOperationService extends OperationService {
 
-    void onMemberLeft(MemberImpl member);
-
     boolean isCallTimedOut(Operation op);
 
     void notifyBackupCall(long callId);
 
     /**
      * Executes a PartitionSpecificRunnable.
-     *
+     * <p/>
      * This method is typically used by the {@link com.hazelcast.client.ClientEngine} when it has received a Packet containing
      * a request that needs to be processed.
      *
@@ -53,7 +50,7 @@ public interface InternalOperationService extends OperationService {
 
     /**
      * Sends a response to a remote machine.
-     *
+     * <p/>
      * This method is deprecated since 3.5. It is an implementation detail.
      *
      * @param response the response to send.
@@ -76,15 +73,4 @@ public interface InternalOperationService extends OperationService {
      * @return collection of long running operation logs.
      */
     Collection<JsonSerializable> getSlowOperations();
-
-    /**
-     * Resets internal state of InternalOperationService.
-     * Notifies registered invocations with an error message.
-     */
-    void reset();
-
-    /**
-     * Shuts down this InternalOperationService.
-     */
-    void shutdown();
 }

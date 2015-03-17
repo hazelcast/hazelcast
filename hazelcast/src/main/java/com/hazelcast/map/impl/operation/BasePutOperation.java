@@ -59,15 +59,17 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     private void publishWANReplicationEvent(MapServiceContext mapServiceContext, MapEventPublisher mapEventPublisher) {
-        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-            Record record = recordStore.getRecord(dataKey);
-            if (record == null) {
-                return;
-            }
-            final Data valueConvertedData = mapServiceContext.toData(dataValue);
-            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
-            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+        if (mapContainer.getWanReplicationPublisher() == null || mapContainer.getWanMergePolicy() == null) {
+            return;
         }
+
+        Record record = recordStore.getRecord(dataKey);
+        if (record == null) {
+            return;
+        }
+        final Data valueConvertedData = mapServiceContext.toData(dataValue);
+        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
+        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
     }
 
     private EntryEventType getEventType() {
@@ -77,6 +79,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return eventType;
     }
 
+    @Override
     public boolean shouldBackup() {
         Record record = recordStore.getRecord(dataKey);
         if (record == null) {
@@ -85,6 +88,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
         final RecordInfo replicationInfo = buildRecordInfo(record);
@@ -98,14 +102,17 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo);
     }
 
+    @Override
     public final int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
+    @Override
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }
 
+    @Override
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);

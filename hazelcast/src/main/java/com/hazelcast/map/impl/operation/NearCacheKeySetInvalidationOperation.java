@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -25,14 +27,10 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.Set;
 
-/**
- * User: ahmetmircik
- * Date: 10/31/13
- */
 public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
-    MapService mapService;
-    MapKeySet mapKeySet;
-    String mapName;
+    private MapService mapService;
+    private MapKeySet mapKeySet;
+    private String mapName;
 
     public NearCacheKeySetInvalidationOperation() {
     }
@@ -47,10 +45,13 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public void run() {
         mapService = getService();
-        if (mapService.getMapServiceContext().getMapContainer(mapName).isNearCacheEnabled()) {
-            mapService.getMapServiceContext().getNearCacheProvider().invalidateNearCache(mapName, mapKeySet.getKeySet());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        if (mapServiceContext.getMapContainer(mapName).isNearCacheEnabled()) {
+            NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
+            nearCacheProvider.invalidateNearCache(mapName, mapKeySet.getKeySet());
         } else {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
                     + mapName + " map. Possible configuration conflict among nodes.");

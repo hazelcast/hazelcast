@@ -205,5 +205,4 @@ public class MapReplicationOperation extends AbstractOperation {
         return new RecordReplicationInfo(record.getKey(), mapService.getMapServiceContext().toData(record.getValue()),
                 info);
     }
-
 }

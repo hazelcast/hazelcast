@@ -25,7 +25,7 @@ import java.io.IOException;
 
 public class IsEmptyOperationFactory implements OperationFactory {
 
-    String name;
+    private String name;
 
     public IsEmptyOperationFactory() {
     }
@@ -48,5 +48,4 @@ public class IsEmptyOperationFactory implements OperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
     }
-
 }

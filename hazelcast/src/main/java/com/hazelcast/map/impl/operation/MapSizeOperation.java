@@ -16,28 +16,33 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 public class MapSizeOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
     private int size;
 
+    public MapSizeOperation() {
+    }
+
     public MapSizeOperation(String name) {
         super(name);
     }
 
-    public MapSizeOperation() {
-    }
-
+    @Override
     public void run() {
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         recordStore.checkIfLoaded();
         size = recordStore.size();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getMapServiceContext()
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            LocalMapStatsImpl localMapStatsImpl = localMapStatsProvider.getLocalMapStatsImpl(name);
+            localMapStatsImpl.incrementOtherOperations();
         }
     }
 

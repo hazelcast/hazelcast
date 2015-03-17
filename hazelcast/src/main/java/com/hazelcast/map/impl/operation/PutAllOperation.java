@@ -51,6 +51,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     private List<RecordInfo> backupRecordInfos;
     private transient RecordStore recordStore;
 
+    public PutAllOperation() {
+    }
+
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);
         this.entrySet = entrySet;
@@ -62,9 +65,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         this.initialLoad = initialLoad;
     }
 
-    public PutAllOperation() {
-    }
-
+    @Override
     public void run() {
         backupRecordInfos = new ArrayList<RecordInfo>();
         backupEntrySet = new ArrayList<Map.Entry<Data, Data>>();
@@ -76,38 +77,45 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         Set<Data> keysToInvalidate = new HashSet<Data>();
         for (Map.Entry<Data, Data> entry : entries) {
-            Data dataKey = entry.getKey();
-            Data dataValue = entry.getValue();
-            if (partitionId == partitionService.getPartitionId(dataKey)) {
-                Data dataOldValue = null;
-                if (initialLoad) {
-                    recordStore.putFromLoad(dataKey, dataValue, -1);
-                } else {
-                    dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, -1));
-                }
-                mapServiceContext.interceptAfterPut(name, dataValue);
-                EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-                final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
-                mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
-                keysToInvalidate.add(dataKey);
-
-                // check in case of an expiration.
-                final Record record = recordStore.getRecordOrNull(dataKey);
-                if (record == null) {
-                    continue;
-                }
-                if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-                    final Data dataValueAsData = mapServiceContext.toData(dataValue);
-                    final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
-                    mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-                }
-                backupEntrySet.add(entry);
-                RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
-                backupRecordInfos.add(replicationInfo);
-                evict(false);
-            }
+            put(partitionId, mapServiceContext, recordStore, partitionService, keysToInvalidate, entry);
         }
         invalidateNearCaches(keysToInvalidate);
+    }
+
+    private void put(int partitionId, MapServiceContext mapServiceContext, RecordStore recordStore,
+                     InternalPartitionService partitionService, Set<Data> keysToInvalidate, Map.Entry<Data, Data> entry) {
+        Data dataKey = entry.getKey();
+        Data dataValue = entry.getValue();
+        if (partitionId != partitionService.getPartitionId(dataKey)) {
+            return;
+        }
+
+        Data dataOldValue = null;
+        if (initialLoad) {
+            recordStore.putFromLoad(dataKey, dataValue, -1);
+        } else {
+            dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, -1));
+        }
+        mapServiceContext.interceptAfterPut(name, dataValue);
+        EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
+        keysToInvalidate.add(dataKey);
+
+        // check in case of an expiration.
+        final Record record = recordStore.getRecordOrNull(dataKey);
+        if (record == null) {
+            return;
+        }
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+            final Data dataValueAsData = mapServiceContext.toData(dataValue);
+            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, dataValueAsData, record);
+            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+        }
+        backupEntrySet.add(entry);
+        RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
+        backupRecordInfos.add(replicationInfo);
+        evict(false);
     }
 
     protected final void invalidateNearCaches(Set<Data> keys) {
@@ -128,10 +136,28 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     }
 
     @Override
-    public String toString() {
-        return "PutAllOperation{"
-                + '}';
+    public boolean shouldBackup() {
+        return !backupEntrySet.isEmpty();
+    }
 
+    @Override
+    public final int getAsyncBackupCount() {
+        return mapContainer.getAsyncBackupCount();
+    }
+
+    @Override
+    public final int getSyncBackupCount() {
+        return mapContainer.getBackupCount();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new PutAllBackupOperation(name, backupEntrySet, backupRecordInfos);
+    }
+
+    @Override
+    public String toString() {
+        return "PutAllOperation{}";
     }
 
     @Override
@@ -146,23 +172,5 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         super.readInternal(in);
         entrySet = in.readObject();
         initialLoad = in.readBoolean();
-    }
-
-    @Override
-    public boolean shouldBackup() {
-        return !backupEntrySet.isEmpty();
-    }
-
-    public final int getAsyncBackupCount() {
-        return mapContainer.getAsyncBackupCount();
-    }
-
-    public final int getSyncBackupCount() {
-        return mapContainer.getBackupCount();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, backupEntrySet, backupRecordInfos);
     }
 }

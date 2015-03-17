@@ -16,20 +16,23 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
+    public MapFlushOperation() {
+    }
+
     public MapFlushOperation(String name) {
         super(name);
     }
 
-    public MapFlushOperation() {
-    }
-
+    @Override
     public void run() {
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         recordStore.flush();
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,6 +32,7 @@ import static java.lang.String.format;
 public class ManagementCenterIdentifier implements JsonSerializable {
 
     private static final int VERSION_MULTIPLIER = 10;
+
     private int version;
     private String clusterName;
     private String address;
@@ -70,7 +72,7 @@ public class ManagementCenterIdentifier implements JsonSerializable {
         return builder.toString();
     }
 
-
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("version", version);

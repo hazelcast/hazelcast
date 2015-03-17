@@ -21,20 +21,22 @@ import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {
 
-    boolean newRecord;
+    private boolean newRecord;
+
+    public SetOperation() {
+    }
 
     public SetOperation(String name, Data dataKey, Data value, long ttl) {
         super(name, dataKey, value, ttl);
     }
 
-    public SetOperation() {
-    }
-
+    @Override
     public void afterRun() {
         eventType = newRecord ? EntryEventType.ADDED : EntryEventType.UPDATED;
         super.afterRun();
     }
 
+    @Override
     public void run() {
         newRecord = recordStore.set(dataKey, dataValue, ttl);
     }

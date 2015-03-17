@@ -16,13 +16,11 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.impl.ConfigCheck;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ConfigCheck;
+import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.NodeMulticastListener;
@@ -38,9 +36,11 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
@@ -51,7 +51,7 @@ import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.ProxyServiceImpl;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
@@ -178,7 +178,7 @@ public class Node {
         }
     }
 
-    public HazelcastThreadGroup getHazelcastThreadGroup(){
+    public HazelcastThreadGroup getHazelcastThreadGroup() {
         return hazelcastThreadGroup;
     }
 
@@ -200,10 +200,9 @@ public class Node {
                     // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
                     if (!bindAddress.getInetAddress().isLoopbackAddress()) {
                         multicastSocket.setInterface(bindAddress.getInetAddress());
-                    }
-                    else if (multicastConfig.isLoopbackModeEnabled()) {
+                    } else if (multicastConfig.isLoopbackModeEnabled()) {
                         multicastSocket.setLoopbackMode(true);
-			            multicastSocket.setInterface(bindAddress.getInetAddress());
+                        multicastSocket.setInterface(bindAddress.getInetAddress());
                     }
                 } catch (Exception e) {
                     logger.warning(e);
@@ -384,8 +383,8 @@ public class Node {
             setActive(false);
             setMasterAddress(null);
             try {
-            	if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean())
-            		Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+                if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean())
+                    Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
             versionCheck.shutdown();
@@ -592,6 +591,7 @@ public class Node {
         return active;
     }
 
+    @Override
     public String toString() {
         return "Node[" + getName() + "]";
     }

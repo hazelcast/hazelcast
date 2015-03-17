@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 public class MapIsEmptyOperation extends AbstractMapOperation implements PartitionAwareOperation {
@@ -36,8 +37,9 @@ public class MapIsEmptyOperation extends AbstractMapOperation implements Partiti
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         empty = recordStore.isEmpty();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapServiceContext.getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsImpl localMapStatsImpl = mapServiceContext.getLocalMapStatsProvider()
+                    .getLocalMapStatsImpl(name);
+            localMapStatsImpl.incrementOtherOperations();
         }
     }
 

@@ -27,9 +27,8 @@ import java.util.Set;
 
 public class MapGetAllOperationFactory implements OperationFactory {
 
-    String name;
-    Set<Data> keys = new HashSet<Data>();
-
+    private String name;
+    private Set<Data> keys = new HashSet<Data>();
 
     public MapGetAllOperationFactory() {
     }

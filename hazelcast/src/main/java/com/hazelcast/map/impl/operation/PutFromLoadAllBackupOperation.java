@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,13 +56,19 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
         }
         final int partitionId = getPartitionId();
         final MapService mapService = this.mapService;
-        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data value = keyValueSequence.get(i + 1);
-            final Object object = mapService.getMapServiceContext().toObject(value);
+            final Object object = mapServiceContext.toObject(value);
             recordStore.putFromLoad(key, object);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "PutFromLoadAllBackupOperation{}";
     }
 
     @Override
@@ -90,10 +97,4 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
             keyValueSequence = tmpKeyValueSequence;
         }
     }
-
-    @Override
-    public String toString() {
-        return "PutFromLoadAllBackupOperation{}";
-    }
-
 }

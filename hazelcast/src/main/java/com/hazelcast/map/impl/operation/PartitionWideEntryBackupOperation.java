@@ -76,25 +76,8 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        backupProcessor = in.readObject();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(backupProcessor);
-    }
-
-    @Override
     public Object getResponse() {
         return true;
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryBackupOperation{}";
     }
 
     private boolean applyPredicate(Data dataKey, Object key, Object value) {
@@ -104,5 +87,22 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
         final SerializationService ss = getNodeEngine().getSerializationService();
         QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
         return getPredicate().apply(queryEntry);
+    }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryBackupOperation{}";
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        backupProcessor = in.readObject();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(backupProcessor);
     }
 }

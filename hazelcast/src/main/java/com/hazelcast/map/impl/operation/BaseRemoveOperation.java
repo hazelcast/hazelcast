@@ -35,6 +35,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     public BaseRemoveOperation() {
     }
 
+    @Override
     public void afterRun() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.interceptAfterRemove(name, dataValue);
@@ -53,18 +54,22 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         return dataOldValue;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new RemoveBackupOperation(name, dataKey);
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
+    @Override
     public int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }

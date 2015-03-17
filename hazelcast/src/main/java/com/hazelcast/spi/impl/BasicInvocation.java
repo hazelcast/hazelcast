@@ -145,7 +145,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                     int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
                     boolean resultDeserialized) {
-        this.operationService = (BasicOperationService) nodeEngine.operationService;
+        this.operationService = (BasicOperationService) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
