@@ -157,60 +157,62 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleConfig(final Element element) {
-            handleCommonBeanAttributes(element, configBuilder, parserContext);
-            for (Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
-                final String nodeName = cleanNodeName(node.getNodeName());
-                if ("network".equals(nodeName)) {
-                    handleNetwork(node);
-                } else if ("group".equals(nodeName)) {
-                    handleGroup(node);
-                } else if ("properties".equals(nodeName)) {
-                    handleProperties(node);
-                } else if ("executor-service".equals(nodeName)) {
-                    handleExecutor(node);
-                } else if ("queue".equals(nodeName)) {
-                    handleQueue(node);
-                } else if ("map".equals(nodeName)) {
-                    handleMap(node);
-                } else if ("cache".equals(nodeName)) {
-                    handleCache(node);
-                } else if ("multimap".equals(nodeName)) {
-                    handleMultiMap(node);
-                } else if ("list".equals(nodeName)) {
-                    handleList(node);
-                } else if ("set".equals(nodeName)) {
-                    handleSet(node);
-                } else if ("topic".equals(nodeName)) {
-                    handleTopic(node);
-                } else if ("jobtracker".equals(nodeName)) {
-                    handleJobTracker(node);
-                } else if ("replicatedmap".equals(nodeName)) {
-                    handleReplicatedMap(node);
-                } else if ("wan-replication".equals(nodeName)) {
-                    handleWanReplication(node);
-                } else if ("partition-group".equals(nodeName)) {
-                    handlePartitionGroup(node);
-                } else if ("serialization".equals(nodeName)) {
-                    handleSerialization(node);
-                } else if ("security".equals(nodeName)) {
-                    handleSecurity(node);
-                } else if ("member-attributes".equals(nodeName)) {
-                    handleMemberAttributes(node);
-                } else if ("instance-name".equals(nodeName)) {
-                    configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
-                } else if ("listeners".equals(nodeName)) {
-                    final List listeners = parseListeners(node, ListenerConfig.class);
-                    configBuilder.addPropertyValue("listenerConfigs", listeners);
-                } else if ("lite-member".equals(nodeName)) {
-                    configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
-                } else if ("license-key".equals(nodeName)) {
-                    configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
-                } else if ("management-center".equals(nodeName)) {
-                    handleManagementCenter(node);
-                } else if ("services".equals(nodeName)) {
-                    handleServices(node);
-                } else if ("spring-aware".equals(nodeName)) {
-                    handleSpringAware();
+            if (element != null) {
+                handleCommonBeanAttributes(element, configBuilder, parserContext);
+                for (Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
+                    final String nodeName = cleanNodeName(node.getNodeName());
+                    if ("network".equals(nodeName)) {
+                        handleNetwork(node);
+                    } else if ("group".equals(nodeName)) {
+                        handleGroup(node);
+                    } else if ("properties".equals(nodeName)) {
+                        handleProperties(node);
+                    } else if ("executor-service".equals(nodeName)) {
+                        handleExecutor(node);
+                    } else if ("queue".equals(nodeName)) {
+                        handleQueue(node);
+                    } else if ("map".equals(nodeName)) {
+                        handleMap(node);
+                    } else if ("cache".equals(nodeName)) {
+                        handleCache(node);
+                    } else if ("multimap".equals(nodeName)) {
+                        handleMultiMap(node);
+                    } else if ("list".equals(nodeName)) {
+                        handleList(node);
+                    } else if ("set".equals(nodeName)) {
+                        handleSet(node);
+                    } else if ("topic".equals(nodeName)) {
+                        handleTopic(node);
+                    } else if ("jobtracker".equals(nodeName)) {
+                        handleJobTracker(node);
+                    } else if ("replicatedmap".equals(nodeName)) {
+                        handleReplicatedMap(node);
+                    } else if ("wan-replication".equals(nodeName)) {
+                        handleWanReplication(node);
+                    } else if ("partition-group".equals(nodeName)) {
+                        handlePartitionGroup(node);
+                    } else if ("serialization".equals(nodeName)) {
+                        handleSerialization(node);
+                    } else if ("security".equals(nodeName)) {
+                        handleSecurity(node);
+                    } else if ("member-attributes".equals(nodeName)) {
+                        handleMemberAttributes(node);
+                    } else if ("instance-name".equals(nodeName)) {
+                        configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
+                    } else if ("listeners".equals(nodeName)) {
+                        final List listeners = parseListeners(node, ListenerConfig.class);
+                        configBuilder.addPropertyValue("listenerConfigs", listeners);
+                    } else if ("lite-member".equals(nodeName)) {
+                        configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
+                    } else if ("license-key".equals(nodeName)) {
+                        configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
+                    } else if ("management-center".equals(nodeName)) {
+                        handleManagementCenter(node);
+                    } else if ("services".equals(nodeName)) {
+                        handleServices(node);
+                    } else if ("spring-aware".equals(nodeName)) {
+                        handleSpringAware();
+                    }
                 }
             }
         }
