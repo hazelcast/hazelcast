@@ -37,8 +37,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
-    private static final AtomicLongFieldUpdater<ReplicatedRecord> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(ReplicatedRecord.class, "lastAccessTime");
     private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
 
@@ -68,11 +66,19 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     public K getKey() {
         access();
+        return getKeyInternal();
+    }
+
+    public K getKeyInternal() {
         return key;
     }
 
     public V getValue() {
         access();
+        return getValueInternal();
+    }
+
+    public V getValueInternal() {
         return value;
     }
 
@@ -124,6 +130,10 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     public V setValue(V value, int hash, long ttlMillis) {
         access();
+        return setValueInternal(value, hash, ttlMillis);
+    }
+
+    public V setValueInternal(V value, int hash, long ttlMillis) {
         V oldValue = this.value;
         this.value = value;
         this.latestUpdateHash = hash;
@@ -148,9 +158,9 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         return lastAccessTime;
     }
 
-    public void access() {
+    private void access() {
         HITS_UPDATER.incrementAndGet(this);
-        LAST_ACCESS_TIME_UPDATER.set(this, Clock.currentTimeMillis());
+        lastAccessTime = Clock.currentTimeMillis();
     }
 
     @Override

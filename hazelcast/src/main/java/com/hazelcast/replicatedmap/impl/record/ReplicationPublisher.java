@@ -344,7 +344,7 @@ public class ReplicationPublisher<K, V>
                         .applyAndIncrementVectorClock(updateVectorClockTimestamp, localMember);
 
                 Object key = update.getKey();
-                V v = localEntry.getValue();
+                V v = localEntry.getValueInternal();
                 V value = v instanceof Data ? (V) nodeEngine.toObject(v) : v;
                 long ttlMillis = update.getTtlMillis();
                 int latestUpdateHash = localEntry.getLatestUpdateHash();
@@ -389,7 +389,7 @@ public class ReplicationPublisher<K, V>
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
         long oldTtlMillis = localEntry.getTtlMillis();
-        Object oldValue = localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
+        Object oldValue = localEntry.setValueInternal(marshalledValue, update.getUpdateHash(), ttlMillis);
 
         localEntry.applyVectorClock(remoteVectorClockTimestamp);
         if (ttlMillis > 0 || update.isRemove()) {

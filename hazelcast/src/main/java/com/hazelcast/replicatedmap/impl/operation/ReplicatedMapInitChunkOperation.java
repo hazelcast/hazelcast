@@ -84,8 +84,8 @@ public class ReplicatedMapInitChunkOperation
             for (int i = 0; i < recordCount; i++) {
                 ReplicatedRecord record = replicatedRecords[i];
 
-                Object key = record.getKey();
-                Object value = record.getValue();
+                Object key = record.getKeyInternal();
+                Object value = record.getValueInternal();
                 VectorClockTimestamp timestamp = record.getVectorClockTimestamp();
                 int updateHash = record.getLatestUpdateHash();
                 long ttlMillis = record.getTtlMillis();
