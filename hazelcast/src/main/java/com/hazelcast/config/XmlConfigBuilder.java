@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.config;
 
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
@@ -96,11 +95,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private Set<String> occurrenceSet = new HashSet<String>();
     private Element root;
 
-
     /**
      * Constructs a XmlConfigBuilder that reads from the provided XML file.
      *
-     * @param xmlFileName the name of the XML file that the XmlConfigBuilder reads from
+     * @param xmlFileName the name of the XML file that the XmlConfigBuilder
+     * reads from
      * @throws FileNotFoundException if the file can't be found.
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
@@ -134,7 +133,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     /**
-     * Constructs a XmlConfigBuilder that tries to find a usable XML configuration file.
+     * Constructs a XmlConfigBuilder that tries to find a usable XML
+     * configuration file.
      */
     public XmlConfigBuilder() {
         XmlConfigLocator locator = new XmlConfigLocator();
@@ -559,7 +559,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         joinConfig.verify();
     }
 
-     private void handleConsul(final org.w3c.dom.Node node) {
+    private void handleConsul(final org.w3c.dom.Node node) {
         final NamedNodeMap atts = node.getAttributes();
         final JoinConfig join = config.getNetworkConfig().getJoin();
         final ConsulConfig consulConfig = join.getConsulConfig();
@@ -572,18 +572,16 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 consulConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
             }
         }
-        final NodeList nodelist = node.getChildNodes();
-        final Set<String> nameTags = new HashSet<String>(Arrays.asList("name"));
-        for (int i = 0; i < nodelist.getLength(); i++) {
-            final org.w3c.dom.Node n = nodelist.item(i);
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
-            if (nameTags.contains(cleanNodeName(n.getNodeName()))) {
+            if ("name".equals(cleanNodeName(n.getNodeName()))) {
                 consulConfig.setName(value);
+            } else if ("host".equals(cleanNodeName(n.getNodeName()))) {
+                consulConfig.setHost(value);
             }
         }
     }
-     
-     
+
     private void handleAWS(Node node) {
         final JoinConfig join = config.getNetworkConfig().getJoin();
         final NamedNodeMap atts = node.getAttributes();
@@ -817,11 +815,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if ("value-collection-type".equals(nodeName)) {
                 multiMapConfig.setValueCollectionType(value);
             } else if ("backup-count".equals(nodeName)) {
-                multiMapConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value, MultiMapConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                multiMapConfig.setBackupCount(getIntegerValue("backup-count", value, MultiMapConfig.DEFAULT_SYNC_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
-                multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value, MultiMapConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MultiMapConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             } else if ("entry-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("entry-listener".equals(cleanNodeName(listenerNode))) {
@@ -848,13 +844,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
             if ("concurrency-level".equals(nodeName)) {
-                replicatedMapConfig.setConcurrencyLevel(getIntegerValue("concurrency-level"
-                        , value, ReplicatedMapConfig.DEFAULT_CONCURRENCY_LEVEL));
+                replicatedMapConfig.setConcurrencyLevel(getIntegerValue("concurrency-level", value, ReplicatedMapConfig.DEFAULT_CONCURRENCY_LEVEL));
             } else if ("in-memory-format".equals(nodeName)) {
                 replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("replication-delay-millis".equals(nodeName)) {
-                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis"
-                        , value, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis", value, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
             } else if ("async-fillup".equals(nodeName)) {
                 replicatedMapConfig.setAsyncFillup(checkTrue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
@@ -1245,11 +1239,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             if ("initial-permits".equals(nodeName)) {
                 sConfig.setInitialPermits(getIntegerValue("initial-permits", value, 0));
             } else if ("backup-count".equals(nodeName)) {
-                sConfig.setBackupCount(getIntegerValue("backup-count"
-                        , value, SemaphoreConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                sConfig.setBackupCount(getIntegerValue("backup-count", value, SemaphoreConfig.DEFAULT_SYNC_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
-                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count"
-                        , value, SemaphoreConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, SemaphoreConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             }
         }
         config.addSemaphoreConfig(sConfig);
