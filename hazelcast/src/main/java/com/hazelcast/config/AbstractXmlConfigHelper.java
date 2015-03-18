@@ -140,9 +140,13 @@ public abstract class AbstractXmlConfigHelper {
         ArrayList<StreamSource> schemas = new ArrayList<StreamSource>();
         InputStream inputStream;
         String lineSeperator = StringUtil.getLineSeperator();
+        String schemaLocation = doc.getDocumentElement().getAttribute("xsi:schemaLocation");
+        schemaLocation = schemaLocation.replaceAll("^ +| +$| (?= )", "");
+
 
         //get every two pair. every pair includes namespace and uri
-        String[] xsdLocations = doc.getDocumentElement().getAttribute("xsi:schemaLocation").split("(?<!\\G\\S+)\\s");
+        String[] xsdLocations = schemaLocation.split("(?<!\\G\\S+)\\s");
+
         for (String xsdLocation : xsdLocations) {
             if (xsdLocation.isEmpty()) {
                 continue;
@@ -151,7 +155,7 @@ public abstract class AbstractXmlConfigHelper {
             String uri = xsdLocation.split("[" + lineSeperator + " ]+")[1];
 
             // if this is hazelcast namespace but location is different log only warning
-            if (namespace.equals(xmlns) && !namespace.equals(hazelcastSchemaLocation)) {
+            if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
                 LOGGER.warning("Name of the hazelcast schema location incorrect using default");
             }
 
