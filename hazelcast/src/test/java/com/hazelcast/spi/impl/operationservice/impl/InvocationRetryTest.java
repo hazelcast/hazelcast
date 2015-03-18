@@ -1,9 +1,13 @@
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -27,8 +31,7 @@ public class InvocationRetryTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance();
         warmUpPartitions(local, remote);
 
-        Node localNode = getNode(local);
-        OperationService service = localNode.nodeEngine.getOperationService();
+        OperationService service = getOperationService(local);
         Operation op = new PartitionTargetOperation();
         Future f = service.createInvocationBuilder(null, op, getPartitionId(remote))
                 .setCallTimeout(30000)
@@ -49,7 +52,7 @@ public class InvocationRetryTest extends HazelcastTestSupport {
         HazelcastInstance remote = factory.newHazelcastInstance();
         warmUpPartitions(local, remote);
 
-        OperationService service = getNode(local).nodeEngine.getOperationService();
+        OperationService service = getOperationService(local);
         Operation op = new TargetOperation();
         Address address = new Address(remote.getCluster().getLocalMember().getSocketAddress());
         Future f = service.createInvocationBuilder(null, op, address).invoke();
@@ -69,6 +72,8 @@ public class InvocationRetryTest extends HazelcastTestSupport {
      * Operation send to a specific member.
      */
     private static class TargetOperation extends AbstractOperation {
+
+        @Override
         public void run() throws InterruptedException {
             Thread.sleep(10000);
         }
@@ -79,6 +84,7 @@ public class InvocationRetryTest extends HazelcastTestSupport {
      */
     private static class PartitionTargetOperation extends AbstractOperation implements PartitionAwareOperation {
 
+        @Override
         public void run() throws InterruptedException {
             Thread.sleep(5000);
         }
