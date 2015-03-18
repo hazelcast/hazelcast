@@ -359,8 +359,8 @@ public final class Packet implements SocketWritable, SocketReadable {
      * @return the size of the packet.
      */
     public int size() {
-        // 7 = byte(version) + short(header) + int(partitionId)
-        return (data != null ? getDataSize(data) : 0) + 7;
+        // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
+        return (data != null ? data.totalSize() : 0) + 11;
     }
 
     public Data getData() {
@@ -386,21 +386,6 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean isPersistStatusSet(short status) {
         return this.persistStatus >= status;
-    }
-
-    private static int getDataSize(Data data) {
-        // type
-        int total = INT_SIZE_IN_BYTES;
-        // class def flag
-        total += 1;
-
-        // partition-hash
-        total += INT_SIZE_IN_BYTES;
-        // data-size
-        total += INT_SIZE_IN_BYTES;
-        // data
-        total += data.dataSize();
-        return total;
     }
 
     @Override
