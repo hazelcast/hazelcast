@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.impl.BasicOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,7 +46,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicOperationServiceTest extends HazelcastTestSupport {
+public class OperationServiceImplTest extends HazelcastTestSupport {
 
     // there was a memory leak caused by the invocation not releasing the backup registration
     // when Future.get() is not called.
@@ -182,7 +181,7 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
     }
 
     public static void assertNoLitterInOpService(HazelcastInstance hz) {
-        final BasicOperationService operationService = (BasicOperationService) getNode(hz).nodeEngine.getOperationService();
+        final OperationServiceImpl operationService = (OperationServiceImpl) getNode(hz).nodeEngine.getOperationService();
 
         // we need to do this with an assertTrueEventually because it can happen that system calls are being send
         // and this leads to the maps not being empty. But eventually they will be empty at some moment in time.

@@ -31,7 +31,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.util.Clock;
 
@@ -114,7 +114,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
 
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         long callId = getCallId();
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
 
         if (nodeEngine.getThisAddress().equals(originalCaller)) {
             operationService.notifyBackupCall(callId);

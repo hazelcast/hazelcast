@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
@@ -23,24 +24,28 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
- * A {@link BasicInvocation} evaluates a Operation Invocation for a particular partition running on top of the
- * {@link com.hazelcast.spi.impl.operationservice.impl.BasicOperationService}.
+ * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
+ * {@link OperationServiceImpl}.
  */
-public final class BasicPartitionInvocation extends BasicInvocation {
+public final class TargetInvocation extends Invocation {
 
-    public BasicPartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                                    Callback<Object> callback, boolean resultDeserialized) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
-                callTimeout, callback, resultDeserialized);
+    private final Address target;
+
+    public TargetInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                            Address target, int tryCount, long tryPauseMillis, long callTimeout,
+                            Callback<Object> callback, boolean resultDeserialized) {
+        super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
+                tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized);
+        this.target = target;
     }
 
+    @Override
     public Address getTarget() {
-        return getPartition().getReplicaAddress(getReplicaIndex());
+        return target;
     }
 
+    @Override
     ExceptionAction onException(Throwable t) {
-        final ExceptionAction action = op.onException(t);
-        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
+        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
     }
 }

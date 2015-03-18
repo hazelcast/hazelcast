@@ -53,38 +53,48 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     public PartitionIteratingOperation() {
     }
 
+    @Override
     public void run() throws Exception {
-        final NodeEngine nodeEngine = getNodeEngine();
         results = new HashMap<Integer, Object>(partitions.size());
         try {
-            Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
-            for (final int partitionId : partitions) {
-                ResponseQueue responseQueue = new ResponseQueue();
-                final Operation op = operationFactory.createOperation();
-                op.setNodeEngine(nodeEngine)
-                        .setPartitionId(partitionId)
-                        .setReplicaIndex(getReplicaIndex())
-                        .setResponseHandler(responseQueue)
-                        .setServiceName(getServiceName())
-                        .setService(getService())
-                        .setCallerUuid(getCallerUuid());
-                OperationAccessor.setCallerAddress(op, getCallerAddress());
-                responses.put(partitionId, responseQueue);
-                nodeEngine.getOperationService().executeOperation(op);
-            }
-            for (Map.Entry<Integer, ResponseQueue> responseQueueEntry : responses.entrySet()) {
-                final ResponseQueue queue = responseQueueEntry.getValue();
-                final Integer key = responseQueueEntry.getKey();
-                final Object result = queue.get();
-                if (result instanceof NormalResponse) {
-                    results.put(key, ((NormalResponse) result).getValue());
-                } else {
-                    results.put(key, result);
-                }
-            }
+            Map<Integer, ResponseQueue> responses = executeOperations();
+            getResults(responses);
         } catch (Exception e) {
-            getLogger(nodeEngine).severe(e);
+            getLogger(getNodeEngine()).severe(e);
         }
+    }
+
+    private void getResults(Map<Integer, ResponseQueue> responses) throws InterruptedException {
+        for (Map.Entry<Integer, ResponseQueue> responseQueueEntry : responses.entrySet()) {
+            final ResponseQueue queue = responseQueueEntry.getValue();
+            final Integer key = responseQueueEntry.getKey();
+            final Object result = queue.get();
+            if (result instanceof NormalResponse) {
+                results.put(key, ((NormalResponse) result).getValue());
+            } else {
+                results.put(key, result);
+            }
+        }
+    }
+
+    private Map<Integer, ResponseQueue> executeOperations() {
+        NodeEngine nodeEngine = getNodeEngine();
+        Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
+        for (final int partitionId : partitions) {
+            ResponseQueue responseQueue = new ResponseQueue();
+            final Operation op = operationFactory.createOperation();
+            op.setNodeEngine(nodeEngine)
+                    .setPartitionId(partitionId)
+                    .setReplicaIndex(getReplicaIndex())
+                    .setResponseHandler(responseQueue)
+                    .setServiceName(getServiceName())
+                    .setService(getService())
+                    .setCallerUuid(getCallerUuid());
+            OperationAccessor.setCallerAddress(op, getCallerAddress());
+            responses.put(partitionId, responseQueue);
+            nodeEngine.getOperationService().executeOperation(op);
+        }
+        return responses;
     }
 
     @Override
@@ -120,6 +130,38 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         }
     }
 
+    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.PARTITION_ITERATOR;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        int pCount = partitions.size();
+        out.writeInt(pCount);
+        for (Integer partition : partitions) {
+            out.writeInt(partition);
+        }
+        out.writeObject(operationFactory);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        int pCount = in.readInt();
+        partitions = new ArrayList<Integer>(pCount);
+        for (int i = 0; i < pCount; i++) {
+            partitions.add(in.readInt());
+        }
+        operationFactory = in.readObject();
+    }
+
     // To make serialization of HashMap faster.
     public static final class PartitionResponse implements IdentifiedDataSerializable {
 
@@ -130,6 +172,20 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
         public PartitionResponse(Map<Integer, Object> results) {
             this.results = results != null ? results : Collections.<Integer, Object>emptyMap();
+        }
+
+        public Map<? extends Integer, ?> asMap() {
+            return results;
+        }
+
+        @Override
+        public int getFactoryId() {
+            return SpiDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getId() {
+            return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
 
         @Override
@@ -158,51 +214,5 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 results = Collections.emptyMap();
             }
         }
-
-        public Map<? extends Integer, ?> asMap() {
-            return results;
-        }
-
-        @Override
-        public int getFactoryId() {
-            return SpiDataSerializerHook.F_ID;
-        }
-
-        @Override
-        public int getId() {
-            return SpiDataSerializerHook.PARTITION_RESPONSE;
-        }
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        int pCount = partitions.size();
-        out.writeInt(pCount);
-        for (Integer partition : partitions) {
-            out.writeInt(partition);
-        }
-        out.writeObject(operationFactory);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        int pCount = in.readInt();
-        partitions = new ArrayList<Integer>(pCount);
-        for (int i = 0; i < pCount; i++) {
-            partitions.add(in.readInt());
-        }
-        operationFactory = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return SpiDataSerializerHook.PARTITION_ITERATOR;
     }
 }

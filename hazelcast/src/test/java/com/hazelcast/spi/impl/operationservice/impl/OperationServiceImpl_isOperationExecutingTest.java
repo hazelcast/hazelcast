@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicOperationService_isOperationExecutingTest extends HazelcastTestSupport {
+public class OperationServiceImpl_isOperationExecutingTest extends HazelcastTestSupport {
 
     // The problem with testing a generic operation, is that it will be executed on the calling
     // thread. So to prevent this, we send the generic operation to a remote node and then we
@@ -49,7 +49,7 @@ public class BasicOperationService_isOperationExecutingTest extends HazelcastTes
             public void run() throws Exception {
                 int partitionId = operation.getPartitionId();
                 long callId = operation.getCallId();
-                InternalOperationService remoteOperationService = getOperationService(remoteHz);
+                OperationServiceImpl remoteOperationService = (OperationServiceImpl)getOperationService(remoteHz);
                 boolean isRunning = remoteOperationService.isOperationExecuting(localAddress, partitionId, callId);
                 assertTrue(isRunning);
             }
@@ -63,7 +63,8 @@ public class BasicOperationService_isOperationExecutingTest extends HazelcastTes
             @Override
             public void run() throws Exception {
                 InternalOperationService remoteOperationService = getOperationService(remoteHz);
-                boolean isRunning = remoteOperationService.isOperationExecuting(
+                OperationServiceImpl operationServiceImpl = (OperationServiceImpl) remoteOperationService;
+                boolean isRunning = operationServiceImpl.isOperationExecuting(
                         localAddress, operation.getPartitionId(), operation.getCallId());
                 assertFalse(isRunning);
             }
@@ -87,7 +88,8 @@ public class BasicOperationService_isOperationExecutingTest extends HazelcastTes
             public void run() throws Exception {
                 int partitionId = operation.getPartitionId();
                 long callId = operation.getCallId();
-                boolean isRunning = operationService.isOperationExecuting(thisAddress, partitionId, callId);
+                OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
+                boolean isRunning = operationServiceImpl.isOperationExecuting(thisAddress, partitionId, callId);
                 assertTrue(isRunning);
             }
         });
@@ -99,7 +101,8 @@ public class BasicOperationService_isOperationExecutingTest extends HazelcastTes
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                boolean isRunning = operationService.isOperationExecuting(
+                OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
+                boolean isRunning = operationServiceImpl.isOperationExecuting(
                         thisAddress, operation.getPartitionId(), operation.getCallId());
                 assertFalse(isRunning);
             }

@@ -27,7 +27,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicOperationService_invokeOnTargetTest extends HazelcastTestSupport {
+public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSupport {
 
     @Test
     public void test_whenSelf() {

@@ -9,7 +9,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.impl.BasicBackPressureService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -29,7 +28,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicBackPressureServiceTest {
+public class BackPressureServiceTest {
 
     public final static int SYNC_WINDOW = 100;
 
@@ -44,7 +43,7 @@ public class BasicBackPressureServiceTest {
     public void testBackPressureDisabledByDefault() {
         Config config = new Config();
         GroupProperties groupProperties = new GroupProperties(config);
-        BasicBackPressureService service = new BasicBackPressureService(groupProperties, logger);
+        BackPressureService service = new BackPressureService(groupProperties, logger);
         assertFalse(service.isBackPressureEnabled());
     }
 
@@ -54,20 +53,20 @@ public class BasicBackPressureServiceTest {
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_ENABLED, "true");
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "" + 0);
         GroupProperties groupProperties = new GroupProperties(config);
-        new BasicBackPressureService(groupProperties, logger);
+        new BackPressureService(groupProperties, logger);
     }
 
     // ========================== clean =================
 
     @Test
     public void cleanup_whenDisabled() {
-        BasicBackPressureService service = newDisabledBackPressureService();
+        BackPressureService service = newDisabledBackPressureService();
         service.cleanup();
     }
 
     @Test
     public void cleanup_whenConnectionIsAlive() {
-        BasicBackPressureService service = newEnabledBackPressureService();
+        BackPressureService service = newEnabledBackPressureService();
         GenericOperation op = new GenericOperation();
 
         Connection connection = mock(Connection.class);
@@ -83,7 +82,7 @@ public class BasicBackPressureServiceTest {
 
     @Test
     public void cleanup_whenConnectionIsNotAlive() {
-        BasicBackPressureService service = newEnabledBackPressureService();
+        BackPressureService service = newEnabledBackPressureService();
         GenericOperation op = new GenericOperation();
 
         Connection connection = mock(Connection.class);
@@ -101,7 +100,7 @@ public class BasicBackPressureServiceTest {
 
     @Test
     public void whenUrgentOperation_thenFalse() {
-        BasicBackPressureService service = newEnabledBackPressureService();
+        BackPressureService service = newEnabledBackPressureService();
         Operation operation = new UrgentOperation();
 
         boolean result = service.isBackPressureNeeded(operation);
@@ -111,7 +110,7 @@ public class BasicBackPressureServiceTest {
 
     @Test
     public void whenDisabled_thenFalse() {
-        BasicBackPressureService service = newDisabledBackPressureService();
+        BackPressureService service = newDisabledBackPressureService();
         PartitionSpecificOperation op = new PartitionSpecificOperation();
 
         boolean result = service.isBackPressureNeeded(op);
@@ -134,7 +133,7 @@ public class BasicBackPressureServiceTest {
     }
 
     public void whenNormalOperation(boolean partitionSpecific, boolean remoteCall) {
-        BasicBackPressureService service = newEnabledBackPressureService();
+        BackPressureService service = newEnabledBackPressureService();
 
         Operation op;
         if (partitionSpecific) {
@@ -170,8 +169,8 @@ public class BasicBackPressureServiceTest {
     }
 
     private void assertValidSyncDelay(AtomicInteger synDelay) {
-        assertTrue("syncDelay is " + synDelay, synDelay.get() >= (1 - BasicBackPressureService.RANGE) * SYNC_WINDOW);
-        assertTrue("syncDelay is " + synDelay, synDelay.get() <= (1 + BasicBackPressureService.RANGE) * SYNC_WINDOW);
+        assertTrue("syncDelay is " + synDelay, synDelay.get() >= (1 - BackPressureService.RANGE) * SYNC_WINDOW);
+        assertTrue("syncDelay is " + synDelay, synDelay.get() <= (1 + BackPressureService.RANGE) * SYNC_WINDOW);
     }
 
     private class UrgentOperation extends AbstractOperation implements UrgentSystemOperation {
@@ -194,18 +193,18 @@ public class BasicBackPressureServiceTest {
         }
     }
 
-    private BasicBackPressureService newEnabledBackPressureService() {
+    private BackPressureService newEnabledBackPressureService() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_ENABLED, "true");
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "" + SYNC_WINDOW);
         GroupProperties groupProperties = new GroupProperties(config);
-        return new BasicBackPressureService(groupProperties, logger);
+        return new BackPressureService(groupProperties, logger);
     }
 
-    private BasicBackPressureService newDisabledBackPressureService() {
+    private BackPressureService newDisabledBackPressureService() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_ENABLED, "false");
         GroupProperties groupProperties = new GroupProperties(config);
-        return new BasicBackPressureService(groupProperties, logger);
+        return new BackPressureService(groupProperties, logger);
     }
 }
