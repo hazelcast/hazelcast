@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
@@ -36,15 +37,14 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -72,10 +72,12 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
     }
 
     private void testWaitingInvocations_whenNodeSplitFromCluster(SplitAction splitAction) throws Exception {
+        Config config = new Config();
+        config.getGroupConfig().setName(generateRandomString(10));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
-        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
         Node node1 = TestUtil.getNode(hz1);
         Node node2 = TestUtil.getNode(hz2);
@@ -129,10 +131,12 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
     }
 
     private void testWaitNotifyService_whenNodeSplitFromCluster(SplitAction action) throws Exception {
+        Config config = new Config();
+        config.getGroupConfig().setName(generateRandomString(10));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
-        HazelcastInstance hz1 = factory.newHazelcastInstance();
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
-        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
         final Node node1 = TestUtil.getNode(hz1);
         Node node2 = TestUtil.getNode(hz2);
@@ -157,7 +161,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
 
         // create a new node to prevent same partition assignments
         // after node3 rejoins
-        factory.newHazelcastInstance();
+        factory.newHazelcastInstance(config);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -186,7 +190,8 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
 
         @Override
         public WaitNotifyKey getWaitKey() {
-            return new AbstractWaitNotifyKey(getServiceName(), "test") {};
+            return new AbstractWaitNotifyKey(getServiceName(), "test") {
+            };
         }
 
         @Override
@@ -216,49 +221,60 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
 
     private static class FullSplitAction implements SplitAction {
         @Override
-        public void run(Node node1, Node node2, Node node3) {
+        public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a network-split
             node1.clusterService.removeAddress(node3.address);
-            node2.clusterService.removeAddress(node3.address);
 
             node3.clusterService.removeAddress(node1.address);
             node3.clusterService.removeAddress(node2.address);
 
-            assertEquals(2, node1.getClusterService().getSize());
-            assertEquals(2, node2.getClusterService().getSize());
-            assertEquals(1, node3.getClusterService().getSize());
-
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(2, node1.getClusterService().getSize());
+                    assertEquals(2, node2.getClusterService().getSize());
+                    assertEquals(1, node3.getClusterService().getSize());
+                }
+            }, 10);
         }
     }
 
     private static class PartialSplitAction implements SplitAction {
         @Override
-        public void run(Node node1, Node node2, Node node3) {
+        public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a partial network-split;
             // node1 and node2 will be split from node3
             // but node 3 will not be able to detect that.
             node1.clusterService.removeAddress(node3.address);
-            node2.clusterService.removeAddress(node3.address);
 
-            assertEquals(2, node1.getClusterService().getSize());
-            assertEquals(2, node2.getClusterService().getSize());
-            assertEquals(3, node3.getClusterService().getSize());
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(2, node1.getClusterService().getSize());
+                    assertEquals(2, node2.getClusterService().getSize());
+                    assertEquals(3, node3.getClusterService().getSize());
+                }
+            }, 10);
         }
     }
 
     private static class HalfPartialSplitAction implements SplitAction {
         @Override
-        public void run(Node node1, Node node2, Node node3) {
+        public void run(final Node node1, final Node node2, final Node node3) {
             // Artificially create a partial network-split;
             // node1 and node2 will be split from node3
             // but node 3 will not be able to detect that.
             node1.clusterService.removeAddress(node3.address);
-            node2.clusterService.removeAddress(node3.address);
             node3.clusterService.removeAddress(node1.address);
 
-            assertEquals(2, node1.getClusterService().getSize());
-            assertEquals(2, node2.getClusterService().getSize());
-            assertEquals(2, node3.getClusterService().getSize());
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertEquals(2, node1.getClusterService().getSize());
+                    assertEquals(2, node2.getClusterService().getSize());
+                    assertEquals(2, node3.getClusterService().getSize());
+                }
+            }, 10);
         }
     }
 }
