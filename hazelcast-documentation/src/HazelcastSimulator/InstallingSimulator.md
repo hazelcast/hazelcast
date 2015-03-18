@@ -3,6 +3,12 @@
 
 Hazelcast Simulator needs a Unix shell to run. So ensure your local and remote machines are running under Unix, Linux or Mac OS. It may work with Windows using a Unix-like environment such as Cygwin, but is not officially supported at the moment.
 
+### Firewall settings
+
+Please ensure that all remote machines are reachable via TCP ports 22, 9000 and 5701 to 5751 on their external network interface (e.g. `eth0`). The first two ports are used by Hazelcast Simulator. The other ports are used by Hazelcast itself. Port 9001 is used on the loopback device on all remote machines for local communication.
+
+![](images/simulator/network.png)
+
 ### Setup of local machine (Coordinator)
 
 Hazelcast Simulator is provided as a separate downloadable package, in `zip` or `tar.gz` format. You can download the either one [here](http://www.hazelcast.org/download).
@@ -61,7 +67,7 @@ copy the public key to all your remote machines using the following command.
 ssh-copy-id -i ~/.ssh/id_rsa.pub simulator@remote-ip-address
 ```
 
-#### Connection test
+#### SSH connection test
 
 You can check if the connection works as expected using the following command from the `Coordinator` machine (will print `ok` if everything is fine).
 
