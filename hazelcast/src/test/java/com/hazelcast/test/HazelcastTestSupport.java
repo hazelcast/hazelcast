@@ -68,13 +68,13 @@ public abstract class HazelcastTestSupport {
     private TestHazelcastInstanceFactory factory;
 
     public static Future spawn(Runnable task) {
-        FutureTask futureTask = new FutureTask(task, null);
+        FutureTask<Runnable> futureTask = new FutureTask<Runnable>(task, null);
         new Thread(futureTask).start();
         return futureTask;
     }
 
     public static <E> Future<E> spawn(Callable<E> task) {
-        FutureTask futureTask = new FutureTask(task);
+        FutureTask<E> futureTask = new FutureTask<E>(task);
         new Thread(futureTask).start();
         return futureTask;
     }
@@ -91,7 +91,7 @@ public abstract class HazelcastTestSupport {
 
     public static InternalOperationService getOperationService(HazelcastInstance hz) {
         Node node = getNode(hz);
-        return (InternalOperationService) node.nodeEngine.getOperationService();
+        return node.nodeEngine.getOperationService();
     }
 
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
@@ -239,7 +239,7 @@ public abstract class HazelcastTestSupport {
         }
 
         if (partitions.isEmpty()) {
-            throw new IllegalStateException("No partitions found for hzinstance:" + hz.getName());
+            throw new IllegalStateException("No partitions found for HazelcastInstance:" + hz.getName());
         }
 
         Collections.shuffle(partitions);
@@ -304,9 +304,6 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Gets a partition id owned by this particular member.
-     *
-     * @param hz
-     * @return
      */
     public static int getPartitionId(HazelcastInstance hz) {
         warmUpPartitions(hz);

@@ -148,7 +148,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         if (partitionId < 0) {
             executor.execute(new ClientPacketProcessor(packet));
         } else {
-            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            InternalOperationService operationService = nodeEngine.getOperationService();
             operationService.execute(new ClientPacketProcessor(packet));
         }
     }
