@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
 
@@ -68,7 +67,6 @@ public class DefaultPacketReader implements PacketReader {
     }
 
     protected Packet obtainPacket() {
-        PortableContext portableContext = ioService.getPortableContext();
-        return new Packet(portableContext);
+        return new Packet();
     }
 }

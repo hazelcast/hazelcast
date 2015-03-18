@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.nio.ByteOrder;
-
 /**
  * Data is basic unit of serialization. It stores binary form of an object serialized
  * by {@link com.hazelcast.nio.serialization.SerializationService#toData(Object)}.
@@ -30,7 +28,7 @@ public interface Data {
      *
      * @return binary data
      */
-    byte[] getData();
+    byte[] toByteArray();
 
     /**
      * Returns serialization type of binary form. It's defined by
@@ -41,9 +39,15 @@ public interface Data {
     int getType();
 
     /**
-     * Returns size of binary data
+     * Returns the total size of Data in bytes
+     * @return total size
+     */
+    int totalSize();
+
+    /**
+     * Returns size of internal binary data in bytes
      *
-     * @return data size
+     * @return internal data size
      */
     int dataSize();
 
@@ -88,29 +92,4 @@ public interface Data {
      */
     boolean isPortable();
 
-    /**
-     * Returns byte array representation of header. Header is used to store <tt>Portable</tt> metadata
-     * during serialization and consists of <tt>factoryId</tt>, <tt>classId</tt> and <tt>version</tt> for each
-     * <tt>Portable</tt> field that source object contains.
-     *
-     * @return header
-     */
-    byte[] getHeader();
-
-    /**
-     * Returns size of header.
-     *
-     * @return size of header
-     */
-    int headerSize();
-
-    /**
-     * Reads an integer header from given offset using given <tt>ByteOrder</tt>.
-     *
-     * @param offset offset of integer header
-     * @param order byte order
-     *
-     * @return integer header
-     */
-    int readIntHeader(int offset, ByteOrder order);
 }

@@ -12,7 +12,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -35,7 +34,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
         final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
         Data data = serializationService.toData(normalResponse);
-        final Packet packet = new Packet(data, 0, serializationService.getPortableContext());
+        final Packet packet = new Packet(data, 0);
         packet.setHeader(Packet.HEADER_RESPONSE);
         packet.setHeader(Packet.HEADER_OP);
         executor.execute(packet);
@@ -56,7 +55,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
         final DummyOperation operation = new DummyOperation(0);
         Data data = serializationService.toData(operation);
-        final Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
+        final Packet packet = new Packet(data, operation.getPartitionId());
         packet.setHeader(Packet.HEADER_OP);
         executor.execute(packet);
 
@@ -76,7 +75,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
 
         final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         Data data = serializationService.toData(operation);
-        final Packet packet = new Packet(data, operation.getPartitionId(), serializationService.getPortableContext());
+        final Packet packet = new Packet(data, operation.getPartitionId());
         packet.setHeader(Packet.HEADER_OP);
         executor.execute(packet);
 
