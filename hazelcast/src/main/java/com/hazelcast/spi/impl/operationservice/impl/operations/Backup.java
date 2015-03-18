@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -29,12 +29,18 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
+import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
+
+public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Data backupOpData;
     private Address originalCaller;
@@ -44,10 +50,11 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     private Operation backupOp;
     private boolean valid = true;
 
-    Backup() {
+    public Backup() {
     }
 
-    Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+    public Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
         this.backupOpData = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
@@ -63,12 +70,14 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         int partitionId = getPartitionId();
         InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
         Address owner = partition.getReplicaAddress(getReplicaIndex());
-        if (!nodeEngine.getThisAddress().equals(owner)) {
-            valid = false;
-            final ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
-            }
+        if (nodeEngine.getThisAddress().equals(owner)) {
+            return;
+        }
+
+        valid = false;
+        final ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
         }
     }
 
@@ -86,7 +95,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             backupOp.setCallerUuid(getCallerUuid());
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
-            backupOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+            backupOp.setResponseHandler(createEmptyResponseHandler());
 
             backupOp.beforeRun();
             backupOp.run();
@@ -99,17 +108,19 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     public void afterRun() throws Exception {
-        if (valid && sync && getCallId() != 0 && originalCaller != null) {
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            long callId = getCallId();
-            InternalOperationService operationService = nodeEngine.getOperationService();
+        if (!valid || !sync || getCallId() == 0 || originalCaller == null) {
+            return;
+        }
 
-            if (!nodeEngine.getThisAddress().equals(originalCaller)) {
-                BackupResponse backupResponse = new BackupResponse(callId, backupOp.isUrgent());
-                operationService.send(backupResponse, originalCaller);
-            } else {
-                operationService.notifyBackupCall(callId);
-            }
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        long callId = getCallId();
+        InternalOperationService operationService = nodeEngine.getOperationService();
+
+        if (nodeEngine.getThisAddress().equals(originalCaller)) {
+            operationService.notifyBackupCall(callId);
+        } else {
+            BackupResponse backupResponse = new BackupResponse(callId, backupOp.isUrgent());
+            operationService.send(backupResponse, originalCaller);
         }
     }
 
@@ -138,6 +149,16 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return SpiDataSerializerHook.BACKUP;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeData(backupOpData);
         if (originalCaller != null) {
@@ -159,16 +180,6 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         }
         replicaVersions = in.readLongArray();
         sync = in.readBoolean();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return SpiDataSerializerHook.BACKUP;
     }
 
     @Override

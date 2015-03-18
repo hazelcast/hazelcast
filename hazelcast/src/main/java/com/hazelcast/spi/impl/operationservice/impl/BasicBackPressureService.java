@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;

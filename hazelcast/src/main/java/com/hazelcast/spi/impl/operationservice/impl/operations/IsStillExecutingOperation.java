@@ -1,9 +1,11 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
@@ -17,7 +19,7 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     IsStillExecutingOperation() {
     }
 
-    IsStillExecutingOperation(long operationCallId, int partitionId) {
+    public IsStillExecutingOperation(long operationCallId, int partitionId) {
         this.operationCallId = operationCallId;
         setPartitionId(partitionId);
     }

@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.Collection;
 
-
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
- * InternalOperationService: {@link com.hazelcast.spi.impl.BasicOperationService}, but in the future others can be added.
+ * InternalOperationService: {@link com.hazelcast.spi.impl.operationservice.impl.BasicOperationService}, but in the
+ * future others can be added.
  * <p/>
  * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
  * the the SPI management.

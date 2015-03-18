@@ -1,4 +1,4 @@
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.OperationTimeoutException;
@@ -9,6 +9,9 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TraceableOperation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.IsStillExecutingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.TraceableIsStillExecutingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -27,7 +30,7 @@ import static java.lang.Math.min;
 
 /**
  * The BasicInvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
- * of a {@link com.hazelcast.spi.impl.BasicInvocation}. The BasicInvocation executes an operation.
+ * of a {@link BasicInvocation}. The BasicInvocation executes an operation.
  *
  * @param <E>
  */

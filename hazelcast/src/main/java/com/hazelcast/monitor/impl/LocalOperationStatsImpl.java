@@ -21,7 +21,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.spi.impl.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;

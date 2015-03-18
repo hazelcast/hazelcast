@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl.responses;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
 /**
- * A {@link com.hazelcast.spi.impl.Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
+ * A {@link Response} is a result of an {@link com.hazelcast.spi.Operation} being executed.
  * There are different types of responses:
  * <ol>
  * <li>
- * {@link com.hazelcast.spi.impl.NormalResponse} the result of a regular Operation result, e.g. Map.put
+ * {@link NormalResponse} the result of a regular Operation result, e.g. Map.put
  * </li>
  * <li>
- * {@link com.hazelcast.spi.impl.BackupResponse} the result of a completed {@link com.hazelcast.spi.impl.Backup}.
+ * {@link BackupResponse} the result of a completed {@link com.hazelcast.spi.impl.operationservice.impl.operations.Backup}.
  * </li>
  * </ol>
  */

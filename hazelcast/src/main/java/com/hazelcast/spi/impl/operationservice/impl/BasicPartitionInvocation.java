@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * A {@link BasicInvocation} evaluates a Operation Invocation for a particular partition running on top of the
- * {@link com.hazelcast.spi.impl.BasicOperationService}.
+ * {@link com.hazelcast.spi.impl.operationservice.impl.BasicOperationService}.
  */
 public final class BasicPartitionInvocation extends BasicInvocation {
 
