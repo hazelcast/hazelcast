@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         K marshalledKey = (K) marshallKey(key);
         synchronized (getMutex(marshalledKey)) {
             ReplicatedRecord<K, V> current = storage.get(marshalledKey);
-            if (current == null || current.getValue() != null) {
+            if (current == null || current.getValueInternal() != null) {
                 return;
             }
             storage.remove(marshalledKey, current);
@@ -85,7 +85,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             if (current == null) {
                 oldValue = null;
             } else {
-                oldValue = (V) current.getValue();
+                oldValue = (V) current.getValueInternal();
                 if (oldValue != null) {
                     current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
                     scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
@@ -116,9 +116,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             if (current == null) {
                 oldValue = null;
             } else {
-                oldValue = (V) current.getValue();
+                oldValue = (V) current.getValueInternal();
                 if (oldValue != null) {
-                    current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
+                    current.setValueInternal(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
                     scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
                     current.incrementVectorClock(localMember);
                 }
@@ -180,7 +180,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 record = buildReplicatedRecord(marshalledKey, marshalledValue, new VectorClockTimestamp(), ttlMillis);
                 storage.put(marshalledKey, record);
             } else {
-                oldValue = (V) old.getValue();
+                oldValue = (V) old.getValueInternal();
                 storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
             }
             if (ttlMillis > 0) {
@@ -207,10 +207,11 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         storage.checkState();
         mapStats.incrementOtherOperations();
 
-        return containsKeyInternal(key);
+        return containsKeyAndValue(key);
     }
 
-    private boolean containsKeyInternal(Object key) {
+    // IMPORTANT >> Increments hit counter
+    private boolean containsKeyAndValue(Object key) {
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
         return replicatedRecord != null && replicatedRecord.getValue() != null;
     }
@@ -234,7 +235,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         storage.checkState();
         Set keySet = new HashSet(storage.size());
         for (K key : storage.keySet()) {
-            if (containsKeyInternal(key)) {
+            if (containsKeyAndValue(key)) {
                 keySet.add(unmarshallKey(key));
             }
         }
@@ -266,11 +267,12 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         Set entrySet = new HashSet(storage.size());
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
             K keyOfEntry = entry.getKey();
-            if (!containsKeyInternal(keyOfEntry)) {
+            if (!containsKeyAndValue(keyOfEntry)) {
                 continue;
             }
             Object key = unmarshallKey(keyOfEntry);
-            Object value = unmarshallValue(entry.getValue().getValue());
+            // getValueInternal() is used here because hit count is incremented by containsKeyAndValue() above
+            Object value = unmarshallValue(entry.getValue().getValueInternal());
             entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
         mapStats.incrementOtherOperations();

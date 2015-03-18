@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,8 +84,8 @@ public class ReplicatedMapInitChunkOperation
             for (int i = 0; i < recordCount; i++) {
                 ReplicatedRecord record = replicatedRecords[i];
 
-                Object key = record.getKey();
-                Object value = record.getValue();
+                Object key = record.getKeyInternal();
+                Object value = record.getValueInternal();
                 VectorClockTimestamp timestamp = record.getVectorClockTimestamp();
                 int updateHash = record.getLatestUpdateHash();
                 long ttlMillis = record.getTtlMillis();
