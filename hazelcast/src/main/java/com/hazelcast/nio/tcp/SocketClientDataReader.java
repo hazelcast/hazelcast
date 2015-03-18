@@ -32,7 +32,7 @@ class SocketClientDataReader implements SocketReader {
     final TcpIpConnection connection;
     final IOService ioService;
     Packet packet;
-    boolean connectionTypeSet;
+//    boolean connectionTypeSet;
 
     public SocketClientDataReader(TcpIpConnection connection) {
         this.connection = connection;
@@ -41,12 +41,12 @@ class SocketClientDataReader implements SocketReader {
 
     public void read(ByteBuffer inBuffer) throws Exception {
         while (inBuffer.hasRemaining()) {
-            if (!connectionTypeSet) {
-                if (!setConnectionType(inBuffer)) {
-                    return;
-                }
-                connectionTypeSet = true;
-            }
+//            if (!connectionTypeSet) {
+//                if (!setConnectionType(inBuffer)) {
+//                    return;
+//                }
+//                connectionTypeSet = true;
+//            }
             if (packet == null) {
                 packet = new Packet();
             }
@@ -61,7 +61,7 @@ class SocketClientDataReader implements SocketReader {
         }
     }
 
-    private boolean setConnectionType(ByteBuffer inBuffer) {
+    public boolean setConnectionType(ByteBuffer inBuffer) {
         if (inBuffer.remaining() >= TYPE_BYTE) {
             byte[] typeBytes = new byte[TYPE_BYTE];
             inBuffer.get(typeBytes);

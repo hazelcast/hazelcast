@@ -118,8 +118,7 @@ final class ReadHandler extends AbstractSelectionHandler {
                     writeHandler.setProtocol(Protocols.CLUSTER);
                     socketReader = new SocketPacketReader(connection);
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
-                    writeHandler.setProtocol(Protocols.CLIENT_BINARY);
-                    socketReader = new SocketClientDataReader(connection);
+                    setupClient(writeHandler);
                 } else {
                     writeHandler.setProtocol(Protocols.TEXT);
                     inputBuffer.put(protocolBuffer.array());
@@ -130,6 +129,20 @@ final class ReadHandler extends AbstractSelectionHandler {
             if (socketReader == null) {
                 throw new IOException("Could not initialize SocketReader!");
             }
+        }
+    }
+
+    private void setupClient(WriteHandler writeHandler) throws IOException {
+        final ByteBuffer clientTypeBuffer = ByteBuffer.allocate(3);
+        int size;
+        do {
+            size = socketChannel.read(clientTypeBuffer);
+        } while (size <3 );
+        clientTypeBuffer.flip();
+        SocketClientDataReader reader = new SocketClientDataReader(connection);
+        if (reader.setConnectionType(clientTypeBuffer)) {
+            socketReader = reader;
+            writeHandler.setProtocol(Protocols.CLIENT_BINARY);
         }
     }
 
