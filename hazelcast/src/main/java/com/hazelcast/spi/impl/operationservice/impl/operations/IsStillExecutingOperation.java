@@ -4,8 +4,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.io.IOException;
 
@@ -27,7 +27,7 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     @Override
     public void run() throws Exception {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        InternalOperationService operationService = nodeEngine.getOperationService();
+        OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         boolean executing = operationService.isOperationExecuting(getCallerAddress(), getPartitionId(), operationCallId);
         getResponseHandler().sendResponse(executing);
     }

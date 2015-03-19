@@ -30,30 +30,30 @@ import static java.lang.Math.min;
 
 /**
  * The BasicInvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
- * of a {@link BasicInvocation}. The BasicInvocation executes an operation.
+ * of a {@link Invocation}. The BasicInvocation executes an operation.
  *
  * @param <E>
  */
-final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
+final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private static final int MAX_CALL_TIMEOUT_EXTENSION = 60 * 1000;
     private static final int IS_EXECUTING_CALL_TIMEOUT = 5000;
 
-    private static final AtomicReferenceFieldUpdater<BasicInvocationFuture, Object> RESPONSE_FIELD_UPDATER
-            = AtomicReferenceFieldUpdater.newUpdater(BasicInvocationFuture.class, Object.class, "response");
-    private static final AtomicIntegerFieldUpdater<BasicInvocationFuture> WAITER_COUNT_FIELD_UPDATER
-            = AtomicIntegerFieldUpdater.newUpdater(BasicInvocationFuture.class,  "waiterCount");
+    private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> RESPONSE_FIELD_UPDATER
+            = AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "response");
+    private static final AtomicIntegerFieldUpdater<InvocationFuture> WAITER_COUNT_FIELD_UPDATER
+            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class,  "waiterCount");
 
     volatile boolean interrupted;
     // Contains the number of threads waiting for a result from this future.
     // is updated through the WAITER_COUNT_FIELD_UPDATER.
     private volatile int waiterCount;
-    private final BasicOperationService operationService;
-    private final BasicInvocation invocation;
+    private final OperationServiceImpl operationService;
+    private final Invocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
     private volatile Object response;
 
-    BasicInvocationFuture(BasicOperationService operationService, BasicInvocation invocation, final Callback<E> callback) {
+    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, final Callback<E> callback) {
         this.invocation = invocation;
         this.operationService = operationService;
 
@@ -77,7 +77,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (response != null && !(response instanceof BasicInvocation.InternalResponse)) {
+            if (response != null && !(response instanceof Invocation.InternalResponse)) {
                 runAsynchronous(callback, executor);
                 return;
             }
@@ -126,7 +126,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
-            if (response != null && !(response instanceof BasicInvocation.InternalResponse)) {
+            if (response != null && !(response instanceof Invocation.InternalResponse)) {
                 //it can be that this invocation future already received an answer, e.g. when a an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
@@ -140,7 +140,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
             }
 
             response = offeredResponse;
-            if (offeredResponse == BasicInvocation.WAIT_RESPONSE) {
+            if (offeredResponse == Invocation.WAIT_RESPONSE) {
                 return;
             }
             callbackChain = callbackHead;
@@ -169,7 +169,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         }
 
         if (rawResponse == null) {
-            rawResponse = BasicInvocation.NULL_RESPONSE;
+            rawResponse = Invocation.NULL_RESPONSE;
         }
         return rawResponse;
     }
@@ -202,7 +202,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
-        if (response != null && response != BasicInvocation.WAIT_RESPONSE) {
+        if (response != null && response != Invocation.WAIT_RESPONSE) {
             return response;
         }
 
@@ -224,13 +224,13 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     lastPollTime = Clock.currentTimeMillis() - startMs;
                     timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
-                    if (response == BasicInvocation.WAIT_RESPONSE) {
-                        RESPONSE_FIELD_UPDATER.compareAndSet(this, BasicInvocation.WAIT_RESPONSE, null);
+                    if (response == Invocation.WAIT_RESPONSE) {
+                        RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
                         continue;
                     } else if (response != null) {
                         //if the thread is interrupted, but the response was not an interrupted-response,
                         //we need to restore the interrupt flag.
-                        if (response != BasicInvocation.INTERRUPTED_RESPONSE && interrupted) {
+                        if (response != Invocation.INTERRUPTED_RESPONSE && interrupted) {
                             Thread.currentThread().interrupt();
                         }
                         return response;
@@ -256,7 +256,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     }
                 }
             }
-            return BasicInvocation.TIMEOUT_RESPONSE;
+            return Invocation.TIMEOUT_RESPONSE;
         } finally {
             WAITER_COUNT_FIELD_UPDATER.decrementAndGet(this);
         }
@@ -351,15 +351,15 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object resolveApplicationResponse(Object unresolvedResponse) {
-        if (unresolvedResponse == BasicInvocation.NULL_RESPONSE) {
+        if (unresolvedResponse == Invocation.NULL_RESPONSE) {
             return null;
         }
 
-        if (unresolvedResponse == BasicInvocation.TIMEOUT_RESPONSE) {
+        if (unresolvedResponse == Invocation.TIMEOUT_RESPONSE) {
             return new TimeoutException("Call " + invocation + " encountered a timeout");
         }
 
-        if (unresolvedResponse == BasicInvocation.INTERRUPTED_RESPONSE) {
+        if (unresolvedResponse == Invocation.INTERRUPTED_RESPONSE) {
             return new InterruptedException("Call " + invocation + " was interrupted");
         }
 
@@ -420,7 +420,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         try {
             Operation isStillExecuting = createCheckOperation();
 
-            BasicInvocation inv = new BasicTargetInvocation(
+            Invocation inv = new TargetInvocation(
                     invocation.nodeEngine, invocation.serviceName, isStillExecuting,
                     target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
             Future f = inv.invoke();

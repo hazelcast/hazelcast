@@ -33,7 +33,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
+public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
     @Test
@@ -46,7 +46,7 @@ public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        BasicOperationServiceTest.assertNoLitterInOpService(hz);
+        OperationServiceImplTest.assertNoLitterInOpService(hz);
     }
 
     //there was a memory leak caused by the invocation not releasing the backup registration when there is a timeout.
@@ -62,8 +62,8 @@ public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
             assertNull(response);
         }
 
-        BasicOperationServiceTest.assertNoLitterInOpService(hz1);
-        BasicOperationServiceTest.assertNoLitterInOpService(hz2);
+        OperationServiceImplTest.assertNoLitterInOpService(hz1);
+        OperationServiceImplTest.assertNoLitterInOpService(hz2);
     }
 
     @Test
@@ -130,7 +130,7 @@ public class BasicOperationService_timeoutTest extends HazelcastTestSupport {
         assertOpenEventually("Should throw OperationTimeoutException", latch);
 
         for (HazelcastInstance instance : instances) {
-            BasicOperationServiceTest.assertNoLitterInOpService(instance);
+            OperationServiceImplTest.assertNoLitterInOpService(instance);
         }
     }
 

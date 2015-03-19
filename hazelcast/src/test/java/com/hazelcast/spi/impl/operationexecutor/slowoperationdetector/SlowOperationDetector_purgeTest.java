@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.spi.impl.operationservice.impl.BasicOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         map.executeOnEntries(new SlowEntryProcessor(3));
         map.executeOnEntries(new SlowEntryProcessor(2));
 
-        BasicOperationService operationService = (BasicOperationService) getInternalOperationService(instance);
+        OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
         operationService.shutdown();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
@@ -86,7 +86,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         }
         sleepSeconds(3);
 
-        BasicOperationService operationService = (BasicOperationService) getInternalOperationService(instance);
+        OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
         operationService.shutdown();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);

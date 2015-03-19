@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class BasicOperationService_invokeOnPartitionTest extends HazelcastTestSupport {
+public class OperationServiceImpl_invokeOnPartitionTest extends HazelcastTestSupport {
 
     @Test
     public void test_whenLocalPartition(){

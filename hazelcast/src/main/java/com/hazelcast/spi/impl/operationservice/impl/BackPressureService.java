@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * For information about the implementation see:
  * https://hazelcast.atlassian.net/wiki/display/EN/Back+Pressure+Design
  */
-public class BasicBackPressureService {
+public class BackPressureService {
 
     /**
      * The percentage above and below a certain sync-window we should randomize.
@@ -47,7 +47,7 @@ public class BasicBackPressureService {
     private final int syncWindow;
     private final int partitionCount;
 
-    public BasicBackPressureService(GroupProperties properties, ILogger logger) {
+    public BackPressureService(GroupProperties properties, ILogger logger) {
         this.backPressureEnabled = properties.BACKPRESSURE_ENABLED.getBoolean();
         this.partitionCount = properties.PARTITION_COUNT.getInteger();
         this.syncWindow = getSyncWindow(properties);

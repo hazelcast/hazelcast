@@ -52,12 +52,11 @@ import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 
 /**
- * The BasicInvocation evaluates a OperationInvocation for the {@link BasicOperationService}.
+ * The Invocation evaluates a Operation invocation.
  * <p/>
- * A handle to wait for the completion of this BasicInvocation is the
- * {@link BasicInvocationFuture}.
+ * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
-abstract class BasicInvocation implements ResponseHandler, Runnable {
+abstract class Invocation implements ResponseHandler, Runnable {
 
     /**
      * A response indicating the 'null' value.
@@ -87,11 +86,11 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
      */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 
-    private static final AtomicReferenceFieldUpdater<BasicInvocation, Boolean> RESPONSE_RECEIVED_FIELD_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(BasicInvocation.class, Boolean.class, "responseReceived");
+    private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED_FIELD_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
 
-    private static final AtomicIntegerFieldUpdater<BasicInvocation> BACKUPS_COMPLETED_FIELD_UPDATER =
-            AtomicIntegerFieldUpdater.newUpdater(BasicInvocation.class, "backupsCompleted");
+    private static final AtomicIntegerFieldUpdater<Invocation> BACKUPS_COMPLETED_FIELD_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsCompleted");
 
 
     static final class InternalResponse {
@@ -134,8 +133,8 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     volatile int backupsExpected;
     volatile int backupsCompleted;
 
-    private final BasicInvocationFuture invocationFuture;
-    private final BasicOperationService operationService;
+    private final InvocationFuture invocationFuture;
+    private final OperationServiceImpl operationService;
 
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
@@ -146,10 +145,10 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     private Address invTarget;
     private MemberImpl invTargetMember;
 
-    BasicInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
-                    boolean resultDeserialized) {
-        this.operationService = (BasicOperationService) nodeEngine.getOperationService();
+    Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
+               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
+               boolean resultDeserialized) {
+        this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
@@ -159,7 +158,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
-        this.invocationFuture = new BasicInvocationFuture(operationService, this, callback);
+        this.invocationFuture = new InvocationFuture(operationService, this, callback);
         this.resultDeserialized = resultDeserialized;
     }
 
@@ -206,7 +205,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         return defaultCallTimeout;
     }
 
-    public final BasicInvocationFuture invoke() {
+    public final InvocationFuture invoke() {
         if (invokeCount > 0) {
             // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");

@@ -1,4 +1,4 @@
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -6,6 +6,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,7 +55,7 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
-        OperationService service = localNode.nodeEngine.getOperationService();
+        OperationService service = getOperationService(local);
         Future f = service.createInvocationBuilder(null, op, localNode.address).invoke();
         Object instance1 = f.get();
         Object instance2 = f.get();
@@ -73,9 +76,9 @@ public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
         Data response = localNode.nodeEngine.toData(new DummyObject());
         Operation op = new OperationWithResponse(response);
 
-        Address remoteAddress = getNode(remote).address;
+        Address remoteAddress = getAddress(remote);
 
-        OperationService operationService = localNode.nodeEngine.getOperationService();
+        OperationService operationService = getOperationService(local);
         Future f = operationService.createInvocationBuilder(null, op, remoteAddress).invoke();
         Object instance1 = f.get();
         Object instance2 = f.get();
