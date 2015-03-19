@@ -1089,9 +1089,9 @@ public class ClientMapBasicTest {
     @Test
     public void testMapStatistics_withClientOperations() {
         final String mapName = randomString();
+        final IMap map = client.getMap(mapName);
         final LocalMapStats serverMapStats = server.getMap(mapName).getLocalMapStats();
 
-        final IMap map = client.getMap(mapName);
         final int operationCount = 1123;
         for (int i = 0; i < operationCount; i++) {
             map.put(i, i);

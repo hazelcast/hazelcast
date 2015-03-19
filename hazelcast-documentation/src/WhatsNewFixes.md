@@ -6,6 +6,9 @@
 
 This section lists issues solved for Hazelcast 3.4.2 release.
 
+- While executing unit tests, `SlowOperationDetectorThread` and `CleanupThread` may not be terminated before the next test is started [[#4757]](https://github.com/hazelcast/hazelcast/issues/4757).
+- When multiple nodes join sequentially after partitions are assigned/distributed, old nodes fail to clean backup replicas larger than the configured backup count. This causes a memory leak. Also, when multiple nodes leave the cluster at the same time (or in a short period), the new partition owner looses some partition replica versions and this causes backup nodes for those specific replica indexes to fail synchronizing data from the owner node, although the owner node holds the whole partition data [[#4687]](https://github.com/hazelcast/hazelcast/issues/4687).
+- After cluster merges due to a network-split, Hazelcast infinitely logs `WaitNotifyServiceImpl$WaitingOp::WrongTargetException` warnings [[#4676]](https://github.com/hazelcast/hazelcast/issues/4676).
 - A strange `mapName` parameter occurred when using wildcard configuration for a custom `MapStoreFacory` [[#4667]](https://github.com/hazelcast/hazelcast/issues/4667).
 - The method `IExecutorService.submitToKeyOwner` encountered two errors: the `onResponse` method is invoked with null and a cast exception is thrown in a Hazelcast thread [[#4627]](https://github.com/hazelcast/hazelcast/issues/4627).
 - The method `init` in an implementation of the `MapLoaderLifecyleSupport` interface is not invoked [[#4623]](https://github.com/hazelcast/hazelcast/issues/4623).
