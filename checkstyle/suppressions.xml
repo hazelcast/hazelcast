@@ -101,6 +101,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.config.Config"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.Config"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.AbstractXmlConfigHelper"/>
     <!--Couldn't change structure because of API -->
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.MapConfig"/>
     <suppress checks="BooleanExpressionComplexity" files="com.hazelcast.config.MapConfig"/>
@@ -111,6 +112,7 @@
     <!---->
     <suppress checks="MethodCount" files="com.hazelcast.config.SerializationConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.XmlConfigBuilder"/>
+    <suppress checks="FileLengthCheck" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>

@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
@@ -184,7 +183,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         try {
             parseAndBuildConfig(config);
         } catch (Exception e) {
-            throw new HazelcastException(e.getMessage(), e);
+            throw ExceptionUtil.rethrow(e);
         }
         return config;
     }
@@ -199,6 +198,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             domLevel3 = false;
         }
         process(root);
+        schemaValidation(root.getOwnerDocument());
         handleConfig(root);
     }
 
@@ -239,7 +239,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
             if (occurrenceSet.contains(nodeName)) {
-                throw new IllegalStateException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
             }
             if (handleXmlNode(node, nodeName)) {
                 continue;
@@ -254,7 +254,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         if (NETWORK.isEqual(nodeName)) {
             handleNetwork(node);
         } else if (IMPORT.isEqual(nodeName)) {
-            throw new IllegalStateException("<import> element can appear only in the top level of the XML");
+            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         } else if (GROUP.isEqual(nodeName)) {
             handleGroup(node);
         } else if (PROPERTIES.isEqual(nodeName)) {
@@ -335,7 +335,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                         Node parserNode = n.getAttributes().getNamedItem("parser");
                         String parserClass = getTextContent(parserNode);
                         if (parserNode == null || parserClass == null) {
-                            throw new IllegalArgumentException("Parser is required!");
+                            throw new InvalidConfigurationException("Parser is required!");
                         }
                         try {
                             ServiceConfigurationParser parser = ClassLoaderUtil.newInstance(config.getClassLoader(), parserClass);
@@ -645,9 +645,27 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            if (cleanNodeName(n.getNodeName()).equals("required-member")) {
+            if (cleanNodeName(n.getNodeName()).equals("member-list")) {
+                handleMemberList(n);
+            } else if (cleanNodeName(n.getNodeName()).equals("required-member")) {
+                if (tcpIpConfig.getRequiredMember() != null) {
+                    throw new InvalidConfigurationException("Duplicate required-member"
+                            + " definition found in XML configuration. ");
+                }
                 tcpIpConfig.setRequiredMember(value);
             } else if (memberTags.contains(cleanNodeName(n.getNodeName()))) {
+                tcpIpConfig.addMember(value);
+            }
+        }
+    }
+
+    private void handleMemberList(final Node node) {
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        final TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("member".equals(nodeName)) {
+                final String value = getTextContent(n).trim();
                 tcpIpConfig.addMember(value);
             }
         }

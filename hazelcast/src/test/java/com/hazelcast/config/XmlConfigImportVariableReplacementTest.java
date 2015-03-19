@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 public class XmlConfigImportVariableReplacementTest {
 
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppersInTopLevel() throws Exception {
         String xml = "<hazelcast>\n" +
                 "   <network>" +
@@ -48,7 +48,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastElementOnlyAppersOnce() throws Exception {
         String xml = "<hazelcast>\n" +
                 "   <hazelcast>" +
@@ -64,19 +64,19 @@ public class XmlConfigImportVariableReplacementTest {
                         "    <semaphore name=\"${name}\">\n" +
                         "        <initial-permits>${initial.permits}</initial-permits>\n" +
                         "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
-                        "        <async-backup-count>${notreplaced}</async-backup-count>\n" +
                         "    </semaphore>" +
                         "</hazelcast>";
 
         Properties properties = new Properties();
         properties.setProperty("name", "s");
         properties.setProperty("initial.permits", "25");
-        properties.setProperty("backupcount.part1", "1");
-        properties.setProperty("backupcount.part2", "0");
+
+        properties.setProperty("backupcount.part1", "0");
+        properties.setProperty("backupcount.part2", "6");
         Config config = buildConfig(xml, properties);
         SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
         assertEquals(25, semaphoreConfig.getInitialPermits());
-        assertEquals(10, semaphoreConfig.getBackupCount());
+        assertEquals(6, semaphoreConfig.getBackupCount());
         assertEquals(0, semaphoreConfig.getAsyncBackupCount());
     }
 
@@ -130,7 +130,7 @@ public class XmlConfigImportVariableReplacementTest {
         assertTrue(join.getTcpIpConfig().isEnabled());
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -147,7 +147,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(config1Xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -181,7 +181,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(config1Xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"\"/>\n" +

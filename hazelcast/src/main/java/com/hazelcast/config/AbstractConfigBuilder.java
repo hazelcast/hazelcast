@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -73,7 +72,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
                 XPathConstants.NODESET
         );
         if (misplacedImports.getLength() > 0) {
-            throw new IllegalStateException("<import> element can appear only in the top level of the XML");
+            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
         NodeList importTags = (NodeList) xpath.evaluate("/" + this.getXmlType().name + "/" + IMPORT.name, document,
                 XPathConstants.NODESET);
@@ -88,10 +87,10 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         String resource = resourceAtrribute.getTextContent();
         URL url = ConfigLoader.locateConfig(resource);
         if (url == null) {
-            throw new HazelcastException("Failed to load resource : " + resource);
+            throw new InvalidConfigurationException("Failed to load resource : " + resource);
         }
         if (!currentlyImportedFiles.add(url.getPath())) {
-            throw new HazelcastException("Cyclic loading of resource " + url.getPath() + " is detected !");
+            throw new InvalidConfigurationException("Cyclic loading of resource " + url.getPath() + " is detected !");
         }
         Document doc = parse(url.openStream());
         Element importedRoot = doc.getDocumentElement();
@@ -127,7 +126,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         NodeList misplacedHazelcastTag = (NodeList) xpath.evaluate("//" + this.getXmlType().name, root.getOwnerDocument(),
                 XPathConstants.NODESET);
         if (misplacedHazelcastTag.getLength() > 1) {
-            throw new IllegalStateException("<" + this.getXmlType().name + "> element can appear only once in the XML");
+            throw new InvalidConfigurationException("<" + this.getXmlType().name + "> element can appear only once in the XML");
         }
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {

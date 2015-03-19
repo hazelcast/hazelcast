@@ -54,6 +54,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_GROUP, "dev-custom");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_PASSWORD, "dev-pass");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_ADDRESS, "localhost");
+        props.setProperty(CacheEnvironment.CONFIG_FILE_PATH,"hazelcast-client-custom.xml");
         SessionFactory sf = createSessionFactory(props);
         HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz instanceof HazelcastClientProxy);
