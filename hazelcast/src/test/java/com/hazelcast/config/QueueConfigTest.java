@@ -75,7 +75,7 @@ public class QueueConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void setAsyncBackupCount_whenTooLarge(){
         QueueConfig config = new QueueConfig();
-        config.setAsyncBackupCount(200); //max allowed is 6.. I need to look up the constant
+        config.setAsyncBackupCount(200); //max allowed is 6..
     }
 
     @Test(expected = IllegalArgumentException.class)
