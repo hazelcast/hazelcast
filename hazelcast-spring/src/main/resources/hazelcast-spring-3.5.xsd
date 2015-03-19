@@ -17,10 +17,12 @@
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="http://www.hazelcast.com/schema/spring"
+           xmlns:tool="http://www.springframework.org/schema/tool"
            targetNamespace="http://www.hazelcast.com/schema/spring"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
+    <xs:import namespace="http://www.springframework.org/schema/tool" schemaLocation="http://www.springframework.org/schema/tool/spring-tool.xsd"/>
     <xs:element name="config">
         <xs:complexType>
             <xs:complexContent>
@@ -937,6 +939,14 @@
     </xs:complexType>
 
     <xs:element name="hazelcast">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the hazelcast instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:exports type="com.hazelcast.core.HazelcastInstance"/>
+            </xs:appinfo>
+        </xs:annotation>
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
@@ -949,6 +959,14 @@
     </xs:element>
 
     <xs:element name="client">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the hazelcast client
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:exports type="com.hazelcast.client.HazelcastClient"/>
+            </xs:appinfo>
+        </xs:annotation>
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
