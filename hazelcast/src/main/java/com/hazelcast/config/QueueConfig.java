@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}
  */
@@ -32,6 +34,10 @@ public class QueueConfig {
      * Default value of sycronous backup count
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+    /**
+     * The number of maximum backup counter
+     */
+    private static final int MAX_BACKUP_COUNT = 6;
     /**
      * Default value of asynchronous backup count
      */
@@ -106,7 +112,15 @@ public class QueueConfig {
         return backupCount;
     }
 
-    public QueueConfig setBackupCount(int backupCount) {
+    public QueueConfig setBackupCount(final int backupCount) {
+        if (backupCount < MIN_BACKUP_COUNT) {
+            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
+                    + MIN_BACKUP_COUNT);
+        }
+        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
+                    + MAX_BACKUP_COUNT);
+        }
         this.backupCount = backupCount;
         return this;
     }
@@ -115,7 +129,15 @@ public class QueueConfig {
         return asyncBackupCount;
     }
 
-    public QueueConfig setAsyncBackupCount(int asyncBackupCount) {
+    public QueueConfig setAsyncBackupCount(final int asyncBackupCount) {
+        if (asyncBackupCount < MIN_BACKUP_COUNT) {
+            throw new IllegalArgumentException("map async backup count must be equal to or bigger than "
+                    + MIN_BACKUP_COUNT);
+        }
+        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
+                    + MAX_BACKUP_COUNT);
+        }
         this.asyncBackupCount = asyncBackupCount;
         return this;
     }

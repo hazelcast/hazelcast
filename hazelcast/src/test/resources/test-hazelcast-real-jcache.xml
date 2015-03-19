@@ -24,6 +24,14 @@
         <password>test-pass1</password>
     </group>
 
+    <network>
+        <join>
+            <tcp-ip enabled="true">
+                <member>127.0.0.1</member>
+            </tcp-ip>
+        </join>
+    </network>
+
     <cache name="cache1">
         <key-type class-name="java.lang.Object"/>
         <value-type class-name="java.lang.Object"/>
