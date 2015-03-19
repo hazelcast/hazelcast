@@ -205,7 +205,8 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return defaultCallTimeout;
     }
 
-    public final InvocationFuture invoke() {
+
+    private void invokeInternal(boolean isAsync) {
         if (invokeCount > 0) {
             // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
@@ -223,14 +224,23 @@ abstract class Invocation implements ResponseHandler, Runnable {
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex);
 
-            if (!operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
-               throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
+            boolean isAllowed = operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op, isAsync);
+            if (!isAllowed && !isMigrationOperation(op)) {
+                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
             handleInvocationException(e);
         }
+    }
+
+    public final InvocationFuture invoke() {
+        invokeInternal(false);
         return invocationFuture;
+    }
+
+    public final void invokeAsync() {
+        invokeInternal(true);
     }
 
     private void handleInvocationException(Exception e) {

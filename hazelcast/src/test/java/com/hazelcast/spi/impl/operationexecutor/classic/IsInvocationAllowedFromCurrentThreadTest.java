@@ -20,7 +20,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
     public void test_whenNullOperation() {
         initExecutor();
 
-        executor.isInvocationAllowedFromCurrentThread(null);
+        executor.isInvocationAllowedFromCurrentThread(null, false);
     }
 
     // ============= generic operations ==============================
@@ -31,7 +31,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         DummyGenericOperation genericOperation = new DummyGenericOperation();
 
-        boolean result = executor.isInvocationAllowedFromCurrentThread(genericOperation);
+        boolean result = executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
 
         assertTrue(result);
     }
@@ -45,7 +45,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(0) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation);
+                return executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
             }
         };
 
@@ -63,7 +63,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation);
+                return executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
             }
         };
         executor.execute(task);
@@ -80,7 +80,26 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return executor.isInvocationAllowedFromCurrentThread(genericOperation);
+                return executor.isInvocationAllowedFromCurrentThread(genericOperation, false);
+            }
+        });
+
+        DummyNioThread nioThread = new DummyNioThread(futureTask);
+        nioThread.start();
+
+        assertEqualsEventually(futureTask, Boolean.FALSE);
+    }
+
+    @Test
+    public void test_whenGenericOperation_andCallingFromNioThread_andAsync() {
+        initExecutor();
+
+        final DummyGenericOperation genericOperation = new DummyGenericOperation();
+
+        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return executor.isInvocationAllowedFromCurrentThread(genericOperation, true);
             }
         });
 
@@ -98,7 +117,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
 
         final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
 
-        boolean result = executor.isInvocationAllowedFromCurrentThread(partitionOperation);
+        boolean result = executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
 
         assertTrue(result);
     }
@@ -112,7 +131,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(Operation.GENERIC_PARTITION_ID) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation);
+                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
             }
         };
 
@@ -130,7 +149,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(partitionOperation.getPartitionId()) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation);
+                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
             }
         };
 
@@ -149,13 +168,32 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
             @Override
             public Object call() {
-                return executor.isInvocationAllowedFromCurrentThread(partitionOperation);
+                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, false);
             }
         };
 
         executor.execute(task);
 
         assertEqualsEventually(task, Boolean.FALSE);
+    }
+
+    @Test
+    public void test_whenPartitionOperation_andCallingFromPartitionOperationThread_andWrongPartition_andAsync() {
+        initExecutor();
+
+        final DummyPartitionOperation partitionOperation = new DummyPartitionOperation();
+
+        int wrongPartition = partitionOperation.getPartitionId()+1;
+        PartitionSpecificCallable task = new PartitionSpecificCallable(wrongPartition) {
+            @Override
+            public Object call() {
+                return executor.isInvocationAllowedFromCurrentThread(partitionOperation, true);
+            }
+        };
+
+        executor.execute(task);
+
+        assertEqualsEventually(task, Boolean.TRUE);
     }
 
     @Test
@@ -167,7 +205,26 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
         FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return executor.isInvocationAllowedFromCurrentThread(operation);
+                return executor.isInvocationAllowedFromCurrentThread(operation, false);
+            }
+        });
+
+        DummyNioThread nioThread = new DummyNioThread(futureTask);
+        nioThread.start();
+
+        assertEqualsEventually(futureTask, Boolean.FALSE);
+    }
+
+    @Test
+    public void test_whenPartitionOperation_andCallingFromNioThread_andAsync() {
+        initExecutor();
+
+        final Operation operation = new DummyOperation(1);
+
+        FutureTask<Boolean> futureTask = new FutureTask<Boolean>(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return executor.isInvocationAllowedFromCurrentThread(operation, true);
             }
         });
 

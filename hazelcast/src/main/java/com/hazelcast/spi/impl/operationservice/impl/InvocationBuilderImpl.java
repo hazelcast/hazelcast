@@ -40,14 +40,25 @@ public class InvocationBuilderImpl extends InvocationBuilder {
         super(nodeEngine, serviceName, op, partitionId, target);
     }
 
-    @Override
-    public InternalCompletableFuture invoke() {
+    private Invocation buildInvocation() {
         if (target == null) {
             return new PartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized).invoke();
+                    tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized);
         } else {
             return new TargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, callback, resultDeserialized).invoke();
+                    callTimeout, callback, resultDeserialized);
         }
+    }
+
+    @Override
+    public InternalCompletableFuture invoke() {
+        Invocation invocation = buildInvocation();
+        return invocation.invoke();
+    }
+
+    @Override
+    public void invokeAsync() {
+        Invocation invocation = buildInvocation();
+        invocation.invokeAsync();
     }
 }

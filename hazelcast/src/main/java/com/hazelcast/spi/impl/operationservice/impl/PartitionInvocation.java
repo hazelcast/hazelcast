@@ -30,7 +30,7 @@ public final class PartitionInvocation extends Invocation {
 
     public PartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                               Callback<Object> callback, boolean resultDeserialized) {
+                               Callback callback, boolean resultDeserialized) {
         super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
                 callTimeout, callback, resultDeserialized);
     }

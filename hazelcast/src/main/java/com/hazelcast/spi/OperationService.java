@@ -129,6 +129,10 @@ public interface OperationService {
 
     <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
+    <E> void invokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback);
+
+    <E> void invokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback);
+
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);

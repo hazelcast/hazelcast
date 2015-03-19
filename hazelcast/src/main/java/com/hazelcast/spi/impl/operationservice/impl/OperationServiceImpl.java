@@ -28,6 +28,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -260,6 +261,22 @@ public final class OperationServiceImpl implements InternalOperationService {
          return new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <E> void invokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback) {
+        new PartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
+                InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+                InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <E> void invokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback) {
+        new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
+                InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 
     // =============================== processing response  ===============================

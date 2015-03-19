@@ -229,4 +229,6 @@ public abstract class InvocationBuilder {
     }
 
     public abstract InternalCompletableFuture invoke();
+
+    public abstract void invokeAsync();
 }
