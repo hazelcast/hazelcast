@@ -70,6 +70,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
         super(name, mapService, nodeEngine);
+        // dummy comment
     }
 
     @Override
