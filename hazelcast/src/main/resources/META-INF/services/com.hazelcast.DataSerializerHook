@@ -9,10 +9,10 @@ com.hazelcast.collection.impl.collection.CollectionDataSerializerHook
 com.hazelcast.topic.impl.TopicDataSerializerHook
 com.hazelcast.executor.impl.ExecutorDataSerializerHook
 com.hazelcast.concurrent.lock.LockDataSerializerHook
-com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook
-com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook
-com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook
-com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook
+com.hazelcast.concurrent.semaphore.impl.SemaphoreDataSerializerHook
+com.hazelcast.concurrent.atomiclong.impl.AtomicLongDataSerializerHook
+com.hazelcast.concurrent.countdownlatch.impl.CountDownLatchDataSerializerHook
+com.hazelcast.concurrent.atomicreference.impl.AtomicReferenceDataSerializerHook
 com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook
 com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook
 com.hazelcast.mapreduce.aggregation.impl.AggregationsDataSerializerHook

@@ -18,10 +18,10 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.countdownlatch.client.AwaitRequest;
-import com.hazelcast.concurrent.countdownlatch.client.CountDownRequest;
-import com.hazelcast.concurrent.countdownlatch.client.GetCountRequest;
-import com.hazelcast.concurrent.countdownlatch.client.SetCountRequest;
+import com.hazelcast.concurrent.countdownlatch.impl.client.AwaitRequest;
+import com.hazelcast.concurrent.countdownlatch.impl.client.CountDownRequest;
+import com.hazelcast.concurrent.countdownlatch.impl.client.GetCountRequest;
+import com.hazelcast.concurrent.countdownlatch.impl.client.SetCountRequest;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.nio.serialization.Data;
 

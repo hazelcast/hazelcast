@@ -1,5 +1,6 @@
 package com.hazelcast.concurrent.countdownlatch;
 
+import com.hazelcast.concurrent.countdownlatch.impl.CountDownLatchService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICountDownLatch;

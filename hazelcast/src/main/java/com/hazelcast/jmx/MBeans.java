@@ -18,11 +18,11 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.set.SetService;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.atomiclong.impl.AtomicLongService;
+import com.hazelcast.concurrent.atomicreference.impl.AtomicReferenceService;
+import com.hazelcast.concurrent.countdownlatch.impl.CountDownLatchService;
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.concurrent.semaphore.impl.SemaphoreService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;

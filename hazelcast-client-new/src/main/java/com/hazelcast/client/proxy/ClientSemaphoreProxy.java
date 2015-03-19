@@ -18,12 +18,12 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.semaphore.client.InitRequest;
-import com.hazelcast.concurrent.semaphore.client.AcquireRequest;
-import com.hazelcast.concurrent.semaphore.client.AvailableRequest;
-import com.hazelcast.concurrent.semaphore.client.DrainRequest;
-import com.hazelcast.concurrent.semaphore.client.ReleaseRequest;
-import com.hazelcast.concurrent.semaphore.client.ReduceRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.InitRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.AcquireRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.AvailableRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.DrainRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.ReleaseRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.ReduceRequest;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.nio.serialization.Data;
 

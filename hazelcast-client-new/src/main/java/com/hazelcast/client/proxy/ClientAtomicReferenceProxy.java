@@ -18,16 +18,16 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomicreference.client.GetRequest;
-import com.hazelcast.concurrent.atomicreference.client.ApplyRequest;
-import com.hazelcast.concurrent.atomicreference.client.AlterRequest;
-import com.hazelcast.concurrent.atomicreference.client.AlterAndGetRequest;
-import com.hazelcast.concurrent.atomicreference.client.GetAndAlterRequest;
-import com.hazelcast.concurrent.atomicreference.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomicreference.client.ContainsRequest;
-import com.hazelcast.concurrent.atomicreference.client.SetRequest;
-import com.hazelcast.concurrent.atomicreference.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomicreference.client.IsNullRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.GetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.ApplyRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.AlterRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.AlterAndGetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.GetAndAlterRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.ContainsRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.SetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.IsNullRequest;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicReference;

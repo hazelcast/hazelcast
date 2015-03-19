@@ -30,6 +30,10 @@
     <suppress checks="CyclomaticComplexityCheck" files=".*(?:SerializerHook)\.java$"/>
     <suppress checks="IllegalType" files=".*(?:SerializerHook)\.java$"/>
 
+    <!-- Proxies often have many methods because that has been defined in their API interface -->
+    <suppress checks="MethodCount" files=".*(?:Proxy)\.java$"/>
+
+
     <!--<suppress checks="" files="[\\/]examples[\\/]"/>-->
     <suppress checks="FileLengthCheck" files="ConsoleApp.java"/>
     <suppress checks="MethodCountCheck" files="ConsoleApp.java"/>

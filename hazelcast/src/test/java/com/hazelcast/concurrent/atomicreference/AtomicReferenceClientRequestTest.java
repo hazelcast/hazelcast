@@ -18,9 +18,14 @@ package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.concurrent.atomicreference.client.*;
+import com.hazelcast.concurrent.atomicreference.impl.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.GetRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.IsNullRequest;
+import com.hazelcast.concurrent.atomicreference.impl.client.SetRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicReference;
+import com.hazelcast.multimap.impl.client.ContainsRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ClientCompatibleTest;

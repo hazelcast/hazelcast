@@ -2,8 +2,8 @@ package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.concurrent.countdownlatch.client.AwaitRequest;
-import com.hazelcast.concurrent.countdownlatch.client.CountDownRequest;
+import com.hazelcast.concurrent.countdownlatch.impl.client.AwaitRequest;
+import com.hazelcast.concurrent.countdownlatch.impl.client.CountDownRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
