@@ -37,7 +37,7 @@ public final class PartitionInvocation extends Invocation {
 
     @Override
     public Address getTarget() {
-        return getPartition().getReplicaAddress(getReplicaIndex());
+        return getPartition().getReplicaAddress(replicaIndex);
     }
 
     @Override

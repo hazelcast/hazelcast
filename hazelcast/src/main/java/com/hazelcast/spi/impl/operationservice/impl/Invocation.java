@@ -172,14 +172,6 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
-
     private long getCallTimeout(long callTimeout) {
         if (callTimeout > 0) {
             return callTimeout;
