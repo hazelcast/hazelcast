@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,30 +25,24 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-class SocketClientDataReader implements SocketReader {
+class SocketClientDataReaderNew implements SocketReader {
 
     private static final int TYPE_BYTE = 3;
 
     final TcpIpConnection connection;
     final IOService ioService;
     Packet packet;
-    boolean connectionTypeSet;
+//    boolean connectionTypeSet;
 
-    public SocketClientDataReader(TcpIpConnection connection) {
+    public SocketClientDataReaderNew(TcpIpConnection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().ioService;
     }
 
     public void read(ByteBuffer inBuffer) throws Exception {
         while (inBuffer.hasRemaining()) {
-            if (!connectionTypeSet) {
-                if (!setConnectionType(inBuffer)) {
-                    return;
-                }
-                connectionTypeSet = true;
-            }
             if (packet == null) {
-                packet = new Packet();
+                packet = new Packet(ioService.getPortableContext());
             }
             boolean complete = packet.readFrom(inBuffer);
             if (complete) {
@@ -61,7 +55,7 @@ class SocketClientDataReader implements SocketReader {
         }
     }
 
-    private boolean setConnectionType(ByteBuffer inBuffer) {
+    public boolean setConnectionType(ByteBuffer inBuffer) {
         if (inBuffer.remaining() >= TYPE_BYTE) {
             byte[] typeBytes = new byte[TYPE_BYTE];
             inBuffer.get(typeBytes);
