@@ -129,7 +129,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                     + lineSeparator + "Exception: " + e.getMessage()
                     + lineSeparator + "HazelcastClient startup interrupted.";
             LOGGER.severe(msg);
-            throw e;
+            throw new InvalidConfigurationException(e.getMessage());
         } finally {
             IOUtil.closeResource(inputStream);
         }
