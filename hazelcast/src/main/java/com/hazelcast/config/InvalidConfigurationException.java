@@ -34,4 +34,15 @@ public class InvalidConfigurationException extends RuntimeException {
     public InvalidConfigurationException(String message) {
         super(message);
     }
+
+    /**
+     * ** Constructs a new runtime exception with the specified detail message and
+     * cause.
+     * @param message the message.
+     * @param cause the cause.
+     */
+    public InvalidConfigurationException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
 }
