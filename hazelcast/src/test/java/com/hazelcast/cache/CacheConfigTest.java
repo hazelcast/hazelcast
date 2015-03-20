@@ -217,7 +217,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void setAsyncBackupCount_whenTooLarge (){
         CacheConfig config = new CacheConfig();
-        config.setAsyncBackupCount(200); //max allowed is 6.. I need to look up the constant
+        config.setAsyncBackupCount(200); //max allowed is 6..
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -235,7 +235,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void setBackupCount_whenTooLarge(){
         CacheConfig config = new CacheConfig();
-        config.setBackupCount(200); //max allowed is 6.. I need to look up the constant
+        config.setBackupCount(200); //max allowed is 6..
     }
 
     @Test
