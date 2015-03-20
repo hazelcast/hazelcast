@@ -4,7 +4,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.impl.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +33,7 @@ public class PerformanceMonitor extends Thread {
         this.delaySeconds = delaySeconds;
         this.node = hazelcastInstance.node;
         this.logger = node.getLogger(PerformanceMonitor.class.getName());
-        this.operationService = (InternalOperationService) node.nodeEngine.getOperationService();
+        this.operationService = node.nodeEngine.getOperationService();
         this.connectionManager = node.connectionManager;
     }
 

@@ -87,7 +87,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         invocation.setSendConnection(connection);
         final SerializationService ss = client.getSerializationService();
         final Data data = ss.toData(invocation.getRequest());
-        Packet packet = new Packet(data, invocation.getPartitionId(), ss.getPortableContext());
+        Packet packet = new Packet(data, invocation.getPartitionId());
         if (!isAllowedToSendRequest(connection, invocation.getRequest()) || !connection.write(packet)) {
             final int callId = invocation.getRequest().getCallId();
             deRegisterCallId(callId);

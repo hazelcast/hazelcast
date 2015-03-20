@@ -70,9 +70,9 @@ public interface SerializationService {
 
     ByteOrder getByteOrder();
 
-    BufferObjectDataOutput pop();
-
-    void push(BufferObjectDataOutput out);
+//    BufferObjectDataOutput pop();
+//
+//    void push(BufferObjectDataOutput out);
 
     void destroy();
 }

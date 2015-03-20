@@ -13,17 +13,16 @@ import static org.junit.Assert.fail;
 public class JoinConfigTest {
 
     @Test
-    public void test() {
-        assertNotOk(true, true, true);
-        assertNotOk(true, true, false);
-        assertNotOk(true, false, true);
-        assertNotOk(false, true, true);
-
+    public void joinConfigTest() {
         assertOk(false, false, false);
-
         assertOk(true, false, false);
         assertOk(false, true, false);
         assertOk(false, false, true);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void joinConfigTestWhenTwoJoinMethodEnabled() {
+        assertOk(true, true, false);
     }
 
     public void assertOk(boolean tcp, boolean multicast, boolean aws) {

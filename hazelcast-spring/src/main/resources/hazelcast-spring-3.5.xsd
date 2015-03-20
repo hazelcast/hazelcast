@@ -17,10 +17,12 @@
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="http://www.hazelcast.com/schema/spring"
+           xmlns:tool="http://www.springframework.org/schema/tool"
            targetNamespace="http://www.hazelcast.com/schema/spring"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
+    <xs:import namespace="http://www.springframework.org/schema/tool" schemaLocation="http://www.springframework.org/schema/tool/spring-tool.xsd"/>
     <xs:element name="config">
         <xs:complexType>
             <xs:complexContent>
@@ -937,6 +939,16 @@
     </xs:complexType>
 
     <xs:element name="hazelcast">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the hazelcast instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.HazelcastInstance"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
@@ -949,6 +961,16 @@
     </xs:element>
 
     <xs:element name="client">
+        <xs:annotation>
+            <xs:documentation>
+                Configure the hazelcast client
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.HazelcastInstance"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
@@ -971,19 +993,162 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="map" type="hazelcast-type"/>
-    <xs:element name="multiMap" type="hazelcast-type"/>
-    <xs:element name="queue" type="hazelcast-type"/>
-    <xs:element name="topic" type="hazelcast-type"/>
-    <xs:element name="set" type="hazelcast-type"/>
-    <xs:element name="list" type="hazelcast-type"/>
-    <xs:element name="executorService" type="hazelcast-type"/>
-    <xs:element name="idGenerator" type="hazelcast-type"/>
-    <xs:element name="atomicLong" type="hazelcast-type"/>
-    <xs:element name="atomicReference" type="hazelcast-type"/>
-    <xs:element name="countDownLatch" type="hazelcast-type"/>
-    <xs:element name="semaphore" type="hazelcast-type"/>
-    <xs:element name="lock" type="hazelcast-type"/>
+    <xs:element name="map" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IMap instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IMap"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="multiMap" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast MultiMap instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.MultiMap"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="queue" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IQueue instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IQueue"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="topic" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast ITopic instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="set" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast ISet instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ISet"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="list" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IList instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IList"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="executorService" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IExecutorService instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IExecutorService"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="idGenerator" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IdGenerator instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IdGenerator"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="atomicLong" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IAtomicLong instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IAtomicLong"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="atomicReference" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast IAtomicReference instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.IAtomicReference"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="countDownLatch" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast ICountDownLatch instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ICountDownLatch"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="semaphore" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast ISemaphore instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ISemaphore"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="lock" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast ILock instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ILock"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
 
     <xs:element name="hibernate-region-factory" type="hibernate-cache"/>
 

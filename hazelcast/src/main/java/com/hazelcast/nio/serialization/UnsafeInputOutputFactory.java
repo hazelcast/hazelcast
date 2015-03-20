@@ -25,7 +25,7 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
 
     @Override
     public BufferObjectDataInput createInput(Data data, SerializationService service) {
-        return new UnsafeObjectDataInput(data, service);
+        return new UnsafeObjectDataInput(data.toByteArray(), DefaultData.DATA_OFFSET, service);
     }
 
     @Override

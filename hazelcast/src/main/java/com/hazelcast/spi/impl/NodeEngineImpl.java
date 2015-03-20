@@ -38,6 +38,8 @@ import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
@@ -62,14 +64,14 @@ import java.util.LinkedList;
  * you get exactly the same behavior.
  * <p/>
  * But the crucial thing is that we don't want to leak concrete dependencies to the outside. For example
- * we don't leak {@link BasicOperationService} to the outside.
+ * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
 public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final ILogger logger;
     private final EventServiceImpl eventService;
-    private final BasicOperationService operationService;
+    private final OperationServiceImpl operationService;
     private final ExecutionServiceImpl executionService;
     private final WaitNotifyServiceImpl waitNotifyService;
     private final ServiceManager serviceManager;
@@ -84,7 +86,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManager(this);
         this.executionService = new ExecutionServiceImpl(this);
-        this.operationService = new BasicOperationService(this);
+        this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
         this.waitNotifyService = new WaitNotifyServiceImpl(this);
         this.transactionManagerService = new TransactionManagerServiceImpl(this);

@@ -71,8 +71,8 @@
         <log4j.version>1.2.12</log4j.version>
         <log4j2.version>2.0.1</log4j2.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
-        <main.basedir>${project.basedir}</main.basedir>
-        <jacoco.version>0.7.0.201403182114</jacoco.version>
+       <main.basedir>${project.basedir}</main.basedir>
+         <jacoco.version>0.7.0.201403182114</jacoco.version>
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>

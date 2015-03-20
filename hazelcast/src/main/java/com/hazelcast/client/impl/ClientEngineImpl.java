@@ -58,7 +58,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -148,7 +148,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         if (partitionId < 0) {
             executor.execute(new ClientPacketProcessor(packet));
         } else {
-            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            InternalOperationService operationService = nodeEngine.getOperationService();
             operationService.execute(new ClientPacketProcessor(packet));
         }
     }
@@ -178,7 +178,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
         Data responseData = serializationService.toData(clientResponse);
         int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
-        final Packet packet = new Packet(responseData, partitionId, serializationService.getPortableContext());
+        final Packet packet = new Packet(responseData, partitionId);
         if (isEvent) {
             packet.setHeader(Packet.HEADER_EVENT);
         }

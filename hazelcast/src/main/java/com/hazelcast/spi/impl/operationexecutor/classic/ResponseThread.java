@@ -4,7 +4,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
-import com.hazelcast.spi.impl.Response;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,8 +19,8 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  * actual processing.
  *
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
- * {@link com.hazelcast.spi.impl.Response} and let the invocation-future deal with the response can be
- * rather expensive currently.
+ * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
+ * deal with the response can be rather expensive currently.
  */
 public final class ResponseThread extends Thread {
 

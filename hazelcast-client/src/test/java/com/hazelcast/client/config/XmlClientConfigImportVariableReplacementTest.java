@@ -17,6 +17,7 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,7 +41,7 @@ import org.junit.runner.RunWith;
 public class XmlClientConfigImportVariableReplacementTest {
 
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppersInTopLevel() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "   <network>" +
@@ -51,7 +52,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(xml);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastElementOnlyAppearsOnce() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "   <hazelcast-client>" +

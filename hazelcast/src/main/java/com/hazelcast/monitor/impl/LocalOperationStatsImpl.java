@@ -21,7 +21,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.spi.impl.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -43,7 +43,7 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     }
 
     public LocalOperationStatsImpl(Node node) {
-        InternalOperationService operationService = (InternalOperationService) node.nodeEngine.getOperationService();
+        InternalOperationService operationService = node.nodeEngine.getOperationService();
         this.slowOperations = operationService.getSlowOperations();
         this.maxVisibleSlowOperationCount = node.groupProperties.MC_MAX_SLOW_OPERATION_COUNT.getInteger();
     }
