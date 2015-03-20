@@ -133,9 +133,10 @@ public interface OperationExecutor {
      * can cause problems, e.g. when you hog a partition thread.
      *
      * @param op the Operation to check
+     * @param isAsync is the invocation async, if false invocation does not return a future to block on
      * @return true if allowed, false otherwise.
      */
-    boolean isInvocationAllowedFromCurrentThread(Operation op);
+    boolean isInvocationAllowedFromCurrentThread(Operation op, boolean isAsync);
 
     /**
      * Shuts down this OperationExecutor.

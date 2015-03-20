@@ -33,7 +33,7 @@ public final class TargetInvocation extends Invocation {
 
     public TargetInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op,
                             Address target, int tryCount, long tryPauseMillis, long callTimeout,
-                            Callback<Object> callback, boolean resultDeserialized) {
+                            Callback callback, boolean resultDeserialized) {
         super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
                 tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized);
         this.target = target;
