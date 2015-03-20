@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -67,4 +69,8 @@ public interface InternalOperationService extends OperationService {
      * @return collection of long running operation logs.
      */
     Collection<JsonSerializable> getSlowOperations();
+
+    <E> void invokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback);
+
+    <E> void invokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback);
 }
