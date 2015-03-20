@@ -31,38 +31,36 @@ public class Flyweight
 
     private final MutableDirectBuffer buffer = new UnsafeBuffer(EMPTY_BUFFER);
     private int offset;
+    private int dataPosition;
 
-    public Flyweight wrap(final byte[] buffer)
+    protected Flyweight wrap(final byte[] buffer)
     {
         this.buffer.wrap(buffer);
-        offset = 0;
-
+        this.offset = 0;
         return this;
     }
 
-    public Flyweight wrap(final ByteBuffer buffer)
+    protected Flyweight wrap(final ByteBuffer buffer)
     {
         return wrap(buffer, 0);
     }
 
-    public Flyweight wrap(final ByteBuffer buffer, final int offset)
+    protected Flyweight wrap(final ByteBuffer buffer, final int offset)
     {
         this.buffer.wrap(buffer);
         this.offset = offset;
-
         return this;
     }
 
-    public Flyweight wrap(final MutableDirectBuffer buffer)
+    protected Flyweight wrap(final MutableDirectBuffer buffer)
     {
         return wrap(buffer, 0);
     }
 
-    public Flyweight wrap(final MutableDirectBuffer buffer, final int offset)
+    protected Flyweight wrap(final MutableDirectBuffer buffer, final int offset)
     {
         this.buffer.wrap(buffer);
         this.offset = offset;
-
         return this;
     }
 
@@ -80,6 +78,18 @@ public class Flyweight
     {
         this.offset = offset;
     }
+
+    public int dataPosition()
+    {
+        return dataPosition;
+    }
+
+    public void dataPosition(final int position)
+    {
+        buffer.checkLimit(position);
+        this.dataPosition = position;
+    }
+
 
     protected void copyFlyweight(final Flyweight srcFlyweight, final int index, final int length)
     {
@@ -167,4 +177,5 @@ public class Flyweight
     {
         return buffer.putStringUtf8(offset, value, byteOrder);
     }
+
 }
