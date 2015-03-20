@@ -32,7 +32,6 @@ class SocketClientDataReaderNew implements SocketReader {
     final TcpIpConnection connection;
     final IOService ioService;
     Packet packet;
-//    boolean connectionTypeSet;
 
     public SocketClientDataReaderNew(TcpIpConnection connection) {
         this.connection = connection;
@@ -42,7 +41,7 @@ class SocketClientDataReaderNew implements SocketReader {
     public void read(ByteBuffer inBuffer) throws Exception {
         while (inBuffer.hasRemaining()) {
             if (packet == null) {
-                packet = new Packet(ioService.getPortableContext());
+                packet = new Packet();
             }
             boolean complete = packet.readFrom(inBuffer);
             if (complete) {
