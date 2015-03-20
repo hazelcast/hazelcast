@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
@@ -41,7 +40,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.util.EmptyStatement;
@@ -111,6 +109,7 @@ public final class OperationServiceImpl implements InternalOperationService {
     private final long defaultCallTimeoutMillis;
     private final SlowOperationDetector slowOperationDetector;
     private final CleanupThread cleanupThread;
+    private final IsStillRunningService isStillRunningService;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -137,6 +136,8 @@ public final class OperationServiceImpl implements InternalOperationService {
                 node.getNodeExtension()
         );
 
+        this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
+
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
@@ -153,6 +154,10 @@ public final class OperationServiceImpl implements InternalOperationService {
                 operationExecutor.getPartitionOperationRunners(),
                 node.groupProperties,
                 node.getHazelcastThreadGroup());
+    }
+
+    public IsStillRunningService getIsStillRunningService() {
+        return isStillRunningService;
     }
 
     @Override
@@ -378,72 +383,6 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     long getDefaultCallTimeoutMillis() {
         return defaultCallTimeoutMillis;
-    }
-
-    public boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
-        Object service = nodeEngine.getService(serviceName);
-        if (service == null) {
-            logger.severe("Not able to find operation execution info. Invalid service: " + serviceName);
-            return false;
-        }
-        if (service instanceof ExecutionTracingService) {
-            return ((ExecutionTracingService) service).isOperationExecuting(callerAddress, callerUuid, identifier);
-        }
-        logger.severe("Not able to find operation execution info. Invalid service: " + service);
-        return false;
-    }
-
-    /**
-     * Checks if an operation is still running.
-     * <p/>
-     * If the partition id is set, then it is super cheap since it just involves some volatiles reads since the right worker
-     * thread can be found and in the worker-thread the current operation is stored in a volatile field.
-     * <p/>
-     * If the partition id isn't set, then we iterate over all generic-operationthread and check if one of them is running
-     * the given operation. So this is a more expensive, but in most cases this should not be an issue since most of the data
-     * is hot in cache.
-     */
-    public boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId) {
-        if (partitionId < 0) {
-            OperationRunner[] genericOperationRunners = operationExecutor.getGenericOperationRunners();
-            for (OperationRunner genericOperationRunner : genericOperationRunners) {
-
-                Object task = genericOperationRunner.currentTask();
-                if (!(task instanceof Operation)) {
-                    continue;
-                }
-                Operation op = (Operation) task;
-                if (matches(op, callerAddress, operationCallId)) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            OperationRunner[] partitionOperationRunners = operationExecutor.getPartitionOperationRunners();
-            OperationRunner operationRunner = partitionOperationRunners[partitionId];
-            Object task = operationRunner.currentTask();
-            if (!(task instanceof Operation)) {
-                return false;
-            }
-            Operation op = (Operation) task;
-            return matches(op, callerAddress, operationCallId);
-        }
-    }
-
-    private static boolean matches(Operation op, Address callerAddress, long operationCallId) {
-        if (op == null) {
-            return false;
-        }
-
-        if (op.getCallId() != operationCallId) {
-            return false;
-        }
-
-        if (!op.getCallerAddress().equals(callerAddress)) {
-            return false;
-        }
-
-        return true;
     }
 
     public void onMemberLeft(final MemberImpl member) {

@@ -7,17 +7,12 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.TraceableOperation;
-import com.hazelcast.spi.impl.operationservice.impl.operations.IsStillExecutingOperation;
-import com.hazelcast.spi.impl.operationservice.impl.operations.TraceableIsStillExecutingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -37,7 +32,6 @@ import static java.lang.Math.min;
 final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private static final int MAX_CALL_TIMEOUT_EXTENSION = 60 * 1000;
-    private static final int IS_EXECUTING_CALL_TIMEOUT = 5000;
 
     private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> RESPONSE_FIELD_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "response");
@@ -248,7 +242,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     }
 
                     invocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
-                    boolean executing = isOperationExecuting(target);
+                    boolean executing = operationService.getIsStillRunningService().isOperationExecuting(invocation);
                     if (!executing) {
                         Object operationTimeoutException = newOperationTimeoutException(pollCount * pollTimeoutMs);
                         // tries to set an OperationTimeoutException response if response is not set yet
@@ -412,35 +406,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public boolean isDone() {
         return response != null;
-    }
-
-    private boolean isOperationExecuting(Address target) {
-        // ask if op is still being executed?
-        Boolean executing = Boolean.FALSE;
-        try {
-            Operation isStillExecuting = createCheckOperation();
-
-            Invocation inv = new TargetInvocation(
-                    invocation.nodeEngine, invocation.serviceName, isStillExecuting,
-                    target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
-            Future f = inv.invoke();
-            invocation.logger.warning("Asking if operation execution has been started: " + toString());
-            executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
-        } catch (Exception e) {
-            invocation.logger.warning("While asking 'is-executing': " + toString(), e);
-        }
-        invocation.logger.warning("'is-executing': " + executing + " -> " + toString());
-        return executing;
-    }
-
-    private Operation createCheckOperation() {
-        Operation op = invocation.op;
-        if (op instanceof TraceableOperation) {
-            TraceableOperation traceable = (TraceableOperation) op;
-            return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
-        } else {
-            return new IsStillExecutingOperation(op.getCallId(), op.getPartitionId());
-        }
     }
 
     @Override
