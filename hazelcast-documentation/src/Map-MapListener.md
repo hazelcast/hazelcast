@@ -4,13 +4,13 @@
 ### Map Listener
 
 You can listen to map-wide or entry-based events by implementing a `MapListener` sub-interface. 
-A map-wide event is fired as a result of a map-wide operation, e.g. `IMap#clear` or `IMap#evictAll`.
-An entry-based event is fired after the operations that affect a specific entry, e.g.`IMap#remove` or `IMap#evict`.
+A map-wide event is fired as a result of a map-wide operation: for example, `IMap#clear` or `IMap#evictAll`.
+An entry-based event is fired after the operations that affect a specific entry: for example, `IMap#remove` or `IMap#evict`.
 
 
-Let's take a look at the following code sample. As you see, to catch an event you should explicitly implement a corresponding sub-interface of a `MapListener`, e.g. `EntryAddedListener` or `MapClearedListener`.
+Let's take a look at the following code sample. To catch an event, you should explicitly implement a corresponding sub-interface of a `MapListener`, such as `EntryAddedListener` or `MapClearedListener`.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *`EntryListener` interface still can be implemented, we kept it as is due to the backward compatibility reasons. However, if you need to listen a different event which is not available in the `EntryListener` interface, you should also implement a relevant `MapListener` sub-interface.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *`EntryListener` interface still can be implemented, we kept that as is due to backward compatibility reasons. However, if you need to listen to a different event which is not available in the `EntryListener` interface, you should also implement a relevant `MapListener` sub-interface.*
 
 ```java
 public class Listen {
@@ -99,5 +99,5 @@ public class MyEntryListener implements EntryListener{
     }
 ...
 ```
-A map listener runs on the event threads which are also used by the other listeners, e.g. the collection listeners and pub/sub message listeners. This means, the entry listeners can access to other partitions. Consider this when you run long tasks since listening to those tasks may cause the other map/event listeners to starve.
+A map listener runs on the event threads that are also used by the other listeners: for example, the collection listeners and pub/sub message listeners. This means that the entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause the other map/event listeners to starve.
 

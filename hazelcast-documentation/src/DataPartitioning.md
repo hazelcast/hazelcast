@@ -1,7 +1,7 @@
 
 ## Data Partitioning
 
-As you read in the [Sharding in Hazelcast section](#sharding-in-hazelcast), Hazelcast shards are called Partitions. Partitions are memory segments, where each of those segments can contain hundreds or thousands of data entries depending on the memory capacity of your system. 
+As you read in the [Sharding in Hazelcast section](#sharding-in-hazelcast), Hazelcast shards are called Partitions. Partitions are memory segments, where each of those segments can contain hundreds or thousands of data entries, depending on the memory capacity of your system. 
 
 By default, Hazelcast offers 271 partitions. When you start a node, that nose owns those 271 partitions. The following illustration shows the partitions in a single node Hazelcast cluster.
 
@@ -17,11 +17,11 @@ As you add more nodes, Hazelcast one-by-one moves some of the primary and replic
 
 ![](images/4NodeCluster.jpg)
 
-The partitions are distributed equally among the members of the cluster. Hazelcast creates the backups of partitions and distributes them among nodes for redundancy.
+Hazelcast distributes the partitions equally among the members of the cluster. Hazelcast creates the backups of partitions and distributes them among nodes for redundancy.
 
 ### How the Data is Partitioned
 
-Hazelcast distributes data entries into the partitions using a hashing algorithm. Given an object key (for example, for map) or an object name (for example, for topic or list):
+Hazelcast distributes data entries into the partitions using a hashing algorithm. Given an object key (for example, for a map) or an object name (for example, for a topic or list):
 
 - the key or name is serialized (converted into a byte array),
 - this byte array is hashed, and
@@ -37,7 +37,7 @@ The oldest node in the cluster (the one that started first) periodically sends t
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If the oldest node goes down, the next oldest node sends the partition table information to the other nodes.*
 
-You can configure the frequency that the node sends the partition table information with the `hazelcast.partition.table.send.interval` system property. It is set to 15 seconds by default. 
+You can configure the frequency (how often) that the node sends the partition table the information by using the `hazelcast.partition.table.send.interval` system property. The property is set to every 15 seconds by default. 
 
 ### Repartitioning
 
