@@ -47,9 +47,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
     private HazelcastInstance[] clusterC = new HazelcastInstance[2];
 
-    private Config configA;
-    private Config configB;
-    private Config configC;
+    public Config configA;
+    public Config configB;
+    public Config configC;
 
     private Random random = new Random();
 
