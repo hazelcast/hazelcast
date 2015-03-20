@@ -14,6 +14,7 @@
 |[Chapter 7 - Distributed Events](#distributed-events)||The whole chapter improved by adding sections describing each listener.|
 |[Chapter 8 - Distributed Computing](#distributed-computing)|[Execution Member Selector](#execution-member-selector)|Added as a new section explaining how to select a cluster member on which an execution will be performed.|
 |[Chapter 13 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
+||[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Updated the Overview paragraph to include the support for Tomcat 8.
 |[Chapter 15 - Clients](#clients)||Added introduction paragraphs.|
 |[Chapter 18 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
 |[Chapter 19 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
