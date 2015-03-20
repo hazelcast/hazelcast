@@ -11,10 +11,10 @@ Hazelcast Simulator makes use of Apache JClouds, an open source multi-cloud tool
 
 You can use Hazelcast Simulator for the following use cases:
 
-- In pre-production phase to simulate the expected throughput/latency of Hazelcast with your specific requirements
-- To test if Hazelcast behaves as expected if you implement new functionality in your project 
-- As part of your test suite in your deployment process
-- When upgrading your Hazelcast version
+- In pre-production phase to simulate the expected throughput/latency of Hazelcast with your specific requirements.
+- To test if Hazelcast behaves as expected when you implement a new functionality in your project.
+- As part of your test suite in your deployment process.
+- When upgrading your Hazelcast version.
 
 Hazelcast Simulator is available as a downloadable package on the Hazelcast [web site](http://www.hazelcast.org/download). Please refer to the [Installing Simulator section](#installing-simulator) for more information.
 

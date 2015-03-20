@@ -16,7 +16,7 @@ Session Replication with Hazelcast Enterprise is a container specific module tha
 
 ***Features***
 
-1. Seamless Tomcat 6 & 7 integration
+1. Seamless Tomcat 6, 7 & 8 integration (Tomcat 8 is supported for Hazelcast Enterprise 3.5 or higher.)
 2. Support for sticky and non-sticky sessions
 3. Tomcat failover
 4. Deferred write for performance boost
@@ -28,8 +28,9 @@ Tomcat Web Session Replication Module has been tested against the following cont
 
 - Tomcat 6.0.x - It can be downloaded [here](http://tomcat.apache.org/download-60.cgi).
 - Tomcat 7.0.x - It can be downloaded [here](http://tomcat.apache.org/download-70.cgi).
+- Tomcat 8.0.x - It can be downloaded [here](http://tomcat.apache.org/download-80.cgi).
 
-The latest tested versions are **6.0.39** and **7.0.40**.
+The latest tested versions are **6.0.39**, **7.0.40** and **8.0.20**.
 <br></br>
 
 ***Requirements***
