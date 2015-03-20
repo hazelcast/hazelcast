@@ -70,7 +70,7 @@ public interface InternalOperationService extends OperationService {
      */
     Collection<JsonSerializable> getSlowOperations();
 
-    <E> void invokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback);
+    <E> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback);
 
-    <E> void invokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback);
+    <E> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback);
 }

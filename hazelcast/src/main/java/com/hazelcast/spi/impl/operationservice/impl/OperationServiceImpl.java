@@ -270,7 +270,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> void invokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback) {
+    public <E> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback) {
         new PartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
                 InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
@@ -278,7 +278,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> void invokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback) {
+    public <E> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback) {
         new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
