@@ -18,15 +18,15 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.AlterAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.AddAndGetRequest;
-import com.hazelcast.concurrent.atomiclong.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAlterRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAddRequest;
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomiclong.client.SetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.ApplyRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.AlterRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.AlterAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.AddAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.GetAndAlterRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.GetAndAddRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.SetRequest;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicLong;

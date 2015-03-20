@@ -9,10 +9,10 @@ com.hazelcast.collection.impl.collection.CollectionPortableHook
 com.hazelcast.topic.impl.TopicPortableHook
 com.hazelcast.executor.impl.ExecutorPortableHook
 com.hazelcast.concurrent.lock.client.LockPortableHook
-com.hazelcast.concurrent.semaphore.client.SemaphorePortableHook
-com.hazelcast.concurrent.atomiclong.client.AtomicLongPortableHook
-com.hazelcast.concurrent.countdownlatch.client.CountDownLatchPortableHook
-com.hazelcast.concurrent.atomicreference.client.AtomicReferencePortableHook
+com.hazelcast.concurrent.semaphore.impl.client.SemaphorePortableHook
+com.hazelcast.concurrent.atomiclong.impl.client.AtomicLongPortableHook
+com.hazelcast.concurrent.countdownlatch.impl.client.CountDownLatchPortableHook
+com.hazelcast.concurrent.atomicreference.impl.client.AtomicReferencePortableHook
 com.hazelcast.mapreduce.impl.MapReducePortableHook
 com.hazelcast.replicatedmap.impl.client.ReplicatedMapPortableHook
 com.hazelcast.cache.impl.CachePortableHook

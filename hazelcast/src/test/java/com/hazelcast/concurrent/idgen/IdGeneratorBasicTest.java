@@ -4,9 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.util.UUID;
-
-import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.concurrent.idgen.impl.IdGeneratorProxy;
 import org.junit.Before;
 import org.junit.Test;
 

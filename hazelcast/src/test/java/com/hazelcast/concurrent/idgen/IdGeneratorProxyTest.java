@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.UUID;
 
+import com.hazelcast.concurrent.idgen.impl.IdGeneratorProxy;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

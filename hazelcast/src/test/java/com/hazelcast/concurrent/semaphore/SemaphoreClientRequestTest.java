@@ -17,7 +17,12 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.client.ClientTestSupport;
-import com.hazelcast.concurrent.semaphore.client.*;
+import com.hazelcast.concurrent.semaphore.impl.client.AcquireRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.AvailableRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.DrainRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.InitRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.ReduceRequest;
+import com.hazelcast.concurrent.semaphore.impl.client.ReleaseRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;

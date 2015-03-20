@@ -18,7 +18,11 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.concurrent.atomiclong.client.*;
+import com.hazelcast.concurrent.atomiclong.impl.client.AddAndGetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.CompareAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.GetAndAddRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.GetAndSetRequest;
+import com.hazelcast.concurrent.atomiclong.impl.client.SetRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastParallelClassRunner;
