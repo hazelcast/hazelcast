@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import uk.co.real_logic.aeron.common.Flyweight;
+import com.hazelcast.client.impl.protocol.util.Flyweight;
 
 import java.nio.ByteOrder;
 
@@ -32,7 +32,7 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  * +---------------------------------------------------------------+
  * |R|                     CorrelationId                           |
  * +-------------+---------------+---------------------------------+
- * |  Version    |     Flags     |               Type              |
+ * |  Version    |B|E|  Flags    |               Type              |
  * +-------------+---------------+---------------------------------+
  * |        Data Offset          |                                 |
  * +-----------------------------+
