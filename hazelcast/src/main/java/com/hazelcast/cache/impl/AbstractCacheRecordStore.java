@@ -600,7 +600,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean deleteRecord(Data key, int completionId) {
-        final R record = records.remove(key);
         return deleteRecord(key, completionId, SOURCE_NOT_AVAILABLE);
     }
 

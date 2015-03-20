@@ -1,5 +1,6 @@
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
@@ -116,6 +117,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
     private final ClientTransactionManager transactionManager;
+    private final NearCacheManager nearCacheManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final LoadBalancer loadBalancer;
@@ -144,6 +146,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         invocationService = initInvocationService();
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
+        nearCacheManager = clientExtension.createNearCacheManager();
+
         proxyManager.init(config);
 
     }
@@ -471,6 +475,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return listenerService;
     }
 
+    public NearCacheManager getNearCacheManager() {
+        return nearCacheManager;
+    }
+
     public ThreadGroup getThreadGroup() {
         return threadGroup;
     }
@@ -497,5 +505,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         invocationService.shutdown();
         listenerService.shutdown();
         serializationService.destroy();
+        nearCacheManager.destroyAllNearCaches();
     }
 }
