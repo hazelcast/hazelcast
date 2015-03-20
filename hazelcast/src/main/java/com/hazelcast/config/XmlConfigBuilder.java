@@ -228,7 +228,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 LOGGER.severe(msg);
 
             }
-            throw new InvalidConfigurationException(e.getMessage(),e);
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             IOUtil.closeResource(is);
         }
