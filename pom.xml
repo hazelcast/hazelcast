@@ -780,7 +780,10 @@
         </profile>
 
         <profile>
-            <id>jdk-8-plus</id>
+            <id>jdk-9</id>
+            <activation>
+                <jdk>1.9</jdk>
+            </activation>
             <build>
                 <plugins>
                     <plugin>
