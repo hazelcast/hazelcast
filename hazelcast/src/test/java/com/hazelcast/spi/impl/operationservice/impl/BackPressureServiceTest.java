@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.AbstractOperation;
@@ -33,17 +34,19 @@ public class BackPressureServiceTest {
     public final static int SYNC_WINDOW = 100;
 
     private ILogger logger;
+    private HazelcastThreadGroup threadGroup;
 
     @Before
     public void setup() {
         logger = mock(ILogger.class);
+        threadGroup = new HazelcastThreadGroup("BackPressureServiceTest", logger, BackPressureServiceTest.class.getClassLoader());
     }
 
     @Test
     public void testBackPressureDisabledByDefault() {
         Config config = new Config();
         GroupProperties groupProperties = new GroupProperties(config);
-        BackPressureService service = new BackPressureService(groupProperties, logger);
+        BackPressureService service = new BackPressureService(groupProperties, logger, threadGroup);
         assertFalse(service.isBackPressureEnabled());
     }
 
@@ -53,7 +56,7 @@ public class BackPressureServiceTest {
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_ENABLED, "true");
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "" + 0);
         GroupProperties groupProperties = new GroupProperties(config);
-        new BackPressureService(groupProperties, logger);
+        new BackPressureService(groupProperties, logger, threadGroup);
     }
 
     // ========================== clean =================
@@ -198,13 +201,13 @@ public class BackPressureServiceTest {
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_ENABLED, "true");
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "" + SYNC_WINDOW);
         GroupProperties groupProperties = new GroupProperties(config);
-        return new BackPressureService(groupProperties, logger);
+        return new BackPressureService(groupProperties, logger, threadGroup);
     }
 
     private BackPressureService newDisabledBackPressureService() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_BACKPRESSURE_ENABLED, "false");
         GroupProperties groupProperties = new GroupProperties(config);
-        return new BackPressureService(groupProperties, logger);
+        return new BackPressureService(groupProperties, logger, threadGroup);
     }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
@@ -115,7 +116,9 @@ public final class ResponseHandlerFactory {
             }
 
             Response response;
-            if (!(obj instanceof Response)) {
+            if (obj instanceof Throwable) {
+                response = new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent());
+            } else if (!(obj instanceof Response)) {
                 response = new NormalResponse(obj, operation.getCallId(), 0, operation.isUrgent());
             } else {
                 response = (Response) obj;

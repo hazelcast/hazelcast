@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.JsonSerializable;
@@ -27,7 +25,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -36,13 +33,13 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -50,15 +47,10 @@ import com.hazelcast.util.executor.ManagedExecutorService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
  * This is the Basic InternalOperationService and depends on Java 6.
@@ -84,16 +76,13 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  */
 public final class OperationServiceImpl implements InternalOperationService {
 
-    private static final int INITIAL_CAPACITY = 1000;
-    private static final float LOAD_FACTOR = 0.75f;
-    private static final long SCHEDULE_DELAY = 1111;
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
     private static final int CONCURRENCY_LEVEL = 16;
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
-    private static final long CLEANUP_THREAD_MAX_WAIT_TIME_TO_FINISH = TimeUnit.SECONDS.toMillis(10);
+    private static final long TERMINATION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
-    final ConcurrentMap<Long, Invocation> invocations;
+    final InvocationRegistry invocationsRegistry;
     final OperationExecutor operationExecutor;
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
@@ -102,14 +91,11 @@ public final class OperationServiceImpl implements InternalOperationService {
     final NodeEngineImpl nodeEngine;
     final Node node;
     final ILogger logger;
-    final long backupOperationTimeoutMillis;
     final OperationBackupHandler operationBackupHandler;
     final BackPressureService backPressureService;
 
-    private final AtomicLong callIdGen = new AtomicLong(1);
     private final long defaultCallTimeoutMillis;
     private final SlowOperationDetector slowOperationDetector;
-    private final CleanupThread cleanupThread;
     private final IsStillRunningService isStillRunningService;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
@@ -118,13 +104,14 @@ public final class OperationServiceImpl implements InternalOperationService {
         this.logger = node.getLogger(OperationService.class);
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-        this.backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
-        this.backPressureService = new BackPressureService(node.getGroupProperties(), logger);
+        this.backPressureService = new BackPressureService(node.getGroupProperties(), logger, node.getHazelcastThreadGroup());
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
-        this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
+
+        long backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
+        this.invocationsRegistry = new InvocationRegistry(this, concurrencyLevel, backupOperationTimeoutMillis);
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.operationExecutor = new ClassicOperationExecutor(
@@ -144,9 +131,6 @@ public final class OperationServiceImpl implements InternalOperationService {
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
         this.slowOperationDetector = initSlowOperationDetector();
-
-        this.cleanupThread = new CleanupThread(this);
-        this.cleanupThread.start();
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -171,6 +155,10 @@ public final class OperationServiceImpl implements InternalOperationService {
         return slowOperationDetector.getSlowOperations();
     }
 
+    public InvocationRegistry getInvocationsRegistry() {
+        return invocationsRegistry;
+    }
+
     @Override
     public int getPartitionOperationThreadCount() {
         return operationExecutor.getPartitionOperationThreadCount();
@@ -193,7 +181,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     public int getRemoteOperationsCount() {
-        return invocations.size();
+        return invocationsRegistry.size();
     }
 
     @Override
@@ -239,7 +227,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     public void runOperationOnCallingThread(Operation op) {
-       operationExecutor.runOnCallingThread(op);
+        operationExecutor.runOnCallingThread(op);
     }
 
     @Override
@@ -263,7 +251,7 @@ public final class OperationServiceImpl implements InternalOperationService {
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-         return new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
+        return new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
     }
@@ -282,19 +270,6 @@ public final class OperationServiceImpl implements InternalOperationService {
         new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
                 InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
                 InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
-    }
-
-    // =============================== processing response  ===============================
-
-    public void notifyBackupCall(long callId) {
-        try {
-            final Invocation invocation = invocations.get(callId);
-            if (invocation != null) {
-                invocation.signalOneBackupComplete();
-            }
-        } catch (Exception e) {
-            ReplicaErrorLogger.log(e, logger);
-        }
     }
 
     // =============================== processing operation  ===============================
@@ -376,75 +351,32 @@ public final class OperationServiceImpl implements InternalOperationService {
         return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
 
-    public void registerInvocation(Invocation invocation) {
-        long callId = callIdGen.getAndIncrement();
-        Operation op = invocation.op;
-        if (op.getCallId() != 0) {
-            invocations.remove(op.getCallId());
-        }
-
-        invocations.put(callId, invocation);
-        setCallId(invocation.op, callId);
-    }
-
-    public void deregisterInvocation(Invocation invocation) {
-        long callId = invocation.op.getCallId();
-        // locally executed non backup-aware operations (e.g. a map.get on a local member) doesn't have a call id.
-        // so in that case we can skip the deregistration since it isn't registered in the first place.
-        if (callId == 0) {
-            return;
-        }
-
-        invocations.remove(callId);
-    }
-
     long getDefaultCallTimeoutMillis() {
         return defaultCallTimeoutMillis;
     }
 
-    public void onMemberLeft(final MemberImpl member) {
-        // postpone notifying calls since real response may arrive in the mean time.
-        nodeEngine.getExecutionService().schedule(new Runnable() {
-            public void run() {
-                final Iterator<Invocation> iter = invocations.values().iterator();
-                while (iter.hasNext()) {
-                    final Invocation invocation = iter.next();
-                    if (invocation.isCallTarget(member)) {
-                        iter.remove();
-                        invocation.notify(new MemberLeftException(member));
-                    }
-                }
-            }
-        }, SCHEDULE_DELAY, TimeUnit.MILLISECONDS);
+    public void onMemberLeft(MemberImpl member) {
+        invocationsRegistry.onMemberLeft(member);
     }
 
     public void reset() {
-        for (Invocation invocation : invocations.values()) {
-            try {
-                invocation.notify(new MemberLeftException());
-            } catch (Throwable e) {
-                logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
-            }
-        }
-        invocations.clear();
+        invocationsRegistry.reset();
     }
 
     public void shutdown() {
         logger.finest("Shutting down OperationService");
-        cleanupThread.shutdown();
-        for (Invocation invocation : invocations.values()) {
-            try {
-                invocation.notify(new HazelcastInstanceNotActiveException());
-            } catch (Throwable e) {
-                logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
-            }
-        }
-        invocations.clear();
+        backPressureService.shutdown();
+        invocationsRegistry.shutdown();
         operationExecutor.shutdown();
         slowOperationDetector.shutdown();
+
         try {
-            cleanupThread.join(CLEANUP_THREAD_MAX_WAIT_TIME_TO_FINISH);
+            invocationsRegistry.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
+            backPressureService.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
+            //restore the interrupt.
+            //todo: we need a better mechanism for dealing with interruption and waiting for termination
+            Thread.currentThread().interrupt();
             EmptyStatement.ignore(e);
         }
     }
