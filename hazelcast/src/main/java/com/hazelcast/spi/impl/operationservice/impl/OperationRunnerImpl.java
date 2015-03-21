@@ -24,8 +24,8 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ForcedSyncResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ForcedSyncResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -187,7 +187,7 @@ class OperationRunnerImpl extends OperationRunner {
 
         if (op.returnsResponse()) {
             return new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount, op.isUrgent());
-        }else if(op.isSyncForced()){
+        } else if (op.isSyncForced()) {
             //todo:we need to deal with this
             return null;
             //return new ForcedSyncResponse(op.getCallId(), actualSyncBackups, op.isUrgent());

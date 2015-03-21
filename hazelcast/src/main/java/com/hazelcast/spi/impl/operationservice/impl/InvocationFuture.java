@@ -222,7 +222,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 }
 
                 Object resp = this.response;
-                if (resp == Invocation.BACKPRESSURE_RESPONSE|| resp == Invocation.WAIT_RESPONSE) {
+                if (resp == Invocation.BACKPRESSURE_RESPONSE || resp == Invocation.WAIT_RESPONSE) {
                     RESPONSE_FIELD_UPDATER.compareAndSet(this, resp, null);
                     continue;
                 } else if (response != null) {

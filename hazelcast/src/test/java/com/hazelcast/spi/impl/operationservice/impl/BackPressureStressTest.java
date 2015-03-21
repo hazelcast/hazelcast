@@ -40,7 +40,7 @@ public class BackPressureStressTest extends HazelcastTestSupport {
 
     private final Random random = new Random();
     private final AtomicLong completedCall = new AtomicLong();
-    private final AtomicLong failedCalls = new AtomicLong();
+    private final AtomicLong failedOperationCount = new AtomicLong();
     private final AtomicLong globalOperationCount = new AtomicLong();
     private final AtomicBoolean stop = new AtomicBoolean();
 
@@ -145,7 +145,7 @@ public class BackPressureStressTest extends HazelcastTestSupport {
             }
         });
 
-        assertEquals(0, failedCalls.get());
+        assertEquals(0, failedOperationCount.get());
 
         long count = localOperationService.backPressureService.backPressureCount();
         System.out.println("Backpressure count: " + count);
@@ -213,14 +213,14 @@ public class BackPressureStressTest extends HazelcastTestSupport {
 
                     if (!new Long(expectedResult).equals(response)) {
                         System.out.println("Wrong result received, expecting: " + expectedResult + " but found:" + response);
-                        failedCalls.incrementAndGet();
+                        failedOperationCount.incrementAndGet();
                     }
                 }
 
                 @Override
                 public void onFailure(Throwable t) {
                     completedCall.incrementAndGet();
-                    failedCalls.incrementAndGet();
+                    failedOperationCount.incrementAndGet();
                     t.printStackTrace();
                 }
             });
@@ -236,10 +236,10 @@ public class BackPressureStressTest extends HazelcastTestSupport {
                 Long result = (Long) f.getSafely();
 
                 if (!expectedResult.equals(result)) {
-                    failedCalls.incrementAndGet();
+                    failedOperationCount.incrementAndGet();
                 }
             } catch (Exception e) {
-                failedCalls.incrementAndGet();
+                failedOperationCount.incrementAndGet();
                 e.printStackTrace();
             }
         }

@@ -22,7 +22,10 @@ public class ForcedSyncResponse extends Response {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
+        if (this == o) {
+            return true;
+        }
+
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
@@ -32,6 +35,7 @@ public class ForcedSyncResponse extends Response {
         if (callId != that.callId) {
             return false;
         }
+
         if (urgent != that.urgent) {
             return false;
         }

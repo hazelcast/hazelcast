@@ -59,9 +59,6 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  */
 abstract class Invocation implements ResponseHandler, Runnable {
 
-    private final static boolean SYCN = false;
-    private final static boolean ASYNC = true;
-
     /**
      * A response indicating the 'null' value.
      */
@@ -100,6 +97,9 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
     private static final AtomicIntegerFieldUpdater<Invocation> BACKUPS_COMPLETED_FIELD_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsCompleted");
+
+    private static final boolean SYCN = false;
+    private static final boolean ASYNC = true;
 
     static final class InternalResponse {
 
@@ -240,7 +240,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
             doInvoke();
 
-            if(forceSync){
+            if (forceSync) {
                 invocationFuture.waitForFakeResponse(callTimeout, TimeUnit.MILLISECONDS);
             }
         } catch (Exception e) {
