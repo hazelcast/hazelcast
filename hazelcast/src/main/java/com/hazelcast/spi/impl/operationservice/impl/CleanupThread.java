@@ -26,14 +26,16 @@ final class CleanupThread extends Thread {
 
     public static final int DELAY_MILLIS = 1000;
 
-    private volatile boolean shutdown;
+    private final InvocationRegistry invocationRegistry;
     private final OperationServiceImpl operationService;
     private final ILogger logger;
+    private volatile boolean shutdown;
 
     CleanupThread(OperationServiceImpl operationService) {
         super(operationService.node.getHazelcastThreadGroup().getThreadNamePrefix("CleanupThread"));
         this.logger = operationService.logger;
         this.operationService = operationService;
+        this.invocationRegistry = operationService.invocationRegistry;
     }
 
     public void shutdown() {
@@ -66,20 +68,22 @@ final class CleanupThread extends Thread {
     }
 
     private void scanHandleOperationTimeout() {
-        if (operationService.invocations.isEmpty()) {
+        if (invocationRegistry.isEmpty()) {
             return;
         }
 
-        for (Invocation invocation : operationService.invocations.values()) {
+        for (Invocation invocation : invocationRegistry.invocations()) {
             if (shutdown) {
                 return;
             }
+
             try {
                 invocation.handleOperationTimeout();
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
                 logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
             }
+
             try {
                 invocation.handleBackupTimeout(operationService.backupOperationTimeoutMillis);
             } catch (Throwable t) {

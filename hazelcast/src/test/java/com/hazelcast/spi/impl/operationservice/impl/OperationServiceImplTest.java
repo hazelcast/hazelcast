@@ -34,7 +34,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -187,7 +186,7 @@ public class OperationServiceImplTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("invocations should be empty", 0, operationService.invocations.size());
+                assertEquals("invocations should be empty", 0, operationService.invocationRegistry.size());
             }
         });
     }

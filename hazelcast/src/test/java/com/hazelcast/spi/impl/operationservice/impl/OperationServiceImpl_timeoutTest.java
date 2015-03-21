@@ -18,6 +18,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -76,11 +77,13 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         testOperationTimeout(3, false);
     }
 
+    @Ignore
     @Test
     public void testAsyncOperationTimeoutSingleMember() {
         testOperationTimeout(1, true);
     }
 
+    @Ignore
     @Test
     public void testAsyncOperationTimeoutMultiMember() {
         testOperationTimeout(3, true);

@@ -34,6 +34,10 @@ public class BackPressureStressTest extends HazelcastTestSupport {
 
     // to stress the back-pressure (to expose the problem quickly) we are going to attach some additional data to each
     // operation. If many operations are being stored (so no back pressure) then you will very quickly run into OOME.
+    // So by increasing this, you will increase the chance to see problems.
+    // On my machine with MEMORY_STRESS_PAYLOAD_SIZE=100000 it takes a very short time (under a minute) to run out of memory if
+    // back pressure is disabled. If you run these tests using a profiler, make sure you keep an eye out on Memory usage and GC
+    // activity. It is very easy to detect when back pressure is disabled.
     public static final int MEMORY_STRESS_PAYLOAD_SIZE = 100000;
 
     private static final int runningTimeMs = (int) TimeUnit.SECONDS.toMillis(300);
@@ -59,8 +63,9 @@ public class BackPressureStressTest extends HazelcastTestSupport {
         localOperationService = (OperationServiceImpl) getOperationService(local);
     }
 
+    // works
     @Test
-    public void test_asyncInvocation_and_noBackups() throws Exception {
+    public void test_asyncInvocation_and_hasResponse() throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -78,14 +83,67 @@ public class BackPressureStressTest extends HazelcastTestSupport {
         });
     }
 
+    // tbd
+    // in this case we rely on the {@link ForcedSyncResponse}.
     @Test
-    public void test_asyncInvocation_and_syncBackups() {
+    public void test_asyncInvocation_and_hasNoResponse() throws Exception {
+        test(new StressThreadFactory() {
+            @Override
+            public StressThread create() {
+                StressThread stressThread = new StressThread();
+                stressThread.returnsResponse = false;
+                stressThread.syncInvocation = false;
+                stressThread.runDelayMs = 1;
+                stressThread.shouldBackup = false;
+                stressThread.asyncBackups = 0;
+                stressThread.syncBackups = 0;
+                stressThread.backupRunDelayMs = 0;
+                stressThread.partitionId = getPartitionId(remote);
+                return stressThread;
+            }
+        });
+    }
+
+    // works (although don't know why)
+    @Test
+    public void test_asyncInvocation_and_syncBackups() throws Exception{
+        test(new StressThreadFactory() {
+            @Override
+            public StressThread create() {
+                StressThread stressThread = new StressThread();
+                stressThread.returnsResponse = true;
+                stressThread.syncInvocation = false;
+                stressThread.runDelayMs = 0;
+                stressThread.shouldBackup = false;
+                stressThread.asyncBackups = 0;
+                stressThread.syncBackups = 1;
+                stressThread.backupRunDelayMs = 0;
+                stressThread.partitionId = getPartitionId(remote);
+                return stressThread;
+            }
+        });
     }
 
     @Test
-    public void test_asyncInvocation_and_asyncBackups() {
+    public void test_asyncInvocation_and_asyncBackups()throws Exception {
+        test(new StressThreadFactory() {
+            @Override
+            public StressThread create() {
+                StressThread stressThread = new StressThread();
+                stressThread.returnsResponse = true;
+                stressThread.syncInvocation = false;
+                stressThread.runDelayMs = 0;
+                stressThread.shouldBackup = true;
+                stressThread.asyncBackups = 1;
+                stressThread.syncBackups = 0;
+                stressThread.backupRunDelayMs = 1;
+                stressThread.partitionId = getPartitionId(remote);
+                return stressThread;
+            }
+        });
     }
 
+    // works
     @Test
     public void test_syncInvocation_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
@@ -105,6 +163,7 @@ public class BackPressureStressTest extends HazelcastTestSupport {
         });
     }
 
+    // works
     @Test
     public void test_syncInvocation_and_syncBackups_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {

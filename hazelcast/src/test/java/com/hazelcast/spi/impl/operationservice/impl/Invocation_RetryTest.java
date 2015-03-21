@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class InvocationRetryTest extends HazelcastTestSupport {
+public class Invocation_RetryTest extends HazelcastTestSupport {
 
     @Test
     public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {
@@ -58,10 +58,11 @@ public class InvocationRetryTest extends HazelcastTestSupport {
         Future f = service.createInvocationBuilder(null, op, address).invoke();
         sleepSeconds(1);
 
-        remote.getLifecycleService().terminate();
+        remote.shutdown();
 
         try {
-            f.get();
+            Object result = f.get();
+            System.out.println("result: "+result);
             fail();
         } catch (MemberLeftException expected) {
 

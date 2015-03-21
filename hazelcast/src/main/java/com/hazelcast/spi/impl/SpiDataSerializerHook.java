@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratin
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ForcedSyncResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupCompleteResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
@@ -35,7 +35,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
     public static final int NORMAL_RESPONSE = 0;
     public static final int BACKUP = 1;
-    public static final int BACKUP_RESPONSE = 2;
+    public static final int BACKUP_COMPLETE_RESPONSE = 2;
     public static final int PARTITION_ITERATOR = 3;
     public static final int PARTITION_RESPONSE = 4;
     public static final int PARALLEL_OPERATION_FACTORY = 5;
@@ -54,8 +54,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new NormalResponse();
                     case BACKUP:
                         return new Backup();
-                    case BACKUP_RESPONSE:
-                        return new BackupResponse();
+                    case BACKUP_COMPLETE_RESPONSE:
+                        return new BackupCompleteResponse();
                     case PARTITION_ITERATOR:
                         return new PartitionIteratingOperation();
                     case PARTITION_RESPONSE:

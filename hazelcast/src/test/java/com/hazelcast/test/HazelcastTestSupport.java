@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import org.junit.After;
 import org.junit.ComparisonFailure;
@@ -123,6 +124,11 @@ public abstract class HazelcastTestSupport {
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.partitionService;
+    }
+
+    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz){
+        Node node = getNode(hz);
+        return node.nodeEngine;
     }
 
     @After

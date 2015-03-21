@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class InvocationTimeoutTest extends HazelcastTestSupport {
+public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
     @Test
     public void testInterruptionDuringBlockingOp1() throws InterruptedException {
