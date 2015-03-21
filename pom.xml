@@ -778,6 +778,38 @@
                 </plugins>
             </build>
         </profile>
+
+        <profile>
+            <id>jdk-8-plus</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                            <argLine>
+                                -Xms128m -Xmx1G
+                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.test.use.network=false
+                            </argLine>
+                            <includes>
+                                <include>**/**.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/jsr/**.java</exclude>
+                            </excludes>
+                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
+                            </excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <distributionManagement>
