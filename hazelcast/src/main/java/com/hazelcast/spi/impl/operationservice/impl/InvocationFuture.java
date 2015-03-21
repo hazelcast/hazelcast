@@ -221,11 +221,9 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     interrupted = true;
                 }
 
-                if (response == Invocation.BACKPRESSURE_RESPONSE) {
-                    RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
-                    continue;
-                } else if (response == Invocation.WAIT_RESPONSE) {
-                    RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
+                Object resp = this.response;
+                if (resp == Invocation.BACKPRESSURE_RESPONSE|| resp == Invocation.WAIT_RESPONSE) {
+                    RESPONSE_FIELD_UPDATER.compareAndSet(this, resp, null);
                     continue;
                 } else if (response != null) {
                     //if the thread is interrupted, but the response was not an interrupted-response,
@@ -267,7 +265,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         long timeoutMs = toTimeoutMs(time, unit);
         long maxCallTimeoutMs = getMaxCallTimeout();
 
-        //todo: we should decrea
+        //todo: we should decrease the timeout with the time we waited.
 
         while (timeoutMs >= 0) {
             long pollTimeoutMs = min(maxCallTimeoutMs, timeoutMs);
