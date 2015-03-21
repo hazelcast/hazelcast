@@ -9,6 +9,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -67,7 +68,7 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
         // and that may cause OperationTimeoutException with "No response for 4000 ms" error.
         warmUpPartitions(instances);
 
-        final String name = "testWaitingIndefinitely";
+        final String name = randomName();
         ILock lock = instances[0].getLock(name);
         lock.lock();
 
@@ -79,6 +80,7 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
                     instances[1].getLock(name).lock();
                     latch.countDown();
                 } catch (Exception ignored) {
+                    ignored.printStackTrace();
                 }
             }
         }.start();
@@ -97,21 +99,23 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final String name = "testWaitingInfinitelyForTryLock";
-        hz.getLock(name).lock();
+        final ILock lock = hz.getLock(randomName());
+        lock.lock();
 
-        new Thread() {
+        spawn(new Runnable() {
+            @Override
             public void run() {
                 try {
-                    hz.getLock(name).tryLock(10, TimeUnit.SECONDS);
+                    boolean result = lock.tryLock(10, TimeUnit.SECONDS);
+                    System.out.println("result: "+result);
                     latch.countDown();
                 } catch (Exception ignored) {
+                    ignored.printStackTrace();
                 }
             }
-        }.start();
+        });
 
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-
+        assertTrue("latch failed to open", latch.await(20, TimeUnit.SECONDS));
     }
 
     @Test
