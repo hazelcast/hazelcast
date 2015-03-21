@@ -62,14 +62,6 @@ public class InvocationRegistry {
     }
 
     public void deregister(Invocation invocation) {
-        if(invocation.op.getClass().getSimpleName().equals("TargetOperation")) {
-            try {
-                throw new Exception();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
         long callId = invocation.op.getCallId();
         // locally executed non backup-aware operations (e.g. a map.get on a local member) doesn't have a call id.
         // so in that case we can skip the deregistration since it isn't registered in the first place.
@@ -143,9 +135,6 @@ public class InvocationRegistry {
     }
 
     public void onMemberLeft(final MemberImpl member) {
-        System.out.println("Received onMemberLeft: "+member);
-        System.out.println("Number of invocations: "+invocations.size());
-
         // postpone notifying calls since real response may arrive in the mean time.
         Runnable task = new Runnable() {
             @Override
@@ -169,8 +158,6 @@ public class InvocationRegistry {
 
     private boolean isCallTarget(Invocation invocation, MemberImpl leftMember) {
         MemberImpl targetMember = invocation.invTargetMember;
-        System.out.println("foundTargetMember: "+targetMember);
-        System.out.println("foundInvTarget: "+invocation.invTarget);
         if (targetMember == null) {
             Address invTarget = invocation.invTarget;
             return leftMember.getAddress().equals(invTarget);

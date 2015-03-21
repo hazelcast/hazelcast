@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -454,6 +455,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         handleRetryResponse();
     }
 
+
     private void handleNormalResponse(NormalResponse response) {
         //if a regular response came and there are backups, we need to wait for the backups
         //when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
@@ -531,10 +533,32 @@ abstract class Invocation implements ResponseHandler, Runnable {
             // impossible to expire
             return;
         }
+
         if (expirationTime < Clock.currentTimeMillis()) {
-            invocationFuture.set(invocationFuture.newOperationTimeoutException(maxCallTimeout));
+            invocationFuture.set(newOperationTimeoutException(maxCallTimeout));
         }
     }
+
+    Object newOperationTimeoutException(long totalTimeoutMs) {
+        boolean hasResponse = pendingResponse != null;
+        int backupsExpected = this.backupsExpected;
+        int backupsCompleted =this.backupsCompleted;
+
+        if (hasResponse) {
+            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " Not all backups have completed! "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        } else {
+            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " No response has been received! "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        }
+    }
+
 
     /**
      * This method is periodically called by the {@link com.hazelcast.spi.impl.operationservice.impl.CleanupThread} and checks
@@ -577,9 +601,9 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        final Response pendingResponse = this.pendingResponse;
+        final NormalResponse pendingResponse = this.pendingResponse;
         if (pendingResponse != null) {
-            invocationFuture.set(pendingResponse);
+            invocationFuture.set(pendingResponse.getValue());
         }
     }
 

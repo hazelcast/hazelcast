@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -20,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static java.lang.Math.min;
@@ -92,7 +92,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 @Override
                 public void run() {
                     try {
-                        Object resp = resolveApplicationResponse(response);
+                        Object resp = resolveResponse(response);
 
                         if (resp == null || !(resp instanceof Throwable)) {
                             callback.onResponse((E) resp);
@@ -119,11 +119,11 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
 
     public void set(Object offeredResponse) {
-        if (offeredResponse instanceof Response) {
-            throw new RuntimeException("Found response: "+response);
-        }
+        assert !(offeredResponse instanceof Response) : "found response:" + offeredResponse;
 
-        offeredResponse = offeredResponse == null ? InternalResponse.NULL_RESPONSE : offeredResponse;
+        if (offeredResponse == null) {
+            offeredResponse = NULL_RESPONSE;
+        }
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
@@ -188,7 +188,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         Object unresolvedResponse = waitForResponse(timeout, unit);
-        return (E) resolveApplicationResponseOrThrowException(unresolvedResponse);
+        return (E) resolveResponseOrThrowException(unresolvedResponse);
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
@@ -227,6 +227,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     if (response != InternalResponse.INTERRUPTED_RESPONSE && interrupted) {
                         Thread.currentThread().interrupt();
                     }
+
+                    // we are ready, we have found a usable response.
                     return response;
                 }
 
@@ -241,7 +243,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     invocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
                     boolean executing = operationService.getIsStillRunningService().isOperationExecuting(invocation);
                     if (!executing) {
-                        Object operationTimeoutException = newOperationTimeoutException(pollCount * pollTimeoutMs);
+                        Object operationTimeoutException = invocation.newOperationTimeoutException(pollCount * pollTimeoutMs);
                         // tries to set an OperationTimeoutException response if response is not set yet
                         set(operationTimeoutException);
                     }
@@ -327,30 +329,10 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return timeoutMs;
     }
 
-    Object newOperationTimeoutException(long totalTimeoutMs) {
-        boolean hasResponse = invocation.pendingResponse != null;
-        int backupsExpected = invocation.backupsExpected;
-        int backupsCompleted = invocation.backupsCompleted;
-
-        if (hasResponse) {
-            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
-                    + " Aborting invocation! " + toString()
-                    + " Not all backups have completed! "
-                    + " backups-expected:" + backupsExpected
-                    + " backups-completed: " + backupsCompleted);
-        } else {
-            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
-                    + " Aborting invocation! " + toString()
-                    + " No response has been received! "
-                    + " backups-expected:" + backupsExpected
-                    + " backups-completed: " + backupsCompleted);
-        }
-    }
-
-    private Object resolveApplicationResponseOrThrowException(Object unresolvedResponse)
+     private Object resolveResponseOrThrowException(Object unresolvedResponse)
             throws ExecutionException, InterruptedException, TimeoutException {
 
-        Object response = resolveApplicationResponse(unresolvedResponse);
+        Object response = resolveResponse(unresolvedResponse);
 
         if (response == null || !(response instanceof Throwable)) {
             return response;
@@ -376,8 +358,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         throw new ExecutionException((Throwable) response);
     }
 
-    private Object resolveApplicationResponse(Object unresolvedResponse) {
-        if (unresolvedResponse == InternalResponse.NULL_RESPONSE) {
+    private Object resolveResponse(Object unresolvedResponse) {
+        if (unresolvedResponse == NULL_RESPONSE) {
             return null;
         }
 
