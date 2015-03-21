@@ -16,7 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -170,7 +169,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(config1Xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
@@ -189,7 +188,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <import resource=\"notexisting.xml\"/>\n" +
@@ -268,7 +267,7 @@ public class XmlConfigImportVariableReplacementTest {
     }
 
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateNetworkConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <network>\n" +
@@ -285,7 +284,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateGroupConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <group>\n" +
@@ -300,7 +299,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateLicenseKeyConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <license-key>foo</license-key>" +
@@ -309,7 +308,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicatePropertiesConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <properties>\n" +
@@ -322,7 +321,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicatePartitionGroupConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "   <partition-group>\n" +
@@ -340,7 +339,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateListenersConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "   <listeners>" +
@@ -354,7 +353,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateSerializationConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "       <serialization>\n" +
@@ -391,7 +390,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateServicesConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "   <services>       " +
@@ -411,7 +410,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateSecurityConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "   <security>       " +
@@ -422,7 +421,7 @@ public class XmlConfigImportVariableReplacementTest {
         buildConfig(xml, null);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testXmlDeniesDuplicateMemberAttributesConfig() throws Exception {
         String xml = "<hazelcast>\n" +
                 "    <member-attributes>\n" +

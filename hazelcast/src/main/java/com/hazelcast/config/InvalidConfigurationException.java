@@ -17,14 +17,13 @@
 package com.hazelcast.config;
 
 
-import com.hazelcast.core.HazelcastException;
 
 /**
  * A InvalidConfigurationException is thrown when there is an Invalid Configuration.
  * Invalid Configuration can be a wrong Xml Config or logical config errors that are found
  * at real time.
  */
-public class InvalidConfigurationException extends HazelcastException {
+public class InvalidConfigurationException extends RuntimeException {
 
 
     /**
@@ -35,4 +34,15 @@ public class InvalidConfigurationException extends HazelcastException {
     public InvalidConfigurationException(String message) {
         super(message);
     }
+
+    /**
+     * ** Constructs a new runtime exception with the specified detail message and
+     * cause.
+     * @param message the message.
+     * @param cause the cause.
+     */
+    public InvalidConfigurationException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
 }

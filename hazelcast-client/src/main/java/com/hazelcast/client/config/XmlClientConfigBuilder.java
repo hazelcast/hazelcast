@@ -129,7 +129,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                     + lineSeparator + "Exception: " + e.getMessage()
                     + lineSeparator + "HazelcastClient startup interrupted.";
             LOGGER.severe(msg);
-            throw e;
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             IOUtil.closeResource(inputStream);
         }
@@ -233,6 +233,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         final int poolSize = Integer.parseInt(getTextContent(node));
         clientConfig.setExecutorPoolSize(poolSize);
     }
+
     private void handleNearCache(Node node) {
         final String name = getAttribute(node, "name");
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
