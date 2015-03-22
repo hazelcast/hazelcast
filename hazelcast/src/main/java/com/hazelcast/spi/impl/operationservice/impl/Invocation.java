@@ -159,7 +159,6 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return defaultCallTimeout;
     }
 
-
     private void invokeInternal(boolean isAsync) {
         if (invokeCount > 0) {
             // no need to be pessimistic.

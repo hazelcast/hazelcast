@@ -49,25 +49,28 @@ public class InvocationRegistry {
     private static final int DELAY_MILLIS = 1000;
 
     private final long backupTimeoutMillis;
-    // initialized as zero, but we always do an increment and get; so a callid will always be larger than 0.
     private final AtomicLong callIdGen = new AtomicLong(0);
+    private final AtomicLong retiredCounter = new AtomicLong();
     private final ConcurrentMap<Long, Invocation> invocations;
     private final OperationServiceImpl operationService;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final InspectionThread inspectionThread;
+    private final int maxConcurrentInvocations;
 
     public InvocationRegistry(OperationServiceImpl operationService, int concurrencyLevel, long backupTimeoutMillis) {
         this.operationService = operationService;
         this.nodeEngine = operationService.nodeEngine;
         this.logger = operationService.logger;
         this.backupTimeoutMillis = backupTimeoutMillis;
+        //todo: this number need to be retrieved from GroupProperties.
+        this.maxConcurrentInvocations = 1000;
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.inspectionThread = new InspectionThread();
         inspectionThread.start();
     }
 
-    public long getLastCallId(){
+    public long getLastCallId() {
         return callIdGen.get();
     }
 
@@ -79,19 +82,71 @@ public class InvocationRegistry {
      * @param invocation the invocation to register.
      */
     public void register(Invocation invocation) {
+        Operation op = invocation.op;
+
+        // we need to determine the call id even for calls that can be skipped. Because these invocations need to be
+        // controlled in number.
+        long nextCallId = nextCallId(op.isUrgent());
+
         if (skipRegistration(invocation)) {
             return;
         }
 
-        long callId = callIdGen.incrementAndGet();
-
-        Operation op = invocation.op;
-        if (op.getCallId() != 0) {
-            invocations.remove(op.getCallId());
+        // if the invocation was already registered, deregister it first.
+        long previousCallId = op.getCallId();
+        if (previousCallId != 0) {
+            invocations.remove(previousCallId);
         }
 
-        invocations.put(callId, invocation);
-        setCallId(invocation.op, callId);
+        invocations.put(nextCallId, invocation);
+        setCallId(invocation.op, nextCallId);
+    }
+
+    /**
+     * Gets the next call id.
+     * <p/>
+     * If the maximum number of pending invocation has been reached, back-pressure is applied. So we are going to do some waiting.
+     * Currently this isn't configurable and it doesn't respect the timeout of the invocation.
+     *
+     * The actual implementation isn't very strict. It can happen more
+     *
+     * @param priority if true, then no back-pressure is applied. You will immediately get your next sequence-id.
+     * @return the next call id.
+     */
+    private long nextCallId(boolean priority) {
+        if (priority) {
+            return callIdGen.incrementAndGet();
+        }
+
+        boolean restoreInterrupt = false;
+        try {
+            int delayMs = 1;
+            for (; ; ) {
+                boolean hasSpace = callIdGen.get() - retiredCounter.get() < maxConcurrentInvocations;
+
+                if (hasSpace) {
+                    break;
+                }
+
+                //back-pressure
+                if (delayMs > 500) {
+                    delayMs = 500;
+                }
+
+                try {
+                    Thread.sleep(delayMs);
+                } catch (InterruptedException e) {
+                    restoreInterrupt = true;
+                }
+                delayMs *= 2;
+            }
+
+            return callIdGen.incrementAndGet();
+        } finally {
+            if (restoreInterrupt) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     /**
@@ -115,12 +170,14 @@ public class InvocationRegistry {
 
     /**
      * Deregisters an invocation.
-     *
-     * If the invocation already already deregisterd or the registration was skipped, the call is ignored.
+     * <p/>
+     * If the invocation registration was skipped, the call is ignored.
      *
      * @param invocation the Invocation to deregister.
      */
     public void deregister(Invocation invocation) {
+        retiredCounter.incrementAndGet();
+
         long callId = invocation.op.getCallId();
 
         // if an invocation skipped registration (so call id is 0) we don't need to deregister it.
@@ -128,7 +185,10 @@ public class InvocationRegistry {
             return;
         }
 
-        invocations.remove(callId);
+        if (invocations.remove(callId) == null) {
+            throw new IllegalArgumentException("Invocation " + invocation + " was not deregistered successfully since no " +
+                    "invocation was found.");
+        }
     }
 
     public Collection<Invocation> invocations() {
