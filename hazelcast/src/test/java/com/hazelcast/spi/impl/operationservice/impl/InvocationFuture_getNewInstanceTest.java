@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
+public class InvocationFuture_getNewInstanceTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] instances;
     private HazelcastInstance local;

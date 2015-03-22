@@ -63,4 +63,7 @@ public final class OperationAccessor {
         op.setCallTimeout(callTimeout);
     }
 
+    public static void setForceSync(Operation op, boolean forceSync) {
+        op.setSyncForced(forceSync);
+    }
 }

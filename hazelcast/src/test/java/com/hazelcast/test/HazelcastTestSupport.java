@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,9 +27,14 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import org.junit.After;
 import org.junit.ComparisonFailure;
@@ -84,6 +90,22 @@ public abstract class HazelcastTestSupport {
         return node.clusterService.getThisAddress();
     }
 
+    public static Packet toPacket(HazelcastInstance hz, Operation operation){
+        SerializationService serializationService = getSerializationService(hz);
+        ConnectionManager connectionManager = getConnectionManager(hz);
+
+        Data data = serializationService.toData(operation);
+        Packet packet = new Packet(data, operation.getPartitionId());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setConn(connectionManager.getConnection(getAddress(hz)));
+        return packet;
+    }
+
+    public static ConnectionManager getConnectionManager(HazelcastInstance hz){
+        Node node = getNode(hz);
+        return node.connectionManager;
+    }
+
     public static SerializationService getSerializationService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.getSerializationService();
@@ -94,9 +116,19 @@ public abstract class HazelcastTestSupport {
         return node.nodeEngine.getOperationService();
     }
 
+    public static ClusterService getClusterService(HazelcastInstance hz){
+        Node node = getNode(hz);
+        return node.clusterService;
+    }
+
     public static InternalPartitionService getPartitionService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.partitionService;
+    }
+
+    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz){
+        Node node = getNode(hz);
+        return node.nodeEngine;
     }
 
     @After
@@ -106,6 +138,15 @@ public abstract class HazelcastTestSupport {
             factory = null;
             testHazelcastInstanceFactory.terminateAll();
         }
+    }
+
+    public static void executeDelayed(final int delaySeconds, final Runnable task){
+        new Thread(){
+            public void run(){
+                sleepSeconds(delaySeconds);
+                task.run();;
+            }
+        }.start();
     }
 
     public static void setLoggingNone() {

@@ -272,7 +272,7 @@
     <suppress checks="ClassDataAbstractionCoupling|MethodCount"
               files="com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl"/>
     <!-- the invocation just has many parameters because there are a lot of things to tune.-->
-    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.operationservice.impl.InvocationImpl"/>
+    <suppress checks="ParameterNumber|MethodCount" files="com.hazelcast.spi.impl.operationservice.impl.InvocationImpl"/>
     <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.operationservice.impl.PartitionInvocation"/>
 

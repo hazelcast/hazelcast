@@ -8,6 +8,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -36,7 +37,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> RESPONSE_FIELD_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "response");
     private static final AtomicIntegerFieldUpdater<InvocationFuture> WAITER_COUNT_FIELD_UPDATER
-            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class,  "waiterCount");
+            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class, "waiterCount");
 
     volatile boolean interrupted;
     // Contains the number of threads waiting for a result from this future.
@@ -71,7 +72,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (response != null && !(response instanceof Invocation.InternalResponse)) {
+            if (response != null && !(response instanceof InternalResponse)) {
                 runAsynchronous(callback, executor);
                 return;
             }
@@ -115,26 +116,33 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      *
      * @param offeredResponse
      */
+
+
     public void set(Object offeredResponse) {
-        offeredResponse = resolveInternalResponse(offeredResponse);
+        if (offeredResponse instanceof Response) {
+            throw new RuntimeException("Found response: "+response);
+        }
+
+        offeredResponse = offeredResponse == null ? InternalResponse.NULL_RESPONSE : offeredResponse;
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
-            if (response != null && !(response instanceof Invocation.InternalResponse)) {
+            if (response != null && !(response instanceof InternalResponse)) {
                 //it can be that this invocation future already received an answer, e.g. when a an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
 
+                // TODO: This sucks, we don't want to log while holding a lock.
                 ILogger logger = invocation.logger;
                 if (logger.isFinestEnabled()) {
-                    logger.info("Future response is already set! Current response: "
+                    logger.finest("Future response is already set! Current response: "
                             + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
                 return;
             }
 
             response = offeredResponse;
-            if (offeredResponse == Invocation.WAIT_RESPONSE) {
+            if (offeredResponse == InternalResponse.WAIT_RESPONSE) {
                 return;
             }
             callbackChain = callbackHead;
@@ -142,7 +150,10 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             notifyAll();
         }
 
-        operationService.deregisterInvocation(invocation);
+        // TODO: if the invocationRegistry becomes a bit smarter, then the deregistration can be done in 1 action.
+        // now we first read.
+        // TODO: Bug. For fake back pressure we rely on a future response to be send. So we can't deregister
+        operationService.invocationRegistry.deregister(invocation);
         notifyCallbacks(callbackChain);
     }
 
@@ -151,21 +162,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
             callbackChain = callbackChain.next;
         }
-    }
-
-    private Object resolveInternalResponse(Object rawResponse) {
-        if (rawResponse == null) {
-            throw new IllegalArgumentException("response can't be null: " + invocation);
-        }
-
-        if (rawResponse instanceof NormalResponse) {
-            rawResponse = ((NormalResponse) rawResponse).getValue();
-        }
-
-        if (rawResponse == null) {
-            rawResponse = Invocation.NULL_RESPONSE;
-        }
-        return rawResponse;
     }
 
     @Override
@@ -196,7 +192,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
-        if (response != null && response != Invocation.WAIT_RESPONSE) {
+        if (response != null && response != InternalResponse.WAIT_RESPONSE && response != InternalResponse.BACKPRESSURE_RESPONSE) {
             return response;
         }
 
@@ -204,7 +200,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         try {
             long timeoutMs = toTimeoutMs(time, unit);
             long maxCallTimeoutMs = getMaxCallTimeout();
-            boolean longPolling = timeoutMs > maxCallTimeoutMs;
+            boolean longRunning = timeoutMs > maxCallTimeoutMs;
 
             int pollCount = 0;
             while (timeoutMs >= 0) {
@@ -217,23 +213,24 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     pollResponse(pollTimeoutMs);
                     lastPollTime = Clock.currentTimeMillis() - startMs;
                     timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
-
-                    if (response == Invocation.WAIT_RESPONSE) {
-                        RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
-                        continue;
-                    } else if (response != null) {
-                        //if the thread is interrupted, but the response was not an interrupted-response,
-                        //we need to restore the interrupt flag.
-                        if (response != Invocation.INTERRUPTED_RESPONSE && interrupted) {
-                            Thread.currentThread().interrupt();
-                        }
-                        return response;
-                    }
                 } catch (InterruptedException e) {
                     interrupted = true;
                 }
 
-                if (!interrupted && longPolling) {
+                Object resp = this.response;
+                if (resp == InternalResponse.BACKPRESSURE_RESPONSE || resp == InternalResponse.WAIT_RESPONSE) {
+                    RESPONSE_FIELD_UPDATER.compareAndSet(this, resp, null);
+                    continue;
+                } else if (response != null) {
+                    //if the thread is interrupted, but the response was not an interrupted-response,
+                    //we need to restore the interrupt flag.
+                    if (response != InternalResponse.INTERRUPTED_RESPONSE && interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return response;
+                }
+
+                if (!interrupted && longRunning) {
                     // no response!
                     Address target = invocation.getTarget();
                     if (invocation.remote && invocation.nodeEngine.getThisAddress().equals(target)) {
@@ -250,22 +247,57 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     }
                 }
             }
-            return Invocation.TIMEOUT_RESPONSE;
+            return InternalResponse.TIMEOUT_RESPONSE;
         } finally {
             WAITER_COUNT_FIELD_UPDATER.decrementAndGet(this);
         }
     }
 
+    public void waitForFakeResponse(long time, TimeUnit unit) {
+        if (response != null) {
+            return;
+        }
+
+        long timeoutMs = toTimeoutMs(time, unit);
+        long maxCallTimeoutMs = getMaxCallTimeout();
+
+        //todo: we should decrease the timeout with the time we waited.
+
+        while (timeoutMs >= 0) {
+            long pollTimeoutMs = min(maxCallTimeoutMs, timeoutMs);
+            long startMs = Clock.currentTimeMillis();
+
+            try {
+                pollResponse(pollTimeoutMs);
+                long lastPollTime = Clock.currentTimeMillis() - startMs;
+                timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+
+            if (response != null) {
+                //if the thread is interrupted, but the response was not an interrupted-response,
+                //we need to restore the interrupt flag.
+                if (response != InternalResponse.INTERRUPTED_RESPONSE && interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+                return;
+            }
+        }
+    }
+
     private void pollResponse(final long pollTimeoutMs) throws InterruptedException {
         //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
-        if (pollTimeoutMs > 0 && response == null) {
-            long currentTimeoutMs = pollTimeoutMs;
-            final long waitStart = Clock.currentTimeMillis();
-            synchronized (this) {
-                while (currentTimeoutMs > 0 && response == null) {
-                    wait(currentTimeoutMs);
-                    currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
-                }
+        if (pollTimeoutMs <= 0 || response != null) {
+            return;
+        }
+
+        long currentTimeoutMs = pollTimeoutMs;
+        final long waitStart = Clock.currentTimeMillis();
+        synchronized (this) {
+            while (currentTimeoutMs > 0 && response == null) {
+                wait(currentTimeoutMs);
+                currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
             }
         }
     }
@@ -345,15 +377,15 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object resolveApplicationResponse(Object unresolvedResponse) {
-        if (unresolvedResponse == Invocation.NULL_RESPONSE) {
+        if (unresolvedResponse == InternalResponse.NULL_RESPONSE) {
             return null;
         }
 
-        if (unresolvedResponse == Invocation.TIMEOUT_RESPONSE) {
+        if (unresolvedResponse == InternalResponse.TIMEOUT_RESPONSE) {
             return new TimeoutException("Call " + invocation + " encountered a timeout");
         }
 
-        if (unresolvedResponse == Invocation.INTERRUPTED_RESPONSE) {
+        if (unresolvedResponse == InternalResponse.INTERRUPTED_RESPONSE) {
             return new InterruptedException("Call " + invocation + " was interrupted");
         }
 
@@ -403,6 +435,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
+    // TODO: this is broken. A future can have a response set like Invocation.WAIT_RESPONSE that indicates that the invocation
+    // is not ready.
     @Override
     public boolean isDone() {
         return response != null;

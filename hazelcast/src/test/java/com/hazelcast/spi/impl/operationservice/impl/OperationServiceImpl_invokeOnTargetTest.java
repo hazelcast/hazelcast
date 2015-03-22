@@ -20,7 +20,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

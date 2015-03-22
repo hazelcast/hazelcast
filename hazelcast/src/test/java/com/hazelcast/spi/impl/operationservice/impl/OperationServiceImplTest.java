@@ -151,13 +151,11 @@ public class OperationServiceImplTest extends HazelcastTestSupport {
         @Override
         protected void writeInternal(ObjectDataOutput out)
                 throws IOException {
-
         }
 
         @Override
         protected void readInternal(ObjectDataInput in)
                 throws IOException {
-
         }
     }
 
@@ -188,7 +186,7 @@ public class OperationServiceImplTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals("invocations should be empty", 0, operationService.invocations.size());
+                assertEquals("invocations should be empty", 0, operationService.invocationRegistry.size());
             }
         });
     }

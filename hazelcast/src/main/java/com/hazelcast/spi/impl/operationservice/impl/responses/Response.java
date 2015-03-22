@@ -31,7 +31,7 @@ import java.io.IOException;
  * {@link NormalResponse} the result of a regular Operation result, e.g. Map.put
  * </li>
  * <li>
- * {@link BackupResponse} the result of a completed {@link com.hazelcast.spi.impl.operationservice.impl.operations.Backup}.
+ * {@link BackupCompleteResponse} the result of a completed {@link com.hazelcast.spi.impl.operationservice.impl.operations.Backup}.
  * </li>
  * </ol>
  */

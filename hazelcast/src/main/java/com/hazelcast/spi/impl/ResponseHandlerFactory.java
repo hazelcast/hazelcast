@@ -98,7 +98,7 @@ public final class ResponseHandlerFactory {
 
         private final NodeEngine nodeEngine;
         private final Operation operation;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
+//        private final AtomicBoolean sent = new AtomicBoolean(false);
 
         private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation operation) {
             this.nodeEngine = nodeEngine;
@@ -107,12 +107,12 @@ public final class ResponseHandlerFactory {
 
         @Override
         public void sendResponse(Object obj) {
-            long callId = operation.getCallId();
+//            long callId = operation.getCallId();
             Connection conn = operation.getConnection();
-            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
-                throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
-                        + " to " + conn.getEndPoint() + ", current-response: " + obj);
-            }
+//            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
+//                throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
+//                        + " to " + conn.getEndPoint() + ", current-response: " + obj);
+//            }
 
             Response response;
             if (!(obj instanceof Response)) {
