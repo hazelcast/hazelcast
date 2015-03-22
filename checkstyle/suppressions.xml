@@ -271,24 +271,25 @@
     <!-- since this class needs to manage services, it knows about them. So it is fine to have lots
          of dependencies on these classes-->
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.ServiceManager"/>
-    <!-- the following suppressions are ok because these classes are the heart of the system. Although
-         in the future we need to get rid of classes knowing about node/node-engine because it is a
-         god-object -->
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl"/>
+
+    <suppress checks="MethodCount"
+              files="com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl"/>
+     <!-- the invocation just has many parameters because there are a lot of things to tune.-->
+    <suppress checks="ParameterNumber"
+              files="com.hazelcast.spi.impl.operationservice.impl.InvocationImpl"/>
+    <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
+    <suppress checks="ParameterNumber"
+              files="com.hazelcast.spi.impl.operationservice.impl.PartitionInvocation"/>
+    <!-- these need to be solved-->
+    <suppress checks="NPathComplexity"
+              files="com.hazelcast.spi.impl.operationservice.impl.InvocationFuture"/>
+    <suppress checks="ReturnCount"
+              files="com.hazelcast.spi.impl.operationservice.impl.InvocationFuture"/>
+    <suppress checks="CyclomaticComplexity"
+              files="com.hazelcast.spi.impl.operationservice.impl.InvocationFuture"/>
 
     <suppress checks="ClassDataAbstractionCoupling|MethodCount"
               files="com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl"/>
-    <!-- the invocation just has many parameters because there are a lot of things to tune.-->
-    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.operationservice.impl.InvocationImpl"/>
-    <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->
-    <suppress checks="ParameterNumber" files="com.hazelcast.spi.impl.operationservice.impl.PartitionInvocation"/>
-
-    <!-- these need to be solved-->
-    <suppress checks="NPathComplexity" files="com.hazelcast.spi.impl.operationservice.impl.InvocationFuture"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.spi.impl.operationservice.impl.InvocationFuture"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.spi.impl.operationservice.impl.InvocationFuture"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com.hazelcast.transaction[\\/]"/>
@@ -404,6 +405,8 @@
        I don't think we want to change this class.
    -->
     <suppress checks="" files="com.hazelcast.util.ConcurrentReferenceHashMap"/>
+
+    <suppress checks="" files="com.hazelcast.util.DebugUtil"/>
 
     <!-- Too complex to change, I am leaving it to implementer -->
     <suppress checks="" files="com.hazelcast.util.Base64"/>

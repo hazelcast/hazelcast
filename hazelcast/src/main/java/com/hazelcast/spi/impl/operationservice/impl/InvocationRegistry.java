@@ -2,12 +2,11 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
@@ -17,14 +16,12 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 
 /**
@@ -40,99 +37,81 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the sequence (although you now get sequence-gaps).
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
- * - apply back pressure when there is no room for more invocations.
  */
 public class InvocationRegistry {
     private static final long SCHEDULE_DELAY = 1111;
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
     private static final int DELAY_MILLIS = 1000;
+    private static final double HUNDRED_PERCENT = 100d;
 
     private final long backupTimeoutMillis;
-    // initialized as zero, but we always do an increment and get; so a callid will always be larger than 0.
-    private final AtomicLong callIdGen = new AtomicLong(0);
     private final ConcurrentMap<Long, Invocation> invocations;
     private final OperationServiceImpl operationService;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final InspectionThread inspectionThread;
+    private final CallIdSequence callIdSequence;
 
-    public InvocationRegistry(OperationServiceImpl operationService, int concurrencyLevel, long backupTimeoutMillis) {
+    public InvocationRegistry(OperationServiceImpl operationService, int concurrencyLevel) {
         this.operationService = operationService;
         this.nodeEngine = operationService.nodeEngine;
         this.logger = operationService.logger;
-        this.backupTimeoutMillis = backupTimeoutMillis;
+        this.callIdSequence = operationService.backpressureRegulator.newCallIdSequence();
+
+        GroupProperties props = operationService.nodeEngine.getGroupProperties();
+        this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.inspectionThread = new InspectionThread();
         inspectionThread.start();
     }
 
     public long getLastCallId() {
-        return callIdGen.get();
+        return callIdSequence.getLastCallId();
     }
 
     /**
      * Registers an invocation.
-     * <p/>
-     * It depends on the invocation if the registration actually happens. See {@link #skipRegistration(Invocation)}
      *
      * @param invocation the invocation to register.
      */
     public void register(Invocation invocation) {
-        if (skipRegistration(invocation)) {
+        assert invocation.op.getCallId() == 0 : "can't register twice:" + invocation;
+
+        long callId = callIdSequence.next(invocation);
+        setCallId(invocation.op, callId);
+
+        if (callId == CALL_ID_LOCAL_SKIPPED) {
             return;
         }
 
-        long callId = callIdGen.incrementAndGet();
-
-        Operation op = invocation.op;
-        if (op.getCallId() != 0) {
-            invocations.remove(op.getCallId());
-        }
-
         invocations.put(callId, invocation);
-        setCallId(invocation.op, callId);
-    }
-
-    /**
-     * Not every call needs to be registered. A call that is local and has no backups, doesn't need to be registered
-     * since there will not be a remote machine sending a response back to the invocation.
-     *
-     * @param invocation
-     * @return true if registration is required, false otherwise.
-     */
-    private boolean skipRegistration(Invocation invocation) {
-        if (invocation.remote) {
-            return false;
-        }
-
-        if (invocation.op instanceof BackupAwareOperation) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
      * Deregisters an invocation.
-     *
-     * If the invocation already already deregisterd or the registration was skipped, the call is ignored.
+     * <p/>
+     * If the invocation registration was skipped, the call is ignored.
      *
      * @param invocation the Invocation to deregister.
      */
     public void deregister(Invocation invocation) {
         long callId = invocation.op.getCallId();
 
-        // if an invocation skipped registration (so call id is 0) we don't need to deregister it.
-        if (callId == 0) {
+        callIdSequence.complete(invocation);
+
+        setCallId(invocation.op, 0);
+
+        if (callId == 0 || callId == CALL_ID_LOCAL_SKIPPED) {
             return;
         }
 
-        invocations.remove(callId);
+        boolean deleted = invocations.remove(callId) != null;
+        assert deleted : "failed to deregister callId:" + callId + " " + invocation;
     }
 
-    public Collection<Invocation> invocations() {
-        return invocations.values();
+    public double getInvocationUsagePercentage() {
+        return (HUNDRED_PERCENT * invocations.size()) / callIdSequence.getMaxConcurrentInvocations();
     }
 
     /**
@@ -142,15 +121,6 @@ public class InvocationRegistry {
      */
     public int size() {
         return invocations.size();
-    }
-
-    /**
-     * Checks if there are any pending invocations.
-     *
-     * @return true if there are any pending invocations, false otherwise.
-     */
-    public boolean isEmpty() {
-        return invocations.isEmpty();
     }
 
     /**
@@ -186,10 +156,11 @@ public class InvocationRegistry {
         try {
             Invocation invocation = invocations.get(callId);
             if (invocation == null) {
+                logger.warning("No Invocation found for response: " + callId);
                 return;
             }
 
-            invocation.notifyOneBackupComplete();
+            invocation.notifySingleBackupComplete();
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
         }
@@ -205,7 +176,7 @@ public class InvocationRegistry {
             return;
         }
 
-        invocation.notifyErrorResponse(response.getCause());
+        invocation.notifyError(response.getCause());
     }
 
     private void notifyNormalResponse(NormalResponse response) {
@@ -229,49 +200,24 @@ public class InvocationRegistry {
             }
             return;
         }
-        invocation.notifyCallTimeoutResponse();
+        invocation.notifyCallTimeout();
     }
 
-    public void onMemberLeft(final MemberImpl member) {
+    public void onMemberLeft(MemberImpl member) {
         // postpone notifying calls since real response may arrive in the mean time.
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                Iterator<Invocation> iterator = invocations.values().iterator();
-                while (iterator.hasNext()) {
-                    Invocation invocation = iterator.next();
-                    if (!isCallTarget(invocation, member)) {
-                        continue;
-                    }
-
-                    iterator.remove();
-                    invocation.notify(new MemberLeftException(member));
-                }
-            }
-        };
         InternalExecutionService executionService = nodeEngine.getExecutionService();
+        Runnable task = new OnMemberLeftTask(member);
         executionService.schedule(task, SCHEDULE_DELAY, TimeUnit.MILLISECONDS);
-    }
-
-    private boolean isCallTarget(Invocation invocation, MemberImpl leftMember) {
-        MemberImpl targetMember = invocation.invTargetMember;
-        if (targetMember == null) {
-            Address invTarget = invocation.invTarget;
-            return leftMember.getAddress().equals(invTarget);
-        } else {
-            return leftMember.getUuid().equals(targetMember.getUuid());
-        }
     }
 
     public void reset() {
         for (Invocation invocation : invocations.values()) {
             try {
-                invocation.notify(new MemberLeftException());
+                invocation.notifyError(new MemberLeftException());
             } catch (Throwable e) {
                 logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
             }
         }
-        invocations.clear();
     }
 
     public void shutdown() {
@@ -279,12 +225,11 @@ public class InvocationRegistry {
 
         for (Invocation invocation : invocations.values()) {
             try {
-                invocation.notify(new HazelcastInstanceNotActiveException());
+                invocation.notifyError(new HazelcastInstanceNotActiveException());
             } catch (Throwable e) {
-                logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage());
+                logger.warning(invocation + " could not be notified with shutdown message -> " + e.getMessage(), e);
             }
         }
-        invocations.clear();
     }
 
     public void awaitTermination(long timeoutMillis) throws InterruptedException {
@@ -316,7 +261,6 @@ public class InvocationRegistry {
             try {
                 while (!shutdown) {
                     scanHandleOperationTimeout();
-
                     if (!shutdown) {
                         sleep();
                     }
@@ -359,6 +303,33 @@ public class InvocationRegistry {
                     inspectOutputMemoryError(t);
                     logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
                 }
+            }
+        }
+    }
+
+    private class OnMemberLeftTask implements Runnable {
+        private final MemberImpl leftMember;
+
+        public OnMemberLeftTask(MemberImpl leftMember) {
+            this.leftMember = leftMember;
+        }
+
+        @Override
+        public void run() {
+            for (Invocation invocation : invocations.values()) {
+                if (hasMemberLeft(invocation)) {
+                    invocation.notifyError(new MemberLeftException(leftMember));
+                }
+            }
+        }
+
+        private boolean hasMemberLeft(Invocation invocation) {
+            MemberImpl targetMember = invocation.targetMember;
+            if (targetMember == null) {
+                Address invTarget = invocation.invTarget;
+                return leftMember.getAddress().equals(invTarget);
+            } else {
+                return leftMember.getUuid().equals(targetMember.getUuid());
             }
         }
     }

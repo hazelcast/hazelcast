@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -57,12 +58,10 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static java.lang.String.format;
 
 /**
- * This is the Basic InternalOperationService and depends on Java 6.
- * <p/>
- * All the classes that begin with 'Basic' are implementation detail that depend on the
- * {@link OperationServiceImpl}.
+ * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
  * <p/>
  * <h1>System Operation</h1>
  * When a {@link com.hazelcast.spi.UrgentSystemOperation} is invoked on this OperationService, it will be executed with a
@@ -98,9 +97,9 @@ public final class OperationServiceImpl implements InternalOperationService {
     final Node node;
     final ILogger logger;
     final OperationBackupHandler operationBackupHandler;
-    final BackPressureService backPressureService;
+    final BackpressureRegulator backpressureRegulator;
+    final long defaultCallTimeoutMillis;
 
-    private final long defaultCallTimeoutMillis;
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
 
@@ -109,19 +108,20 @@ public final class OperationServiceImpl implements InternalOperationService {
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
-        this.defaultCallTimeoutMillis = node.getGroupProperties().OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-        this.backPressureService = new BackPressureService(node.getGroupProperties(), logger, node.getHazelcastThreadGroup());
+        GroupProperties groupProperties = node.getGroupProperties();
+        this.defaultCallTimeoutMillis = groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+
+        this.backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        long backupOperationTimeoutMillis = node.getGroupProperties().OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
-        this.invocationsRegistry = new InvocationRegistry(this, concurrencyLevel, backupOperationTimeoutMillis);
+        this.invocationsRegistry = new InvocationRegistry(this, concurrencyLevel);
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.operationExecutor = new ClassicOperationExecutor(
-                node.getGroupProperties(),
+                groupProperties,
                 node.loggingService,
                 node.getThisAddress(),
                 new OperationRunnerFactoryImpl(this),
@@ -153,6 +153,12 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
+        sb.append("invocationsPending=")
+                .append(invocationsRegistry.getInvocationUsagePercentage()).append('\n');
+        sb.append("invocationsUsed=")
+                .append(format("%.2f", invocationsRegistry.getInvocationUsagePercentage())).append("%\n");
+        sb.append("invocationsMax=")
+                .append(backpressureRegulator.getMaxConcurrentInvocations()).append('\n');
         operationExecutor.dumpPerformanceMetrics(sb);
     }
 
@@ -163,6 +169,16 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     public InvocationRegistry getInvocationsRegistry() {
         return invocationsRegistry;
+    }
+
+    @Override
+    public int getPendingInvocationCount() {
+        return invocationsRegistry.size();
+    }
+
+    @Override
+    public double getInvocationUsagePercentage() {
+        return invocationsRegistry.getInvocationUsagePercentage();
     }
 
     @Override
@@ -283,17 +299,23 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     public boolean isCallTimedOut(Operation op) {
-        if (op.returnsResponse() && op.getCallId() != 0) {
-            final long callTimeout = op.getCallTimeout();
-            final long invocationTime = op.getInvocationTime();
-            final long expireTime = invocationTime + callTimeout;
-            if (expireTime > 0 && expireTime < Long.MAX_VALUE) {
-                final long now = nodeEngine.getClusterService().getClusterClock().getClusterTime();
-                if (expireTime < now) {
-                    return true;
-                }
-            }
+        if (!op.returnsResponse() || op.getCallId() == 0) {
+            return false;
         }
+
+        long callTimeout = op.getCallTimeout();
+        long invocationTime = op.getInvocationTime();
+        long expireTime = invocationTime + callTimeout;
+
+        if (expireTime <= 0 || expireTime >= Long.MAX_VALUE) {
+            return false;
+        }
+
+        long now = nodeEngine.getClusterService().getClusterClock().getClusterTime();
+        if (expireTime < now) {
+            return true;
+        }
+
         return false;
     }
 
@@ -307,13 +329,15 @@ public final class OperationServiceImpl implements InternalOperationService {
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
+        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
             Address owner = partitionService.getPartitionOwnerOrWait(partition);
+
             if (!memberPartitions.containsKey(owner)) {
                 memberPartitions.put(owner, new ArrayList<Integer>());
             }
+
             memberPartitions.get(owner).add(partition);
         }
         InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
@@ -325,16 +349,20 @@ public final class OperationServiceImpl implements InternalOperationService {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
+
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
+
         Data data = nodeEngine.toData(op);
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(data, partitionId);
         packet.setHeader(Packet.HEADER_OP);
+
         if (op instanceof UrgentSystemOperation) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
+
         Connection connection = node.getConnectionManager().getOrConnect(target);
         return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
@@ -344,22 +372,22 @@ public final class OperationServiceImpl implements InternalOperationService {
         if (target == null) {
             throw new IllegalArgumentException("Target is required!");
         }
+
         if (nodeEngine.getThisAddress().equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
+
         Data data = nodeEngine.toData(response);
         Packet packet = new Packet(data);
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
+
         if (response.isUrgent()) {
             packet.setHeader(Packet.HEADER_URGENT);
         }
+
         Connection connection = node.getConnectionManager().getOrConnect(target);
         return nodeEngine.getPacketTransceiver().transmit(packet, connection);
-    }
-
-    long getDefaultCallTimeoutMillis() {
-        return defaultCallTimeoutMillis;
     }
 
     public void onMemberLeft(MemberImpl member) {
@@ -372,14 +400,12 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     public void shutdown() {
         logger.finest("Shutting down OperationService");
-        backPressureService.shutdown();
         invocationsRegistry.shutdown();
         operationExecutor.shutdown();
         slowOperationDetector.shutdown();
 
         try {
             invocationsRegistry.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
-            backPressureService.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
             //restore the interrupt.
             //todo: we need a better mechanism for dealing with interruption and waiting for termination
