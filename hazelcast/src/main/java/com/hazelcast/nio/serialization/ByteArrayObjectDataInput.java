@@ -393,7 +393,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @see java.io.FilterInputStream#in
      */
     public int readUnsignedByte() throws IOException {
-        return readByte();
+        return 0xff & (int)readByte();
     }
 
     /**
@@ -410,7 +410,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @see java.io.FilterInputStream#in
      */
     public int readUnsignedShort() throws IOException {
-        return readShort();
+        return 0xffff & (int)readShort();
     }
 
     /**
