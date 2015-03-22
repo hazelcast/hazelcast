@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 /**
  * The {@link com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler} is responsible for handling
@@ -9,7 +8,11 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
  */
 public interface ResponsePacketHandler {
 
-    Response deserialize(Packet packet) throws Exception;
-
-    void process(Response task) throws Exception;
+    /**
+     * Signals the ResponsePacketHandler that there is a response packet that should be handled.
+     *
+     * @param packet the response packet to handle
+     * @throws Exception
+     */
+    void handle(Packet packet) throws Exception;
 }

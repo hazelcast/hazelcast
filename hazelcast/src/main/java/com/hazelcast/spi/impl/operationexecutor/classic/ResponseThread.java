@@ -4,7 +4,6 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -74,8 +73,7 @@ public final class ResponseThread extends Thread {
     private void process(Packet responsePacket) {
         processedResponses++;
         try {
-            Response response = responsePacketHandler.deserialize(responsePacket);
-            responsePacketHandler.process(response);
+            responsePacketHandler.handle(responsePacket);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
             logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName());
