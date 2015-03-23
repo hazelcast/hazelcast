@@ -136,9 +136,8 @@ Running Test :
 TestCase{
       id=
     , class=yourgroupid.ExampleTest
-    , logFrequency=10000
-    , performanceUpdateFrequency=10000
-    , threadCount=1
+    , maxKeys=5000
+    , putProb=0.4
 }
 --------------------------------------------------------------
 INFO  08:44:06 Starting Test initialization
