@@ -54,6 +54,9 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration access;
     private Duration update;
 
+    public HazelcastExpiryPolicy() {
+    }
+
     /**
      * Constructs an expiry policy with provided values for creation, access and update in milliseconds.
      *
