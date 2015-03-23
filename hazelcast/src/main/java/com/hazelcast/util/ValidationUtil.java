@@ -101,4 +101,53 @@ public final class ValidationUtil {
         }
     }
 
+
+    /**
+     * Tests whether the supplied object is an instance of the supplied class type.
+     *
+     * @param type         the expected type
+     * @param object       the object to be tested against the type
+     * @param argumentName the argument name of the object
+     * @return the object argument.
+     * @throws java.lang.IllegalArgumentException if the object is not an instance of the type
+     */
+    public static <E> E checkInstanceOf(Class type, E object, String argumentName) {
+        isNotNull(type, "type");
+        if (!type.isInstance(object)) {
+            throw new IllegalArgumentException(argumentName + " should be an instance of " + type
+                    + ", but found " + object);
+        }
+        return object;
+    }
+
+    /**
+     * Tests the supplied object is not a type of the supplied class.
+     *
+     * @param type         the type which is not expected
+     * @param object       the object to be tested against the type
+     * @param argumentName the argument name of the object
+     * @return the object argument.
+     * @throws java.lang.IllegalArgumentException if the object is an instance of the type
+     */
+    public static <E> E checkNotInstanceOf(Class type, E object, String argumentName) {
+        isNotNull(type, "type");
+        if (type.isInstance(object)) {
+            throw new IllegalArgumentException(argumentName + " can not be an instance of " + type);
+        }
+        return object;
+    }
+
+    /**
+     * Tests whether the supplied expression is {@code false}.
+     *
+     * @param expression expression to be tested.
+     * @param message    exception message in case of a failure.
+     * @throws java.lang.IllegalArgumentException if the supplied expression is {@code true}
+     */
+    public static void checkFalse(boolean expression, String message) {
+        if (expression) {
+            throw new IllegalArgumentException(message);
+        }
+    }
 }
+
