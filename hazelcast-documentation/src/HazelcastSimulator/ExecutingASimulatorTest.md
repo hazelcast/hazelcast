@@ -18,7 +18,7 @@ In the following sections, we provide an example test and its output along with 
 
 ### An Example Simulator Test
 
-The following example is a test where a counter is being incremented. When the test is completed, a verification is done if the actual number of increments is equal to the expected number of increments.
+The following example test performs `put` and `get` operations on a Hazelcast Map and verifies the key-value ownership, and also prints the size of the map.
 
 ```
 import com.hazelcast.core.HazelcastInstance;
