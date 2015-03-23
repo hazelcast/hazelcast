@@ -48,6 +48,10 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 client.getThreadGroup(), eventThreadCount, eventQueueCapacity);
     }
 
+    public StripedExecutor getEventExecutor() {
+        return eventExecutor;
+    }
+
     @Override
     public String startListening(ClientRequest request, Object key, EventHandler handler) {
         final Future future;
