@@ -178,6 +178,7 @@ src/HazelcastSimulator/SimulatorOverview.md
 	src/HazelcastSimulator/InstallingSimulator.md
 	src/HazelcastSimulator/SettingUpForEC2.md
 	src/HazelcastSimulator/SettingUpForGCE.md
+	src/HazelcastSimulator/SettingUpMachinesManually.md
 	src/HazelcastSimulator/ExecutingASimulatorTest.md
 	src/HazelcastSimulator/Provisioner.md
 	src/HazelcastSimulator/Coordinator.md
