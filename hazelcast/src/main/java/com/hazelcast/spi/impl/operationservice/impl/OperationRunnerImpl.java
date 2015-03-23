@@ -21,6 +21,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -259,7 +260,7 @@ class OperationRunnerImpl extends OperationRunner {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = IOUtil.extractOperationCallId(data, operationService.node.getSerializationService());
-            operationService.send(new NormalResponse(throwable, callId, 0, packet.isUrgent()), caller);
+            operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {
