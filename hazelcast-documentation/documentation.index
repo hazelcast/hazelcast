@@ -176,8 +176,8 @@ src/HazelcastSimulator/SimulatorOverview.md
 	src/HazelcastSimulator/Provisioner.md
 	src/HazelcastSimulator/Coordinator.md
 	src/HazelcastSimulator/Communicator.md
-	src/HazelcastSimulator/SimulatorProperties.md
 	src/HazelcastSimulator/PerformanceAndBenchmarking.md
+	src/HazelcastSimulator/SimulatorProperties.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 #src/Config.md
