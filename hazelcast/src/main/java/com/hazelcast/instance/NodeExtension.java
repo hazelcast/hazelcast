@@ -141,4 +141,10 @@ public interface NodeExtension {
      */
     void destroy();
 
+    /**
+     * Called before a new node is joining to cluster,
+     * executed if node is the master node before join event.
+     */
+    void beforeJoin();
+
 }
