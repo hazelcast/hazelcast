@@ -167,6 +167,17 @@ src/Performance.md
 		src/ThreadingOperation.md
 	src/BackPressure.md
 	src/HazelcastPerformanceOnAWS.md
+src/HazelcastSimulator/SimulatorOverview.md
+	src/HazelcastSimulator/InstallingSimulator.md
+	src/HazelcastSimulator/SettingUpForEC2.md
+	src/HazelcastSimulator/SettingUpForGCE.md
+	src/HazelcastSimulator/SettingUpMachinesManually.md
+	src/HazelcastSimulator/ExecutingASimulatorTest.md
+	src/HazelcastSimulator/Provisioner.md
+	src/HazelcastSimulator/Coordinator.md
+	src/HazelcastSimulator/Communicator.md
+	src/HazelcastSimulator/PerformanceAndBenchmarking.md
+	src/HazelcastSimulator/SimulatorProperties.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
 #src/Config.md

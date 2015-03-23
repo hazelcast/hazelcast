@@ -22,11 +22,12 @@
 |[Chapter 15 - Clients](#clients)|[Java Client](#java-client)|Added information related to load balancer configuration.|
 |[Chapter 19 - Performance](#performance)|[Back Pressure](#back-pressure)|Added as a new section.|
 ||[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
-|[Chapter 21 - Hazelcast Configuration](#hazelcast-configuration)|[Composing XML Configuration](#composing-xml-configuration)|Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets.|
+|[Chapter 20 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.
+|[Chapter 22 - Hazelcast Configuration](#hazelcast-configuration)|[Composing XML Configuration](#composing-xml-configuration)|Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets.|
 |||The whole (formerly known as the *Configuration* chapter) chapter redesigned to include all the Hazelcast configuration elements and attributes.|
-|[Chapter 23 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
-|[Chapter 24 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
-|[Chapter 25 - Glossary](#glossary)||Added as a new chapter.|
+|[Chapter 24 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
+|[Chapter 25 - FAQ](#frequently-asked-questions)||Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS.|
+|[Chapter 26 - Glossary](#glossary)||Added as a new chapter.|
 
 
 
