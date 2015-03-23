@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
-
-public interface SelectionHandler {
-    void handle();
-    long getNoOfEvents();
-}
+/**
+ * Contains Handler Migration classes
+ */
+package com.hazelcast.nio.tcp.handlermigration;

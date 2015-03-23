@@ -134,4 +134,9 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     long getLastHandle() {
         return lastHandle;
     }
+
+    @Override
+    public long getNoOfEvents() {
+        throw new UnsupportedOperationException("Not implemented on client side.");
+    }
 }

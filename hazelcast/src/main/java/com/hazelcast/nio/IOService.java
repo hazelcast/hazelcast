@@ -95,6 +95,8 @@ public interface IOService {
 
     int getConnectionMonitorMaxFaults();
 
+    int getHandlerMigrationIntervalSeconds();
+
     void onDisconnect(Address endpoint);
 
     boolean isClient();

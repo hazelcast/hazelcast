@@ -70,6 +70,11 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         }
     }
 
+    @Override
+    public long getNoOfEvents() {
+        throw new UnsupportedOperationException("Not implemented on client side.");
+    }
+
     private void writeBuffer() {
         while (buffer.hasRemaining() && lastWritable != null) {
             boolean complete = lastWritable.writeTo(buffer);

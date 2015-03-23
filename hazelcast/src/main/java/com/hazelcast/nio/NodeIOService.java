@@ -239,6 +239,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public int getHandlerMigrationIntervalSeconds() {
+        return node.groupProperties.HANDLER_MIGRATION_INTERVAL_SECONDS.getInteger();
+    }
+
+    @Override
     public void executeAsync(final Runnable runnable) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
     }

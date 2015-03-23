@@ -45,6 +45,11 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     protected void shutdown() {
     }
 
+    @Override
+    public long getNoOfEvents() {
+        throw new UnsupportedOperationException("Not implemented on client side.");
+    }
+
     final void handleSocketException(Throwable e) {
         if (sk != null) {
             sk.cancel();

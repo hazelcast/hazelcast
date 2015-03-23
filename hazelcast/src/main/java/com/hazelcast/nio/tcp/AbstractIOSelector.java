@@ -102,7 +102,24 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
             if (runnable == null) {
                 return;
             }
+            executeTask(runnable);
+        }
+    }
+
+    private void executeTask(Runnable runnable) {
+        IOSelector target = getTargetIOSelector(runnable);
+        if (target == this) {
             runnable.run();
+        } else {
+            target.addTask(runnable);
+        }
+    }
+
+    private IOSelector getTargetIOSelector(Runnable runnable) {
+        if (runnable instanceof MigratableHandler) {
+            return ((MigratableHandler) runnable).getOwner();
+        } else {
+            return this;
         }
     }
 
