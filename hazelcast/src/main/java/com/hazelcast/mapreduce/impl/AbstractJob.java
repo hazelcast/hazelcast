@@ -62,7 +62,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
     protected Collection<KeyIn> keys;
 
-    protected KeyPredicate<KeyIn> predicate;
+    protected KeyPredicate<? super KeyIn> predicate;
 
     protected int chunkSize = -1;
 
@@ -85,7 +85,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
     }
 
     @Override
-    public Job<KeyIn, ValueIn> onKeys(Iterable<KeyIn> keys) {
+    public Job<KeyIn, ValueIn> onKeys(Iterable<? extends KeyIn> keys) {
         addKeys(keys);
         return this;
     }
@@ -97,7 +97,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
     }
 
     @Override
-    public Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<KeyIn> predicate) {
+    public Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<? super KeyIn> predicate) {
         setKeyPredicate(predicate);
         return this;
     }
@@ -138,7 +138,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
     }
 
-    private void addKeys(Iterable<KeyIn> keys) {
+    private void addKeys(Iterable<? extends KeyIn> keys) {
         if (this.keys == null) {
             this.keys = new HashSet<KeyIn>();
         }
@@ -154,7 +154,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         this.keys.addAll(Arrays.asList(keys));
     }
 
-    private void setKeyPredicate(KeyPredicate<KeyIn> predicate) {
+    private void setKeyPredicate(KeyPredicate<? super KeyIn> predicate) {
         isNotNull(predicate, "predicate");
         this.predicate = predicate;
     }
@@ -174,7 +174,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
             implements MappingJob<EntryKey, Key, Value> {
 
         @Override
-        public MappingJob<EntryKey, Key, Value> onKeys(Iterable<EntryKey> keys) {
+        public MappingJob<EntryKey, Key, Value> onKeys(Iterable<? extends EntryKey> keys) {
             addKeys((Iterable<KeyIn>) keys);
             return this;
         }
@@ -186,7 +186,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public MappingJob<EntryKey, Key, Value> keyPredicate(KeyPredicate<EntryKey> predicate) {
+        public MappingJob<EntryKey, Key, Value> keyPredicate(KeyPredicate<? super EntryKey> predicate) {
             setKeyPredicate((KeyPredicate<KeyIn>) predicate);
             return this;
         }
@@ -204,7 +204,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         }
 
         @Override
-        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(CombinerFactory<Key, Value, ValueOut> combinerFactory) {
+        public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(CombinerFactory<? super Key, ? super Value, ? extends ValueOut> combinerFactory) {
             isNotNull(combinerFactory, "combinerFactory");
             if (AbstractJob.this.combinerFactory != null) {
                 throw new IllegalStateException("combinerFactory already set");
@@ -215,7 +215,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
         @Override
         public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
-                ReducerFactory<Key, Value, ValueOut> reducerFactory) {
+                ReducerFactory<? super Key, ? super Value, ? extends ValueOut> reducerFactory) {
             isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null) {
                 throw new IllegalStateException("reducerFactory already set");

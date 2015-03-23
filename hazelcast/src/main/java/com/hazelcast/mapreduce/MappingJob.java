@@ -16,10 +16,10 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import java.util.List;
 import java.util.Map;
+
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * <p>
@@ -43,7 +43,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
      */
-    MappingJob<EntryKey, KeyIn, ValueIn> onKeys(Iterable<EntryKey> keys);
+    MappingJob<EntryKey, KeyIn, ValueIn> onKeys(Iterable<? extends EntryKey> keys);
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
@@ -63,7 +63,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
      * @param predicate predicate implementation to be used to evaluate keys
      * @return instance of this Job with generics changed on usage
      */
-    MappingJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<EntryKey> predicate);
+    MappingJob<EntryKey, KeyIn, ValueIn> keyPredicate(KeyPredicate<? super EntryKey> predicate);
 
     /**
      * Defines the number of elements per chunk. Whenever the chunk size is reached and a
@@ -93,7 +93,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
      * @param <ValueOut>      type of the combined value
      * @return instance of this Job with generics changed on usage
      */
-    <ValueOut> ReducingJob<EntryKey, KeyIn, ValueOut> combiner(CombinerFactory<KeyIn, ValueIn, ValueOut> combinerFactory);
+    <ValueOut> ReducingJob<EntryKey, KeyIn, ValueOut> combiner(CombinerFactory<? super KeyIn, ? super ValueIn, ? extends ValueOut> combinerFactory);
 
     /**
      * Defines the {@link ReducerFactory} for this task. This method is not idempotent and is callable only one time. Further
@@ -103,7 +103,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
      * @param <ValueOut>     type of the reduced value
      * @return instance of this Job with generics changed on usage
      */
-    <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
+    <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(ReducerFactory<? super KeyIn, ? super ValueIn, ? extends ValueOut> reducerFactory);
 
     /**
      * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes.
