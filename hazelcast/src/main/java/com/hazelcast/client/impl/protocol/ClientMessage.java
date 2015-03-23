@@ -62,21 +62,15 @@ public class ClientMessage extends Flyweight {
     /** Begin and End Flags */
     public static final short BEGIN_AND_END_FLAGS = (short) (BEGIN_FLAG | END_FLAG);
 
-    /**
-     *  variable size data length field in bytes
-     */
-    public static final int SIZE_OF_LENGTH_FIELD = 4;
 
     public void wrapForEncode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer,offset);
         dataOffset(HEADER_SIZE);
         frameLength(dataOffset());
-        dataPosition(dataOffset());
     }
 
     public void wrapForDecode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer,offset);
-        dataPosition(dataOffset());
     }
 
     /**
@@ -210,28 +204,5 @@ public class ClientMessage extends Flyweight {
         return this;
     }
 
-    public byte[] getVarData()
-    {
-        final int dataPosition = dataPosition();
-        final int dataLength = uint8Get(offset() + dataPosition);
-
-        dataPosition(dataPosition + SIZE_OF_LENGTH_FIELD + dataLength);
-        byte[] data = new byte[dataLength];
-        buffer().getBytes(offset() + dataPosition + SIZE_OF_LENGTH_FIELD,data);
-        return data;
-    }
-
-    public ClientMessage putVarData(byte[] data){
-        if(data == null) {
-            throw new NullPointerException("Data cannot be null");
-        }
-        final int length = data.length;
-        final int dataPosition = dataPosition();
-        dataPosition(dataPosition + SIZE_OF_LENGTH_FIELD + length);
-        uint32Put(offset() + dataPosition,(long) length, LITTLE_ENDIAN);
-        buffer().putBytes(offset() + dataPosition + SIZE_OF_LENGTH_FIELD ,data, 0, length);
-        frameLength(frameLength() + SIZE_OF_LENGTH_FIELD + length);
-        return this;
-    }
 
 }

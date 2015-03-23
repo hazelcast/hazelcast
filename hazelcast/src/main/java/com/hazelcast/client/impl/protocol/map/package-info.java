@@ -1,5 +1,4 @@
 /*
-
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,19 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.impl.messagehandlers;
-
-import com.hazelcast.client.impl.protocol.MessageHandlerContext;
-
 /**
- * Key Based Message Handlers that are doing operations like put get etc extends this message handler
+ * Client Protocol Map related details
  */
-public abstract class AbstractKeyBasedMessageHandler extends AbstractPartitionsMessageHandler {
-
-    protected abstract Object getKey(MessageHandlerContext context);
-
-    @Override
-    protected final int getPartition(MessageHandlerContext context) {
-        return -1;
-    }
-}
+package com.hazelcast.client.impl.protocol.map;

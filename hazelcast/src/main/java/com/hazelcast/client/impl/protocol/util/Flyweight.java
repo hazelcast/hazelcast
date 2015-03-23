@@ -20,162 +20,77 @@ import java.nio.ByteOrder;
 
 import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_INT;
 import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_LONG;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 /**
- * Parent class for flyweight implementations both in the messaging
- * protocol and also the control protocol.
+ * Parent class for flyweight implementations in the messaging protocol.
  */
-public class Flyweight
-{
+public class Flyweight {
+
     private static final byte[] EMPTY_BUFFER = new byte[0];
 
-    private final MutableDirectBuffer buffer = new UnsafeBuffer(EMPTY_BUFFER);
+    protected final MutableDirectBuffer buffer = new UnsafeBuffer(EMPTY_BUFFER);
     private int offset;
-    private int dataPosition;
 
-    protected Flyweight wrap(final byte[] buffer)
-    {
+    protected Flyweight wrap(final byte[] buffer) {
         this.buffer.wrap(buffer);
         this.offset = 0;
         return this;
     }
 
-    protected Flyweight wrap(final ByteBuffer buffer)
-    {
+    protected Flyweight wrap(final ByteBuffer buffer) {
         return wrap(buffer, 0);
     }
 
-    protected Flyweight wrap(final ByteBuffer buffer, final int offset)
-    {
+    protected Flyweight wrap(final ByteBuffer buffer, final int offset) {
         this.buffer.wrap(buffer);
         this.offset = offset;
         return this;
     }
 
-    protected Flyweight wrap(final MutableDirectBuffer buffer)
-    {
+    protected Flyweight wrap(final MutableDirectBuffer buffer) {
         return wrap(buffer, 0);
     }
 
-    protected Flyweight wrap(final MutableDirectBuffer buffer, final int offset)
-    {
+    protected Flyweight wrap(final MutableDirectBuffer buffer, final int offset) {
         this.buffer.wrap(buffer);
         this.offset = offset;
         return this;
     }
 
-    public MutableDirectBuffer buffer()
-    {
+    public MutableDirectBuffer buffer() {
         return buffer;
     }
 
-    public int offset()
-    {
+    public int offset() {
         return offset;
     }
 
-    public void offset(final int offset)
-    {
+    public void offset(final int offset) {
         this.offset = offset;
     }
 
-    public int dataPosition()
-    {
-        return dataPosition;
+    protected short uint8Get(final int offset) {
+        return (short) (buffer.getByte(offset) & 0xFF);
     }
 
-    public void dataPosition(final int position)
-    {
-        buffer.checkLimit(position);
-        this.dataPosition = position;
+    protected void uint8Put(final int offset, final short value) {
+        buffer.putByte(offset, (byte) value);
     }
 
-
-    protected void copyFlyweight(final Flyweight srcFlyweight, final int index, final int length)
-    {
-        buffer.putBytes(index, srcFlyweight.buffer, srcFlyweight.offset, length);
-    }
-
-    protected boolean uint8GetChoice(final int offset, final int bitIndex)
-    {
-        return 0 != (buffer.getByte(offset) & (1 << bitIndex));
-    }
-
-    protected void uint8PutChoice(final int offset, final int bitIndex, final boolean switchOn)
-    {
-        byte bits = buffer.getByte(offset);
-        bits = (byte)((switchOn ? bits | (1 << bitIndex) : bits & ~(1 << bitIndex)));
-        buffer.putByte(offset, bits);
-    }
-
-    protected short uint8Get(final int offset)
-    {
-        return (short)(buffer.getByte(offset) & 0xFF);
-    }
-
-    protected void uint8Put(final int offset, final short value)
-    {
-        buffer.putByte(offset, (byte)value);
-    }
-
-    protected int uint16Get(final int offset, final ByteOrder byteOrder)
-    {
+    protected int uint16Get(final int offset, final ByteOrder byteOrder) {
         return buffer.getShort(offset, byteOrder) & 0xFFFF;
     }
 
-    protected void uint16Put(final int offset, final int value, final ByteOrder byteOrder)
-    {
-        buffer.putShort(offset, (short)value, byteOrder);
+    protected void uint16Put(final int offset, final int value, final ByteOrder byteOrder) {
+        buffer.putShort(offset, (short) value, byteOrder);
     }
 
-    protected long uint32Get(final int offset, final ByteOrder byteOrder)
-    {
+    protected long uint32Get(final int offset, final ByteOrder byteOrder) {
         return buffer.getInt(offset, byteOrder) & 0xFFFFFFFFL;
     }
 
-    protected void uint32Put(final int offset, final long value, final ByteOrder byteOrder)
-    {
-        buffer.putInt(offset, (int)value, byteOrder);
+    protected void uint32Put(final int offset, final long value, final ByteOrder byteOrder) {
+        buffer.putInt(offset, (int) value, byteOrder);
     }
-
-    protected long[] uint32ArrayGet(final int offset, final ByteOrder byteOrder)
-    {
-        final int length = buffer.getInt(offset);
-        final long[] values = new long[length];
-        int location = offset + SIZE_OF_INT;
-
-        for (int i = 0; i < length; i++)
-        {
-            values[i] = uint32Get(location, byteOrder);
-            location += SIZE_OF_LONG;
-        }
-
-        return values;
-    }
-
-    protected int uint32ArrayPut(final int offset, final long[] values, final ByteOrder byteOrder)
-    {
-        final int length = values.length;
-        buffer.putInt(offset, length, byteOrder);
-        int location = offset + SIZE_OF_INT;
-
-        for (final long value : values)
-        {
-            uint32Put(location, value, byteOrder);
-            location += SIZE_OF_LONG;
-        }
-
-        return SIZE_OF_INT + (length * BitUtil.SIZE_OF_LONG);
-    }
-
-    public String stringGet(final int offset, final ByteOrder byteOrder)
-    {
-        return buffer.getStringUtf8(offset, byteOrder);
-    }
-
-    public int stringPut(final int offset, final String value, final ByteOrder byteOrder)
-    {
-        return buffer.putStringUtf8(offset, value, byteOrder);
-    }
-
 }

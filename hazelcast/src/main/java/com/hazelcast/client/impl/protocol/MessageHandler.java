@@ -25,9 +25,4 @@ public interface MessageHandler extends SecureRequest {
 
     void process(MessageHandlerContext context);
 
-    /**
-     * @return parameter class, null if template handler is not using any parameters
-     */
-    MessageHandlerParameters createParameters();
-
 }

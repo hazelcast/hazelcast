@@ -20,41 +20,64 @@ import java.nio.charset.Charset;
 /**
  * Miscellaneous useful functions for dealing with low level bits and bytes.
  */
-public class BitUtil
-{
-    /** Size of a byte in bytes */
+public final  class BitUtil {
+    private BitUtil() {
+    }
+
+    /**
+     * Size of a byte in bytes
+     */
     public static final int SIZE_OF_BYTE = 1;
-    /** Size of a boolean in bytes */
+    /**
+     * Size of a boolean in bytes
+     */
     public static final int SIZE_OF_BOOLEAN = 1;
 
-    /** Size of a char in bytes */
+    /**
+     * Size of a char in bytes
+     */
     public static final int SIZE_OF_CHAR = 2;
-    /** Size of a short in bytes */
+    /**
+     * Size of a short in bytes
+     */
     public static final int SIZE_OF_SHORT = 2;
 
-    /** Size of an int in bytes */
+    /**
+     * Size of an int in bytes
+     */
     public static final int SIZE_OF_INT = 4;
-    /** Size of a a float in bytes */
+    /**
+     * Size of a a float in bytes
+     */
     public static final int SIZE_OF_FLOAT = 4;
 
-    /** Size of a long in bytes */
+    /**
+     * Size of a long in bytes
+     */
     public static final int SIZE_OF_LONG = 8;
-    /** Size of a double in bytes */
+    /**
+     * Size of a double in bytes
+     */
     public static final int SIZE_OF_DOUBLE = 8;
 
-    /** Length of the data blocks used by the CPU cache sub-system in bytes. */
+    /**
+     * Length of the data blocks used by the CPU cache sub-system in bytes.
+     */
     public static final int CACHE_LINE_LENGTH = 64;
 
     private static final byte[] HEX_DIGIT_TABLE =
-        {
-            '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-        };
+            {
+                    '0', '1', '2', '3', '4', '5', '6', '7',
+                    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+            };
+
+    private static final int LAST_DIGIT_MASK = 1;
+
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
     private static final byte[] FROM_HEX_DIGIT_TABLE;
 
-    static
-    {
+    static {
         FROM_HEX_DIGIT_TABLE = new byte[128];
         FROM_HEX_DIGIT_TABLE['0'] = 0x00;
         FROM_HEX_DIGIT_TABLE['1'] = 0x01;
@@ -80,37 +103,31 @@ public class BitUtil
         FROM_HEX_DIGIT_TABLE['F'] = 0x0f;
     }
 
-    private static final int LAST_DIGIT_MASK = 1;
-
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-
     /**
      * Fast method of finding the next power of 2 greater than or equal to the supplied value.
-     *
+     * <p/>
      * If the value is &lt;= 0 then 1 will be returned.
-     *
+     * <p/>
      * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
      *
      * @param value from which to search for next power of 2
      * @return The next power of 2 or the value itself if it is a power of 2
      */
-    public static int findNextPositivePowerOfTwo(final int value)
-    {
+    public static int findNextPositivePowerOfTwo(final int value) {
         return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
     }
 
     /**
      * Align a value to the next multiple up of alignment.
      * If the value equals an alignment multiple then it is returned unchanged.
-     * <p>
+     * <p/>
      * This method executes without branching.
      *
-     * @param value to be aligned up.
+     * @param value     to be aligned up.
      * @param alignment to be used.
      * @return the value aligned to the next boundary.
      */
-    public static int align(final int value, final int alignment)
-    {
+    public static int align(final int value, final int alignment) {
         return (value + (alignment - 1)) & ~(alignment - 1);
     }
 
@@ -120,14 +137,12 @@ public class BitUtil
      * @param buffer to convert from a hex representation (in Big Endian)
      * @return new byte array that is decimal representation of the passed array
      */
-    public static byte[] fromHexByteArray(final byte[] buffer)
-    {
+    public static byte[] fromHexByteArray(final byte[] buffer) {
         final byte[] outputBuffer = new byte[buffer.length >> 1];
 
-        for (int i = 0; i < buffer.length; i += 2)
-        {
+        for (int i = 0; i < buffer.length; i += 2) {
             outputBuffer[i >> 1] =
-                (byte) ((FROM_HEX_DIGIT_TABLE[buffer[i]] << 4) | FROM_HEX_DIGIT_TABLE[buffer[i + 1]]);
+                    (byte) ((FROM_HEX_DIGIT_TABLE[buffer[i]] << 4) | FROM_HEX_DIGIT_TABLE[buffer[i + 1]]);
         }
 
         return outputBuffer;
@@ -139,8 +154,7 @@ public class BitUtil
      * @param buffer to convert to a hex representation
      * @return new byte array that is hex representation (in Big Endian) of the passed array
      */
-    public static byte[] toHexByteArray(final byte[] buffer)
-    {
+    public static byte[] toHexByteArray(final byte[] buffer) {
         return toHexByteArray(buffer, 0, buffer.length);
     }
 
@@ -152,12 +166,10 @@ public class BitUtil
      * @param length the number of bytes to convert
      * @return new byte array that is hex representation (in Big Endian) of the passed array
      */
-    public static byte[] toHexByteArray(final byte[] buffer, int offset, int length)
-    {
+    public static byte[] toHexByteArray(final byte[] buffer, int offset, int length) {
         final byte[] outputBuffer = new byte[length << 1];
 
-        for (int i = 0; i < (length << 1); i += 2)
-        {
+        for (int i = 0; i < (length << 1); i += 2) {
             final byte b = buffer[offset + (i >> 1)];
 
             outputBuffer[i] = HEX_DIGIT_TABLE[(b >> 4) & 0x0F];
@@ -173,8 +185,7 @@ public class BitUtil
      * @param string to convert from a hex representation (in Big Endian)
      * @return new byte array holding the decimal representation of the passed array
      */
-    public static byte[] fromHex(final String string)
-    {
+    public static byte[] fromHex(final String string) {
         return fromHexByteArray(string.getBytes(UTF8_CHARSET));
     }
 
@@ -186,8 +197,7 @@ public class BitUtil
      * @param length the number of bytes to convert
      * @return new String holding the hex representation (in Big Endian) of the passed array
      */
-    public static String toHex(final byte[] buffer, int offset, int length)
-    {
+    public static String toHex(final byte[] buffer, int offset, int length) {
         return new String(toHexByteArray(buffer, offset, length), UTF8_CHARSET);
     }
 
@@ -197,8 +207,7 @@ public class BitUtil
      * @param buffer to convert to a hex representation
      * @return new String holding the hex representation (in Big Endian) of the passed array
      */
-    public static String toHex(final byte[] buffer)
-    {
+    public static String toHex(final byte[] buffer) {
         return new String(toHexByteArray(buffer), UTF8_CHARSET);
     }
 
@@ -208,8 +217,7 @@ public class BitUtil
      * @param value to check.
      * @return true if the number is even otherwise false.
      */
-    public static boolean isEven(final int value)
-    {
+    public static boolean isEven(final int value) {
         return (value & LAST_DIGIT_MASK) == 0;
     }
 
@@ -219,8 +227,7 @@ public class BitUtil
      * @param value to be checked.
      * @return true if the number is a positive power of two otherwise false.
      */
-    public static boolean isPowerOfTwo(final int value)
-    {
+    public static boolean isPowerOfTwo(final int value) {
         return value > 0 && ((value & (~value + 1)) == value);
     }
 
@@ -228,14 +235,12 @@ public class BitUtil
      * Cycles indices of an array one at a time in a forward fashion
      *
      * @param current value to be incremented.
-     * @param max value for the cycle.
+     * @param max     value for the cycle.
      * @return the next value, or zero if max is reached.
      */
-    public static int next(final int current, final int max)
-    {
+    public static int next(final int current, final int max) {
         int next = current + 1;
-        if (next == max)
-        {
+        if (next == max) {
             next = 0;
         }
 
@@ -246,13 +251,11 @@ public class BitUtil
      * Cycles indices of an array one at a time in a backwards fashion
      *
      * @param current value to be decremented.
-     * @param max value of the cycle.
+     * @param max     value of the cycle.
      * @return the next value, or max - 1 if current is zero
      */
-    public static int previous(final int current, final int max)
-    {
-        if (0 == current)
-        {
+    public static int previous(final int current, final int max) {
+        if (0 == current) {
             return max - 1;
         }
 
@@ -265,18 +268,12 @@ public class BitUtil
      * @param scale of the number reported by Unsafe.
      * @return how many times the number needs to be shifted to the left.
      */
-    public static int calculateShiftForScale(final int scale)
-    {
-        if (4 == scale)
-        {
+    public static int calculateShiftForScale(final int scale) {
+        if (4 == scale) {
             return 2;
-        }
-        else if (8 == scale)
-        {
+        } else if (8 == scale) {
             return 3;
-        }
-        else
-        {
+        } else {
             throw new IllegalArgumentException("Unknown pointer size");
         }
     }
