@@ -1,8 +1,11 @@
 package com.hazelcast.client.protocol;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.map.MapPutParameters;
 import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
-import org.junit.After;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.SerializationService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,13 +19,16 @@ import static org.junit.Assert.assertEquals;
  */
 public class MapMessageEncodeDecodeTest {
 
+    private static final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private static final String NAME = "name";
-    private static final byte[] DATA = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63};
+    private static final Data DATA = serializationService.toData("The Test");
+    private static final byte[] BYTES_DATA = DATA.toByteArray();
     private static final long THE_LONG = 0xFFFFl;
-    private static final boolean THE_BOOLEAN = true;
 
+    private static final boolean THE_BOOLEAN = true;
     private ParameterFlyweight flyweight = new ParameterFlyweight();
+
     private ByteBuffer byteBuffer;
 
     @Before
@@ -31,23 +37,47 @@ public class MapMessageEncodeDecodeTest {
         flyweight.wrap(byteBuffer);
     }
 
-    @After
-    public void tearDown() { }
-
     @Test
-    public void shouldEncode_PUT() {
-        MapPutParameters.encode(flyweight, NAME, DATA, DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
+    public void shouldEncodeCorrectly_PUT() {
+        MapPutParameters.encode(flyweight, NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
 
         flyweight.index(0);
         final MapPutParameters putParameters = MapPutParameters.decode(flyweight);
 
         assertEquals(NAME, putParameters.name);
-        assertArrayEquals(DATA, putParameters.key);
-        assertArrayEquals(DATA, putParameters.value);
+        assertArrayEquals(BYTES_DATA, putParameters.key);
+        assertArrayEquals(BYTES_DATA, putParameters.value);
         assertEquals(THE_LONG, putParameters.threadId);
         assertEquals(THE_LONG, putParameters.ttl);
         assertEquals(THE_BOOLEAN, putParameters.async);
+    }
 
+    @Test
+    public void shouldEncodeDecodeWithHeaderCorrectly_PUT() {
+        byteBuffer = ByteBuffer
+                .allocate(MapPutParameters.encodeSizeCost(NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN));
+        ClientMessage cmEncode = new ClientMessage();
+        cmEncode.wrapForEncode(byteBuffer, 0);
 
+        MapPutParameters.encode(cmEncode, NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
+        cmEncode.headerType(7).version((short) 3).flags(ClientMessage.BEGIN_AND_END_FLAGS).correlationId(66).partitionId(77);
+
+        ClientMessage cmDecode = new ClientMessage();
+        cmDecode.wrapForDecode(byteBuffer, 0);
+
+        final MapPutParameters putParameters = MapPutParameters.decode(cmDecode);
+
+        assertEquals(7, cmDecode.headerType());
+        assertEquals(3, cmDecode.version());
+        assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.flags());
+        assertEquals(66, cmDecode.correlationId());
+        assertEquals(77, cmDecode.partitionId());
+
+        assertEquals(NAME, putParameters.name);
+        assertArrayEquals(BYTES_DATA, putParameters.key);
+        assertArrayEquals(BYTES_DATA, putParameters.value);
+        assertEquals(THE_LONG, putParameters.threadId);
+        assertEquals(THE_LONG, putParameters.ttl);
+        assertEquals(THE_BOOLEAN, putParameters.async);
     }
 }

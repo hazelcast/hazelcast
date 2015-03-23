@@ -21,8 +21,7 @@ import java.nio.ByteOrder;
 /**
  * Abstraction over a range of buffer types that allows fields to be read in native typed fashion.
  */
-public interface DirectBuffer
-{
+public interface DirectBuffer {
     /**
      * Attach a view to a byte[] for providing direct access.
      *
@@ -110,7 +109,7 @@ public interface DirectBuffer
 
     /**
      * Check that a given limit is not greater than the capacity of a buffer from a given offset.
-     * <p>
+     * <p/>
      * Can be overridden in a DirectBuffer subclass to enable an extensible buffer or handle retry after a flush.
      *
      * @param limit up to which access is required.
@@ -232,6 +231,7 @@ public interface DirectBuffer
 
     /**
      * Get bytes from this {@link DirectBuffer} into the provided {@link MutableDirectBuffer} at given indices.
+     *
      * @param index     in this buffer to begin getting the bytes.
      * @param dstBuffer to which the bytes will be copied.
      * @param dstIndex  in the channel buffer to which the byte copy will begin.

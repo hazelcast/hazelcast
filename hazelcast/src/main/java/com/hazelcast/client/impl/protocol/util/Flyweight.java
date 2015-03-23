@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.util;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_INT;
-import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_LONG;
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.BYTE_MASK;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.INT_MASK;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.LONG_MASK;
 
 /**
  * Parent class for flyweight implementations in the messaging protocol.
@@ -32,27 +32,27 @@ public class Flyweight {
     protected final MutableDirectBuffer buffer = new UnsafeBuffer(EMPTY_BUFFER);
     private int offset;
 
-    protected Flyweight wrap(final byte[] buffer) {
+    public Flyweight wrap(final byte[] buffer) {
         this.buffer.wrap(buffer);
         this.offset = 0;
         return this;
     }
 
-    protected Flyweight wrap(final ByteBuffer buffer) {
+    public Flyweight wrap(final ByteBuffer buffer) {
         return wrap(buffer, 0);
     }
 
-    protected Flyweight wrap(final ByteBuffer buffer, final int offset) {
+    public Flyweight wrap(final ByteBuffer buffer, final int offset) {
         this.buffer.wrap(buffer);
         this.offset = offset;
         return this;
     }
 
-    protected Flyweight wrap(final MutableDirectBuffer buffer) {
+    public Flyweight wrap(final MutableDirectBuffer buffer) {
         return wrap(buffer, 0);
     }
 
-    protected Flyweight wrap(final MutableDirectBuffer buffer, final int offset) {
+    public Flyweight wrap(final MutableDirectBuffer buffer, final int offset) {
         this.buffer.wrap(buffer);
         this.offset = offset;
         return this;
@@ -70,8 +70,9 @@ public class Flyweight {
         this.offset = offset;
     }
 
+    //region PUT/GET helpers
     protected short uint8Get(final int offset) {
-        return (short) (buffer.getByte(offset) & 0xFF);
+        return (short) (buffer.getByte(offset) & BYTE_MASK);
     }
 
     protected void uint8Put(final int offset, final short value) {
@@ -79,7 +80,7 @@ public class Flyweight {
     }
 
     protected int uint16Get(final int offset, final ByteOrder byteOrder) {
-        return buffer.getShort(offset, byteOrder) & 0xFFFF;
+        return buffer.getShort(offset, byteOrder) & INT_MASK;
     }
 
     protected void uint16Put(final int offset, final int value, final ByteOrder byteOrder) {
@@ -87,10 +88,13 @@ public class Flyweight {
     }
 
     protected long uint32Get(final int offset, final ByteOrder byteOrder) {
-        return buffer.getInt(offset, byteOrder) & 0xFFFFFFFFL;
+        return buffer.getInt(offset, byteOrder) & LONG_MASK;
     }
 
     protected void uint32Put(final int offset, final long value, final ByteOrder byteOrder) {
         buffer.putInt(offset, (int) value, byteOrder);
     }
+
+    //endregion PUT/GET helpers
+
 }

@@ -21,8 +21,8 @@ import java.nio.ByteOrder;
 /**
  * Abstraction over a range of buffer types that allows fields to be written in native typed fashion.
  */
-public interface MutableDirectBuffer extends DirectBuffer
-{
+public interface MutableDirectBuffer
+        extends DirectBuffer {
     /**
      * Set a region of memory to a given byte value.
      *
@@ -166,6 +166,7 @@ public interface MutableDirectBuffer extends DirectBuffer
 
     /**
      * Put bytes from a source {@link DirectBuffer} into this {@link MutableDirectBuffer} at given indices.
+     *
      * @param index     in this buffer to begin putting the bytes.
      * @param srcBuffer from which the bytes will be copied.
      * @param srcIndex  in the source buffer from which the byte copy will begin.

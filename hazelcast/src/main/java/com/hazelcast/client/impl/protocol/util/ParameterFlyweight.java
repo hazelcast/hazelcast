@@ -5,19 +5,24 @@ import com.hazelcast.nio.serialization.DefaultData;
 
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.client.impl.protocol.util.BitUtil.*;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_BYTE;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_DOUBLE;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_FLOAT;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_INT;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_LONG;
+import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_SHORT;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 /**
  * Parameter Flyweight
  */
-public class ParameterFlyweight extends Flyweight {
+public class ParameterFlyweight
+        extends Flyweight {
 
     private int index;
 
-
     public ParameterFlyweight wrap(final ByteBuffer buffer) {
-        return wrap(buffer,0);
+        return wrap(buffer, 0);
     }
 
     public ParameterFlyweight wrap(final ByteBuffer buffer, final int offset) {
@@ -27,11 +32,11 @@ public class ParameterFlyweight extends Flyweight {
     }
 
     public ParameterFlyweight wrap(final MutableDirectBuffer buffer) {
-        return wrap(buffer,0);
+        return wrap(buffer, 0);
     }
 
     public ParameterFlyweight wrap(final MutableDirectBuffer buffer, final int offset) {
-        super.wrap(buffer,offset);
+        super.wrap(buffer, offset);
         this.index = offset;
         return this;
     }
@@ -44,7 +49,6 @@ public class ParameterFlyweight extends Flyweight {
         this.index = index;
         return this;
     }
-
 
     //region SET Overloads
     public ParameterFlyweight set(boolean value) {
@@ -98,37 +102,37 @@ public class ParameterFlyweight extends Flyweight {
     //endregion SET Overloads
 
     //region GET Overloads
-    public boolean getBoolean(){
+    public boolean getBoolean() {
         byte result = buffer.getByte(index);
         index += SIZE_OF_BYTE;
-        return result!=0;
+        return result != 0;
     }
 
-    public short getShort(){
+    public short getShort() {
         short result = buffer.getShort(index, LITTLE_ENDIAN);
         index += SIZE_OF_SHORT;
         return result;
     }
 
-    public int getInt(){
+    public int getInt() {
         int result = buffer.getInt(index, LITTLE_ENDIAN);
         index += SIZE_OF_INT;
         return result;
     }
 
-    public long getLong(){
+    public long getLong() {
         long result = buffer.getLong(index, LITTLE_ENDIAN);
         index += SIZE_OF_LONG;
         return result;
     }
 
-    public float getFloat(){
+    public float getFloat() {
         float result = buffer.getFloat(index, LITTLE_ENDIAN);
         index += SIZE_OF_FLOAT;
         return result;
     }
 
-    public double getDouble(){
+    public double getDouble() {
         double result = buffer.getDouble(index, LITTLE_ENDIAN);
         index += SIZE_OF_DOUBLE;
         return result;
@@ -153,9 +157,6 @@ public class ParameterFlyweight extends Flyweight {
     public Data getData() {
         return new DefaultData(getByteArray());
     }
-
-
     //endregion GET Overloads
-
 
 }

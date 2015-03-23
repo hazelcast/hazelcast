@@ -31,7 +31,8 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-final class ReadHandler extends AbstractSelectionHandler {
+final class ReadHandler
+        extends AbstractSelectionHandler {
 
     private final ByteBuffer inputBuffer;
 
@@ -99,7 +100,8 @@ final class ReadHandler extends AbstractSelectionHandler {
         }
     }
 
-    private void initializeSocketReader() throws IOException {
+    private void initializeSocketReader()
+            throws IOException {
         if (socketReader == null) {
             final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
             int readBytes = socketChannel.read(protocolBuffer);
@@ -135,12 +137,13 @@ final class ReadHandler extends AbstractSelectionHandler {
         }
     }
 
-    private void setupClient(WriteHandler writeHandler) throws IOException {
+    private void setupClient(WriteHandler writeHandler)
+            throws IOException {
         final ByteBuffer clientTypeBuffer = ByteBuffer.allocate(3);
         int size;
         do {
             size = socketChannel.read(clientTypeBuffer);
-        } while (size <3 );
+        } while (size < 3);
         clientTypeBuffer.flip();
         SocketClientDataReaderNew reader = new SocketClientDataReaderNew(connection);
         if (reader.setConnectionType(clientTypeBuffer)) {

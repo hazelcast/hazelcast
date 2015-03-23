@@ -17,6 +17,9 @@ import static org.junit.Assert.assertThat;
  */
 public class FlyweightTest {
 
+    private static byte[] DATA = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
+            (byte) 0x98, (byte) 0xBA};
+
     private ParameterFlyweight flyweight = new ParameterFlyweight();
     private ByteBuffer byteBuffer;
 
@@ -144,7 +147,7 @@ public class FlyweightTest {
 
     @Test
     public void shouldDecodeShort() {
-        flyweight.set(0x12);
+        flyweight.set((short)0x12);
         flyweight.index(0);
         assertEquals(0x12, flyweight.getShort());
         assertEquals(2, flyweight.index());
@@ -188,15 +191,32 @@ public class FlyweightTest {
 
     @Test
     public void shouldDecodeByteArray() {
-        byte[] data = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
-                (byte) 0x98, (byte) 0xBA};
 
-        flyweight.set(data);
+        flyweight.set(DATA);
         flyweight.index(0);
 
-        assertArrayEquals(data, flyweight.getByteArray());
-        assertEquals(4 + data.length, flyweight.index());
+        assertArrayEquals(DATA, flyweight.getByteArray());
+        assertEquals(4 + DATA.length, flyweight.index());
     }
 
+    @Test
+    public void shouldDecodeData() {
+        flyweight.set(DATA);
+        flyweight.index(0);
+
+        assertArrayEquals(DATA, flyweight.getData().toByteArray());
+        assertEquals(4 + DATA.length, flyweight.index());
+    }
+
+    @Test
+    public void shouldEncodeDecodeMultipleData() {
+        flyweight.set(0x12345678l);
+        flyweight.set(0x1234);
+        flyweight.set((short) 0x12);
+        flyweight.set(true);
+        flyweight.set(Float.MAX_VALUE);
+        flyweight.set(Double.MAX_VALUE);
+        flyweight.set(DATA);
+    }
 
 }
