@@ -99,7 +99,7 @@ public class CacheReplicationOperation extends AbstractOperation {
                 Data key = next.getKey();
                 CacheRecord record = next.getValue();
                 iter.remove();
-                cache.setRecord(key, record);
+                cache.putRecord(key, record);
             }
         }
         data.clear();
