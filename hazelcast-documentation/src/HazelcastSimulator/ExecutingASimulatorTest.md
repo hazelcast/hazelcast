@@ -21,27 +21,17 @@ In the following sections, we provide an example test and its output along with 
 The following example is a test where a counter is being incremented. When the test is completed, a verification is done if the actual number of increments is equal to the expected number of increments.
 
 ```
-package yourGroupId;
-
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.simulator.probes.probes.IntervalProbe;
 import com.hazelcast.simulator.test.TestContext;
 import com.hazelcast.simulator.test.TestRunner;
-import com.hazelcast.simulator.test.annotations.Performance;
-import com.hazelcast.simulator.test.annotations.Run;
-import com.hazelcast.simulator.test.annotations.Setup;
-import com.hazelcast.simulator.test.annotations.Teardown;
-import com.hazelcast.simulator.test.annotations.Verify;
-import com.hazelcast.simulator.test.utils.ThreadSpawner;
-import com.hazelcast.simulator.worker.selector.OperationSelector;
+import com.hazelcast.simulator.test.annotations.*;
 import com.hazelcast.simulator.worker.selector.OperationSelectorBuilder;
+import com.hazelcast.simulator.worker.tasks.AbstractWorker;
 
-import java.util.concurrent.atomic.AtomicLong;
-
-import static org.junit.Assert.assertEquals;
+import static junit.framework.TestCase.assertEquals;
 
 public class ExampleTest {
 
@@ -50,100 +40,78 @@ public class ExampleTest {
         GET
     }
 
-    private final static ILogger log = Logger.getLogger(ExampleTest.class);
+    private static final ILogger log = Logger.getLogger(ExampleTest.class);
 
-    // properties
-    public int threadCount = 1;
-    public int logFrequency = 10000;
-    public int performanceUpdateFrequency = 10000;
-    public double putProb = 0.2;
+    //properties
+    public double putProb = 0.5;
+    public int maxKeys = 1000;
 
-    // probes
-    public IntervalProbe putLatencyProbe;
-    public IntervalProbe getLatencyProbe;
-
-    private IAtomicLong totalCounter;
-    private AtomicLong operations = new AtomicLong();
-    private IAtomicLong counter;
     private TestContext testContext;
+    private IMap map;
 
     private OperationSelectorBuilder<Operation> operationSelectorBuilder = new OperationSelectorBuilder<Operation>();
 
     @Setup
     public void setup(TestContext testContext) throws Exception {
+        log.info("======== SETUP =========");
         this.testContext = testContext;
         HazelcastInstance targetInstance = testContext.getTargetInstance();
+        map = targetInstance.getMap("exampleMap");
 
-        totalCounter = targetInstance.getAtomicLong("totalCounter");
-        counter = targetInstance.getAtomicLong("counter");
+        log.info("Map name is:" + map.getName());
 
         operationSelectorBuilder.addOperation(Operation.PUT, putProb).addDefaultOperation(Operation.GET);
     }
 
-    @Run
-    public void run() {
-        ThreadSpawner spawner = new ThreadSpawner(testContext.getTestId());
-        for (int k = 0; k < threadCount; k++) {
-            spawner.spawn(new Worker());
-        }
-        spawner.awaitCompletion();
+    @Warmup
+    public void warmup() {
+        log.info("======== WARMUP =========");
+        log.info("Map size is:" + map.size());
     }
 
     @Verify
     public void verify() {
-        long expected = totalCounter.get();
-        long actual = counter.get();
+        log.info("======== VERIFYING =========");
+        log.info("Map size is:" + map.size());
 
-        assertEquals(expected, actual);
+        for (int i = 0; i < maxKeys; i++) {
+            assertEquals(map.get(i), "value" + i);
+        }
     }
 
     @Teardown
     public void teardown() throws Exception {
-        counter.destroy();
-        totalCounter.destroy();
+        log.info("======== TEAR DOWN =========");
+        map.destroy();
+        log.info("======== THE END =========");
     }
 
-    @Performance
-    public long getOperationCount() {
-        return operations.get();
+    @RunWithWorker
+    public AbstractWorker<Operation> createWorker() {
+        return new Worker();
     }
 
-    private class Worker implements Runnable {
-        private final OperationSelector<Operation> selector = operationSelectorBuilder.build();
+    private class Worker extends AbstractWorker<Operation> {
+
+        public Worker() {
+            super(operationSelectorBuilder);
+        }
 
         @Override
-        public void run() {
-            long iteration = 0;
-            while (!testContext.isStopped()) {
-                Operation operation = selector.select();
-                switch (operation) {
-                    case PUT:
-                        putLatencyProbe.started();
-                        counter.incrementAndGet();
-                        putLatencyProbe.done();
-                        break;
-                    case GET:
-                        getLatencyProbe.started();
-                        counter.get();
-                        getLatencyProbe.done();
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("Unknown operation" + operation);
-                }
-
-                if (iteration % logFrequency == 0) {
-                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
-                }
-
-                if (iteration % performanceUpdateFrequency == 0) {
-                    operations.addAndGet(performanceUpdateFrequency);
-                }
-                iteration++;
+        protected void timeStep(Operation operation) {
+            int key = randomInt(maxKeys);
+            switch (operation) {
+                case PUT:
+                    map.put(key, "value" + key);
+                    break;
+                case GET:
+                    map.get(key);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("Unknown operation" + operation);
             }
-
-            operations.addAndGet(iteration % performanceUpdateFrequency);
-            totalCounter.addAndGet(iteration);
         }
+
     }
 
     public static void main(String[] args) throws Throwable {
@@ -176,9 +144,8 @@ You need to give the classpath of `Example` test in the file `test.properties` a
 
 ```
 class=yourgroupid.ExampleTest
-threadCount=1
-logFrequency=10000
-performanceUpdateFrequency=10000
+maxKeys=5000
+putProb=0.4
 ```
 
 The property `class` defines the actual test case and the rest are the properties you want to bind in your test. If a
@@ -188,10 +155,10 @@ You can also define multiple tests in the file `test.properties` as shown below.
 
 ```
 foo.class=yourgroupid.ExampleTest
-foo.threadCount=1
+foo.maxKeys=5000
 
 bar.class=yourgroupid.ExampleTest
-bar.threadCount=1
+bar.maxKeys=5000
 
 ```
 
