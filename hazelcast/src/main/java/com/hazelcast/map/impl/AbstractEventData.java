@@ -3,6 +3,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 /**
@@ -10,10 +11,10 @@ import java.io.IOException;
  */
 abstract class AbstractEventData implements EventData {
 
-    private String source;
-    private String mapName;
-    private Address caller;
-    private int eventType;
+    protected String source;
+    protected String mapName;
+    protected Address caller;
+    protected int eventType;
 
     public AbstractEventData() {
     }
