@@ -176,10 +176,22 @@ When you are in your working directory, execute the following command to start t
 The script `run.sh` is for your convenience which gathers all commands used to perform a test in one script. The following is the content of this example `run.sh` script.
 
 ```
-???
-???
-???
-???
+#!/bin/bash
+
+set -e
+
+coordinator     --memberWorkerCount 2 \
+                --workerVmOptions "-ea -server -Xms2G -Xmx2G -verbosegc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:gc.log -XX:+HeapDumpOnOutOfMemoryError" \
+                --hzFile            hazelcast.xml \
+                --clientWorkerCount 2 \
+                --clientWorkerVmOptions "-ea -server -Xms2G -Xmx2G -verbosegc -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:gc.log -XX:+HeapDumpOnOutOfMemoryError" \
+                --clientHzFile      client-hazelcast.xml \
+                --workerClassPath   '../target/*.jar' \
+                --duration          5m \
+                --monitorPerformance \
+                test.properties
+
+provisioner --download
 ```
 
 This script performs the following.
@@ -275,9 +287,8 @@ Running Test :
 TestCase{
       id=
     , class=yourgroupid.ExampleTest
-    , logFrequency=10000
-    , performanceUpdateFrequency=10000
-    , threadCount=1
+    , maxKeys=5000
+    , putProb=0.4
 }
 --------------------------------------------------------------
 INFO  08:44:06 Starting Test initialization
@@ -353,6 +364,3 @@ INFO  08:51:16 ==============================================================
 INFO  08:51:16 Finished terminating 4 aws-ec2 machines, 0 machines remaining.
 INFO  08:51:16 ==============================================================
 ```
-
-
-??? Post-test information ??? agents.txt ???
