@@ -364,3 +364,40 @@ INFO  08:51:16 ==============================================================
 INFO  08:51:16 Finished terminating 4 aws-ec2 machines, 0 machines remaining.
 INFO  08:51:16 ==============================================================
 ```
+
+### Using Maven Archetypes
+
+Alternatively, you can execute tests using the Simulator archetype. Please see the following:
+
+```
+mvn archetype:generate  \
+    -DarchetypeGroupId=com.hazelcast.simulator \
+    -DarchetypeArtifactId=archetype \
+    -DarchetypeVersion=0.3 \
+    -DgroupId=yourgroupid  \
+    -DartifactId=yourproject
+```
+
+This will create fully working Simulator project including the test having `yourgroupid`. 
+
+1. After this project is generated, go to the created directory and run the following command.
+
+   ```
+mvn clean install
+   ```
+
+2. Then, go to your working directory.
+ 
+   ```
+cd <working directory>
+   ```
+ 
+3. Edit the `simulator.properties` file as explained in the [Editing the Simulator.Properties File section](#editing-the-simulator-properties-file). 
+
+4. Run the test from your working directory using the following command.
+
+   ```
+./run.sh
+   ```
+
+The output is the same as shown in the [Running the Test section](#running-the-test).
