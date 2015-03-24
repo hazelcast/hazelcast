@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.Operation;
@@ -24,7 +24,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -63,12 +63,10 @@ public interface InternalOperationService extends OperationService {
 
     /**
      * Returns information about long running operations.
-     * <p/>
-     * Do not modify this collection; it should only be read.
      *
-     * @return collection of long running operation logs.
+     * @return list of {@link SlowOperationDTO} instances.
      */
-    Collection<JsonSerializable> getSlowOperations();
+    List<SlowOperationDTO> getSlowOperationDTOs();
 
     <E> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback);
 

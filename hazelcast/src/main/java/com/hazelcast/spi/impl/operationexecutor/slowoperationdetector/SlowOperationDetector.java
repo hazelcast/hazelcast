@@ -18,15 +18,15 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;
 
-import java.util.Collection;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -83,9 +83,12 @@ public final class SlowOperationDetector {
         this.detectorThread = initDetectorThread(hazelcastThreadGroup, groupProperties);
     }
 
-    @SuppressWarnings("unchecked")
-    public Collection<JsonSerializable> getSlowOperations() {
-        return ((Map) slowOperationLogs).values();
+    public List<SlowOperationDTO> getSlowOperationDTOs() {
+        List<SlowOperationDTO> slowOperationDTOs = new ArrayList<SlowOperationDTO>(slowOperationLogs.size());
+        for (SlowOperationLog slowOperationLog : slowOperationLogs.values()) {
+            slowOperationDTOs.add(slowOperationLog.createDTO());
+        }
+        return slowOperationDTOs;
     }
 
     public void shutdown() {
@@ -212,12 +215,12 @@ public final class SlowOperationDetector {
         private void logSlowOperation(OperationRunner operationRunner, SlowOperationLog log) {
             // log a warning and print the full stack trace each FULL_LOG_FREQUENCY invocations
             Object operation = operationRunner.currentTask();
-            int totalInvocations = log.getTotalInvocations();
+            int totalInvocations = log.totalInvocations;
             if (totalInvocations == 1) {
-                logger.warning(format("Slow operation detected: %s%n%s", operation, log.getStackTrace()));
+                logger.warning(format("Slow operation detected: %s%n%s", operation, log.stackTrace));
             } else {
                 logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
-                        (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.getStackTrace() : log.getShortStackTrace()));
+                        (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.stackTrace : log.shortStackTrace));
             }
         }
 
@@ -231,7 +234,7 @@ public final class SlowOperationDetector {
                     return false;
                 }
                 if (log.purgeInvocations(nowNanos, logRetentionNanos)) {
-                    slowOperationLogs.remove(log.getStackTrace().hashCode());
+                    slowOperationLogs.remove(log.stackTrace.hashCode());
                 }
             }
             return true;

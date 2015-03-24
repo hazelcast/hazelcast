@@ -18,34 +18,47 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.monitor.LocalOperationStats;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.Clock;
 
-import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getObject;
 
 /**
  * Hazelcast statistic implementations for local operations.
  */
+@SuppressWarnings("unused")
 public class LocalOperationStatsImpl implements LocalOperationStats {
 
-    private long creationTime;
-    private Collection<JsonSerializable> slowOperations;
     private long maxVisibleSlowOperationCount;
+    private List<SlowOperationDTO> slowOperations;
+    private long creationTime;
 
     public LocalOperationStatsImpl() {
-        this.slowOperations = new ConcurrentLinkedQueue<JsonSerializable>();
         this.maxVisibleSlowOperationCount = Long.MAX_VALUE;
+        this.slowOperations = new ArrayList<SlowOperationDTO>();
+        this.creationTime = Clock.currentTimeMillis();
     }
 
     public LocalOperationStatsImpl(Node node) {
-        InternalOperationService operationService = node.nodeEngine.getOperationService();
-        this.slowOperations = operationService.getSlowOperations();
         this.maxVisibleSlowOperationCount = node.groupProperties.MC_MAX_SLOW_OPERATION_COUNT.getInteger();
+        this.slowOperations = node.nodeEngine.getOperationService().getSlowOperationDTOs();
+        this.creationTime = Clock.currentTimeMillis();
+    }
+
+    public long getMaxVisibleSlowOperationCount() {
+        return maxVisibleSlowOperationCount;
+    }
+
+    public List<SlowOperationDTO> getSlowOperations() {
+        return slowOperations;
     }
 
     @Override
@@ -56,23 +69,29 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
         root.add("maxVisibleSlowOperationCount", maxVisibleSlowOperationCount);
         JsonArray slowOperationArray = new JsonArray();
         int logCount = 0;
-        for (JsonSerializable slowOperation : slowOperations) {
+        for (SlowOperationDTO slowOperation : slowOperations) {
             if (logCount++ < maxVisibleSlowOperationCount) {
                 slowOperationArray.add(slowOperation.toJson());
             }
         }
         root.add("slowOperations", slowOperationArray);
+        root.add("creationTime", creationTime);
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
         maxVisibleSlowOperationCount = getLong(json, "maxVisibleSlowOperationCount", Long.MAX_VALUE);
+        for (JsonValue jsonValue : getArray(json, "slowOperations")) {
+            getObject(json, "operationServiceBean");
+            SlowOperationDTO slowOperationDTO = new SlowOperationDTO();
+            slowOperationDTO.fromJson(jsonValue.asObject());
+            slowOperations.add(slowOperationDTO);
+        }
+        creationTime = getLong(json, "creationTime", -1L);
     }
 
     @Override
@@ -84,19 +103,26 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
             return false;
         }
         LocalOperationStatsImpl that = (LocalOperationStatsImpl) o;
-        if (creationTime != that.creationTime) {
-            return false;
-        }
         if (maxVisibleSlowOperationCount != that.maxVisibleSlowOperationCount) {
             return false;
         }
-        if (slowOperations != null ? !isEqualSlowOperations(that.slowOperations) : that.slowOperations != null) {
+        if (!isEqualSlowOperations(that.slowOperations)) {
+            return false;
+        }
+        if (creationTime != that.creationTime) {
             return false;
         }
         return true;
     }
 
-    private boolean isEqualSlowOperations(Collection<JsonSerializable> thatSlowOperations) {
+    private boolean isEqualSlowOperations(List<SlowOperationDTO> thatSlowOperations) {
+        if (slowOperations == null) {
+            if (thatSlowOperations != null) {
+                return false;
+            }
+            return true;
+        }
+
         if (slowOperations.size() != thatSlowOperations.size()) {
             return false;
         }
@@ -109,17 +135,17 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     @Override
     public int hashCode() {
         int result = slowOperations != null ? slowOperations.hashCode() : 0;
-        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         result = 31 * result + (int) (maxVisibleSlowOperationCount ^ (maxVisibleSlowOperationCount >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         return result;
     }
 
     @Override
     public String toString() {
         return "LocalOperationStatsImpl{"
-                + "creationTime=" + creationTime
+                + "maxVisibleSlowOperationCount=" + maxVisibleSlowOperationCount
                 + ", slowOperations=" + slowOperations
-                + ", maxVisibleSlowOperationCount=" + maxVisibleSlowOperationCount
+                + ", creationTime=" + creationTime
                 + '}';
     }
 }
