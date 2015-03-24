@@ -126,7 +126,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     protected <K, V> CacheConfig<K, V> createConfigOnPartition(CacheConfig<K, V> cacheConfig) {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
-            CacheCreateConfigRequest request = new CacheCreateConfigRequest(cacheConfig, false, false, partitionId);
+            CacheCreateConfigRequest request = new CacheCreateConfigRequest(cacheConfig, false, partitionId);
             Future future = clientContext.getInvocationService()
                                 .invokeOnKeyOwner(request, cacheConfig.getNameWithPrefix());
             return (CacheConfig<K, V>) clientContext.getSerializationService().toObject(future.get());
@@ -166,7 +166,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(config.getNameWithPrefix());
             CacheCreateConfigRequest request =
-                    new CacheCreateConfigRequest(config, createAlsoOnOthers, false, partitionId);
+                    new CacheCreateConfigRequest(config, createAlsoOnOthers, partitionId);
             Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, cacheName);
             if (syncCreate) {
                 return (CacheConfig<K, V>) clientContext.getSerializationService().toObject(future.get());
