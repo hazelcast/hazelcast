@@ -27,4 +27,6 @@ public interface CacheRecordMap<K extends Data, V extends CacheRecord>
 
     CacheKeyIteratorResult fetchNext(int nextTableIndex, int size);
 
+    void close();
+
 }

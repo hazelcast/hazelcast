@@ -120,14 +120,24 @@ public abstract class AbstractCacheService implements ICacheService {
 
     protected void destroySegments(String objectName) {
         for (CachePartitionSegment segment : segments) {
-            segment.deleteCache(objectName);
+            segment.deleteCache(objectName, true);
+        }
+    }
+
+    protected void closeSegments(String objectName) {
+        for (CachePartitionSegment segment : segments) {
+            segment.deleteCache(objectName, false);
         }
     }
 
     @Override
-    public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
+    public void deleteCache(String objectName, boolean isLocal, String callerUuid, boolean destroy) {
         CacheConfig config = deleteCacheConfig(objectName);
-        destroySegments(objectName);
+        if (destroy) {
+            destroySegments(objectName);
+        } else {
+            closeSegments(objectName);
+        }
 
         if (!isLocal) {
             deregisterAllListener(objectName);

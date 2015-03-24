@@ -42,7 +42,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CachePartitionSegment getSegment(int partitionId);
 
-    void destroyCache(String objectName, boolean isLocal, String callerUuid);
+    void deleteCache(String objectName, boolean isLocal, String callerUuid, boolean destroy);
 
     CacheSimpleConfig findCacheConfig(String simpleName);
 

@@ -27,9 +27,9 @@ import java.io.IOException;
 
 /**
  * <p>Destroys the cache on the cluster or on a single node by calling
- * {@link CacheService#destroyCache(String, boolean, String)}.
+ * {@link CacheService#deleteCache(String, boolean, String, boolean)}.
  * </p>
- * @see CacheService#destroyCache(String, boolean, String)
+ * @see CacheService#deleteCache(String, boolean, String, boolean)
  */
 public class CacheDestroyOperation
         extends AbstractNamedOperation
@@ -53,7 +53,7 @@ public class CacheDestroyOperation
     public void run()
             throws Exception {
         final CacheService service = getService();
-        service.destroyCache(name, isLocal, getCallerUuid());
+        service.deleteCache(name, isLocal, getCallerUuid(), true);
     }
 
     @Override

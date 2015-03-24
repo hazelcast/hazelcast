@@ -1273,11 +1273,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void clear() {
-        records.clear();
-    }
-
-    @Override
     public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
         // We don not call loadAll. shouldn't we ?
         expiryPolicy = getExpiryPolicy(expiryPolicy);
@@ -1415,8 +1410,20 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
+    public void clear() {
+        records.clear();
+    }
+
+    @Override
+    public void close() {
+        records.close();
+        closeResources();
+        closeListeners();
+    }
+
+    @Override
     public void destroy() {
-        clear();
+        records.clear();
         closeResources();
         closeListeners();
     }

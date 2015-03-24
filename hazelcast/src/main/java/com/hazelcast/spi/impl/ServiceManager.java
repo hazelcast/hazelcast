@@ -48,8 +48,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.persistence.DBRepository;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.util.EmptyStatement;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -104,6 +106,13 @@ final class ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
+
+        try {
+            DBRepository dbRepository = createService(DBRepository.class);
+            registerService(DBRepository.SERVICE_NAME, dbRepository);
+        } catch (Throwable e) {
+            EmptyStatement.ignore(e);
+        }
     }
 
     private void registerDefaultServices(ServicesConfig servicesConfig) {

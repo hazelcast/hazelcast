@@ -307,12 +307,27 @@ public interface ICacheRecordStore {
     void removeAll(Set<Data> keys, int completionId);
 
     /**
+     * Shutdown is equivalent to below operations in the given order:
+     * <ul>
+     *     <li>close resources.</li>
+     *     <li>unregister all listeners.</li>
+     * </ul>
+     *
+     * @see #clear()
+     * @see #destroy()
+     */
+    void close();
+
+    /**
      * Destroy is equivalent to below operations in the given order:
      * <ul>
      *     <li>clear all.</li>
      *     <li>close resources.</li>
      *     <li>unregister all listeners.</li>
      * </ul>
+     *
+     * @see #clear()
+     * @see #close()
      */
     void destroy();
 
@@ -422,4 +437,5 @@ public interface ICacheRecordStore {
      */
     int evictIfRequired();
 
+    boolean isLoading();
 }

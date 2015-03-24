@@ -91,4 +91,8 @@ public class CacheRecordHashMap
         return super.getRandomSamples(sampleCount);
     }
 
+    @Override
+    public void close() {
+        clear();
+    }
 }

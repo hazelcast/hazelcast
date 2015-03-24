@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInput;
 import java.io.DataOutput;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -306,5 +307,27 @@ public final class IOUtil {
                 Logger.getLogger(IOUtil.class).finest("closeResource failed", e);
             }
         }
+    }
+
+    public static void deleteFile(String fileName) {
+        deleteFile(new File(fileName));
+    }
+
+    public static void deleteFile(File file) {
+        if (!file.exists()) {
+            return;
+        }
+
+        if (file.isFile()) {
+            file.delete();
+        }
+
+        String[] files = file.list();
+        if (files != null) {
+            for (String child : files) {
+                deleteFile(new File(file, child));
+            }
+        }
+        file.delete();
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -73,35 +74,49 @@ public final class CachePartitionSegment {
     }
 
     public ICacheRecordStore getOrCreateCache(String name) {
-        return
-             ConcurrencyUtil.getOrPutSynchronized(caches,
-                                                  name,
-                                                  mutex,
-                                                  cacheConstructorFunction);
+        ICacheRecordStore recordStore = ConcurrencyUtil
+                .getOrPutSynchronized(caches, name, mutex, cacheConstructorFunction);
+        if (recordStore.isLoading()) {
+            throw new RetryableHazelcastException("still loading...");
+        }
+        return recordStore;
     }
 
     public ICacheRecordStore getCache(String name) {
-        return caches.get(name);
+        ICacheRecordStore recordStore = caches.get(name);
+        if (recordStore != null && recordStore.isLoading()) {
+            throw new RetryableHazelcastException("still loading...");
+        }
+        return recordStore;
     }
 
-    public void deleteCache(String name) {
+    public void deleteCache(String name, boolean destroy) {
         ICacheRecordStore cache = caches.remove(name);
         if (cache != null) {
-            cache.destroy();
+            if (destroy) {
+                cache.destroy();
+            } else {
+                cache.close();
+            }
         }
     }
 
     public void clear() {
         synchronized (mutex) {
             for (ICacheRecordStore cache : caches.values()) {
-                cache.destroy();
+                cache.clear();
             }
         }
         caches.clear();
     }
 
-    public void destroy() {
-        clear();
+    public void close() {
+        synchronized (mutex) {
+            for (ICacheRecordStore cache : caches.values()) {
+                cache.close();
+            }
+        }
+        caches.clear();
     }
 
     public boolean hasAnyCache() {

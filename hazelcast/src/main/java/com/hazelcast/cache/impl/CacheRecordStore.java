@@ -167,4 +167,8 @@ public class CacheRecordStore
         }
     }
 
+    @Override
+    public boolean isLoading() {
+        return false;
+    }
 }

@@ -132,7 +132,7 @@ abstract class AbstractCacheProxyBase<K, V> {
         //todo What happens in exception case? Cache doesn't get destroyed
         f.getSafely();
 
-        cacheService.destroyCache(getDistributedObjectName(), true, null);
+        cacheService.deleteCache(getDistributedObjectName(), true, null, true);
         f.getSafely();
     }
 
