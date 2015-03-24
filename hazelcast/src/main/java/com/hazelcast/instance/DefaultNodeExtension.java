@@ -188,7 +188,6 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeJoin() {
-        logger.info("Before join check.");
     }
 
 }

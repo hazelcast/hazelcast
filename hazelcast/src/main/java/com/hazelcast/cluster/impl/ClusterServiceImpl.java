@@ -648,7 +648,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     node.getNodeExtension().beforeJoin();
                 } catch (Exception e) {
                     logger.warning(e.getMessage());
-                    sendBeforeJoinCheckFailure(joinRequest.getAddress(),e.getMessage());
+                    sendBeforeJoinCheckFailure(joinRequest.getAddress(), e.getMessage());
                     return;
                 }
             }
