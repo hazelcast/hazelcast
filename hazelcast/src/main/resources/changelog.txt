@@ -4,39 +4,55 @@ Document Revision History
 	•	Chapter 1 - Preface
 	⁃	Added as a new chapter as the front matter of the Hazelcast Reference Manual.
 
-	•	Chapter 3 - Hazelcast Clusters
+	•	Chapter 2 - What's New in Hazelcast 3.4
+	⁃	Upgrading from 3.x:Added as a new section.
+
+	•	Chapter 4 - Overview: Separated from Getting Started as a new chapter.
+	⁃	Data Partitioning: Added as a new section explaining how the partitioning works in Hazelcast.
+
+	•	Chapter 5 - Hazelcast Clusters
 	⁃	Added as a new chapter to explain the Hazelcast clusters and their features. 
 
-	•	Chapter 5 - Distributed Data Structures
+	•	Chapter 6 - Distributed Data Structures
 	⁃	Map Persistence: Thread information related to MapLoader interface added as a note.
 	⁃	Eviction: New max-size policies FREE_HEAP_SIZE and FREE_HEAP_PERCENTAGE descriptions added.
 	⁃	Bounded Queue: Whole section modified for a more cleaner description. 
 	⁃	Queue Configuration: Added as a new section to explain the important elements to configure a distributed queue. 
 
-	•	Chapter 11 - Hazelcast JCache
+	•	Chapter 7 - Distributed Events
+	⁃	The whole chapter improved by adding sections describing each listener.
+
+	•	Chapter 12 - Hazelcast JCache
 	⁃	Whole chapter improved by adding an overview to JCache, an extensive description of the JCache API and Hazelcast's JCache extension, namely ICache. 
 	⁃	JCache Eviction: Added as a new section.
 
-	•	Chapter 12 - Integrated Clustering
+	•	Chapter 13 - Integrated Clustering
 	⁃	Jetty Based Web Session Replication: Added as a new section to explain replicating sessions for Jetty based web applications. 
 	⁃	Hibernate Second Level Cache: Added the last paragraph to the HazelcastLocalCacheRegionFactory section. This paragraph describes the eviction support when Hazelcast is configured for Hibernate using local cache region factory. 
 
-	•	Chapter 13 - Storage
+	•	Chapter 14 - Storage
 	⁃	High-Density Memory Store: Added as a new section. 
 
-	•	Chapter 14 - Clients
+	•	Chapter 15 - Clients
 	⁃	Java Client: Added information related to load balancer configuration. 
 
-	•	Chapter 18 - Performance
+	•	Chapter 19 - Performance
 	⁃	Back Pressure: Added as a new section. 
+	⁃	Hazelcast Performance on AWS: Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.
 
-	•	Chapter 20 - Hazelcast Configuration
+	•	Chapter 20 - Hazelcast Simulator
+	⁃	Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.
+
+	•	Chapter 22 - Hazelcast Configuration
 	⁃	Composing XML Configuration: Added as a new section that explains how to compose a Hazelcast XML Configuration file from multiple XML configuration snippets. 
 	⁃	The whole (formerly known as the *Configuration* chapter) chapter redesigned to include all the Hazelcast configuration elements and attributes. 
 
-	•	Chapter 22 - FAQ
+	•	Chapter 24 - License Questions
+	⁃	Added as a new chapter describing the license information of dependencies.
+
+	•	Chapter 25 - FAQ
 	⁃	Updated with new questions related to socket communications, the OOM exception "unable to create new native thread", and virtualization to be used on AWS. 
 
-	•	Chapter 23 - Glossary
+	•	Chapter 26 - Glossary
 	⁃	Added as a new chapter. 
 
