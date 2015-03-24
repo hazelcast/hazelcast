@@ -18,12 +18,15 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
@@ -92,5 +95,14 @@ public class DefaultClientExtension implements ClientExtension {
     @Override
     public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
         return new DefaultSocketChannelWrapperFactory();
+    }
+
+    @Override
+    public <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service) {
+        if (MapService.class.isAssignableFrom(service)) {
+            return ClientMapProxy.class;
+        }
+
+        throw new IllegalArgumentException("Proxy cannot be created. Unknown service : " + service);
     }
 }
