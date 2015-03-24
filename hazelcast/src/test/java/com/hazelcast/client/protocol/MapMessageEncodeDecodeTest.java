@@ -55,7 +55,7 @@ public class MapMessageEncodeDecodeTest {
     @Test
     public void shouldEncodeDecodeWithHeaderCorrectly_PUT() {
         byteBuffer = ByteBuffer
-                .allocate(MapPutParameters.encodeSizeCost(NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN));
+                .allocate(MapPutParameters.encodeSizeCost(NAME, BYTES_DATA, BYTES_DATA));
         ClientMessage cmEncode = new ClientMessage();
         cmEncode.wrapForEncode(byteBuffer, 0);
 

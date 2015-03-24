@@ -7,7 +7,7 @@ import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
 /**
  * Sample Put parameter
  */
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD" })
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class MapPutParameters {
 
     public byte[] key;
