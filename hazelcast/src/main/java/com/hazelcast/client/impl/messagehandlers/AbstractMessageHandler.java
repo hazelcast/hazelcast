@@ -19,17 +19,11 @@ package com.hazelcast.client.impl.messagehandlers;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageHandler;
 import com.hazelcast.client.impl.protocol.MessageHandlerContext;
-import com.hazelcast.client.impl.protocol.MessageHandlerParameters;
 
 /**
  * Base support class for message handlers
  */
 public abstract class AbstractMessageHandler implements MessageHandler {
-
-    @Override
-    public MessageHandlerParameters createParameters() {
-        return null;
-    }
 
     protected static ClientMessage prepareResponse(MessageHandlerContext context, Object... objects) {
 
