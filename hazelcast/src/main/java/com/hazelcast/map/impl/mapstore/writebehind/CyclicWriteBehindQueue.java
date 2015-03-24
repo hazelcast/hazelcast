@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MutableInteger;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -50,11 +51,11 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
      *
      * @see WriteBehindStore#loadable(com.hazelcast.nio.serialization.Data)
      */
-    private final Map<Data, Integer> index;
+    private final Map<Data, MutableInteger> index;
 
     public CyclicWriteBehindQueue() {
         this.deque = new ArrayDeque<DelayedEntry>();
-        this.index = new HashMap<Data, Integer>();
+        this.index = new HashMap<Data, MutableInteger>();
     }
 
     /**
@@ -82,8 +83,8 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     }
 
     /**
-     * Removes the first occurrence of the specified element in this queue
-     * when searching it by starting from the head of this queue.
+     * Removes the first element of this queue instead of searching for it,
+     * implementation of this method is strongly tied with {@link StoreWorker} implementation.
      *
      * @param entry element to be removed.
      * @return <code>true</code> if removed successfully, <code>false</code> otherwise
@@ -180,13 +181,13 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     private void addCountIndex(DelayedEntry entry) {
         Data key = (Data) entry.getKey();
-        Map<Data, Integer> index = this.index;
+        Map<Data, MutableInteger> index = this.index;
 
-        Integer count = index.get(key);
+        MutableInteger count = index.get(key);
         if (count == null) {
-            count = 0;
+            count = new MutableInteger();
         }
-        count++;
+        count.value++;
         index.put(key, count);
     }
 
@@ -198,15 +199,15 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     private void decreaseCountIndex(DelayedEntry entry) {
         Data key = (Data) entry.getKey();
-        Map<Data, Integer> index = this.index;
+        Map<Data, MutableInteger> index = this.index;
 
-        Integer count = index.get(key);
+        MutableInteger count = index.get(key);
         if (count == null) {
             return;
         }
-        count--;
+        count.value--;
 
-        if (count == 0) {
+        if (count.value == 0) {
             index.remove(key);
         } else {
             index.put(key, count);
