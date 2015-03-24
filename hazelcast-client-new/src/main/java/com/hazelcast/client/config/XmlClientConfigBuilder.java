@@ -21,6 +21,7 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SSLConfig;
@@ -43,8 +44,22 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
+import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
+import static com.hazelcast.client.config.ClientXmlElements.GROUP;
+import static com.hazelcast.client.config.ClientXmlElements.LISTENERS;
+import static com.hazelcast.client.config.ClientXmlElements.LOAD_BALANCER;
+import static com.hazelcast.client.config.ClientXmlElements.NATIVE_MEMORY;
+import static com.hazelcast.client.config.ClientXmlElements.NEAR_CACHE;
+import static com.hazelcast.client.config.ClientXmlElements.NETWORK;
+import static com.hazelcast.client.config.ClientXmlElements.PROPERTIES;
+import static com.hazelcast.client.config.ClientXmlElements.PROXY_FACTORIES;
+import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
+import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
+import static com.hazelcast.client.config.ClientXmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -55,10 +70,10 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private static final int DEFAULT_VALUE = 5;
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
 
-
     private Properties properties = System.getProperties();
 
     private ClientConfig clientConfig;
+    private Set<String> occurrenceSet = new HashSet<String>();
     private InputStream in;
 
     public XmlClientConfigBuilder(String resource) throws IOException {
@@ -114,7 +129,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                     + lineSeparator + "Exception: " + e.getMessage()
                     + lineSeparator + "HazelcastClient startup interrupted.";
             LOGGER.severe(msg);
-            throw e;
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             IOUtil.closeResource(inputStream);
         }
@@ -170,37 +185,53 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             domLevel3 = false;
         }
         process(root);
+        schemaValidation(root.getOwnerDocument());
         handleConfig(root);
     }
 
     private void handleConfig(final Element docElement) throws Exception {
         for (Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
-            if ("security".equals(nodeName)) {
-                handleSecurity(node);
-            } else if ("proxy-factories".equals(nodeName)) {
-                handleProxyFactories(node);
-            } else if ("properties".equals(nodeName)) {
-                fillProperties(node, clientConfig.getProperties());
-            } else if ("serialization".equals(nodeName)) {
-                handleSerialization(node);
-            } else if ("native-memory".equals(nodeName)) {
-                fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
-            } else if ("group".equals(nodeName)) {
-                handleGroup(node);
-            } else if ("listeners".equals(nodeName)) {
-                handleListeners(node);
-            } else if ("network".equals(nodeName)) {
-                handleNetwork(node);
-            } else if ("load-balancer".equals(nodeName)) {
-                handleLoadBalancer(node);
-            } else if ("near-cache".equals(nodeName)) {
-                handleNearCache(node);
-            } else if ("executor-pool-size".equals(nodeName)) {
-                final int poolSize = Integer.parseInt(getTextContent(node));
-                clientConfig.setExecutorPoolSize(poolSize);
+            if (occurrenceSet.contains(nodeName)) {
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
+            }
+            handleXmlNode(node, nodeName);
+            if (!canOccurMultipleTimes(nodeName)) {
+                occurrenceSet.add(nodeName);
             }
         }
+    }
+
+    private void handleXmlNode(Node node, String nodeName) throws Exception {
+
+        if (SECURITY.isEqual(nodeName)) {
+            handleSecurity(node);
+        } else if (PROXY_FACTORIES.isEqual(nodeName)) {
+            handleProxyFactories(node);
+        } else if (PROPERTIES.isEqual(nodeName)) {
+            fillProperties(node, clientConfig.getProperties());
+        } else if (SERIALIZATION.isEqual(nodeName)) {
+            handleSerialization(node);
+        } else if (NATIVE_MEMORY.isEqual(nodeName)) {
+            fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
+        } else if (GROUP.isEqual(nodeName)) {
+            handleGroup(node);
+        } else if (LISTENERS.isEqual(nodeName)) {
+            handleListeners(node);
+        } else if (NETWORK.isEqual(nodeName)) {
+            handleNetwork(node);
+        } else if (LOAD_BALANCER.isEqual(nodeName)) {
+            handleLoadBalancer(node);
+        } else if (NEAR_CACHE.isEqual(nodeName)) {
+            handleNearCache(node);
+        } else if (EXECUTOR_POOL_SIZE.isEqual(nodeName)) {
+            handleExecutorPoolSize(node);
+        }
+    }
+
+    private void handleExecutorPoolSize(Node node) {
+        final int poolSize = Integer.parseInt(getTextContent(node));
+        clientConfig.setExecutorPoolSize(poolSize);
     }
 
     private void handleNearCache(Node node) {
@@ -310,14 +341,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         return clientAwsConfig;
     }
 
-    private void handleSSLConfig(final org.w3c.dom.Node node, ClientNetworkConfig clientNetworkConfig) {
+    private void handleSSLConfig(final Node node, ClientNetworkConfig clientNetworkConfig) {
         SSLConfig sslConfig = new SSLConfig();
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
         final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode).trim());
         sslConfig.setEnabled(enabled);
 
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             if ("factory-class-name".equals(nodeName)) {
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
@@ -365,7 +396,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleGroup(Node node) {
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();
             final String nodeName = cleanNodeName(n.getNodeName());
             if ("name".equals(nodeName)) {
@@ -399,7 +430,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         clientConfig.addProxyFactoryConfig(proxyFactoryConfig);
     }
 
-    private void handleSocketInterceptorConfig(final org.w3c.dom.Node node, ClientNetworkConfig clientNetworkConfig) {
+    private void handleSocketInterceptorConfig(final Node node, ClientNetworkConfig clientNetworkConfig) {
         SocketInterceptorConfig socketInterceptorConfig = parseSocketInterceptorConfig(node);
         clientNetworkConfig.setSocketInterceptorConfig(socketInterceptorConfig);
     }
