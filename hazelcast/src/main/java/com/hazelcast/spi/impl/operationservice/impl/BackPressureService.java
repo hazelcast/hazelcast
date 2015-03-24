@@ -26,7 +26,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  * For information about the implementation see:
  * https://hazelcast.atlassian.net/wiki/display/EN/Back+Pressure+Design
  */
-public class BackPressureService {
+public final class BackPressureService {
 
     /**
      * The percentage above and below a certain sync-window we should randomize.
