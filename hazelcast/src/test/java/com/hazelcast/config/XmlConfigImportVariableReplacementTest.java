@@ -136,10 +136,10 @@ public class XmlConfigImportVariableReplacementTest {
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         String config1Xml = "<hazelcast>" +
-                "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         String config2Xml = "<hazelcast>" +
-                "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -155,13 +155,13 @@ public class XmlConfigImportVariableReplacementTest {
         FileOutputStream os2 = new FileOutputStream(config2);
         FileOutputStream os3 = new FileOutputStream(config2);
         String config1Xml = "<hazelcast>" +
-                "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         String config2Xml = "<hazelcast>" +
-                "    <import resource=\"file://" + config3.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + config3.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         String config3Xml = "<hazelcast>" +
-                "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -174,7 +174,7 @@ public class XmlConfigImportVariableReplacementTest {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         String config1Xml = "<hazelcast>" +
-                "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
         writeStringToStreamAndClose(os1, "");
         buildConfig(config1Xml, null);
@@ -212,7 +212,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = "<hazelcast>\n" +
-                "    <import resource=\"file://" + file.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
 
         Config config = buildConfig(xml, null);
@@ -239,7 +239,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(os, mapConfig);
 
         String xml = "<hazelcast>\n" +
-                "    <import resource=\"file://" + file.getAbsolutePath() + "\"/>\n" +
+                "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
 
         Config config = buildConfig(xml, null);
@@ -461,7 +461,7 @@ public class XmlConfigImportVariableReplacementTest {
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = "<hazelcast>\n" +
-                "    <import resource=\"file://" + "${file}" + "\"/>\n" +
+                "    <import resource=\"file:///" + "${file}" + "\"/>\n" +
                 "</hazelcast>";
         Config config = buildConfig(xml, "file", file.getAbsolutePath());
         assertEquals(config.getProperty("prop1"), "value1");
