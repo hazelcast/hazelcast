@@ -62,25 +62,6 @@ public interface AtomicBuffer
      */
     boolean compareAndSetLong(int index, long expectedValue, long updateValue);
 
-    //    /**
-    //     * Atomically exchange a value at a location returning the previous contents.
-    //     *
-    //     * @param index in bytes for where to put.
-    //     * @param value for at a given index
-    //     * @return previous value
-    //     */
-    //    long getAndSetLong(int index, long value);
-    //
-    //    /**
-    //     * Atomically add a delta to a value at a location returning the previous contents.
-    //     * To decrement a negative delta can be provided.
-    //     *
-    //     * @param index in bytes for where to put.
-    //     * @param delta to be added to the value at the index
-    //     * @return previous value
-    //     */
-    //    long getAndAddLong(int index, long delta);
-
     /**
      * Get the value at a given index with volatile semantics.
      *
@@ -122,25 +103,6 @@ public interface AtomicBuffer
      * @return successful or not
      */
     boolean compareAndSetInt(int index, int expectedValue, int updateValue);
-
-    //    /**
-    //     * Atomically exchange a value at a location returning the previous contents.
-    //     *
-    //     * @param index in bytes for where to put.
-    //     * @param value for at a given index
-    //     * @return previous value
-    //     */
-    //    int getAndSetInt(int index, int value);
-    //
-    //    /**
-    //     * Atomically add a delta to a value at a location returning the previous contents.
-    //     * To decrement a negative delta can be provided.
-    //     *
-    //     * @param index in bytes for where to put.
-    //     * @param delta to be added to the value at the index
-    //     * @return previous value
-    //     */
-    //    int getAndAddInt(int index, int delta);
 
     /**
      * Get the value at a given index with volatile semantics.

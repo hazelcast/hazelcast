@@ -158,20 +158,4 @@ public final class BitUtil {
         return current - 1;
     }
 
-//    /**
-//     * Calculate the shift value to scale a number based on how refs are compressed or not.
-//     *
-//     * @param scale of the number reported by Unsafe.
-//     * @return how many times the number needs to be shifted to the left.
-//     */
-//    public static int calculateShiftForScale(final int scale) {
-//        if (4 == scale) {
-//            return 2;
-//        } else if (8 == scale) {
-//            return 3;
-//        } else {
-//            throw new IllegalArgumentException("Unknown pointer size");
-//        }
-//    }
-
 }

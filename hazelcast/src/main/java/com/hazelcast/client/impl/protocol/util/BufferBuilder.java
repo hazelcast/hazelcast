@@ -47,6 +47,14 @@ public class BufferBuilder {
         mutableDirectBuffer = new UnsafeBuffer(buffer);
     }
 
+    private static int findSuitableCapacity(int capacity, final int requiredCapacity) {
+        do {
+            capacity <<= 1;
+        } while (capacity < requiredCapacity);
+
+        return capacity;
+    }
+
     /**
      * The current capacity of the buffer.
      *
@@ -114,13 +122,6 @@ public class BufferBuilder {
         return this;
     }
 
-    //    public BufferBuilder append(byte[] src, final int srcOffset, final int length){
-    //        ensureCapacity(length);
-    //        System.arraycopy(src,srcOffset,buffer, limit, length);
-    //        limit += length;
-    //        return this;
-    //    }
-
     private void ensureCapacity(final int additionalCapacity) {
         final int requiredCapacity = limit + additionalCapacity;
 
@@ -137,13 +138,5 @@ public class BufferBuilder {
             buffer = newBuffer;
             mutableDirectBuffer.wrap(newBuffer);
         }
-    }
-
-    private static int findSuitableCapacity(int capacity, final int requiredCapacity) {
-        do {
-            capacity <<= 1;
-        } while (capacity < requiredCapacity);
-
-        return capacity;
     }
 }
