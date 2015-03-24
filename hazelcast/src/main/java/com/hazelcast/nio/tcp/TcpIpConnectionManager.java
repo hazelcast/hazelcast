@@ -243,7 +243,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
         }
-        if (checkAlreadyConnected(connection, remoteEndPoint)) {
+        if (destroyIfAnotherConnectionIsAlreadyBound(connection, remoteEndPoint)) {
             return false;
         }
         if (!registerConnection(remoteEndPoint, connection)) {
@@ -289,15 +289,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return true;
     }
 
-    private boolean checkAlreadyConnected(TcpIpConnection connection, Address remoteEndPoint) {
+    private boolean destroyIfAnotherConnectionIsAlreadyBound(TcpIpConnection connection, Address remoteEndPoint) {
         final Connection existingConnection = connectionsMap.get(remoteEndPoint);
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
                     log(Level.FINEST, existingConnection + " is already bound to " + remoteEndPoint
-                            + ", new one is " + connection);
+                            + ", destroying the new " + connection);
                 }
-                activeConnections.add(connection);
+                destroyConnection(connection);
+                sendBindRequest((TcpIpConnection) existingConnection, remoteEndPoint, false);
             }
             return true;
         }
