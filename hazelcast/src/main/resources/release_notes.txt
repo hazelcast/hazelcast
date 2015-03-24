@@ -33,15 +33,15 @@ This section provides the new features introduced with Hazelcast 3.4 release.
 
 This section lists the enhancements performed for Hazelcast 3.4.2 release.
 
-- The method `contains` for ISet scans all the items [#4620].
+	•	The method `contains` for ISet scans all the items [#4620].
 
 
 3.4.1 Enhancements:
 
 This section lists the enhancements performed for Hazelcast 3.4.1 release.
 
-- When the near cache is used, cached entries from the remote node are evicted by idleness, despite being read [#4358].
-- HazelcastQueryResultsRegion is never expired/evicted. The cleanup() method in LocalRegionCache for the query cache instances is never called, thus the query cache lives forever [#3882].
+	•	When the near cache is used, cached entries from the remote node are evicted by idleness, despite being read [#4358].
+	•	HazelcastQueryResultsRegion is never expired/evicted. The cleanup() method in LocalRegionCache for the query cache instances is never called, thus the query cache lives forever [#3882].
 
 3.4 Enhancements:
 
@@ -70,13 +70,13 @@ This section lists the enhancements performed for Hazelcast 3.4 release.
 This section lists issues solved for Hazelcast 3.4.2 release.
 
 	•	While executing unit tests, `SlowOperationDetectorThread` and `CleanupThread` may not be 
-terminated before the next test is started [#4757].
+	terminated before the next test is started [#4757].
 	•	When multiple nodes join sequentially after partitions are assigned/distributed, old 
-nodes fail to clean backup replicas larger than the configured backup count. This causes a 
-memory leak. Also, when multiple nodes leave the cluster at the same time (or in a short period), 
-the new partition owner looses some partition replica versions and this causes backup nodes for 
-those specific replica indexes to fail synchronizing data from the owner node, although the owner 
-node holds the whole partition data [#4687].
+	nodes fail to clean backup replicas larger than the configured backup count. This causes a 
+	memory leak. Also, when multiple nodes leave the cluster at the same time (or in a short period), 
+	the new partition owner looses some partition replica versions and this causes backup nodes for 
+	those specific replica indexes to fail synchronizing data from the owner node, although the owner 
+	node holds the whole partition data [#4687].
 	•	After cluster merges due to a network-split, Hazelcast infinitely logs `WaitNotifyServiceImpl$WaitingOp::WrongTargetException` warnings [#4676].
 	•	A strange `mapName` parameter occurred when using wildcard configuration for a custom `MapStoreFacory` [#4667].
 	•	The method `IExecutorService.submitToKeyOwner` encountered two errors: the `onResponse` 
@@ -92,29 +92,29 @@ This section lists issues solved for Hazelcast 3.4.1 release.
 
 	•	IMap.getAll does not put data to RecordStore upon loading from map store [#4458].
 	•	In the ClientNearCache class, there is a comparator which is used in a TreeSet to 
-find the entries that should be evicted. If there are CacheRecords with the same 
-hit count or lastAccessTime (depending on the policy, i.e. LFU or LRU), all of them 
-should be evicted [#4451].
+	find the entries that should be evicted. If there are CacheRecords with the same 
+	hit count or lastAccessTime (depending on the policy, i.e. LFU or LRU), all of them 
+	should be evicted [#4451].
 	•	When using write-behind and the entries, which have not been stored yet, are evicted, 
-duplicate calls to the map store is made [#4448].
+	duplicate calls to the map store is made [#4448].
 	•	There is a memory leak caused by the empty await queues in WaitNotifyService. When more 
-than one thread try to lock on an IMap key at the same time, a memory leak occurs [#4432].
+	than one thread try to lock on an IMap key at the same time, a memory leak occurs [#4432].
 	•	ClientListener is not configurable via ListenerConfig. HazelcastInstanceImpl.initializeListeners(Config config) 
-does not honor ClientListener instances [#4429].
+	does not honor ClientListener instances [#4429].
 	•	The CacheConfig(CacheSimpleConfig simpleConfig) constructor is broken. Variable 
-assignments should be fixed [#4423].
+	assignments should be fixed [#4423].
 	•	In ReplicatedMap, the containsKey method should return false on the removed keys [#4420].
 	•	During the Hazelcast.shutdownAll() process, LockService is shut down before the MapService 
-and this may cause null pointer exception if there is something like isLocked check in some 
-internal IMap operations [#4382].
+	and this may cause null pointer exception if there is something like isLocked check in some 
+	internal IMap operations [#4382].
 	•	Hazelcast clients shut down in the case of an IP change of one or more of the configured 
-node (DNS) addresses [#4349].
+	node (DNS) addresses [#4349].
 	•	Write-behind system coalesces all operations on a specific key in a configured 
-write-delay-seconds window and it should also store only the latest change on that key 
-in that window. Problem with the current behavior is; a continuously updated key may not 
-be persisted ever due to the shifted store time during the updates [#4341].
+	write-delay-seconds window and it should also store only the latest change on that key 
+	in that window. Problem with the current behavior is; a continuously updated key may not 
+	be persisted ever due to the shifted store time during the updates [#4341].
 	•	Issue with contains pattern in Config.getXXXConfig(). Since the actual wildcard search 
-always does a contains matching, you cannot set a configuration for startsWith, for instance [#4315].
+	always does a contains matching, you cannot set a configuration for startsWith, for instance [#4315].
 	•	ReplicatedMapMBean is not present in JMX [#4173].
 
 3.4 Fixes:
