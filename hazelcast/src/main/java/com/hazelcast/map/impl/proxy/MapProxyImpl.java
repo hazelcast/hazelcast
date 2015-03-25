@@ -17,6 +17,7 @@
 
 package com.hazelcast.map.impl.proxy;
 
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
@@ -396,7 +397,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public String addLocalEntryListener(final MapListener listener) {
+        return addLocalEntryListenerInternal(listener);
+    }
+
+    @Override
+    public String addLocalEntryListener(final EntryListener listener) {
+        return addLocalEntryListenerInternal(listener);
+    }
+
+    @Override
     public String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        return addLocalEntryListenerInternal(listener, predicate, null, includeValue);
+    }
+
+    @Override
+    public String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -420,7 +442,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key,
+                                        boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        Data keyData = toData(key, partitionStrategy);
+        return addLocalEntryListenerInternal(listener, predicate, keyData, includeValue);
+    }
+
+    @Override
     public String addEntryListener(final MapListener listener, final boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        return addEntryListenerInternal(listener, null, includeValue);
+    }
+
+    @Override
+    public String addEntryListener(final EntryListener listener, final boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -436,8 +479,26 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addEntryListener(
-            MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+    public String addEntryListener(final EntryListener listener, final K key, final boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
+    }
+
+    @Override
+    public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        return addEntryListenerInternal(listener, predicate, toData(key, partitionStrategy), includeValue);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -449,6 +510,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        return addEntryListenerInternal(listener, predicate, null, includeValue);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }

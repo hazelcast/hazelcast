@@ -1,6 +1,5 @@
 package com.hazelcast.map.impl;
 
-import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.spi.EventFilter;
 
 /**
@@ -8,11 +7,11 @@ import com.hazelcast.spi.EventFilter;
  */
 public interface MapServiceContextEventListenerSupport {
 
-    String addLocalEventListener(MapListener mapListener, String mapName);
+    String addLocalEventListener(Object mapListener, String mapName);
 
-    String addLocalEventListener(MapListener mapListener, EventFilter eventFilter, String mapName);
+    String addLocalEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
-    String addEventListener(MapListener mapListener, EventFilter eventFilter, String mapName);
+    String addEventListener(Object mapListener, EventFilter eventFilter, String mapName);
 
     boolean removeEventListener(String mapName, String registrationId);
 
