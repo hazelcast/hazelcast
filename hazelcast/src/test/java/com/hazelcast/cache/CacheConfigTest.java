@@ -209,8 +209,6 @@ public class CacheConfigTest extends HazelcastTestSupport {
             fail("NullPointerException expected");
         }catch (NullPointerException expected){
         }
-
-        cacheManager.destroyCache(cacheName);
     }
 
     @Test
