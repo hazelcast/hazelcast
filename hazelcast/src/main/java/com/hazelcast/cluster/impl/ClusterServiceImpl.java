@@ -32,6 +32,7 @@ import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.cluster.impl.operations.SetMasterOperation;
+import com.hazelcast.cluster.impl.operations.BeforeJoinCheckFailureOperation;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -642,6 +643,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 }
             }
 
+            if (node.isMaster()) {
+                try {
+                    node.getNodeExtension().beforeJoin();
+                } catch (Exception e) {
+                    logger.warning(e.getMessage());
+                    sendBeforeJoinCheckFailure(joinRequest.getAddress(), e.getMessage());
+                    return;
+                }
+            }
+
             if (firstJoinRequest == 0) {
                 firstJoinRequest = now;
             }
@@ -680,6 +691,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void sendAuthenticationFailure(Address target) {
         nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), target);
+    }
+
+    private void sendBeforeJoinCheckFailure(Address target, String message) {
+        nodeEngine.getOperationService().send(new BeforeJoinCheckFailureOperation(message), target);
     }
 
     private void sendConfigurationMismatchFailure(Address target, String msg) {
