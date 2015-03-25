@@ -747,6 +747,27 @@ public interface IMap<K, V>
     void forceUnlock(K key);
 
     /**
+     * Adds a {@link MapListener} for this map. To receive an event, you should
+     * implement a corresponding {@link MapListener} sub-interface for that event.
+     * <p/>
+     * Note that entries in distributed map are partitioned across
+     * the cluster members; each member owns and manages the some portion of the
+     * entries. Owned entries are called local entries. This
+     * listener will be listening for the events of local entries. Let's say
+     * your cluster has member1 and member2. On member2 you added a local listener and from
+     * member1, you call <code>map.put(key2, value2)</code>.
+     * If the key2 is owned by member2 then the local listener will be
+     * notified for the add/update event. Also note that entries can migrate to
+     * other nodes for load balancing and/or membership change.
+     *
+     * @param listener {@link MapListener} for this map.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @see #localKeySet()
+     * @see MapListener
+     */
+    String addLocalEntryListener(MapListener listener);
+
+    /**
      * Adds a local entry listener for this map. The added listener will be only
      * listening for the events (add/remove/update/evict) of the locally owned entries.
      * <p/>
@@ -763,8 +784,23 @@ public interface IMap<K, V>
      * @param listener entry listener
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @see #localKeySet()
+     * @deprecated use {@link #addLocalEntryListener(MapListener)} instead.
      */
-    String addLocalEntryListener(MapListener listener);
+    String addLocalEntryListener(EntryListener listener);
+
+    /**
+     * Adds a {@link MapListener} for this map. To receive an event, you should
+     * implement a corresponding {@link MapListener} sub-interface for that event.
+     * Listener will get notified for map events filtered by given predicate.
+     *
+     * @param listener     {@link MapListener} for this map.
+     * @param predicate    predicate for filtering entries
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @see MapListener
+     */
+    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
 
     /**
      * Adds a local entry listener for this map. The added listener will be only
@@ -776,8 +812,25 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)}
      */
-    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
+
+    /**
+     * Adds a local entry listener for this map. The added listener will be only
+     * listening for the events (add/remove/update/evict) of the locally owned entries.
+     * Listener will get notified for map add/remove/update/evict events filtered by given predicate.
+     *
+     * @param listener     {@link MapListener} for this map.
+     * @param predicate    predicate for filtering entries
+     * @param key          key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @see MapListener
+     */
+    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+
 
     /**
      * Adds a local entry listener for this map. The added listener will be only
@@ -790,8 +843,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @deprecated use {@link #addLocalEntryListener(MapListener, com.hazelcast.query.Predicate, boolean)} instead
      */
-    String addLocalEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Adds an interceptor for this map. Added interceptor will intercept operations
@@ -812,6 +866,18 @@ public interface IMap<K, V>
     void removeInterceptor(String id);
 
     /**
+     * Adds a {@link MapListener} for this map. To receive an event, you should
+     * implement a corresponding {@link MapListener} sub-interface for that event.
+     *
+     * @param listener     {@link MapListener} for this map.
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @see MapListener
+     */
+    String addEntryListener(MapListener listener, boolean includeValue);
+
+    /**
      * Adds an entry listener for this map. Listener will get notified
      * for all map add/remove/update/evict events.
      *
@@ -819,8 +885,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @deprecated use {@link #addEntryListener(MapListener, boolean)} instead.
      */
-    String addEntryListener(MapListener listener, boolean includeValue);
+    String addEntryListener(EntryListener listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener
@@ -830,6 +897,25 @@ public interface IMap<K, V>
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String id);
+
+    /**
+     * Adds a {@link MapListener} for this map. To receive an event, you should
+     * implement a corresponding {@link MapListener} sub-interface for that event.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param listener     {@link MapListener} for this map.
+     * @param key          key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @throws NullPointerException if the specified key is null
+     * @see MapListener
+     */
+    String addEntryListener(MapListener listener, K key, boolean includeValue);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -847,8 +933,22 @@ public interface IMap<K, V>
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      * @throws NullPointerException if the specified key is null
+     * @deprecated use {@link #addEntryListener(MapListener, Predicate, Object, boolean)} instead.
      */
-    String addEntryListener(MapListener listener, K key, boolean includeValue);
+    String addEntryListener(EntryListener listener, K key, boolean includeValue);
+
+    /**
+     * Adds a {@link MapListener} for this map. To receive an event, you should
+     * implement a corresponding {@link MapListener} sub-interface for that event.
+     *
+     * @param listener     the added continuous {@link MapListener} for this map
+     * @param predicate    predicate for filtering entries
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @see MapListener
+     */
+    String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified
@@ -859,8 +959,23 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @deprecated use {@link #addEntryListener(MapListener, Predicate, boolean)} instead.
      */
-    String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue);
+    String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue);
+
+    /**
+     * Adds a {@link MapListener} for this map. To receive an event, you should
+     * implement a corresponding {@link MapListener} sub-interface for that event.
+     *
+     * @param listener     the continuous {@link MapListener} for this map
+     * @param predicate    predicate for filtering entries
+     * @param key          key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @see MapListener
+     */
+    String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified
@@ -872,8 +987,9 @@ public interface IMap<K, V>
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @deprecated use {@link #addEntryListener(MapListener, Object, boolean)}
      */
-    String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
+    String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Returns the <tt>EntryView</tt> for the specified key.

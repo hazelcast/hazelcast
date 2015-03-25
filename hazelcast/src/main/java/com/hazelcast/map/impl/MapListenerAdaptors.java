@@ -225,7 +225,7 @@ public final class MapListenerAdaptors {
      * @return {@link com.hazelcast.map.impl.ListenerAdapter} for the user-defined
      * {@link com.hazelcast.map.listener.MapListener}
      */
-    public static ListenerAdapter createMapListenerAdaptor(MapListener mapListener) {
+    static ListenerAdapter createMapListenerAdaptor(MapListener mapListener) {
         return new InternalMapListenerAdapter(mapListener);
     }
 
