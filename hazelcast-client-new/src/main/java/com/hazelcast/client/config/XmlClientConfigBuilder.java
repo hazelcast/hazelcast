@@ -213,7 +213,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         } else if (SERIALIZATION.isEqual(nodeName)) {
             handleSerialization(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
-            fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
+            handleNativeMemoryConfig(node);
         } else if (GROUP.isEqual(nodeName)) {
             handleGroup(node);
         } else if (LISTENERS.isEqual(nodeName)) {
@@ -227,6 +227,10 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         } else if (EXECUTOR_POOL_SIZE.isEqual(nodeName)) {
             handleExecutorPoolSize(node);
         }
+    }
+
+    private void handleNativeMemoryConfig(Node node) {
+        fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
     }
 
     private void handleExecutorPoolSize(Node node) {
