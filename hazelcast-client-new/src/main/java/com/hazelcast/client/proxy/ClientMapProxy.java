@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
@@ -128,7 +129,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.map.impl.MapListenerAdaptors.createMapListenerAdaptor;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
@@ -497,14 +498,29 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public String addLocalEntryListener(EntryListener listener) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
+    @Override
     public String addLocalEntryListener(MapListener listener,
                                         Predicate<K, V> predicate, boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
     @Override
+    public String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
+    @Override
     public String addLocalEntryListener(MapListener listener,
                                         Predicate<K, V> predicate, K key, boolean includeValue) {
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+    }
+
+    @Override
+    public String addLocalEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
@@ -527,6 +543,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public String addEntryListener(EntryListener listener, boolean includeValue) {
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, handler);
+    }
+
+    @Override
     public boolean removeEntryListener(String id) {
         final MapRemoveEntryListenerRequest request = new MapRemoveEntryListenerRequest(name, id);
         return stopListening(request, id);
@@ -534,6 +557,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
+        final Data keyData = toData(key);
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, keyData, handler);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
         MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
@@ -549,7 +580,22 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        final Data keyData = toData(key);
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, keyData, handler);
+    }
+
+    @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, null, includeValue, predicate);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, null, handler);
+    }
+
+    @Override
+    public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, null, includeValue, predicate);
         EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
         return listen(request, null, handler);
@@ -1044,8 +1090,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final MapListener listener, final boolean includeValue) {
-        final ListenerAdapter listenerAdaptor = createMapListenerAdaptor(listener);
+    private EventHandler<PortableEntryEvent> createHandler(final Object listener, final boolean includeValue) {
+        final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         return new ClientMapEventHandler(listenerAdaptor, includeValue);
     }
 

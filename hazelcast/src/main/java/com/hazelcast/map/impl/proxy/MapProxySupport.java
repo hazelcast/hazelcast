@@ -81,7 +81,6 @@ import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
-import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -175,7 +174,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         List<EntryListenerConfig> listenerConfigs = getMapConfig().getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            MapListener listener = null;
+            Object listener = null;
             if (listenerConfig.getImplementation() != null) {
                 listener = listenerConfig.getImplementation();
             } else if (listenerConfig.getClassName() != null) {
@@ -191,7 +190,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
                 if (listenerConfig.isLocal()) {
-                    addLocalEntryListener(listener);
+                    addLocalEntryListenerInternal(listener);
                 } else {
                     addEntryListenerInternal(listener, null, listenerConfig.isIncludeValue());
                 }
@@ -906,12 +905,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    public String addLocalEntryListener(final MapListener listener) {
+    public String addLocalEntryListenerInternal(final Object listener) {
         final MapService mapService = getService();
         return mapService.getMapServiceContext().addLocalEventListener(listener, name);
     }
 
-    public String addLocalEntryListenerInternal(MapListener listener, Predicate predicate,
+    public String addLocalEntryListenerInternal(Object listener, Predicate predicate,
                                                 final Data key, boolean includeValue) {
 
         final MapService mapService = getService();
@@ -920,14 +919,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected String addEntryListenerInternal(
-            final MapListener listener, final Data key, final boolean includeValue) {
+            final Object listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         final MapService mapService = getService();
         return mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
     }
 
     protected String addEntryListenerInternal(
-            MapListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+            Object listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         final MapService mapService = getService();
         return mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
