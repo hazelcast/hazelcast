@@ -51,7 +51,6 @@ public class CacheCreateConfigOperation
 
     private CacheConfig config;
     private boolean createAlsoOnOthers = true;
-    private boolean ignoreLocal;
 
     private boolean returnsResponse = true;
     private transient Object response;
@@ -64,22 +63,16 @@ public class CacheCreateConfigOperation
     }
 
     public CacheCreateConfigOperation(CacheConfig config, boolean createAlsoOnOthers) {
-        this(config, createAlsoOnOthers, false);
-    }
-
-    public CacheCreateConfigOperation(CacheConfig config, boolean createAlsoOnOthers, boolean ignoreLocal) {
         super(config.getNameWithPrefix());
         this.config = config;
         this.createAlsoOnOthers = createAlsoOnOthers;
-        this.ignoreLocal = ignoreLocal;
     }
 
     @Override
     public void run() throws Exception {
         AbstractCacheService service = getService();
-        if (!ignoreLocal) {
-            response = service.createCacheConfigIfAbsent(config);
-        }
+        response = service.createCacheConfigIfAbsent(config);
+
         if (createAlsoOnOthers && response == null) {
             NodeEngine nodeEngine = getNodeEngine();
             Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
@@ -143,7 +136,6 @@ public class CacheCreateConfigOperation
         super.writeInternal(out);
         out.writeObject(config);
         out.writeBoolean(createAlsoOnOthers);
-        out.writeBoolean(ignoreLocal);
     }
 
     @Override
@@ -152,7 +144,6 @@ public class CacheCreateConfigOperation
         super.readInternal(in);
         config = in.readObject();
         createAlsoOnOthers = in.readBoolean();
-        ignoreLocal = in.readBoolean();
     }
 
     @Override
