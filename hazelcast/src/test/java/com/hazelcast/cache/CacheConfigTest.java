@@ -53,11 +53,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -200,6 +196,21 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         Cache testCache = cacheManager.getCache("default");
         assertNull(testCache);
+    }
+
+    @Test
+    public void createCache_WhenCacheConfigIsNull() {
+        String cacheName = "cacheNull";
+
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+
+        try {
+            cacheManager.createCache(cacheName, null);
+            fail("NullPointerException expected");
+        }catch (NullPointerException expected){
+        }
+
+        cacheManager.destroyCache(cacheName);
     }
 
     @Test
