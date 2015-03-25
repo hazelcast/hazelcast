@@ -256,14 +256,18 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public boolean processExpiredEntry(Data key, R record, long now, String source) {
+        return processExpiredEntry(key, record, now, source, null);
+    }
+
+    public boolean processExpiredEntry(Data key, R record, long now, String source, String origin) {
         final boolean isExpired = record != null && record.isExpiredAt(now);
         if (!isExpired) {
             return false;
         }
         doRemoveRecord(key, source);
         if (isEventsEnabled) {
-            publishEvent(CacheEventType.EXPIRED, key, null, toEventData(record), false,
-                         IGNORE_COMPLETION, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+            publishEvent(CacheEventType.EXPIRED, key, null, toEventData(record), false, IGNORE_COMPLETION,
+                         CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
         }
         return true;
     }
@@ -273,6 +277,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public R processExpiredEntry(Data key, R record, long expiryTime, long now, String source) {
+        return processExpiredEntry(key, record, expiryTime, now, source,  null);
+    }
+
+    public R processExpiredEntry(Data key, R record, long expiryTime, long now, String source, String origin) {
         final boolean isExpired = isExpiredAt(expiryTime, now);
         if (!isExpired) {
             return record;
@@ -282,8 +290,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         doRemoveRecord(key, source);
         if (isEventsEnabled) {
-            publishEvent(CacheEventType.EXPIRED, key, null, toEventData(record), false,
-                         IGNORE_COMPLETION, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+            publishEvent(CacheEventType.EXPIRED, key, null, toEventData(record), false, IGNORE_COMPLETION,
+                         CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
         }
         return null;
     }
@@ -376,7 +384,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void publishEvent(CacheEventType eventType, Data dataKey, Data dataOldValue,
                                 Data dataValue, boolean isOldValueAvailable,
+                                int completionId) {
+        publishEvent(eventType, dataKey, dataOldValue, dataValue, isOldValueAvailable,
+                completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+    }
+
+    protected void publishEvent(CacheEventType eventType, Data dataKey, Data dataOldValue,
+                                Data dataValue, boolean isOldValueAvailable,
                                 int completionId, long expirationTime) {
+        publishEvent(eventType, dataKey, dataOldValue, dataValue, isOldValueAvailable,
+                completionId, expirationTime, null);
+    }
+
+    protected void publishEvent(CacheEventType eventType, Data dataKey, Data dataOldValue,
+                                Data dataValue, boolean isOldValueAvailable,
+                                int completionId, long expirationTime, String origin) {
         if (isEventBatchingEnabled) {
             final CacheEventDataImpl cacheEventData =
                     new CacheEventDataImpl(name, eventType, dataKey,
@@ -390,7 +412,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } else {
             cacheService.publishEvent(name, eventType, dataKey, dataValue,
                                       dataOldValue, isOldValueAvailable, dataKey.hashCode(),
-                                      completionId, expirationTime);
+                                      completionId, expirationTime, origin);
         }
     }
 
@@ -447,34 +469,48 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected R createRecord(Data keyData, Object value, long expirationTime, int completionId) {
+        return createRecord(keyData, value, expirationTime, completionId, null);
+    }
+
+    protected R createRecord(Data keyData, Object value, long expirationTime, int completionId, String origin) {
         final R record = createRecord(value, expirationTime);
         updateHasExpiringEntry(record);
         if (isEventsEnabled) {
             Data dataValue = toEventData(value);
             publishEvent(CacheEventType.CREATED, keyData, null, dataValue, false,
-                         completionId, expirationTime);
+                         completionId, expirationTime, origin);
         }
         return record;
     }
 
     public R createRecordWithExpiry(Data key, Object value, long expiryTime,
                                     long now, boolean disableWriteThrough, int completionId) {
+        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, null);
+    }
+
+    public R createRecordWithExpiry(Data key, Object value, long expiryTime,
+                                    long now, boolean disableWriteThrough, int completionId, String origin) {
         if (!disableWriteThrough) {
             writeThroughCache(key, value);
         }
 
         if (!isExpiredAt(expiryTime, now)) {
-            R record = createRecord(key, value, expiryTime, completionId);
+            R record = createRecord(key, value, expiryTime, completionId, origin);
             doPutRecord(key, record);
             return record;
         }
         publishEvent(CacheEventType.COMPLETED, key, null, null, false,
-                     completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+                     completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
         return null;
     }
 
     public R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
                                     long now, boolean disableWriteThrough, int completionId) {
+        return createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, null);
+    }
+
+    public R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
+                                    long now, boolean disableWriteThrough, int completionId, String origin) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         Duration expiryDuration;
@@ -485,7 +521,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         long expiryTime = expiryDuration.getAdjustedTime(now);
 
-        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId);
+        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, origin);
     }
 
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
@@ -500,6 +536,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected R updateRecord(Data key, R record, Object value, int completionId, String source) {
+        return updateRecord(key, record, value, completionId, source, null);
+    }
+
+    protected R updateRecord(Data key, R record, Object value, int completionId, String source, String origin) {
         Data dataOldValue = null;
         Data dataValue = null;
         Object recordValue = value;
@@ -544,7 +584,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
             if (isEventsEnabled) {
                 publishEvent(CacheEventType.UPDATED, eventDataKey, eventDataOldValue, eventDataValue,
-                             true, completionId, record.getExpirationTime());
+                             true, completionId, record.getExpirationTime(), origin);
             }
             return record;
         } catch (Throwable error) {
@@ -556,16 +596,23 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime,
                                           long now, boolean disableWriteThrough, int completionId) {
         return updateRecordWithExpiry(key, value, record, expiryTime, now, disableWriteThrough,
-                completionId, SOURCE_NOT_AVAILABLE);
+                                      completionId, SOURCE_NOT_AVAILABLE);
     }
 
     public boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime,
                                           long now, boolean disableWriteThrough, int completionId, String source) {
+        return updateRecordWithExpiry(key, value, record, expiryTime, now,
+                                      disableWriteThrough, completionId, source, null);
+    }
+
+    public boolean updateRecordWithExpiry(Data key, Object value, R record, long expiryTime,
+                                          long now, boolean disableWriteThrough, int completionId,
+                                          String source, String origin) {
         record.setExpirationTime(expiryTime);
         if (!disableWriteThrough) {
             writeThroughCache(key, value);
         }
-        updateRecord(key, record, value, completionId, source);
+        updateRecord(key, record, value, completionId, source, origin);
         return processExpiredEntry(key, record, expiryTime, now) != null;
     }
 
@@ -577,6 +624,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     public boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy,
                                           long now, boolean disableWriteThrough, int completionId, String source) {
+        return updateRecordWithExpiry(key, value, record, expiryPolicy, now,
+                                      disableWriteThrough, completionId, source, null);
+    }
+
+    public boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy,
+                                          long now, boolean disableWriteThrough, int completionId,
+                                          String source, String origin) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
 
         long expiryTime = CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE;
@@ -589,7 +643,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             EmptyStatement.ignore(e);
         }
         return updateRecordWithExpiry(key, value, record, expiryTime, now,
-                                      disableWriteThrough, completionId, source);
+                                      disableWriteThrough, completionId, source, origin);
     }
 
     protected void onDeleteRecord(Data key, R record, Data dataValue, boolean deleted) {
@@ -604,6 +658,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected boolean deleteRecord(Data key, int completionId, String source) {
+        return deleteRecord(key, completionId, source, null);
+    }
+
+    protected boolean deleteRecord(Data key, int completionId, String source, String origin) {
         final R record = doRemoveRecord(key, source);
         Data dataValue = null;
         try {
@@ -629,7 +687,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
             if (isEventsEnabled) {
                 publishEvent(CacheEventType.REMOVED, eventDataKey, null, eventDataValue, false,
-                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
             }
 
             return record != null;
@@ -786,7 +844,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected final R doPutRecord(Data key, R record, String source) {
-        R oldRecord = records.put(key, (R) record);
+        R oldRecord = records.put(key, record);
         if (oldRecord != null) {
             // Just be sure about key data is heap data
             invalidateEntry(toHeapData(key), source);
@@ -1147,6 +1205,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean remove(Data key, String source, int completionId) {
+        return remove(key, source, completionId, null);
+    }
+
+    public boolean remove(Data key, String source, int completionId, String origin) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -1160,9 +1222,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 removed = false;
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false,
-                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
             } else {
-                removed = deleteRecord(key, completionId);
+                removed = deleteRecord(key, completionId, source, origin);
             }
 
             onRemove(key, null, source, false, record, removed);
@@ -1185,6 +1247,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean remove(Data key, Object value, String source, int completionId) {
+        return remove(key, value, source, completionId, null);
+    }
+
+    public boolean remove(Data key, Object value, String source, int completionId, String origin) {
         final long now = Clock.currentTimeMillis();
         final long start = System.nanoTime();
 
@@ -1203,17 +1269,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 hitCount++;
                 if (compare(toValue(record), toValue(value))) {
                     deleteCacheEntry(key);
-                    removed = deleteRecord(key, completionId);
+                    removed = deleteRecord(key, completionId, source, origin);
                 } else {
                     long expiryTime = onRecordAccess(key, record, defaultExpiryPolicy, now);
-                    processExpiredEntry(key, record, expiryTime, now);
+                    processExpiredEntry(key, record, expiryTime, now, source, origin);
                     removed = false;
                 }
             }
 
             if (!removed) {
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false,
-                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
             }
 
             onRemove(key, value, source, false, record, removed);
@@ -1245,6 +1311,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object getAndRemove(Data key, String source, int completionId) {
+        return getAndRemove(key, source, completionId, null);
+    }
+
+    public Object getAndRemove(Data key, String source, int completionId, String origin) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
@@ -1260,10 +1330,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 obj = null;
                 removed = false;
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false,
-                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
+                             completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE, origin);
             } else {
                 obj = toValue(record);
-                removed = deleteRecord(key, completionId);
+                removed = deleteRecord(key, completionId, source, origin);
             }
 
             onRemove(key, null, source, false, record, removed);

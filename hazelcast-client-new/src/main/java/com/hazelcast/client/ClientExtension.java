@@ -26,7 +26,6 @@ import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 /**
  * ClientExtension is a client extension mechanism to be able to plug different implementations of
  * some modules, like; {@link SerializationService}, {@link SocketChannelWrapperFactory} etc.
- * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
  */
 public interface ClientExtension {
 
@@ -70,8 +69,6 @@ public interface ClientExtension {
      * @return the created {@link NearCacheManager} instance
      */
     NearCacheManager createNearCacheManager();
-
-    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 
     /**
      * Returns a proxy for the corresponding service.
