@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 
 /**
- * Context to be used by TemplateHandlers to handle client messages
+ * Context to be used by MessageHandlers to handle client messages
  */
 public class MessageHandlerContext {
 
@@ -34,33 +34,16 @@ public class MessageHandlerContext {
     private final SerializationService serializationService;
     private final ClientEndpoint clientEndpoint;
     private final OperationService operationService;
-    private final ClientMessage clientMessage;
-    private final MessageHandlerParameters parameters;
 
     public MessageHandlerContext(NodeEngineImpl nodeEngine, ClientEngine clientEngine,
                                  SerializationService serializationService,
-                                 ClientEndpoint clientEndpoint, OperationService operationService,
-                                 ClientMessage clientMessage, MessageHandler messageHandler) {
+                                 ClientEndpoint clientEndpoint, OperationService operationService) {
         this.nodeEngine = nodeEngine;
         this.clientEngine = clientEngine;
         this.serializationService = serializationService;
         this.clientEndpoint = clientEndpoint;
         this.operationService = operationService;
-        this.clientMessage = clientMessage;
-        this.parameters = initParameters(messageHandler);
     }
-
-    private MessageHandlerParameters initParameters(MessageHandler messageHandler) {
-        ClientMessageReaderImpl reader = new ClientMessageReaderImpl(clientMessage, serializationService);
-
-        MessageHandlerParameters parameters = messageHandler.createParameters();
-        if (parameters != null) {
-            parameters.readMessage(reader);
-            return parameters;
-        }
-        return null;
-    }
-
 
     public ClientEngine getClientEngine() {
         return clientEngine;
@@ -78,9 +61,6 @@ public class MessageHandlerContext {
         return operationService;
     }
 
-    public ClientMessage getClientMessage() {
-        return clientMessage;
-    }
 
     public <S> S getService(String serviceName) {
         Object service = nodeEngine.getService(serviceName);
@@ -93,8 +73,5 @@ public class MessageHandlerContext {
         return (S) service;
     }
 
-    public <P extends MessageHandlerParameters> P getParameters() {
-        return (P) parameters;
-    }
 }
 

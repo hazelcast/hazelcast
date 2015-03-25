@@ -17,11 +17,11 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
@@ -33,11 +33,11 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -45,11 +45,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.spi.ExceptionAction.CONTINUE_WAIT;
+import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 
 /**
  * The Invocation evaluates a Operation invocation.
@@ -58,54 +63,12 @@ import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
  */
 abstract class Invocation implements ResponseHandler, Runnable {
 
-    /**
-     * A response indicating the 'null' value.
-     */
-    static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
-
-    /**
-     * A response indicating that the operation should be executed again. E.g. because an operation
-     * was send to the wrong machine.
-     */
-    static final Object RETRY_RESPONSE = new InternalResponse("Invocation::RETRY_RESPONSE");
-
-    /**
-     * Indicating that there currently is no 'result' available. An example is some kind of blocking
-     * operation like ILock.lock. If this lock isn't available at the moment, the wait response
-     * is returned.
-     */
-    static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
-
-    /**
-     * A response indicating that a timeout has happened.
-     */
-    static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
-
-    /**
-     * A response indicating that the operation execution was interrupted
-     */
-    static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
-
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED_FIELD_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
 
     private static final AtomicIntegerFieldUpdater<Invocation> BACKUPS_COMPLETED_FIELD_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(Invocation.class, "backupsCompleted");
 
-
-    static final class InternalResponse {
-
-        private String toString;
-
-        private InternalResponse(String toString) {
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
-    }
 
     private static final long MIN_TIMEOUT = 10000;
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
@@ -129,9 +92,11 @@ abstract class Invocation implements ResponseHandler, Runnable {
     final boolean resultDeserialized;
     boolean remote;
 
-    volatile NormalResponse pendingResponse;
+    volatile Object pendingResponse;
     volatile int backupsExpected;
     volatile int backupsCompleted;
+    Address invTarget;
+    MemberImpl invTargetMember;
 
     private final InvocationFuture invocationFuture;
     private final OperationServiceImpl operationService;
@@ -139,11 +104,8 @@ abstract class Invocation implements ResponseHandler, Runnable {
     //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED_FIELD_UPDATER
     private volatile Boolean responseReceived = Boolean.FALSE;
 
-     //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
     private volatile int invokeCount;
-
-    private Address invTarget;
-    private MemberImpl invTargetMember;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
@@ -172,14 +134,6 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 
-    public int getReplicaIndex() {
-        return replicaIndex;
-    }
-
-    public int getPartitionId() {
-        return partitionId;
-    }
-
     private long getCallTimeout(long callTimeout) {
         if (callTimeout > 0) {
             return callTimeout;
@@ -205,7 +159,8 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return defaultCallTimeout;
     }
 
-    public final InvocationFuture invoke() {
+
+    private void invokeInternal(boolean isAsync) {
         if (invokeCount > 0) {
             // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
@@ -223,14 +178,23 @@ abstract class Invocation implements ResponseHandler, Runnable {
                     .setPartitionId(partitionId)
                     .setReplicaIndex(replicaIndex);
 
-            if (!operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op) && !isMigrationOperation(op)) {
-               throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
+            boolean isAllowed = operationService.operationExecutor.isInvocationAllowedFromCurrentThread(op, isAsync);
+            if (!isAllowed && !isMigrationOperation(op)) {
+                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
             doInvoke();
         } catch (Exception e) {
             handleInvocationException(e);
         }
+    }
+
+    public final InvocationFuture invoke() {
+        invokeInternal(false);
         return invocationFuture;
+    }
+
+    public final void invokeAsync() {
+        invokeInternal(true);
     }
 
     private void handleInvocationException(Exception e) {
@@ -255,7 +219,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         setInvocationTime(op, nodeEngine.getClusterService().getClusterClock().getClusterTime());
-
+        operationService.invocationsRegistry.register(this);
         if (remote) {
             doInvokeRemote();
         } else {
@@ -268,10 +232,6 @@ abstract class Invocation implements ResponseHandler, Runnable {
             op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         }
 
-        if (op instanceof BackupAwareOperation) {
-            operationService.registerInvocation(this);
-        }
-
         responseReceived = Boolean.FALSE;
         op.setResponseHandler(this);
 
@@ -280,21 +240,21 @@ abstract class Invocation implements ResponseHandler, Runnable {
     }
 
     private void doInvokeRemote() {
-        operationService.registerInvocation(this);
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
-            operationService.deregisterInvocation(this);
+            operationService.invocationsRegistry.deregister(this);
             notify(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
 
     private boolean engineActive() {
-        if (!nodeEngine.isActive()) {
-            remote = false;
-            notify(new HazelcastInstanceNotActiveException());
-            return false;
+        if (nodeEngine.isActive()) {
+            return true;
         }
-        return true;
+
+        remote = false;
+        notify(new HazelcastInstanceNotActiveException());
+        return false;
     }
 
     /**
@@ -340,27 +300,6 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return true;
     }
 
-    private static Throwable getError(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-
-        if (obj instanceof Throwable) {
-            return (Throwable) obj;
-        }
-
-        if (!(obj instanceof NormalResponse)) {
-            return null;
-        }
-
-        NormalResponse response = (NormalResponse) obj;
-        if (!(response.getValue() instanceof Throwable)) {
-            return null;
-        }
-
-        return (Throwable) response.getValue();
-    }
-
     @Override
     public void sendResponse(Object obj) {
         if (!RESPONSE_RECEIVED_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
@@ -375,36 +314,31 @@ abstract class Invocation implements ResponseHandler, Runnable {
         return true;
     }
 
-    public boolean isCallTarget(MemberImpl leftMember) {
-        if (invTargetMember == null) {
-            return leftMember.getAddress().equals(invTarget);
-        } else {
-            return leftMember.getUuid().equals(invTargetMember.getUuid());
-        }
-    }
-
     //this method is called by the operation service to signal the invocation that something has happened, e.g.
     //a response is returned.
-    public void notify(Object obj) {
-        Object response = resolveResponse(obj);
-
-        if (response == RETRY_RESPONSE) {
-            handleRetryResponse();
-            return;
-        }
-
-        if (response == WAIT_RESPONSE) {
-            handleWaitResponse();
-            return;
+    public void notify(Object response) {
+        if (response == null) {
+            response = NULL_RESPONSE;
         }
 
         if (response instanceof CallTimeoutResponse) {
-            handleTimeoutResponse();
+            notifyCallTimeoutResponse();
+            return;
+        }
+
+        if (response instanceof ErrorResponse) {
+            notifyErrorResponse(((ErrorResponse) response).getCause());
+            return;
+        }
+
+        if (response instanceof Throwable) {
+            notifyErrorResponse((Throwable) response);
             return;
         }
 
         if (response instanceof NormalResponse) {
-            handleNormalResponse((NormalResponse) response);
+            NormalResponse normalResponse = (NormalResponse) response;
+            notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
             return;
         }
 
@@ -412,24 +346,48 @@ abstract class Invocation implements ResponseHandler, Runnable {
         invocationFuture.set(response);
     }
 
-    private void handleNormalResponse(NormalResponse response) {
+    void notifyErrorResponse(Throwable error) {
+        assert error != null;
+
+        ExceptionAction action = onException(error);
+        int localInvokeCount = invokeCount;
+        if (action == RETRY_INVOCATION && localInvokeCount < tryCount) {
+            if (localInvokeCount > LOG_MAX_INVOCATION_COUNT && localInvokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
+                logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
+            }
+            handleRetryResponse();
+            return;
+        }
+
+        if (action == CONTINUE_WAIT) {
+            handleWaitResponse();
+            return;
+        }
+
+        notifyNormalResponse(error, 0);
+    }
+
+    void notifyNormalResponse(Object value, int expectedBackups) {
+        if (value == null) {
+            value = NULL_RESPONSE;
+        }
+
         //if a regular response came and there are backups, we need to wait for the backs.
         //when the backups complete, the response will be send by the last backup or backup-timeout-handle mechanism kicks on
 
-        int backupsExpected = response.getBackupCount();
-        if (backupsExpected > backupsCompleted) {
+        if (expectedBackups > backupsCompleted) {
             // So the invocation has backups and since not all backups have completed, we need to wait.
             // It could be that backups arrive earlier than the response.
 
             this.pendingResponseReceivedMillis = Clock.currentTimeMillis();
 
-            this.backupsExpected = backupsExpected;
+            this.backupsExpected = expectedBackups;
 
             // It is very important that the response is set after the backupsExpected is set. Else the system
             // can assume the invocation is complete because there is a response and no backups need to respond.
-            this.pendingResponse = response;
+            this.pendingResponse = value;
 
-            if (backupsCompleted != backupsExpected) {
+            if (backupsCompleted != expectedBackups) {
                 // We are done since not all backups have completed. Therefor we should not notify the future.
                 return;
             }
@@ -438,7 +396,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         // We are going to notify the future that a response is available. This can happen when:
         // - we had a regular operation (so no backups we need to wait for) that completed.
         // - we had a backup-aware operation that has completed, but also all its backups have completed.
-        invocationFuture.set(response);
+        invocationFuture.set(value);
     }
 
     private void handleWaitResponse() {
@@ -460,35 +418,9 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
     }
 
-    private Object resolveResponse(Object obj) {
-        if (obj == null) {
-            return NULL_RESPONSE;
-        }
-
-        Throwable error = getError(obj);
-        if (error == null) {
-            return obj;
-        }
-
-        ExceptionAction action = onException(error);
-        int localInvokeCount = invokeCount;
-        if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
-            if (localInvokeCount > LOG_MAX_INVOCATION_COUNT && localInvokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
-                logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
-            }
-            return RETRY_RESPONSE;
-        }
-
-        if (action == ExceptionAction.CONTINUE_WAIT) {
-            return WAIT_RESPONSE;
-        }
-
-        return error;
-    }
-
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
-    private void handleTimeoutResponse() {
+    public void notifyCallTimeoutResponse() {
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
         }
@@ -504,10 +436,10 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
     protected abstract Address getTarget();
 
-    public void signalOneBackupComplete() {
+    public void notifyOneBackupComplete() {
         final int newBackupsCompleted = BACKUPS_COMPLETED_FIELD_UPDATER.incrementAndGet(this);
 
-        final NormalResponse pendingResponse = this.pendingResponse;
+        final Object pendingResponse = this.pendingResponse;
         if (pendingResponse == null) {
             // No pendingResponse has been set, so we are done since the invocation on the primary needs to complete first.
             return;
@@ -530,7 +462,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         invocationFuture.set(pendingResponse);
     }
 
-    public void handleOperationTimeout() {
+    public void notifyInvocationTimeout() {
         if (pendingResponse != null) {
             return;
         }
@@ -551,11 +483,31 @@ abstract class Invocation implements ResponseHandler, Runnable {
             return;
         }
         if (expirationTime < Clock.currentTimeMillis()) {
-            invocationFuture.set(invocationFuture.newOperationTimeoutException(maxCallTimeout));
+            invocationFuture.set(newOperationTimeoutException(maxCallTimeout));
         }
     }
 
-    public void handleBackupTimeout(long timeoutMillis) {
+    Object newOperationTimeoutException(long totalTimeoutMs) {
+        boolean hasResponse = this.pendingResponse != null;
+        int backupsExpected = this.backupsExpected;
+        int backupsCompleted = this.backupsCompleted;
+
+        if (hasResponse) {
+            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " Not all backups have completed! "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        } else {
+            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
+                    + " Aborting invocation! " + toString()
+                    + " No response has been received! "
+                    + " backups-expected:" + backupsExpected
+                    + " backups-completed: " + backupsCompleted);
+        }
+    }
+
+    public void checkBackupTimeout(long timeoutMillis) {
         // If the backups have completed, we are done.
         // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
         // backupsCompleted.
@@ -590,7 +542,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        final Response pendingResponse = this.pendingResponse;
+        final Object pendingResponse = this.pendingResponse;
         if (pendingResponse != null) {
             invocationFuture.set(pendingResponse);
         }

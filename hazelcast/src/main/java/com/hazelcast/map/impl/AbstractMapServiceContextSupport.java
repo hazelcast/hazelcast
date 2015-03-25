@@ -2,7 +2,6 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -11,7 +10,7 @@ import com.hazelcast.util.Clock;
 
 import java.util.List;
 
-import static com.hazelcast.map.impl.MapListenerAdaptors.createMapListenerAdaptor;
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 
 abstract class AbstractMapServiceContextSupport implements MapServiceContext {
 
@@ -178,24 +177,24 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
     }
 
     @Override
-    public String addLocalEventListener(MapListener mapListener, String mapName) {
-        ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
+    public String addLocalEventListener(Object listener, String mapName) {
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
                 registerLocalListener(serviceName(), mapName, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
-    public String addLocalEventListener(MapListener mapListener, EventFilter eventFilter, String mapName) {
-        ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
+    public String addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
                 registerLocalListener(serviceName(), mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
     @Override
-    public String addEventListener(MapListener mapListener, EventFilter eventFilter, String mapName) {
-        ListenerAdapter listenerAdaptor = createMapListenerAdaptor(mapListener);
+    public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
                 registerListener(serviceName(), mapName, eventFilter, listenerAdaptor);
         return registration.getId();

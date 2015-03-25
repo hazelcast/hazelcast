@@ -30,6 +30,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -92,6 +93,11 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         });
     }
 
+    static void shutdownOperationService(HazelcastInstance instance) {
+        OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
+        operationService.shutdown();
+    }
+
     static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
         InternalOperationService operationService = getInternalOperationService(instance);
         SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
@@ -106,7 +112,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static InternalOperationService getInternalOperationService(HazelcastInstance instance) {
-        return ((InternalOperationService) TestUtil.getNode(instance).nodeEngine.getOperationService());
+        return TestUtil.getNode(instance).nodeEngine.getOperationService();
     }
 
     static int getDefaultPartitionId(HazelcastInstance instance) {
@@ -121,7 +127,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         return getTimedMemberState(instance).getMemberState().getOperationStats().toJson();
     }
 
-    private static TimedMemberState getTimedMemberState(HazelcastInstance instance) {
+    static TimedMemberState getTimedMemberState(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
         return timedMemberStateFactory.createTimedMemberState();
     }
@@ -131,27 +137,27 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void assertTotalInvocations(SlowOperationLog log, int totalInvocations) {
-        assertEqualsStringFormat("Expected %d total invocations, but was %d", totalInvocations, log.getTotalInvocations());
+        assertEqualsStringFormat("Expected %d total invocations, but was %d", totalInvocations, log.totalInvocations);
     }
 
     static void assertEntryProcessorOperation(SlowOperationLog log) {
-        String operation = getFieldFromObject(log, "operation");
+        String operation = log.operation;
         assertEqualsStringFormat("Expected operation %s, but was %s", "PartitionWideEntryWithPredicateOperation{}", operation);
     }
 
     static void assertOperationContainsClassName(SlowOperationLog log, String className) {
-        String operation = getFieldFromObject(log, "operation");
+        String operation = log.operation;
         assertTrue(format("Expected operation to contain '%s'%n%s", className, operation), operation.contains("$" + className));
     }
 
     static void assertStackTraceContainsClassName(SlowOperationLog log, String className) {
-        String stackTrace = log.getStackTrace();
+        String stackTrace = log.stackTrace;
         assertTrue(format("Expected stacktrace to contain className '%s'%n%s", className, stackTrace),
                 stackTrace.contains("$" + className + "."));
     }
 
     static void assertStackTraceNotContainsClassName(SlowOperationLog log, String className) {
-        String stackTrace = log.getStackTrace();
+        String stackTrace = log.stackTrace;
         assertFalse(format("Expected stacktrace to not contain className '%s'%n%s", className, stackTrace),
                 stackTrace.contains(className));
     }
@@ -170,7 +176,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void assertInvocationDurationBetween(SlowOperationLog.Invocation invocation, int min, int max) {
-        Integer duration = getFieldFromObject(invocation, "durationMs");
+        Integer duration = invocation.createDTO().durationMs;
 
         assertTrue(format("Duration of invocation should be >= %d, but was %d", min, duration), duration >= min);
         assertTrue(format("Duration of invocation should be <= %d, but was %d", max, duration), duration <= max);

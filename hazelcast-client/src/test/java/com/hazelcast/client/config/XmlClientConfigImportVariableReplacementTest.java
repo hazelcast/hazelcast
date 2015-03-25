@@ -132,7 +132,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         assertTrue(config.getNetworkConfig().getAddresses().contains("192.168.5.5"));
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -150,7 +150,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(config1Xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -173,7 +173,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(config1Xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
@@ -184,7 +184,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(config1Xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "    <import resource=\"\"/>\n" +
@@ -193,7 +193,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "    <import resource=\"notexisting.xml\"/>\n" +

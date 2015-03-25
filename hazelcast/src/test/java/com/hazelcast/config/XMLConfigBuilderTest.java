@@ -69,7 +69,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         new XmlConfigBuilder();
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testJoinValidation() {
         String xml = "<hazelcast>\n" +
                 "    <network>\n" +
@@ -565,7 +565,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(mergePolicy, wanRef.getMergePolicy());
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =
                 "<hazelcast>\n" +

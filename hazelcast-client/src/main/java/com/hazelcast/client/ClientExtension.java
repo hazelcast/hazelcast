@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -25,6 +26,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 /**
  * ClientExtension is a client extension mechanism to be able to plug different implementations of
  * some modules, like; {@link SerializationService}, {@link SocketChannelWrapperFactory} etc.
+ * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
  */
 public interface ClientExtension {
 
@@ -68,4 +70,14 @@ public interface ClientExtension {
      */
     NearCacheManager createNearCacheManager();
 
+    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+
+    /**
+     * Returns a proxy for the corresponding service.
+     *
+     * @param service service for the proxy to create.
+     * @return proxy for the service.
+     * @throws java.lang.IllegalArgumentException if type is not known
+     */
+    <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service);
 }

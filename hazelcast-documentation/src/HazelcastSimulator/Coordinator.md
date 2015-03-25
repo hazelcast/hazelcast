@@ -24,7 +24,6 @@ to generate the correct Hazelcast configuration. You can use your own configurat
 coordinator --clientHzFile=your-client-hazelcast.xml --hzFile your-hazelcast.xml ....
 ```
 
-??? is there any other arguments to be mentioned here ???
 
 
 ### Controlling Test Duration

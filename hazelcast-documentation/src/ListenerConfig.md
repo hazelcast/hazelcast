@@ -4,7 +4,7 @@
 
 You can add or remove event listeners to/from the related object using the Hazelcast API.
 
-The downside of attaching listeners using this API is the possibility of missing events between the creation of an object and registering the listener. To overcome this race condition, Hazelcast introduces registration of listeners in configuration. You can register listeners using declarative, programmatic, or Spring configuration.
+The downside of attaching listeners using this API is the possibility of missing events between the creation of an object and registering the listener. To overcome this race condition, Hazelcast allows you to register listeners in configuration. You can register listeners using declarative, programmatic, or Spring configuration.
 
 ####  MembershipListener
 

@@ -1,29 +1,28 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.TraceableOperation;
-import com.hazelcast.spi.impl.operationservice.impl.operations.IsStillExecutingOperation;
-import com.hazelcast.spi.impl.operationservice.impl.operations.TraceableIsStillExecutingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.TIMEOUT_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static java.lang.Math.min;
@@ -37,12 +36,11 @@ import static java.lang.Math.min;
 final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     private static final int MAX_CALL_TIMEOUT_EXTENSION = 60 * 1000;
-    private static final int IS_EXECUTING_CALL_TIMEOUT = 5000;
 
     private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> RESPONSE_FIELD_UPDATER
             = AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "response");
     private static final AtomicIntegerFieldUpdater<InvocationFuture> WAITER_COUNT_FIELD_UPDATER
-            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class,  "waiterCount");
+            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class, "waiterCount");
 
     volatile boolean interrupted;
     // Contains the number of threads waiting for a result from this future.
@@ -77,7 +75,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (response != null && !(response instanceof Invocation.InternalResponse)) {
+            if (response != null && !(response instanceof InternalResponse)) {
                 runAsynchronous(callback, executor);
                 return;
             }
@@ -122,15 +120,20 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * @param offeredResponse
      */
     public void set(Object offeredResponse) {
-        offeredResponse = resolveInternalResponse(offeredResponse);
+        assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
+
+        if (offeredResponse == null) {
+            offeredResponse = NULL_RESPONSE;
+        }
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
-            if (response != null && !(response instanceof Invocation.InternalResponse)) {
+            if (response != null && !(response instanceof InternalResponse)) {
                 //it can be that this invocation future already received an answer, e.g. when a an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
 
+                // this is no good; no logging while holding a lock
                 ILogger logger = invocation.logger;
                 if (logger.isFinestEnabled()) {
                     logger.info("Future response is already set! Current response: "
@@ -140,7 +143,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             }
 
             response = offeredResponse;
-            if (offeredResponse == Invocation.WAIT_RESPONSE) {
+            if (offeredResponse == WAIT_RESPONSE) {
                 return;
             }
             callbackChain = callbackHead;
@@ -148,7 +151,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             notifyAll();
         }
 
-        operationService.deregisterInvocation(invocation);
+        operationService.invocationsRegistry.deregister(invocation);
         notifyCallbacks(callbackChain);
     }
 
@@ -157,21 +160,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
             callbackChain = callbackChain.next;
         }
-    }
-
-    private Object resolveInternalResponse(Object rawResponse) {
-        if (rawResponse == null) {
-            throw new IllegalArgumentException("response can't be null: " + invocation);
-        }
-
-        if (rawResponse instanceof NormalResponse) {
-            rawResponse = ((NormalResponse) rawResponse).getValue();
-        }
-
-        if (rawResponse == null) {
-            rawResponse = Invocation.NULL_RESPONSE;
-        }
-        return rawResponse;
     }
 
     @Override
@@ -202,7 +190,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
-        if (response != null && response != Invocation.WAIT_RESPONSE) {
+        if (response != null && response != WAIT_RESPONSE) {
             return response;
         }
 
@@ -224,13 +212,13 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     lastPollTime = Clock.currentTimeMillis() - startMs;
                     timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
-                    if (response == Invocation.WAIT_RESPONSE) {
-                        RESPONSE_FIELD_UPDATER.compareAndSet(this, Invocation.WAIT_RESPONSE, null);
+                    if (response == WAIT_RESPONSE) {
+                        RESPONSE_FIELD_UPDATER.compareAndSet(this, WAIT_RESPONSE, null);
                         continue;
                     } else if (response != null) {
                         //if the thread is interrupted, but the response was not an interrupted-response,
                         //we need to restore the interrupt flag.
-                        if (response != Invocation.INTERRUPTED_RESPONSE && interrupted) {
+                        if (response != INTERRUPTED_RESPONSE && interrupted) {
                             Thread.currentThread().interrupt();
                         }
                         return response;
@@ -248,15 +236,15 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     }
 
                     invocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
-                    boolean executing = isOperationExecuting(target);
+                    boolean executing = operationService.getIsStillRunningService().isOperationExecuting(invocation);
                     if (!executing) {
-                        Object operationTimeoutException = newOperationTimeoutException(pollCount * pollTimeoutMs);
+                        Object operationTimeoutException = invocation.newOperationTimeoutException(pollCount * pollTimeoutMs);
                         // tries to set an OperationTimeoutException response if response is not set yet
                         set(operationTimeoutException);
                     }
                 }
             }
-            return Invocation.TIMEOUT_RESPONSE;
+            return TIMEOUT_RESPONSE;
         } finally {
             WAITER_COUNT_FIELD_UPDATER.decrementAndGet(this);
         }
@@ -272,6 +260,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     wait(currentTimeoutMs);
                     currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
                 }
+                notifyAll();
             }
         }
     }
@@ -299,26 +288,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             timeoutMs = 0;
         }
         return timeoutMs;
-    }
-
-    Object newOperationTimeoutException(long totalTimeoutMs) {
-        boolean hasResponse = invocation.pendingResponse != null;
-        int backupsExpected = invocation.backupsExpected;
-        int backupsCompleted = invocation.backupsCompleted;
-
-        if (hasResponse) {
-            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
-                    + " Aborting invocation! " + toString()
-                    + " Not all backups have completed! "
-                    + " backups-expected:" + backupsExpected
-                    + " backups-completed: " + backupsCompleted);
-        } else {
-            return new OperationTimeoutException("No response for " + totalTimeoutMs + " ms."
-                    + " Aborting invocation! " + toString()
-                    + " No response has been received! "
-                    + " backups-expected:" + backupsExpected
-                    + " backups-completed: " + backupsCompleted);
-        }
     }
 
     private Object resolveApplicationResponseOrThrowException(Object unresolvedResponse)
@@ -351,15 +320,15 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object resolveApplicationResponse(Object unresolvedResponse) {
-        if (unresolvedResponse == Invocation.NULL_RESPONSE) {
+        if (unresolvedResponse == NULL_RESPONSE) {
             return null;
         }
 
-        if (unresolvedResponse == Invocation.TIMEOUT_RESPONSE) {
+        if (unresolvedResponse == TIMEOUT_RESPONSE) {
             return new TimeoutException("Call " + invocation + " encountered a timeout");
         }
 
-        if (unresolvedResponse == Invocation.INTERRUPTED_RESPONSE) {
+        if (unresolvedResponse == INTERRUPTED_RESPONSE) {
             return new InterruptedException("Call " + invocation + " was interrupted");
         }
 
@@ -412,35 +381,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     @Override
     public boolean isDone() {
         return response != null;
-    }
-
-    private boolean isOperationExecuting(Address target) {
-        // ask if op is still being executed?
-        Boolean executing = Boolean.FALSE;
-        try {
-            Operation isStillExecuting = createCheckOperation();
-
-            Invocation inv = new TargetInvocation(
-                    invocation.nodeEngine, invocation.serviceName, isStillExecuting,
-                    target, 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
-            Future f = inv.invoke();
-            invocation.logger.warning("Asking if operation execution has been started: " + toString());
-            executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
-        } catch (Exception e) {
-            invocation.logger.warning("While asking 'is-executing': " + toString(), e);
-        }
-        invocation.logger.warning("'is-executing': " + executing + " -> " + toString());
-        return executing;
-    }
-
-    private Operation createCheckOperation() {
-        Operation op = invocation.op;
-        if (op instanceof TraceableOperation) {
-            TraceableOperation traceable = (TraceableOperation) op;
-            return new TraceableIsStillExecutingOperation(invocation.serviceName, traceable.getTraceIdentifier());
-        } else {
-            return new IsStillExecutingOperation(op.getCallId(), op.getPartitionId());
-        }
     }
 
     @Override

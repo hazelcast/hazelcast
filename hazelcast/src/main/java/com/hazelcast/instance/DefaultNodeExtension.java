@@ -186,4 +186,8 @@ public class DefaultNodeExtension implements NodeExtension {
         logger.info("Destroying node NodeExtension.");
     }
 
+    @Override
+    public void beforeJoin() {
+    }
+
 }

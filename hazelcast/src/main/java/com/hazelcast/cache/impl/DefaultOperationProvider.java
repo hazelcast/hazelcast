@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class DefaultOperationProvider implements CacheOperationProvider {
 
-    private final String nameWithPrefix;
+    protected final String nameWithPrefix;
 
     public DefaultOperationProvider(String nameWithPrefix) {
         this.nameWithPrefix = nameWithPrefix;

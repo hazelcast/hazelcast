@@ -201,6 +201,7 @@ public final class CacheDataSerializerHook
             }
         };
         constructors[EXPIRY_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new HazelcastExpiryPolicy();
             }

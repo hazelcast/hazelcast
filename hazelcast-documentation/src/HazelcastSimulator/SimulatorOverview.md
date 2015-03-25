@@ -7,14 +7,14 @@ Hazelcast Simulator is a production simulator used to test Hazelcast and Hazelca
 
 Hazelcast Simulator allows you to add potential production problems like real-life failures, network problems, overloaded CPU and failing nodes to your tests. It also provides a benchmarking and performance testing platform by supporting performance tracking and various out of the box profilers.
 
-Hazelcast Simulator makes use of Apache JClouds, an open source multi-cloud toolkit, and is primarily designed for testing on the clouds like Amazon EC2 and GCE.
+Hazelcast Simulator makes use of Apache jclouds&reg;, an open source multi-cloud toolkit, and is primarily designed for testing on the clouds like Amazon EC2 and GCE.
 
 You can use Hazelcast Simulator for the following use cases:
 
-- In pre-production phase to simulate the expected throughput/latency of Hazelcast with your specific requirements
-- To test if Hazelcast behaves as expected if you implement new functionality in your project 
-- As part of your test suite in your deployment process
-- When upgrading your Hazelcast version
+- In pre-production phase to simulate the expected throughput/latency of Hazelcast with your specific requirements.
+- To test if Hazelcast behaves as expected when you implement a new functionality in your project.
+- As part of your test suite in your deployment process.
+- When upgrading your Hazelcast version.
 
 Hazelcast Simulator is available as a downloadable package on the Hazelcast [web site](http://www.hazelcast.org/download). Please refer to the [Installing Simulator section](#installing-simulator) for more information.
 

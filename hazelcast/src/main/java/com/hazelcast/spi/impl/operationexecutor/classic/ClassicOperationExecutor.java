@@ -236,7 +236,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     @Override
-    public boolean isInvocationAllowedFromCurrentThread(Operation op) {
+    public boolean isInvocationAllowedFromCurrentThread(Operation op, boolean isAsync) {
         if (op == null) {
             throw new NullPointerException("op can't be null");
         }
@@ -246,6 +246,11 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         // IO threads are not allowed to run any operation
         if (currentThread instanceof NIOThread) {
             return false;
+        }
+
+        // if it is async we don't need to check if it is PartitionOperationThread or not
+        if (isAsync) {
+            return true;
         }
 
         if (op.getPartitionId() < 0) {

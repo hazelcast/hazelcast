@@ -95,14 +95,10 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         protected List<Response> responses = synchronizedList(new LinkedList<Response>());
 
         @Override
-        public Response deserialize(Packet packet) throws Exception {
+        public void handle(Packet packet) throws Exception {
             packets.add(packet);
-            return serializationService.toObject(packet.getData());
-        }
-
-        @Override
-        public void process(Response task) throws Exception {
-            responses.add(task);
+            Response response = serializationService.toObject(packet.getData());
+            responses.add(response);
         }
     }
 

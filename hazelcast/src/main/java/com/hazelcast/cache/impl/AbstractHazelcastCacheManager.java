@@ -172,6 +172,16 @@ public abstract class AbstractHazelcastCacheManager
         return null;
     }
 
+    public <K, V>  ICache<K, V> getOrCreateCache(String cacheName, CacheConfig<K, V> cacheConfig) {
+        checkIfManagerNotClosed();
+        String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
+        ICache<?, ?> cache = caches.get(cacheNameWithPrefix);
+        if (cache == null) {
+            cache = createCache(cacheName, cacheConfig);
+        }
+        return (ICache<K, V>) cache;
+    }
+
     @Override
     public <K, V> ICache<K, V> getCache(String cacheName) {
         checkIfManagerNotClosed();

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.MessageHandlerContext;
 /**
  * Key Based Message Handlers that are doing operations like put get etc extends this message handler
  */
-abstract class AbstractKeyBasedMessageHandler extends AbstractPartitionsMessageHandler {
+public abstract class AbstractKeyBasedMessageHandler extends AbstractPartitionsMessageHandler {
 
     protected abstract Object getKey(MessageHandlerContext context);
 

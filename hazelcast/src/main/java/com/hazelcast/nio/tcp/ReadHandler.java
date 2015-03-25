@@ -31,7 +31,8 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-final class ReadHandler extends AbstractSelectionHandler {
+final class ReadHandler
+        extends AbstractSelectionHandler {
 
     private final ByteBuffer inputBuffer;
 
@@ -99,7 +100,8 @@ final class ReadHandler extends AbstractSelectionHandler {
         }
     }
 
-    private void initializeSocketReader() throws IOException {
+    private void initializeSocketReader()
+            throws IOException {
         if (socketReader == null) {
             final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
             int readBytes = socketChannel.read(protocolBuffer);
@@ -120,6 +122,8 @@ final class ReadHandler extends AbstractSelectionHandler {
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY);
                     socketReader = new SocketClientDataReader(connection);
+                } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
+                    setupClient(writeHandler);
                 } else {
                     writeHandler.setProtocol(Protocols.TEXT);
                     inputBuffer.put(protocolBuffer.array());
@@ -130,6 +134,21 @@ final class ReadHandler extends AbstractSelectionHandler {
             if (socketReader == null) {
                 throw new IOException("Could not initialize SocketReader!");
             }
+        }
+    }
+
+    private void setupClient(WriteHandler writeHandler)
+            throws IOException {
+        final ByteBuffer clientTypeBuffer = ByteBuffer.allocate(3);
+        int size;
+        do {
+            size = socketChannel.read(clientTypeBuffer);
+        } while (size < 3);
+        clientTypeBuffer.flip();
+        SocketClientDataReaderNew reader = new SocketClientDataReaderNew(connection);
+        if (reader.setConnectionType(clientTypeBuffer)) {
+            socketReader = reader;
+            writeHandler.setProtocol(Protocols.CLIENT_BINARY);
         }
     }
 

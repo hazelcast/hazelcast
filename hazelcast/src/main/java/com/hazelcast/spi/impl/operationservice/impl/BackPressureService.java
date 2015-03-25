@@ -1,15 +1,19 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 
 
 /**
@@ -22,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * For information about the implementation see:
  * https://hazelcast.atlassian.net/wiki/display/EN/Back+Pressure+Design
  */
-public class BackPressureService {
+public final class BackPressureService {
 
     /**
      * The percentage above and below a certain sync-window we should randomize.
@@ -46,15 +50,21 @@ public class BackPressureService {
     private final boolean backPressureEnabled;
     private final int syncWindow;
     private final int partitionCount;
+    private final ILogger logger;
+    private final CleanupThread cleanupThread;
 
-    public BackPressureService(GroupProperties properties, ILogger logger) {
+    public BackPressureService(GroupProperties properties, ILogger logger, HazelcastThreadGroup threadGroup) {
         this.backPressureEnabled = properties.BACKPRESSURE_ENABLED.getBoolean();
         this.partitionCount = properties.PARTITION_COUNT.getInteger();
         this.syncWindow = getSyncWindow(properties);
+        this.logger = logger;
 
         if (backPressureEnabled) {
             logger.info("Backpressure is enabled, syncWindow is " + syncWindow);
+            this.cleanupThread = new CleanupThread(threadGroup);
+            cleanupThread.start();
         } else {
+            cleanupThread = null;
             logger.info("Backpressure is disabled");
         }
     }
@@ -185,4 +195,59 @@ public class BackPressureService {
         return Math.round((1 - RANGE) * syncWindow + random.nextInt(Math.round(2 * RANGE * syncWindow)));
     }
 
+    public void shutdown() {
+        if (cleanupThread == null) {
+            return;
+        }
+
+        cleanupThread.shutdown();
+    }
+
+    public void awaitTermination(long timeoutMs) throws InterruptedException {
+        if (cleanupThread == null) {
+            return;
+        }
+
+        cleanupThread.join(timeoutMs);
+    }
+
+    final class CleanupThread extends Thread {
+
+        public static final int DELAY_MILLIS = 1000;
+
+        private volatile boolean shutdown;
+
+        CleanupThread(HazelcastThreadGroup threadGroup) {
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("BackPressureCleanupThread"));
+        }
+
+        public void shutdown() {
+            shutdown = true;
+            interrupt();
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    cleanup();
+                    if (!shutdown) {
+                        sleep();
+                    }
+                }
+            } catch (Throwable t) {
+                inspectOutputMemoryError(t);
+                logger.severe("Failed to run", t);
+            }
+        }
+
+        private void sleep() {
+            try {
+                Thread.sleep(DELAY_MILLIS);
+            } catch (InterruptedException ignore) {
+                // can safely be ignored. If this thread wants to shut down, we'll read the shutdown variable.
+                EmptyStatement.ignore(ignore);
+            }
+        }
+    }
 }

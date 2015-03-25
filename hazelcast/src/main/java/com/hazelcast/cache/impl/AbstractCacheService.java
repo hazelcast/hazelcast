@@ -267,7 +267,7 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
                              Data dataOldValue, boolean isOldValueAvailable, int orderKey,
-                             int completionId, long expirationTime) {
+                             int completionId, long expirationTime, String origin) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 
