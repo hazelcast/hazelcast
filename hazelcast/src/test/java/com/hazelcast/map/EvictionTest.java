@@ -1088,13 +1088,16 @@ public class EvictionTest extends HazelcastTestSupport {
         assertNull("value of expired key should be null on a replicated partition", value);
     }
 
-    private void testExpirationDelay(final int expectedEntryCountAfterExpiration, final int numberOfItemsToBeAdded, final boolean backup) {
+    private void testExpirationDelay(final int expectedEntryCountAfterExpiration,
+                                     final int numberOfItemsToBeAdded, final boolean backup) {
         // node count should be at least 2 since we are testing a scenario on backups.
         final int nodeCount = 2;
         final int maxIdleSeconds = 1;
         final String mapName = randomMapName();
 
         final Config config = newConfigWithExpiration(mapName, maxIdleSeconds);
+        // use a long delay for testing purposes.
+        config.setProperty(GroupProperties.PROP_MAP_EXPIRY_DELAY_SECONDS, String.valueOf(TimeUnit.HOURS.toSeconds(1)));
 
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
@@ -1123,8 +1126,6 @@ public class EvictionTest extends HazelcastTestSupport {
                         notExpiredEntryCountOnNode1 + notExpiredEntryCountOnNode2);
             }
         });
-
-
     }
 
     private int getNotExpiredEntryCount(IMap map, long now, boolean backup) {

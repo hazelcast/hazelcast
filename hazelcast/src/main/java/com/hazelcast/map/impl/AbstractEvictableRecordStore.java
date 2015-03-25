@@ -2,14 +2,17 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.MaxSizeChecker;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
@@ -59,20 +62,33 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private final EvictionPolicy evictionPolicy;
 
+    private final long backupExpiryDelayMillis;
+
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         final MapConfig mapConfig = mapContainer.getMapConfig();
         this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
         this.evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
-        this.evictionEnabled
-                = !EvictionPolicy.NONE.equals(evictionPolicy);
+        this.evictionEnabled = !EvictionPolicy.NONE.equals(evictionPolicy);
         this.expirable = isRecordStoreExpirable();
+        this.backupExpiryDelayMillis = getBackupExpiryDelayMillis();
     }
 
     private boolean isRecordStoreExpirable() {
         final MapConfig mapConfig = mapContainer.getMapConfig();
         return mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
+    }
+
+    /**
+     * @see com.hazelcast.instance.GroupProperties#PROP_MAP_EXPIRY_DELAY_SECONDS
+     */
+    private long getBackupExpiryDelayMillis() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        GroupProperties.GroupProperty delaySecondsProperty = groupProperties.MAP_EXPIRY_DELAY_SECONDS;
+        int delaySeconds = delaySecondsProperty.getInteger();
+        return TimeUnit.SECONDS.toMillis(delaySeconds);
     }
 
     @Override
@@ -290,11 +306,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // lastAccessTime : updates on every touch (put/get).
         final long lastAccessTime = record.getLastAccessTime();
         final long maxIdleMillis = mapContainer.getMaxIdleMillis();
-        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis, backup);
-        final long passedMillis = now - lastAccessTime;
-        return passedMillis >= idleMillis ? null : record;
+        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis,
+                backupExpiryDelayMillis, backup);
+        final long elapsedMillis = now - lastAccessTime;
+        return elapsedMillis >= idleMillis ? null : record;
     }
-
 
     private Record isTTLExpired(Record record, long now, boolean backup) {
         if (record == null) {
@@ -306,9 +322,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return record;
         }
         final long lastUpdateTime = record.getLastUpdateTime();
-        final long lifeMillis = calculateExpirationWithDelay(ttl, backup);
-        final long passedMillis = now - lastUpdateTime;
-        return passedMillis >= lifeMillis ? null : record;
+        final long ttlMillis = calculateExpirationWithDelay(ttl,
+                backupExpiryDelayMillis, backup);
+        final long elapsedMillis = now - lastUpdateTime;
+        return elapsedMillis >= ttlMillis ? null : record;
     }
 
     /**

@@ -121,6 +121,13 @@ public class GroupProperties {
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
     public static final String PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
             = "hazelcast.map.replica.scheduled.task.delay.seconds";
+    /**
+     * PROP_MAP_EXPIRY_DELAY_SECONDS is useful to deal with some possible edge cases e.g. when using EntryProcessor,
+     * without this delay, you may see an EntryProcessor running on owner partition found a key but
+     * EntryBackupProcessor did not find it on backup, as a result of this when backup promotes to owner
+     * you will end up an unprocessed key.
+     */
+    public static final String PROP_MAP_EXPIRY_DELAY_SECONDS = "hazelcast.map.expiry.delay.seconds";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
@@ -279,6 +286,8 @@ public class GroupProperties {
 
     public final GroupProperty MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS;
 
+    public final GroupProperty MAP_EXPIRY_DELAY_SECONDS;
+
     public final GroupProperty PARTITION_COUNT;
 
     public final GroupProperty LOGGING_TYPE;
@@ -408,6 +417,7 @@ public class GroupProperties {
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
         MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
                 = new GroupProperty(config, PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "10");
+        MAP_EXPIRY_DELAY_SECONDS = new GroupProperty(config, PROP_MAP_EXPIRY_DELAY_SECONDS, "10");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
