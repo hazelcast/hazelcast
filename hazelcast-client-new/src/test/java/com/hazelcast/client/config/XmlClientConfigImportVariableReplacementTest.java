@@ -17,9 +17,13 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -31,18 +35,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.Ignore;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 @Ignore
 public class XmlClientConfigImportVariableReplacementTest {
 
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppersInTopLevel() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "   <network>" +
@@ -53,7 +52,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(xml);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testHazelcastElementOnlyAppearsOnce() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "   <hazelcast-client>" +
@@ -133,7 +132,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         assertTrue(config.getNetworkConfig().getAddresses().contains("192.168.5.5"));
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -151,7 +150,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(config1Xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         File config2 = createConfigFile("hz2", "xml");
@@ -174,7 +173,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(config1Xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
@@ -185,7 +184,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(config1Xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "    <import resource=\"\"/>\n" +
@@ -194,7 +193,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         buildConfig(xml);
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() throws Exception {
         String xml = "<hazelcast-client>\n" +
                 "    <import resource=\"notexisting.xml\"/>\n" +
