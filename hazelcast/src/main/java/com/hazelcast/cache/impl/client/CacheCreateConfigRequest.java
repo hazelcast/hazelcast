@@ -72,7 +72,7 @@ public class CacheCreateConfigRequest
     }
 
     protected Operation prepareOperation() {
-        return new CacheCreateConfigOperation(cacheConfig, createAlsoOnOthers, false);
+        return new CacheCreateConfigOperation(cacheConfig, createAlsoOnOthers);
     }
 
     public final int getFactoryId() {
