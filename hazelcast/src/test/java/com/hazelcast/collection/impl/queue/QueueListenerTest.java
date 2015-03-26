@@ -45,13 +45,13 @@ import static junit.framework.Assert.assertTrue;
 @Category(QuickTest.class)
 public class QueueListenerTest extends HazelcastTestSupport {
 
-    private String Qname = "Q";
-    private int totalQput = 2000;
+    private static final String Q_NAME = "Q";
+    private static final int TOTAL_QPUT = 2000;
 
-    private Config cfg = new Config();
-    private SimpleItemListener simpleItemListener = new SimpleItemListener(totalQput);
-    private ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
-    private QueueConfig qConfig = new QueueConfig();
+    private final Config cfg = new Config();
+    private final SimpleItemListener simpleItemListener = new SimpleItemListener(TOTAL_QPUT);
+    private final ItemListenerConfig itemListenerConfig = new ItemListenerConfig();
+    private final QueueConfig qConfig = new QueueConfig();
 
     //TODO: Don't add a number to a test to test a diferent case. I guess it was already in the system.
     @Test
@@ -59,7 +59,6 @@ public class QueueListenerTest extends HazelcastTestSupport {
         final Config config = new Config();
         config.getQueueConfig("q2").setEmptyQueueTtl(0);
         final HazelcastInstance hz = createHazelcastInstance(config);
-
         final CountDownLatch latch = new CountDownLatch(2);
         hz.addDistributedObjectListener(new DistributedObjectListener() {
             @Override
@@ -82,30 +81,29 @@ public class QueueListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigListenerRegistration() throws InterruptedException {
-        Config config = new Config();
+        final Config config = new Config();
         final String name = "queue";
         final QueueConfig queueConfig = config.getQueueConfig(name);
         final DummyListener dummyListener = new DummyListener();
         final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);
         queueConfig.addItemListenerConfig(itemListenerConfig);
         final HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue queue = instance.getQueue(name);
+        final IQueue<String> queue = instance.getQueue(name);
         queue.offer("item");
         queue.poll();
         assertTrue(dummyListener.latch.await(10, TimeUnit.SECONDS));
     }
 
     private static class DummyListener implements ItemListener, Serializable {
+        final CountDownLatch latch = new CountDownLatch(2);
 
-        public final CountDownLatch latch = new CountDownLatch(2);
+        DummyListener() { }
 
-        public DummyListener() {
-        }
-
+        @Override
         public void itemAdded(ItemEvent item) {
             latch.countDown();
         }
-
+        @Override
         public void itemRemoved(ItemEvent item) {
             latch.countDown();
         }
@@ -116,23 +114,20 @@ public class QueueListenerTest extends HazelcastTestSupport {
         itemListenerConfig.setImplementation(simpleItemListener);
         itemListenerConfig.setIncludeValue(true);
 
-        qConfig.setName(Qname);
+        qConfig.setName(Q_NAME);
         qConfig.addItemListenerConfig(itemListenerConfig);
         cfg.addQueueConfig(qConfig);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance node1 = factory.newHazelcastInstance(cfg);
-        IQueue queue = node1.getQueue(Qname);
-        for (int i = 0; i < totalQput / 2; i++) {
+        IQueue<Integer> queue = node1.getQueue(Q_NAME);
+        for (int i = 0; i < TOTAL_QPUT / 2; i++) {
             queue.put(i);
         }
-
         HazelcastInstance node2 = factory.newHazelcastInstance(cfg);
-
-        for (int i = 0; i < totalQput / 4; i++) {
+        for (int i = 0; i < TOTAL_QPUT / 4; i++) {
             queue.put(i);
         }
-
         assertTrue(simpleItemListener.added.await(3, TimeUnit.SECONDS));
     }
 
@@ -141,10 +136,9 @@ public class QueueListenerTest extends HazelcastTestSupport {
         final String name = randomString();
         HazelcastInstance instance = createHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(20);
-        final AtomicBoolean notCalled = new AtomicBoolean(true);
 
-        IQueue queue = instance.getQueue(name);
-        TestItemListener listener = new TestItemListener(latch, notCalled);
+        IQueue<String> queue = instance.getQueue(name);
+        TestItemListener listener = new TestItemListener(latch);
         final String id = queue.addItemListener(listener, true);
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
@@ -157,17 +151,16 @@ public class QueueListenerTest extends HazelcastTestSupport {
         queue.removeItemListener(id);
         queue.offer("item-a");
         queue.poll();
-        assertTrue(notCalled.get());
+        assertTrue(listener.notCalled.get());
     }
 
-    private static class TestItemListener implements ItemListener {
+    private static class TestItemListener implements ItemListener<String> {
         int offer;
         int poll;
         CountDownLatch latch;
         AtomicBoolean notCalled;
 
-        //TODO: Why do you pass an argument if it isn't used??
-        TestItemListener(CountDownLatch latch, AtomicBoolean notCalled) {
+        TestItemListener(CountDownLatch latch) {
             this.latch = latch;
             this.notCalled = new AtomicBoolean(true);
         }

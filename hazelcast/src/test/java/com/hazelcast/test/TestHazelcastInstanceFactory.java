@@ -75,7 +75,7 @@ public final class TestHazelcastInstanceFactory {
             if (nodeIndex.get() >= addresses.length) {
                 throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
             }
-            config = init(config);
+            init(config);
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex.getAndIncrement()]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
