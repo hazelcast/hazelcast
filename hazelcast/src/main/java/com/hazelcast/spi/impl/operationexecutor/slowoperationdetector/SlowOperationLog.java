@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Internal data structure for {@link SlowOperationDetector}.
@@ -38,12 +39,11 @@ final class SlowOperationLog {
 
     private static final int SHORT_STACKTRACE_LENGTH = 200;
 
+    final AtomicInteger totalInvocations = new AtomicInteger(0);
+
     final String operation;
     final String stackTrace;
     final String shortStackTrace;
-
-    // this field will be incremented by single SlowOperationDetectorThread (it can be read by multiple threads)
-    volatile int totalInvocations;
 
     private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<Integer, Invocation>();
 
@@ -53,15 +53,11 @@ final class SlowOperationLog {
         if (stackTrace.length() <= SHORT_STACKTRACE_LENGTH) {
             this.shortStackTrace = stackTrace;
         } else {
-            this.shortStackTrace = stackTrace.substring(0, stackTrace.indexOf('\n', SHORT_STACKTRACE_LENGTH)) + "\n(...)";
+            this.shortStackTrace = stackTrace.substring(0, stackTrace.indexOf('\n', SHORT_STACKTRACE_LENGTH)) + "\n\t(...)";
         }
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT", justification =
-            "method is used by a single SlowOperationDetectorThread only")
-    Invocation getOrCreateInvocation(Integer operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
-        totalInvocations++;
-
+    Invocation getOrCreate(Integer operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
         Invocation candidate = invocations.get(operationHashCode);
         if (candidate != null) {
             return candidate;
@@ -69,7 +65,7 @@ final class SlowOperationLog {
 
         int durationMs = (int) TimeUnit.NANOSECONDS.toMillis(lastDurationNanos);
         long startedAt = nowMillis - durationMs;
-        candidate = new Invocation(operationHashCode, startedAt, nowNanos, durationMs);
+        candidate = new Invocation(startedAt, nowNanos, durationMs);
         invocations.put(operationHashCode, candidate);
 
         return candidate;
@@ -86,35 +82,34 @@ final class SlowOperationLog {
 
     SlowOperationDTO createDTO() {
         List<SlowOperationInvocationDTO> invocationDTOList = new ArrayList<SlowOperationInvocationDTO>(invocations.size());
-        for (Invocation invocation : invocations.values()) {
-            invocationDTOList.add(invocation.createDTO());
+        for (Map.Entry<Integer, Invocation> invocationEntry : invocations.entrySet()) {
+            int id = invocationEntry.getKey();
+            invocationDTOList.add(invocationEntry.getValue().createDTO(id));
         }
-        return new SlowOperationDTO(operation, stackTrace, totalInvocations, invocationDTOList);
+        return new SlowOperationDTO(operation, stackTrace, totalInvocations.get(), invocationDTOList);
     }
 
     static final class Invocation {
 
-        private final int id;
         private final long startedAt;
+
+        private long lastAccessNanos;
 
         // this field will be written by single SlowOperationDetectorThread (it can be read by multiple threads)
         private volatile int durationMs;
 
-        private long lastAccessNanos;
-
-        private Invocation(int id, long startedAt, long lastAccessNanos, int durationMs) {
-            this.id = id;
+        private Invocation(long startedAt, long lastAccessNanos, int durationMs) {
             this.startedAt = startedAt;
-            this.durationMs = durationMs;
             this.lastAccessNanos = lastAccessNanos;
+            this.durationMs = durationMs;
         }
 
         void update(long lastAccessNanos, int durationMs) {
-            this.durationMs = durationMs;
             this.lastAccessNanos = lastAccessNanos;
+            this.durationMs = durationMs;
         }
 
-        SlowOperationInvocationDTO createDTO() {
+        SlowOperationInvocationDTO createDTO(int id) {
             return new SlowOperationInvocationDTO(id, startedAt, durationMs);
         }
     }

@@ -153,17 +153,18 @@ public final class SlowOperationDetector {
         private void scan(long nowNanos, long nowMillis, OperationRunner[] operationRunners,
                           CurrentOperationData[] currentOperationDataArray) {
             for (int i = 0; i < operationRunners.length && running; i++) {
-                if (operationRunners[i].currentTask() == null) {
-                    continue;
-                }
-
                 scanOperationRunner(nowNanos, nowMillis, operationRunners[i], currentOperationDataArray[i]);
             }
         }
 
         private void scanOperationRunner(long nowNanos, long nowMillis, OperationRunner operationRunner,
                                          CurrentOperationData operationData) {
-            int operationHashCode = System.identityHashCode(operationRunner.currentTask());
+            Object operation = operationRunner.currentTask();
+            if (operation == null) {
+                return;
+            }
+
+            int operationHashCode = System.identityHashCode(operation);
             if (operationData.operationHashCode != operationHashCode) {
                 // initialize currentOperationData for newly detected operation
                 operationData.operationHashCode = operationHashCode;
@@ -183,45 +184,57 @@ public final class SlowOperationDetector {
                 return;
             }
 
-            // create the stack trace once for this operation and cache the invocation for upcoming updates
-            SlowOperationLog log = getOrCreateSlowOperationLog(operationRunner);
-            operationData.invocation = log.getOrCreateInvocation(operationHashCode, durationNanos, nowNanos, nowMillis);
+            // create the stack trace once (if the running operation didn't change)
+            String stackTrace = getStackTraceOrNull(operationRunner, operation);
+            if (stackTrace != null) {
+                // create the log for this operation and cache the invocation for upcoming updates
+                SlowOperationLog log = getOrCreate(stackTrace, operation);
+                int totalInvocations = log.totalInvocations.incrementAndGet();
+                operationData.invocation = log.getOrCreate(operationHashCode, durationNanos, nowNanos, nowMillis);
 
-            logSlowOperation(operationRunner, log);
+                logSlowOperation(operation, log, totalInvocations);
+            }
         }
 
-        private SlowOperationLog getOrCreateSlowOperationLog(final OperationRunner operationRunner) {
+        private String getStackTraceOrNull(OperationRunner operationRunner, Object operation) {
             String prefix = "";
             for (StackTraceElement stackTraceElement : operationRunner.currentThread().getStackTrace()) {
                 stackTraceStringBuilder.append(prefix).append(stackTraceElement.toString());
                 prefix = "\n\t";
             }
 
-            String stackTraceString = stackTraceStringBuilder.toString();
-            stackTraceStringBuilder.setLength(0);
+            // check if the operation is still the same
+            if (operationRunner.currentTask() != operation) {
+                stackTraceStringBuilder.setLength(0);
+                return null;
+            }
 
-            Integer hashCode = stackTraceString.hashCode();
-            SlowOperationLog candidate = slowOperationLogs.get(hashCode);
+            String stackTrace = stackTraceStringBuilder.toString();
+            stackTraceStringBuilder.setLength(0);
+            return stackTrace;
+        }
+
+        private SlowOperationLog getOrCreate(String stackTrace, Object operation) {
+            Integer stackTraceHashCode = stackTrace.hashCode();
+            SlowOperationLog candidate = slowOperationLogs.get(stackTraceHashCode);
             if (candidate != null) {
                 return candidate;
             }
 
-            candidate = new SlowOperationLog(stackTraceString, operationRunner.currentTask());
-            slowOperationLogs.put(hashCode, candidate);
+            candidate = new SlowOperationLog(stackTrace, operation);
+            slowOperationLogs.put(stackTraceHashCode, candidate);
 
             return candidate;
         }
 
-        private void logSlowOperation(OperationRunner operationRunner, SlowOperationLog log) {
-            // log a warning and print the full stack trace each FULL_LOG_FREQUENCY invocations
-            Object operation = operationRunner.currentTask();
-            int totalInvocations = log.totalInvocations;
+        private void logSlowOperation(Object operation, SlowOperationLog log, int totalInvocations) {
             if (totalInvocations == 1) {
                 logger.warning(format("Slow operation detected: %s%n%s", operation, log.stackTrace));
-            } else {
-                logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
-                        (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.stackTrace : log.shortStackTrace));
+                return;
             }
+            // print the full stack trace each FULL_LOG_FREQUENCY invocations
+            logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
+                    (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.stackTrace : log.shortStackTrace));
         }
 
         private boolean purge(long nowNanos, long lastLogPurge) {
@@ -253,8 +266,8 @@ public final class SlowOperationDetector {
             detectorThread.interrupt();
             try {
                 detectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
-            } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+            } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
                 // TODO: Interrupt flag is consumed here
             }
         }

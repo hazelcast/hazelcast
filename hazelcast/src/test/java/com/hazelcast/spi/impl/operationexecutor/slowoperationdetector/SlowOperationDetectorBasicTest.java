@@ -41,9 +41,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
     @After
     public void teardown() {
-        if (instance != null) {
-            shutdownOperationService(instance);
-        }
+        shutdownOperationService(instance);
         shutdownNodeFactory();
     }
 
@@ -254,6 +252,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     }
 
     private static class SlowRecursiveOperation extends AbstractOperation {
+
         private final int recursionDepth;
         private final int sleepSeconds;
 
