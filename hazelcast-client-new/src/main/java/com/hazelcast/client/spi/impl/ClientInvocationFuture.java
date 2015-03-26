@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -42,7 +42,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
 
-    private final ClientRequest request;
+    private final ClientMessage clientMessage;
 
     private final ClientExecutionServiceImpl executionService;
 
@@ -60,12 +60,12 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                  ClientRequest request, EventHandler handler) {
+                                  ClientMessage clientMessage, EventHandler handler) {
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.serializationService = client.getSerializationService();
-        this.request = request;
+        this.clientMessage = clientMessage;
         this.handler = handler;
         this.invocation = invocation;
     }
@@ -120,7 +120,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     void setResponse(Object response) {
         synchronized (this) {
             if (this.response != null && handler == null) {
-                LOGGER.warning("The Future.set() method can only be called once. Request: " + request
+                LOGGER.warning("The Future.set() method can only be called once. Request: " + clientMessage
                         + ", current response: " + this.response + ", new response: " + response);
                 return;
             }
@@ -132,7 +132,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             if (this.response != null && !(response instanceof Throwable)) {
                 String uuid = serializationService.toObject(this.response);
                 String alias = serializationService.toObject(response);
-                clientListenerService.reRegisterListener(uuid, alias, request.getCallId());
+                clientListenerService.reRegisterListener(uuid, alias, clientMessage.correlationId());
                 return;
             }
             this.response = response;
@@ -194,8 +194,8 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         }
     }
 
-    public ClientRequest getRequest() {
-        return request;
+    public ClientMessage getClientMessage() {
+        return clientMessage;
     }
 
     public EventHandler getHandler() {
@@ -221,13 +221,17 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                         callback.onResponse(resp);
                     } catch (Throwable t) {
                         LOGGER.severe("Failed to execute callback: " + callback
-                                + "! Request: " + request + ", response: " + response, t);
+                                + "! Request: " + clientMessage + ", response: " + response, t);
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
             LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
         }
+    }
+
+    public ClientInvocation getInvocation() {
+        return invocation;
     }
 
     class ExecutionCallbackNode {
