@@ -403,7 +403,9 @@ HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 ```
 
  
+## What Does "Replica: 1 has no owner" Mean?
 
+When you start more nodes after the first one is started, you will see `replica: 1 has no owner` entry in the newly started node's log. There is no need to worry about it since it refers to a transitory state. It only means the replica partition is not ready/assigned yet and eventually it will be.
 
 
 
