@@ -1,4 +1,4 @@
-package com.hazelcast.util;
+package com.hazelcast.internal.monitors;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;

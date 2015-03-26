@@ -17,7 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.util.HealthMonitorLevel;
+import com.hazelcast.internal.monitors.HealthMonitorLevel;
 
 /**
  * The GroupProperties contain the Hazelcast properties. They can be set as an environmental variable, or
