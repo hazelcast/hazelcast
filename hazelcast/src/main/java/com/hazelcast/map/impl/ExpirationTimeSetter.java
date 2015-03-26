@@ -131,20 +131,19 @@ final class ExpirationTimeSetter {
     /**
      * On backup partitions, this method delays key`s expiration.
      */
-    public static long calculateExpirationWithDelay(long value, boolean backup) {
-        isNotNegative(value, "value");
-        // todo Inherited 10 seconds default delay from previous versions, instead a new GroupProperty may be introduced.
-        final long delayMillis = TimeUnit.SECONDS.toMillis(10);
+    public static long calculateExpirationWithDelay(long timeInMillis, long delayMillis, boolean backup) {
+        isNotNegative(timeInMillis, "timeInMillis");
+
         if (backup) {
-            final long sum = value + delayMillis;
+            final long delayedTime = timeInMillis + delayMillis;
             // check for a potential long overflow.
-            if (sum < 0L) {
+            if (delayedTime < 0L) {
                 return Long.MAX_VALUE;
             } else {
-                return sum;
+                return delayedTime;
             }
         }
-        return value;
+        return timeInMillis;
     }
 
 
