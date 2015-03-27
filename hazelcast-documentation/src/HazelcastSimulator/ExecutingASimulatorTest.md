@@ -4,21 +4,21 @@
 
 After you install and prepare the Hazelcast Simulator for your environment, it is time to perform a test.
 
-The following steps wrap up the whole procedure for executing a Hazelcast Simulator test.
+The following steps execute a Hazelcast Simulator test.
 
 1. Install the Hazelcast Simulator.
-2. Create a directory for your tests, let's call it as the working directory.
-3. Copy the `simulator.properties` file from the `/conf` directory of Hazelcast Simulator to your working directory.
+2. Create a folder85 for your tests. Let's call it your working folder.
+3. Copy the `simulator.properties` file from the `/conf` folder of the Hazelcast Simulator to your working folder.
 4. Edit the `simulator.properties` file according to your needs.
-5. Copy the `test.properties` file from the `/simulator-tests` directory of Hazelcast Simulator to your working directory.
+5. Copy the `test.properties` file from the `/simulator-tests` folder of Hazelcast Simulator to your working folder.
 6. Edit the `test.properties` file according to your needs.
-5. Execute the `run.sh` script while you are in your working directory to perform your Simulator test.
+5. Execute the `run.sh` script while you are in your working folder to perform your Simulator test.
 
-In the following sections, we provide an example test and its output along with the required file (`simulator.properties` and `test.properties`) edits.
+In the following sections, we provide an example test and its output along with the required edits to the files `simulator.properties` and `test.properties`.
 
 ### An Example Simulator Test
 
-The following example test performs `put` and `get` operations on a Hazelcast Map and verifies the key-value ownership, and also prints the size of the map.
+The following example code performs `put` and `get` operations on a Hazelcast Map and verifies the key-value ownership, and it also prints the size of the map.
 
 ```
 import com.hazelcast.core.HazelcastInstance;
@@ -132,7 +132,7 @@ CLOUD_IDENTITY=~/ec2.identity
 CLOUD_CREDENTIAL=~/ec2.credential
 ```
 
-Create two text files in your home directory. The file `ec2.identity` should contain your access key and the file 
+Create two text files in your home folder. The file `ec2.identity` should contain your access key and the file 
 `ec2.credential` should contain your secret key. 
 
 ***NOTE:*** *For a full description of the file `simulator.properties`, please see the [Simulator.Properties File Description section](#simulator-properties-file-description).*
@@ -166,14 +166,14 @@ This is useful if you want to run multiple tests sequentially, or tests in paral
 
 ### Running the Test
 
-When you are in your working directory, execute the following command to start the test.
+When you are in your working folder, execute the following command to start the test.
 
 
 ```
 ./run.sh
 ```
 
-The script `run.sh` is for your convenience which gathers all commands used to perform a test in one script. The following is the content of this example `run.sh` script.
+The script `run.sh` is for your convenience. It gathers all the commands used to perform a test into one script. The following is the content of this example `run.sh` script.
 
 ```
 #!/bin/bash
@@ -200,7 +200,7 @@ This script performs the following.
  * Upload your JARs, run the test using a 2 node test cluster and 2 client machines (the clients generate the load).
  
  
-This test runs for 2 minutes. After it is completed, the artifacts (log files) are downloaded in the `workers` directory. Then, it terminates the 4 instances. If you do not want to start/terminate the instances for every run, just comment out the line `provisioner --terminate` in the script `run.sh`. This prevents the machines from being terminated. Please see the [Provisioner section](#provisioner) for more information.
+This test runs for 2 minutes. After it is completed, the artifacts (log files) are downloaded into the `workers` folder. Then, it terminates the 4 instances. If you do not want to start/terminate the instances for every run, just comment out the line `provisioner --terminate` in the script `run.sh`. This prevents the machines from being terminated. Please see the [Provisioner section](#provisioner) for more information.
 
 <br></br>
 ***RELATED INFORMATION***
@@ -378,23 +378,23 @@ mvn archetype:generate  \
     -DartifactId=yourproject
 ```
 
-This will create fully working Simulator project including the test having `yourgroupid`. 
+This will create a fully working Simulator project, including the test having `yourgroupid`. 
 
-1. After this project is generated, go to the created directory and run the following command.
+1. After this project is generated, go to the created folder and run the following command.
 
    ```
 mvn clean install
    ```
 
-2. Then, go to your working directory.
+2. Then, go to your working folder.
  
    ```
-cd <working directory>
+cd <working folder>
    ```
  
 3. Edit the `simulator.properties` file as explained in the [Editing the Simulator.Properties File section](#editing-the-simulator-properties-file). 
 
-4. Run the test from your working directory using the following command.
+4. Run the test from your working folder using the following command.
 
    ```
 ./run.sh
