@@ -115,7 +115,9 @@ public class MapConfig {
 
     private WanReplicationRef wanReplicationRef;
 
-    private List<EntryListenerConfig> listenerConfigs;
+    private List<EntryListenerConfig> entryListenerConfigs;
+
+    private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
 
     private List<MapIndexConfig> mapIndexConfigs;
 
@@ -150,7 +152,9 @@ public class MapConfig {
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
-        this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.entryListenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.partitionLostListenerConfigs =
+                new ArrayList<MapPartitionLostListenerConfig>(config.getPartitionLostListenerConfigs());
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
@@ -477,16 +481,35 @@ public class MapConfig {
     }
 
     public List<EntryListenerConfig> getEntryListenerConfigs() {
-        if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<EntryListenerConfig>();
+        if (entryListenerConfigs == null) {
+            entryListenerConfigs = new ArrayList<EntryListenerConfig>();
         }
-        return listenerConfigs;
+        return entryListenerConfigs;
     }
 
     public MapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
-        this.listenerConfigs = listenerConfigs;
+        this.entryListenerConfigs = listenerConfigs;
         return this;
     }
+
+    public MapConfig addMapPartitionLostListenerConfig(MapPartitionLostListenerConfig listenerConfig) {
+        getPartitionLostListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
+    public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        if (partitionLostListenerConfigs == null) {
+            partitionLostListenerConfigs = new ArrayList<MapPartitionLostListenerConfig>();
+        }
+
+        return partitionLostListenerConfigs;
+    }
+
+    public MapConfig setPartitionLostListenerConfigs(List<MapPartitionLostListenerConfig> listenerConfigs) {
+        this.partitionLostListenerConfigs = listenerConfigs;
+        return this;
+    }
+
 
     public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
         getMapIndexConfigs().add(mapIndexConfig);
@@ -626,7 +649,7 @@ public class MapConfig {
         sb.append(", mapStoreConfig=").append(mapStoreConfig);
         sb.append(", mergePolicyConfig='").append(mergePolicy).append('\'');
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
-        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
         sb.append('}');
         return sb.toString();

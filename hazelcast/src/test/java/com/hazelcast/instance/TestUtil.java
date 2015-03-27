@@ -22,12 +22,12 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import org.junit.Ignore;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public final class TestUtil {
@@ -67,6 +67,17 @@ public final class TestUtil {
     }
 
     public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
+        for (HazelcastInstance instance : instances) {
+            final PartitionService ps = instance.getPartitionService();
+            for (Partition partition : ps.getPartitions()) {
+                while (partition.getOwner() == null) {
+                    Thread.sleep(10);
+                }
+            }
+        }
+    }
+
+    public static void warmUpPartitions(Collection<HazelcastInstance> instances) throws InterruptedException {
         for (HazelcastInstance instance : instances) {
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {

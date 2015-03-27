@@ -84,6 +84,16 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     }
 
     @Override
+    public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
+        return partitionService.addPartitionLostListener(partitionLostListener);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String registrationId) {
+        return partitionService.removePartitionLostListener(registrationId);
+    }
+
+    @Override
     public boolean isClusterSafe() {
         final Node node = getNode();
         final Collection<MemberImpl> memberList = node.clusterService.getMemberList();

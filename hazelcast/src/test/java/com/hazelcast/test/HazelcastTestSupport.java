@@ -277,6 +277,14 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void warmUpPartitions(Collection<HazelcastInstance> instances) {
+        try {
+            TestUtil.warmUpPartitions(instances);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Gets a partition id owned by this particular member.
      */

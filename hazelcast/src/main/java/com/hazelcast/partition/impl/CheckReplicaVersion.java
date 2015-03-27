@@ -65,9 +65,9 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
     private void logBackupVersionMismatch(long currentVersion) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Partition: " + getPartitionId() + ", Replica: " + getReplicaIndex()
+            logger.finest("partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
                     + " version is not matching to version of the owner! "
-                    + " Expected: " + version + ", Actual: " + currentVersion);
+                    + " expected-version=" + version + ", current-version=" + currentVersion);
         }
     }
 
@@ -114,12 +114,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("CheckReplicaVersion");
-        sb.append("{partition=").append(getPartitionId());
-        sb.append(", replica=").append(getReplicaIndex());
-        sb.append(", version=").append(version);
-        sb.append('}');
-        return sb.toString();
+        return getClass().getName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", version="
+                + version + '}';
     }
 }

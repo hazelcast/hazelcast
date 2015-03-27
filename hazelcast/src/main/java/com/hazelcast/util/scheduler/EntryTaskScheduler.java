@@ -39,6 +39,8 @@ public interface EntryTaskScheduler<K, V> {
 
     ScheduledEntry<K, V> cancel(K key);
 
+    int cancelIfExists(K key, V value);
+
     ScheduledEntry<K, V> get(K key);
 
     Set<K> flush(Set<K> keys);

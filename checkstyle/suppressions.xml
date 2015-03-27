@@ -109,6 +109,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.config.MapConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.CacheSimpleConfig"/>
     <suppress checks="ExecutableStatementCount" files="com.hazelcast.config.CacheConfig"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.config.MapConfig"/>
     <!---->
     <suppress checks="MethodCount" files="com.hazelcast.config.SerializationConfig"/>
     <suppress checks="MethodCount" files="com.hazelcast.config.XmlConfigBuilder"/>

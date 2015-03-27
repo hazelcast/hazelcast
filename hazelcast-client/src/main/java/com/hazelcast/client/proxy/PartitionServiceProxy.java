@@ -20,6 +20,7 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.core.PartitionService;
 
 import java.util.LinkedHashSet;
@@ -68,6 +69,16 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public boolean removeMigrationListener(String registrationId) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String registrationId) {
         throw new UnsupportedOperationException();
     }
 

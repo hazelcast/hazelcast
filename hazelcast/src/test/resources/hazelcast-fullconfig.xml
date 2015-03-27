@@ -284,6 +284,10 @@
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
 
+        <partition-lost-listeners>
+            <partition-lost-listener>com.hazelcast.examples.MapPartitionLostListener</partition-lost-listener>
+        </partition-lost-listeners>
+
     </map>
 
     <multimap name="default">
@@ -356,6 +360,7 @@
         <listener>com.hazelcast.examples.MembershipListener</listener>
         <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
+        <listener>com.hazelcast.examples.PartitionLostListener</listener>
     </listeners>
 
     <serialization>

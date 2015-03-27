@@ -169,15 +169,7 @@ public class MigrationInfo implements DataSerializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MigrationInfo");
-        sb.append("{ partitionId=").append(partitionId);
-        sb.append(", source=").append(source);
-        sb.append(", destination=").append(destination);
-        sb.append(", master=").append(master);
-        sb.append(", valid=").append(valid);
-        sb.append(", processing=").append(processing.get());
-        sb.append('}');
-        return sb.toString();
+        return getClass().getName() + "{partitionId=" + partitionId + ", source=" + source + ", destination=" + destination
+                + ", master=" + master + ", valid=" + valid + ", processing=" + processing.get() + '}';
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.client.MapAddEntryListenerSqlRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
 import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapAddPartitionLostListenerRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
@@ -50,6 +51,7 @@ import com.hazelcast.map.impl.client.MapQueryRequest;
 import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapRemoveIfSameRequest;
 import com.hazelcast.map.impl.client.MapRemoveInterceptorRequest;
+import com.hazelcast.map.impl.client.MapRemovePartitionLostListenerRequest;
 import com.hazelcast.map.impl.client.MapRemoveRequest;
 import com.hazelcast.map.impl.client.MapReplaceIfSameRequest;
 import com.hazelcast.map.impl.client.MapReplaceRequest;
@@ -121,6 +123,8 @@ public class MapPortableHook implements PortableHook {
     public static final int LOAD_ALL_KEYS = 48;
     public static final int IS_EMPTY = 49;
     public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
+    public static final int ADD_MAP_PARTITION_LOST_LISTENER = 51;
+    public static final int REMOVE_MAP_PARTITION_LOST_LISTENER = 52;
 
     public int getFactoryId() {
         return F_ID;
@@ -129,7 +133,7 @@ public class MapPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable>[] constructors
-                    = new ConstructorFunction[ADD_NEAR_CACHE_ENTRY_LISTENER + 1];
+                    = new ConstructorFunction[REMOVE_MAP_PARTITION_LOST_LISTENER + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -404,6 +408,18 @@ public class MapPortableHook implements PortableHook {
                 constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapAddNearCacheEntryListenerRequest();
+                    }
+                };
+
+                constructors[ADD_MAP_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddPartitionLostListenerRequest();
+                    }
+                };
+
+                constructors[REMOVE_MAP_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapRemovePartitionLostListenerRequest();
                     }
                 };
             }

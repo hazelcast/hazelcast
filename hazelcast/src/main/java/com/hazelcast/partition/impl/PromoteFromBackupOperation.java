@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.AbstractOperation;
@@ -87,17 +88,22 @@ final class PromoteFromBackupOperation extends AbstractOperation
         String log = null;
 
         if (loggable) {
-            log = "Setting missing replica versions for partition: " + getPartitionId()
-                    + " Changed from " + Arrays.toString(versions);
+            log = "Setting missing replica versions for partitionId=" + getPartitionId() + " overwriting-replicaIndex="
+                    + (ix + 1) + " Changed from replicaVersions=" + Arrays.toString(versions);
         }
 
         // set all zero versions to first non-zero
         for (int i = 0; i < ix; i++) {
+            if (logger.isFinestEnabled() && versions[i] == InternalPartition.SYNC_WAITING) {
+                logger.finest("SYNC_WAITING is overwritten. partitionId=" + getPartitionId() + " replicaIndex=" + (i + 1)
+                        + " newVersion=" + version);
+            }
+
             versions[i] = version;
         }
 
         if (loggable) {
-            log += " to " + Arrays.toString(versions);
+            log += " to replicaVersions=" + Arrays.toString(versions);
             logger.finest(log);
         }
     }
@@ -143,13 +149,13 @@ final class PromoteFromBackupOperation extends AbstractOperation
 
     private void logMigrationError(Throwable e) {
         ILogger logger = getLogger();
-        logger.warning("While promoting partition " + getPartitionId(), e);
+        logger.warning("While promoting partitionId=" + getPartitionId(), e);
     }
 
     private void logPromotingPartition() {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Promoting partition " + getPartitionId());
+            logger.finest("Promoting partitionId=" + getPartitionId());
         }
     }
 

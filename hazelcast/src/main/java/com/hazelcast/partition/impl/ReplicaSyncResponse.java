@@ -85,7 +85,7 @@ public class ReplicaSyncResponse extends Operation
         if (replicaIndex == currentReplicaIndex) {
             partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
         } else {
-            partitionService.clearReplicaSync(partitionId, replicaIndex);
+            partitionService.clearReplicaSyncRequest(partitionId, replicaIndex);
             if (currentReplicaIndex < 0) {
                 partitionService.clearPartitionReplicaVersions(partitionId);
             } else if (currentReplicaIndex > 0) {
@@ -97,8 +97,8 @@ public class ReplicaSyncResponse extends Operation
     private void logNodeNotOwnsBackup(int partitionId, int replicaIndex, int currentReplicaIndex) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("This node is not backup replica of partition: " + partitionId + ", replica: " + replicaIndex
-                    + " anymore. Current replica index: " + currentReplicaIndex);
+            logger.finest("This node is not backup replica of partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+                    + " anymore. current replicaIndex=" + currentReplicaIndex);
         }
     }
 
@@ -131,7 +131,7 @@ public class ReplicaSyncResponse extends Operation
     private void logEmptyTaskList(int partitionId, int replicaIndex) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("No data available for replica sync, partition: " + partitionId + ", replica: " + replicaIndex);
+            logger.finest("No data available for replica sync, partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
         }
     }
 
@@ -147,7 +147,7 @@ public class ReplicaSyncResponse extends Operation
     private void logApplyReplicaSync(int partitionId, int replicaIndex) {
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
+            logger.finest("Applying replica sync for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
         }
     }
 
@@ -208,13 +208,8 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ReplicaSyncResponse");
-        sb.append("{partition=").append(getPartitionId());
-        sb.append(", replica=").append(getReplicaIndex());
-        sb.append(", version=").append(Arrays.toString(replicaVersions));
-        sb.append('}');
-        return sb.toString();
+        return getClass().getName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
+                + ", replicaVersions=" + Arrays.toString(replicaVersions) + '}';
     }
 
     private static final class ErrorLoggingResponseHandler implements ResponseHandler {

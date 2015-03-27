@@ -29,6 +29,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.listener.MapListener;
+import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -536,6 +537,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException("Listener id should not be null!");
         }
         return removeEntryListenerInternal(id);
+    }
+
+    @Override
+    public String addPartitionLostListener(MapPartitionLostListener listener) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        return addPartitionLostListenerInternal(listener);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String id) {
+        if (id == null) {
+            throw new NullPointerException("Listener id should not be null!");
+        }
+        return removePartitionLostListenerInternal(id);
     }
 
     @Override

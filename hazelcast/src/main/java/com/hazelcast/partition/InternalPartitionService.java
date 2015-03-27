@@ -36,6 +36,16 @@ public interface InternalPartitionService extends CoreService {
     long REPLICA_SYNC_RETRY_DELAY = 500L;
 
     /**
+     * Static constant for dispatching and listening migration events
+     */
+    String MIGRATION_EVENT_TOPIC = ".migration";
+
+    /**
+     * Static constant for dispatching and listening internal partition lost events
+     */
+    String PARTITION_LOST_EVENT_TOPIC = ".partitionLost";
+
+    /**
      * Gets the owner of the partition if it's set.
      * Otherwise it will trigger partition assignment.
      *
@@ -123,6 +133,10 @@ public interface InternalPartitionService extends CoreService {
     String addMigrationListener(MigrationListener migrationListener);
 
     boolean removeMigrationListener(String registrationId);
+
+    String addPartitionLostListener(PartitionLostListener partitionLostListener);
+
+    boolean removePartitionLostListener(String registrationId);
 
     Member getMember(Address address);
 

@@ -54,6 +54,16 @@ public class MapConfigReadOnly extends MapConfig {
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
 
+    public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        final List<MapPartitionLostListenerConfig> listenerConfigs = super.getPartitionLostListenerConfigs();
+        final List<MapPartitionLostListenerConfig> readOnlyListenerConfigs =
+                new ArrayList<MapPartitionLostListenerConfig>(listenerConfigs.size());
+        for (MapPartitionLostListenerConfig listenerConfig : listenerConfigs) {
+            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyListenerConfigs);
+    }
+
     public List<MapIndexConfig> getMapIndexConfigs() {
         final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
         final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());

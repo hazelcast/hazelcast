@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.listener.MapListener;
+import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
@@ -897,6 +898,38 @@ public interface IMap<K, V>
      * @return true if registration is removed, false otherwise
      */
     boolean removeEntryListener(String id);
+
+
+    /**
+     * Adds a MapPartitionLostListener.
+     * <p/>
+     * The addPartitionLostListener returns a register-id. This id is needed to remove the MapPartitionLostListener using the
+     * {@link #removePartitionLostListener(String)} method.
+     * <p/>
+     * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses
+     * IMPORTANT: Listeners registered from HazelcastClient are assigned to nodes randomly. When a node to which
+     * a client-listener is registered fails, the listener is registered to another node automatically. If a listener registered
+     * from HazelcastClient is a random node and that node fails, some of the map partition lost events may be missed until
+     * the listener is assigned to another node.
+     *
+     * @param listener the added MapPartitionLostListener
+     * @return returns the registration id for the MapPartitionLostListener.
+     * @throws java.lang.NullPointerException if listener is null.
+     *
+     *
+     * @see #removePartitionLostListener(String)
+     */
+    String addPartitionLostListener(MapPartitionLostListener listener);
+
+    /**
+     * Removes the specified map partition lost listener
+     * Returns silently if there is no such listener added before.
+     *
+     * @param id id of registered listener
+     * @return true if registration is removed, false otherwise
+     */
+    boolean removePartitionLostListener(String id);
 
     /**
      * Adds a {@link MapListener} for this map. To receive an event, you should

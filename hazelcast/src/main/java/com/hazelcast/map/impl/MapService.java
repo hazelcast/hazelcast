@@ -18,11 +18,13 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
@@ -49,10 +51,14 @@ import java.util.Properties;
  * @see MapPostJoinAwareService
  * @see MapSplitBrainHandlerService
  * @see MapReplicationSupportingService
+ * @see MapStatisticsAwareService
+ * @see MapPartitionAwareService
+ * @see MapServiceContext
  */
 public class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService {
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
+        PartitionAwareService {
 
     /**
      * Service name of map service used
@@ -69,6 +75,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private SplitBrainHandlerService splitBrainHandlerService;
     private ReplicationSupportingService replicationSupportingService;
     private StatisticsAwareService statisticsAwareService;
+    private PartitionAwareService mapPartitionAwareService;
     private MapServiceContext mapServiceContext;
 
     public MapService() {
@@ -140,6 +147,11 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
+    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+        mapPartitionAwareService.onPartitionLost(partitionLostEvent);
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         return splitBrainHandlerService.prepareMergeRunnable();
     }
@@ -201,5 +213,9 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     void setStatisticsAwareService(StatisticsAwareService statisticsAwareService) {
         this.statisticsAwareService = statisticsAwareService;
+    }
+
+    public void setMapPartitionAwareService(PartitionAwareService mapPartitionAwareService) {
+        this.mapPartitionAwareService = mapPartitionAwareService;
     }
 }

@@ -921,6 +921,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapIndexesHandle(n, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
                 mapEntryListenerHandle(n, mapConfig);
+            } else if ("partition-lost-listeners".equals(nodeName)) {
+                mapPartitionLostListenerHandle(n, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
@@ -1058,6 +1060,15 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
                 String listenerClass = getTextContent(listenerNode);
                 mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
+            }
+        }
+    }
+
+    private void mapPartitionLostListenerHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+            if ("partition-lost-listener".equals(cleanNodeName(listenerNode))) {
+                String listenerClass = getTextContent(listenerNode);
+                mapConfig.addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig(listenerClass));
             }
         }
     }
