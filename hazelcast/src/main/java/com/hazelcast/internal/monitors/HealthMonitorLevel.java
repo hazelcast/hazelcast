@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.internal.monitors;
 
 /**
  *  Health monitor can be configured with system properties
  *
  * "hazelcast.health.monitoring.level"
- *
  */
 public enum HealthMonitorLevel {
     /**

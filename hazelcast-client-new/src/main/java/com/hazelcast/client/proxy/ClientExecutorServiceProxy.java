@@ -32,15 +32,13 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.executor.impl.client.IsShutdownRequest;
-import com.hazelcast.executor.impl.client.PartitionOwnerTargetCallableRequest;
-import com.hazelcast.executor.impl.client.RandomTargetCallableRequest;
+import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -393,9 +391,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionOwnerTargetCallableRequest request
-                = new PartitionOwnerTargetCallableRequest(name, uuid, task, partitionId);
-        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
+        final PartitionTargetCallableRequest request
+                = new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
 
@@ -404,9 +402,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionOwnerTargetCallableRequest request
-                = new PartitionOwnerTargetCallableRequest(name, uuid, task, partitionId);
-        final ICompletableFuture<T> f = invokeFuture(request, partitionId);
+        final PartitionTargetCallableRequest request
+                = new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         f.andThen(callback);
     }
 
@@ -414,29 +412,23 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         checkNotNull(task, "task should not be null");
 
         final String uuid = getUUID();
-        final ConstructorFunction<Object, Address> targetCreator = newTargetCreator();
-        final RandomTargetCallableRequest request = new RandomTargetCallableRequest(name, uuid, task, targetCreator);
-        final ICompletableFuture<T> f = invokeFuture(request);
-        return checkSync(f, uuid, request.getTarget(), -1, preventSync, defaultValue);
-    }
+        int partitionId = randomPartitionId();
 
-    private ConstructorFunction<Object, Address> newTargetCreator() {
-        return new ConstructorFunction<Object, Address>() {
-            @Override
-            public Address createNew(Object arg) {
-                final int partitionId = randomPartitionId();
-                return getPartitionOwner(partitionId);
-            }
-        };
+        final PartitionTargetCallableRequest request =
+                new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
+        return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
         final String uuid = getUUID();
-        final ConstructorFunction<Object, Address> targetCreator = newTargetCreator();
-        final RandomTargetCallableRequest request = new RandomTargetCallableRequest(name, uuid, task, targetCreator);
-        final ICompletableFuture<T> f = invokeFuture(request);
+        int partitionId = randomPartitionId();
+        final PartitionTargetCallableRequest request =
+                new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+
+        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         f.andThen(callback);
     }
 
@@ -446,7 +438,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final SpecificTargetCallableRequest request = new SpecificTargetCallableRequest(name, uuid, task, address);
-        ICompletableFuture<T> f = invokeFuture(request);
+        ICompletableFuture<T> f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, -1, preventSync, defaultValue);
     }
 
@@ -454,9 +446,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         checkNotNull(task, "task should not be null");
 
         final SpecificTargetCallableRequest request = new SpecificTargetCallableRequest(name, null, task, address);
-        ICompletableFuture<T> f = invokeFuture(request);
+        ICompletableFuture<T> f = invokeOnTarget(request, address);
         f.andThen(callback);
     }
+
 
     @Override
     public String toString() {
@@ -564,7 +557,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> ICompletableFuture<T> invokeFuture(ClientRequest request, int partitionId) {
+    private <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
             return clientInvocation.invoke();
@@ -573,9 +566,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> ICompletableFuture<T> invokeFuture(TargetClientRequest request) {
+    private <T> ICompletableFuture<T> invokeOnTarget(TargetClientRequest request, Address target) {
         try {
-            final ClientInvocation invocation = new ClientInvocation(getClient(), request, request.getTarget());
+            final ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
             return invocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -602,11 +595,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private int randomPartitionId() {
         final ClientPartitionService partitionService = getContext().getPartitionService();
         return random.nextInt(partitionService.getPartitionCount());
-    }
-
-    private Address getPartitionOwner(int partitionId) {
-        final ClientPartitionService partitionService = getContext().getPartitionService();
-        return partitionService.getPartitionOwner(partitionId);
     }
 
 }

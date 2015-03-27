@@ -72,9 +72,9 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.HealthMonitor;
-import com.hazelcast.util.HealthMonitorLevel;
-import com.hazelcast.util.PerformanceMonitor;
+import com.hazelcast.internal.monitors.HealthMonitor;
+import com.hazelcast.internal.monitors.HealthMonitorLevel;
+import com.hazelcast.internal.monitors.PerformanceMonitor;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;

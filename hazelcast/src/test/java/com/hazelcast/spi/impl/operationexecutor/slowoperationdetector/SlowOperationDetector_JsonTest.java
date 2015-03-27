@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
@@ -41,11 +42,13 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
 
     private HazelcastInstance instance;
     private IMap<String, String> map;
+    private ILogger logger;
 
     @Before
     public void setup() {
         instance = getSingleNodeCluster(1000);
         map = getMapWithSingleElement(instance);
+        logger = instance.getLoggingService().getLogger("SlowOperationDetector_JsonTest");
     }
 
     @After
@@ -65,10 +68,11 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
         long durationNanos = TimeUnit.MILLISECONDS.toNanos(durationMs);
 
         SlowOperationLog log = new SlowOperationLog(stackTrace, operation);
-        log.getOrCreateInvocation(id, durationNanos, nowNanos, nowMillis);
+        log.totalInvocations.incrementAndGet();
+        log.getOrCreate(id, durationNanos, nowNanos, nowMillis);
 
         JsonObject json = log.createDTO().toJson();
-        System.out.println(json);
+        logger.finest(json.toString());
 
         SlowOperationDTO slowOperationDTO = new SlowOperationDTO();
         slowOperationDTO.fromJson(json);
@@ -92,7 +96,7 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
         map.executeOnEntries(new SlowEntryProcessor(2));
         waitForAllOperationsToComplete(instance);
 
-        //System.out.println(getTimedMemberState(instance).toJson());
+        logger.finest(getOperationStats(instance).toString());
 
         JsonObject firstLogJsonObject = getSlowOperationLogsJsonArray(instance).get(0).asObject();
         assertJSONContainsClassName(firstLogJsonObject, "SlowEntryProcessor");
@@ -108,7 +112,7 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
         map.executeOnEntries(new SlowEntryProcessor(4));
         waitForAllOperationsToComplete(instance);
 
-        //System.out.println(getTimedMemberState(instance).toJson());
+        logger.finest(getOperationStats(instance).toString());
 
         JsonArray slowOperationLogsJsonArray = getSlowOperationLogsJsonArray(instance);
         JsonObject firstLogJsonObject = slowOperationLogsJsonArray.get(0).asObject();

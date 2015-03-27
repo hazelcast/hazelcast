@@ -4,7 +4,7 @@
 
 Hazelcast JCache provides two different ways of cache configuration:
 
-- programmatically: the typical Hazelcast way, using the Config API seen above),
+- programmatically: the typical Hazelcast way, using the Config API seen above,
 - and declaratively: using `hazelcast.xml` or `hazelcast-client.xml`.
 
 #### JCache Declarative Configuration

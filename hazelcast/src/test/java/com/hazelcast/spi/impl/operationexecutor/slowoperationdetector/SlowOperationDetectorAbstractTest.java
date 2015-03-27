@@ -27,7 +27,6 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -94,6 +93,9 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void shutdownOperationService(HazelcastInstance instance) {
+        if (instance == null) {
+            return;
+        }
         OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
         operationService.shutdown();
     }
@@ -123,13 +125,9 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         return getOperationStats(instance).get("slowOperations").asArray();
     }
 
-    private static JsonObject getOperationStats(HazelcastInstance instance) {
-        return getTimedMemberState(instance).getMemberState().getOperationStats().toJson();
-    }
-
-    static TimedMemberState getTimedMemberState(HazelcastInstance instance) {
+    static JsonObject getOperationStats(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
-        return timedMemberStateFactory.createTimedMemberState();
+        return timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats().toJson();
     }
 
     static void assertNumberOfSlowOperationLogs(Collection<SlowOperationLog> logs, int expected) {
@@ -137,7 +135,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void assertTotalInvocations(SlowOperationLog log, int totalInvocations) {
-        assertEqualsStringFormat("Expected %d total invocations, but was %d", totalInvocations, log.totalInvocations);
+        assertEqualsStringFormat("Expected %d total invocations, but was %d", totalInvocations, log.totalInvocations.get());
     }
 
     static void assertEntryProcessorOperation(SlowOperationLog log) {
@@ -176,7 +174,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void assertInvocationDurationBetween(SlowOperationLog.Invocation invocation, int min, int max) {
-        Integer duration = invocation.createDTO().durationMs;
+        Integer duration = invocation.createDTO(0).durationMs;
 
         assertTrue(format("Duration of invocation should be >= %d, but was %d", min, duration), duration >= min);
         assertTrue(format("Duration of invocation should be <= %d, but was %d", max, duration), duration <= max);

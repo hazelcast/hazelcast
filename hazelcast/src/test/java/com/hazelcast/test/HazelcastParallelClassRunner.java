@@ -25,24 +25,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
-    private static final int MAX_THREADS;
+    private static final int MAX_THREADS = !TestEnvironment.isMockNetwork() ? 1
+                : Math.max(Runtime.getRuntime().availableProcessors(), 8);
 
-    static {
-        int cores = Runtime.getRuntime().availableProcessors();
-        if (!TestEnvironment.isMockNetwork()) {
-            MAX_THREADS = 1;
-        } else if (cores < 8) {
-            MAX_THREADS = 8;
-        } else {
-            MAX_THREADS = cores;
-        }
-    }
-
-    private final AtomicInteger numThreads;
+    private final AtomicInteger numThreads = new AtomicInteger(0);
 
     public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
-        numThreads = new AtomicInteger(0);
     }
 
     @Override
@@ -51,9 +40,8 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
-                System.err.println("Interrupted: " + method.getName());
-                e.printStackTrace();
-                return; // The user may have interrupted us; this won't happen normally
+                Thread.currentThread().interrupt();
+                return;
             }
         }
         numThreads.incrementAndGet();

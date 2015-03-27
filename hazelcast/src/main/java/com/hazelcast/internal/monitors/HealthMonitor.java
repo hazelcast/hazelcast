@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.internal.monitors;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;

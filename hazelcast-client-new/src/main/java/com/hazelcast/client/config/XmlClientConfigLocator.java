@@ -12,7 +12,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 /**
- * A support class for the {@link com.hazelcast.client.config.XmlClientConfigBuilder} to locate the client
+ * A support class for the {@link XmlClientConfigBuilder} to locate the client
  * xml configuration.
  */
 public class XmlClientConfigLocator {
