@@ -4,15 +4,13 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.client.RemoveAllListeners;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.cluster.client.ClientPingRequest;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -70,11 +68,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     @Override
-    public <T> ICompletableFuture<T> invokeOnTarget(ClientRequest request, Address target) throws Exception {
-        return new ClientInvocation(client, request, target).invoke();
-    }
-
-    @Override
     public boolean isRedoOperation() {
         return client.getClientConfig().getNetworkConfig().isRedoOperation();
     }
@@ -84,27 +77,30 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
         registerInvocation(invocation);
-        invocation.setSendConnection(connection);
+
         final SerializationService ss = client.getSerializationService();
-        final Data data = ss.toData(invocation.getRequest());
+        final Data data = ss.toData(invocation.getClientMessage());
         Packet packet = new Packet(data, invocation.getPartitionId());
-        if (!isAllowedToSendRequest(connection, invocation.getRequest()) || !connection.write(packet)) {
-            final int callId = invocation.getRequest().getCallId();
+        if (!isAllowedToSendRequest(connection, invocation.getClientMessage()) || !connection.write(packet)) {
+            final int callId = invocation.getClientMessage().correlationId();
             deRegisterCallId(callId);
             deRegisterEventHandler(callId);
             throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
         }
+        invocation.setSendConnection(connection);
     }
 
-    private boolean isAllowedToSendRequest(ClientConnection connection, ClientRequest request) {
+    private boolean isAllowedToSendRequest(ClientConnection connection, ClientMessage clientMessage) {
         if (!connection.isHeartBeating()) {
-            if (request instanceof ClientPingRequest || request instanceof RemoveAllListeners) {
-                //ping request and removeAllListeners should be send even though heart is not beating
-                return true;
-            }
+//            TODO will be changed by a utility method to verify request is of a type,
+//            TODO currently there is no way to verify
+//            if (clientMessage instanceof ClientPingRequest || clientMessage instanceof RemoveAllListeners) {
+//                //ping request and removeAllListeners should be send even though heart is not beating
+//                return true;
+//            }
 
             if (logger.isFinestEnabled()) {
-                logger.warning("Connection is not heart-beating, won't write request -> " + request);
+                logger.warning("Connection is not heart-beating, won't write client message -> " + clientMessage);
             }
             return false;
         }
@@ -112,11 +108,11 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
-        final int callId = newCallId();
-        clientInvocation.getRequest().setCallId(callId);
-        callIdMap.put(callId, clientInvocation);
+        final int correlationId = newCorrelationId();
+        clientInvocation.getClientMessage().correlationId(correlationId);
+        callIdMap.put(correlationId, clientInvocation);
         if (clientInvocation.getHandler() != null) {
-            eventHandlerMap.put(callId, clientInvocation);
+            eventHandlerMap.put(correlationId, clientInvocation);
         }
     }
 
@@ -336,7 +332,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     }
 
-    private int newCallId() {
+    private int newCorrelationId() {
         return callIdIncrementer.incrementAndGet();
     }
 

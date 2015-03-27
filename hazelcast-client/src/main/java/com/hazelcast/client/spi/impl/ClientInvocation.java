@@ -11,7 +11,6 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.executor.impl.client.RefreshableRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -207,9 +206,6 @@ public class ClientInvocation implements Runnable {
         if (handler != null) {
             handler.beforeListenerRegister();
         }
-        if (request instanceof RefreshableRequest) {
-            ((RefreshableRequest) request).refresh();
-        }
 
         try {
             sleep();
@@ -256,5 +252,9 @@ public class ClientInvocation implements Runnable {
 
     public ClientConnection getSendConnection() {
         return sendConnection;
+    }
+
+    public boolean isInvoked() {
+        return sendConnection != null;
     }
 }

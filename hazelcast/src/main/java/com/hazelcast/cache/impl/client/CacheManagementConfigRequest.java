@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -69,8 +70,8 @@ public class CacheManagementConfigRequest
     }
 
     @Override
-    public Address getTarget() {
-        return target;
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return operationService.createInvocationBuilder(getServiceName(), op, target);
     }
 
     @Override

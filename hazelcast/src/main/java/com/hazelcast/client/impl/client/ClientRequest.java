@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -27,7 +28,8 @@ import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
 
-public abstract class ClientRequest implements SecureRequest, VersionedPortable {
+// TODO this extends ClientMessage is temporary to not break compilation during development of client protocol
+public abstract class ClientRequest extends ClientMessage implements SecureRequest, VersionedPortable {
 
     protected volatile int callId = -1;
     protected transient ClientEngineImpl clientEngine;

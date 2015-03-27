@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
@@ -42,13 +41,9 @@ public abstract class TargetClientRequest extends ClientRequest {
         builder.invoke();
     }
 
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        return operationService.createInvocationBuilder(getServiceName(), op, getTarget());
-    }
+    protected abstract InvocationBuilder getInvocationBuilder(Operation op);
 
     protected abstract Operation prepareOperation();
-
-    public abstract Address getTarget();
 
     protected Object filter(Object response) {
         return response;
