@@ -24,11 +24,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.test.HazelcastTestSupport;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
