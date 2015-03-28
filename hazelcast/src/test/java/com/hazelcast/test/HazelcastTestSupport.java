@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -26,12 +27,17 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
 import java.util.Collection;
@@ -103,6 +109,27 @@ public abstract class HazelcastTestSupport {
     public static Address getAddress(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService.getThisAddress();
+    }
+
+    public static Packet toPacket(HazelcastInstance hz, Operation operation){
+        SerializationService serializationService = getSerializationService(hz);
+        ConnectionManager connectionManager = getConnectionManager(hz);
+
+        Data data = serializationService.toData(operation);
+        Packet packet = new Packet(data, operation.getPartitionId());
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setConn(connectionManager.getConnection(getAddress(hz)));
+        return packet;
+    }
+
+    public static ConnectionManager getConnectionManager(HazelcastInstance hz){
+        Node node = getNode(hz);
+        return node.connectionManager;
+    }
+
+    public static ClusterService getClusterService(HazelcastInstance hz){
+        Node node = getNode(hz);
+        return node.clusterService;
     }
 
     public static SerializationService getSerializationService(HazelcastInstance hz) {
@@ -432,6 +459,11 @@ public abstract class HazelcastTestSupport {
 
     private static void formatClassAndValue(StringBuilder message, Object value, String valueString) {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
+    }
+
+    public static void assertInstanceOf(Class clazz, Object o){
+        Assert.assertNotNull(o);
+        assertTrue(o+" is not an instanceof "+clazz.getName(), clazz.isAssignableFrom(o.getClass()));
     }
 
     public static void assertJoinable(Thread... threads) {
