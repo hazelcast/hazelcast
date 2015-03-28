@@ -74,7 +74,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
     }
 
     @Test
-    public void test_whenGenericOperation_andCallingFromNioThread() {
+    public void test_whenGenericOperation_andCallingFromOperationHostileThread() {
         initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
@@ -86,8 +86,8 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }
@@ -162,7 +162,7 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
     }
 
     @Test
-    public void test_whenPartitionOperation_andCallingFromNioThread() {
+    public void test_whenPartitionOperation_andCallingFromOperationHostileThread() {
         initExecutor();
 
         final DummyPartitionOperation operation = new DummyPartitionOperation();
@@ -174,8 +174,8 @@ public class IsAllowedToRunInCurrentThreadTest extends AbstractClassicOperationE
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }

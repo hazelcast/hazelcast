@@ -22,7 +22,7 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.NIOThread;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
@@ -208,7 +208,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         Thread currentThread = Thread.currentThread();
 
         // IO threads are not allowed to run any operation
-        if (currentThread instanceof NIOThread) {
+        if (currentThread instanceof OperationHostileThread) {
             return false;
         }
 
@@ -244,7 +244,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         Thread currentThread = Thread.currentThread();
 
         // IO threads are not allowed to run any operation
-        if (currentThread instanceof NIOThread) {
+        if (currentThread instanceof OperationHostileThread) {
             return false;
         }
 

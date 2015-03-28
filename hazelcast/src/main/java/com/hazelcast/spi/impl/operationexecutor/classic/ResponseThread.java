@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 
@@ -20,8 +21,11 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMem
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive currently.
+ *
+ * This class needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
+ * is not going to schedule any operations on this task due to retry.
  */
-public final class ResponseThread extends Thread {
+public final class ResponseThread extends Thread implements OperationHostileThread {
 
     final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
     // field is only written by the response-thread itself, but can be read by other threads.

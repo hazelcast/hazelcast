@@ -72,7 +72,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
     }
 
     @Test
-    public void test_whenGenericOperation_andCallingFromNioThread() {
+    public void test_whenGenericOperation_andCallingFromOperationHostileThread() {
         initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
@@ -84,14 +84,14 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }
 
     @Test
-    public void test_whenGenericOperation_andCallingFromNioThread_andAsync() {
+    public void test_whenGenericOperation_andCallingFromOperationHostileThread_andAsync() {
         initExecutor();
 
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
@@ -103,8 +103,8 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread hostileThread = new DummyOperationHostileThread(futureTask);
+        hostileThread.start();
 
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }
@@ -197,7 +197,7 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
     }
 
     @Test
-    public void test_whenPartitionOperation_andCallingFromNioThread() {
+    public void test_whenPartitionOperation_andCallingFromOperationHostileThread() {
         initExecutor();
 
         final Operation operation = new DummyOperation(1);
@@ -209,14 +209,14 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }
 
     @Test
-    public void test_whenPartitionOperation_andCallingFromNioThread_andAsync() {
+    public void test_whenPartitionOperation_andCallingFromOperationHostileThread_andAsync() {
         initExecutor();
 
         final Operation operation = new DummyOperation(1);
@@ -228,8 +228,8 @@ public class IsInvocationAllowedFromCurrentThreadTest extends AbstractClassicOpe
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.FALSE);
     }

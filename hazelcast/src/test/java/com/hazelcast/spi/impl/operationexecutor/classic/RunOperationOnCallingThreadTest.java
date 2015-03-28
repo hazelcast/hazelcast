@@ -103,8 +103,8 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicOperationExe
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.TRUE);
     }
@@ -210,8 +210,8 @@ public class RunOperationOnCallingThreadTest extends AbstractClassicOperationExe
             }
         });
 
-        DummyNioThread nioThread = new DummyNioThread(futureTask);
-        nioThread.start();
+        DummyOperationHostileThread thread = new DummyOperationHostileThread(futureTask);
+        thread.start();
 
         assertEqualsEventually(futureTask, Boolean.TRUE);
     }
