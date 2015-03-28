@@ -12,12 +12,19 @@ import java.util.concurrent.ConcurrentMap;
 
 class DummyBackupAwareOperation extends AbstractOperation implements BackupAwareOperation {
 
-    public final static ConcurrentMap<String,Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
+    public final static ConcurrentMap<String, Integer> backupCompletedMap = new ConcurrentHashMap<String, Integer>();
 
     public int syncBackupCount;
     public int asyncBackupCount;
     public boolean returnsResponse = true;
     public String backupKey;
+
+    public DummyBackupAwareOperation() {
+    }
+
+    public DummyBackupAwareOperation(int partitionId) {
+        setPartitionId(partitionId);
+    }
 
     @Override
     public boolean returnsResponse() {
@@ -48,7 +55,7 @@ class DummyBackupAwareOperation extends AbstractOperation implements BackupAware
     @Override
     public void run() throws Exception {
         System.out.println("DummyBackupAwareOperation completed");
-        if(backupKey!=null){
+        if (backupKey != null) {
             backupCompletedMap.put(backupKey, 0);
         }
     }
