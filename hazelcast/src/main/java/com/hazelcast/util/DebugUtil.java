@@ -11,10 +11,23 @@ import java.io.PrintWriter;
 /**
  * Contains some debugging functionality; useful if you are running large testsuites and can't rely on a debugger.
  */
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({ "DM_DEFAULT_ENCODING" })
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"DM_DEFAULT_ENCODING"})
 public final class DebugUtil {
 
     private DebugUtil() {
+    }
+
+    /**
+     * Prints the stacktrace of the calling thread to the System.out.
+     *
+     * @param msg debug message
+     */
+    public static void printStackTrace(String msg) {
+        try {
+            throw new Exception(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**

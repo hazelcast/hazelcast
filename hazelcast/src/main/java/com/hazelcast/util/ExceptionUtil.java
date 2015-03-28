@@ -19,10 +19,12 @@ package com.hazelcast.util;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.concurrent.ExecutionException;
 
 /**
- * @author mdogan 2/11/13
+ * Contains various exception related utility methods.
  */
 public final class ExceptionUtil {
 
@@ -31,6 +33,19 @@ public final class ExceptionUtil {
 
     //we don't want instances
     private ExceptionUtil() {
+    }
+
+    /**
+     * Converts a Throwable stacktrace to a String.
+     *
+     * @param cause the Throwable
+     * @return the String.
+     */
+    public static String toString(Throwable cause) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        cause.printStackTrace(pw);
+        return sw.toString();
     }
 
     public static RuntimeException rethrow(final Throwable t) {
@@ -123,7 +138,7 @@ public final class ExceptionUtil {
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given remoteCause itself.
      *
-     * @param remoteCause the remotely generated exception
+     * @param remoteCause         the remotely generated exception
      * @param localSideStackTrace the local stacktrace to add to the exception stacktrace
      */
     public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace) {
@@ -147,8 +162,8 @@ public final class ExceptionUtil {
      * cause, this inner cause is unwrapped and the local stacktrace and exception message are added to the
      * that instead of the given remoteCause itself.
      *
-     * @param remoteCause the remotely generated exception
-     * @param localSideStackTrace the local stacktrace to add to the exceptions stacktrace
+     * @param remoteCause           the remotely generated exception
+     * @param localSideStackTrace   the local stacktrace to add to the exceptions stacktrace
      * @param localExceptionMessage a special exception message which is added to the stacktrace
      */
     public static void fixRemoteStackTrace(Throwable remoteCause, StackTraceElement[] localSideStackTrace,
@@ -170,7 +185,6 @@ public final class ExceptionUtil {
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 2, localSideStackTrace.length - 1);
         throwable.setStackTrace(newStackTrace);
     }
-
 
 
 }
