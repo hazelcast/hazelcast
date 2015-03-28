@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.*;
@@ -105,7 +106,7 @@ public class ClientAtomicLongTest {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(1, ref.get());
@@ -126,7 +127,7 @@ public class ClientAtomicLongTest {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -157,7 +158,7 @@ public class ClientAtomicLongTest {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -187,7 +188,7 @@ public class ClientAtomicLongTest {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -213,11 +214,8 @@ public class ClientAtomicLongTest {
     private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            throw new WoohaaException();
+            throw new ExpectedRuntimeException();
         }
     }
 
-    private static class WoohaaException extends RuntimeException {
-
-    }
 }

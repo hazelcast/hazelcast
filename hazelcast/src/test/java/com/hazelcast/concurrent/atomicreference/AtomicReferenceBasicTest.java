@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.atomicreference;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -175,7 +176,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -193,7 +194,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -224,7 +225,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -255,7 +256,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -297,12 +298,8 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
     private static class FailingFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
-            throw new WoohaaException();
+            throw new ExpectedRuntimeException();
         }
-    }
-
-    private static class WoohaaException extends RuntimeException {
-
     }
 
     @Test
