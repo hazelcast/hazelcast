@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl;
+package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
@@ -40,10 +41,9 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.
  */
 public final class ReflectionHelper {
+    static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
 
     private static final int INITIAL_CAPACITY = 3;
-
-    private static final ClassLoader THIS_CL = ReflectionHelper.class.getClassLoader();
 
     private static final ConcurrentMap<Class, ConcurrentMap<String, Getter>> GETTER_CACHE
             = new ConcurrentHashMap<Class, ConcurrentMap<String, Getter>>(1000);
@@ -209,102 +209,4 @@ public final class ReflectionHelper {
         }
     }
 
-    private abstract static class Getter {
-        protected final Getter parent;
-
-        public Getter(final Getter parent) {
-            this.parent = parent;
-        }
-
-        abstract Object getValue(Object obj) throws Exception;
-
-        abstract Class getReturnType();
-
-        abstract boolean isCacheable();
-    }
-
-    private static class MethodGetter extends Getter {
-        final Method method;
-
-        MethodGetter(Getter parent, Method method) {
-            super(parent);
-            this.method = method;
-        }
-
-        Object getValue(Object obj) throws Exception {
-            Object paramObj = obj;
-            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
-            return paramObj != null ? method.invoke(paramObj) : null;
-        }
-
-        @Override
-        Class getReturnType() {
-            return this.method.getReturnType();
-        }
-
-        @Override
-        boolean isCacheable() {
-            return THIS_CL.equals(method.getDeclaringClass().getClassLoader());
-        }
-
-        @Override
-        public String toString() {
-            return "MethodGetter [parent=" + parent + ", method=" + method.getName() + "]";
-        }
-    }
-
-    private static final class FieldGetter extends Getter {
-        private final Field field;
-
-        private FieldGetter(Getter parent, Field field) {
-            super(parent);
-            this.field = field;
-        }
-
-        @Override
-        Object getValue(Object obj) throws Exception {
-            Object paramObj = obj;
-            paramObj = parent != null ? parent.getValue(paramObj) : paramObj;
-            return paramObj != null ? field.get(paramObj) : null;
-        }
-
-        @Override
-        Class getReturnType() {
-            return this.field.getType();
-        }
-
-        @Override
-        boolean isCacheable() {
-            return THIS_CL.equals(field.getDeclaringClass().getClassLoader());
-        }
-
-        @Override
-        public String toString() {
-            return "FieldGetter [parent=" + parent + ", field=" + field + "]";
-        }
-    }
-
-    private static final class ThisGetter extends Getter {
-        private final Object object;
-
-        public ThisGetter(final Getter parent, Object object) {
-            super(parent);
-            this.object = object;
-        }
-
-        @Override
-        Object getValue(Object obj) throws Exception {
-            return obj;
-        }
-
-        @Override
-        Class getReturnType() {
-            return this.object.getClass();
-        }
-
-        @Override
-        boolean isCacheable() {
-            return false;
-        }
-    }
 }

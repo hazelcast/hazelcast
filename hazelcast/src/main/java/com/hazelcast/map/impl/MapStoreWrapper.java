@@ -21,7 +21,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.query.impl.ReflectionHelper;
+import com.hazelcast.query.impl.getters.ReflectionHelper;
 
 import java.util.Collection;
 import java.util.Collections;
