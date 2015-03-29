@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.handlermigration;
 
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -146,13 +147,26 @@ public class IOBalancer {
     }
 
     private boolean shouldStart(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
-        return inSelectors.length > 1 || outSelectors.length > 1;
+        if (migrationIntervalSeconds < 0) {
+            if (log.isFinestEnabled()) {
+                log.finest("I/O Balancer is disabled as the '"
+                        + GroupProperties.PROP_PERFORMANCE_MONITORING_ENABLED + "' property is set to "
+                        + migrationIntervalSeconds + ". Set the property to a positive value to enable I/O Balancer.");
+            }
+            return false;
+        }
+        if (inSelectors.length == 1 && outSelectors.length == 1) {
+            log.finest("I/O Balancer is disabled as there is only a single a pair of I/O threads. Use the '"
+                    + GroupProperties.PROP_IO_THREAD_COUNT + "' property to increase number of I/O Threads.");
+            return false;
+        }
+        return true;
     }
 
     private void tryToMigrate(BalancerState balancerState) {
         MigratableHandler handler = strategy.findHandlerToMigrate(balancerState);
         if (handler == null) {
-            log.finest("There had been imbalance detected, but no suitable migration candidate was found.");
+            log.finest("There had been I/O imbalance detected, but no suitable migration candidate was found.");
             return;
         }
 
