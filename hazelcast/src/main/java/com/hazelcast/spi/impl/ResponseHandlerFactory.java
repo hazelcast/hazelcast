@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public final class ResponseHandlerFactory {
 
@@ -96,10 +96,12 @@ public final class ResponseHandlerFactory {
     }
 
     private static final class RemoteInvocationResponseHandler implements ResponseHandler {
+        private static final AtomicIntegerFieldUpdater<RemoteInvocationResponseHandler> SENT
+                = AtomicIntegerFieldUpdater.newUpdater(RemoteInvocationResponseHandler.class, "sent");
 
         private final NodeEngine nodeEngine;
         private final Operation operation;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
+        private volatile int sent;
 
         private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation operation) {
             this.nodeEngine = nodeEngine;
@@ -110,7 +112,7 @@ public final class ResponseHandlerFactory {
         public void sendResponse(Object obj) {
             long callId = operation.getCallId();
             Connection conn = operation.getConnection();
-            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
+            if (!SENT.compareAndSet(this, 0, 1) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
