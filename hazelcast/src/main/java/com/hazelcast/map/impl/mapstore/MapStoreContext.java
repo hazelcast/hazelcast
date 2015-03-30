@@ -20,10 +20,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-
-import java.util.Map;
 
 /**
  * A context which provides/initializes map store specific functionality.
@@ -42,8 +39,6 @@ public interface MapStoreContext {
 
     MapStoreManager getMapStoreManager();
 
-    Map<Data, Object> getInitialKeys();
-
     MapStoreWrapper getMapStoreWrapper();
 
     boolean isWriteBehindMapStoreEnabled();
@@ -58,7 +53,10 @@ public interface MapStoreContext {
 
     MapStoreConfig getMapStoreConfig();
 
-    void waitInitialLoadFinish() throws Exception;
+    Iterable<Object> loadAllKeys();
 
-    void triggerInitialKeyLoad();
+    /**
+     * @return true if MapLoader or MapStore is defined
+     */
+    boolean isMapLoader();
 }

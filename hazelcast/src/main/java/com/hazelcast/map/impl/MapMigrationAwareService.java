@@ -47,7 +47,6 @@ class MapMigrationAwareService implements MigrationAwareService {
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
-
     }
 
     @Override
