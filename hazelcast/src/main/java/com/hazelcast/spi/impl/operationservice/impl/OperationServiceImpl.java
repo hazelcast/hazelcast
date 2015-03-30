@@ -52,6 +52,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+
 /**
  * This is the Basic InternalOperationService and depends on Java 6.
  * <p/>
@@ -243,33 +249,34 @@ public final class OperationServiceImpl implements InternalOperationService {
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(String serviceName, Operation op, int partitionId) {
-        return new PartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
-                InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
+        return new PartitionInvocation(
+                nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
+                DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+                DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
-        return new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
-                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, null, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invoke();
+        return new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
+                DEFAULT_TRY_PAUSE_MILLIS,
+                DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <E> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback) {
-        new PartitionInvocation(nodeEngine, serviceName, op, partitionId, InvocationBuilder.DEFAULT_REPLICA_INDEX,
-                InvocationBuilder.DEFAULT_TRY_COUNT, InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+        new PartitionInvocation(nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
+                DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
+                DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <E> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback) {
-        new TargetInvocation(nodeEngine, serviceName, op, target, InvocationBuilder.DEFAULT_TRY_COUNT,
-                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS,
-                InvocationBuilder.DEFAULT_CALL_TIMEOUT, callback, InvocationBuilder.DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+        new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
+                DEFAULT_TRY_PAUSE_MILLIS,
+                DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 
     // =============================== processing operation  ===============================
