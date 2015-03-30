@@ -3,9 +3,9 @@ package com.hazelcast.cluster;
 public interface ClusterClock {
 
     /**
-     * Returns the cluster-time.
-     * <p/>
-     * TODO: We need to document what cluster time really means and what is can be used for.
+     * Returns the cluster-time in ms.
+     *
+     * The cluster-time can only be used to measure elapsed time. Comparable to the {@link System#nanoTime()}
      *
      * @return the cluster-time.
      */

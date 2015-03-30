@@ -51,14 +51,36 @@ public final class OperationAccessor {
         op.setConnection(connection);
     }
 
+    /**
+     * Sets the callId.
+     *
+     * @param op the Operator to update
+     * @param callId the callId.
+     * @see Operation#setCallId(long)
+     * @see Operation#getCallId()
+     */
     public static void setCallId(Operation op, long callId) {
         op.setCallId(callId);
     }
 
+    /**
+     * Sets the invocation time.
+     *
+     * @param op the Operation to update.
+     * @param invocationTime the new invocation time.
+     * @see Operation#setInvocationTime(long)
+     */
     public static void setInvocationTime(Operation op, long invocationTime) {
         op.setInvocationTime(invocationTime);
     }
 
+    /**
+     * Sets the call timeout in ms.
+     *
+     * @param op the Operation to update.
+     * @param callTimeout the call timeout in ms.
+     * @see com.hazelcast.spi.Operation#setCallTimeout(long)
+     */
     public static void setCallTimeout(Operation op, long callTimeout) {
         op.setCallTimeout(callTimeout);
     }

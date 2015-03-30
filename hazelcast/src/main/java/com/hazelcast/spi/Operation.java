@@ -160,6 +160,14 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    /**
+     * Gets the callId of this Operation.
+     *
+     * The callId is used to associate the invocation of an Operation on a remote system, with the response from the execution
+     * of that operation.
+     *
+     * @return the callId.
+     */
     public final long getCallId() {
         return callId;
     }
@@ -239,6 +247,13 @@ public abstract class Operation implements DataSerializable {
         return responseHandler;
     }
 
+    /**
+     * Gets the time in ms this invocation started.
+     *
+     * For more information see {@link com.hazelcast.cluster.ClusterClock#getClusterTime()}.
+     *
+     * @return the time of the invocation start.
+     */
     public final long getInvocationTime() {
         return invocationTime;
     }
@@ -249,10 +264,28 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    /**
+     * Gets the call timeout in milliseconds. For example if a call should be executed within 60 seconds, otherwise it should be
+     * aborted, then the call-timeout is 60000 ms.
+     *
+     * For more information about the default value see
+     * {@link com.hazelcast.instance.GroupProperties#OPERATION_CALL_TIMEOUT_MILLIS}
+     *
+     * @return the call timeout in milliseconds.
+     * @see #setCallTimeout(long)
+     * @see com.hazelcast.spi.OperationAccessor#setCallTimeout(Operation, long)
+     */
     public final long getCallTimeout() {
         return callTimeout;
     }
 
+    /**
+     * Sets the call timeout.
+     *
+     * @param callTimeout the call timeout.
+     * @return the updated Operation.
+     * @see #getCallTimeout()
+     */
     // Accessed using OperationAccessor
     final Operation setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
