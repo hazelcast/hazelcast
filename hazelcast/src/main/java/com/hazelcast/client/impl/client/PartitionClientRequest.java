@@ -52,7 +52,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
         ClientEndpoint endpoint = getEndpoint();
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId())
                 .setReplicaIndex(getReplicaIndex())
                 .setTryCount(TRY_COUNT)
                 .setResultDeserialized(false)
