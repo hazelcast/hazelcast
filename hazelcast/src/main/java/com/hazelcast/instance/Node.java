@@ -26,11 +26,7 @@ import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.NodeMulticastListener;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -49,6 +45,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.IExternalJoiner;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -562,15 +559,16 @@ public class Node {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
-        } else if (join.getConsulConfig().isEnabled()) {
-            Class clazz;
-            try {
-                logger.info("Creating ConsulJoiner");
-                clazz = Class.forName("com.hazelcast.consul.TcpIpJoinerOverConsul");
-                Constructor constructor = clazz.getConstructor(Node.class);
-                return (Joiner) constructor.newInstance(this);                
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+        } else {
+            for(ExternalJoinConfig joinConfig : join.getExternalConfigs().values()) {
+                if (joinConfig.isEnabled()) {
+                    String tagName = joinConfig.getTagName();
+                    logger.info("Creating external Joiner:" + tagName);
+                    IExternalJoiner joiner = ExternalJoinerLoadService.getInstance().getJoiner(tagName);
+                    joiner.initialize(this, joinConfig);
+
+                    //TODO stop the loop or what??
+                }
             }
         }
 
