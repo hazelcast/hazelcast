@@ -16,9 +16,11 @@
 
 package com.hazelcast.cluster.impl.operations;
 
-import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -28,31 +30,92 @@ import java.io.IOException;
 
 public class JoinCheckOperation extends AbstractOperation implements JoinOperation {
 
-    private JoinRequest joinRequest;
-    private JoinRequest response;
+    private JoinMessage request;
+    private JoinMessage response;
+
+    private transient boolean removeCaller;
 
     public JoinCheckOperation() {
     }
 
-    public JoinCheckOperation(final JoinRequest joinRequest) {
-        this.joinRequest = joinRequest;
+    public JoinCheckOperation(JoinMessage request) {
+        this.request = request;
     }
 
     @Override
     public void run() {
-        final ClusterServiceImpl service = getService();
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final Node node = nodeEngine.getNode();
-        boolean ok = false;
-        if (joinRequest != null && node.joined() && node.isActive()) {
+        ClusterServiceImpl service = getService();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        Node node = nodeEngine.getNode();
+
+        if (!preCheck(node)) {
+            return;
+        }
+
+        if (!masterCheck(node)) {
+            return;
+        }
+
+        if (request != null) {
+            ILogger logger = getLogger();
             try {
-                ok = service.validateJoinMessage(joinRequest);
-            } catch (Exception ignored) {
+                if (service.validateJoinMessage(request)) {
+                    response = node.createSplitBrainJoinMessage();
+                }
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Returning " + response + " to " + getCallerAddress());
+                }
+            } catch (Exception e) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Could not validate split-brain join message! -> " + e.getMessage());
+                }
             }
         }
-        if (ok) {
-            response = node.createJoinRequest();
+    }
+
+    private boolean masterCheck(Node node) {
+        ILogger logger = getLogger();
+        Address caller = getCallerAddress();
+        ClusterServiceImpl service = getService();
+
+        if (node.isMaster()) {
+            if (service.getMember(caller) != null) {
+                logger.info("Removing " + caller + ", since it thinks it's already split from this cluster "
+                        + "and looking to merge.");
+                removeCaller = true;
+            }
+            return true;
+        } else {
+            // ping master to check if it's still valid
+            service.sendMasterConfirmation();
+            logger.info("Ignoring join check from " + caller
+                    + ", because this node is not master...");
+            return false;
         }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (removeCaller) {
+            ClusterServiceImpl service = getService();
+            Address caller = getCallerAddress();
+            service.removeAddress(caller);
+        }
+    }
+
+    private boolean preCheck(Node node) {
+        ILogger logger = getLogger();
+        if (!node.joined()) {
+            logger.info("Ignoring join check from " + getCallerAddress()
+                    + ", because this node is not joined to a cluster yet...");
+            return false;
+        }
+
+        if (!node.isActive()) {
+            logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not active...");
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -67,13 +130,13 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
 
     @Override
     protected void readInternal(final ObjectDataInput in) throws IOException {
-        joinRequest = new JoinRequest();
-        joinRequest.readData(in);
+        request = new JoinMessage();
+        request.readData(in);
     }
 
     @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
-        joinRequest.writeData(out);
+        request.writeData(out);
     }
 }
 

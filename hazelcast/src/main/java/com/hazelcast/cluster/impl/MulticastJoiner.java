@@ -109,17 +109,27 @@ public class MulticastJoiner extends AbstractJoiner {
             }
         };
         node.multicastService.addMulticastListener(listener);
-        node.multicastService.send(node.createJoinRequest());
+        node.multicastService.send(node.createJoinRequest(false));
         try {
             JoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
+                if (node.clusterService.getMember(joinInfo.getAddress()) != null) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Ignoring merge join response, since " + joinInfo.getAddress()
+                            + " is already a member.");
+                    }
+                    return;
+                }
+
                 if (joinInfo.getMemberCount() == 1) {
                     // if the other cluster has just single member, that may be a newly starting node
                     // instead of a split node.
                     // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest.
                     Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
                 }
-                if (shouldMerge(joinInfo)) {
+
+                JoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
+                if (shouldMerge(response)) {
                     logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
                     startClusterMerge(joinInfo.getAddress());
                 }
@@ -144,7 +154,7 @@ public class MulticastJoiner extends AbstractJoiner {
             if (logger.isFinestEnabled()) {
                 logger.finest("Searching for master node. Max tries: " + maxTryCount.get());
             }
-            JoinRequest joinRequest = node.createJoinRequest();
+            JoinRequest joinRequest = node.createJoinRequest(false);
             while (node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
                 joinRequest.setTryCount(currentTryCount.get());
                 node.multicastService.send(joinRequest);

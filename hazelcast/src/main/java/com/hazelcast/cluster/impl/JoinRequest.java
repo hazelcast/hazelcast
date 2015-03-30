@@ -36,10 +36,9 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes) {
-        super(packetVersion, buildNumber, address, uuid, config, memberCount);
+                       Credentials credentials, Map<String, Object> attributes) {
+        super(packetVersion, buildNumber, address, uuid, config);
         this.credentials = credentials;
-        this.tryCount = tryCount;
         this.attributes = attributes;
     }
 
@@ -97,7 +96,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         sb.append(", address=").append(address);
         sb.append(", uuid='").append(uuid).append('\'');
         sb.append(", credentials=").append(credentials);
-        sb.append(", memberCount=").append(memberCount);
+        sb.append(", memberCount=").append(getMemberCount());
         sb.append(", tryCount=").append(tryCount);
         sb.append('}');
         return sb.toString();

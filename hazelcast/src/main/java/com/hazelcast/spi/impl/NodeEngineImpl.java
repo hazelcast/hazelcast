@@ -202,10 +202,6 @@ public class NodeEngineImpl implements NodeEngine {
         if (connection == null || !connection.isAlive()) {
             return false;
         }
-        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
-        }
         return connection.write(packet);
     }
 

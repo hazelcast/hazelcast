@@ -16,9 +16,9 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.operations.MemberAttributeChangedOperation;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -54,9 +53,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     private Address address;
     private String uuid;
     private volatile HazelcastInstanceImpl instance;
-    private volatile long lastRead;
-    private volatile long lastWrite;
-    private volatile long lastPing;
     private volatile ILogger logger;
 
     public MemberImpl() {
@@ -74,7 +70,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
                       Map<String, Object> attributes) {
         this.localMember = localMember;
         this.address = address;
-        this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
         this.instance = instance;
         if (attributes != null) {
@@ -85,7 +80,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     public MemberImpl(MemberImpl member) {
         this.localMember = member.localMember;
         this.address = member.address;
-        this.lastRead = member.lastRead;
         this.uuid = member.uuid;
         this.attributes.putAll(member.attributes);
     }
@@ -138,34 +132,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     @Override
     public boolean localMember() {
         return localMember;
-    }
-
-    public void didWrite() {
-        lastWrite = Clock.currentTimeMillis();
-    }
-
-    public void didRead() {
-        lastRead = Clock.currentTimeMillis();
-    }
-
-    public void didPing() {
-        lastPing = Clock.currentTimeMillis();
-    }
-
-    public long getLastPing() {
-        return lastPing;
-    }
-
-    public long getLastRead() {
-        return lastRead;
-    }
-
-    public long getLastWrite() {
-        return lastWrite;
-    }
-
-    void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     @Override
@@ -273,7 +239,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     @Override
     public void removeAttribute(String key) {
-        isLocalMamber();
+        isLocalMember();
         isNotNull(key, "key");
 
         Object value = attributes.remove(key);
@@ -287,7 +253,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    private void isLocalMamber() {
+    private void isLocalMember() {
         if (!localMember) {
             throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         }
@@ -298,7 +264,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     private void setAttribute(String key, Object value) {
-        isLocalMamber();
+        isLocalMember();
         isNotNull(key, "key");
         isNotNull(value, "value");
 
@@ -372,6 +338,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         sb.append("]");
         sb.append(":");
         sb.append(address.getPort());
+        sb.append(" - ").append(uuid);
         if (localMember) {
             sb.append(" this");
         }

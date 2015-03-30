@@ -43,7 +43,7 @@ public interface ConnectionManager {
 
     void start();
 
-    void restart();
+    void stop();
 
     void addConnectionListener(ConnectionListener connectionListener);
 

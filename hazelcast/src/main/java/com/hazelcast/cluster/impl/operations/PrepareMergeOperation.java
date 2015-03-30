@@ -45,7 +45,7 @@ public class PrepareMergeOperation extends AbstractClusterOperation {
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         boolean local = caller == null;
         if (!local && !caller.equals(masterAddress)) {
-            logger.warning("Prepare-merge instruction sent from non-master endpoint: " + caller);
+            logger.warning("Ignoring prepare-merge instruction sent from non-master endpoint: " + caller);
             return;
         }
         logger.warning("Preparing to merge... Waiting for merge instruction...");

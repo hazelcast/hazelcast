@@ -82,7 +82,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTcpIp__ClusterMerge() throws Exception {
+    public void testTcpIp_ClusterMerge() throws Exception {
         testClusterMerge(false);
     }
 
@@ -461,7 +461,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config.getGroupConfig().setName(groupName);
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-
+        config.setProperty(GroupProperties.PROP_MAX_NO_HEARTBEAT_SECONDS, "15");
         config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
 
@@ -491,7 +491,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         hz2.getCluster().addMembershipListener(membershipAdapter);
         hz3.getCluster().addMembershipListener(membershipAdapter);
 
-        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        final CountDownLatch mergeLatch = new CountDownLatch(1);
         LifecycleListener lifecycleListener = new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -500,8 +500,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                 }
             }
         };
-        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
-        hz3.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
 
         FirewallingTcpIpConnectionManager cm1 = getConnectionManager(hz1);
         FirewallingTcpIpConnectionManager cm2 = getConnectionManager(hz2);
@@ -533,9 +532,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertEquals(3, hz2.getCluster().getMembers().size());
         assertEquals(3, hz3.getCluster().getMembers().size());
 
-        assertEquals(n1.getThisAddress(), n1.getMasterAddress());
-        assertEquals(n1.getThisAddress(), n2.getMasterAddress());
-        assertEquals(n1.getThisAddress(), n3.getMasterAddress());
+        assertEquals(n2.getThisAddress(), n1.getMasterAddress());
+        assertEquals(n2.getThisAddress(), n2.getMasterAddress());
+        assertEquals(n2.getThisAddress(), n3.getMasterAddress());
     }
 
     @Test
@@ -545,7 +544,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config.getGroupConfig().setName(groupName);
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-
+        config.setProperty(GroupProperties.PROP_MAX_NO_HEARTBEAT_SECONDS, "15");
         config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
 
@@ -575,7 +574,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         hz1.getCluster().addMembershipListener(membershipAdapter);
         hz2.getCluster().addMembershipListener(membershipAdapter);
 
-        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        final CountDownLatch mergeLatch = new CountDownLatch(1);
         LifecycleListener lifecycleListener = new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -584,8 +583,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                 }
             }
         };
-        hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
-        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz3.getLifecycleService().addLifecycleListener(lifecycleListener);
 
         FirewallingTcpIpConnectionManager cm1 = getConnectionManager(hz1);
         FirewallingTcpIpConnectionManager cm2 = getConnectionManager(hz2);
@@ -599,7 +597,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm1.block(n3.address);
         cm2.block(n3.address);
 
-        assertTrue(splitLatch.await(20, TimeUnit.SECONDS));
+        assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
         assertEquals(2, hz1.getCluster().getMembers().size());
         assertEquals(2, hz2.getCluster().getMembers().size());
         assertEquals(3, hz3.getCluster().getMembers().size());
@@ -608,14 +606,14 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         cm1.unblock(n3.address);
         cm2.unblock(n3.address);
 
-        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+        assertTrue(mergeLatch.await(120, TimeUnit.SECONDS));
         assertEquals(3, hz1.getCluster().getMembers().size());
         assertEquals(3, hz2.getCluster().getMembers().size());
         assertEquals(3, hz3.getCluster().getMembers().size());
 
-        assertEquals(n3.getThisAddress(), n1.getMasterAddress());
-        assertEquals(n3.getThisAddress(), n2.getMasterAddress());
-        assertEquals(n3.getThisAddress(), n3.getMasterAddress());
+        assertEquals(n1.getThisAddress(), n1.getMasterAddress());
+        assertEquals(n1.getThisAddress(), n2.getMasterAddress());
+        assertEquals(n1.getThisAddress(), n3.getMasterAddress());
     }
 
 
@@ -626,7 +624,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         config.getGroupConfig().setName(groupName);
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "10");
-
+        config.setProperty(GroupProperties.PROP_MAX_NO_HEARTBEAT_SECONDS, "15");
         config.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "40");
         config.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
 
@@ -660,7 +658,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         hz3.getCluster().addMembershipListener(membershipAdapter);
 
         final CountDownLatch mergingLatch = new CountDownLatch(1);
-        final CountDownLatch mergeLatch = new CountDownLatch(2);
+        final CountDownLatch mergeLatch = new CountDownLatch(1);
         LifecycleListener lifecycleListener = new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
@@ -672,8 +670,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                 }
             }
         };
-        hz2.getLifecycleService().addLifecycleListener(lifecycleListener);
-        hz3.getLifecycleService().addLifecycleListener(lifecycleListener);
+        hz1.getLifecycleService().addLifecycleListener(lifecycleListener);
 
         FirewallingTcpIpConnectionManager cm1 = getConnectionManager(hz1);
         FirewallingTcpIpConnectionManager cm2 = getConnectionManager(hz2);
@@ -693,21 +690,21 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertEquals(3, hz1.getCluster().getMembers().size());
 
         cm1.unblock(n2.address);
+        cm1.unblock(n3.address);
         cm2.unblock(n1.address);
         cm3.unblock(n1.address);
 
         assertTrue(mergingLatch.await(60, TimeUnit.SECONDS));
-        Thread.sleep(2700);
-        hz1.getLifecycleService().terminate();
-        hz1 = newHazelcastInstance(config, "test-node1", new FirewallingNodeContext());
-        Node node1 = TestUtil.getNode(hz1);
+        hz2.getLifecycleService().terminate();
+        hz2 = newHazelcastInstance(config, "test-node2", new FirewallingNodeContext());
+        n2 = TestUtil.getNode(hz2);
 
-        assertTrue(mergeLatch.await(60, TimeUnit.SECONDS));
+        assertTrue(mergeLatch.await(120, TimeUnit.SECONDS));
         assertEquals(3, hz1.getCluster().getMembers().size());
         assertEquals(3, hz2.getCluster().getMembers().size());
         assertEquals(3, hz3.getCluster().getMembers().size());
 
-        assertEquals(n3.getThisAddress(), node1.getMasterAddress());
+        assertEquals(n3.getThisAddress(), n1.getMasterAddress());
         assertEquals(n3.getThisAddress(), n2.getMasterAddress());
         assertEquals(n3.getThisAddress(), n3.getMasterAddress());
     }
