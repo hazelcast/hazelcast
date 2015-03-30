@@ -44,11 +44,14 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
+        boolean unlocked;
         if (force) {
-            response = lockStore.forceUnlock(key);
+            unlocked = lockStore.forceUnlock(key);
         } else {
-            response = lockStore.unlock(key, originalCallerUuid, threadId);
+            unlocked = lockStore.unlock(key, originalCallerUuid, threadId);
         }
+
+        response = unlocked;
         lockStore.pollExpiredAwaitOp(key);
     }
 

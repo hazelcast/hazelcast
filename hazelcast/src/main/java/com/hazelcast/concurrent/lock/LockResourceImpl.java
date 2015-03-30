@@ -73,15 +73,11 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, long threadId, long leaseTime) {
-        return lock(owner, threadId, leaseTime, false);
-    }
-
     boolean lock(String owner, long threadId, long leaseTime, boolean transactional) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
-            lockCount++;
+            lockCount = 1;
             acquireTime = Clock.currentTimeMillis();
             setExpirationTime(leaseTime);
             this.transactional = transactional;

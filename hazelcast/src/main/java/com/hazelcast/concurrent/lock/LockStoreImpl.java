@@ -60,14 +60,10 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         this.lockService = lockService;
     }
 
-    public boolean lock(Data key, String caller, long threadId) {
-        return lock(key, caller, threadId, Long.MAX_VALUE);
-    }
-
     @Override
     public boolean lock(Data key, String caller, long threadId, long leaseTime) {
         LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, leaseTime);
+        return lock.lock(caller, threadId, leaseTime, false);
     }
 
     @Override
@@ -85,7 +81,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return lock.extendLeaseTime(caller, threadId, leaseTime);
     }
 
-    private LockResourceImpl getLock(Data key) {
+    public LockResourceImpl getLock(Data key) {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
     }
 

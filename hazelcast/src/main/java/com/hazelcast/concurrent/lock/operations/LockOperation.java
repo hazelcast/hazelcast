@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockDataSerializerHook;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
@@ -57,7 +58,8 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
 
     @Override
     public final boolean shouldWait() {
-        return getWaitTimeout() != 0 && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
+        LockStoreImpl lockStore = getLockStore();
+        return getWaitTimeout() != 0 && !lockStore.canAcquireLock(key, getCallerUuid(), threadId);
     }
 
     @Override
