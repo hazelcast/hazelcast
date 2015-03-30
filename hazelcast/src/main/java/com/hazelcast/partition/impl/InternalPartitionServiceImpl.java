@@ -579,6 +579,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem to be master!"
                                 + " => Sender: " + sender + ", Master: " + master + "! "
                                 + "(Ignore if master node has changed recently.)");
+                        return;
                     }
                 }
             }
