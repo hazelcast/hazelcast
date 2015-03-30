@@ -60,15 +60,18 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
 
     protected final void unlock() {
         LockStoreImpl lockStore = getLockStore();
-        boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId);
+        boolean unlocked = lockStore.unlock(key, getCallerUuid(), threadId, getReferenceCallId());
         response = unlocked;
         ensureUnlocked(lockStore, unlocked);
     }
 
     private void ensureUnlocked(LockStoreImpl lockStore, boolean unlocked) {
         if (!unlocked) {
-            String ownerInfo = lockStore.getOwnerInfo(key);
-            throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
+            boolean isRetry = getReferenceCallId() != getCallId();
+            if (!isRetry) {
+                String ownerInfo = lockStore.getOwnerInfo(key);
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock! -> " + ownerInfo);
+            }
         }
     }
 
@@ -90,7 +93,10 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
 
     @Override
     public Operation getBackupOperation() {
-        return new UnlockBackupOperation(namespace, key, threadId, getCallerUuid(), force);
+        UnlockBackupOperation operation = new UnlockBackupOperation(namespace, key, threadId,
+                getCallerUuid(), force);
+        operation.setReferenceCallId(getReferenceCallId());
+        return operation;
     }
 
     @Override

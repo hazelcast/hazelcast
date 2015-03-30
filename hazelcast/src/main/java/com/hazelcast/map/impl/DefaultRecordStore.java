@@ -269,9 +269,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
+    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl) {
         checkIfLoaded();
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl);
     }
 
     @Override
@@ -281,9 +281,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId) {
+    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
         checkIfLoaded();
-        return lockStore != null && lockStore.unlock(key, caller, threadId);
+        return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
 
     @Override

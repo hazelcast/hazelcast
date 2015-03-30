@@ -32,10 +32,13 @@ import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -183,34 +186,47 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void releaseLocksOf(String uuid) {
-        for (LockStoreContainer container : containers) {
-            for (LockStoreImpl lockStore : container.getLockStores()) {
-                releaseLock(uuid, container, lockStore);
-            }
+    private void releaseLocksOf(final String uuid) {
+        final InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        for (final LockStoreContainer container : containers) {
+            operationService.execute(new PartitionSpecificRunnable() {
+                @Override
+                public void run() {
+                    for (LockStoreImpl lockStore : container.getLockStores()) {
+                        releaseLock(operationService, uuid, container.getPartitionId(), lockStore);
+                    }
+                }
+
+                @Override
+                public int getPartitionId() {
+                    return container.getPartitionId();
+                }
+            });
+
         }
     }
 
-    private void releaseLock(String uuid, LockStoreContainer container, LockStoreImpl lockStore) {
+    private void releaseLock(OperationService operationService, String uuid, int partitionId, LockStoreImpl lockStore) {
         Collection<LockResource> locks = lockStore.getLocks();
         for (LockResource lock : locks) {
             Data key = lock.getKey();
             if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
-                sendUnlockOperation(container, lockStore, key);
+                UnlockOperation op = createUnlockOperation(partitionId, lockStore.getNamespace(), key, uuid);
+                operationService.runOperationOnCallingThread(op);
             }
         }
     }
 
-    private void sendUnlockOperation(LockStoreContainer container, LockStoreImpl lockStore, Data key) {
-        UnlockOperation op = new LocalLockCleanupOperation(lockStore.getNamespace(), key, -1);
+    private UnlockOperation createUnlockOperation(int partitionId, ObjectNamespace namespace, Data key, String uuid) {
+        UnlockOperation op = new LocalLockCleanupOperation(namespace, key, uuid);
         op.setAsyncBackup(true);
         op.setNodeEngine(nodeEngine);
         op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
         op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-        op.setPartitionId(container.getPartitionId());
+        op.setPartitionId(partitionId);
         op.setValidateTarget(false);
-        nodeEngine.getOperationService().executeOperation(op);
+        return op;
     }
 
     @Override
@@ -305,5 +321,4 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     public void clientDisconnected(String clientUuid) {
         releaseLocksOf(clientUuid);
     }
-
 }
