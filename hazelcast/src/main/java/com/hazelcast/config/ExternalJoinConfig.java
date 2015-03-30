@@ -21,10 +21,12 @@ import org.w3c.dom.Node;
  * class to save information of the external join configuration.
  */
 public class ExternalJoinConfig {
+    private boolean enabled;
     private String tagName;
     private Node node;
 
-    public ExternalJoinConfig(String tagName, Node node) {
+    public ExternalJoinConfig(boolean enabled, String tagName, Node node) {
+        this.enabled = enabled;
         this.tagName = tagName;
         this.node = node;
     }
@@ -33,17 +35,11 @@ public class ExternalJoinConfig {
         return tagName;
     }
 
-    public void setTagName(String tagName) {
-        this.tagName = tagName;
-    }
-
     public Node getNode() {
         return node;
     }
 
-    public void setNode(Node node) {
-        this.node = node;
+    public boolean isEnabled() {
+        return enabled;
     }
-
-
 }

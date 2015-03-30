@@ -551,9 +551,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("aws".equals(name)) {
                 handleAWS(child);
             } else {
-                if(isExternalConfigEnabled(node)){
-                    config.getNetworkConfig().getJoin().addExternalConfig(new ExternalJoinConfig(name, node));
-                }
+                boolean enabled = isExternalConfigEnabled(node);
+                config.getNetworkConfig().getJoin().addExternalConfig(new ExternalJoinConfig(enabled, name, node));
             }
         }
 
