@@ -17,6 +17,7 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 
 /**
  * A RetryableHazelcastException that indicates that a request was send to a machine which isn't member
@@ -26,6 +27,11 @@ public class CallerNotMemberException extends RetryableHazelcastException {
 
     public CallerNotMemberException(Address target, int partitionId, String operationName, String serviceName) {
         super("Not Member! caller:" + target + ", partitionId: " + partitionId
+                + ", operation: " + operationName + ", service: " + serviceName);
+    }
+
+    public CallerNotMemberException(Connection conn, int partitionId, String operationName, String serviceName) {
+        super("Not Member! caller:" + conn + ", partitionId: " + partitionId
                 + ", operation: " + operationName + ", service: " + serviceName);
     }
 }

@@ -264,12 +264,11 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     private void doInvokeLocal() {
-        if (op.getCallerUuid() == null) {
-            op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        }
-
         if (op instanceof BackupAwareOperation) {
-            operationService.registerInvocation(this);
+            if (!operationService.registerInvocation(this)) {
+                logger.finest("Cannot local invoke, because registration failed: " + toString());
+                return;
+            }
         }
 
         responseReceived = Boolean.FALSE;
@@ -284,10 +283,13 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
     }
 
     private void doInvokeRemote() {
-        operationService.registerInvocation(this);
+        if (!operationService.registerInvocation(this)) {
+            logger.finest("Cannot remote invoke, because registration failed: " + toString());
+            return;
+        }
+
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
-            operationService.deregisterInvocation(this);
             notify(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
@@ -310,7 +312,6 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         Address thisAddress = nodeEngine.getThisAddress();
 
         invTarget = getTarget();
-
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
@@ -379,11 +380,11 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         return true;
     }
 
-    public boolean isCallTarget(MemberImpl leftMember) {
+    public boolean isCallTarget(MemberImpl member) {
         if (invTargetMember == null) {
-            return leftMember.getAddress().equals(invTarget);
+            return member.getAddress().equals(invTarget);
         } else {
-            return leftMember.getUuid().equals(invTargetMember.getUuid());
+            return member.getUuid().equals(invTargetMember.getUuid());
         }
     }
 
@@ -480,6 +481,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             if (localInvokeCount > LOG_MAX_INVOCATION_COUNT && localInvokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
                 logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
             }
+
             return RETRY_RESPONSE;
         }
 
@@ -622,6 +624,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
         sb.append(", op=").append(op);
         sb.append(", partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", callId=").append(op.getCallId());
         sb.append(", tryCount=").append(tryCount);
         sb.append(", tryPauseMillis=").append(tryPauseMillis);
         sb.append(", invokeCount=").append(invokeCount);

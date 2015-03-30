@@ -16,19 +16,19 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -37,20 +37,15 @@ import java.util.Arrays;
 final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Data backupOpData;
-    private Address originalCaller;
     private long[] replicaVersions;
-    private boolean sync;
 
-    private Operation backupOp;
-    private boolean valid = true;
+    private transient Operation backupOp;
 
     Backup() {
     }
 
     Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
         this.backupOpData = backupOp;
-        this.originalCaller = originalCaller;
-        this.sync = sync;
         this.replicaVersions = replicaVersions;
         if (sync && originalCaller == null) {
             throw new IllegalArgumentException("Sync backup requires original caller address, Op: " + backupOp);
@@ -59,38 +54,25 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     public void beforeRun() throws Exception {
-        NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = getPartitionId();
-        InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-        Address owner = partition.getReplicaAddress(getReplicaIndex());
-        if (!nodeEngine.getThisAddress().equals(owner)) {
-            valid = false;
-            final ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
-            }
-        }
     }
 
     @Override
     public void run() throws Exception {
-        if (!valid) {
-            return;
-        }
-
         NodeEngine nodeEngine = getNodeEngine();
         if (backupOpData != null) {
             backupOp = nodeEngine.getSerializationService().toObject(backupOpData);
             backupOp.setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
             backupOp.setNodeEngine(nodeEngine);
             backupOp.setCallerUuid(getCallerUuid());
+            OperationAccessor.setCallId(backupOp, getCallId());
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
-            backupOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+            backupOp.setResponseHandler(ResponseHandlerFactory.createErrorLoggingResponseHandler(getLogger()));
 
             backupOp.beforeRun();
             backupOp.run();
             backupOp.afterRun();
+
         }
 
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
@@ -99,33 +81,33 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     @Override
     public void afterRun() throws Exception {
-        if (valid && sync && getCallId() != 0 && originalCaller != null) {
-            NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            long callId = getCallId();
-            InternalOperationService operationService = nodeEngine.operationService;
+    }
 
-            if (!nodeEngine.getThisAddress().equals(originalCaller)) {
-                BackupResponse backupResponse = new BackupResponse(callId, backupOp.isUrgent());
-                operationService.send(backupResponse, originalCaller);
-            } else {
-                operationService.notifyBackupCall(callId);
+    @Override
+    public ExceptionAction onException(Throwable throwable) {
+        if (throwable instanceof WrongTargetException) {
+            NodeEngine nodeEngine = getNodeEngine();
+            InternalPartitionService partitionService = nodeEngine.getPartitionService();
+            if (partitionService.getMaxBackupCount() < getReplicaIndex()) {
+                return ExceptionAction.THROW_EXCEPTION;
             }
         }
+        return super.onException(throwable);
     }
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     @Override
     public Object getResponse() {
-        return null;
+        return Boolean.TRUE;
     }
 
     @Override
     public boolean validatesTarget() {
-        return false;
+        return true;
     }
 
     @Override
@@ -140,25 +122,13 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeData(backupOpData);
-        if (originalCaller != null) {
-            out.writeBoolean(true);
-            originalCaller.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
         out.writeLongArray(replicaVersions);
-        out.writeBoolean(sync);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         backupOpData = in.readData();
-        if (in.readBoolean()) {
-            originalCaller = new Address();
-            originalCaller.readData(in);
-        }
         replicaVersions = in.readLongArray();
-        sync = in.readBoolean();
     }
 
     @Override
@@ -175,10 +145,9 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Backup");
-        sb.append("{backupOpBinary=").append(backupOpData);
-        sb.append(", originalCaller=").append(originalCaller);
+        sb.append("{backupOpData=").append(backupOpData);
+        sb.append(", backupOp=").append(backupOp);
         sb.append(", version=").append(Arrays.toString(replicaVersions));
-        sb.append(", sync=").append(sync);
         sb.append('}');
         return sb.toString();
     }

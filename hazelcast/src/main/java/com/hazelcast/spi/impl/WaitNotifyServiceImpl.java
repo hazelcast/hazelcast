@@ -31,6 +31,7 @@ import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -386,6 +387,18 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 }
             } else {
                 logger.severe("Op: " + op + ", Error: " + e.getMessage(), e);
+            }
+
+            // If operation gets a WrongTargetException,
+            // that means this node is in an exceptional situation
+            // like network-partitioning and partition table changed.
+            // This operation's partition doesn't belong to this node anymore.
+            if (e instanceof WrongTargetException) {
+                try {
+                    queue.remove(this);
+                } catch (Throwable ignored) {
+                    ignore(ignored);
+                }
             }
         }
 

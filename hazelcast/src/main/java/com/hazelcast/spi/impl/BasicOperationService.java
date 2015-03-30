@@ -16,8 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -49,6 +51,7 @@ import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
@@ -71,6 +74,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
@@ -375,19 +379,33 @@ final class BasicOperationService implements InternalOperationService {
         return nodeEngine.send(packet, connection);
     }
 
-    public void registerInvocation(BasicInvocation invocation) {
-        long callId = callIdGen.getAndIncrement();
+    public boolean registerInvocation(BasicInvocation invocation) {
         Operation op = invocation.op;
-        if (op.getCallId() != 0) {
-            invocations.remove(op.getCallId());
+        long oldCallId = op.getCallId();
+        if (oldCallId != 0) {
+            boolean removed = invocations.remove(oldCallId) != null;
+            if (!removed) {
+                logger.finest("Cannot re-register " + invocation + " with a new call-id, "
+                        + "because deregistration with old-call-id: " + oldCallId + " failed.");
+                return false;
+            }
         }
 
+        long callId = callIdGen.getAndIncrement();
         invocations.put(callId, invocation);
         setCallId(invocation.op, callId);
+        return true;
     }
 
     public void deregisterInvocation(BasicInvocation invocation) {
-        invocations.remove(invocation.op.getCallId());
+        Operation op = invocation.op;
+        long callId = op.getCallId();
+        if (callId != 0) {
+            boolean removed = invocations.remove(callId) != null;
+            if (!removed) {
+                logger.finest("Cannot deregister " + invocation + " with call-id: " + callId);
+            }
+        }
     }
 
     @PrivateApi
@@ -419,11 +437,8 @@ final class BasicOperationService implements InternalOperationService {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
-                final Iterator<BasicInvocation> iter = invocations.values().iterator();
-                while (iter.hasNext()) {
-                    final BasicInvocation invocation = iter.next();
+                for (BasicInvocation invocation : invocations.values()) {
                     if (invocation.isCallTarget(member)) {
-                        iter.remove();
                         invocation.notify(new MemberLeftException(member));
                     }
                 }
@@ -433,14 +448,18 @@ final class BasicOperationService implements InternalOperationService {
 
     @Override
     public void reset() {
-        for (BasicInvocation invocation : invocations.values()) {
-            try {
-                invocation.notify(new MemberLeftException());
-            } catch (Throwable e) {
-                logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
+        Iterator<BasicInvocation> iter = invocations.values().iterator();
+        while (iter.hasNext()) {
+            BasicInvocation invocation = iter.next();
+            if (!invocation.isCallTarget(node.getLocalMember())) {
+                try {
+                    invocation.notify(new MemberLeftException());
+                } catch (Throwable e) {
+                    iter.remove();
+                    logger.warning(invocation + " could not be notified with reset message -> " + e.getMessage());
+                }
             }
         }
-        invocations.clear();
     }
 
     @Override
@@ -636,7 +655,7 @@ final class BasicOperationService implements InternalOperationService {
             try {
                 Operation op = loadOperation(packet);
 
-                if (!ensureValidMember(op)) {
+                if (!ensureHasCaller(op)) {
                     return;
                 }
 
@@ -683,9 +702,13 @@ final class BasicOperationService implements InternalOperationService {
             }
         }
 
-        private boolean ensureValidMember(Operation op) {
-            if (!isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
-                Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
+        private boolean ensureHasCaller(Operation op) {
+            if (isJoinOperation(op)) {
+                return true;
+            }
+
+            if (op.getCallerAddress() == null) {
+                Exception error = new CallerNotMemberException(op.getConnection(), op.getPartitionId(),
                         op.getClass().getName(), op.getServiceName());
                 operationHandler.handleOperationError(op, error);
                 return false;
@@ -732,6 +755,10 @@ final class BasicOperationService implements InternalOperationService {
 
             RemoteCallKey callKey = null;
             try {
+                if (!ensureValidMember(op)) {
+                    return;
+                }
+
                 if (timeout(op)) {
                     return;
                 }
@@ -747,6 +774,7 @@ final class BasicOperationService implements InternalOperationService {
                 }
 
                 op.run();
+
                 handleResponse(op);
                 afterRun(op);
             } catch (Throwable e) {
@@ -754,6 +782,29 @@ final class BasicOperationService implements InternalOperationService {
             } finally {
                 afterCallExecution(op, callKey);
             }
+        }
+
+        private boolean ensureValidMember(Operation op) {
+            if (isJoinOperation(op)) {
+                return true;
+            }
+
+            Address callerAddress = op.getCallerAddress();
+            // callerAddress == null means its local
+            if (callerAddress == null || node.getThisAddress().equals(callerAddress)) {
+                if (op.getCallerUuid() == null) {
+                    op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                }
+                return true;
+            }
+
+            if (node.clusterService.getMember(callerAddress) == null) {
+                Exception error = new CallerNotMemberException(callerAddress, op.getPartitionId(),
+                        op.getClass().getName(), op.getServiceName());
+                operationHandler.handleOperationError(op, error);
+                return false;
+            }
+            return true;
         }
 
         private boolean waitingNeeded(Operation op) {
@@ -777,27 +828,32 @@ final class BasicOperationService implements InternalOperationService {
 
         private void handleResponse(Operation op) throws Exception {
             boolean returnsResponse = op.returnsResponse();
-            Object response = null;
+            boolean postponeResponse = false;
             if (op instanceof BackupAwareOperation) {
                 BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
-                int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
-                    syncBackupCount = operationBackupHandler.backup(backupAwareOp);
-                }
-                if (returnsResponse) {
-                    response = new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount, op.isUrgent());
+                    if (returnsResponse) {
+                        BackupResponseCallback callback = new BackupResponseCallback(logger, op);
+                        int syncBackupCount = operationBackupHandler.backup(backupAwareOp, callback);
+                        callback.setSyncBackupCount(syncBackupCount);
+                        postponeResponse = true;
+                    } else {
+                        operationBackupHandler.backup(backupAwareOp, null);
+                    }
                 }
             }
 
-            if (returnsResponse) {
-                if (response == null) {
-                    response = op.getResponse();
-                }
+            if (returnsResponse && !postponeResponse) {
+                Object response = op.getResponse();
                 ResponseHandler responseHandler = op.getResponseHandler();
                 if (responseHandler == null) {
                     throw new IllegalStateException("ResponseHandler should not be null!");
                 }
-                responseHandler.sendResponse(response);
+                try {
+                    responseHandler.sendResponse(response);
+                } catch (Throwable e) {
+                    logOperationError(op, e);
+                }
             }
         }
 
@@ -892,12 +948,73 @@ final class BasicOperationService implements InternalOperationService {
         }
     }
 
+    private static class BackupResponseCallback implements ExecutionCallback<Object> {
+        private final ILogger logger;
+        private final Operation operation;
+        private int syncBackupCount = -1;
+        private int completedBackups;
+
+        BackupResponseCallback(ILogger logger, Operation op) {
+            this.logger = logger;
+            this.operation = op;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+            onBackupResponse();
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            if (t instanceof HazelcastInstanceNotActiveException) {
+                return;
+            }
+
+            Level level = Level.WARNING;
+            if (t instanceof RetryableException) {
+                level = Level.FINEST;
+            }
+            logger.log(level, "Failure during backup of " + operation, t);
+            onBackupResponse();
+        }
+
+        private synchronized void onBackupResponse() {
+            ++completedBackups;
+            if (syncBackupCount > 0 && completedBackups >= syncBackupCount) {
+                sendOperationResponse();
+            }
+        }
+
+        private synchronized void sendOperationResponse() {
+            Object response = operation.getResponse();
+            ResponseHandler responseHandler = operation.getResponseHandler();
+            if (responseHandler == null) {
+                throw new IllegalStateException("ResponseHandler should not be null!");
+            }
+            try {
+                responseHandler.sendResponse(response);
+            } catch (Throwable e) {
+                operation.logError(e);
+            }
+
+            // hack to send response only once
+            syncBackupCount = Integer.MAX_VALUE;
+        }
+
+        synchronized void setSyncBackupCount(int syncBackupCount) {
+            this.syncBackupCount = syncBackupCount;
+            if (completedBackups >= syncBackupCount) {
+                sendOperationResponse();
+            }
+        }
+    }
+
     /**
      * Responsible for creating a backups of an operation.
      */
     private final class OperationBackupHandler {
 
-        public int backup(BackupAwareOperation backupAwareOp) throws Exception {
+        public int backup(BackupAwareOperation backupAwareOp, ExecutionCallback<Object> callback) throws Exception {
             int requestedSyncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                     ? min(InternalPartition.MAX_BACKUP_COUNT, backupAwareOp.getSyncBackupCount()) : 0;
 
@@ -928,11 +1045,12 @@ final class BasicOperationService implements InternalOperationService {
                 syncBackupCount = 0;
             }
 
-            return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackupCount, totalBackupCount);
+            return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions,
+                    syncBackupCount, totalBackupCount, callback);
         }
 
         private int makeBackups(BackupAwareOperation backupAwareOp, int partitionId, long[] replicaVersions,
-                                int syncBackupCount, int totalBackupCount) {
+                int syncBackupCount, int totalBackupCount, ExecutionCallback<Object> callback) {
             Boolean backPressureNeeded = null;
             int sentSyncBackupCount = 0;
             InternalPartitionService partitionService = node.getPartitionService();
@@ -962,13 +1080,26 @@ final class BasicOperationService implements InternalOperationService {
                 }
 
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
-                send(backup, target);
+                ICompletableFuture<Object> future = invokeBackup(partitionId, replicaIndex, backup);
 
                 if (isSyncBackup) {
+                    if (callback != null) {
+                        future.andThen(callback);
+                    }
                     sentSyncBackupCount++;
                 }
             }
             return sentSyncBackupCount;
+        }
+
+        private ICompletableFuture<Object> invokeBackup(int partitionId, int replicaIndex, Backup backup) {
+
+            BasicPartitionInvocation invocation = new BasicPartitionInvocation(nodeEngine, null,
+                backup, partitionId, replicaIndex, InvocationBuilder.DEFAULT_TRY_COUNT,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS, InvocationBuilder.DEFAULT_CALL_TIMEOUT,
+                null, null, false);
+
+            return invocation.invoke();
         }
 
         private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
@@ -979,9 +1110,7 @@ final class BasicOperationService implements InternalOperationService {
             Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
             backup.setPartitionId(op.getPartitionId())
                     .setReplicaIndex(replicaIndex)
-                    .setServiceName(op.getServiceName())
-                    .setCallerUuid(nodeEngine.getLocalMember().getUuid());
-            setCallId(backup, op.getCallId());
+                    .setServiceName(op.getServiceName());
             return backup;
         }
 
