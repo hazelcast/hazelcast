@@ -22,6 +22,7 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
     private List<Data> keys;
 
     private boolean replaceExistingValues;
+    private boolean lastBatch = true;
 
     public LoadAllOperation() {
         keys = Collections.emptyList();
@@ -33,13 +34,20 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
         this.replaceExistingValues = replaceExistingValues;
     }
 
+    public LoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues, boolean lastBatch) {
+        super(name);
+        this.keys = keys;
+        this.replaceExistingValues = replaceExistingValues;
+        this.lastBatch = lastBatch;
+    }
+
     @Override
     public void run() throws Exception {
         final int partitionId = getPartitionId();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         keys = selectThisPartitionsKeys(this.keys);
-        recordStore.loadAllFromStore(keys, replaceExistingValues);
+        recordStore.loadAllFromStore(keys, replaceExistingValues, lastBatch);
     }
 
     private List<Data> selectThisPartitionsKeys(Collection<Data> keys) {
@@ -70,6 +78,7 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
             out.writeData(key);
         }
         out.writeBoolean(replaceExistingValues);
+        out.writeBoolean(lastBatch);
     }
 
     @Override
@@ -84,5 +93,6 @@ public class LoadAllOperation extends AbstractMapOperation implements PartitionA
             keys.add(data);
         }
         replaceExistingValues = in.readBoolean();
+        lastBatch = in.readBoolean();
     }
 }

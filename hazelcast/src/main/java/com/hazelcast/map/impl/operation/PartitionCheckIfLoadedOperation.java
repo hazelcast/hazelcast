@@ -18,11 +18,16 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.PartitionAwareOperation;
+
+import java.io.IOException;
 
 public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
     private boolean isFinished;
+    private boolean doLoad;
 
     public PartitionCheckIfLoadedOperation() {
     }
@@ -31,15 +36,35 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
         super(name);
     }
 
+    public PartitionCheckIfLoadedOperation(String name, boolean doLoad) {
+        super(name);
+        this.doLoad = doLoad;
+    }
+
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         isFinished = recordStore.isLoaded();
+        if (doLoad) {
+            recordStore.maybeDoInitialLoad();
+        }
     }
 
     @Override
     public Object getResponse() {
         return isFinished;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(doLoad);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        doLoad = in.readBoolean();
     }
 }

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
@@ -30,6 +31,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -71,6 +73,14 @@ public class MapContainer extends MapContainerSupport {
 
     private MapMergePolicy wanMergePolicy;
 
+    private final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
+        @Override
+        public Data apply(Object input) {
+            SerializationService ss = mapStoreContext.getSerializationService();
+            return ss.toData(input, partitioningStrategy);
+        }
+    };
+
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
@@ -108,7 +118,6 @@ public class MapContainer extends MapContainerSupport {
         }
         return recordFactory;
     }
-
 
     public void initWanReplication(NodeEngine nodeEngine) {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
@@ -221,6 +230,10 @@ public class MapContainer extends MapContainerSupport {
 
     public MapStoreContext getMapStoreContext() {
         return mapStoreContext;
+    }
+
+    public IFunction<Object, Data> toData() {
+        return toDataFunction;
     }
 }
 

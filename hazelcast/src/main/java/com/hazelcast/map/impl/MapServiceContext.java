@@ -3,7 +3,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
@@ -61,14 +60,6 @@ public interface MapServiceContext extends MapServiceContextSupport,
     Collection<Integer> getOwnedPartitions();
 
     void reloadOwnedPartitions();
-
-    /**
-     * Check if key belongs on partitions of the this node
-     *
-     * @param key key to be queried.
-     * @return true if this node owns the key
-     */
-    boolean isOwnedKey(Data key);
 
     AtomicInteger getWriteBehindQueueItemCounter();
 

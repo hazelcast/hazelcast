@@ -16,6 +16,9 @@
 
 package com.hazelcast.util;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import static java.lang.String.format;
 
 /**
@@ -149,5 +152,19 @@ public final class ValidationUtil {
             throw new IllegalArgumentException(message);
         }
     }
-}
 
+    /**
+     * Check if iterator has next element. If not throw NoSuchElementException
+     *
+     * @param iterator
+     * @param message
+     * @return the iterator itself
+     * @throws NoSuchElementException if iterator.hasNext returns false
+     */
+    public static <T> Iterator<T> checkHasNext(Iterator<T> iterator, String message) throws NoSuchElementException {
+        if (!iterator.hasNext()) {
+            throw new NoSuchElementException(message);
+        }
+        return iterator;
+    }
+}

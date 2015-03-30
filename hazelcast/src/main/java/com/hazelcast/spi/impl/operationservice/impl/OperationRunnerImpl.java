@@ -180,7 +180,7 @@ class OperationRunnerImpl extends OperationRunner {
         }
 
         if (partitionId != getPartitionId()) {
-            throw new IllegalStateException("wrong partition, expected: " + getPartitionId() + " but found:" + op);
+            throw new IllegalStateException("wrong partition, expected: " + getPartitionId() + " but found:" + partitionId);
         }
 
         if (internalPartition == null) {

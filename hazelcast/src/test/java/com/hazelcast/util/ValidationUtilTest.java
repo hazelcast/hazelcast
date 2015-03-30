@@ -2,11 +2,12 @@ package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import static com.hazelcast.util.ValidationUtil.checkFalse;
 import static com.hazelcast.util.ValidationUtil.checkInstanceOf;
@@ -14,6 +15,10 @@ import static com.hazelcast.util.ValidationUtil.checkNotInstanceOf;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.fail;
 import static junit.framework.TestCase.assertEquals;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -74,5 +79,16 @@ public class ValidationUtilTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_checkFalse_whenComparisonTrue() throws Exception {
         checkFalse(Boolean.TRUE, "comparison cannot be true");
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void test_hasNextThrowsException_whenEmptyIteratorGiven() throws Exception {
+        ValidationUtil.checkHasNext(Collections.emptyList().iterator(), "");
+    }
+
+    @Test
+    public void test_hasNextReturnsIterator_whenNonEmptyIteratorGiven() throws Exception {
+        Iterator<Integer> iterator = Arrays.asList(1, 2).iterator();
+        assertEquals(iterator, ValidationUtil.checkHasNext(iterator, ""));
     }
 }

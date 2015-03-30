@@ -58,7 +58,13 @@ public final class BuildInfoProvider {
         } else {
             build = String.valueOf(hazelcastBuild);
         }
-        int buildNumber = Integer.parseInt(build);
+        int buildNumber = -1;
+
+        try {
+            buildNumber = Integer.parseInt(build);
+        } catch (Exception ignored) {
+            EmptyStatement.ignore(ignored);
+        }
 
         return new BuildInfo(version, build, revision, buildNumber, enterprise);
     }

@@ -51,7 +51,7 @@ public interface InternalPartitionService extends CoreService {
      * @return owner of partition
      * @throws InterruptedException
      */
-    Address getPartitionOwnerOrWait(int partitionId) throws InterruptedException;
+    Address getPartitionOwnerOrWait(int partitionId);
 
     /**
      * Returns the InternalPartition for a given partitionId.
@@ -168,4 +168,10 @@ public interface InternalPartitionService extends CoreService {
 
     boolean hasOnGoingMigrationLocal();
 
+    /**
+     * Check if this node is the owner of a  partition
+     * @param partitionId
+     * @return true if it owns the partition. false if it doesn't or partition hasn't been assigned yet.
+     */
+    boolean isPartitionOwner(int partitionId);
 }

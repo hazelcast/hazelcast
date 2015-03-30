@@ -77,7 +77,7 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         return (mapStore != null);
     }
 
-    private boolean isMapLoader() {
+    public boolean isMapLoader() {
         return (mapLoader != null);
     }
 
@@ -112,9 +112,9 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
     }
 
     @Override
-    public Iterable loadAllKeys() {
+    public Iterable<Object> loadAllKeys() {
         if (isMapLoader()) {
-            Iterable allKeys;
+            Iterable<Object> allKeys;
             try {
                 allKeys = mapLoader.loadAllKeys();
             } catch (AbstractMethodError e) {

@@ -17,9 +17,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -36,8 +33,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -114,7 +116,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         node = nodeBuilder.getRandomNode();
         map = node.getMap(mapName);
 
-        assertLoadAllKeysCount(loader, nodeCount);
+        assertLoadAllKeysCount(loader, 1);
         assertPredicateResultCorrect(map, predicate);
     }
 
