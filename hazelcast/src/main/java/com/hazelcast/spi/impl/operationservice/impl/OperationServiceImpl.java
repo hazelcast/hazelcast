@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -26,7 +27,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
@@ -281,7 +281,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, Callback<E> callback) {
+    public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
         new PartitionInvocation(nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
                 DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
@@ -289,7 +289,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <E> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, Callback<E> callback) {
+    public <V> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, ExecutionCallback<V> callback) {
         new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
                 DEFAULT_TRY_PAUSE_MILLIS,
                 DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();

@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
@@ -56,12 +57,15 @@ public class AsyncInvocationTest extends HazelcastTestSupport {
             PutOperation op = new PutOperation((String) entry.getValue(), key, val, -1);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, op, partitionId,
-                    new Callback<Object>() {
+                    new ExecutionCallback<Object>() {
                         @Override
-                        public void notify(Object object) {
-                            if (!(object instanceof Throwable)) {
-                                latch.countDown();
-                            }
+                        public void onResponse(Object response) {
+                            latch.countDown();
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+
                         }
                     });
             return null;

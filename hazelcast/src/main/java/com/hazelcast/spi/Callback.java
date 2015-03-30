@@ -19,8 +19,11 @@ package com.hazelcast.spi;
 /**
  * A callback interface; make it possible to receive a callback.
  *
+ * This interface has been deprecated since Hazelcast 3.5. Please use the {@link com.hazelcast.core.ExecutionCallback} instead.
+ *
  * @param <T>
  */
+@Deprecated
 public interface Callback<T> {
 
     void notify(T object);
