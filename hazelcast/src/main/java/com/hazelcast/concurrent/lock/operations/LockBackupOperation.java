@@ -41,7 +41,7 @@ public class LockBackupOperation extends BaseLockOperation implements BackupOper
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.lock(key, originalCallerUuid, threadId, ttl);
+        response = lockStore.lock(key, originalCallerUuid, threadId, getReferenceCallId(), ttl);
     }
 
     @Override

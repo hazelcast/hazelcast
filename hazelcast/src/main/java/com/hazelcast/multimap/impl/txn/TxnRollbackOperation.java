@@ -36,7 +36,7 @@ public class TxnRollbackOperation extends MultiMapBackupAwareOperation implement
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (container.isLocked(dataKey) && !container.unlock(dataKey, getCallerUuid(), threadId)) {
+        if (container.isLocked(dataKey) && !container.unlock(dataKey, getCallerUuid(), threadId, getCallId())) {
             throw new TransactionException(
                     "Lock is not owned by the transaction! Owner: " + container.getLockOwnerInfo(dataKey)
             );

@@ -50,7 +50,7 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
+        if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
         MultiMapWrapper wrapper = getCollectionWrapper();
