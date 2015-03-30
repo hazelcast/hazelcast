@@ -550,8 +550,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleTcpIp(child);
             } else if ("aws".equals(name)) {
                 handleAWS(child);
-            } else if ("consul".equals(name)) {
-                handleConsul(child);
+            } else {
+                if(isExternalConfigEnabled(node)){
+                    config.getNetworkConfig().getJoin().addExternalConfig(new ExternalJoinConfig(name, node));
+                }
             }
         }
 
@@ -559,27 +561,18 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         joinConfig.verify();
     }
 
-    private void handleConsul(final org.w3c.dom.Node node) {
+    private boolean isExternalConfigEnabled(final org.w3c.dom.Node node){
         final NamedNodeMap atts = node.getAttributes();
-        final JoinConfig join = config.getNetworkConfig().getJoin();
-        final ConsulConfig consulConfig = join.getConsulConfig();
+        boolean isEnabled = false;
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
-            final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("enabled")) {
-                consulConfig.setEnabled(checkTrue(value));
-            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
-                consulConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                isEnabled = true;
+                break;
             }
         }
-        for (Node n : new IterableNodeList(node.getChildNodes())) {
-            final String value = getTextContent(n).trim();
-            if ("name".equals(cleanNodeName(n.getNodeName()))) {
-                consulConfig.setName(value);
-            } else if ("host".equals(cleanNodeName(n.getNodeName()))) {
-                consulConfig.setHost(value);
-            }
-        }
+
+        return isEnabled;
     }
 
     private void handleAWS(Node node) {
