@@ -902,12 +902,23 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             lifecycleService.runUnderLifecycleLock(new Runnable() {
                 public void run() {
                     lifecycleService.fireLifecycleEvent(MERGING);
+
+                    // reset node and membership state
+                    // from now on this node won't be joined
+                    // and won't have a master address
                     node.reset();
                     ClusterServiceImpl.this.reset();
-                    node.partitionService.reset();
+                    // stop the connection-manager
+                    // all socket connections will be closed
+                    // connection listening thread will stop
+                    // and no new connection will be established
                     node.connectionManager.stop();
+
+                    // clear waiting operations in queue
+                    // and notify invocations to retry
                     nodeEngine.reset();
 
+                    // gather merge tasks from services
                     Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
                     Collection<Runnable> tasks = new LinkedList<Runnable>();
                     for (SplitBrainHandlerService service : services) {
@@ -917,14 +928,18 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         }
                     }
 
+                    // reset all services to their initial state
                     Collection<ManagedService> managedServices = nodeEngine.getServices(ManagedService.class);
                     for (ManagedService service : managedServices) {
                         service.reset();
                     }
 
+                    // start connection-manager to setup and accept new connections
                     node.connectionManager.start();
+                    // re-join to the target cluster
                     node.rejoin();
 
+                    // execute merge tasks
                     Collection<Future> futures = new LinkedList<Future>();
                     for (Runnable task : tasks) {
                         Future f = nodeEngine.getExecutionService().submit(ExecutionService.SYSTEM_EXECUTOR, task);
