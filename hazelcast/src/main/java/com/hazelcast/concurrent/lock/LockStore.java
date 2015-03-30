@@ -22,13 +22,13 @@ import java.util.Set;
 
 public interface LockStore {
 
-    boolean lock(Data key, String caller, long threadId, long leaseTime);
+    boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime);
 
-    boolean txnLock(Data key, String caller, long threadId, long leaseTime);
+    boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime);
 
     boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime);
 
-    boolean unlock(Data key, String caller, long threadId);
+    boolean unlock(Data key, String caller, long threadId, long referenceId);
 
     boolean isLocked(Data key);
 

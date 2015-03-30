@@ -397,7 +397,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000));
-            getLockStore().lock(key, getCallerUuid(), 1, -1);
+            getLockStore().lock(key, getCallerUuid(), 1, 1, -1);
         }
 
         @Override

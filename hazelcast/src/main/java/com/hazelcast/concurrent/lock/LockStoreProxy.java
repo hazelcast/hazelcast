@@ -33,15 +33,15 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean lock(Data key, String caller, long threadId, long ttl) {
+    public boolean lock(Data key, String caller, long threadId, long referenceId, long ttl) {
         LockStore lockStore = getLockStoreOrNull();
-        return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
+        return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, ttl);
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
+    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl) {
         LockStore lockStore = getLockStoreOrNull();
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl);
     }
 
     @Override
@@ -51,9 +51,9 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId) {
+    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
         LockStore lockStore = getLockStoreOrNull();
-        return lockStore != null && lockStore.unlock(key, caller, threadId);
+        return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
 
     @Override

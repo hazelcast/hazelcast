@@ -47,7 +47,7 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() throws Exception {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId())) {
+        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }

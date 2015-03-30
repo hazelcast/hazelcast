@@ -61,15 +61,15 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean lock(Data key, String caller, long threadId, long leaseTime) {
+    public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
         LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, leaseTime, false);
+        return lock.lock(caller, threadId, referenceId, leaseTime, false);
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long leaseTime) {
+    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
         LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, leaseTime, true);
+        return lock.lock(caller, threadId, referenceId, leaseTime, true);
     }
 
     @Override
@@ -137,7 +137,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId) {
+    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return false;
@@ -145,7 +145,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
         boolean result = false;
         if (lock.canAcquireLock(caller, threadId)) {
-            if (lock.unlock(caller, threadId)) {
+            if (lock.unlock(caller, threadId, referenceId)) {
                 result = true;
             }
         }

@@ -182,7 +182,11 @@ public abstract class Operation implements DataSerializable {
     // Accessed using OperationAccessor
     final Operation setCallId(long callId) {
         this.callId = callId;
+        onSetCallId();
         return this;
+    }
+
+    protected void onSetCallId() {
     }
 
     public boolean validatesTarget() {

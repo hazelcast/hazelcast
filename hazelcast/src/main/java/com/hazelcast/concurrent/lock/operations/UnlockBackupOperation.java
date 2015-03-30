@@ -48,7 +48,7 @@ public class UnlockBackupOperation extends BaseLockOperation implements BackupOp
         if (force) {
             unlocked = lockStore.forceUnlock(key);
         } else {
-            unlocked = lockStore.unlock(key, originalCallerUuid, threadId);
+            unlocked = lockStore.unlock(key, originalCallerUuid, threadId, getReferenceCallId());
         }
 
         response = unlocked;

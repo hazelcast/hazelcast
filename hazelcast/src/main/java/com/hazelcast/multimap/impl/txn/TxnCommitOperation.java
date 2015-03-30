@@ -49,7 +49,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
             op.run();
             op.afterRun();
         }
-        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId);
+        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId, getCallId());
     }
 
     public boolean shouldBackup() {

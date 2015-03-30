@@ -189,11 +189,11 @@ public interface RecordStore {
 
     int size();
 
-    boolean txnLock(Data key, String caller, long threadId, long ttl);
+    boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl);
 
     boolean extendLock(Data key, String caller, long threadId, long ttl);
 
-    boolean unlock(Data key, String caller, long threadId);
+    boolean unlock(Data key, String caller, long threadId, long referenceId);
 
     boolean isLocked(Data key);
 

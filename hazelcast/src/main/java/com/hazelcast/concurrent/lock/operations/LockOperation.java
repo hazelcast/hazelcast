@@ -38,12 +38,14 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
 
     @Override
     public void run() throws Exception {
-        response = getLockStore().lock(key, getCallerUuid(), threadId, ttl);
+        response = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), ttl);
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new LockBackupOperation(namespace, key, threadId, getCallerUuid());
+        LockBackupOperation operation = new LockBackupOperation(namespace, key, threadId, getCallerUuid());
+        operation.setReferenceCallId(getReferenceCallId());
+        return operation;
     }
 
     @Override

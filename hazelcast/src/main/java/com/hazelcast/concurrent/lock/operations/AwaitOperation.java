@@ -54,7 +54,7 @@ public class AwaitOperation extends BaseLockOperation
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        if (!lockStore.lock(key, getCallerUuid(), threadId, -1L)) {
+        if (!lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), -1L)) {
             throw new IllegalMonitorStateException(
                     "Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
         }
@@ -108,7 +108,7 @@ public class AwaitOperation extends BaseLockOperation
         lockStore.removeSignalKey(getWaitKey());
         lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
 
-        boolean locked = lockStore.lock(key, getCallerUuid(), threadId, -1L);
+        boolean locked = lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), -1L);
         if (locked) {
             // expired & acquired lock, send FALSE
             sendResponse(false);
