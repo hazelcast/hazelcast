@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.atomiclong;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -113,7 +114,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
         try {
             atomicLong.apply(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(1, atomicLong.get());
@@ -131,7 +132,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
         try {
             atomicLong.alter(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(10, atomicLong.get());
@@ -157,7 +158,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
         try {
             atomicLong.alterAndGet(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(10, atomicLong.get());
@@ -182,7 +183,7 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
         try {
             atomicLong.getAndAlter(new FailingFunction());
             fail();
-        } catch (WoohaaException expected) {
+        } catch (ExpectedRuntimeException expected) {
         }
 
         assertEquals(10, atomicLong.get());
@@ -206,11 +207,8 @@ public abstract class AtomicLongBasicTest extends HazelcastTestSupport {
     private static class FailingFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            throw new WoohaaException();
+            throw new ExpectedRuntimeException();
         }
     }
 
-    private static class WoohaaException extends RuntimeException {
-
-    }
 }
