@@ -24,9 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -34,82 +32,89 @@ import javax.cache.Cache;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class CacheCreationTest {
+public class CacheCreationTest extends HazelcastTestSupport {
 
-    private final URL configUrl1 = getClass().getClassLoader().getResource("test-hazelcast-real-jcache.xml");
-    Config hzConfig;
+    static Config hzConfig;
+    private static final int THREAD_COUNT = 4;
 
-    @Before
-    public void init() throws Exception{
-        Hazelcast.shutdownAll();
+    @BeforeClass
+    public static void init() throws Exception{
+        final URL configUrl1 = CacheCreationTest.class.getClassLoader().getResource("test-hazelcast-real-jcache.xml");
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(configUrl1.getFile());
         hzConfig = configBuilder.build();
     }
 
+    @Before
     @After
-    public void cleanup() throws Exception{
+    public void killAllHazelcastInstances() throws Exception {
         Hazelcast.shutdownAll();
     }
 
     @Test
     public void creatingASingleCache() throws URISyntaxException {
-
-        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
-                .createCachingProvider(hazelcastInstance);
-
+        HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" + 1);
         cache.get(1);
     }
 
-
     @Test
-    public void creatingASingleCacheFromMultiProviders() throws URISyntaxException {
+    public void creatingASingleCacheFromMultiProviders() throws URISyntaxException, InterruptedException {
 
-        int threadCount=4;
+        ExecutorService execSer = Executors.newFixedThreadPool(THREAD_COUNT);
 
-        final CountDownLatch latch = new CountDownLatch(threadCount);
-        for (int i = 0; i < threadCount; i++) {
-            final int finalI = i;
-            new Thread() {
+        final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
+        for (int i = 0; i < THREAD_COUNT; i++) {
+            execSer.execute(new Runnable() {
+                @Override
                 public void run() {
-                    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
-                    HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
-                            .createCachingProvider(hazelcastInstance);
-
-                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache" );
+                    HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
+                    Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache");
                     cache.get(1);
                     latch.countDown();
                 }
-            }.start();
+            });
         }
         HazelcastTestSupport.assertOpenEventually(latch);
+        if (!execSer.awaitTermination(3, TimeUnit.SECONDS)) {
+            execSer.shutdown();
+        }
     }
 
     @Test
-    public void creatingMultiCacheFromMultiProviders() throws URISyntaxException {
+    public void creatingMultiCacheFromMultiProviders() throws URISyntaxException, InterruptedException {
 
-        int threadCount=4;
+        ExecutorService execSer = Executors.newFixedThreadPool(THREAD_COUNT);
 
-        final CountDownLatch latch = new CountDownLatch(threadCount);
-        for (int i = 0; i < threadCount; i++) {
+        final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
+        for (int i = 0; i < THREAD_COUNT; i++) {
             final int finalI = i;
-            new Thread() {
+            execSer.execute(new Runnable() {
+                @Override
                 public void run() {
-                    HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
-                    HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
-                            .createCachingProvider(hazelcastInstance);
-
+                    HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
                     Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache("xmlCache"+finalI);
                     cache.get(1);
                     latch.countDown();
                 }
-            }.start();
+            });
         }
         HazelcastTestSupport.assertOpenEventually(latch);
+        if (!execSer.awaitTermination(3, TimeUnit.SECONDS)) {
+            execSer.shutdown();
+        }
+    }
+
+    private HazelcastServerCachingProvider createCachingProvider(Config hzConfig){
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(hzConfig);
+        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
+                .createCachingProvider(hazelcastInstance);
+        return cachingProvider;
     }
 }

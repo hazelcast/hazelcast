@@ -32,48 +32,6 @@
         </join>
     </network>
 
-    <cache name="cache1">
-        <key-type class-name="java.lang.Object"/>
-        <value-type class-name="java.lang.Object"/>
-        <statistics-enabled>true</statistics-enabled>
-        <management-enabled>true</management-enabled>
-        <read-through>true</read-through>
-        <write-through>true</write-through>
-        <cache-loader-factory class-name="com.hazelcast.cache.CacheConfigTest$MyCacheLoaderFactory"/>
-        <cache-writer-factory class-name="com.hazelcast.cache.CacheConfigTest$MyCacheWriterFactory"/>
-        <expiry-policy-factory class-name="com.hazelcast.cache.CacheConfigTest$MyExpirePolicyFactory"/>
-        <eviction size="50" max-size-policy="ENTRY_COUNT" eviction-policy="LRU"/>
-        <cache-entry-listeners>
-            <cache-entry-listener old-value-required="false" synchronous="false">
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.CacheConfigTest$MyEntryListenerFactory"/>
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.CacheConfigTest$MyEntryEventFilterFactory"/>
-            </cache-entry-listener>
-           <cache-entry-listener old-value-required="true" synchronous="true">
-                <cache-entry-listener-factory class-name="com.hazelcast.cache.CacheConfigTest$MySyncEntryListenerFactory"/>
-                <cache-entry-event-filter-factory class-name="com.hazelcast.cache.CacheConfigTest$MySyncEntryEventFilterFactory"/>
-            </cache-entry-listener>
-        </cache-entry-listeners>
-        <backup-count>3</backup-count>
-        <async-backup-count>2</async-backup-count>
-    </cache>
-
-    <cache name="testCache">
-        <key-type class-name="java.lang.Integer"/>
-        <value-type class-name="java.lang.String"/>
-        <statistics-enabled>false</statistics-enabled>
-        <management-enabled>false</management-enabled>
-    </cache>
-
-    <cache name="wanRefTestCache">
-        <key-type class-name="java.lang.Integer"/>
-        <value-type class-name="java.lang.String"/>
-        <statistics-enabled>false</statistics-enabled>
-        <management-enabled>false</management-enabled>
-        <wan-replication-ref name="testWanRef">
-            <merge-policy>TestMergePolicy</merge-policy>
-        </wan-replication-ref>
-    </cache>
-
     <cache name="xmlCache*">
     </cache>
 
