@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -54,13 +55,19 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  * </pre>
  */
 public class ClientMessage
-        extends ParameterFlyweight {
+        extends ParameterFlyweight implements SocketWritable {
 
-    /** Begin Flag */
+    /**
+     * Begin Flag
+     */
     public static final short BEGIN_FLAG = 0x80;
-    /** End Flag */
+    /**
+     * End Flag
+     */
     public static final short END_FLAG = 0x40;
-    /** Begin and End Flags */
+    /**
+     * Begin and End Flags
+     */
     public static final short BEGIN_AND_END_FLAGS = (short) (BEGIN_FLAG | END_FLAG);
 
     /**
@@ -81,16 +88,19 @@ public class ClientMessage
         HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + BitUtil.SIZE_OF_SHORT;
     }
 
+    private transient int valueOffset;
+
     public void wrapForEncode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer, offset);
-        dataOffset(HEADER_SIZE);
-        frameLength(HEADER_SIZE);
-        index(dataOffset());
+        setDataOffset(HEADER_SIZE);
+        setFrameLength(HEADER_SIZE);
+        index(getDataOffset());
+        setPartitionId(-1);
     }
 
     public void wrapForDecode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer, offset);
-        index(dataOffset());
+        index(getDataOffset());
     }
 
     /**
@@ -98,7 +108,7 @@ public class ClientMessage
      *
      * @return ver field value
      */
-    public short version() {
+    public short getVersion() {
         return uint8Get(offset() + VERSION_FIELD_OFFSET);
     }
 
@@ -108,7 +118,7 @@ public class ClientMessage
      * @param ver field value
      * @return ClientMessage
      */
-    public ClientMessage version(final short ver) {
+    public ClientMessage setVersion(final short ver) {
         uint8Put(offset() + VERSION_FIELD_OFFSET, ver);
         return this;
     }
@@ -118,7 +128,7 @@ public class ClientMessage
      *
      * @return flags field value
      */
-    public short flags() {
+    public short getFlags() {
         return uint8Get(offset() + FLAGS_FIELD_OFFSET);
     }
 
@@ -128,7 +138,7 @@ public class ClientMessage
      * @param flags field value
      * @return ClientMessage
      */
-    public ClientMessage flags(final short flags) {
+    public ClientMessage setFlags(final short flags) {
         uint8Put(offset() + FLAGS_FIELD_OFFSET, flags);
         return this;
     }
@@ -138,7 +148,7 @@ public class ClientMessage
      *
      * @return type field value
      */
-    public int headerType() {
+    public int getHeaderType() {
         return uint16Get(offset() + TYPE_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
@@ -148,7 +158,7 @@ public class ClientMessage
      * @param type field value
      * @return ClientMessage
      */
-    public ClientMessage headerType(final int type) {
+    public ClientMessage setHeaderType(final int type) {
         uint16Put(offset() + TYPE_FIELD_OFFSET, (short) type, LITTLE_ENDIAN);
         return this;
     }
@@ -158,7 +168,7 @@ public class ClientMessage
      *
      * @return frame length field
      */
-    public int frameLength() {
+    public int getFrameLength() {
         return (int) uint32Get(offset() + FRAME_LENGTH_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
@@ -168,7 +178,7 @@ public class ClientMessage
      * @param length field value
      * @return ClientMessage
      */
-    public ClientMessage frameLength(final int length) {
+    public ClientMessage setFrameLength(final int length) {
         uint32Put(offset() + FRAME_LENGTH_FIELD_OFFSET, length, LITTLE_ENDIAN);
         return this;
     }
@@ -178,7 +188,7 @@ public class ClientMessage
      *
      * @return correlation id field
      */
-    public int correlationId() {
+    public int getCorrelationId() {
         return (int) uint32Get(offset() + CORRELATION_ID_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
@@ -188,7 +198,7 @@ public class ClientMessage
      * @param correlationId field value
      * @return ClientMessage
      */
-    public ClientMessage correlationId(final int correlationId) {
+    public ClientMessage setCorrelationId(final int correlationId) {
         uint32Put(offset() + CORRELATION_ID_FIELD_OFFSET, correlationId, ByteOrder.LITTLE_ENDIAN);
         return this;
     }
@@ -198,7 +208,7 @@ public class ClientMessage
      *
      * @return partition id field
      */
-    public int partitionId() {
+    public int getPartitionId() {
         return (int) uint32Get(offset() + PARTITION_ID_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
@@ -208,17 +218,17 @@ public class ClientMessage
      * @param partitionId field value
      * @return ClientMessage
      */
-    public ClientMessage partitionId(final int partitionId) {
+    public ClientMessage setPartitionId(final int partitionId) {
         uint32Put(offset() + PARTITION_ID_FIELD_OFFSET, partitionId, ByteOrder.LITTLE_ENDIAN);
         return this;
     }
 
     /**
-     * return dataOffset field
+     * return setDataOffset field
      *
      * @return type field value
      */
-    public int dataOffset() {
+    public int getDataOffset() {
         return uint16Get(offset() + DATA_OFFSET_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
@@ -228,33 +238,68 @@ public class ClientMessage
      * @param dataOffset field value
      * @return ClientMessage
      */
-    public ClientMessage dataOffset(final int dataOffset) {
+    public ClientMessage setDataOffset(final int dataOffset) {
         uint16Put(offset() + DATA_OFFSET_FIELD_OFFSET, (short) dataOffset, LITTLE_ENDIAN);
         return this;
     }
 
     /**
      * copy into payload data region located at data Offset
+     *
      * @param payload the payload data
      * @return ClientMessage
      */
     public ClientMessage putPayloadData(byte[] payload) {
-        final int index = offset() + dataOffset();
+        final int index = offset() + getDataOffset();
         buffer.putBytes(index, payload);
-        frameLength(frameLength() + payload.length);
+        setFrameLength(getFrameLength() + payload.length);
         return this;
     }
 
     /**
      * reads from payload data region into the provided array
+     *
      * @param payload destination array that payload will be copied into
      * @return ClientMessage
      */
     public ClientMessage getPayloadData(byte[] payload) {
-        final int index = offset() + dataOffset();
-        final int length = frameLength() - index;
+        final int index = offset() + getDataOffset();
+        final int length = getFrameLength() - index;
         buffer.getBytes(index, payload, 0, length);
         return this;
     }
 
+    @Override
+    public boolean writeTo(ByteBuffer destination) {
+        byte[] byteArray = buffer().byteArray();
+        int size = byteArray.length;
+
+        // the number of bytes that can be written to the bb.
+        int bytesWritable = destination.remaining();
+
+        // the number of bytes that need to be written.
+        int bytesNeeded = size - valueOffset;
+
+        int bytesWrite;
+        boolean done;
+        if (bytesWritable >= bytesNeeded) {
+            // All bytes for the value are available.
+            bytesWrite = bytesNeeded;
+            done = true;
+        } else {
+            // Not all bytes for the value are available. So lets write as much as is available.
+            bytesWrite = bytesWritable;
+            done = false;
+        }
+
+        destination.put(byteArray, valueOffset, bytesWrite);
+        valueOffset += bytesWrite;
+
+        return done;
+    }
+
+    @Override
+    public boolean isUrgent() {
+        return false;
+    }
 }

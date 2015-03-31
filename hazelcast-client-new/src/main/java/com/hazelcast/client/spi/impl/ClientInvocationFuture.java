@@ -132,7 +132,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             if (this.response != null && !(response instanceof Throwable)) {
                 String uuid = serializationService.toObject(this.response);
                 String alias = serializationService.toObject(response);
-                clientListenerService.reRegisterListener(uuid, alias, clientMessage.correlationId());
+                clientListenerService.reRegisterListener(uuid, alias, clientMessage.getCorrelationId());
                 return;
             }
             this.response = response;

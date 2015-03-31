@@ -33,6 +33,7 @@ import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -76,7 +77,6 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -101,6 +101,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
+    private static final short protocolVersion = 1;
 
     private final ClientProperties clientProperties;
     private final int id = CLIENT_ID.getAndIncrement();
@@ -145,7 +146,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         listenerService = initListenerService();
         userContext = new ConcurrentHashMap<String, Object>();
         proxyManager.init(config);
-
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {
@@ -481,6 +481,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
 
     public Credentials getCredentials() {
         return credentials;
+    }
+
+    public short getProtocolVersion() {
+        return protocolVersion;
     }
 
     @Override

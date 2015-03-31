@@ -407,7 +407,7 @@ public final class Predicates {
 
 
         protected int getFlags() {
-            //no flags
+            //no setFlags
             return 0;
         }
 
