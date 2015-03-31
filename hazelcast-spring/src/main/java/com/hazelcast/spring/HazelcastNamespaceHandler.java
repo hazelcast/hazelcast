@@ -32,7 +32,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         final String[] types = {
                 "map",
                 "multiMap",
-                "replicatedmap",
+                "replicatedMap",
                 "queue",
                 "topic",
                 "set",

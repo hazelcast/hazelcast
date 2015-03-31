@@ -1017,6 +1017,18 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
+    <xs:element name="replicatedMap" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrive an hazelcast ReplicatedMap instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ReplicatedMap"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
     <xs:element name="queue" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
