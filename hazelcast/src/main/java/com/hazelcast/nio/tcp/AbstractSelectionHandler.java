@@ -25,16 +25,17 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.logging.Level;
 
-abstract class AbstractSelectionHandler implements SelectionHandler {
+public abstract class AbstractSelectionHandler implements MigratableHandler {
 
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
     protected final TcpIpConnection connection;
     protected final TcpIpConnectionManager connectionManager;
-    protected final Selector selector;
-    protected final IOSelector ioSelector;
-    private final int initialOps;
+    protected Selector selector;
+    protected IOSelector ioSelector;
+
     private SelectionKey selectionKey;
+    private final int initialOps;
 
     public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int initialOps) {
         this.connection = connection;
@@ -46,6 +47,25 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         this.initialOps = initialOps;
     }
 
+    /**
+     * Migrates this handler to a new IOSelector thread.
+     * The migration logic is rather simple:
+     * <p><ul>
+     *     <li>Submit a de-registration task to a current IOSelector thread</li>
+     *     <li>The de-registration task submits a registration task to the new IOSelector thread</li>
+     * </ul></p>
+     *
+     * @param newOwner target IOSelector this handler migrates to
+     */
+    public void migrate(final IOSelector newOwner) {
+        if (ioSelector == newOwner || !socketChannel.isOpen()) {
+            return;
+        }
+
+        ioSelector.addTask(new MigrationTask(newOwner));
+        ioSelector.wakeup();
+    }
+
     protected SelectionKey getSelectionKey() {
         if (selectionKey == null) {
             try {
@@ -54,7 +74,6 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
                 handleSocketException(e);
             }
         }
-
         return selectionKey;
     }
 
@@ -93,4 +112,51 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         }
     }
 
+    final void unregisterOp(int operation) {
+        SelectionKey selectionKey = getSelectionKey();
+        try {
+            selectionKey.interestOps(selectionKey.interestOps() & ~operation);
+        } catch (Throwable e) {
+            handleSocketException(e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     */
+    public IOSelector getOwner() {
+        return ioSelector;
+    }
+
+    private class MigrationTask implements Runnable {
+        private final IOSelector newOwner;
+
+        public MigrationTask(IOSelector newOwner) {
+            this.newOwner = newOwner;
+        }
+
+        @Override
+        public void run() {
+            if (!socketChannel.isOpen()) {
+                return;
+            }
+            unregisterOp(initialOps);
+            ioSelector = newOwner;
+            selectionKey.cancel();
+            selectionKey = null;
+            newOwner.addTask(new Runnable() {
+                @Override
+                public void run() {
+                    if (!socketChannel.isOpen()) {
+                        return;
+                    }
+                    selector = newOwner.getSelector();
+                    selectionKey = getSelectionKey();
+                    registerOp(initialOps);
+                }
+            });
+            newOwner.wakeup();
+        }
+    }
 }
