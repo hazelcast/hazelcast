@@ -32,7 +32,7 @@ The following are the key concepts mentioned with Hazelcast Simulator.
 
 - **Agent** - A JVM installed on a piece of hardware. Its main responsibility is spawning, monitoring and terminating `Workers`.
 
-- **Coordinator** -  A JVM that can run anywhere, such as on your local machine. **Coordinator** is actually responsible for running the test using the `Agents`. You configure it with a list of `Agent` IP addresses, and you run it by sening a command like "run this testsuite with 10 worker JVMs for 2 hours".
+- **Coordinator** -  A JVM that can run anywhere, such as on your local machine. **Coordinator** is actually responsible for running the test using the `Agents`. You configure it with a list of `Agent` IP addresses, and you run it by sending a command like "run this testsuite with 10 worker JVMs for 2 hours".
 
 - **Provisioner** -  Spawns and terminates cloud instances, and installs `Agents` on the remote machines. It can be used in combination with EC2 (or any other cloud), but it can also be used in a static setup, such as a local machine or a cluster of machines in your data center.
 

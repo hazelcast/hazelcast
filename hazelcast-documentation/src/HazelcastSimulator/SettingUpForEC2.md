@@ -4,7 +4,7 @@
 
 Having installed the Simulator, this section describes how to prepare the Simulator for testing a Hazelcast cluster deployed at Amazon EC2. 
 
-To do this, copy the file `SIMULATOR_HOME/conf/simulator.properties` to your working directory and edit this file. You should set the values for the following parameters that are included in this file.
+To do this, copy the file `SIMULATOR_HOME/conf/simulator.properties` to your working folder and edit this file. You should set the values for the following parameters that are included in this file.
 
 - CLOUD_PROVIDER: Maven artifact ID of the cloud provider. In this case it is `aws-ec2` for Amazon EC2. Please refer to the [Simulator.Properties File Description section](#simulator-properties-file-description) for a full list of cloud providers.
 - CLOUD_IDENTITY: The path to the file that contains your EC2 access key. 
@@ -20,7 +20,7 @@ CLOUD_CREDENTIAL=~/ec2.credential
 MACHINE_SPEC=hardwareId=c3.xlarge,imageId=us-east-1/ami-1b3b2472
 ``` 
 
-![image](images/NoteSmall.jpg) ***NOTE***: *Creating these files in your working directory instead of just setting the access and secret keys in the `simulator.properties` file is for security reasons. It is too easy to share your credentials with the outside world; now you can safely add the `simulator.properties` file in your source repository or share it with other people.*
+![image](images/NoteSmall.jpg) ***NOTE***: *Creating these files in your working folder instead of just setting the access and secret keys in the `simulator.properties` file is for security reasons. It is too easy to share your credentials with the outside world; now you can safely add the `simulator.properties` file in your source repository or share it with other people.*
 
 ![image](images/NoteSmall.jpg) ***NOTE***: *For the full description of  the `simulator.properties` file, please refer to the [Simulator.Properties File Description section](#simulator-properties-file-description).*
 

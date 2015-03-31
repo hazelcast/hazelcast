@@ -45,7 +45,7 @@ Below table shows the conventions used in this manual.
 |Convention|Description|
 |:-|:-|
 |**bold font**| - Indicates part of a sentence that require the reader's specific attention. <br> - Also indicates property/parameter values.|
-|*italic font*|- When italicized words are enclosed with "<" and ">", indicates a variable in command or code syntax that you must replace, e.g. `hazelcast-<`*version*`>.jar`. <br> - Note and Related Information text is in italics.|
+|*italic font*|- When italicized words are enclosed with "<" and ">", indicates a variable in command or code syntax that you must replace, e.g. `hazelcast-<`*version*`>.jar`. <br> - Note and Related Information texts are in italics.|
 |`monospace`|- Indicates files, folders, class and library names, code snippets, and inline code words in a sentence.|
 |***RELATED INFORMATION***|- Indicates a resource that is relevant to the topic, usually with a link or cross-reference.|
 |![image](images/NoteSmall.jpg) ***NOTE***| Indicates information that is of special interest or importance, e.g. an additional action required only in certain circumstances.|
