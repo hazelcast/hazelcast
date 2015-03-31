@@ -47,6 +47,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         }
         ClientConnection connection =
                 (ClientConnection) connectionManager.getOrConnect(owner, authenticator);
+        invocation.getClientMessage().setPartitionId(partitionId);
         send(invocation, connection);
     }
 

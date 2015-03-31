@@ -60,18 +60,18 @@ public class MapMessageEncodeDecodeTest {
         cmEncode.wrapForEncode(byteBuffer, 0);
 
         MapPutParameters.encode(cmEncode, NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
-        cmEncode.headerType(7).version((short) 3).flags(ClientMessage.BEGIN_AND_END_FLAGS).correlationId(66).partitionId(77);
+        cmEncode.setHeaderType(7).setVersion((short) 3).setFlags(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
 
         ClientMessage cmDecode = new ClientMessage();
         cmDecode.wrapForDecode(byteBuffer, 0);
 
         final MapPutParameters putParameters = MapPutParameters.decode(cmDecode);
 
-        assertEquals(7, cmDecode.headerType());
-        assertEquals(3, cmDecode.version());
-        assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.flags());
-        assertEquals(66, cmDecode.correlationId());
-        assertEquals(77, cmDecode.partitionId());
+        assertEquals(7, cmDecode.getHeaderType());
+        assertEquals(3, cmDecode.getVersion());
+        assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
+        assertEquals(66, cmDecode.getCorrelationId());
+        assertEquals(77, cmDecode.getPartitionId());
 
         assertEquals(NAME, putParameters.name);
         assertArrayEquals(BYTES_DATA, putParameters.key);

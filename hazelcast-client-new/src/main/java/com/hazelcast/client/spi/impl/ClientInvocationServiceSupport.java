@@ -18,7 +18,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -78,11 +77,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
         registerInvocation(invocation);
 
-        final SerializationService ss = client.getSerializationService();
-        final Data data = ss.toData(invocation.getClientMessage());
-        Packet packet = new Packet(data, invocation.getPartitionId());
-        if (!isAllowedToSendRequest(connection, invocation.getClientMessage()) || !connection.write(packet)) {
-            final int callId = invocation.getClientMessage().correlationId();
+        if (!isAllowedToSendRequest(connection, invocation.getClientMessage())
+                || !connection.write(invocation.getClientMessage())) {
+            final int callId = invocation.getClientMessage().getCorrelationId();
             deRegisterCallId(callId);
             deRegisterEventHandler(callId);
             throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
@@ -108,8 +105,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
+        short protocolVersion = client.getProtocolVersion();
         final int correlationId = newCorrelationId();
-        clientInvocation.getClientMessage().correlationId(correlationId);
+        clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
         callIdMap.put(correlationId, clientInvocation);
         if (clientInvocation.getHandler() != null) {
             eventHandlerMap.put(correlationId, clientInvocation);
