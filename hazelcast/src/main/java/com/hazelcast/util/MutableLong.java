@@ -1,7 +1,7 @@
 package com.hazelcast.util;
 
 /**
- * Mutable integer which can be used for counting purposes.
+ * Mutable long which can be used for counting purposes.
  * <p/>
  * This class is not thread-safe.
  */
