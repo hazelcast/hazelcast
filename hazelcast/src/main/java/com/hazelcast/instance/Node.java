@@ -566,8 +566,8 @@ public class Node {
                     logger.info("Creating external Joiner:" + tagName);
                     IExternalJoiner joiner = ExternalJoinerLoadService.getInstance().getJoiner(tagName);
                     joiner.initialize(this, joinConfig);
-
-                    //TODO stop the loop or what??
+                    return joiner;
+                    //TODO return which joiner???
                 }
             }
         }
