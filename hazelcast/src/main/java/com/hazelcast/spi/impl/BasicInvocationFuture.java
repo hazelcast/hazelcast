@@ -265,7 +265,6 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     wait(currentTimeoutMs);
                     currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
                 }
-                notifyAll();
             }
         }
     }
