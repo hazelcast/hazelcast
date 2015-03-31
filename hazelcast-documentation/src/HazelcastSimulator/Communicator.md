@@ -38,7 +38,7 @@ Mode can be either '*' for broadcast or 'R' for a single random destination.
 
 **Addressing Example 1:**
 
-`Agent=*,Worker=R`: A message will be routed to all agents, then each agent will pass it to a single random worker for processing.
+`Agent=*,Worker=R`: A message will be routed to all agents, then each agent will pass it to a single random worker, and each worker will pass the message for processing.
 
 **Addressing Example 2:**
 
