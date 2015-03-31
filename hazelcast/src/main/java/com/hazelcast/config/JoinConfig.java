@@ -32,7 +32,7 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
-    private Map<String, ExternalJoinConfig> externalConfigs = new HashMap<String, ExternalJoinConfig>();
+    private Map<String, SpiJoinerConfig> spiJoinerConfigs = new HashMap<String, SpiJoinerConfig>();
 
     /**
      * @return the multicastConfig join configuration
@@ -82,13 +82,13 @@ public class JoinConfig {
         return this;
     }
 
-    public Map<String,ExternalJoinConfig> getExternalConfigs(){
-        return this.externalConfigs;
+    public Map<String,SpiJoinerConfig> getSpiJoinerConfigs(){
+        return this.spiJoinerConfigs;
     }
 
-    public void addExternalConfig(ExternalJoinConfig config) {
+    public void addSpiJoinerConfig(SpiJoinerConfig config) {
         isNotNull(config, config.getTagName());
-        this.externalConfigs.put(config.getTagName(), config);
+        this.spiJoinerConfigs.put(config.getTagName(), config);
     }
 
     /**

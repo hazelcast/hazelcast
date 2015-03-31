@@ -45,7 +45,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.IExternalJoiner;
+import com.hazelcast.spi.SpiJoiner;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -560,12 +560,12 @@ public class Node {
                 throw ExceptionUtil.rethrow(e);
             }
         } else {
-            for(ExternalJoinConfig joinConfig : join.getExternalConfigs().values()) {
-                if (joinConfig.isEnabled()) {
-                    String tagName = joinConfig.getTagName();
-                    logger.info("Creating external Joiner:" + tagName);
-                    IExternalJoiner joiner = ExternalJoinerLoadService.getInstance().getJoiner(tagName);
-                    joiner.initialize(this, joinConfig);
+            for(SpiJoinerConfig joinerConfig : join.getSpiJoinerConfigs().values()) {
+                if (joinerConfig.isEnabled()) {
+                    String tagName = joinerConfig.getTagName();
+                    logger.info("Creating Joiner via spi for tagName:" + tagName);
+                    SpiJoiner joiner = SpiJoinerLoadService.getInstance().getJoiner(tagName);
+                    joiner.initialize(this, joinerConfig);
                     return joiner;
                     //TODO return which joiner???
                 }

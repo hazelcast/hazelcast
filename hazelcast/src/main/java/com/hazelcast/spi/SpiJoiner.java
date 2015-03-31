@@ -16,14 +16,18 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.ExternalJoinConfig;
+import com.hazelcast.config.SpiJoinerConfig;
 import com.hazelcast.instance.Node;
 
 /**
- * SPI for external joiner.
+ * interface of SPI joiner.
  */
-public interface IExternalJoiner extends Joiner{
+public interface SpiJoiner extends Joiner {
 
+    /**
+     * @return the corresponding xml tagName in configuration.
+     */
     String getTagName();
-    void initialize(Node node, ExternalJoinConfig joinConfig);
+
+    void initialize(Node node, SpiJoinerConfig joinConfig);
 }

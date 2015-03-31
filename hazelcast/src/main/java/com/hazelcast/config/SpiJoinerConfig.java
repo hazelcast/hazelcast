@@ -18,14 +18,14 @@ package com.hazelcast.config;
 import org.w3c.dom.Node;
 
 /**
- * class to save information of the external join configuration.
+ * class to save information of the spi joiner configuration.
  */
-public class ExternalJoinConfig {
+public class SpiJoinerConfig {
     private boolean enabled;
     private String tagName;
     private Node node;
 
-    public ExternalJoinConfig(boolean enabled, String tagName, Node node) {
+    public SpiJoinerConfig(boolean enabled, String tagName, Node node) {
         this.enabled = enabled;
         this.tagName = tagName;
         this.node = node;

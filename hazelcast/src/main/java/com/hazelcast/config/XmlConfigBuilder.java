@@ -551,8 +551,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("aws".equals(name)) {
                 handleAWS(child);
             } else {
-                boolean enabled = isExternalConfigEnabled(node);
-                config.getNetworkConfig().getJoin().addExternalConfig(new ExternalJoinConfig(enabled, name, node));
+                boolean enabled = isJoinerConfigEnabled(node);
+                config.getNetworkConfig().getJoin().addSpiJoinerConfig(new SpiJoinerConfig(enabled, name, node));
             }
         }
 
@@ -560,7 +560,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         joinConfig.verify();
     }
 
-    private boolean isExternalConfigEnabled(final org.w3c.dom.Node node){
+    private boolean isJoinerConfigEnabled(final org.w3c.dom.Node node){
         final NamedNodeMap atts = node.getAttributes();
         boolean isEnabled = false;
         for (int a = 0; a < atts.getLength(); a++) {

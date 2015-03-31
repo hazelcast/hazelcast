@@ -17,29 +17,29 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.IExternalJoiner;
+import com.hazelcast.spi.SpiJoiner;
 
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
- *
+ * service class to load the joiner via spi.
  */
-public class ExternalJoinerLoadService {
+public class SpiJoinerLoadService {
 
-    private static final ILogger LOGGER = Logger.getLogger(ExternalJoinerLoadService.class);
+    private static final ILogger LOGGER = Logger.getLogger(SpiJoinerLoadService.class);
 
-    private static ExternalJoinerLoadService service;
-    private ServiceLoader<IExternalJoiner> loader;
+    private static SpiJoinerLoadService service;
+    private ServiceLoader<SpiJoiner> loader;
 
-    private ExternalJoinerLoadService() {
-        loader = ServiceLoader.load(IExternalJoiner.class);
+    private SpiJoinerLoadService() {
+        loader = ServiceLoader.load(SpiJoiner.class);
     }
 
-    public static synchronized ExternalJoinerLoadService getInstance() {
+    public static synchronized SpiJoinerLoadService getInstance() {
         if (service == null) {
-            service = new ExternalJoinerLoadService();
+            service = new SpiJoinerLoadService();
         }
         return service;
     }
@@ -47,15 +47,14 @@ public class ExternalJoinerLoadService {
     /**
      * get the joiner service with the given tag name.
      * @param tagName
-     * @return
      */
-    public IExternalJoiner getJoiner(String tagName) {
-        IExternalJoiner result = null;
+    public SpiJoiner getJoiner(String tagName) {
+        SpiJoiner result = null;
 
         try {
-            Iterator<IExternalJoiner> joiners = loader.iterator();
+            Iterator<SpiJoiner> joiners = loader.iterator();
             while (result == null && joiners.hasNext()) {
-                IExternalJoiner joiner = joiners.next();
+                SpiJoiner joiner = joiners.next();
                 if(tagName.equals(joiner.getTagName())) {
                     result = joiner;
                 }
