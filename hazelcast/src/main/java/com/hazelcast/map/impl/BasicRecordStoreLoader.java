@@ -27,6 +27,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -165,6 +166,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             entries = mapDataStore.loadAll(keys);
         } catch (Throwable t) {
             logger.warning("Could not load keys from map store", t);
+            ExceptionUtil.rethrow(t);
         }
         return getKeyValueSequence(entries);
     }
