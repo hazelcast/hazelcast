@@ -106,7 +106,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
             });
         }
         HazelcastTestSupport.assertOpenEventually(latch);
-        if (!execSer.awaitTermination(3, TimeUnit.SECONDS)) {
+        if (!execSer.awaitTermination(30, TimeUnit.SECONDS)) {
             execSer.shutdown();
         }
     }
