@@ -562,9 +562,9 @@ public class Node {
         } else {
             for(SpiJoinerConfig joinerConfig : join.getSpiJoinerConfigs().values()) {
                 if (joinerConfig.isEnabled()) {
-                    String tagName = joinerConfig.getTagName();
-                    logger.info("Creating Joiner via spi for tagName:" + tagName);
-                    SpiJoiner joiner = SpiJoinerLoadService.getInstance().getJoiner(tagName);
+                    String type = joinerConfig.getType();
+                    logger.info("Creating Joiner via spi for type:" + type);
+                    SpiJoiner joiner = SpiJoinerLoadService.getInstance().getJoiner(type);
                     joiner.initialize(this, joinerConfig);
                     return joiner;
                     //TODO return which joiner???

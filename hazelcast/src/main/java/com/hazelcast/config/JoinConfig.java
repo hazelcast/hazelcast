@@ -87,8 +87,8 @@ public class JoinConfig {
     }
 
     public void addSpiJoinerConfig(SpiJoinerConfig config) {
-        isNotNull(config, config.getTagName());
-        this.spiJoinerConfigs.put(config.getTagName(), config);
+        isNotNull(config, config.getType());
+        this.spiJoinerConfigs.put(config.getType(), config);
     }
 
     /**

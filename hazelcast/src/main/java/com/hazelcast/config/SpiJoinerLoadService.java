@@ -45,23 +45,23 @@ public class SpiJoinerLoadService {
     }
 
     /**
-     * get the joiner service with the given tag name.
-     * @param tagName
+     * get the joiner service with the given type.
+     * @param type
      */
-    public SpiJoiner getJoiner(String tagName) {
+    public SpiJoiner getJoiner(String type) {
         SpiJoiner result = null;
 
         try {
             Iterator<SpiJoiner> joiners = loader.iterator();
             while (result == null && joiners.hasNext()) {
                 SpiJoiner joiner = joiners.next();
-                if(tagName.equals(joiner.getTagName())) {
+                if(type.equals(joiner.getType())) {
                     result = joiner;
                 }
             }
         } catch (ServiceConfigurationError serviceError) {
             result = null;
-            LOGGER.severe("Error while getting joiner service with tagName" + tagName, serviceError);
+            LOGGER.severe("Error while getting joiner service with type" + type, serviceError);
         }
         return result;
     }

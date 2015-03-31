@@ -23,11 +23,5 @@ import com.hazelcast.instance.Node;
  * interface of SPI joiner.
  */
 public interface SpiJoiner extends Joiner {
-
-    /**
-     * @return the corresponding xml tagName in configuration.
-     */
-    String getTagName();
-
     void initialize(Node node, SpiJoinerConfig joinConfig);
 }

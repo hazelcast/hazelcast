@@ -22,17 +22,17 @@ import org.w3c.dom.Node;
  */
 public class SpiJoinerConfig {
     private boolean enabled;
-    private String tagName;
+    private String type;
     private Node node;
 
-    public SpiJoinerConfig(boolean enabled, String tagName, Node node) {
+    public SpiJoinerConfig(boolean enabled, String type, Node node) {
         this.enabled = enabled;
-        this.tagName = tagName;
+        this.type = type;
         this.node = node;
     }
 
-    public String getTagName() {
-        return tagName;
+    public String getType() {
+        return type;
     }
 
     public Node getNode() {
