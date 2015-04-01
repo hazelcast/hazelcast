@@ -996,7 +996,7 @@
     <xs:element name="map" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IMap instance
+                Retrieve a Hazelcast IMap instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1008,7 +1008,7 @@
     <xs:element name="multiMap" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast MultiMap instance
+                Retrieve a Hazelcast MultiMap instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1020,7 +1020,7 @@
     <xs:element name="replicatedMap" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast ReplicatedMap instance
+                Retrieve a Hazelcast ReplicatedMap instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1032,7 +1032,7 @@
     <xs:element name="queue" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IQueue instance
+                Retrieve a Hazelcast IQueue instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1044,7 +1044,7 @@
     <xs:element name="topic" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast ITopic instance
+                Retrieve a Hazelcast ITopic instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1056,7 +1056,7 @@
     <xs:element name="set" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast ISet instance
+                Retrieve a Hazelcast ISet instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1068,7 +1068,7 @@
     <xs:element name="list" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IList instance
+                Retrieve a Hazelcast IList instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1080,7 +1080,7 @@
     <xs:element name="executorService" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IExecutorService instance
+                Retrieve a Hazelcast IExecutorService instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1092,7 +1092,7 @@
     <xs:element name="idGenerator" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IdGenerator instance
+                Retrieve a Hazelcast IdGenerator instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1104,7 +1104,7 @@
     <xs:element name="atomicLong" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IAtomicLong instance
+                Retrieve a Hazelcast IAtomicLong instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1116,7 +1116,7 @@
     <xs:element name="atomicReference" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast IAtomicReference instance
+                Retrieve a Hazelcast IAtomicReference instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1128,7 +1128,7 @@
     <xs:element name="countDownLatch" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast ICountDownLatch instance
+                Retrieve a Hazelcast ICountDownLatch instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1140,7 +1140,7 @@
     <xs:element name="semaphore" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast ISemaphore instance
+                Retrieve a Hazelcast ISemaphore instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
@@ -1152,7 +1152,7 @@
     <xs:element name="lock" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrive an hazelcast ILock instance
+                Retrieve a Hazelcast ILock instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
