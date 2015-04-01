@@ -29,6 +29,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
