@@ -190,6 +190,8 @@
     <suppress checks="" files="com.hazelcast.client.impl.protocol.util[\\/]"/>
     <!--TODO we will refactor these encode-decode code-->
     <suppress checks="" files="com.hazelcast.client.impl.protocol.map[\\/]"/>
+    <!--Parameters class are gonna be auto generated-->
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>

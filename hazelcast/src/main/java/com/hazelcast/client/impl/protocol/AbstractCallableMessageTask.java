@@ -14,20 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.messagehandlers;
+package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.MessageHandlerContext;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Connection;
 
 /**
- * Callable message handler. Message handlers that return a client message without a further invocation
- * will extend this class.
+ * Base callable Message task.
  */
-abstract class AbstractCallableMessageHandler extends AbstractMessageHandler {
+public abstract class AbstractCallableMessageTask<CM extends ClientMessage>
+        extends AbstractMessageTask<CM> {
 
-    public void process(MessageHandlerContext context) {
-
+    protected AbstractCallableMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        super(clientMessage, node, connection);
     }
 
-    abstract ClientMessage call(MessageHandlerContext context) throws Exception;
+    @Override
+    public final void processMessage() {
+        Object result = call();
+        endpoint.sendResponse(result, parameters.getCorrelationId());
+    }
+
+    protected abstract Object call();
 }

@@ -1,15 +1,19 @@
 package com.hazelcast.client.impl.protocol.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
-import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
 
 /**
  * Sample Put parameter
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class MapPutParameters {
+public class MapPutParameters extends ClientMessage {
 
+    /**
+     * ClientMessageType of this message
+     */
+    public static final MapMessageType TYPE = MapMessageType.MAP_PUT;
     public byte[] key;
     public byte[] value;
     public String name;
@@ -17,7 +21,10 @@ public class MapPutParameters {
     public long ttl;
     public boolean async;
 
-    public MapPutParameters(ParameterFlyweight flyweight) {
+    private MapPutParameters() {
+    }
+
+    private MapPutParameters(ClientMessage flyweight) {
         name = flyweight.getStringUtf8();
         key = flyweight.getByteArray();
         value = flyweight.getByteArray();
@@ -26,21 +33,24 @@ public class MapPutParameters {
         async = flyweight.getBoolean();
     }
 
-    public static MapPutParameters decode(ParameterFlyweight flyweight) {
+    public static MapPutParameters decode(ClientMessage flyweight) {
         return new MapPutParameters(flyweight);
     }
 
-    public static void encode(ParameterFlyweight flyweight, String name, byte[] key, byte[] value, long threadId, long ttl,
-                              boolean async) {
-        flyweight.set(name).set(key).set(value).set(ttl).set(threadId).set(async);
+    public static MapPutParameters encode(String name, byte[] key, byte[] value, long threadId, long ttl, boolean async) {
+        MapPutParameters parameters = new MapPutParameters();
+        final int requiredDataSize = calculateDataSize(name, key, value, threadId, ttl, async);
+        parameters.ensureCapacity(requiredDataSize);
+        parameters.setMessageType(TYPE.id());
+        parameters.set(name).set(key).set(value).set(ttl).set(threadId).set(async);
+        return parameters;
     }
 
     /**
      * sample data size estimation
      * @return size
      */
-    public static int encodeSizeCost(String name, byte[] key, byte[] value) {
-
+    public static int calculateDataSize(String name, byte[] key, byte[] value, long threadId, long ttl, boolean async) {
         return ClientMessage.HEADER_SIZE//
                 + (BitUtil.SIZE_OF_INT + name.length() * 3)//
                 + (BitUtil.SIZE_OF_INT + key.length)//
@@ -49,5 +59,6 @@ public class MapPutParameters {
                 + BitUtil.SIZE_OF_LONG//
                 + BitUtil.SIZE_OF_BYTE;
     }
+
 
 }

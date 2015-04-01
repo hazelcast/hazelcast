@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -54,6 +55,8 @@ public interface IOService {
     void handleMemberPacket(Packet p);
 
     void handleClientPacket(Packet p);
+
+    void handleClientMessage(ClientMessage cm, Connection connection);
 
     TextCommandService getTextCommandService();
 

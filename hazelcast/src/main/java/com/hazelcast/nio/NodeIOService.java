@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
@@ -114,6 +115,11 @@ public class NodeIOService implements IOService {
     @Override
     public void handleClientPacket(Packet p) {
         node.clientEngine.handlePacket(p);
+    }
+
+    @Override
+    public void handleClientMessage(ClientMessage cm, Connection connection) {
+        node.clientEngine.handleClientMessage(cm, connection);
     }
 
     @Override

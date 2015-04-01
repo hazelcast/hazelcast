@@ -65,9 +65,9 @@ public class BufferBuilder {
     }
 
     /**
-     * The current limit of the buffer that has been used by append operations.
+     * The current limit of the buffer that has been used by accumulate operations.
      *
-     * @return the current limit of the buffer that has been used by append operations.
+     * @return the current limit of the buffer that has been used by accumulate operations.
      */
     public int limit() {
         return limit;
@@ -83,7 +83,7 @@ public class BufferBuilder {
     }
 
     /**
-     * Reset the builder to restart append operations. The internal buffer does not shrink.
+     * Reset the builder to restart accumulate operations. The internal buffer does not shrink.
      *
      * @return the builder for fluent API usage.
      */

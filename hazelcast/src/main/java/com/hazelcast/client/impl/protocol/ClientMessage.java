@@ -55,7 +55,8 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  * </pre>
  */
 public class ClientMessage
-        extends ParameterFlyweight implements SocketWritable {
+        extends ParameterFlyweight
+        implements SocketWritable {
 
     /**
      * Begin Flag
@@ -94,13 +95,13 @@ public class ClientMessage
         super.wrap(buffer, offset);
         setDataOffset(HEADER_SIZE);
         setFrameLength(HEADER_SIZE);
-        index(getDataOffset());
+        index(getDataOffset() + offset);
         setPartitionId(-1);
     }
 
     public void wrapForDecode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer, offset);
-        index(getDataOffset());
+        index(getDataOffset() + offset);
     }
 
     /**
@@ -144,21 +145,21 @@ public class ClientMessage
     }
 
     /**
-     * return header type field
+     * return message type field
      *
      * @return type field value
      */
-    public int getHeaderType() {
+    public int getMessageType() {
         return uint16Get(offset() + TYPE_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
     /**
-     * set header type field
+     * set message type field
      *
      * @param type field value
      * @return ClientMessage
      */
-    public ClientMessage setHeaderType(final int type) {
+    protected ClientMessage setMessageType(final int type) {
         uint16Put(offset() + TYPE_FIELD_OFFSET, (short) type, LITTLE_ENDIAN);
         return this;
     }
@@ -264,7 +265,10 @@ public class ClientMessage
      */
     public ClientMessage getPayloadData(byte[] payload) {
         final int index = offset() + getDataOffset();
-        final int length = getFrameLength() - index;
+        if (index >= (offset() + getFrameLength())) {
+            throw new IndexOutOfBoundsException("index cannot exceed frame length");
+        }
+        final int length = (offset() + getFrameLength()) - index;
         buffer.getBytes(index, payload, 0, length);
         return this;
     }

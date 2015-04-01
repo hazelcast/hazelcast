@@ -1,6 +1,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
@@ -21,6 +22,8 @@ public interface ClientEndpoint {
     boolean isAlive();
 
     void sendResponse(Object response, int callId);
+
+    void sendClientMessage(ClientMessage response);
 
     void sendEvent(Object key, Object event, int callId);
 

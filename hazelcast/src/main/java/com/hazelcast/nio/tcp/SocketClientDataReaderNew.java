@@ -17,40 +17,31 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-class SocketClientDataReaderNew implements SocketReader {
+class SocketClientDataReaderNew
+        implements SocketReader {
 
     private static final int TYPE_BYTE = 3;
 
     final TcpIpConnection connection;
-    final IOService ioService;
-    Packet packet;
+    private ClientMessageBuilder builder;
 
     public SocketClientDataReaderNew(TcpIpConnection connection) {
         this.connection = connection;
-        this.ioService = connection.getConnectionManager().ioService;
+        this.builder = new ClientMessageBuilder(connection);
     }
 
-    public void read(ByteBuffer inBuffer) throws Exception {
+    public void read(ByteBuffer inBuffer)
+            throws Exception {
         while (inBuffer.hasRemaining()) {
-            if (packet == null) {
-                packet = new Packet();
-            }
-            boolean complete = packet.readFrom(inBuffer);
-            if (complete) {
-                packet.setConn(connection);
-                ioService.handleClientPacket(packet);
-                packet = null;
-            } else {
-                break;
-            }
+            builder.onData(inBuffer);
         }
     }
 
@@ -70,6 +61,7 @@ class SocketClientDataReaderNew implements SocketReader {
             } else if (ClientTypes.RUBY.equals(type)) {
                 connection.setType(ConnectionType.RUBY_CLIENT);
             } else {
+                final IOService ioService = connection.getConnectionManager().ioService;
                 ioService.getLogger(getClass().getName()).info("Unknown client type: " + type);
                 connection.setType(ConnectionType.BINARY_CLIENT);
             }
