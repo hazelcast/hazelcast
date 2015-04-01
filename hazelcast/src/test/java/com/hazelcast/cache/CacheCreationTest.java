@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -34,8 +35,6 @@ import java.net.URL;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -54,7 +53,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
     @Before
     @After
     public void killAllHazelcastInstances() throws Exception {
-        Hazelcast.shutdownAll();
+        HazelcastInstanceFactory.shutdownAll();
     }
 
     @Test
@@ -66,12 +65,11 @@ public class CacheCreationTest extends HazelcastTestSupport {
 
     @Test
     public void creatingASingleCacheFromMultiProviders() throws URISyntaxException, InterruptedException {
-
-        ExecutorService execSer = Executors.newFixedThreadPool(THREAD_COUNT);
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
 
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
-            execSer.execute(new Runnable() {
+            executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
@@ -82,20 +80,17 @@ public class CacheCreationTest extends HazelcastTestSupport {
             });
         }
         HazelcastTestSupport.assertOpenEventually(latch);
-        if (!execSer.awaitTermination(3, TimeUnit.SECONDS)) {
-            execSer.shutdown();
-        }
+        executorService.shutdown();
     }
 
     @Test
-    public void creatingMultiCacheFromMultiProviders() throws URISyntaxException, InterruptedException {
-
-        ExecutorService execSer = Executors.newFixedThreadPool(THREAD_COUNT);
+    public void creatingMultiCacheFromMultiProviders() throws Exception {
+        ExecutorService executorService = Executors.newFixedThreadPool(THREAD_COUNT);
 
         final CountDownLatch latch = new CountDownLatch(THREAD_COUNT);
         for (int i = 0; i < THREAD_COUNT; i++) {
             final int finalI = i;
-            execSer.execute(new Runnable() {
+            executorService.execute(new Runnable() {
                 @Override
                 public void run() {
                     HazelcastServerCachingProvider cachingProvider = createCachingProvider(hzConfig);
@@ -106,9 +101,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
             });
         }
         HazelcastTestSupport.assertOpenEventually(latch);
-        if (!execSer.awaitTermination(30, TimeUnit.SECONDS)) {
-            execSer.shutdown();
-        }
+        executorService.shutdown();
     }
 
     private HazelcastServerCachingProvider createCachingProvider(Config hzConfig){
