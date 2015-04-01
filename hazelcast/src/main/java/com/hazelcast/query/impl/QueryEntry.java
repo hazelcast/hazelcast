@@ -80,7 +80,7 @@ public class QueryEntry implements QueryableEntry {
     }
 
     @Override
-    public Comparable getAttribute(String attributeName) throws QueryException {
+    public Object getAttribute(String attributeName) throws QueryException {
         if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
             return (Comparable) getKey();
         } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
@@ -113,7 +113,7 @@ public class QueryEntry implements QueryableEntry {
     // This method is very inefficient because:
     // lot of time is spend on retrieving field/method and it isn't cached
     // the actual invocation on the Field, Method is also is quite expensive.
-    private Comparable extractViaReflection(String attributeName, boolean isKey) {
+    private Object extractViaReflection(String attributeName, boolean isKey) {
         try {
             Object obj = isKey ? getKey() : getValue();
             return ReflectionHelper.extractValue(obj, attributeName);

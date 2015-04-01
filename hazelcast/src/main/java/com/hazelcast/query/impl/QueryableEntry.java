@@ -29,7 +29,7 @@ public interface QueryableEntry extends Map.Entry, QueryResultEntry {
 
     Object getKey();
 
-    Comparable getAttribute(String attributeName) throws QueryException;
+    Object getAttribute(String attributeName) throws QueryException;
 
     AttributeType getAttributeType(String attributeName);
 }

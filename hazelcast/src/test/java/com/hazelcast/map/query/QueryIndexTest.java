@@ -23,26 +23,27 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
+import com.hazelcast.query.SampleObjects.InterestGroup;
 import com.hazelcast.query.SampleObjects.Value;
 import com.hazelcast.query.SampleObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import static java.util.UUID.randomUUID;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -148,6 +149,59 @@ public class QueryIndexTest extends HazelcastTestSupport {
         testPredicateNotEqualWithIndex(map1, true);
         testPredicateNotEqualWithIndex(map2, false);
     }
+
+    @Test
+    public void testIndexOnCollection() {
+        HazelcastInstance h1 = createHazelcastInstance();
+        IMap imap = h1.getMap("interestGroups");
+        imap.addIndex("members", false);
+
+        //Add a couple of employees to the OPS group
+        InterestGroup ops = new InterestGroup("ops", new ArrayList<Employee>());
+        for (int i=0; i < 10; i++) {
+            ops.getMembers().add(new Employee(i, "joe" + i, 20 + i, true, 100D + i));
+        }
+
+        //Add a couple of employees to the DEV group
+        InterestGroup dev = new InterestGroup("dev", new ArrayList<Employee>());
+        for (int i=10; i < 15; i++) {
+            dev.getMembers().add(new Employee(i, "john" + i, 20 + i, true, 100D + i));
+        }
+
+        //Create two employees to put in the groups - these we can query on
+        Employee kev = new Employee(100L, "kevin", 35, true, 500D);
+        Employee mark = new Employee(101L, "mark", 25, true, 500D);
+
+        //KEVIN goes into both groups, MARK into only one
+        ops.getMembers().add(kev);
+        dev.getMembers().add(kev);
+        dev.getMembers().add(mark);
+        imap.put("ops", ops);
+        imap.put("dev", dev);
+
+        //Find the groups for KEVIN
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate p = e.get("members").contains(kev);
+        Collection<InterestGroup> results = imap.values(p);
+        assertEquals(2, results.size());
+
+        HashMap<String, InterestGroup> groupMap = new HashMap<String, InterestGroup>();
+        Iterator<InterestGroup> iter = results.iterator();
+        while(iter.hasNext()) {
+            InterestGroup g = iter.next();
+            groupMap.put(g.getName(), g);
+        }
+        assertEquals(dev, groupMap.get("dev"));
+        assertEquals(ops, groupMap.get("ops"));
+
+        //Find the group for MARK
+        e = new PredicateBuilder().getEntryObject();
+        Predicate p2 = e.get("members").contains(mark);
+        results = imap.values(p2);
+        assertEquals(1, results.size());
+        assertEquals(dev, results.iterator().next());
+    }
+
 
     private void testPredicateNotEqualWithIndex(IMap map, boolean ordered) {
         map.addIndex("name", ordered);

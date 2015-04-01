@@ -30,6 +30,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,7 +54,7 @@ public final class Predicates {
 
     private static Comparable readAttribute(Map.Entry entry, String attribute) {
         QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Comparable value = queryableEntry.getAttribute(attribute);
+        Comparable value = (Comparable) queryableEntry.getAttribute(attribute);
         if (value == null) {
             return IndexImpl.NULL;
         }
@@ -122,6 +123,9 @@ public final class Predicates {
         return new InPredicate(attribute, values);
     }
 
+    public static Predicate contains(String attribute, Comparable value) {
+        return new ContainsPredicate(attribute, value);
+    }
     /**
      * Between Predicate
      */
@@ -803,6 +807,34 @@ public final class Predicates {
     }
 
     /**
+     * Contains predicate, allows searching in collections containing some comparable
+     */
+    public static class ContainsPredicate extends EqualPredicate {
+
+        public ContainsPredicate(String attribute, Comparable value) {
+            super(attribute, value);
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
+            Object entryValue = queryableEntry.getAttribute(attribute);
+            if (entryValue == null) {
+                return value == null || value == IndexImpl.NULL;
+            }
+
+            Collection<Comparable> valueCollection = (Collection<Comparable>) entryValue;
+            return valueCollection.contains(value);
+        }
+
+        @Override
+        public String toString() {
+            return attribute + ".contains(" + value + ")";
+        }
+    }
+
+
+    /**
      * Provides some functionality for some predicates
      * such as Between, In.
      */
@@ -858,7 +890,7 @@ public final class Predicates {
 
         protected Comparable readAttribute(Map.Entry entry) {
             QueryableEntry queryableEntry = (QueryableEntry) entry;
-            Comparable val = queryableEntry.getAttribute(attribute);
+            Comparable val = (Comparable) queryableEntry.getAttribute(attribute);
             if (val != null && val.getClass().isEnum()) {
                 val = val.toString();
             }

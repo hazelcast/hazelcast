@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.TypeConverters.TypeConverter;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +38,10 @@ public class IndexImpl implements Index {
 
     // indexKey -- indexValue
     private final ConcurrentMap<Data, Comparable> recordValues = new ConcurrentHashMap<Data, Comparable>(1000);
+    //Map to keep track of the collections we added to the index
+    private final ConcurrentMap<Data, Collection<Comparable>> collectionValues
+            = new ConcurrentHashMap<Data, Collection<Comparable>>();
+
     private final IndexStore indexStore;
     private final String attribute;
     private final boolean ordered;
@@ -85,14 +90,46 @@ public class IndexImpl implements Index {
         }
 
         Data key = e.getIndexKey();
-        Comparable oldValue = recordValues.remove(key);
-        Comparable newValue = e.getAttribute(attribute);
+        Object newValue = e.getAttribute(attribute);
         if (newValue == null) {
             newValue = NULL;
         } else if (newValue.getClass().isEnum()) {
-            newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
+            newValue = TypeConverters.ENUM_CONVERTER.convert((Comparable) newValue);
         }
-        recordValues.put(key, newValue);
+
+        //If collection then add all the Comparables to the index
+        if (newValue instanceof Collection) {
+            Collection<Comparable> newValues = (Collection<Comparable>) newValue;
+            Collection<Comparable> oldValues = collectionValues.remove(key);
+
+            collectionValues.put(key, newValues);
+
+            removeAll(oldValues, key);
+            addAll(newValues, e);
+        } else {
+            Comparable oldValue = recordValues.remove(key);
+            recordValues.put(key, (Comparable) newValue);
+            updateIndex((Comparable) newValue, oldValue, e);
+        }
+    }
+
+    private void removeAll(Collection<Comparable> values, Data key) {
+        if (values == null) {
+            return;
+        }
+
+        for (Comparable v: values) {
+            indexStore.removeIndex(v, key);
+        }
+    }
+
+    private void addAll(Collection<Comparable> values, QueryableEntry e) {
+        for (Comparable v: values) {
+            indexStore.newIndex(v, e);
+        }
+    }
+
+    private void updateIndex(Comparable newValue, Comparable oldValue, QueryableEntry e) {
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);

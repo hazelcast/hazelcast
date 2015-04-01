@@ -49,6 +49,36 @@ The following is the Spring declarative configuration for the same sample.
   </hz:indexes>
 </hz:map>
 ```
+
+#### Indexing Collections
+
+All non primitive types should implement *`Comparable`*, but it is possible to add a *`Collection`* of *`Comparable`*
+objects to the index. 
+
+*For example:* Given a Document object with a Collection of categories.
+
+```java
+public class Document implements Serializable {
+    private String contents;
+    private List<String> categories;
+}
+```
+An index can be added for the *`categories`*
+
+```java
+map.addIndex( "categories", false);
+```
+To find all the documents with the category 'fiction'
+
+```java
+EntryObject e = new PredicateBuilder().getEntryObject();
+Predicate p = e.get("categories").contains("fiction");
+
+Collection<Document> documents = map.values(p);
+```
+
+This will then use the index to find all the documents that in their list of categories have the value 'fiction'.
+
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Non-primitive types to be indexed should implement *`Comparable`*.*
 
