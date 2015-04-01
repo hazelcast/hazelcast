@@ -19,7 +19,6 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -28,7 +27,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import javax.cache.Cache;
 import java.net.URISyntaxException;
 import java.net.URL;
