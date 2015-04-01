@@ -225,7 +225,13 @@
                     <hz:message-listener class-name="com.hazelcast.spring.DummyMessageListener"/>
                 </hz:message-listeners>
             </hz:topic>
-
+            <hz:replicatedmap name="replicatedMap" replication-delay-millis="200" async-fillup="false"
+                              concurrency-level="16" statistics-enabled="false" in-memory-format="OBJECT">
+                <hz:entry-listeners>
+                    <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
+                    <hz:entry-listener implementation="dummyEntryListener" local="true"/>
+                </hz:entry-listeners>
+            </hz:replicatedmap>
             <hz:listeners>
                 <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
                 <hz:listener implementation="dummyMembershipListener"/>
@@ -260,6 +266,7 @@
                                    implementation="dummySerializer"/>
                 </hz:serializers>
             </hz:serialization>
+
             <hz:member-attributes>
                 <hz:attribute name="cluster.group.name">spring-group</hz:attribute>
                 <hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
@@ -270,6 +277,7 @@
                 <hz:attribute name="attribute.double" type="double">0.0d</hz:attribute>
                 <hz:attribute name="attribute.float" type="float">1234.5678</hz:attribute>
             </hz:member-attributes>
+
             <hz:services>
                 <hz:service>
                     <hz:name>my-service</hz:name>
@@ -287,6 +295,7 @@
                     </hz:configuration>
                 </hz:service>
             </hz:services>
+
         </hz:config>
     </hz:hazelcast>
 
@@ -297,6 +306,7 @@
     <hz:map id="map1" instance-ref="instance" name="map1"/>
     <hz:map id="map2" instance-ref="instance" name="map2"/>
     <hz:multiMap id="multiMap" instance-ref="instance" name="testMultimap"/>
+    <hz:replicatedMap id="replicatedMap" instance-ref="instance" name="replicatedMap"/>
     <hz:queue id="queue" instance-ref="instance" name="testQ"/>
     <hz:topic id="topic" instance-ref="instance" name="testTopic"/>
     <hz:set id="set" instance-ref="instance" name="set"/>
