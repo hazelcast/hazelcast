@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -53,6 +54,7 @@ public class ClientConnection implements Connection, Closeable {
     private final SocketChannelWrapper socketChannelWrapper;
     private final ClientConnectionManager connectionManager;
     private final SerializationService serializationService;
+    private final LifecycleService lifecycleService;
 
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
@@ -62,6 +64,7 @@ public class ClientConnection implements Connection, Closeable {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = client.getConnectionManager();
         this.serializationService = client.getSerializationService();
+        this.lifecycleService = client.getLifecycleService();
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
@@ -190,11 +193,6 @@ public class ClientConnection implements Connection, Closeable {
         if (!live.compareAndSet(true, false)) {
             return;
         }
-        try {
-            innerClose();
-        } catch (Exception e) {
-            logger.warning(e);
-        }
         String message = "Connection [" + socketChannelWrapper.socket().getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
@@ -202,7 +200,17 @@ public class ClientConnection implements Connection, Closeable {
             message += "Socket explicitly closed";
         }
 
-        logger.warning(message);
+        try {
+            innerClose();
+        } catch (Exception e) {
+            logger.warning(e);
+        }
+
+        if (lifecycleService.isRunning()) {
+            logger.warning(message);
+        } else {
+            logger.finest(message);
+        }
     }
 
     //failedHeartBeat is incremented in single thread.
