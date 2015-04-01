@@ -119,7 +119,7 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                final URI uri = url.toURI();
+                final URI uri = new URI(url.toString().replace(" ", "%20"));
 
                 ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
                 if (!highestClassLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
