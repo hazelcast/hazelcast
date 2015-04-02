@@ -6,8 +6,7 @@ import com.hazelcast.client.impl.protocol.util.BitUtil;
  * ExceptionResultParameters
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class ExceptionResultParameters
-        extends ClientMessage {
+public class ExceptionResultParameters {
 
     /**
      * ClientMessageType of this message
@@ -16,9 +15,6 @@ public class ExceptionResultParameters
     public String className;
     public String message;
     public String stacktrace;
-
-    private ExceptionResultParameters() {
-    }
 
     private ExceptionResultParameters(ClientMessage flyweight) {
         className = flyweight.getStringUtf8();
@@ -30,13 +26,14 @@ public class ExceptionResultParameters
         return new ExceptionResultParameters(flyweight);
     }
 
-    public static ExceptionResultParameters encode(String className, String message, String stacktrace) {
-        ExceptionResultParameters parameters = new ExceptionResultParameters();
+    public static ClientMessage encode(String className, String message, String stacktrace) {
         final int requiredDataSize = calculateDataSize(className, message, stacktrace);
-        parameters.ensureCapacity(requiredDataSize);
-        parameters.setMessageType(TYPE.id());
-        parameters.set(className).set(message).set(stacktrace);
-        return parameters;
+        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
+        clientMessage.ensureCapacity(requiredDataSize);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(className).set(message).set(stacktrace);
+        clientMessage.updateFrameLenght();
+        return clientMessage;
     }
 
     /**

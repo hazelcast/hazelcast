@@ -91,6 +91,42 @@ public class ClientMessage
 
     private transient int valueOffset;
 
+    protected ClientMessage() {
+    }
+
+    protected ClientMessage(boolean encode, final ByteBuffer buffer, final int offset) {
+        super();
+        if (encode) {
+            wrapForEncode(buffer, offset);
+        } else {
+            wrapForDecode(buffer, offset);
+        }
+    }
+
+    public static ClientMessage createForEncode() {
+        return createForEncode(INITIAL_BUFFER_CAPACITY);
+    }
+
+    public static ClientMessage createForDecode() {
+        return createForDecode(INITIAL_BUFFER_CAPACITY);
+    }
+
+    public static ClientMessage createForEncode(int initialCapacity) {
+        return new ClientMessage(true, ByteBuffer.allocate(initialCapacity), 0);
+    }
+
+    public static ClientMessage createForDecode(int initialCapacity) {
+        return new ClientMessage(false, ByteBuffer.allocate(initialCapacity), 0);
+    }
+
+    public static ClientMessage createForEncode(final ByteBuffer buffer, final int offset) {
+        return new ClientMessage(true, buffer, offset);
+    }
+
+    public static ClientMessage createForDecode(final ByteBuffer buffer, final int offset) {
+        return new ClientMessage(false, buffer, offset);
+    }
+
     public void wrapForEncode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer, offset);
         setDataOffset(HEADER_SIZE);
@@ -159,7 +195,7 @@ public class ClientMessage
      * @param type field value
      * @return ClientMessage
      */
-    protected ClientMessage setMessageType(final int type) {
+    public ClientMessage setMessageType(final int type) {
         uint16Put(offset() + TYPE_FIELD_OFFSET, (short) type, LITTLE_ENDIAN);
         return this;
     }
@@ -270,6 +306,11 @@ public class ClientMessage
         }
         final int length = (offset() + getFrameLength()) - index;
         buffer.getBytes(index, payload, 0, length);
+        return this;
+    }
+
+    public ClientMessage updateFrameLenght() {
+        setFrameLength(index());
         return this;
     }
 

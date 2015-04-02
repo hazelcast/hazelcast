@@ -2,6 +2,7 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.instance.MemberImpl;
@@ -18,8 +19,8 @@ import java.util.Set;
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<CM extends ClientMessage>
-        extends AbstractCallableMessageTask<CM> {
+public abstract class AuthenticationBaseMessageTask<P>
+        extends AbstractCallableMessageTask<P> {
 
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
@@ -29,7 +30,21 @@ public abstract class AuthenticationBaseMessageTask<CM extends ClientMessage>
     }
 
     @Override
-    public Object call() {
+    protected ClientEndpointImpl getEndpoint() {
+        if (connection.isAlive()) {
+            return new ClientEndpointImpl(clientEngine, connection);
+        } else {
+            handleEndpointNotCreatedConnectionNotAlive();
+        }
+        return null;
+    }
+
+    private void handleEndpointNotCreatedConnectionNotAlive() {
+        logger.warning("Dropped: " + clientMessage + " -> endpoint not created for AuthenticationRequest, connection not alive");
+    }
+
+    @Override
+    public ClientMessage call() {
         boolean authenticated = authenticate();
 
         if (authenticated) {
@@ -41,11 +56,11 @@ public abstract class AuthenticationBaseMessageTask<CM extends ClientMessage>
 
     protected abstract boolean authenticate();
 
-    private Object handleUnauthenticated() {
-        return new AuthenticationException("Invalid credentials!");
+    private ClientMessage handleUnauthenticated() {
+        throw  new AuthenticationException("Invalid credentials!");
     }
 
-    private Object handleAuthenticated() {
+    private ClientMessage handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
             final String localMemberUUID = clientEngine.getLocalMember().getUuid();
@@ -67,9 +82,9 @@ public abstract class AuthenticationBaseMessageTask<CM extends ClientMessage>
         clientEngine.bind(endpoint);
 
         final Address thisAddress = clientEngine.getThisAddress();
-        final AuthenticationResultParameters resultParameters = AuthenticationResultParameters
+        final ClientMessage resultClientMesage = AuthenticationResultParameters
                 .encode(thisAddress.getHost(), thisAddress.getPort(), principal.getUuid(), principal.getOwnerUuid());
-        return resultParameters;
+        return resultClientMesage;
     }
 
     protected abstract boolean isOwnerConnection();

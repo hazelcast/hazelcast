@@ -22,8 +22,8 @@ import com.hazelcast.nio.Connection;
 /**
  * Base callable Message task.
  */
-public abstract class AbstractCallableMessageTask<CM extends ClientMessage>
-        extends AbstractMessageTask<CM> {
+public abstract class AbstractCallableMessageTask<P>
+        extends AbstractMessageTask<P> {
 
     protected AbstractCallableMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -31,9 +31,16 @@ public abstract class AbstractCallableMessageTask<CM extends ClientMessage>
 
     @Override
     public final void processMessage() {
-        Object result = call();
-        endpoint.sendResponse(result, parameters.getCorrelationId());
+        try {
+            final ClientMessage result = call();
+            endpoint.sendClientMessage(result);
+        } catch (Exception e) {
+            clientEngine.getLogger(getClass()).warning(e);
+            final ClientMessage exceptionMessage = createExceptionMessage(e);
+            exceptionMessage.setCorrelationId(clientMessage.getCorrelationId());
+            endpoint.sendClientMessage(exceptionMessage);
+        }
     }
 
-    protected abstract Object call();
+    protected abstract ClientMessage call();
 }

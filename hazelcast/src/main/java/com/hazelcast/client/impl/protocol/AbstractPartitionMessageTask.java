@@ -10,8 +10,8 @@ import com.hazelcast.spi.Operation;
 /**
  * AbstractPartitionMessageTask
  */
-public abstract class AbstractPartitionMessageTask<CM extends ClientMessage>
-        extends AbstractMessageTask<CM> {
+public abstract class AbstractPartitionMessageTask<P>
+        extends AbstractMessageTask<P> {
 
     private static final int TRY_COUNT = 100;
 
@@ -76,8 +76,8 @@ public abstract class AbstractPartitionMessageTask<CM extends ClientMessage>
         public void notify(Object object) {
             beforeResponse();
             final byte[] result = filter(object);
-            final GenericResultParameters resultParameters = GenericResultParameters.encode(result);
-            resultParameters.setCorrelationId(parameters.getCorrelationId());
+            final ClientMessage resultParameters = GenericResultParameters.encode(result);
+            resultParameters.setCorrelationId(clientMessage.getCorrelationId());
             endpoint.sendClientMessage(resultParameters);
             afterResponse();
         }

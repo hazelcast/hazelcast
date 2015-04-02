@@ -188,17 +188,18 @@
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
 
-    <!--TODO: we will refactor these External utils-->
-    <suppress checks="" files="com.hazelcast.client.impl.protocol.util[\\/]"/>
-    <!--TODO we will refactor these encode-decode code-->
-    <suppress checks="" files="com.hazelcast.client.impl.protocol.map[\\/]"/>
-    <!--Parameters class are gonna be auto generated-->
-    <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
 
+    <!--CLIENT PROTOCOL-->
+    <!--TODO: we will refactor these External utils-->
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.util[\\/]"/>
+    <!--TODO we will refactor these encode-decode code-->
+    <!--Parameters class are gonna be auto generated-->
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.map.*Parameters"/>
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
 
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
