@@ -21,9 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 
-public class MultiMapOperationFactory implements OperationFactory {
+public class MultiMapOperationFactory
+        implements OperationFactory {
 
     private String name;
 
@@ -58,25 +60,26 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     public Operation createOperation() {
 
-        switch(operationFactoryType) {
+        switch (operationFactoryType) {
             case KEY_SET:
-                 return new KeySetOperation(name);
+                return new KeySetOperation(name);
             case VALUES:
-                 return new ValuesOperation(name);
+                return new ValuesOperation(name);
             case ENTRY_SET:
-                 return new EntrySetOperation(name);
+                return new EntrySetOperation(name);
             case CONTAINS:
-                 return new ContainsEntryOperation(name, key, value, threadId);
+                return new ContainsEntryOperation(name, key, value, threadId);
             case SIZE:
-                 return new SizeOperation(name);
+                return new SizeOperation(name);
             case CLEAR:
-                 return new ClearOperation(name);
+                return new ClearOperation(name);
             default:
-                 return null;
+                return null;
         }
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
         out.writeLong(threadId);
@@ -84,7 +87,8 @@ public class MultiMapOperationFactory implements OperationFactory {
         out.writeData(value);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         threadId = in.readLong();

@@ -25,6 +25,8 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -58,9 +60,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
 
@@ -106,6 +108,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
+    private final MessageTaskFactoryImpl messageTaskFactory;
+
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
         this.node = node;
@@ -113,6 +117,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
         this.executor = newExecutor();
+        this.messageTaskFactory = new MessageTaskFactoryImpl(node);
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
@@ -150,6 +155,19 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         } else {
             InternalOperationService operationService = nodeEngine.getOperationService();
             operationService.execute(new ClientPacketProcessor(packet));
+        }
+    }
+
+    public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
+
+        //TODO: FIXME
+        int partitionId = clientMessage.getPartitionId();
+        final PartitionSpecificRunnable messageTask = messageTaskFactory.createMessageTask(clientMessage, connection);
+        if (partitionId < 0) {
+            executor.execute(messageTask);
+        } else {
+            InternalOperationService operationService = nodeEngine.getOperationService();
+            operationService.execute(messageTask);
         }
     }
 

@@ -31,16 +31,6 @@ public class ParameterFlyweight
         return this;
     }
 
-    public ParameterFlyweight wrap(final MutableDirectBuffer buffer) {
-        return wrap(buffer, 0);
-    }
-
-    public ParameterFlyweight wrap(final MutableDirectBuffer buffer, final int offset) {
-        super.wrap(buffer, offset);
-        this.index = offset;
-        return this;
-    }
-
     public int index() {
         return index;
     }
@@ -93,12 +83,19 @@ public class ParameterFlyweight
     }
 
     public ParameterFlyweight set(final byte[] value) {
-        final int length = value.length;
+        final int length = value != null ? value.length : 0;
         set(length);
-        buffer.putBytes(index, value);
-        index += length;
+        if(length > 0) {
+            buffer.putBytes(index, value);
+            index += length;
+        }
         return this;
     }
+
+    private void setNullValue() {
+
+    }
+
     //endregion SET Overloads
 
     //region GET Overloads

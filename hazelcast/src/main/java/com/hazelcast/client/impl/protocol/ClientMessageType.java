@@ -17,27 +17,43 @@
 package com.hazelcast.client.impl.protocol;
 
 /**
- * Message Id that is used to relate clients messages and message handlers
+ * Client Message type is the unique id defines the type of message. Each type is handled on a specific handler by this id
  */
-public enum MessageId {
-    /**
-     * Map put at protocol version 1
-     */
-    MAP_PUT_1(9),
-    /**
-     * Map get at protocol version 1
-     */
-    MAP_GET_1(10);
+public enum ClientMessageType {
 
-    private final long messageId;
+    /**
+     * Heart beat
+     */
+    HEART_BEAT(0),
 
-    MessageId(long messageId) {
-        this.messageId = messageId;
+    /**
+     * Default Authentication with user-name and password
+     */
+    AUTHENTICATION_DEFAULT(1),
+
+    /**
+     * Custom Authentication with custom credentials impl
+     */
+    AUTHENTICATION_CUSTOM(2),
+
+    /**
+     * Exception
+     */
+    EXCEPTION(3),
+
+    /**
+     * Result wrapper message type
+     */
+    RESULT(4);
+
+    private final int id;
+
+    ClientMessageType(int messageType) {
+        this.id = messageType;
     }
 
-    public long getMessageId() {
-        return messageId;
+    public int id() {
+        return id;
     }
-
 
 }

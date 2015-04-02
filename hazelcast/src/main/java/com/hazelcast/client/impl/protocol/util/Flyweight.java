@@ -17,6 +17,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import static com.hazelcast.client.impl.protocol.util.BitUtil.BYTE_MASK;
 import static com.hazelcast.client.impl.protocol.util.BitUtil.INT_MASK;
@@ -27,32 +28,17 @@ import static com.hazelcast.client.impl.protocol.util.BitUtil.LONG_MASK;
  */
 public class Flyweight {
 
-    private static final byte[] EMPTY_BUFFER = new byte[0];
+    private static final int INITIAL_BUFFER_CAPACITY = 4096;
+    private static final ByteBuffer INITIAL_BUFFER = ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY);
 
-    protected final MutableDirectBuffer buffer = new UnsafeBuffer(EMPTY_BUFFER);
+    protected final MutableDirectBuffer buffer = new UnsafeBuffer(INITIAL_BUFFER);
     private int offset;
-
-    public Flyweight wrap(final byte[] buffer) {
-        this.buffer.wrap(buffer);
-        this.offset = 0;
-        return this;
-    }
 
     public Flyweight wrap(final ByteBuffer buffer) {
         return wrap(buffer, 0);
     }
 
     public Flyweight wrap(final ByteBuffer buffer, final int offset) {
-        this.buffer.wrap(buffer);
-        this.offset = offset;
-        return this;
-    }
-
-    public Flyweight wrap(final MutableDirectBuffer buffer) {
-        return wrap(buffer, 0);
-    }
-
-    public Flyweight wrap(final MutableDirectBuffer buffer, final int offset) {
         this.buffer.wrap(buffer);
         this.offset = offset;
         return this;
@@ -96,5 +82,23 @@ public class Flyweight {
     }
 
     //endregion PUT/GET helpers
+
+    protected void ensureCapacity(final int requiredCapacity) {
+        final int capacity = buffer.capacity();
+        if (requiredCapacity > capacity) {
+            final int newCapacity = findSuitableCapacity(capacity, requiredCapacity);
+            ByteBuffer newBuffer =  ByteBuffer.allocate(newCapacity);
+            //TODO if not using byte buffer ????
+            newBuffer.put(buffer.byteBuffer());
+            buffer.wrap(newBuffer);
+        }
+    }
+    private static int findSuitableCapacity(int capacity, final int requiredCapacity) {
+        do {
+            capacity <<= 1;
+        } while (capacity < requiredCapacity);
+
+        return capacity;
+    }
 
 }
