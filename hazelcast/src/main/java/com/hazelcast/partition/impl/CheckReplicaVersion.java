@@ -114,7 +114,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
 
     @Override
     public String toString() {
-        return getClass().getName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", version="
-                + version + '}';
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
+                + ", version=" + version + '}';
     }
 }

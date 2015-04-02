@@ -14,7 +14,7 @@ import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,8 +34,8 @@ import static org.mockito.Mockito.mock;
 @Category(QuickTest.class)
 public class ClientMapPartitionLostListenerTest {
 
-    @AfterClass
-    public static void destroy() {
+    @After
+    public void destroy() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
@@ -66,20 +66,6 @@ public class ClientMapPartitionLostListenerTest {
         assertRegistrationsSizeEventually(instance, mapName, 0);
     }
 
-    private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final String mapName, final int size) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-
-                final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
-                final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
-                assertEquals(size, registrations.size());
-
-            }
-        });
-    }
-
     @Test
     public void test_mapPartitionLostListener_invoked() {
         final String mapName = randomMapName();
@@ -99,17 +85,7 @@ public class ClientMapPartitionLostListenerTest {
         final int partitionId = 5;
         mapService.onPartitionLost(new InternalPartitionLostEvent(partitionId, 0, null));
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-
-                final List<MapPartitionLostEvent> events = listener.getEvents();
-                assertFalse(events.isEmpty());
-                assertEquals(partitionId, events.get(0).getPartitionId());
-
-            }
-        });
+        assertMapPartitionLostEventEventually(listener, partitionId);
     }
 
     @Test
@@ -132,6 +108,11 @@ public class ClientMapPartitionLostListenerTest {
         final int partitionId = 5;
         mapService.onPartitionLost(new InternalPartitionLostEvent(partitionId, 0, null));
 
+        assertMapPartitionLostEventEventually(listener, partitionId);
+    }
+
+    private void assertMapPartitionLostEventEventually(final EventCollectingMapPartitionLostListener listener,
+                                                       final int partitionId) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -140,6 +121,20 @@ public class ClientMapPartitionLostListenerTest {
                 final List<MapPartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
                 assertEquals(partitionId, events.get(0).getPartitionId());
+
+            }
+        });
+    }
+
+    private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final String mapName, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+
+                final InternalEventService eventService = getNode(instance).getNodeEngine().getEventService();
+                final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
+                assertEquals(size, registrations.size());
 
             }
         });

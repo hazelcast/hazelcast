@@ -52,11 +52,6 @@ final class PartitionReplicaVersions {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("PartitionReplicaVersions");
-        sb.append("{partitionId=").append(partitionId);
-        sb.append(", versions=").append(Arrays.toString(versions));
-        sb.append('}');
-        return sb.toString();
+        return getClass().getSimpleName() + "{partitionId=" + partitionId + ", versions=" + Arrays.toString(versions) + '}';
     }
 }

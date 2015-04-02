@@ -38,7 +38,8 @@ public class PartitionLostListenerTest
 
         final InternalPartitionLostEvent internalEvent = new InternalPartitionLostEvent(1, 0, null);
 
-        final InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getNode(instance).getNodeEngine().getPartitionService();
+        final InternalPartitionServiceImpl partitionService =
+                (InternalPartitionServiceImpl) getNode(instance).getNodeEngine().getPartitionService();
         partitionService.onPartitionLost(internalEvent);
 
         assertTrueEventually(new AssertTask() {

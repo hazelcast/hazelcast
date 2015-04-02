@@ -47,6 +47,8 @@ public class ClientPortableHook implements PortableHook {
     public static final int REMOVE_ALL_LISTENERS = 14;
     public static final int GET_MEMBER_LIST = 15;
     public static final int REGISTER_MEMBERSHIP_LISTENER = 16;
+    public static final int ADD_PARTITION_LOST_LISTENER = 17;
+    public static final int REMOVE_PARTITION_LOST_LISTENER = 18;
 
     @Override
     public int getFactoryId() {

@@ -908,10 +908,8 @@ public interface IMap<K, V>
      * <p/>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
      * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses
-     * IMPORTANT: Listeners registered from HazelcastClient are assigned to nodes randomly. When a node to which
-     * a client-listener is registered fails, the listener is registered to another node automatically. If a listener registered
-     * from HazelcastClient is a random node and that node fails, some of the map partition lost events may be missed until
-     * the listener is assigned to another node.
+     * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
+     * to design limitations
      *
      * @param listener the added MapPartitionLostListener
      * @return returns the registration id for the MapPartitionLostListener.

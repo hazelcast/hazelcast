@@ -228,6 +228,6 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
 
     @Override
     public String toString() {
-        return getClass().getName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
     }
 }

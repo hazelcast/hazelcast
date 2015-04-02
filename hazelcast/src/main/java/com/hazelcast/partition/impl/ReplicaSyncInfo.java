@@ -42,7 +42,7 @@ final class ReplicaSyncInfo {
 
     @Override
     public String toString() {
-        return getClass().getName() + "{partitionId=" + partitionId + ", replicaIndex=" + replicaIndex + ", target=" + target
-                + '}';
+        return getClass().getSimpleName() + "{partitionId=" + partitionId + ", replicaIndex=" + replicaIndex + ", target="
+                + target + '}';
     }
 }

@@ -3,6 +3,8 @@ package com.hazelcast.partition;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -14,14 +16,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.min;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
+//@Repeat(100)
 public class PartitionReplicaVersionsCorrectnessStressTest
         extends AbstractPartitionLostListenerTest {
 
@@ -39,51 +45,63 @@ public class PartitionReplicaVersionsCorrectnessStressTest
     }
 
     @Test
-    public void testReplicaVersions_when1NodeCrashes() {
+    public void testReplicaVersions_when1NodeCrashes()
+            throws InterruptedException {
         testReplicaVersionsWhenNodesCrashSimultaneously(1);
     }
 
     @Test
-    public void testReplicaVersions_when2NodesCrashSimultaneously() {
+    public void testReplicaVersions_when2NodesCrashSimultaneously()
+            throws InterruptedException {
         testReplicaVersionsWhenNodesCrashSimultaneously(2);
     }
 
     @Test
-    public void testReplicaVersions_when3NodesCrashSimultaneously() {
+    public void testReplicaVersions_when3NodesCrashSimultaneously()
+            throws InterruptedException {
         testReplicaVersionsWhenNodesCrashSimultaneously(3);
     }
 
     @Test
-    public void testReplicaVersions_when4NodesCrashSimultaneously() {
+    public void testReplicaVersions_when4NodesCrashSimultaneously()
+            throws InterruptedException {
         testReplicaVersionsWhenNodesCrashSimultaneously(4);
     }
 
-    private void testReplicaVersionsWhenNodesCrashSimultaneously(final int numberOfNodesToCrash) {
+    private void testReplicaVersionsWhenNodesCrashSimultaneously(final int numberOfNodesToCrash)
+            throws InterruptedException {
         final List<HazelcastInstance> instances = getCreatedInstancesShuffledAfterWarmedUp();
 
-        List<HazelcastInstance> survivingInstances = new ArrayList<HazelcastInstance>(instances);
-        final List<HazelcastInstance> terminatingInstances = survivingInstances.subList(0, numberOfNodesToCrash);
-        survivingInstances = survivingInstances.subList(numberOfNodesToCrash, instances.size());
-
+        List<HazelcastInstance> instancesCopy = new ArrayList<HazelcastInstance>(instances);
+        final List<HazelcastInstance> terminatingInstances = instancesCopy.subList(0, numberOfNodesToCrash);
+        final List<HazelcastInstance> survivingInstances = instancesCopy.subList(numberOfNodesToCrash, instances.size());
         populateMaps(survivingInstances.get(0));
 
         final String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
 
         final Map<Integer, long[]> replicaVersionsByPartitionId = new HashMap<Integer, long[]>();
+        final Map<Integer, List<Address>> partitionReplicaAddresses = new HashMap<Integer, List<Address>>();
         final Map<Integer, Integer> smallestSurvivingReplicaIndexByPartitionId = new HashMap<Integer, Integer>();
-        collect(numberOfNodesToCrash, instances, replicaVersionsByPartitionId, smallestSurvivingReplicaIndexByPartitionId);
+
+        collect(numberOfNodesToCrash, instances, replicaVersionsByPartitionId, partitionReplicaAddresses,
+                smallestSurvivingReplicaIndexByPartitionId);
 
         terminateInstances(terminatingInstances);
-        waitAllForSafeState(survivingInstances);
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(isAllInSafeState(survivingInstances));
+            }
+        }, 300);
 
         validateReplicaVersions(numberOfNodesToCrash, log, survivingInstances, replicaVersionsByPartitionId,
-                smallestSurvivingReplicaIndexByPartitionId);
+                partitionReplicaAddresses, smallestSurvivingReplicaIndexByPartitionId);
     }
 
-    private void collect(final int numberOfNodesToCrash,
-                         final List<HazelcastInstance> instances,
+    private void collect(final int numberOfNodesToCrash, final List<HazelcastInstance> instances,
                          final Map<Integer, long[]> replicaVersionsByPartitionId,
-                         final Map<Integer, Integer> smallestSurvivingReplicaIndexByPartitionId) {
+                         final Map<Integer, List<Address>> partitionReplicaAddresses,
+                         final Map<Integer, Integer> smallestSurvivingReplicaIndexByPartitionId)
+            throws InterruptedException {
         for (int i = 0; i < instances.size(); i++) {
             final HazelcastInstance instance = instances.get(i);
             final Node node = getNode(instance);
@@ -92,11 +110,16 @@ public class PartitionReplicaVersionsCorrectnessStressTest
             final InternalPartitionService partitionService = node.getPartitionService();
             for (InternalPartition partition : partitionService.getPartitions()) {
                 final int partitionId = partition.getPartitionId();
-                final long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+
+                final long[] replicaVersions = getReplicaVersions(node, partitionId);
 
                 if (address.equals(partition.getOwnerOrNull())) {
                     final long[] replicaVersionsCopy = Arrays.copyOf(replicaVersions, replicaVersions.length);
                     replicaVersionsByPartitionId.put(partitionId, replicaVersionsCopy);
+
+                    final List<Address> addresses = getAddresses(i, partition);
+                    partitionReplicaAddresses.put(partitionId, addresses);
+
                 }
 
                 if (i >= numberOfNodesToCrash) { // instance is surviving
@@ -113,10 +136,64 @@ public class PartitionReplicaVersionsCorrectnessStressTest
         }
     }
 
+    // Must be called on the correct node !!!
+    private long[] getReplicaVersions(Node node, int partitionId)
+            throws InterruptedException {
+        final GetReplicaVersionsRunnable runnable = new GetReplicaVersionsRunnable(node, partitionId);
+        node.getNodeEngine().getOperationService().execute(runnable);
+        return runnable.getReplicaVersions();
+    }
+
+    private static class GetReplicaVersionsRunnable
+            implements PartitionSpecificRunnable {
+
+        private final Node node;
+
+        private final int partitionId;
+
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        private long[] replicaVersions;
+
+        public GetReplicaVersionsRunnable(Node node, int partitionId) {
+            this.node = node;
+            this.partitionId = partitionId;
+        }
+
+        @Override
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        @Override
+        public void run() {
+            final InternalPartitionService partitionService = node.nodeEngine.getPartitionService();
+            final long[] replicaVersions = partitionService.getPartitionReplicaVersions(getPartitionId());
+            this.replicaVersions = Arrays.copyOf(replicaVersions, replicaVersions.length);
+            latch.countDown();
+        }
+
+        public long[] getReplicaVersions()
+                throws InterruptedException {
+            latch.await(30, TimeUnit.SECONDS);
+            return replicaVersions;
+        }
+    }
+
+    private List<Address> getAddresses(int i, InternalPartition partition) {
+        final List<Address> addresses = new ArrayList<Address>();
+        for (int j = 0; j < i; j++) {
+            addresses.add(partition.getReplicaAddress(j));
+        }
+        return addresses;
+    }
+
     private void validateReplicaVersions(final int numberOfNodesToCrash, final String log,
                                          final List<HazelcastInstance> survivingInstances,
                                          final Map<Integer, long[]> replicaVersionsByPartitionId,
-                                         final Map<Integer, Integer> smallestSurvivingReplicaIndexByPartitionId) {
+                                         final Map<Integer, List<Address>> partitionReplicaAddresses,
+                                         final Map<Integer, Integer> smallestSurvivingReplicaIndexByPartitionId)
+            throws InterruptedException {
         for (HazelcastInstance instance : survivingInstances) {
             final Node node = getNode(instance);
             final Address address = node.getThisAddress();
@@ -127,11 +204,14 @@ public class PartitionReplicaVersionsCorrectnessStressTest
                     final int partitionId = partition.getPartitionId();
                     final long[] initialReplicaVersions = replicaVersionsByPartitionId.get(partitionId);
                     final Integer smallestSurvivingReplicaIndex = smallestSurvivingReplicaIndexByPartitionId.get(partitionId);
-                    final long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+                    final long[] replicaVersions = getReplicaVersions(node, partitionId);
+                    final List<Address> addresses = getAddresses(survivingInstances.size(), partition);
 
                     final String message = log + " PartitionId: " + partitionId + " InitialReplicaVersions: " +
                             Arrays.toString(initialReplicaVersions) + " ReplicaVersions: " + Arrays.toString(replicaVersions)
-                            + " SmallestSurvivingReplicaIndex: " + smallestSurvivingReplicaIndex;
+                            + " SmallestSurvivingReplicaIndex: " + smallestSurvivingReplicaIndex + " InitialReplicaAddresses: "
+                            + partitionReplicaAddresses.get(partitionId) + " Instance: " + address + " CurrentReplicaAddresses: "
+                            + addresses;
 
                     if (smallestSurvivingReplicaIndex <= 1) {
                         assertArrayEquals(message, initialReplicaVersions, replicaVersions);

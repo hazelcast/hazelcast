@@ -21,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class PartitionLostListenerStressTest
         extends AbstractPartitionLostListenerTest {
 
-    static class EventCollectingPartitionLostListener
+    public static class EventCollectingPartitionLostListener
             implements PartitionLostListener {
 
         private List<PartitionLostEvent> lostPartitions = new ArrayList<PartitionLostEvent>();

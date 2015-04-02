@@ -201,7 +201,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
     @Override
     public String toString() {
         final int numberOfTasks = tasks != null ? tasks.size() : 0;
-        return getClass().getName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo + ", replicaVersions="
-                + Arrays.toString(replicaVersions) + ", numberOfTasks=" + numberOfTasks + '}';
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo
+                + ", replicaVersions=" + Arrays.toString(replicaVersions) + ", numberOfTasks=" + numberOfTasks + '}';
     }
 }

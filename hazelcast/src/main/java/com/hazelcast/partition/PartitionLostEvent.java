@@ -67,7 +67,7 @@ public class PartitionLostEvent
             throws IOException {
         out.writeInt(partitionId);
         out.writeInt(lostBackupCount);
-        eventSource.writeData(out);
+        out.writeObject(eventSource);
     }
 
     @Override
@@ -75,8 +75,7 @@ public class PartitionLostEvent
             throws IOException {
         partitionId = in.readInt();
         lostBackupCount = in.readInt();
-        eventSource = new Address();
-        eventSource.readData(in);
+        eventSource = in.readObject();
     }
 
     @Override

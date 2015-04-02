@@ -31,7 +31,7 @@ public class MapPartitionLostEvent extends AbstractIMapEvent {
 
     @Override
     public String toString() {
-        return "MapPartitionLostEvent{"
+        return getClass().getSimpleName() + "{"
                 + super.toString()
                 + ", partitionId=" + partitionId
                 + '}';

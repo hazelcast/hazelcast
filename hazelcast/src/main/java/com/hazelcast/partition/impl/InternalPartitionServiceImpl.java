@@ -398,7 +398,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             // before other members realize the dead one.
             pauseMigration();
             cancelReplicaSyncRequestsTo(deadAddress);
-            promoteFromBackups(deadAddress, thisAddress);
+            removeDeadAddress(deadAddress, thisAddress);
 
             if (node.isMaster() && initialized) {
                 migrationQueue.add(new RepartitioningTask());
@@ -431,11 +431,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         delayedResumeMigrationTrigger.executeWithDelay();
     }
 
-    private void promoteFromBackups(Address deadAddress, Address thisAddress) {
+    private void removeDeadAddress(Address deadAddress, Address thisAddress) {
         for (InternalPartitionImpl partition : partitions) {
-            boolean promote = false;
             if (deadAddress.equals(partition.getOwnerOrNull()) && thisAddress.equals(partition.getReplicaAddress(1))) {
-                promote = true;
                 partition.setMigrating(true);
             }
             // shift partition table up.
@@ -445,14 +443,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 throw new IllegalStateException("Duplicate address found in partition replicas!");
             }
 
-            if (promote) {
-                final Operation op = new PromoteFromBackupOperation(deadAddress);
-                op.setPartitionId(partition.getPartitionId())
-                        .setNodeEngine(nodeEngine)
-                        .setValidateTarget(false)
-                        .setService(this);
-                nodeEngine.getOperationService().executeOperation(op);
-            }
         }
     }
 
@@ -1787,10 +1777,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         @Override
         public String toString() {
-            final StringBuilder sb = new StringBuilder("MigrateTask{");
-            sb.append("migrationInfo=").append(migrationInfo);
-            sb.append('}');
-            return sb.toString();
+            return getClass().getSimpleName() + "{" + "migrationInfo=" + migrationInfo + '}';
         }
     }
 
@@ -1902,7 +1889,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     // it is possible that I might become owner while waiting for sync request from the previous owner.
                     // I should check whether if have failed to get backups from the owner and lost the partition for
                     // some backups.
-                    forceUpdateSyncWaitingReplicaVersions(partitionId, reason);
+                    promoteFromBackups(partitionId, reason, oldAddress);
                 }
                 partitionService.cancelReplicaSync(partitionId);
             }
@@ -1949,9 +1936,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             nodeEngine.getOperationService().executeOperation(op);
         }
 
-        private void forceUpdateSyncWaitingReplicaVersions(int partitionId, PartitionReplicaChangeReason reason) {
+        private void promoteFromBackups(int partitionId, PartitionReplicaChangeReason reason, Address oldAddress) {
             NodeEngine nodeEngine = partitionService.nodeEngine;
-            ForceUpdateSyncWaitingReplicaVersionsOperation op = new ForceUpdateSyncWaitingReplicaVersionsOperation(reason);
+            PromoteFromBackupOperation op = new PromoteFromBackupOperation(reason, oldAddress);
             op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setService(partitionService);
             nodeEngine.getOperationService().executeOperation(op);
         }

@@ -109,8 +109,6 @@ public interface PartitionService {
      * @param partitionLostListener the added PartitionLostListener
      * @return returns the registration id for the PartitionLostListener.
      * @throws java.lang.NullPointerException if partitionLostListener is null.
-     * @throws UnsupportedOperationException  if this operation isn't supported. For example on the client side it isn't possible
-     *                                        to add a PartitionLostListener.
      * @see #removePartitionLostListener(String)
      */
     String addPartitionLostListener(PartitionLostListener partitionLostListener);
@@ -125,8 +123,7 @@ public interface PartitionService {
      * @param registrationId the registration id of the listener to remove.
      * @return true if the listener is removed, false otherwise.
      * @throws java.lang.NullPointerException if registrationId is null.
-     * @throws UnsupportedOperationException  if this operation isn't supported. For example, on the client side it isn't possible
-     *                                        to add/remove a PartitionLostListener.
+     *
      * @see #addPartitionLostListener(PartitionLostListener)
      */
     boolean removePartitionLostListener(String registrationId);

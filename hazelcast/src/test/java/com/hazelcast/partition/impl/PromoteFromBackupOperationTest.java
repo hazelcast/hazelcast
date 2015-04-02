@@ -3,8 +3,9 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.PartitionAwareService;
+import com.hazelcast.partition.impl.PromoteFromBackupOperation.InternalPartitionLostEventPublisher;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,22 +13,20 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Arrays;
-
+import static com.hazelcast.partition.InternalPartitionService.SERVICE_NAME;
 import static com.hazelcast.partition.impl.PartitionReplicaChangeReason.ASSIGNMENT;
 import static com.hazelcast.partition.impl.PartitionReplicaChangeReason.MEMBER_REMOVED;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
+public class PromoteFromBackupOperationTest {
 
     @Mock
     private InternalPartitionService partitionService;
@@ -36,13 +35,14 @@ public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
     private NodeEngineImpl nodeEngine;
 
     @Mock
-    private PartitionAwareService partitionAwareService;
+    private InternalExecutionService executionService;
 
     @Before
     public void before() {
-        when(nodeEngine.getService("partitionService")).thenReturn(partitionService);
-        when(nodeEngine.getLogger(ForceUpdateSyncWaitingReplicaVersionsOperation.class)).thenReturn(mock(ILogger.class));
-        when(nodeEngine.getServices(PartitionAwareService.class)).thenReturn(Arrays.asList(partitionAwareService));
+        when(nodeEngine.getService(SERVICE_NAME)).thenReturn(partitionService);
+        when(nodeEngine.getExecutionService()).thenReturn(executionService);
+        when(nodeEngine.getLogger(PromoteFromBackupOperation.class)).thenReturn(mock(ILogger.class));
+        when(nodeEngine.getLogger(InternalPartitionLostEventPublisher.class)).thenReturn(mock(ILogger.class));
     }
 
     @Test
@@ -52,7 +52,7 @@ public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
         final long[] expectedVersions = {6, 5, 4, 3, 2, 1};
         final int partitionId = 1;
 
-        final ArgumentCaptor<InternalPartitionLostEvent> eventCaptor = ArgumentCaptor.forClass(InternalPartitionLostEvent.class);
+        final ArgumentCaptor<InternalPartitionLostEventPublisher> eventCaptor = createArgumentCaptor();
 
         invokeOperation(versions, partitionId, MEMBER_REMOVED);
         assertThat(versions, equalTo(expectedVersions));
@@ -67,7 +67,7 @@ public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
         final long[] expectedVersions = {5, 5, 4, 3, 2, 1};
         final int partitionId = 1;
 
-        final ArgumentCaptor<InternalPartitionLostEvent> eventCaptor = ArgumentCaptor.forClass(InternalPartitionLostEvent.class);
+        final ArgumentCaptor<InternalPartitionLostEventPublisher> eventCaptor = createArgumentCaptor();
 
         invokeOperation(versions, partitionId, MEMBER_REMOVED);
         assertThat(versions, equalTo(expectedVersions));
@@ -82,12 +82,12 @@ public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
         final long[] expectedVersions = {0, 0, 0, 0, 0, 0};
         final int partitionId = 1;
 
-        final ArgumentCaptor<InternalPartitionLostEvent> eventCaptor = ArgumentCaptor.forClass(InternalPartitionLostEvent.class);
+        final ArgumentCaptor<InternalPartitionLostEventPublisher> publisherCaptor = createArgumentCaptor();
 
         invokeOperation(versions, partitionId, MEMBER_REMOVED);
         assertThat(versions, equalTo(expectedVersions));
 
-        verifyInternalPartitionLostEvent(partitionId, 6, eventCaptor);
+        verifyInternalPartitionLostEvent(partitionId, 6, publisherCaptor);
     }
 
     @Test
@@ -99,14 +99,17 @@ public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
 
         invokeOperation(versions, partitionId, ASSIGNMENT);
         assertThat(versions, equalTo(expectedVersions));
+    }
 
-        verify(partitionAwareService, never()).onPartitionLost(any(InternalPartitionLostEvent.class));
+    private ArgumentCaptor<InternalPartitionLostEventPublisher> createArgumentCaptor() {
+        return ArgumentCaptor.forClass(InternalPartitionLostEventPublisher.class);
     }
 
     private void verifyInternalPartitionLostEvent(final int partitionId, final int replicaIndex,
-                                                  final ArgumentCaptor<InternalPartitionLostEvent> eventCaptor) {
-        verify(partitionAwareService).onPartitionLost(eventCaptor.capture());
-        final InternalPartitionLostEvent expectedEvent = eventCaptor.getValue();
+                                                  final ArgumentCaptor<InternalPartitionLostEventPublisher> publisherCaptor) {
+        verify(executionService).execute(anyString(), publisherCaptor.capture());
+        final InternalPartitionLostEventPublisher publisher = publisherCaptor.getValue();
+        final InternalPartitionLostEvent expectedEvent = publisher.getEvent();
         assertNotNull(expectedEvent);
         assertEquals(partitionId, expectedEvent.getPartitionId());
         assertEquals(replicaIndex, expectedEvent.getLostReplicaIndex());
@@ -114,17 +117,17 @@ public class ForceUpdateSyncWaitingReplicaVersionsOperationTest {
 
     private void invokeOperation(long[] versions, int partitionId, PartitionReplicaChangeReason reason)
             throws Exception {
-        final ForceUpdateSyncWaitingReplicaVersionsOperation operation = createOperation(partitionId, reason);
+        final PromoteFromBackupOperation operation = createOperation(partitionId, reason);
         when(partitionService.getPartitionReplicaVersions(partitionId)).thenReturn(versions);
-        operation.run();
+        operation.initLogger();
+        operation.handleLostBackups();
     }
 
-    private ForceUpdateSyncWaitingReplicaVersionsOperation createOperation(final int partitionId,
-                                                                  final PartitionReplicaChangeReason reason) {
-        final ForceUpdateSyncWaitingReplicaVersionsOperation operation = new ForceUpdateSyncWaitingReplicaVersionsOperation(reason);
+    private PromoteFromBackupOperation createOperation(final int partitionId, final PartitionReplicaChangeReason reason) {
+        final PromoteFromBackupOperation operation = new PromoteFromBackupOperation(reason, null);
         operation.setPartitionId(partitionId);
         operation.setNodeEngine(nodeEngine);
-        operation.setServiceName("partitionService");
+        operation.setServiceName(SERVICE_NAME);
         return operation;
     }
 

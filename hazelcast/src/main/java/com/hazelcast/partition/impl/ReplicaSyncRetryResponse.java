@@ -97,6 +97,6 @@ public class ReplicaSyncRetryResponse extends Operation
 
     @Override
     public String toString() {
-        return getClass().getName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
     }
 }
