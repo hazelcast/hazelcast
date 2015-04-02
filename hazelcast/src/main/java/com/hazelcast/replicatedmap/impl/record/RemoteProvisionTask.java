@@ -66,7 +66,7 @@ final class RemoteProvisionTask<K, V>
     }
 
     private void processReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord, boolean finalRecord) {
-        Object marshalledKey = replicatedRecordStore.marshallKey(replicatedRecord.getKey());
+        Object marshalledKey = replicatedRecordStore.marshallKey(replicatedRecord.getKeyInternal());
         synchronized (replicatedRecordStore.getMutex(marshalledKey)) {
             pushReplicatedRecord(replicatedRecord, finalRecord);
         }
@@ -78,8 +78,8 @@ final class RemoteProvisionTask<K, V>
         }
 
         int hash = replicatedRecord.getLatestUpdateHash();
-        Object key = replicatedRecordStore.unmarshallKey(replicatedRecord.getKey());
-        Object value = replicatedRecordStore.unmarshallValue(replicatedRecord.getValue());
+        Object key = replicatedRecordStore.unmarshallKey(replicatedRecord.getKeyInternal());
+        Object value = replicatedRecordStore.unmarshallValue(replicatedRecord.getValueInternal());
         VectorClockTimestamp vectorClockTimestamp = replicatedRecord.getVectorClockTimestamp();
         long originalTtlMillis = replicatedRecord.getTtlMillis();
         long remainingTtlMillis = getRemainingTtl(replicatedRecord);
