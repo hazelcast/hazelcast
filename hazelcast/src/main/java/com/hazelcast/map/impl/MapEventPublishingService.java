@@ -3,6 +3,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.spi.EventPublishingService;
@@ -34,6 +35,11 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
             return;
         }
 
+        if (eventData instanceof MapPartitionEventData) {
+            dispatchMapPartitionLostEventData((MapPartitionEventData) eventData, listener);
+            return;
+        }
+
         throw new IllegalArgumentException("Unknown map event data");
     }
 
@@ -52,6 +58,17 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
         callListener(listener, event);
     }
 
+
+    private void dispatchMapPartitionLostEventData(MapPartitionEventData mapPartitionEventData, ListenerAdapter listener) {
+        Member member = getMember(mapPartitionEventData);
+        MapPartitionLostEvent event = createMapPartitionLostEventData(mapPartitionEventData, member);
+        callListener(listener, event);
+    }
+
+    private MapPartitionLostEvent createMapPartitionLostEventData(MapPartitionEventData mapPartitionEventData, Member member) {
+        return new MapPartitionLostEvent(mapPartitionEventData.getMapName(), member,
+                    mapPartitionEventData.getEventType(), mapPartitionEventData.getPartitionId());
+    }
 
     private void callListener(ListenerAdapter listener, IMapEvent event) {
         listener.onEvent(event);

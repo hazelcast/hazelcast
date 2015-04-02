@@ -600,6 +600,43 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(o instanceof DummyMapStore);
     }
 
+    @Test
+    public void testMapPartitionLostListenerConfig() {
+        String mapName = "map1";
+        String listenerName = "DummyMapPartitionLostListenerImpl";
+        String xml = createMapPartitionLostListenerConfiguredXml(mapName, listenerName);
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("map1");
+        assertMapPartitionLostListener(listenerName, mapConfig);
+    }
+
+    @Test
+    public void testMapPartitionLostListenerConfigReadOnly() {
+        String mapName = "map1";
+        String listenerName = "DummyMapPartitionLostListenerImpl";
+        String xml = createMapPartitionLostListenerConfiguredXml(mapName, listenerName);
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.findMapConfig("map1");
+        assertMapPartitionLostListener(listenerName, mapConfig);
+    }
+
+    private void assertMapPartitionLostListener(String listenerName, MapConfig mapConfig) {
+        assertFalse(mapConfig.getPartitionLostListenerConfigs().isEmpty());
+        assertEquals(listenerName, mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
+    }
+
+    private String createMapPartitionLostListenerConfiguredXml(String mapName, String listenerName) {
+        return "<hazelcast>\n" +
+                "<map name=\"" + mapName + "\">\n" +
+                "<partition-lost-listeners>\n" +
+                "<partition-lost-listener>"+ listenerName +"</partition-lost-listener>\n" +
+                "</partition-lost-listeners>\n" +
+                "</map>\n" +
+                "</hazelcast>\n";
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.5.xsd");

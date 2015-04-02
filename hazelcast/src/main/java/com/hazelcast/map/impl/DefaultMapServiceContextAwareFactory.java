@@ -97,4 +97,9 @@ class DefaultMapServiceContextAwareFactory extends AbstractMapServiceContextAwar
         return new MapStatisticsAwareService(getMapServiceContext());
     }
 
+    @Override
+    MapPartitionAwareService createPartitionAwareService() {
+        return new MapPartitionAwareService(getMapServiceContext());
+    }
+
 }

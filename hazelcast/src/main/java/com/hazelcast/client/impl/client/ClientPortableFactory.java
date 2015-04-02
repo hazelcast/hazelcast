@@ -21,7 +21,9 @@ import com.hazelcast.cluster.client.ClientPingRequest;
 import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.partition.client.AddPartitionLostListenerRequest;
 import com.hazelcast.partition.client.GetPartitionsRequest;
+import com.hazelcast.partition.client.RemovePartitionLostListenerRequest;
 
 /**
  * Factory class for central client request
@@ -76,6 +78,12 @@ public class ClientPortableFactory implements PortableFactory {
                 break;
             case ClientPortableHook.REGISTER_MEMBERSHIP_LISTENER:
                 portable = new RegisterMembershipListenerRequest();
+                break;
+            case ClientPortableHook.ADD_PARTITION_LOST_LISTENER:
+                portable = new AddPartitionLostListenerRequest();
+                break;
+            case ClientPortableHook.REMOVE_PARTITION_LOST_LISTENER:
+                portable = new RemovePartitionLostListenerRequest();
                 break;
             default:
                 portable = null;

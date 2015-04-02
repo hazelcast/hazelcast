@@ -56,8 +56,8 @@ final class ClearReplicaOperation extends AbstractOperation
             }
             ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
-                logger.finest("Clearing partition replica... partition: " + partitionId
-                        + ", old-replica: " + oldReplicaIndex + ", current-replica: " + currentReplicaIndex);
+                logger.finest("Clearing partition replica... partitionId=" + partitionId
+                        + ", old-replicaIndex=" + oldReplicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
             }
             clearPartition(partitionId, partitionService);
         }
@@ -78,7 +78,7 @@ final class ClearReplicaOperation extends AbstractOperation
 
     private void logMigrationError(Throwable e) {
         ILogger logger = getLogger();
-        logger.warning("While clearing partition data: " + getPartitionId(), e);
+        logger.warning("Error while clearing data. partitionId=" + getPartitionId() + " old-replicaIndex=" + oldReplicaIndex, e);
     }
 
     @Override

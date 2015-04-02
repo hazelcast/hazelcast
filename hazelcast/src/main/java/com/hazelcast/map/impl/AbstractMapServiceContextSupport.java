@@ -2,6 +2,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -201,7 +202,21 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
     }
 
     @Override
+    public String addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
+        final ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
+        final EventFilter filter = new MapPartitionLostEventFilter();
+        final EventRegistration registration = nodeEngine.getEventService().registerListener(serviceName(), mapName, filter,
+                listenerAdapter);
+        return registration.getId();
+    }
+
+    @Override
     public boolean removeEventListener(String mapName, String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(serviceName(), mapName, registrationId);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String mapName, String registrationId) {
         return nodeEngine.getEventService().deregisterListener(serviceName(), mapName, registrationId);
     }
 

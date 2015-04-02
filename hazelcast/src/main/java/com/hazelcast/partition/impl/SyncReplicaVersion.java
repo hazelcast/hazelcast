@@ -146,10 +146,6 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("SyncReplicaVersion{");
-        sb.append("partitionId=").append(getPartitionId());
-        sb.append(", replicaIndex=").append(syncReplicaIndex);
-        sb.append('}');
-        return sb.toString();
+        return getClass().getSimpleName() + "{" + "partitionId=" + getPartitionId() + ", replicaIndex=" + syncReplicaIndex + '}';
     }
 }

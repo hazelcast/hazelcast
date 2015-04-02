@@ -18,17 +18,20 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
 
-public class PartitionReplicaChangeEvent {
-    private int partitionId;
-    private int replicaIndex;
-    private Address oldAddress;
-    private Address newAddress;
+class PartitionReplicaChangeEvent {
+    private final int partitionId;
+    private final int replicaIndex;
+    private final Address oldAddress;
+    private final Address newAddress;
+    private final PartitionReplicaChangeReason reason;
 
-    public PartitionReplicaChangeEvent(int partitionId, int replicaIndex, Address oldAddress, Address newAddress) {
+    public PartitionReplicaChangeEvent(int partitionId, int replicaIndex, Address oldAddress, Address newAddress,
+                                       PartitionReplicaChangeReason reason) {
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
         this.oldAddress = oldAddress;
         this.newAddress = newAddress;
+        this.reason = reason;
     }
 
     public int getPartitionId() {
@@ -47,13 +50,13 @@ public class PartitionReplicaChangeEvent {
         return newAddress;
     }
 
+    public PartitionReplicaChangeReason getReason() {
+        return reason;
+    }
+
     @Override
     public String toString() {
-        return "PartitionReplicaChangeEvent{"
-                + "partitionId=" + partitionId
-                + ", replicaIndex=" + replicaIndex
-                + ", oldAddress=" + oldAddress
-                + ", newAddress=" + newAddress
-                + '}';
+        return getClass().getName() + "{partitionId=" + partitionId + ", replicaIndex=" + replicaIndex + ", oldAddress="
+                + oldAddress + ", newAddress=" + newAddress + ", reason=" + reason + '}';
     }
 }

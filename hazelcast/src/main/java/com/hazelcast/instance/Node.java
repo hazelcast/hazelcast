@@ -36,6 +36,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -250,6 +251,10 @@ public class Node {
             }
             if (listener instanceof MigrationListener) {
                 partitionService.addMigrationListener((MigrationListener) listener);
+                known = true;
+            }
+            if (listener instanceof PartitionLostListener) {
+                partitionService.addPartitionLostListener((PartitionLostListener) listener);
                 known = true;
             }
             if (listener instanceof LifecycleListener) {

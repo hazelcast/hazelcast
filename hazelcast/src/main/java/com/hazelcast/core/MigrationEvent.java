@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionEvent;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,7 +32,7 @@ import java.io.IOException;
  * @see PartitionService
  * @see MigrationListener
  */
-public class MigrationEvent implements DataSerializable {
+public class MigrationEvent implements DataSerializable, PartitionEvent {
 
     private int partitionId;
     private Member oldOwner;

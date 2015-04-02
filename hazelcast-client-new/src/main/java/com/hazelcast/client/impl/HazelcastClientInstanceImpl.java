@@ -402,7 +402,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
 
     @Override
     public PartitionService getPartitionService() {
-        return new PartitionServiceProxy(partitionService);
+        return new PartitionServiceProxy(partitionService, listenerService);
     }
 
     @Override

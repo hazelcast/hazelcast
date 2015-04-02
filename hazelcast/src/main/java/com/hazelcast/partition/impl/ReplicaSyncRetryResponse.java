@@ -44,7 +44,7 @@ public class ReplicaSyncRetryResponse extends Operation
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
 
-        partitionService.clearReplicaSync(partitionId, replicaIndex);
+        partitionService.clearReplicaSyncRequest(partitionId, replicaIndex);
 
         InternalPartitionImpl partition = partitionService.getPartitionImpl(partitionId);
         Address thisAddress = getNodeEngine().getThisAddress();
@@ -53,15 +53,15 @@ public class ReplicaSyncRetryResponse extends Operation
         int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
         if (currentReplicaIndex > 0) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Retrying replica sync request for partition: " + partitionId
-                    + ", initial-replica: " + replicaIndex + ", current-replica: " + currentReplicaIndex);
+                logger.finest("Retrying replica sync request for partitionId=" + partitionId
+                    + ", initial-replicaIndex=" + replicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
             }
             partitionService.triggerPartitionReplicaSync(partitionId, currentReplicaIndex,
                     InternalPartitionService.REPLICA_SYNC_RETRY_DELAY);
 
         } else if (logger.isFinestEnabled()) {
-            logger.finest("No need to retry replica sync request for partition: " + partitionId
-                    + ", initial-replica: " + replicaIndex + ", current-replica: " + currentReplicaIndex);
+            logger.finest("No need to retry replica sync request for partitionId=" + partitionId
+                    + ", initial-replicaIndex=" + replicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
         }
     }
 
@@ -97,11 +97,6 @@ public class ReplicaSyncRetryResponse extends Operation
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ReplicaSyncRetryResponse");
-        sb.append("{partition=").append(getPartitionId());
-        sb.append(", replica=").append(getReplicaIndex());
-        sb.append('}');
-        return sb.toString();
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + '}';
     }
 }

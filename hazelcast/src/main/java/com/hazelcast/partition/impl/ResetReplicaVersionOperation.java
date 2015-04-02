@@ -31,6 +31,15 @@ import java.util.Arrays;
 final class ResetReplicaVersionOperation extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
+    private final PartitionReplicaChangeReason reason;
+
+    private final boolean initialAssignment;
+
+    public ResetReplicaVersionOperation(PartitionReplicaChangeReason reason, boolean initialAssignment) {
+        this.reason = reason;
+        this.initialAssignment = initialAssignment;
+    }
+
     @Override
     public void run() throws Exception {
         int partitionId = getPartitionId();
@@ -40,10 +49,39 @@ final class ResetReplicaVersionOperation extends AbstractOperation
         // version array, we need to clone it here
         versions = Arrays.copyOf(versions, InternalPartition.MAX_BACKUP_COUNT);
 
+        final int replicaIndex = getReplicaIndex();
+        final boolean setWaitingSyncFlag = !initialAssignment;
+
+        if (setWaitingSyncFlag) {
+            versions[replicaIndex - 1] = InternalPartition.SYNC_WAITING;
+
+            if (getLogger().isFinestEnabled()) {
+                getLogger().finest("SYNC_WAITING flag is set. partitionId=" + partitionId + " replicaIndex="
+                        + replicaIndex + " replicaVersions=" + Arrays.toString(versions));
+            }
+
+            if (reason == PartitionReplicaChangeReason.ASSIGNMENT) {
+                resetSyncWaitingVersionsAfterReplicaIndex(versions, replicaIndex);
+
+                if (getLogger().isFinestEnabled()) {
+                    getLogger().finest("SYNC_WAITING flags after replica index are reset. partitionId="
+                            + partitionId + " replicaIndex=" + replicaIndex  + " replicaVersions=" + Arrays.toString(versions));
+                }
+            }
+        }
+
         // clear and set replica versions back to ensure backup replica does not have
         // version numbers of prior replicas
         partitionService.clearPartitionReplicaVersions(partitionId);
-        partitionService.setPartitionReplicaVersions(partitionId, versions, getReplicaIndex());
+        partitionService.setPartitionReplicaVersions(partitionId, versions, replicaIndex);
+    }
+
+    private void resetSyncWaitingVersionsAfterReplicaIndex(long[] versions, int replicaIndex) {
+        for (int i = replicaIndex + 1; i <= versions.length; i++) {
+            if (versions[i - 1] == InternalPartition.SYNC_WAITING) {
+                versions[i - 1] = 0;
+            }
+        }
     }
 
     @Override

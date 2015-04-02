@@ -18,6 +18,7 @@ import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 class MapEventPublisherSupport implements MapEventPublisher {
@@ -46,11 +47,17 @@ class MapEventPublisherSupport implements MapEventPublisher {
     @Override
     public void publishMapEvent(Address caller, String mapName, EntryEventType eventType,
                                 int numberOfEntriesAffected) {
+        final Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
+        for (EventRegistration registration : getRegistrations(mapName)) {
+            if (!(registration.getFilter() instanceof MapPartitionLostEventFilter)) {
+                registrations.add(registration);
+            }
+        }
 
-        final Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (registrations.isEmpty()) {
             return;
         }
+
         final String source = getThisNodesAddress();
         final MapEventData mapEventData = new MapEventData(source, mapName, caller,
                 eventType.getType(), numberOfEntriesAffected);
@@ -104,6 +111,24 @@ class MapEventPublisherSupport implements MapEventPublisher {
         }
     }
 
+    @Override
+    public void publishMapPartitionLostEvent(Address caller, String mapName, int partitionId) {
+        final Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
+        for (EventRegistration registration : getRegistrations(mapName)) {
+            if (registration.getFilter() instanceof MapPartitionLostEventFilter) {
+                registrations.add(registration);
+            }
+        }
+
+        if (registrations.isEmpty()) {
+            return;
+        }
+
+        final String thisNodesAddress = getThisNodesAddress();
+        final MapPartitionEventData eventData = new MapPartitionEventData(thisNodesAddress, mapName, caller, partitionId);
+        publishEventInternal(registrations, eventData, partitionId);
+    }
+
     private List<EventRegistration> initRegistrationsWithoutValue(List<EventRegistration> registrationsWithoutValue,
                                                                   Result result) {
         if (registrationsWithoutValue != null) {
@@ -135,6 +160,10 @@ class MapEventPublisherSupport implements MapEventPublisher {
 
     private Result applyEventFilter(EventFilter filter, boolean syntheticEvent, Data dataKey,
                                     Data dataOldValue, Data dataValue, EntryEventType eventType) {
+
+        if (filter instanceof MapPartitionLostEventFilter) {
+            return Result.NONE;
+        }
 
         // below, order of ifs are important.
         // QueryEventFilter is instance of EntryEventFilter.

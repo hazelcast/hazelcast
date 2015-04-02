@@ -33,6 +33,11 @@ public interface InternalPartition {
     int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
 
     /**
+     * Indicates that a replica index is waiting for a backup sync
+     */
+    int SYNC_WAITING = -1;
+
+    /**
      * Checks if the partition is local.
      *
      * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the

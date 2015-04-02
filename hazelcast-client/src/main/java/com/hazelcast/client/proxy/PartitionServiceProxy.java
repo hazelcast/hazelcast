@@ -16,11 +16,18 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.partition.PartitionLostEvent;
+import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.partition.client.AddPartitionLostListenerRequest;
+import com.hazelcast.partition.client.RemovePartitionLostListenerRequest;
+import com.hazelcast.spi.impl.PortablePartitionLostEvent;
 
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -33,10 +40,12 @@ import java.util.concurrent.TimeUnit;
 public final class PartitionServiceProxy implements PartitionService {
 
     private final ClientPartitionService partitionService;
+    private final ClientListenerService listenerService;
     private final Random random = new Random();
 
-    public PartitionServiceProxy(ClientPartitionService partitionService) {
+    public PartitionServiceProxy(ClientPartitionService partitionService, ClientListenerService listenerService) {
         this.partitionService = partitionService;
+        this.listenerService = listenerService;
     }
 
     @Override
@@ -72,6 +81,19 @@ public final class PartitionServiceProxy implements PartitionService {
     }
 
     @Override
+    public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
+        final AddPartitionLostListenerRequest request = new AddPartitionLostListenerRequest();
+        final EventHandler<PortablePartitionLostEvent> handler = new ClientPartitionLostEventHandler(partitionLostListener);
+        return listenerService.startListening(request, null, handler);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String registrationId) {
+        final RemovePartitionLostListenerRequest request = new RemovePartitionLostListenerRequest(registrationId);
+        return listenerService.stopListening(request, registrationId);
+    }
+
+    @Override
     public boolean isClusterSafe() {
         throw new UnsupportedOperationException();
     }
@@ -90,4 +112,29 @@ public final class PartitionServiceProxy implements PartitionService {
     public boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit) {
         throw new UnsupportedOperationException();
     }
+
+    private static class ClientPartitionLostEventHandler implements EventHandler<PortablePartitionLostEvent> {
+
+        private PartitionLostListener listener;
+
+        public ClientPartitionLostEventHandler(PartitionLostListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(PortablePartitionLostEvent event) {
+            listener.partitionLost(new PartitionLostEvent(event.getPartitionId(), event.getLostBackupCount(), event.getSource()));
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
 }

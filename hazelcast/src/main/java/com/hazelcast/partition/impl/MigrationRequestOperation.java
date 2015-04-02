@@ -86,9 +86,9 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         try {
             verifyOwner(source, partition, owner);
             partitionService.addActiveMigration(migrationInfo);
-            long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
             Collection<Operation> tasks = prepareMigrationTasks();
             if (tasks.size() > 0) {
+                long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
                 invokeMigrationOperation(destination, replicaVersions, tasks);
                 returnResponse = false;
             } else {
@@ -132,7 +132,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     private void verifyOwner(Address source, InternalPartition partition, Address owner) {
         if (!source.equals(owner)) {
             throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
-                    + migrationInfo + " -> " + partition);
+                    + migrationInfo + " -> partitionId=" + partition.getPartitionId() + " , " + partition);
         }
     }
 
