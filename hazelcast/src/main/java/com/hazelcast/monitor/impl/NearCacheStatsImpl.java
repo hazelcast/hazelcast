@@ -11,15 +11,18 @@ import static com.hazelcast.util.JsonUtil.getLong;
 public class NearCacheStatsImpl
         implements NearCacheStats {
 
-    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> HITS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(NearCacheStatsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(NearCacheStatsImpl.class, "misses");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> OWNED_ENTRY_COUNT_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(NearCacheStatsImpl.class, "ownedEntryCount");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> OWNED_ENTRY_MEMORY_COST_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(NearCacheStatsImpl.class, "ownedEntryMemoryCost");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> HITS_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(NearCacheStatsImpl.class, "hits");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> MISSES_UPDATER =
+            AtomicLongFieldUpdater.newUpdater(NearCacheStatsImpl.class, "misses");
+
+    private volatile long creationTime;
     private volatile long ownedEntryCount;
     private volatile long ownedEntryMemoryCost;
-    private volatile long creationTime;
-
-    // These fields are only accessed through the updaters
     private volatile long hits;
     private volatile long misses;
 
@@ -38,7 +41,15 @@ public class NearCacheStatsImpl
     }
 
     public void setOwnedEntryCount(long ownedEntryCount) {
-        this.ownedEntryCount = ownedEntryCount;
+        OWNED_ENTRY_COUNT_UPDATER.set(this, ownedEntryCount);
+    }
+
+    public void incrementOwnedEntryCount() {
+        OWNED_ENTRY_COUNT_UPDATER.incrementAndGet(this);
+    }
+
+    public void decrementOwnedEntryCount() {
+        OWNED_ENTRY_COUNT_UPDATER.decrementAndGet(this);
     }
 
     @Override
@@ -46,14 +57,26 @@ public class NearCacheStatsImpl
         return ownedEntryMemoryCost;
     }
 
+    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST_UPDATER.set(this, ownedEntryMemoryCost);
+    }
+
+    public void incrementOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST_UPDATER.addAndGet(this, ownedEntryMemoryCost);
+    }
+
+    public void decrementOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
+        OWNED_ENTRY_MEMORY_COST_UPDATER.addAndGet(this, -ownedEntryMemoryCost);
+    }
+
     @Override
     public long getHits() {
         return hits;
     }
 
-    @Override
-    public long getMisses() {
-        return misses;
+
+    public void incrementHits() {
+        HITS_UPDATER.incrementAndGet(this);
     }
 
     public void setHits(long hits) {
@@ -61,21 +84,21 @@ public class NearCacheStatsImpl
     }
 
     @Override
-    public double getRatio() {
-        return (double) hits / misses;
+    public long getMisses() {
+        return misses;
     }
 
-    public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+    public void setMisses(long misses) {
+        MISSES_UPDATER.set(this, misses);
     }
 
     public void incrementMisses() {
         MISSES_UPDATER.incrementAndGet(this);
     }
 
-    public void incrementHits() {
-        HITS_UPDATER.incrementAndGet(this);
+    @Override
+    public double getRatio() {
+        return (double) hits / misses;
     }
 
     @Override

@@ -51,6 +51,7 @@ public class CacheSizeRequest
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.SIZE;
     }
@@ -76,4 +77,5 @@ public class CacheSizeRequest
     public Permission getRequiredPermission() {
         return null;
     }
+
 }

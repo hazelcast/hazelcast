@@ -54,7 +54,11 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration access;
     private Duration update;
 
+    /**
+     * Default constructor to serialize/deserialize
+     */
     public HazelcastExpiryPolicy() {
+
     }
 
     /**

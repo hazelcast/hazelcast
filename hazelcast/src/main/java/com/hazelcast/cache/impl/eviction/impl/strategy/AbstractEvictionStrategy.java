@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.eviction.impl.strategy;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictableStore;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
+import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
 
@@ -38,19 +39,21 @@ public abstract class AbstractEvictionStrategy<A, E extends Evictable, S extends
      * @param evictionChecker           {@link EvictionChecker} to make a decision about if eviction is
      *                                  required or not. If you want evict anyway,
      *                                  you can use {@link EvictionChecker#EVICT_ALWAYS}
+     * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
      * @return evicted entry count
      */
+    @Override
     public int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
-            EvictionChecker evictionChecker) {
+            EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener) {
         if (evictionChecker != null) {
             if (evictionChecker.isEvictionRequired()) {
-                return evictInternal(evictableStore, evictionPolicyEvaluator);
+                return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
             } else {
                 return 0;
             }
         } else {
-            return evictInternal(evictableStore, evictionPolicyEvaluator);
+            return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
         }
     }
 
@@ -60,10 +63,12 @@ public abstract class AbstractEvictionStrategy<A, E extends Evictable, S extends
      * @param evictableStore            Store that holds {@link Evictable} entries
      * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
      *                                  {@link com.hazelcast.config.EvictionPolicy} on entries
+     * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
      * @return evicted entry count
      */
     protected abstract int evictInternal(S evictableStore,
-        EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator);
+            EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
+            EvictionListener<A, E> evictionListener);
 
 }
