@@ -66,8 +66,12 @@ class DefaultMapServiceContext extends AbstractMapServiceContextSupport {
         this.nearCacheProvider = new NearCacheProvider(this, nodeEngine);
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
-        this.mapEventPublisher = new MapEventPublisherSupport(this);
+        this.mapEventPublisher = createMapEventPublisherSupport();
         this.mapContextQuerySupport = new BasicMapContextQuerySupport(this);
+    }
+
+    MapEventPublisherSupport createMapEventPublisherSupport() {
+        return new MapEventPublisherSupport(this);
     }
 
     @Override
