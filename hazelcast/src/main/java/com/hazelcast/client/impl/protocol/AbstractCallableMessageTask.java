@@ -33,12 +33,11 @@ public abstract class AbstractCallableMessageTask<P>
     public final void processMessage() {
         try {
             final ClientMessage result = call();
-            endpoint.sendClientMessage(result);
+            sendClientMessage(result);
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
             final ClientMessage exceptionMessage = createExceptionMessage(e);
-            exceptionMessage.setCorrelationId(clientMessage.getCorrelationId());
-            endpoint.sendClientMessage(exceptionMessage);
+            sendClientMessage(exceptionMessage);
         }
     }
 

@@ -29,10 +29,17 @@ import static com.hazelcast.client.impl.protocol.util.BitUtil.LONG_MASK;
 public class Flyweight {
 
     public static final int INITIAL_BUFFER_CAPACITY = 4096;
-    protected final MutableDirectBuffer buffer= new UnsafeBuffer(ByteBuffer.allocate(0));
+    protected final MutableDirectBuffer buffer;
     private int offset;
 
-    protected Flyweight(){}
+    protected Flyweight(){
+        buffer= new UnsafeBuffer(ByteBuffer.allocate(0));
+    }
+
+    protected Flyweight(final ByteBuffer buffer, final int offset){
+        this.buffer = new UnsafeBuffer(buffer);
+        this.offset = offset;
+    }
 
     public Flyweight wrap(final ByteBuffer buffer) {
         return wrap(buffer, 0);

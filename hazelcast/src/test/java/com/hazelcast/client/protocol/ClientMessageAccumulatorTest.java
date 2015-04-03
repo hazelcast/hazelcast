@@ -1,6 +1,6 @@
 package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.impl.protocol.util.ClientMessageAccumulator;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,10 +29,11 @@ public class ClientMessageAccumulatorTest {
 
     @Test
     public void shouldAccumulateClientMessageCorrectly() {
-        ClientMessageAccumulator accumulator = new ClientMessageAccumulator();
+        ClientMessage accumulator = ClientMessage.create();
         final ByteBuffer inBuffer = ByteBuffer.wrap(BYTE_DATA);
-        accumulator.accumulate(inBuffer);
-        final ByteBuffer byteBuffer = accumulator.accumulatedByteBuffer();
+        accumulator.readFrom(inBuffer);
+
+        final ByteBuffer byteBuffer = accumulatedByteBuffer(accumulator.buffer().byteBuffer(), accumulator.index());
         assertEquals(0, byteBuffer.position());
         assertEquals(accumulator.getFrameLength(), byteBuffer.limit());
 
@@ -44,12 +45,25 @@ public class ClientMessageAccumulatorTest {
 
     @Test
     public void shouldNotAccumulateInCompleteFrameSize() {
-        ClientMessageAccumulator accumulator = new ClientMessageAccumulator();
+        ClientMessage accumulator = ClientMessage.create();
         final byte[] array = new byte[]{1,2,3};
         final ByteBuffer inBuffer = ByteBuffer.wrap(array);
-        final int accumulate = accumulator.accumulate(inBuffer);
-        assertEquals(0, accumulate);
+        assertFalse(accumulator.readFrom(inBuffer));
         assertFalse(accumulator.isComplete());
+    }
+
+    /**
+     * setup the wrapped bytebuffer to point to this clientMessages data
+     * @return
+     */
+    public ByteBuffer accumulatedByteBuffer(final ByteBuffer byteBuffer, int index) {
+        if (byteBuffer != null) {
+            byteBuffer.limit(index);
+            byteBuffer.position(index);
+            byteBuffer.flip();
+            return byteBuffer;
+        }
+        return null;
     }
 
 }

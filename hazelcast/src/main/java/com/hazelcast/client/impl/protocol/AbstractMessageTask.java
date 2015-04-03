@@ -105,9 +105,7 @@ public abstract class AbstractMessageTask<P>
             }
         }
         if (parameters != null && endpoint != null) {
-            ClientMessage exception = createExceptionMessage(throwable);
-            exception.setCorrelationId(clientMessage.getCorrelationId());
-            endpoint.sendClientMessage(exception);
+            sendClientMessage(throwable);
         }
 
     }
@@ -152,6 +150,18 @@ public abstract class AbstractMessageTask<P>
     }
 
     protected abstract void processMessage();
+
+    protected void sendClientMessage(ClientMessage resultClientMessage) {
+        resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
+        resultClientMessage.setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
+        resultClientMessage.setVersion(ClientMessage.VERSION);
+        getEndpoint().sendClientMessage(resultClientMessage);
+    }
+
+    protected void sendClientMessage(Throwable throwable) {
+        ClientMessage exception = createExceptionMessage(throwable);
+        sendClientMessage(exception);
+    }
 
     @Override
     public String getDistributedObjectType() {

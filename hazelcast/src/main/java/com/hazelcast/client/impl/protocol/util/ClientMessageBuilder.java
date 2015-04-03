@@ -19,7 +19,7 @@ public class ClientMessageBuilder {
 
     private final Int2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Int2ObjectHashMap<BufferBuilder>();
 
-    private ClientMessageAccumulator message = new ClientMessageAccumulator();
+    private ClientMessage message = ClientMessage.create();
 
     final TcpIpConnection connection;
     final IOService ioService;
@@ -30,9 +30,8 @@ public class ClientMessageBuilder {
     }
 
     public void onData(final ByteBuffer buffer) {
-        message.accumulate(buffer);
-
-        if (!message.isComplete()) {
+        final boolean complete = message.readFrom(buffer);
+        if (!complete) {
             return;
         }
 
@@ -41,10 +40,8 @@ public class ClientMessageBuilder {
 
         if ((flags & BEGIN_AND_END_FLAGS) == BEGIN_AND_END_FLAGS) {
             //HANDLE-MESSAGE
-            ClientMessage cm = ClientMessage.createForDecode(message.buffer().byteBuffer(), 0);
-            //HANDLE-MESSAGE
-            handleMessage(cm);
-            message = new ClientMessageAccumulator();
+            handleMessage(message);
+            message = ClientMessage.create();
         } else {
             if ((flags & BEGIN_FLAG) == BEGIN_FLAG) {
                 final BufferBuilder builder = builderBySessionIdMap
@@ -74,6 +71,7 @@ public class ClientMessageBuilder {
     }
 
     protected void handleMessage(ClientMessage message) {
+        message.index(message.getDataOffset() + message.offset());
         this.ioService.handleClientMessage(message, connection);
     }
 

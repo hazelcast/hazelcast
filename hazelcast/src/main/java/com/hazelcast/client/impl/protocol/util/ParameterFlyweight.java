@@ -21,6 +21,14 @@ public class ParameterFlyweight
 
     private int index;
 
+    public ParameterFlyweight() {
+        super();
+    }
+
+    public ParameterFlyweight(ByteBuffer buffer, int offset) {
+        super(buffer,offset);
+    }
+
     public ParameterFlyweight wrap(final ByteBuffer buffer) {
         return wrap(buffer, 0);
     }

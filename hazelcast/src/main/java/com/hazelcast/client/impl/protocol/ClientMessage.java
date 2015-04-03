@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.nio.SocketReadable;
 import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
@@ -56,7 +57,12 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  */
 public class ClientMessage
         extends ParameterFlyweight
-        implements SocketWritable {
+        implements SocketWritable, SocketReadable {
+
+    /**
+     * Current protocol version
+     */
+    public static final short VERSION = 0;
 
     /**
      * Begin Flag
@@ -92,10 +98,11 @@ public class ClientMessage
     private transient int valueOffset;
 
     protected ClientMessage() {
+        super();
     }
 
     protected ClientMessage(boolean encode, final ByteBuffer buffer, final int offset) {
-        super();
+        super(buffer, offset);
         if (encode) {
             wrapForEncode(buffer, offset);
         } else {
@@ -103,12 +110,10 @@ public class ClientMessage
         }
     }
 
-    public static ClientMessage createForEncode() {
-        return createForEncode(INITIAL_BUFFER_CAPACITY);
-    }
-
-    public static ClientMessage createForDecode() {
-        return createForDecode(INITIAL_BUFFER_CAPACITY);
+    public static ClientMessage create() {
+        final ClientMessage clientMessage = new ClientMessage();
+        clientMessage.wrap(ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY), 0);
+        return clientMessage;
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
@@ -341,6 +346,45 @@ public class ClientMessage
         valueOffset += bytesWrite;
 
         return done;
+    }
+
+    public boolean readFrom(ByteBuffer source) {
+        if (index() == 0) {
+            initFrameSize(source);
+        }
+        while (index() >= BitUtil.SIZE_OF_INT && source.hasRemaining() && !isComplete()) {
+            accumulate(source, getFrameLength() - index());
+        }
+        return isComplete();
+    }
+
+    private int initFrameSize(ByteBuffer byteBuffer) {
+        if (byteBuffer.remaining() < BitUtil.SIZE_OF_INT) {
+            return 0;
+        }
+        final int accumulatedBytesSize = accumulate(byteBuffer, BitUtil.SIZE_OF_INT);
+        return accumulatedBytesSize;
+    }
+
+    private int accumulate(ByteBuffer byteBuffer, int length) {
+        final int remaining = byteBuffer.remaining();
+        final int readLength = remaining < length ? remaining : length;
+        if (readLength > 0) {
+            final int requiredCapacity = index() + readLength;
+            ensureCapacity(requiredCapacity);
+            buffer.putBytes(index(), byteBuffer, readLength);
+            index(index() + readLength);
+            return readLength;
+        }
+        return 0;
+    }
+
+    /**
+     * checks frame size and total data size to validate message size
+     * @return true if message is constructed
+     */
+    public boolean isComplete() {
+        return (index() > HEADER_SIZE) && (index() == getFrameLength());
     }
 
     @Override
