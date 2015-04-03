@@ -1,105 +1,101 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.instance.GroupProperties.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class InvocationRegistryTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private NodeEngineImpl nodeEngine;
     private OperationServiceImpl operationService;
-    private HazelcastInstance[] cluster;
     private HazelcastInstance local;
-    private HazelcastInstance remote;
 
     @Before
     public void setup() {
-        cluster = createHazelcastInstanceFactory(2).newInstances();
-        warmUpPartitions(cluster);
-        local = cluster[0];
-        remote = cluster[1];
+        Config config = new Config();
+        config.setProperty(PROP_BACKPRESSURE_ENABLED, "false");
+        local = createHazelcastInstance(config);
+        warmUpPartitions(local);
         nodeEngine = getNodeEngineImpl(local);
+
         operationService = (OperationServiceImpl) getOperationService(local);
-        invocationRegistry = new InvocationRegistry(operationService, 10, TimeUnit.MINUTES.toMillis(1));
+        invocationRegistry = operationService.invocationsRegistry;
+    }
+
+    private Invocation newInvocation() {
+        return newInvocation(new DummyBackupAwareOperation());
+    }
+
+    private Invocation newInvocation(Operation op) {
+        return new PartitionInvocation(nodeEngine, null, op, op.getPartitionId(), 0, 0, 0, 0, null, false);
     }
 
     // ====================== register ===============================
 
     @Test
-    public void register_whenLocal_and_notBackupAware_thenSkipped() {
+    public void register_whenSkippableInvocation() {
         Operation op = new DummyOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+        Invocation invocation = newInvocation(op);
         invocation.remote = false;
-
-        long oldCallId = invocationRegistry.getLastCallId();
 
         invocationRegistry.register(invocation);
 
-        assertEquals(oldCallId, invocationRegistry.getLastCallId());
-        assertEquals(0, invocation.op.getCallId());
+        assertEquals(Operation.CALL_ID_LOCAL_SKIPPED, invocation.op.getCallId());
         assertNull(invocationRegistry.get(op.getCallId()));
     }
 
     @Test
-    public void register_whenRemote_and_notBackupAware_thenRegistered() {
-        Operation op = new DummyOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
-        invocation.remote = true;
+    public void register_whenNoneSkippableInvocation() {
+        Operation op = new DummyBackupAwareOperation();
+        Invocation invocation = newInvocation(op);
         long oldCallId = invocationRegistry.getLastCallId();
 
         invocationRegistry.register(invocation);
 
-        assertEquals(oldCallId + 1, invocationRegistry.getLastCallId());
         assertEquals(oldCallId + 1, op.getCallId());
         assertSame(invocation, invocationRegistry.get(op.getCallId()));
     }
 
     @Test
-    public void register_whenBackupAware_thenRegistered() {
+    public void register_whenAlreadyRegistered_thenAssertionError() {
         Operation op = new DummyBackupAwareOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
-        invocation.remote = false;
+        Invocation invocation = newInvocation(op);
+        invocationRegistry.register(invocation);
         long oldCallId = invocationRegistry.getLastCallId();
 
-        invocationRegistry.register(invocation);
+        try {
+            invocationRegistry.register(invocation);
+            fail();
+        } catch (AssertionError expected) {
 
-        assertEquals(oldCallId + 1, invocationRegistry.getLastCallId());
-        assertEquals(oldCallId + 1, invocation.op.getCallId());
-        assertSame(invocation, invocationRegistry.get(op.getCallId()));
-    }
+        }
 
-    @Test
-    public void register_whenAlreadyRegistered_thenFirstUnregistered() {
-        Operation op = new DummyBackupAwareOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
-
-        invocationRegistry.register(invocation);
-        long oldCallId = invocationRegistry.getLastCallId();
-        invocationRegistry.register(invocation);
-
-        assertNull(invocationRegistry.get(oldCallId));
-        assertEquals(oldCallId + 1, invocationRegistry.getLastCallId());
-        assertEquals(oldCallId + 1, invocation.op.getCallId());
-        assertSame(invocation, invocationRegistry.get(op.getCallId()));
+        assertSame(invocation, invocationRegistry.get(oldCallId));
+        assertEquals(oldCallId, invocationRegistry.getLastCallId());
+        assertEquals(oldCallId, invocation.op.getCallId());
     }
 
     // ====================== deregister ===============================
@@ -107,7 +103,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Test
     public void deregister_whenAlreadyDeregistered_thenIgnored() {
         Operation op = new DummyBackupAwareOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+        Invocation invocation = newInvocation(op);
         invocationRegistry.register(invocation);
         long callId = op.getCallId();
 
@@ -119,7 +115,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Test
     public void deregister_whenSkipped() {
         Operation op = new DummyOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+        Invocation invocation = newInvocation(op);
         invocation.remote = false;
 
         invocationRegistry.register(invocation);
@@ -131,7 +127,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Test
     public void deregister_whenRegistered_thenRemoved() {
         Operation op = new DummyBackupAwareOperation();
-        Invocation invocation = new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+        Invocation invocation = newInvocation(op);
         invocationRegistry.register(invocation);
         long callId = op.getCallId();
 
@@ -139,28 +135,61 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         assertNull(invocationRegistry.get(callId));
     }
 
-    // ====================== size and isEmpty===============================
+    // ====================== size ===============================
 
     @Test
-    public void size_and_isEmpty() {
+    public void test_size() {
         assertEquals(0, invocationRegistry.size());
-        assertTrue(invocationRegistry.isEmpty());
 
         Invocation firstInvocation = newInvocation();
         invocationRegistry.register(firstInvocation);
 
         assertEquals(1, invocationRegistry.size());
-        assertFalse(invocationRegistry.isEmpty());
 
         Invocation secondInvocation = newInvocation();
         invocationRegistry.register(secondInvocation);
 
         assertEquals(2, invocationRegistry.size());
-        assertFalse(invocationRegistry.isEmpty());
     }
 
-    private Invocation newInvocation() {
-        Operation op = new DummyBackupAwareOperation();
-        return new PartitionInvocation(nodeEngine, null, op, 0, 0, 0, 0, 0, null, false);
+    // ===================== onMemberLeft ============================
+
+    // ===================== reset ============================
+
+    @Test
+    public void reset_thenAllInvocationsMemberLeftException() throws ExecutionException, InterruptedException {
+        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
+        invocationRegistry.register(invocation);
+        long callId = invocation.op.getCallId();
+
+        invocationRegistry.reset();
+
+        InvocationFuture f = invocation.invocationFuture;
+        try {
+            f.get();
+            fail();
+        } catch (MemberLeftException expected) {
+        }
+
+        assertNull(invocationRegistry.get(callId));
+    }
+
+    // ===================== shutdown ============================
+
+    @Test
+    public void shutdown_thenAllInvocationsAborted() throws ExecutionException, InterruptedException {
+        Invocation invocation = newInvocation(new DummyBackupAwareOperation());
+        invocationRegistry.register(invocation);
+        long callId = invocation.op.getCallId();
+        invocationRegistry.shutdown();
+
+        InvocationFuture f = invocation.invocationFuture;
+        try {
+            f.getSafely();
+            fail();
+        } catch (HazelcastInstanceNotActiveException expected) {
+        }
+
+        assertNull(invocationRegistry.get(callId));
     }
 }

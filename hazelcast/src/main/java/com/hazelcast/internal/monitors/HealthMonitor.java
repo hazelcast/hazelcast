@@ -27,8 +27,8 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -75,7 +75,7 @@ public class HealthMonitor extends Thread {
     private final ClusterServiceImpl clusterService;
     private final ExecutionService executionService;
     private final EventService eventService;
-    private final OperationService operationService;
+    private final InternalOperationService operationService;
     private final ProxyService proxyService;
     private final ConnectionManager connectionManager;
     private final ClientEngineImpl clientEngine;
@@ -87,7 +87,7 @@ public class HealthMonitor extends Thread {
         setDaemon(true);
 
         this.node = hazelcastInstance.node;
-        this.logger = node.getLogger(HealthMonitor.class.getName());
+        this.logger = node.getLogger(HealthMonitor.class);
         this.runtime = Runtime.getRuntime();
         this.logLevel = logLevel;
         this.delaySeconds = delaySeconds;
@@ -159,6 +159,8 @@ public class HealthMonitor extends Thread {
         private final int scheduledExecutorQueueSize;
         private final int systemExecutorQueueSize;
         private final int eventQueueSize;
+        private final int pendingInvocationsCount;
+        private final double pendingInvocationsPercentage;
         private final int operationServiceOperationExecutorQueueSize;
         private final int operationServiceOperationPriorityExecutorQueueSize;
         private final int operationServiceOperationResponseQueueSize;
@@ -197,6 +199,8 @@ public class HealthMonitor extends Thread {
             operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
             runningOperationsCount = operationService.getRunningOperationsCount();
             remoteOperationsCount = operationService.getRemoteOperationsCount();
+            pendingInvocationsCount = operationService.getPendingInvocationCount();
+            pendingInvocationsPercentage = operationService.getInvocationUsagePercentage();
             proxyCount = proxyService.getProxyCount();
             clientEndpointCount = clientEngine.getClientEndpointCount();
             activeConnectionCount = connectionManager.getActiveConnectionCount();
@@ -215,6 +219,10 @@ public class HealthMonitor extends Thread {
             }
 
             if (systemCpuLoad > THRESHOLD) {
+                return true;
+            }
+
+            if (pendingInvocationsPercentage > THRESHOLD) {
                 return true;
             }
 
@@ -272,6 +280,10 @@ public class HealthMonitor extends Thread {
             sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");
             sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
             sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
+            sb.append("operations.pending.invocations.count=")
+                    .append(pendingInvocationsCount).append(", ");
+            sb.append("operations.pending.invocations.percentage=")
+                    .append(format("%.2f", pendingInvocationsPercentage)).append("%, ");
             sb.append("proxy.count=").append(proxyCount).append(", ");
             sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
             sb.append("connection.active.count=").append(activeConnectionCount).append(", ");

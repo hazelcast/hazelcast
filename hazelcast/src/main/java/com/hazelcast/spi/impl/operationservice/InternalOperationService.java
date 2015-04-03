@@ -37,6 +37,24 @@ import java.util.List;
 public interface InternalOperationService extends OperationService {
 
     /**
+     * Returns the percentage of the the used invocations. With back pressure there is a cap on the number
+     * of concurrent invocations. This call sends back the percentage of used invocations compared to that cap.
+     *
+     * @return percentage of used invocations.
+     */
+    double getInvocationUsagePercentage();
+
+    /**
+     * Gets the current number of pending invocations. Each map.put or a queue.take, is a pending
+     * invocation until it is answered. In most cases the number of pending invocations is bound
+     * by the number of concurrent threads, but if you use async API's, the number of pending
+     * invocations is not bound to the number of threads.
+     *
+     * @return number of pending invocations
+     */
+    int getPendingInvocationCount();
+
+    /**
      * Checks if this call is timed out. A timed out call is not going to be executed.
      *
      * @param op the operation to check.

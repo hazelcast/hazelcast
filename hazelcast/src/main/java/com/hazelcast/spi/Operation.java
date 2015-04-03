@@ -42,6 +42,12 @@ public abstract class Operation implements DataSerializable {
 
     public static final int GENERIC_PARTITION_ID = -1;
 
+    /**
+     * A call id for an invocation that is skipping local registration. E.g. a local call without backups
+     * doesn't need to have its call id registered since it won't receive a response from a remote system.
+     */
+    public static final long CALL_ID_LOCAL_SKIPPED = Long.MAX_VALUE;
+
     static final int BITMASK_VALIDATE_TARGET = 1;
     static final int BITMASK_CALLER_UUID_SET = 1 << 1;
     static final int BITMASK_REPLICA_INDEX_SET = 1 << 2;
