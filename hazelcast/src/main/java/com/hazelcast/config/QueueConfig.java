@@ -37,7 +37,7 @@ public class QueueConfig {
     /**
      * The number of maximum backup counter
      */
-    private static final int MAX_BACKUP_COUNT = 6;
+    public static final int MAX_BACKUP_COUNT = 6;
     /**
      * Default value of asynchronous backup count
      */
