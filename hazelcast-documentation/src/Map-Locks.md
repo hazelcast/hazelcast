@@ -64,7 +64,7 @@ public class PessimisticUpdateMember {
 }
 ```
 
-The IMap lock will automatically be collected by the garbage collector when the map entry is removed.
+The IMap lock will automatically be collected by the garbage collector when the lock is released and no other waiting conditions exist on the lock.
 
 The IMap lock is reentrant, but it does not support fairness.
 
