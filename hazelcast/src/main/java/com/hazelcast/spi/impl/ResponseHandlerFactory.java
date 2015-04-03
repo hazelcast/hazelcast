@@ -43,10 +43,10 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
-        if (operation.getCallId() == 0) {
+        if (operation.getCallId() == 0 || operation.getCallId() == Operation.CALL_ID_LOCAL_SKIPPED) {
             if (operation.returnsResponse()) {
                 throw new HazelcastException(
-                        "Op: " + operation.getClass().getName() + " can not return response without call-id!");
+                        "Op: " + operation + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }

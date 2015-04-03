@@ -19,7 +19,7 @@ public class ClientMessageBuilder {
 
     private final Int2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Int2ObjectHashMap<BufferBuilder>();
 
-    private ClientMessageAccumulator message = new ClientMessageAccumulator();
+    private ClientMessage message = ClientMessage.create();
 
     final TcpIpConnection connection;
     final IOService ioService;
@@ -30,9 +30,8 @@ public class ClientMessageBuilder {
     }
 
     public void onData(final ByteBuffer buffer) {
-        message.accumulate(buffer);
-
-        if (!message.isComplete()) {
+        final boolean complete = message.readFrom(buffer);
+        if (!complete) {
             return;
         }
 
@@ -41,11 +40,8 @@ public class ClientMessageBuilder {
 
         if ((flags & BEGIN_AND_END_FLAGS) == BEGIN_AND_END_FLAGS) {
             //HANDLE-MESSAGE
-            ClientMessage cm = new ClientMessage();
-            cm.wrapForDecode(cm.buffer().byteBuffer(), 0);
-            //HANDLE-MESSAGE
-            handleMessage(cm);
-            message = new ClientMessageAccumulator();
+            handleMessage(message);
+            message = ClientMessage.create();
         } else {
             if ((flags & BEGIN_FLAG) == BEGIN_FLAG) {
                 final BufferBuilder builder = builderBySessionIdMap
@@ -63,8 +59,7 @@ public class ClientMessageBuilder {
 
                     if ((flags & END_FLAG) == END_FLAG) {
                         final int msgLength = builder.limit();
-                        ClientMessage cm = new ClientMessage();
-                        cm.wrapForDecode(ByteBuffer.wrap(builder.buffer().byteArray()), 0);
+                        ClientMessage cm = ClientMessage.createForDecode(ByteBuffer.wrap(builder.buffer().byteArray()), 0);
                         cm.setFrameLength(msgLength);
                         //HANDLE-MESSAGE
                         handleMessage(cm);
@@ -76,27 +71,8 @@ public class ClientMessageBuilder {
     }
 
     protected void handleMessage(ClientMessage message) {
+        message.index(message.getDataOffset() + message.offset());
         this.ioService.handleClientMessage(message, connection);
     }
 
-    private static class ClientMessageAccumulator
-            extends ClientMessage {
-
-        public void accumulate(ByteBuffer byteBuffer) {
-            final int limit = byteBuffer.limit();
-            final int reqCap = limit + index();
-            ensureCapacity(reqCap);
-            final int length = limit < incompleteSize() ? limit : incompleteSize();
-            buffer.putBytes(index(), byteBuffer, length);
-            index(index() + limit);
-        }
-
-        public boolean isComplete() {
-            return (index() > HEADER_SIZE) && (index() == getFrameLength());
-        }
-
-        public int incompleteSize() {
-            return getFrameLength() - index();
-        }
-    }
 }

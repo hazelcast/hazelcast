@@ -1,21 +1,18 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.core.Client;
 
 /**
  * AuthenticationResultParameters
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class AuthenticationResultParameters
-        extends ClientMessage {
+public class AuthenticationResultParameters {
 
     public String host;
     public int port;
     public String uuid;
     public String ownerUuid;
-
-    private AuthenticationResultParameters() {
-    }
 
     private AuthenticationResultParameters(ClientMessage flyweight) {
         host = flyweight.getStringUtf8();
@@ -28,12 +25,13 @@ public class AuthenticationResultParameters
         return new AuthenticationResultParameters(flyweight);
     }
 
-    public static AuthenticationResultParameters encode(String host, int port, String uuid, String ownerUuid) {
-        AuthenticationResultParameters parameters = new AuthenticationResultParameters();
+    public static ClientMessage encode(String host, int port, String uuid, String ownerUuid) {
         final int requiredDataSize = calculateDataSize(host, port, uuid, ownerUuid);
-        parameters.ensureCapacity(requiredDataSize);
-        parameters.set(host).set(port).set(uuid).set(ownerUuid);
-        return parameters;
+        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
+        clientMessage.ensureCapacity(requiredDataSize);
+        clientMessage.set(host).set(port).set(uuid).set(ownerUuid);
+        clientMessage.updateFrameLenght();
+        return clientMessage;
     }
 
     /**

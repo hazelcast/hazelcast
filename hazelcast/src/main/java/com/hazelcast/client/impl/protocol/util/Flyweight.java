@@ -28,11 +28,18 @@ import static com.hazelcast.client.impl.protocol.util.BitUtil.LONG_MASK;
  */
 public class Flyweight {
 
-    private static final int INITIAL_BUFFER_CAPACITY = 4096;
-    private static final ByteBuffer INITIAL_BUFFER = ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY);
-
-    protected final MutableDirectBuffer buffer = new UnsafeBuffer(INITIAL_BUFFER);
+    public static final int INITIAL_BUFFER_CAPACITY = 4096;
+    protected final MutableDirectBuffer buffer;
     private int offset;
+
+    protected Flyweight(){
+        buffer= new UnsafeBuffer(ByteBuffer.allocate(0));
+    }
+
+    protected Flyweight(final ByteBuffer buffer, final int offset){
+        this.buffer = new UnsafeBuffer(buffer);
+        this.offset = offset;
+    }
 
     public Flyweight wrap(final ByteBuffer buffer) {
         return wrap(buffer, 0);
@@ -83,8 +90,8 @@ public class Flyweight {
 
     //endregion PUT/GET helpers
 
-    protected void ensureCapacity(final int requiredCapacity) {
-        final int capacity = buffer.capacity();
+    public void ensureCapacity(final int requiredCapacity) {
+        final int capacity = buffer.capacity() > 0 ? buffer.capacity() : 1;
         if (requiredCapacity > capacity) {
             final int newCapacity = findSuitableCapacity(capacity, requiredCapacity);
             ByteBuffer newBuffer =  ByteBuffer.allocate(newCapacity);

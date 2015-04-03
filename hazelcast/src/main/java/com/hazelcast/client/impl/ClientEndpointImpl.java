@@ -67,7 +67,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     private Credentials credentials;
     private volatile boolean authenticated;
 
-    ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
+    public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
         this.conn = conn;
         if (conn instanceof TcpIpConnection) {

@@ -1,8 +1,9 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.map.MapMessageType;
 import com.hazelcast.client.impl.protocol.map.MapPutParameters;
-import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -36,21 +37,33 @@ public class MapMessageEncodeDecodeTest {
     }
 
     @Test
-    public void shouldEncodeCorrectly_PUT() {
-        MapPutParameters parameters = MapPutParameters.encode(NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
-        byteBuffer = parameters.buffer().byteBuffer();
+    public void shouldEncodeDecodeCorrectly_PUT() {
+        final int calculatedSize =
+                (BitUtil.SIZE_OF_INT + NAME.length()) + (BitUtil.SIZE_OF_INT + BYTES_DATA.length) * 2 + 8 * 2 + 1
+                        + ClientMessage.HEADER_SIZE;
+        ClientMessage cmEncode = MapPutParameters.encode(NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
+        cmEncode.setVersion((short) 3).setFlags(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
 
-        ClientMessage cmDecode = new ClientMessage();
-        cmDecode.wrapForDecode(this.byteBuffer,0);
+        byteBuffer = cmEncode.buffer().byteBuffer();
 
-        final MapPutParameters putParameters = MapPutParameters.decode(cmDecode);
+        ClientMessage cmDecode = ClientMessage.createForDecode(this.byteBuffer, 0);
 
-        assertEquals(NAME, putParameters.name);
-        assertArrayEquals(BYTES_DATA, putParameters.key);
-        assertArrayEquals(BYTES_DATA, putParameters.value);
-        assertEquals(THE_LONG, putParameters.threadId);
-        assertEquals(THE_LONG, putParameters.ttl);
-        assertEquals(THE_BOOLEAN, putParameters.async);
+        final MapPutParameters decodeParams = MapPutParameters.decode(cmDecode);
+
+        assertEquals(calculatedSize, cmEncode.getFrameLength());
+
+        assertEquals(MapMessageType.MAP_PUT.id(), cmDecode.getMessageType());
+        assertEquals(3, cmDecode.getVersion());
+        assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
+        assertEquals(66, cmDecode.getCorrelationId());
+        assertEquals(77, cmDecode.getPartitionId());
+
+        assertEquals(NAME, decodeParams.name);
+        assertArrayEquals(BYTES_DATA, decodeParams.key);
+        assertArrayEquals(BYTES_DATA, decodeParams.value);
+        assertEquals(THE_LONG, decodeParams.threadId);
+        assertEquals(THE_LONG, decodeParams.ttl);
+        assertEquals(THE_BOOLEAN, decodeParams.async);
     }
 
 }

@@ -148,15 +148,15 @@ public final class ReadHandler extends AbstractSelectionHandler {
     private void setupClient(WriteHandler writeHandler)
             throws IOException {
         final ByteBuffer clientTypeBuffer = ByteBuffer.allocate(3);
-        int size;
+        int size = 0;
         do {
-            size = socketChannel.read(clientTypeBuffer);
+            size += socketChannel.read(clientTypeBuffer);
         } while (size < 3);
         clientTypeBuffer.flip();
         SocketClientDataReaderNew reader = new SocketClientDataReaderNew(connection);
         if (reader.setConnectionType(clientTypeBuffer)) {
             socketReader = reader;
-            writeHandler.setProtocol(Protocols.CLIENT_BINARY);
+            writeHandler.setProtocol(Protocols.CLIENT_BINARY_NEW);
         }
     }
 

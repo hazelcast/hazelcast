@@ -2,7 +2,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
@@ -14,23 +16,29 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 
 /**
  * Responsible for processing an Operation.
@@ -38,7 +46,12 @@ import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHan
 class OperationRunnerImpl extends OperationRunner {
     static final int AD_HOC_PARTITION_ID = -2;
 
-    private OperationServiceImpl operationService;
+    private final ILogger logger;
+    private final OperationServiceImpl operationService;
+    private final Node node;
+    private final NodeEngineImpl nodeEngine;
+    private final AtomicLong executedOperationsCount;
+
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
     private InternalPartition internalPartition;
@@ -51,6 +64,10 @@ class OperationRunnerImpl extends OperationRunner {
     public OperationRunnerImpl(OperationServiceImpl operationService, int partitionId) {
         super(partitionId);
         this.operationService = operationService;
+        this.logger = operationService.logger;
+        this.node = operationService.node;
+        this.nodeEngine = operationService.nodeEngine;
+        this.executedOperationsCount = operationService.executedOperationsCount;
     }
 
     @Override
@@ -76,8 +93,7 @@ class OperationRunnerImpl extends OperationRunner {
 
     @Override
     public void run(Operation op) {
-        // TODO: We need to think about replacing this contended counter
-        operationService.executedOperationsCount.incrementAndGet();
+        executedOperationsCount.incrementAndGet();
 
         boolean publishCurrentTask = publishCurrentTask();
 
@@ -111,22 +127,26 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean waitingNeeded(Operation op) {
-        if (op instanceof WaitSupport) {
-            WaitSupport waitSupport = (WaitSupport) op;
-            if (waitSupport.shouldWait()) {
-                operationService.nodeEngine.getWaitNotifyService().await(waitSupport);
-                return true;
-            }
+        if (!(op instanceof WaitSupport)) {
+            return false;
+        }
+
+        WaitSupport waitSupport = (WaitSupport) op;
+        if (waitSupport.shouldWait()) {
+            nodeEngine.getWaitNotifyService().await(waitSupport);
+            return true;
         }
         return false;
     }
 
     private boolean timeout(Operation op) {
-        if (operationService.isCallTimedOut(op)) {
-            op.getResponseHandler().sendResponse(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
-            return true;
+        if (!operationService.isCallTimedOut(op)) {
+            return false;
         }
-        return false;
+
+        CallTimeoutResponse callTimeoutResponse = new CallTimeoutResponse(op.getCallId(), op.isUrgent());
+        op.getResponseHandler().sendResponse(callTimeoutResponse);
+        return true;
     }
 
     private void handleResponse(Operation op) throws Exception {
@@ -143,16 +163,19 @@ class OperationRunnerImpl extends OperationRunner {
             }
         }
 
-        if (returnsResponse) {
-            if (response == null) {
-                response = op.getResponse();
-            }
-            com.hazelcast.spi.ResponseHandler responseHandler = op.getResponseHandler();
-            if (responseHandler == null) {
-                throw new IllegalStateException("ResponseHandler should not be null!");
-            }
-            responseHandler.sendResponse(response);
+        if (!returnsResponse) {
+            return;
         }
+
+        if (response == null) {
+            response = op.getResponse();
+        }
+
+        ResponseHandler responseHandler = op.getResponseHandler();
+        if (responseHandler == null) {
+            throw new IllegalStateException("ResponseHandler should not be null! " + op);
+        }
+        responseHandler.sendResponse(response);
     }
 
     private void afterRun(Operation op) {
@@ -184,17 +207,17 @@ class OperationRunnerImpl extends OperationRunner {
         }
 
         if (internalPartition == null) {
-            internalPartition = operationService.nodeEngine.getPartitionService().getPartition(partitionId);
+            internalPartition = nodeEngine.getPartitionService().getPartition(partitionId);
         }
 
         if (retryDuringMigration(op) && internalPartition.isMigrating()) {
-            throw new PartitionMigratingException(operationService.node.getThisAddress(), partitionId,
+            throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                     op.getClass().getName(), op.getServiceName());
         }
 
         Address owner = internalPartition.getReplicaAddress(op.getReplicaIndex());
-        if (op.validatesTarget() && !operationService.node.getThisAddress().equals(owner)) {
-            throw new WrongTargetException(operationService.node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
+        if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
+            throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
                     op.getClass().getName(), op.getServiceName());
         }
     }
@@ -208,16 +231,17 @@ class OperationRunnerImpl extends OperationRunner {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
         operation.logError(e);
-        com.hazelcast.spi.ResponseHandler responseHandler = operation.getResponseHandler();
+
+        ResponseHandler responseHandler = operation.getResponseHandler();
         if (operation.returnsResponse() && responseHandler != null) {
             try {
-                if (operationService.node.isActive()) {
+                if (node.isActive()) {
                     responseHandler.sendResponse(e);
                 } else if (responseHandler.isLocal()) {
                     responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
                 }
             } catch (Throwable t) {
-                operationService.logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
+                logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
             }
         }
     }
@@ -241,13 +265,13 @@ class OperationRunnerImpl extends OperationRunner {
         Address caller = connection.getEndPoint();
         Data data = packet.getData();
         try {
-            Object object = operationService.nodeEngine.toObject(data);
+            Object object = nodeEngine.toObject(data);
             Operation op = (Operation) object;
-            op.setNodeEngine(operationService.nodeEngine);
+            op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);
             setConnection(op, connection);
             setCallerUuidIfNotSet(caller, op);
-            setRemoteResponseHandler(operationService.nodeEngine, op);
+            setRemoteResponseHandler(nodeEngine, op);
 
             if (!ensureValidMember(op)) {
                 return;
@@ -259,7 +283,7 @@ class OperationRunnerImpl extends OperationRunner {
             run(op);
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
-            long callId = IOUtil.extractOperationCallId(data, operationService.node.getSerializationService());
+            long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
             operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
@@ -271,13 +295,15 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean ensureValidMember(Operation op) {
-        if (!isJoinOperation(op) && operationService.node.clusterService.getMember(op.getCallerAddress()) == null) {
-            Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
-                    op.getClass().getName(), op.getServiceName());
-            handleOperationError(op, error);
-            return false;
+        if (isJoinOperation(op) || node.clusterService.getMember(op.getCallerAddress()) != null) {
+            return true;
         }
-        return true;
+
+        Exception error = new CallerNotMemberException(
+                op.getCallerAddress(), op.getPartitionId(),
+                op.getClass().getName(), op.getServiceName());
+        handleOperationError(op, error);
+        return false;
     }
 
     private void setCallerUuidIfNotSet(Address caller, Operation op) {
@@ -285,7 +311,7 @@ class OperationRunnerImpl extends OperationRunner {
             return;
 
         }
-        MemberImpl callerMember = operationService.node.clusterService.getMember(caller);
+        MemberImpl callerMember = node.clusterService.getMember(caller);
         if (callerMember != null) {
             op.setCallerUuid(callerMember.getUuid());
         }
@@ -295,20 +321,20 @@ class OperationRunnerImpl extends OperationRunner {
         boolean returnsResponse = callId != 0;
 
         if (t instanceof RetryableException) {
-            final Level level = returnsResponse ? Level.FINEST : Level.WARNING;
-            if (operationService.logger.isLoggable(level)) {
-                operationService.logger.log(level, t.getClass().getName() + ": " + t.getMessage());
+            final Level level = returnsResponse ? FINEST : WARNING;
+            if (logger.isLoggable(level)) {
+                logger.log(level, t.getClass().getName() + ": " + t.getMessage());
             }
         } else if (t instanceof OutOfMemoryError) {
             try {
-                operationService.logger.log(Level.SEVERE, t.getMessage(), t);
+                logger.log(SEVERE, t.getMessage(), t);
             } catch (Throwable ignored) {
-                operationService.logger.log(Level.SEVERE, ignored.getMessage(), t);
+                logger.log(SEVERE, ignored.getMessage(), t);
             }
         } else {
-            final Level level = operationService.nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-            if (operationService.logger.isLoggable(level)) {
-                operationService.logger.log(level, t.getMessage(), t);
+            final Level level = operationService.nodeEngine.isActive() ? SEVERE : FINEST;
+            if (logger.isLoggable(level)) {
+                logger.log(level, t.getMessage(), t);
             }
         }
     }

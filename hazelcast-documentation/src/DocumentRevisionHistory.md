@@ -16,6 +16,7 @@
 |[Chapter 13 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 ||[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Updated the Overview paragraph to include the support for Tomcat 8.
 |[Chapter 15 - Clients](#clients)||Added introduction paragraphs.|
+|[Chapter 17 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
 |[Chapter 18 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
 |[Chapter 19 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
 |[Chapter 20 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.|

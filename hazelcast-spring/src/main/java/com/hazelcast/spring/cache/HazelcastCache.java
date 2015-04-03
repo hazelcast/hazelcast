@@ -92,6 +92,11 @@ public class HazelcastCache implements Cache {
         map.clear();
     }
 
+    public ValueWrapper putIfAbsent(Object key, Object value) {
+        Object result = map.putIfAbsent(key, toStoreValue(value));
+        return result != null ? new SimpleValueWrapper(fromStoreValue(result)) : null;
+    }
+
     static final class NullDataSerializable implements DataSerializable {
         public void writeData(final ObjectDataOutput out) throws IOException {
         }

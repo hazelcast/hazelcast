@@ -58,4 +58,16 @@ public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionServi
         InetSocketAddress address = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
         return managedObject.getMemberPartitions(new Address(address)).size();
     }
+
+    @ManagedAnnotation("isClusterSafe")
+    @ManagedDescription("Is the cluster in a safe state")
+    public boolean isClusterSafe() {
+        return hazelcastInstance.getPartitionService().isClusterSafe();
+    }
+
+    @ManagedAnnotation("isLocalMemberSafe")
+    @ManagedDescription("Is the local member safe to shutdown")
+    public boolean isLocalMemberSafe() {
+        return hazelcastInstance.getPartitionService().isLocalMemberSafe();
+    }
 }
