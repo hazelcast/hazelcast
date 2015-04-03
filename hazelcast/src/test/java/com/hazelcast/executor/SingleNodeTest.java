@@ -20,6 +20,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -314,27 +315,34 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
         executor.submit(task);
     }
 
-//    @Test
-//    public void executorServiceStats() throws InterruptedException, ExecutionException {
-//        final int k = 10;
-//        LatchRunnable.latch = new CountDownLatch(k);
-//        final LatchRunnable r = new LatchRunnable();
-//        for (int i = 0; i < k; i++) {
-//            executor.execute(r);
-//        }
-//        assertOpenEventually(LatchRunnable.latch);
-//        final Future<Boolean> f = executor.submit(new SleepingTask(10));
-//        f.cancel(true);
-//        try {
-//            f.get();
-//        } catch (CancellationException ignored) {
-//        }
-//        final LocalExecutorStats stats = executor.getLocalExecutorStats();
-//        assertEquals(k + 1, stats.getStartedTaskCount());
-//        assertEquals(k, stats.getCompletedTaskCount());
-//        assertEquals(0, stats.getPendingTaskCount());
-//        assertEquals(1, stats.getCancelledTaskCount());
-//    }
+    @Test
+    public void executorServiceStats() throws InterruptedException, ExecutionException {
+        final int k = 10;
+        LatchRunnable.latch = new CountDownLatch(k);
+        final LatchRunnable r = new LatchRunnable();
+        for (int i = 0; i < k; i++) {
+            executor.execute(r);
+        }
+        assertOpenEventually(LatchRunnable.latch);
+        final Future<Boolean> f = executor.submit(new SleepingTask(10));
+        f.cancel(true);
+        try {
+            f.get();
+        } catch (CancellationException ignored) {
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final LocalExecutorStats stats = executor.getLocalExecutorStats();
+                assertEquals(k + 1, stats.getStartedTaskCount());
+                assertEquals(k, stats.getCompletedTaskCount());
+                assertEquals(0, stats.getPendingTaskCount());
+                assertEquals(1, stats.getCancelledTaskCount());
+            }
+        });
+    }
 
     static class LatchRunnable implements Runnable, Serializable {
         static CountDownLatch latch;
