@@ -231,6 +231,8 @@ You can find the JMX API definition below with descriptions and the API methods 
 * **Partition Service ( `HazelcastInstance.PartitionService` )**
  *  Partition count ( `partitionCount` )
  *  Active partition count ( `activePartitionCount` )
+ *  Cluster Safe State ( `isClusterSafe` )
+ *  LocalMember Safe State ( `isLocalMemberSafe` )
 * **Connection Manager ( `HazelcastInstance.ConnectionManager` )**
  *  Client connection count ( `clientConnectionCount` )
  *  Active connection count ( `activeConnectionCount` )
