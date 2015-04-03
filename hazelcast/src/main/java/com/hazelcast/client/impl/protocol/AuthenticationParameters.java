@@ -6,8 +6,7 @@ import com.hazelcast.client.impl.protocol.util.BitUtil;
  * AuthenticationParameters
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class AuthenticationParameters
-        extends ClientMessage {
+public class AuthenticationParameters {
 
     /**
      * ClientMessageType of this message
@@ -19,8 +18,6 @@ public class AuthenticationParameters
     public String ownerUuid;
     public boolean isOwnerConnection;
 
-    private AuthenticationParameters() {
-    }
 
     private AuthenticationParameters(ClientMessage flyweight) {
         username = flyweight.getStringUtf8();
@@ -46,16 +43,17 @@ public class AuthenticationParameters
      * @param uuid
      * @param ownerUuid
      * @param isOwnerConnection
-     * @return AuthenticationParameters
+     * @return encoded ClientMessage
      */
-    public static AuthenticationParameters encode(String username, String password, String uuid, String ownerUuid,
+    public static ClientMessage encode(String username, String password, String uuid, String ownerUuid,
                                                   boolean isOwnerConnection) {
-        AuthenticationParameters parameters = new AuthenticationParameters();
         final int requiredDataSize = calculateDataSize(username, password, uuid, ownerUuid, isOwnerConnection);
-        parameters.ensureCapacity(requiredDataSize);
-        parameters.setMessageType(TYPE.id());
-        parameters.set(username).set(password).set(uuid).set(ownerUuid).set(isOwnerConnection);
-        return parameters;
+        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
+        clientMessage.ensureCapacity(requiredDataSize);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(username).set(password).set(uuid).set(ownerUuid).set(isOwnerConnection);
+        clientMessage.updateFrameLenght();
+        return clientMessage;
     }
 
     /**

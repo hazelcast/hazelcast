@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.nio.SocketReadable;
 import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
@@ -56,7 +57,12 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  */
 public class ClientMessage
         extends ParameterFlyweight
-        implements SocketWritable {
+        implements SocketWritable, SocketReadable {
+
+    /**
+     * Current protocol version
+     */
+    public static final short VERSION = 0;
 
     /**
      * Begin Flag
@@ -90,6 +96,41 @@ public class ClientMessage
     }
 
     private transient int valueOffset;
+
+    protected ClientMessage() {
+        super();
+    }
+
+    protected ClientMessage(boolean encode, final ByteBuffer buffer, final int offset) {
+        super(buffer, offset);
+        if (encode) {
+            wrapForEncode(buffer, offset);
+        } else {
+            wrapForDecode(buffer, offset);
+        }
+    }
+
+    public static ClientMessage create() {
+        final ClientMessage clientMessage = new ClientMessage();
+        clientMessage.wrap(ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY), 0);
+        return clientMessage;
+    }
+
+    public static ClientMessage createForEncode(int initialCapacity) {
+        return new ClientMessage(true, ByteBuffer.allocate(initialCapacity), 0);
+    }
+
+    public static ClientMessage createForDecode(int initialCapacity) {
+        return new ClientMessage(false, ByteBuffer.allocate(initialCapacity), 0);
+    }
+
+    public static ClientMessage createForEncode(final ByteBuffer buffer, final int offset) {
+        return new ClientMessage(true, buffer, offset);
+    }
+
+    public static ClientMessage createForDecode(final ByteBuffer buffer, final int offset) {
+        return new ClientMessage(false, buffer, offset);
+    }
 
     public void wrapForEncode(final ByteBuffer buffer, final int offset) {
         super.wrap(buffer, offset);
@@ -159,7 +200,7 @@ public class ClientMessage
      * @param type field value
      * @return ClientMessage
      */
-    protected ClientMessage setMessageType(final int type) {
+    public ClientMessage setMessageType(final int type) {
         uint16Put(offset() + TYPE_FIELD_OFFSET, (short) type, LITTLE_ENDIAN);
         return this;
     }
@@ -273,6 +314,11 @@ public class ClientMessage
         return this;
     }
 
+    public ClientMessage updateFrameLenght() {
+        setFrameLength(index());
+        return this;
+    }
+
     @Override
     public boolean writeTo(ByteBuffer destination) {
         byte[] byteArray = buffer().byteArray();
@@ -300,6 +346,45 @@ public class ClientMessage
         valueOffset += bytesWrite;
 
         return done;
+    }
+
+    public boolean readFrom(ByteBuffer source) {
+        if (index() == 0) {
+            initFrameSize(source);
+        }
+        while (index() >= BitUtil.SIZE_OF_INT && source.hasRemaining() && !isComplete()) {
+            accumulate(source, getFrameLength() - index());
+        }
+        return isComplete();
+    }
+
+    private int initFrameSize(ByteBuffer byteBuffer) {
+        if (byteBuffer.remaining() < BitUtil.SIZE_OF_INT) {
+            return 0;
+        }
+        final int accumulatedBytesSize = accumulate(byteBuffer, BitUtil.SIZE_OF_INT);
+        return accumulatedBytesSize;
+    }
+
+    private int accumulate(ByteBuffer byteBuffer, int length) {
+        final int remaining = byteBuffer.remaining();
+        final int readLength = remaining < length ? remaining : length;
+        if (readLength > 0) {
+            final int requiredCapacity = index() + readLength;
+            ensureCapacity(requiredCapacity);
+            buffer.putBytes(index(), byteBuffer, readLength);
+            index(index() + readLength);
+            return readLength;
+        }
+        return 0;
+    }
+
+    /**
+     * checks frame size and total data size to validate message size
+     * @return true if message is constructed
+     */
+    public boolean isComplete() {
+        return (index() > HEADER_SIZE) && (index() == getFrameLength());
     }
 
     @Override

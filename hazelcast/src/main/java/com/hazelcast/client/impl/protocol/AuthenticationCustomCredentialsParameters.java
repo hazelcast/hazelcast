@@ -6,8 +6,7 @@ import com.hazelcast.client.impl.protocol.util.BitUtil;
  * AuthenticationParameters
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class AuthenticationCustomCredentialsParameters
-        extends ClientMessage {
+public class AuthenticationCustomCredentialsParameters {
 
     /**
      * ClientMessageType of this message
@@ -17,9 +16,6 @@ public class AuthenticationCustomCredentialsParameters
     public String uuid;
     public String ownerUuid;
     public boolean isOwnerConnection;
-
-    private AuthenticationCustomCredentialsParameters() {
-    }
 
     private AuthenticationCustomCredentialsParameters(ClientMessage flyweight) {
         credentials = flyweight.getByteArray();
@@ -43,16 +39,17 @@ public class AuthenticationCustomCredentialsParameters
      * @param uuid
      * @param ownerUuid
      * @param isOwnerConnection
-     * @return AuthenticationCustomParameters
+     * @return encoded ClientMessage
      */
-    public static AuthenticationCustomCredentialsParameters encode(byte[] credentials, String uuid, String ownerUuid,
-                                                        boolean isOwnerConnection) {
-        AuthenticationCustomCredentialsParameters parameters = new AuthenticationCustomCredentialsParameters();
+    public static ClientMessage encode(byte[] credentials, String uuid, String ownerUuid,
+                                                                   boolean isOwnerConnection) {
         final int requiredDataSize = calculateDataSize(credentials, uuid, ownerUuid, isOwnerConnection);
-        parameters.ensureCapacity(requiredDataSize);
-        parameters.setMessageType(TYPE.id());
-        parameters.set(credentials).set(uuid).set(ownerUuid).set(isOwnerConnection);
-        return parameters;
+        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
+        clientMessage.ensureCapacity(requiredDataSize);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(credentials).set(uuid).set(ownerUuid).set(isOwnerConnection);
+        clientMessage.updateFrameLenght();
+        return clientMessage;
     }
 
     /**

@@ -1,6 +1,5 @@
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Callback;
@@ -10,8 +9,8 @@ import com.hazelcast.spi.Operation;
 /**
  * AbstractPartitionMessageTask
  */
-public abstract class AbstractPartitionMessageTask<CM extends ClientMessage>
-        extends AbstractMessageTask<CM> {
+public abstract class AbstractPartitionMessageTask<P>
+        extends AbstractMessageTask<P> {
 
     private static final int TRY_COUNT = 100;
 
@@ -47,7 +46,7 @@ public abstract class AbstractPartitionMessageTask<CM extends ClientMessage>
                       .setReplicaIndex(getReplicaIndex())
                       .setTryCount(TRY_COUNT)
                       .setResultDeserialized(false)
-                      .setCallback(new CallbackImpl(endpoint));
+                      .setCallback(new CallbackImpl());
         builder.invoke();
     }
 
@@ -66,19 +65,16 @@ public abstract class AbstractPartitionMessageTask<CM extends ClientMessage>
 
     private class CallbackImpl
             implements Callback<Object> {
-        private final ClientEndpoint endpoint;
 
-        public CallbackImpl(ClientEndpoint endpoint) {
-            this.endpoint = endpoint;
+        public CallbackImpl() {
         }
 
         @Override
         public void notify(Object object) {
             beforeResponse();
             final byte[] result = filter(object);
-            final GenericResultParameters resultParameters = GenericResultParameters.encode(result);
-            resultParameters.setCorrelationId(parameters.getCorrelationId());
-            endpoint.sendClientMessage(resultParameters);
+            final ClientMessage resultParameters = GenericResultParameters.encode(result);
+            sendClientMessage(resultParameters);
             afterResponse();
         }
     }

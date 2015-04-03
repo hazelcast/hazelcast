@@ -1,7 +1,5 @@
 package com.hazelcast.client.impl.protocol.map;
 
-import com.hazelcast.client.impl.protocol.ClientMessageType;
-
 /**
  * Map message types
  */

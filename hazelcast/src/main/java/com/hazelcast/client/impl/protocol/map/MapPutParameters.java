@@ -4,11 +4,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 
+import java.nio.ByteBuffer;
+
 /**
  * Sample Put parameter
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class MapPutParameters extends ClientMessage {
+public class MapPutParameters /*extends ClientMessage*/ {
 
     /**
      * ClientMessageType of this message
@@ -21,8 +23,6 @@ public class MapPutParameters extends ClientMessage {
     public long ttl;
     public boolean async;
 
-    private MapPutParameters() {
-    }
 
     private MapPutParameters(ClientMessage flyweight) {
         name = flyweight.getStringUtf8();
@@ -37,13 +37,14 @@ public class MapPutParameters extends ClientMessage {
         return new MapPutParameters(flyweight);
     }
 
-    public static MapPutParameters encode(String name, byte[] key, byte[] value, long threadId, long ttl, boolean async) {
-        MapPutParameters parameters = new MapPutParameters();
+    public static ClientMessage encode(String name, byte[] key, byte[] value, long threadId, long ttl, boolean async) {
         final int requiredDataSize = calculateDataSize(name, key, value, threadId, ttl, async);
-        parameters.ensureCapacity(requiredDataSize);
-        parameters.setMessageType(TYPE.id());
-        parameters.set(name).set(key).set(value).set(ttl).set(threadId).set(async);
-        return parameters;
+        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
+        clientMessage.ensureCapacity(requiredDataSize);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(name).set(key).set(value).set(ttl).set(threadId).set(async);
+        clientMessage.updateFrameLenght();
+        return clientMessage;
     }
 
     /**
@@ -59,6 +60,5 @@ public class MapPutParameters extends ClientMessage {
                 + BitUtil.SIZE_OF_LONG//
                 + BitUtil.SIZE_OF_BYTE;
     }
-
 
 }

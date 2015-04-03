@@ -23,10 +23,11 @@ import java.util.logging.Level;
 /**
  * Base Message task
  */
-public abstract class AbstractMessageTask<CM extends ClientMessage>
+public abstract class AbstractMessageTask<P>
         implements PartitionSpecificRunnable, SecureRequest {
 
-    protected final CM parameters;
+    protected final P parameters;
+    protected final ClientMessage clientMessage;
 
     protected final Connection connection;
     protected final ClientEndpointImpl endpoint;
@@ -39,6 +40,7 @@ public abstract class AbstractMessageTask<CM extends ClientMessage>
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+        this.clientMessage = clientMessage;
         this.logger = node.getLogger(ClientEngine.class);
         this.node = node;
         this.nodeEngine = node.nodeEngine;
@@ -47,14 +49,18 @@ public abstract class AbstractMessageTask<CM extends ClientMessage>
         this.parameters = decodeClientMessage(clientMessage);
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
-        this.endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+        this.endpoint = getEndpoint();
     }
 
-    protected abstract CM decodeClientMessage(ClientMessage clientMessage);
+    protected ClientEndpointImpl getEndpoint() {
+        return (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+    }
+
+    protected abstract P decodeClientMessage(ClientMessage clientMessage);
 
     @Override
     public int getPartitionId() {
-        return parameters.getPartitionId();
+        return clientMessage.getPartitionId();
     }
 
     @Override
@@ -99,9 +105,7 @@ public abstract class AbstractMessageTask<CM extends ClientMessage>
             }
         }
         if (parameters != null && endpoint != null) {
-            ClientMessage exception = createExceptionMessage(throwable);
-            exception.setCorrelationId(this.parameters.getCorrelationId());
-            endpoint.sendClientMessage(exception);
+            sendClientMessage(throwable);
         }
 
     }
@@ -136,16 +140,28 @@ public abstract class AbstractMessageTask<CM extends ClientMessage>
         }
     }
 
-    private ClientMessage createExceptionMessage(Throwable throwable) {
+    protected ClientMessage createExceptionMessage(Throwable throwable) {
         String className = throwable.getClass().getName();
         String message = throwable.getMessage();
         StringWriter sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
-        final ExceptionResultParameters parameters = ExceptionResultParameters.encode(className, message, sw.toString());
+        final ClientMessage parameters = ExceptionResultParameters.encode(className, message, sw.toString());
         return parameters;
     }
 
     protected abstract void processMessage();
+
+    protected void sendClientMessage(ClientMessage resultClientMessage) {
+        resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
+        resultClientMessage.setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
+        resultClientMessage.setVersion(ClientMessage.VERSION);
+        getEndpoint().sendClientMessage(resultClientMessage);
+    }
+
+    protected void sendClientMessage(Throwable throwable) {
+        ClientMessage exception = createExceptionMessage(throwable);
+        sendClientMessage(exception);
+    }
 
     @Override
     public String getDistributedObjectType() {
