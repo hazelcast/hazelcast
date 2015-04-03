@@ -184,6 +184,12 @@
                     <version>${project.parent.version}</version>
                     <classifier>tests</classifier>
                 </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-core</artifactId>
+                    <version>4.3.8.Final</version>
+                    <scope>test</scope>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -238,6 +244,12 @@
                     <scope>test</scope>
                     <version>${project.parent.version}</version>
                     <classifier>tests</classifier>
+                </dependency>
+                <dependency>
+                    <groupId>org.hibernate</groupId>
+                    <artifactId>hibernate-core</artifactId>
+                    <version>3.5.4-Final</version>
+                    <scope>test</scope>
                 </dependency>
             </dependencies>
         </profile>
