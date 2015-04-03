@@ -25,7 +25,7 @@ abstract class AbstractCacheAllPartitionsRequest extends AllPartitionsClientRequ
         this.name = name;
     }
 
-    CacheOperationProvider getOperationProvider() {
+    protected CacheOperationProvider getOperationProvider() {
         ICacheService service = getService();
         CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
@@ -35,11 +35,13 @@ abstract class AbstractCacheAllPartitionsRequest extends AllPartitionsClientRequ
         return service.getCacheOperationProvider(name, cacheConfig.getInMemoryFormat());
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
@@ -51,7 +53,9 @@ abstract class AbstractCacheAllPartitionsRequest extends AllPartitionsClientRequ
         return name;
     }
 
+    @Override
     public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
+
 }

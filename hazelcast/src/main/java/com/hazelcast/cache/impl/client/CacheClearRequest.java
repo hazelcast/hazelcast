@@ -66,10 +66,12 @@ public class CacheClearRequest
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.CLEAR;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -87,6 +89,7 @@ public class CacheClearRequest
         }
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -124,4 +127,5 @@ public class CacheClearRequest
     public Permission getRequiredPermission() {
         return null;
     }
+
 }

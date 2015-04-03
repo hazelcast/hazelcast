@@ -21,8 +21,8 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -59,8 +59,9 @@ abstract class AbstractClientCacheProxy<K, V>
         extends AbstractClientInternalCacheProxy<K, V>
         implements ICache<K, V> {
 
-    protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext) {
-        super(cacheConfig, clientContext);
+    protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
+                                       HazelcastClientCacheManager cacheManager) {
+        super(cacheConfig, clientContext, cacheManager);
     }
 
     //region ICACHE: JCACHE EXTENSION
@@ -75,7 +76,7 @@ abstract class AbstractClientCacheProxy<K, V>
         validateNotNull(key);
         final Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
         CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
@@ -223,7 +224,7 @@ abstract class AbstractClientCacheProxy<K, V>
             while (iterator.hasNext()) {
                 Data key = iterator.next();
                 Object cached = nearCache.get(key);
-                if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+                if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
                     result.put((K) toObject(key), (V) cached);
                     iterator.remove();
                 }

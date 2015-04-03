@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -27,7 +26,7 @@ import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -74,14 +73,12 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  */
 public class ClientCacheProxy<K, V>
         extends AbstractClientCacheProxy<K, V> {
-    protected final ILogger logger;
 
-    private AbstractHazelcastCacheManager cacheManager;
+    protected final ILogger logger;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext clientContext,
                             HazelcastClientCacheManager cacheManager) {
-        super(cacheConfig, clientContext);
-        this.cacheManager = cacheManager;
+        super(cacheConfig, clientContext, cacheManager);
         logger = Logger.getLogger(getClass());
     }
 
@@ -101,7 +98,7 @@ public class ClientCacheProxy<K, V>
         validateNotNull(key);
         final Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
         CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
@@ -194,8 +191,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean replace(K key, V value) {
-        final ExpiryPolicy expiryPolicy = null;
-        return replace(key, value, expiryPolicy);
+        return replace(key, value, (ExpiryPolicy) null);
     }
 
     @Override
@@ -299,7 +295,7 @@ public class ClientCacheProxy<K, V>
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         ensureOpen();
         if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
@@ -317,7 +313,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {

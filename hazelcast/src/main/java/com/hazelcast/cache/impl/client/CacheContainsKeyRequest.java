@@ -37,7 +37,7 @@ import java.io.IOException;
 public class CacheContainsKeyRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
+    private Data key;
 
     public CacheContainsKeyRequest() {
     }
@@ -47,10 +47,12 @@ public class CacheContainsKeyRequest
         this.key = key;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.CONTAINS_KEY;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -61,6 +63,7 @@ public class CacheContainsKeyRequest
         return operationProvider.createContainsKeyOperation(key);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -68,6 +71,7 @@ public class CacheContainsKeyRequest
         out.writeData(key);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);

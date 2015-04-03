@@ -37,8 +37,8 @@ import java.io.IOException;
 public class CacheRemoveRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
-    protected Data currentValue;
+    private Data key;
+    private Data currentValue;
     private int completionId;
 
     public CacheRemoveRequest() {
@@ -55,10 +55,12 @@ public class CacheRemoveRequest
         this.currentValue = currentValue;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.REMOVE;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -69,6 +71,7 @@ public class CacheRemoveRequest
         return operationProvider.createRemoveOperation(key, currentValue, completionId);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -78,6 +81,7 @@ public class CacheRemoveRequest
         out.writeData(currentValue);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -87,6 +91,7 @@ public class CacheRemoveRequest
         currentValue = in.readData();
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }

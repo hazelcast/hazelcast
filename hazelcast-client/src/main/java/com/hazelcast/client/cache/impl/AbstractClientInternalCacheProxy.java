@@ -16,32 +16,47 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
+import com.hazelcast.cache.impl.client.CacheAddInvalidationListenerRequest;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndReplaceRequest;
+import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
 import com.hazelcast.cache.impl.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
+import com.hazelcast.cache.impl.client.CacheRemoveInvalidationListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
+import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.cache.impl.nearcache.NearCacheContext;
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.nearcache.ClientHeapNearCache;
-import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.Client;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -58,6 +73,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,7 +96,16 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
 
-    protected final ClientNearCache<Data, Object> nearCache;
+    protected final ILogger logger = Logger.getLogger(getClass());
+
+    protected final AbstractHazelcastCacheManager cacheManager;
+    protected final NearCacheManager nearCacheManager;
+    // Object => Data or <V>
+    protected NearCache<Data, Object> nearCache;
+
+    protected String nearCacheMembershipRegistrationId;
+    protected final ConcurrentMap<Member, String> nearCacheInvalidationListeners =
+            new ConcurrentHashMap<Member, String>();
 
     private final boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
@@ -89,20 +114,66 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private final AtomicInteger completionIdCounter = new AtomicInteger();
 
-    protected AbstractClientInternalCacheProxy(CacheConfig cacheConfig, ClientContext clientContext) {
+    protected AbstractClientInternalCacheProxy(CacheConfig cacheConfig, ClientContext clientContext,
+                                               AbstractHazelcastCacheManager cacheManager) {
         super(cacheConfig, clientContext);
+        this.cacheManager = cacheManager;
+        nearCacheManager = clientContext.getNearCacheManager();
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
 
         NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
         if (nearCacheConfig != null) {
-            nearCache = new ClientHeapNearCache<Data>(nameWithPrefix, clientContext, nearCacheConfig);
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
+            NearCacheContext nearCacheContext =
+                    new NearCacheContext(clientContext.getSerializationService(),
+                                         createNearCacheExecutor(clientContext.getExecutionService()));
+            nearCache = nearCacheManager
+                            .getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
+            registerInvalidationListener();
         } else {
             nearCache = null;
             cacheOnUpdate = false;
         }
+    }
+
+    protected class ClientNearCacheExecutor implements Executor {
+
+        protected ClientExecutionService clientExecutionService;
+
+        protected ClientNearCacheExecutor(ClientExecutionService clientExecutionService) {
+            this.clientExecutionService = clientExecutionService;
+        }
+
+        @Override
+        public void execute(Runnable runnable) {
+            clientExecutionService.execute(runnable);
+        }
+
+    }
+
+    protected Executor createNearCacheExecutor(ClientExecutionService clientExecutionService) {
+        return new ClientNearCacheExecutor(clientExecutionService);
+    }
+
+    @Override
+    public void close() {
+        if (nearCache != null) {
+            removeInvalidationListener();
+            nearCacheManager.clearNearCache(nearCache.getName());
+        }
+        super.close();
+    }
+
+    @Override
+    public void destroy() {
+        if (nearCache != null) {
+            removeInvalidationListener();
+            nearCacheManager.destroyNearCache(nearCache.getName());
+            nearCache = null;
+        }
+        super.destroy();
     }
 
     protected <T> ICompletableFuture<T> invoke(ClientRequest req, Data keyData, boolean completionOperation) {
@@ -305,19 +376,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected void storeInNearCache(Data key, Data valueData, V value) {
         if (nearCache != null) {
-            final Object valueToStore;
-            if (nearCache.getInMemoryFormat() == InMemoryFormat.OBJECT) {
-                valueToStore = value != null ? value : valueData;
-            } else {
-                valueToStore = valueData != null ? valueData : value;
-            }
+            final Object valueToStore = nearCache.selectToSave(value, valueData);
             nearCache.put(key, valueToStore);
         }
     }
 
     protected void invalidateNearCache(Data key) {
         if (nearCache != null) {
-            nearCache.remove(key);
+            nearCache.invalidate(key);
         }
     }
     //endregion internal base operations
@@ -462,6 +528,126 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected ICompletableFuture createCompletedFuture(Object value) {
         return new CompletedFuture(clientContext.getSerializationService(), value,
                                    clientContext.getExecutionService().getAsyncExecutor());
+    }
+
+    protected final class NearCacheMembershipListener implements MembershipListener {
+
+        public void memberAdded(MembershipEvent event) {
+            MemberImpl member = (MemberImpl) event.getMember();
+            addInvalidationListener(member);
+        }
+
+        public void memberRemoved(MembershipEvent event) {
+            MemberImpl member = (MemberImpl) event.getMember();
+            removeInvalidationListener(member, false);
+        }
+
+        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+
+        }
+
+    }
+
+    protected final class NearCacheInvalidationHandler implements EventHandler<CacheInvalidationMessage> {
+
+        private final Client client;
+
+        private NearCacheInvalidationHandler(Client client) {
+            this.client = client;
+        }
+
+        @Override
+        public void handle(CacheInvalidationMessage message) {
+            if (client.getUuid().equals(message.getSourceUuid())) {
+                return;
+            }
+            Data key = message.getKey();
+            if (key != null) {
+                nearCache.invalidate(key);
+            } else {
+                nearCache.clear();
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+            nearCache.clear();
+        }
+
+    }
+
+    protected void registerInvalidationListener() {
+        if (nearCache != null && nearCache.isInvalidateOnChange()) {
+            ClientClusterService clusterService = clientContext.getClusterService();
+            nearCacheMembershipRegistrationId =
+                    clusterService.addMembershipListener(new NearCacheMembershipListener());
+            Collection<MemberImpl> memberList = clusterService.getMemberList();
+            for (MemberImpl member : memberList) {
+                addInvalidationListener(member);
+            }
+        }
+    }
+
+    protected void removeInvalidationListener() {
+        if (nearCache != null && nearCache.isInvalidateOnChange()) {
+            String registrationId = nearCacheMembershipRegistrationId;
+            ClientClusterService clusterService = clientContext.getClusterService();
+            if (registrationId != null) {
+                clusterService.removeMembershipListener(registrationId);
+            }
+            Collection<MemberImpl> memberList = clusterService.getMemberList();
+            for (MemberImpl member : memberList) {
+                removeInvalidationListener(member, true);
+            }
+        }
+    }
+
+    protected void addInvalidationListener(MemberImpl member) {
+        if (nearCacheInvalidationListeners.containsKey(member)) {
+            return;
+        }
+        try {
+            ClientRequest request = new CacheAddInvalidationListenerRequest(nameWithPrefix);
+            Client client = clientContext.getClusterService().getLocalClient();
+            EventHandler handler = new NearCacheInvalidationHandler(client);
+            HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+            ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, member.getAddress());
+            Future future = invocation.invoke();
+            String registrationId = clientContext.getSerializationService().toObject(future.get());
+            clientContext.getListenerService().registerListener(registrationId, request.getCallId());
+
+            nearCacheInvalidationListeners.put(member, registrationId);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    protected void removeInvalidationListener(MemberImpl member, boolean removeFromMemberAlso) {
+        String registrationId = nearCacheInvalidationListeners.remove(member);
+        if (registrationId != null) {
+            try {
+                if (removeFromMemberAlso) {
+                    ClientRequest request = new CacheRemoveInvalidationListenerRequest(nameWithPrefix, registrationId);
+                    HazelcastClientInstanceImpl clientInstance =
+                            (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());
+                    Future future = invocation.invoke();
+                    Boolean result = clientContext.getSerializationService().toObject(future.get());
+                    if (!result) {
+                        logger.warning("Invalidation listener couldn't be removed on member " + member.getAddress());
+                        // TODO What we do if result is false ???
+                    }
+                }
+                clientContext.getListenerService().deRegisterListener(registrationId);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
     }
 
 }

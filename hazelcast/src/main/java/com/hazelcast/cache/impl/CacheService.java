@@ -16,9 +16,17 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.client.CacheInvalidationListener;
+import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
+import com.hazelcast.nio.serialization.Data;
+
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
+
+import java.util.Collection;
 
 /**
  * Cache Service is the main access point of JCache implementation.
@@ -79,5 +87,36 @@ public class CacheService extends AbstractCacheService implements ICacheService 
         return op.isEmpty() ? null : op;
     }
     //endregion
+
+    /**
+     * Registers and {@link CacheInvalidationListener} for specified <code>cacheName</code>.
+     *
+     * @param name      the name of the cache that {@link CacheInvalidationListener} will be registered for
+     * @param listener  the {@link CacheInvalidationListener} to be registered for specified <code>cache</code>
+     * @return the id which is unique for current registration
+     */
+    public String addInvalidationListener(String name, CacheInvalidationListener listener) {
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+        return registration.getId();
+    }
+
+    /**
+     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
+     * from mentioned source with <code>sourceUuid</code>.
+     *
+     * @param name       the name of the cache that invalidation event is sent for
+     * @param key        the {@link Data} represents the invalidation event
+     * @param sourceUuid an id that represents the source for invalidation event
+     */
+    @Override
+    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        if (!registrations.isEmpty()) {
+            eventService.publishEvent(SERVICE_NAME, registrations,
+                    new CacheInvalidationMessage(name, key, sourceUuid), name.hashCode());
+        }
+    }
 
 }

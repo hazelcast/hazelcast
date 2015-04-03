@@ -57,7 +57,7 @@ public class CacheRecordStore
     protected CacheRecordFactory cacheRecordFactory;
 
     public CacheRecordStore(String name, int partitionId, NodeEngine nodeEngine,
-            AbstractCacheService cacheService) {
+                            AbstractCacheService cacheService) {
         super(name, partitionId, nodeEngine, cacheService);
         this.serializationService = nodeEngine.getSerializationService();
         this.cacheRecordFactory = createCacheRecordFactory();
@@ -65,7 +65,7 @@ public class CacheRecordStore
 
     @Override
     protected CacheMaxSizeChecker createCacheMaxSizeChecker(int size,
-            CacheEvictionConfig.CacheMaxSizePolicy maxSizePolicy) {
+                                                            CacheEvictionConfig.CacheMaxSizePolicy maxSizePolicy) {
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
@@ -85,14 +85,14 @@ public class CacheRecordStore
     }
 
     @Override
-    protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key,
-            CacheRecord record, long now, int completionId) {
+    protected CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, CacheRecord record,
+                                                                      long now, int completionId) {
         return new CacheEntryProcessorEntry(key, record, this, now, completionId);
     }
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                nodeEngine.getSerializationService());
+                                      nodeEngine.getSerializationService());
     }
 
     @Override
@@ -110,11 +110,6 @@ public class CacheRecordStore
     @Override
     protected <T> T dataToValue(Data data) {
         return (T) serializationService.toObject(data);
-    }
-
-    @Override
-    protected <T> CacheRecord valueToRecord(T value) {
-        return cacheRecordFactory.newRecord(value);
     }
 
     @Override
@@ -136,18 +131,6 @@ public class CacheRecordStore
             return (Data) value;
         } else {
             return valueToData(value);
-        }
-    }
-
-    @Override
-    protected CacheRecord dataToRecord(Data data) {
-        Object value = dataToValue(data);
-        if (value == null) {
-            return null;
-        } else if (value instanceof CacheRecord) {
-            return (CacheRecord) value;
-        } else {
-            return valueToRecord(value);
         }
     }
 

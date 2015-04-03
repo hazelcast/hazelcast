@@ -38,9 +38,9 @@ import java.io.IOException;
 public class CachePutIfAbsentRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
-    protected Data value;
-    protected ExpiryPolicy expiryPolicy;
+    private Data key;
+    private Data value;
+    private ExpiryPolicy expiryPolicy;
     private int completionId;
 
     public CachePutIfAbsentRequest() {
@@ -53,10 +53,12 @@ public class CachePutIfAbsentRequest
         this.expiryPolicy = expiryPolicy;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.PUT_IF_ABSENT;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -67,6 +69,7 @@ public class CachePutIfAbsentRequest
         return operationProvider.createPutIfAbsentOperation(key, value, expiryPolicy, completionId);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -77,6 +80,7 @@ public class CachePutIfAbsentRequest
         out.writeObject(expiryPolicy);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -87,6 +91,7 @@ public class CachePutIfAbsentRequest
         expiryPolicy = in.readObject();
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }

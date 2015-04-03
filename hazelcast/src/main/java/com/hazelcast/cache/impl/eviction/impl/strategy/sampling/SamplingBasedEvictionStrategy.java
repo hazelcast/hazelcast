@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl.eviction.impl.strategy.sampling;
 
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
+import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
 import com.hazelcast.cache.impl.eviction.impl.strategy.AbstractEvictionStrategy;
@@ -36,17 +37,19 @@ public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends Sam
      *
      * @param sampleableEvictableStore  {@link SampleableEvictableStore} that holds {@link Evictable} entries
      * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
+     * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
      * @return evicted entry count
      */
     @Override
     protected int evictInternal(S sampleableEvictableStore,
-            EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator) {
+            EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
+            EvictionListener<A, E> evictionListener) {
         final Iterable<EvictionCandidate<A, E>> samples =
                 sampleableEvictableStore.sample(SAMPLE_COUNT);
         final Iterable<EvictionCandidate<A, E>> evictionCandidates =
                 evictionPolicyEvaluator.evaluate(samples);
-        return sampleableEvictableStore.evict(evictionCandidates);
+        return sampleableEvictableStore.evict(evictionCandidates, evictionListener);
     }
 
 }
