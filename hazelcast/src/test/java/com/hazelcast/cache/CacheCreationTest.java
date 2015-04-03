@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -36,7 +37,7 @@ import java.util.concurrent.Executors;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class CacheCreationTest extends HazelcastTestSupport {
+public class CacheCreationTest {
 
     static Config hzConfig;
     private static final int THREAD_COUNT = 4;
@@ -103,9 +104,9 @@ public class CacheCreationTest extends HazelcastTestSupport {
     }
 
     private HazelcastServerCachingProvider createCachingProvider(Config hzConfig){
-        HazelcastInstance hazelcastInstance = createHazelcastInstance(hzConfig);
-        HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider
-                .createCachingProvider(hazelcastInstance);
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(hzConfig);
+        HazelcastServerCachingProvider cachingProvider =
+                HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
         return cachingProvider;
     }
 }
