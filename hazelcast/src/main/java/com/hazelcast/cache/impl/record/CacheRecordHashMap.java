@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl.record;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
+import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;
@@ -73,7 +74,8 @@ public class CacheRecordHashMap
     }
 
     @Override
-    public <C extends EvictionCandidate<Data, CacheRecord>> int evict(Iterable<C> evictionCandidates) {
+    public <C extends EvictionCandidate<Data, CacheRecord>> int evict(Iterable<C> evictionCandidates,
+            EvictionListener<Data, CacheRecord> evictionListener) {
         if (evictionCandidates == null) {
             return 0;
         }
@@ -81,6 +83,9 @@ public class CacheRecordHashMap
         for (EvictionCandidate<Data, CacheRecord> evictionCandidate : evictionCandidates) {
             if (remove(evictionCandidate.getAccessor()) != null) {
                 actualEvictedCount++;
+                if (evictionListener != null) {
+                    evictionListener.onEvict(evictionCandidate);
+                }
             }
         }
         return actualEvictedCount;

@@ -78,6 +78,7 @@ public class CacheIterateRequest
         return CachePortableHook.ITERATE;
     }
 
+    @Override
     public final String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
@@ -108,4 +109,5 @@ public class CacheIterateRequest
         batch = reader.readInt("b");
         inMemoryFormat = InMemoryFormat.valueOf(reader.readUTF("i"));
     }
+
 }

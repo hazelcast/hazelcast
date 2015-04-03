@@ -37,7 +37,6 @@ public abstract class AbstractCacheRequest
         implements RetryableRequest {
 
     protected String name;
-
     protected InMemoryFormat inMemoryFormat;
 
     public AbstractCacheRequest() {
@@ -69,15 +68,18 @@ public abstract class AbstractCacheRequest
         return null;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         writer.writeUTF("n", name);
         writer.writeUTF("i", inMemoryFormat.name());
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
         inMemoryFormat = InMemoryFormat.valueOf(reader.readUTF("i"));
     }
+
 }

@@ -37,12 +37,14 @@ public class CacheRemoveEntryListenerRequest
         super(name, registrationId);
     }
 
+    @Override
     public Object call()
             throws Exception {
         final CacheService service = getService();
         return service.deregisterListener(name, registrationId);
     }
 
+    @Override
     public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
@@ -61,4 +63,5 @@ public class CacheRemoveEntryListenerRequest
     public Permission getRequiredPermission() {
         return null;
     }
+
 }

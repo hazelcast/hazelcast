@@ -44,6 +44,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
     protected final Data keyData;
     protected R record;
     protected R recordLoaded;
+    protected V valueLoaded;
 
     protected final AbstractCacheRecordStore cacheRecordStore;
     protected final long now;
@@ -117,7 +118,8 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         }
         if (recordLoaded != null) {
             state = State.LOAD;
-            return getRecordValue(recordLoaded);
+            valueLoaded = getRecordValue(recordLoaded);
+            return valueLoaded;
         }
         return null;
     }
@@ -168,7 +170,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false, completionId);
                 break;
             case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true, completionId);
+                cacheRecordStore.createRecordWithExpiry(keyData, valueLoaded, expiryPolicy, now, true, completionId);
                 break;
             case NONE:
                 cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false, completionId);

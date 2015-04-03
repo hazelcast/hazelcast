@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.nio.SocketInterceptor;
@@ -24,7 +25,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 
 /**
  * ClientExtension is a client extension mechanism to be able to plug different implementations of
- * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
+ * some modules, like; {@link SerializationService}, {@link SocketChannelWrapperFactory} etc.
  */
 public interface ClientExtension {
 
@@ -39,26 +40,35 @@ public interface ClientExtension {
     void afterStart(HazelcastClientInstanceImpl client);
 
     /**
-     * Creates a <tt>SerializationService</tt> instance to be used by this client.
+     * Creates a {@link SerializationService} instance to be used by this client.
      *
-     * @return a <tt>SerializationService</tt> instance
+     * @return the created {@link SerializationService} instance
      */
     SerializationService createSerializationService();
 
     /**
-     * Returns <tt>SocketInterceptor</tt> for this client if available,
-     * otherwise returns null.
+     * Creates a {@link SocketInterceptor} to be used by this client if available,
+     * otherwise returns <code>null</code>.
      *
-     * @return SocketInterceptor
+     * @return the created {@link SocketInterceptor} instance if available,
+     *         otherwise <code>null</code>
      */
-    SocketInterceptor getSocketInterceptor();
+    SocketInterceptor createSocketInterceptor();
 
     /**
-     * Returns <tt>SocketChannelWrapperFactory</tt> instance to be used by this client.
+     * Creates a {@link SocketChannelWrapperFactory} instance to be used by this client.
      *
-     * @return SocketChannelWrapperFactory
+     * @return the created {@link SocketChannelWrapperFactory} instance
      */
-    SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+    SocketChannelWrapperFactory createSocketChannelWrapperFactory();
+
+    /**
+     * Creates a {@link NearCacheManager} instance to be used by this client.
+     *
+     * @return the created {@link NearCacheManager} instance
+     */
+    NearCacheManager createNearCacheManager();
+
 
     /**
      * Returns a proxy for the corresponding service.

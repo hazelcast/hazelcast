@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.eviction.Evictable;
+import com.hazelcast.cache.impl.eviction.Expirable;
 
 /**
  * <p>

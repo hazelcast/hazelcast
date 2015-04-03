@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl.eviction.impl.evaluator;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.record.Expirable;
+import com.hazelcast.cache.impl.eviction.Expirable;
 import com.hazelcast.util.Clock;
 
 import java.util.Collections;

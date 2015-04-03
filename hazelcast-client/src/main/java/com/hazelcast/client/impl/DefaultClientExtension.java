@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
@@ -87,13 +89,13 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public SocketInterceptor getSocketInterceptor() {
+    public SocketInterceptor createSocketInterceptor() {
         LOGGER.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         return null;
     }
 
     @Override
-    public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
+    public SocketChannelWrapperFactory createSocketChannelWrapperFactory() {
         return new DefaultSocketChannelWrapperFactory();
     }
 
@@ -106,4 +108,13 @@ public class DefaultClientExtension implements ClientExtension {
 
         throw new IllegalArgumentException("Proxy cannot be created. Unknown service : " + service);
     }
+
+    @Override
+    public NearCacheManager createNearCacheManager() {
+        // If there is a specific behaviour for client,
+        // there maybe a custom "NearCacheManager" implementation such as "ClientNearCacheManager".
+        // Currently "DefaultNearCacheManager" is enough.
+        return new DefaultNearCacheManager();
+    }
+
 }
