@@ -28,8 +28,10 @@ import java.util.concurrent.ConcurrentMap;
 
 public class DefaultNearCacheManager implements NearCacheManager {
 
-    protected final ConcurrentMap<String, NearCache> nearCacheMap =
+    private final ConcurrentMap<String, NearCache> nearCacheMap =
             new ConcurrentHashMap<String, NearCache>();
+
+    private final Object mutex = new Object();
 
     @Override
     public <K, V> NearCache<K, V> getNearCache(String name) {
@@ -41,7 +43,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
                                                        NearCacheContext nearCacheContext) {
         NearCache<K, V> nearCache = nearCacheMap.get(name);
         if (nearCache == null) {
-            synchronized (nearCacheMap) {
+            synchronized (mutex) {
                 nearCache = nearCacheMap.get(name);
                 if (nearCache == null) {
                     nearCache = createNearCache(name, nearCacheConfig, nearCacheContext);
