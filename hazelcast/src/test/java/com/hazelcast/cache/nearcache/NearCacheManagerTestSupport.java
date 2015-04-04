@@ -5,6 +5,8 @@ import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.config.NearCacheConfig;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,19 +47,22 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
     protected void doListNearCaches() {
         NearCacheManager nearCacheManager = createNearCacheManager();
 
+        Set<String> nearCacheNames = new HashSet<String>();
+
         Collection<NearCache> nearCaches1 = nearCacheManager.listAllNearCaches();
         assertEquals(0, nearCaches1.size());
 
         for (int i = 0; i < DEFAULT_NEAR_CACHE_COUNT; i++) {
-            createNearCache(nearCacheManager, DEFAULT_NEAR_CACHE_NAME + "-" + i);
+            String nearCacheName = DEFAULT_NEAR_CACHE_NAME + "-" + i;
+            createNearCache(nearCacheManager, nearCacheName);
+            nearCacheNames.add(nearCacheName);
         }
 
         Collection<NearCache> nearCaches2 = nearCacheManager.listAllNearCaches();
         assertEquals(DEFAULT_NEAR_CACHE_COUNT, nearCaches2.size());
 
-        int i = 0;
         for (NearCache nearCache : nearCaches2) {
-            assertEquals(DEFAULT_NEAR_CACHE_NAME + "-" + (i++), nearCache.getName());
+            assertTrue(nearCacheNames.contains(nearCache.getName()));
         }
     }
 
