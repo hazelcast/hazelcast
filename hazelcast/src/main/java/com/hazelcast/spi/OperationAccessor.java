@@ -52,9 +52,9 @@ public final class OperationAccessor {
     }
 
     /**
-     * Sets the callId.
+     * Sets the callId for the Operation.
      *
-     * @param op the Operator to update
+     * @param op the Operator that is updated for its callId.
      * @param callId the callId.
      * @see Operation#setCallId(long)
      * @see Operation#getCallId()
@@ -64,9 +64,9 @@ public final class OperationAccessor {
     }
 
     /**
-     * Sets the invocation time.
+     * Sets the invocation time for the Operation.
      *
-     * @param op the Operation to update.
+     * @param op the Operation that is updated for its invocation time.
      * @param invocationTime the new invocation time.
      * @see Operation#setInvocationTime(long)
      */
@@ -75,9 +75,9 @@ public final class OperationAccessor {
     }
 
     /**
-     * Sets the call timeout in ms.
+     * Sets the call timeout in milliseconds for the Operation.
      *
-     * @param op the Operation to update.
+     * @param op the Operation to updated for its call timeout.
      * @param callTimeout the call timeout in ms.
      * @see com.hazelcast.spi.Operation#setCallTimeout(long)
      */

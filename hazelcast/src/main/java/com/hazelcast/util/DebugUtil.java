@@ -18,7 +18,7 @@ public final class DebugUtil {
     }
 
     /**
-     * Prints the stacktrace of the calling thread to the System.out.
+     * Prints the stacktrace of the calling thread to System.out.
      *
      * @param msg debug message
      */
@@ -35,7 +35,7 @@ public final class DebugUtil {
      * <p/>
      * If something fails while writing to the file, the exception is printed and then ignored.
      *
-     * @param file
+     * @param file the file to which the stacktrace of the current thread is appended.
      * @throws java.lang.NullPointerException if file is null.
      */
     public static void appendStackTrace(File file) {
@@ -72,8 +72,8 @@ public final class DebugUtil {
      * <p/>
      * If something fails while writing to the file, the exception is printed and then ignored.
      *
-     * @param file
-     * @param s
+     * @param file the file to which text is appended.
+     * @param s the text to append to the file.
      * @throws java.lang.NullPointerException if file is null
      */
     public static void appendWithNewLine(File file, String s) {

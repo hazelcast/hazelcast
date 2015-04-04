@@ -35,7 +35,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
- * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
+ * An operation could be compared to a {@link Runnable}. It contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
 public abstract class Operation implements DataSerializable {
@@ -43,7 +43,7 @@ public abstract class Operation implements DataSerializable {
     public static final int GENERIC_PARTITION_ID = -1;
 
     /**
-     * A call id for an invocation that is skipping local registration. E.g. a local call without backups
+     * A call id for an invocation that is skipping local registration. For example, a local call without backups
      * doesn't need to have its call id registered since it won't receive a response from a remote system.
      */
     public static final long CALL_ID_LOCAL_SKIPPED = Long.MAX_VALUE;
@@ -120,15 +120,15 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Returns the id of the partition this Operation is going to be executed on.
+     * Returns the id of the partition that this Operation will be executed upon.
      *
-     * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition, for example
+     * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition: for example,
      * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
      *
-     * The partitionId should never be equal or larger than the total number of partitions. For example if there are 271
+     * The partitionId should never be equal or larger than the total number of partitions. For example, if there are 271
      * partitions, the maximum partitionId is 270.
      *
-     * The partitionId is used by the OperationService to figure out which member owns a specific partition and will send
+     * The partitionId is used by the OperationService to figure out which member owns a specific partition, and to send
      * the operation to that member.
      *
      * @return the id of the partition.
@@ -254,9 +254,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the time in ms this invocation started.
+     * Gets the time in milliseconds since this invocation started.
      *
-     * For more information see {@link com.hazelcast.cluster.ClusterClock#getClusterTime()}.
+     * For more information, see {@link com.hazelcast.cluster.ClusterClock#getClusterTime()}.
      *
      * @return the time of the invocation start.
      */
@@ -271,10 +271,10 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the call timeout in milliseconds. For example if a call should be executed within 60 seconds, otherwise it should be
-     * aborted, then the call-timeout is 60000 ms.
+     * Gets the call timeout in milliseconds. For example, if a call should be executed within 60 seconds orotherwise it should be
+     * aborted, then the call-timeout is 60000 milliseconds.
      *
-     * For more information about the default value see
+     * For more information about the default value, see
      * {@link com.hazelcast.instance.GroupProperties#OPERATION_CALL_TIMEOUT_MILLIS}
      *
      * @return the call timeout in milliseconds.
@@ -368,7 +368,7 @@ public abstract class Operation implements DataSerializable {
     @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
         // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
-        // It is used to return deserialization exceptions to the caller
+        // It is used to return deserialization exceptions to the caller.
         out.writeLong(callId);
 
         // write state next, so that it is first available on reading.
@@ -410,7 +410,7 @@ public abstract class Operation implements DataSerializable {
     @Override
     public final void readData(ObjectDataInput in) throws IOException {
         // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
-        // It is used to return deserialization exceptions to the caller
+        // It is used to return deserialization exceptions to the caller.
         callId = in.readLong();
 
         flags = in.readShort();

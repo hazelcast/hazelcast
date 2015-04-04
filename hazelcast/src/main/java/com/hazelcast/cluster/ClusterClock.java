@@ -3,11 +3,11 @@ package com.hazelcast.cluster;
 public interface ClusterClock {
 
     /**
-     * Returns the cluster-time in ms.
+     * Returns the cluster-time in milliseconds.
      *
-     * The cluster-time can only be used to measure elapsed time. Comparable to the {@link System#nanoTime()}
+     * The cluster-time measures elapsed time since the cluster was created. Comparable to the {@link System#nanoTime()}.
      *
-     * @return the cluster-time.
+     * @return the cluster-time (elapsed milliseconds since the cluster was created).
      */
     long getClusterTime();
 
