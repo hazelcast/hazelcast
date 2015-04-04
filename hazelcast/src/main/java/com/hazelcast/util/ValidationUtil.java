@@ -29,9 +29,9 @@ public final class ValidationUtil {
     /**
      * Tests if an argument is not null.
      *
-     * @param argument the argument
-     * @param message  message thrown if argument is null
-     * @return the argument
+     * @param argument the argument tested to see if it is not null.
+     * @param message  message thrown if argument is null.
+     * @return the argument that was tested.
      * @throws java.lang.NullPointerException if argument is null
      */
     public static <T> T checkNotNull(T argument, String message) {
@@ -44,9 +44,9 @@ public final class ValidationUtil {
     /**
      * Tests if a string contains text.
      *
-     * @param argument the string to test
-     * @param argName  the string name (used in message if an error is thrown)
-     * @return the string argument
+     * @param argument the string tested to see if it contains text.
+     * @param argName  the string name (used in message if an error is thrown).
+     * @return the string argument that was tested.
      * @throws java.lang.IllegalArgumentException if the string is empty
      */
     public static String hasText(String argument, String argName) {
@@ -62,10 +62,10 @@ public final class ValidationUtil {
     /**
      * Tests if a string is not null.
      *
-     * @param argument the string to test
-     * @param argName  the string name (used in message if an error is thrown)
-     * @return the string argument
-     * @throws java.lang.IllegalArgumentException if the string is null
+     * @param argument the string tested to see if it is not null.
+     * @param argName  the string name (used in message if an error is thrown).
+     * @return the string argument that was tested.
+     * @throws java.lang.IllegalArgumentException if the string is null.
      */
     public static <E> E isNotNull(E argument, String argName) {
         if (argument == null) {
@@ -78,9 +78,9 @@ public final class ValidationUtil {
     /**
      * Tests if a long value is not negative.
      *
-     * @param value        the long value to test
-     * @param argumentName the value name (used in message if an error is thrown)
-     * @throws java.lang.IllegalArgumentException if the value is negative
+     * @param value        the long value tested to see if it is not negative.
+     * @param argumentName the value name (used in message if an error is thrown).
+     * @throws java.lang.IllegalArgumentException if the value is negative.
      */
     public static void isNotNegative(long value, String argumentName) {
         if (value < 0) {
@@ -91,9 +91,9 @@ public final class ValidationUtil {
     /**
      * Tests if a long value is positive.
      *
-     * @param value        the long value to test
-     * @param argumentName the value name (used in message if an error is thrown)
-     * @throws java.lang.IllegalArgumentException if the value is not positive
+     * @param value        the long value tested to see if it is positive.
+     * @param argumentName the value name (used in message if an error is thrown).
+     * @throws java.lang.IllegalArgumentException if the value is not positive.
      */
     public static void shouldBePositive(long value, String argumentName) {
         if (value <= 0) {
@@ -105,11 +105,11 @@ public final class ValidationUtil {
     /**
      * Tests whether the supplied object is an instance of the supplied class type.
      *
-     * @param type         the expected type
-     * @param object       the object to be tested against the type
-     * @param argumentName the argument name of the object
+     * @param type         the expected type.
+     * @param object       the object tested against the expected type.
+     * @param argumentName the argument name of the object.
      * @return the object argument.
-     * @throws java.lang.IllegalArgumentException if the object is not an instance of the type
+     * @throws java.lang.IllegalArgumentException if the object is not an instance of the expected type.
      */
     public static <E> E checkInstanceOf(Class type, E object, String argumentName) {
         isNotNull(type, "type");
@@ -121,13 +121,13 @@ public final class ValidationUtil {
     }
 
     /**
-     * Tests the supplied object is not a type of the supplied class.
+     * Tests the supplied object to see if it is not a type of the supplied class.
      *
-     * @param type         the type which is not expected
-     * @param object       the object to be tested against the type
-     * @param argumentName the argument name of the object
+     * @param type         the type that is not of the supplied class.
+     * @param object       the object tested against the type.
+     * @param argumentName the argument name of the object.
      * @return the object argument.
-     * @throws java.lang.IllegalArgumentException if the object is an instance of the type
+     * @throws java.lang.IllegalArgumentException if the object is an instance of the type that is not of the expected class.
      */
     public static <E> E checkNotInstanceOf(Class type, E object, String argumentName) {
         isNotNull(type, "type");
@@ -140,9 +140,9 @@ public final class ValidationUtil {
     /**
      * Tests whether the supplied expression is {@code false}.
      *
-     * @param expression expression to be tested.
-     * @param message    exception message in case of a failure.
-     * @throws java.lang.IllegalArgumentException if the supplied expression is {@code true}
+     * @param expression the expression tested to see if it is {@code false}.
+     * @param message    exception message in case the supplied expression is not {@code false}.
+     * @throws java.lang.IllegalArgumentException if the supplied expression is {@code true}.
      */
     public static void checkFalse(boolean expression, String message) {
         if (expression) {

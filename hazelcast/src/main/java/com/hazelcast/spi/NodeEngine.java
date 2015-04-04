@@ -32,9 +32,9 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
- * The NodeEngine the 'umbrella' of services/service-method that gets injected into a {@link ManagedService}.
+ * The NodeEngine is the 'umbrella' of services/service-method that gets injected into a {@link ManagedService}.
  * <p/>
- * So if you are writing a custom SPI service, e.g. a stack-service, this service should probably implement
+ * So if you are writing a custom SPI service, such as a stack-service, this service should probably implement
  * the {@link ManagedService} so you can get access to the services within the system.
  */
 public interface NodeEngine {
@@ -123,7 +123,7 @@ public interface NodeEngine {
     /**
      * Get the address of this member.
      * <p/>
-     * Returned value will never change and will never be null.
+     * The returned value will never change and will never be null.
      *
      * @return the address of this member.
      */
@@ -190,7 +190,7 @@ public interface NodeEngine {
     /**
      * Serializes an object to a {@link Data}.
      * <p/>
-     * This method can safely be called with a {@link Data} instance; then that instance is returned.
+     * This method can safely be called with a {@link Data} instance. In that case, that instance is returned.
      * <p/>
      * If this method is called with null, null is returned.
      *
@@ -203,7 +203,7 @@ public interface NodeEngine {
     /**
      * Deserializes an object.
      * <p/>
-     * This method can safely be called on object that is already deserialized. In that case that instance
+     * This method can safely be called on an object that is already deserialized. In that case, that instance
      * is returned.
      * <p/>
      * If this method is called with null, null is returned.
@@ -215,7 +215,7 @@ public interface NodeEngine {
     <T> T toObject(Object object);
 
     /**
-     * Checks if the HazelcastInstance this {@link NodeEngine} belongs to is still active.
+     * Checks if the HazelcastInstance that this {@link NodeEngine} belongs to is still active.
      * <p/>
      * A HazelcastInstance is not active when it is shut down.
      *
@@ -224,7 +224,7 @@ public interface NodeEngine {
     boolean isActive();
 
     /**
-     * Returns the HazelcastInstance this {@link NodeEngine} belongs to.
+     * Returns the HazelcastInstance that this {@link NodeEngine} belongs to.
      *
      * @return the HazelcastInstance
      */
