@@ -96,6 +96,8 @@ public class ClientConfig {
 
     private ClassLoader classLoader;
 
+    private String licenseKey;
+
     public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
         if (configPatternMatcher == null) {
             throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
@@ -618,6 +620,15 @@ public class ClientConfig {
 
     public ClientConfig setNativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
         this.nativeMemoryConfig = nativeMemoryConfig;
+        return this;
+    }
+
+    public String getLicenseKey() {
+        return licenseKey;
+    }
+
+    public ClientConfig setLicenseKey(final String licenseKey) {
+        this.licenseKey = licenseKey;
         return this;
     }
 
