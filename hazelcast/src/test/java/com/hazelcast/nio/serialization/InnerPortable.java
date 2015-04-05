@@ -1,5 +1,7 @@
 package com.hazelcast.nio.serialization;
 
+import junit.framework.Test;
+
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -7,8 +9,6 @@ import java.util.Arrays;
 * @author mdogan 22/05/14
 */
 class InnerPortable implements Portable {
-
-    static final short CLASS_ID = 2;
 
     byte[] bb;
     char[] cc;
@@ -34,7 +34,7 @@ class InnerPortable implements Portable {
     }
 
     public int getClassId() {
-        return CLASS_ID;
+        return TestSerializationConstants.INNER_PORTABLE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
@@ -94,7 +94,7 @@ class InnerPortable implements Portable {
     }
 
     public int getFactoryId() {
-        return PortableTest.FACTORY_ID;
+        return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }
 
 

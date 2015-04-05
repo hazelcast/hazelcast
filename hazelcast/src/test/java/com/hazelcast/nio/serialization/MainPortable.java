@@ -7,8 +7,6 @@ import java.io.IOException;
 */
 class MainPortable implements Portable {
 
-    static final int CLASS_ID = 1;
-
     byte b;
     boolean bool;
     char c;
@@ -37,7 +35,7 @@ class MainPortable implements Portable {
     }
 
     public int getClassId() {
-        return CLASS_ID;
+        return TestSerializationConstants.MAIN_PORTABLE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
@@ -53,7 +51,8 @@ class MainPortable implements Portable {
         if (p != null) {
             writer.writePortable("p", p);
         } else {
-            writer.writeNullPortable("p", PortableTest.FACTORY_ID, InnerPortable.CLASS_ID);
+            writer.writeNullPortable("p", TestSerializationConstants.PORTABLE_FACTORY_ID,
+                    TestSerializationConstants.INNER_PORTABLE);
         }
     }
 
@@ -110,6 +109,6 @@ class MainPortable implements Portable {
     }
 
     public int getFactoryId() {
-        return PortableTest.FACTORY_ID;
+        return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }
 }

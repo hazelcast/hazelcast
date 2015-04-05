@@ -8,8 +8,6 @@ import java.io.IOException;
 * @author mdogan 22/05/14
 */
 class InvalidRawDataPortable extends RawDataPortable {
-    static final int CLASS_ID = 5;
-
     InvalidRawDataPortable() {
     }
 
@@ -18,7 +16,7 @@ class InvalidRawDataPortable extends RawDataPortable {
     }
 
     public int getClassId() {
-        return CLASS_ID;
+        return TestSerializationConstants.INVALID_RAW_DATA_PORTABLE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

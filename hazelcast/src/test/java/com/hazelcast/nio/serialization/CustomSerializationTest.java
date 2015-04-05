@@ -67,16 +67,22 @@ public class CustomSerializationTest {
                 .setTypeClass(Foo.class);
         config.addSerializerConfig(sc);
         SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
-        Foo foo = new Foo();
-        foo.setFoo("f");
+        Foo foo = new Foo("f");
         Data d = ss.toData(foo);
-        Foo newFoo = (Foo) ss.toObject(d);
-        assertEquals(newFoo.getFoo(), foo.getFoo());
+        Foo newFoo = ss.toObject(d);
+        assertEquals(newFoo, foo);
     }
 
     public static class Foo {
 
         private String foo;
+
+        public Foo() {
+        }
+
+        public Foo(String foo) {
+            this.foo = foo;
+        }
 
         public String getFoo() {
             return foo;
@@ -84,6 +90,22 @@ public class CustomSerializationTest {
 
         public void setFoo(String foo) {
             this.foo = foo;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Foo foo1 = (Foo) o;
+
+            return !(foo != null ? !foo.equals(foo1.foo) : foo1.foo != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return foo != null ? foo.hashCode() : 0;
         }
     }
 

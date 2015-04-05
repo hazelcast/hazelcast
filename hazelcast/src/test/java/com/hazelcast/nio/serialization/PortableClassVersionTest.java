@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PortableClassVersionTest {
 
-    static final int FACTORY_ID = PortableTest.FACTORY_ID;
+    static final int FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
 
     @Test
     public void testDifferentClassVersions() {
@@ -202,7 +202,7 @@ public class PortableClassVersionTest {
     }
 
     static ClassDefinition createInnerPortableClassDefinition() {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, InnerPortable.CLASS_ID);
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, TestSerializationConstants.INNER_PORTABLE);
         builder.addByteArrayField("b");
         builder.addCharArrayField("c");
         builder.addShortArrayField("s");
