@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -148,7 +149,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
 
-        CountingEntryListener<Object, Object> listener = new CountingEntryListener<Object, Object>();
+        final CountingEntryListener<Object, Object> listener = new CountingEntryListener<Object, Object>();
 
         MultiMap<Object, Object> map = instance1.getMultiMap(mapName);
         map.addEntryListener(listener, true);
@@ -173,10 +174,14 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         ctx4.getMultiMap(mapName).remove(key, value2);
         ctx4.commitTransaction();
 
-        Thread.sleep(100);
-
-        assertEquals(2, listener.getAddedCount());
-        assertEquals(2, listener.getRemovedCount());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(2, listener.getAddedCount());
+                assertEquals(2, listener.getRemovedCount());
+            }
+        });
     }
 
     private class CountingEntryListener<K,V> extends EntryAdapter<K,V> {
