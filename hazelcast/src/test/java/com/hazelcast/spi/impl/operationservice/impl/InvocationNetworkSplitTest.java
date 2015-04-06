@@ -20,6 +20,7 @@ import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.AbstractOperation;
@@ -37,14 +38,15 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -72,8 +74,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
     }
 
     private void testWaitingInvocations_whenNodeSplitFromCluster(SplitAction splitAction) throws Exception {
-        Config config = new Config();
-        config.getGroupConfig().setName(generateRandomString(10));
+        Config config = createConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -131,8 +132,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
     }
 
     private void testWaitNotifyService_whenNodeSplitFromCluster(SplitAction action) throws Exception {
-        Config config = new Config();
-        config.getGroupConfig().setName(generateRandomString(10));
+        Config config = createConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -180,6 +180,13 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
         assertEquals(4, node3.getClusterService().getSize());
 
         assertEquals(0, waitNotifyService3.getTotalWaitingOperationCount());
+    }
+
+    private Config createConfig() {
+        Config config = new Config();
+        config.getGroupConfig().setName(generateRandomString(10));
+        config.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "1");
+        return config;
     }
 
     private static class AlwaysBlockingOperation extends AbstractOperation implements WaitSupport {
@@ -252,7 +259,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
                 public void run() throws Exception {
                     assertEquals(2, node1.getClusterService().getSize());
                     assertEquals(2, node2.getClusterService().getSize());
-                    assertEquals(3, node3.getClusterService().getSize());
+                    assertEquals(1, node3.getClusterService().getSize());
                 }
             }, 10);
         }
@@ -272,7 +279,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
                 public void run() throws Exception {
                     assertEquals(2, node1.getClusterService().getSize());
                     assertEquals(2, node2.getClusterService().getSize());
-                    assertEquals(2, node3.getClusterService().getSize());
+                    assertEquals(1, node3.getClusterService().getSize());
                 }
             }, 10);
         }
