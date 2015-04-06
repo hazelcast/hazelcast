@@ -968,6 +968,7 @@
     <xs:element name="map" type="hazelcast-type"/>
     <xs:element name="multiMap" type="hazelcast-type"/>
     <xs:element name="queue" type="hazelcast-type"/>
+    <xs:element name="replicatedMap" type="hazelcast-type"/>
     <xs:element name="topic" type="hazelcast-type"/>
     <xs:element name="set" type="hazelcast-type"/>
     <xs:element name="list" type="hazelcast-type"/>
