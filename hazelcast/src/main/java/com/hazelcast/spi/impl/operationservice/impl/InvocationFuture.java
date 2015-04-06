@@ -27,8 +27,8 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static java.lang.Math.min;
 
 /**
- * The BasicInvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
- * of a {@link Invocation}. The BasicInvocation executes an operation.
+ * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
+ * of a {@link Invocation}. The Invocation executes an operation.
  *
  * @param <E>
  */
@@ -75,13 +75,25 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (response != null && !(response instanceof InternalResponse)) {
+            if (responseAvailable(response)) {
                 runAsynchronous(callback, executor);
                 return;
             }
 
             this.callbackHead = new ExecutionCallbackNode<E>(callback, executor, callbackHead);
         }
+    }
+
+    private boolean responseAvailable(Object response) {
+        if (response == null) {
+            return false;
+        }
+
+        if (response == InternalResponse.WAIT_RESPONSE) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -192,7 +204,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
-        if (response != null && response != WAIT_RESPONSE) {
+        if (responseAvailable(response)) {
             return response;
         }
 
@@ -365,15 +377,14 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         return false;
     }
 
-    // TODO: Is broken. E.g. when response is set to WAIT_RESPONSE
     @Override
     public boolean isDone() {
-        return response != null;
+         return responseAvailable(response);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("BasicInvocationFuture{");
+        StringBuilder sb = new StringBuilder("InvocationFuture{");
         sb.append("invocation=").append(invocation.toString());
         sb.append(", response=").append(response);
         sb.append(", done=").append(isDone());
