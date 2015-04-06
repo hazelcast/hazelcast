@@ -29,7 +29,8 @@ enum ClientXmlElements {
     NETWORK("network", false),
     LOAD_BALANCER("load-balancer", false),
     NEAR_CACHE("near-cache", true),
-    EXECUTOR_POOL_SIZE("executor-pool-size", false);
+    EXECUTOR_POOL_SIZE("executor-pool-size", false),
+    LICENSE_KEY("license-key", false);
 
 
     final String name;
