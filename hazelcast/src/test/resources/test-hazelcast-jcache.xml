@@ -63,6 +63,7 @@
         <management-enabled>false</management-enabled>
         <wan-replication-ref name="testWanRef">
             <merge-policy>TestMergePolicy</merge-policy>
+            <republish-enabled>true</republish-enabled>
         </wan-replication-ref>
     </cache>
 
