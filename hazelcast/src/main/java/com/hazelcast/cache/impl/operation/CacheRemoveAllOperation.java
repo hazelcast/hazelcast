@@ -4,12 +4,15 @@ import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.CacheException;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,11 +22,9 @@ import java.util.Set;
 public class CacheRemoveAllOperation extends PartitionWideCacheOperation implements BackupAwareOperation {
 
     private Set<Data> keys;
-
     private int completionId;
 
     private transient Set<Data> filteredKeys = new HashSet<Data>();
-
     private transient ICacheRecordStore cache;
 
     public CacheRemoveAllOperation() {
@@ -98,4 +99,31 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
         }
     }
 
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeInt(completionId);
+        out.writeBoolean(keys != null);
+        if (keys != null) {
+            out.writeInt(keys.size());
+            for (Data key : keys) {
+                out.writeData(key);
+            }
+        }
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        completionId = in.readInt();
+        boolean isKeysNotNull = in.readBoolean();
+        if (isKeysNotNull) {
+            int size = in.readInt();
+            keys = new HashSet<Data>(size);
+            for (int i = 0; i < size; i++) {
+                Data key = in.readData();
+                keys.add(key);
+            }
+        }
+    }
 }
