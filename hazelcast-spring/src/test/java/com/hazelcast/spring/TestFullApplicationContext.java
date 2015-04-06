@@ -35,6 +35,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
@@ -71,6 +72,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -614,6 +616,18 @@ public class TestFullApplicationContext {
         GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
         assertNotNull(globalSerializerConfig);
         assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
+    }
+
+    @Test
+    public void testNativeMemoryConfig() {
+        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+        assertFalse(nativeMemoryConfig.isEnabled());
+        assertEquals(MemoryUnit.MEGABYTES,nativeMemoryConfig.getSize().getUnit());
+        assertEquals(256,nativeMemoryConfig.getSize().getValue());
+        assertEquals(20,nativeMemoryConfig.getPageSize());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED,nativeMemoryConfig.getAllocatorType());
+        assertEquals(10.2,nativeMemoryConfig.getMetadataSpacePercentage(),0.1);
+        assertEquals(10,nativeMemoryConfig.getMinBlockSize());
     }
 
     @Test
