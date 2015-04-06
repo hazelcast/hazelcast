@@ -7,7 +7,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.NIOThread;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
@@ -227,8 +227,8 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         }
     }
 
-    protected static class DummyNioThread extends Thread implements NIOThread {
-        protected DummyNioThread(Runnable task) {
+    protected static class DummyOperationHostileThread extends Thread implements OperationHostileThread {
+        protected DummyOperationHostileThread(Runnable task) {
             super(task);
         }
     }

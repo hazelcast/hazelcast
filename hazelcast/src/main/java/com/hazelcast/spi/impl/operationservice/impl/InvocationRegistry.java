@@ -6,6 +6,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
@@ -242,8 +243,11 @@ public class InvocationRegistry {
      * <p/>
      * But it should also check if a 'is still running' check needs to be done. This removed complexity from
      * the invocation.waitForResponse which is too complicated too understand.
+     *
+     * This class needs to implement the OperationHostileThread interface to make sure that the OperationExecutor
+     * is not going to schedule any operations on this task due to retry.
      */
-    class InspectionThread extends Thread {
+    class InspectionThread extends Thread implements OperationHostileThread {
 
         private volatile boolean shutdown;
 
