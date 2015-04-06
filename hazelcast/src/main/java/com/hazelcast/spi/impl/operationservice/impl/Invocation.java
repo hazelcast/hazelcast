@@ -196,7 +196,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
             if (!isAllowed && !isMigrationOperation(op)) {
                 throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
             }
-            doInvoke();
+            doInvoke(isAsync);
         } catch (Exception e) {
             handleInvocationException(e);
         }
@@ -212,7 +212,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
-    private void doInvoke() {
+    private void doInvoke(boolean isAsync) {
         if (!engineActive()) {
             return;
         }
@@ -229,11 +229,11 @@ abstract class Invocation implements ResponseHandler, Runnable {
         if (remote) {
             doInvokeRemote();
         } else {
-            doInvokeLocal();
+            doInvokeLocal(isAsync);
         }
     }
 
-    private void doInvokeLocal() {
+    private void doInvokeLocal(boolean isAsync) {
         if (op.getCallerUuid() == null) {
             op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
         }
@@ -242,7 +242,12 @@ abstract class Invocation implements ResponseHandler, Runnable {
         op.setResponseHandler(this);
 
         OperationExecutor executor = operationService.operationExecutor;
-        executor.runOnCallingThreadIfPossible(op);
+        if (isAsync) {
+            executor.execute(op);
+        } else {
+            executor.runOnCallingThreadIfPossible(op);
+        }
+
     }
 
     private void doInvokeRemote() {
@@ -255,7 +260,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
     @Override
     public void run() {
-        doInvoke();
+        doInvoke(false);
     }
 
     private boolean engineActive() {
@@ -577,7 +582,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         pendingResponseReceivedMillis = -1;
         backupsExpected = 0;
         backupsCompleted = 0;
-        doInvoke();
+        doInvoke(false);
     }
 
     @Override
