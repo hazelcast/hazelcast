@@ -27,22 +27,26 @@ import java.io.Serializable;
  * Configuration for Wan target replication reference
  */
 public class WanReplicationRef implements DataSerializable, Serializable {
+
     private String name;
     private String mergePolicy;
+    private boolean republishEnabled;
 
     private WanReplicationRefReadOnly readOnly;
 
     public WanReplicationRef() {
     }
 
-    public WanReplicationRef(String name, String mergePolicy) {
+    public WanReplicationRef(String name, String mergePolicy, boolean republishEnabled) {
         this.name = name;
         this.mergePolicy = mergePolicy;
+        this.republishEnabled = republishEnabled;
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
         name = ref.name;
         mergePolicy = ref.mergePolicy;
+        republishEnabled = ref.republishEnabled;
     }
 
     public WanReplicationRefReadOnly getAsReadOnly() {
@@ -61,13 +65,21 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return this;
     }
 
-
     public String getMergePolicy() {
         return mergePolicy;
     }
 
     public WanReplicationRef setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+        return this;
+    }
+
+    public boolean isRepublishEnabled() {
+        return republishEnabled;
+    }
+
+    public WanReplicationRef setRepublishEnabled(boolean republishEnabled) {
+        this.republishEnabled = republishEnabled;
         return this;
     }
 

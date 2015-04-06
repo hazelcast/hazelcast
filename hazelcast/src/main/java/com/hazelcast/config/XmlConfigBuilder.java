@@ -999,9 +999,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         wanReplicationRef.setName(wanName);
         for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
             final String wanChildName = cleanNodeName(wanChild.getNodeName());
-            final String wanChildValue = getTextContent(n);
+            final String wanChildValue = getTextContent(wanChild);
             if ("merge-policy".equals(wanChildName)) {
                 wanReplicationRef.setMergePolicy(wanChildValue);
+            } else if ("republish-enabled".equals(wanChildName)) {
+                wanReplicationRef.setRepublishEnabled(checkTrue(wanChildValue));
             }
         }
         cacheConfig.setWanReplicationRef(wanReplicationRef);
@@ -1033,9 +1035,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         wanReplicationRef.setName(wanName);
         for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
             final String wanChildName = cleanNodeName(wanChild.getNodeName());
-            final String wanChildValue = getTextContent(n);
+            final String wanChildValue = getTextContent(wanChild);
             if ("merge-policy".equals(wanChildName)) {
                 wanReplicationRef.setMergePolicy(wanChildValue);
+            } else if ("republish-enabled".equals(wanChildName)) {
+                wanReplicationRef.setRepublishEnabled(checkTrue(wanChildValue));
             }
         }
         mapConfig.setWanReplicationRef(wanReplicationRef);
