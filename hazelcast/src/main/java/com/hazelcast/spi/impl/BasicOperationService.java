@@ -26,6 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.NIOThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
@@ -1087,7 +1088,7 @@ final class BasicOperationService implements InternalOperationService {
      * We use a dedicated thread instead of a shared ScheduledThreadPool because there will not be that many of these threads
      * (each member-HazelcastInstance gets 1) and we don't want problems in 1 member causing problems in the other.
      */
-    private final class CleanupThread extends Thread {
+    private final class CleanupThread extends Thread implements NIOThread {
 
         public static final int DELAY_MILLIS = 1000;
 
