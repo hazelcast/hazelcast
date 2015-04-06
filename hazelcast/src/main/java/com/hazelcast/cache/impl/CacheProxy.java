@@ -24,9 +24,17 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -37,14 +45,6 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -112,13 +112,13 @@ public class CacheProxy<K, V>
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
         validateCacheLoader(completionListener);
-        HashSet<Data> keysData = new HashSet<Data>();
+        HashSet<Data> keysData = new HashSet<Data>(keys.size());
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
         }
-        OperationFactory operationFactory = operationProvider.createLoadAllOperationFactory(keysData, replaceExistingValues);
+        LoadAllTask loadAllTask = new LoadAllTask(operationProvider, keysData, replaceExistingValues, completionListener);
         try {
-            submitLoadAllTask(operationFactory, completionListener);
+            submitLoadAllTask(loadAllTask);
         } catch (Exception e) {
             if (completionListener != null) {
                 completionListener.onException(e);
