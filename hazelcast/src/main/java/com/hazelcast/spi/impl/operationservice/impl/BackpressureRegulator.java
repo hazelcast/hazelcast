@@ -6,8 +6,10 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static java.lang.Math.max;
 import static java.lang.Math.round;
 
 
@@ -52,8 +54,13 @@ public class BackpressureRegulator {
         }
     };
 
-    // we have a counter per partition + we have an additional counter for generic operations.
-    private final AtomicInteger[] syncDelays;
+    // number of ints in a single cache-line.
+    private static final int INTS_PER_CACHE_LINE = CACHE_LINE_LENGTH / INT_SIZE_IN_BYTES;
+
+    // There is syncDelay counter per partition. To prevent false sharing, the syncDelay for each partition is padded additional
+    // int's so that each sync delay is on its own cache-line.
+    // Each partition will always be handled by 1 thread at any given moment, so thread-safety is not required.
+    private final int[] syncDelays;
 
     private final boolean enabled;
     private final boolean disabled;
@@ -71,9 +78,10 @@ public class BackpressureRegulator {
         this.syncWindow = getSyncWindow(properties);
         this.maxConcurrentInvocations = getMaxConcurrentInvocations(properties);
         this.backoffTimeoutMs = getBackoffTimeoutMs(properties);
-        this.syncDelays = new AtomicInteger[partitionCount + 1];
-        for (int k = 0; k < syncDelays.length; k++) {
-            syncDelays[k] = new AtomicInteger(randomSyncDelay());
+
+        this.syncDelays = new int[INTS_PER_CACHE_LINE * partitionCount];
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            syncDelays[partitionId * INTS_PER_CACHE_LINE] = randomSyncDelay();
         }
 
         if (enabled) {
@@ -87,9 +95,9 @@ public class BackpressureRegulator {
 
     private int getSyncWindow(GroupProperties props) {
         int syncWindow = props.BACKPRESSURE_SYNCWINDOW.getInteger();
-        if (enabled && syncWindow < 0) {
+        if (enabled && syncWindow <= 0) {
             throw new IllegalArgumentException("Can't have '"
-                    + props.BACKPRESSURE_SYNCWINDOW.getName() + "' with a value smaller than 0");
+                    + props.BACKPRESSURE_SYNCWINDOW.getName() + "' with a value smaller than 1");
         }
         return syncWindow;
     }
@@ -124,6 +132,11 @@ public class BackpressureRegulator {
         return enabled;
     }
 
+    // just for testing
+    int syncDelay(Operation op) {
+        return syncDelays[op.getPartitionId() * INTS_PER_CACHE_LINE];
+    }
+
     int getMaxConcurrentInvocations() {
         if (enabled) {
             return maxConcurrentInvocations;
@@ -156,6 +169,11 @@ public class BackpressureRegulator {
             return false;
         }
 
+        if (backupAwareOp.getPartitionId() < 0) {
+            throw new IllegalArgumentException("A BackupAwareOperation can't have a negative partitionId, "
+                    + backupAwareOp);
+        }
+
         // if there are no asynchronous backups, there is nothing to regulate.
         if (backupAwareOp.getAsyncBackupCount() == 0) {
             return false;
@@ -168,47 +186,26 @@ public class BackpressureRegulator {
             return false;
         }
 
-        AtomicInteger syncDelayCounter = syncDelayCounter(op);
+        int index = op.getPartitionId() * INTS_PER_CACHE_LINE;
+        int oldSyncDelay = syncDelays[index];
 
-        for (; ; ) {
-            int prev = syncDelayCounter.get();
-            int next;
-
-            boolean syncForced;
-            if (prev > 0) {
-                next = prev - 1;
-                syncForced = false;
-            } else {
-                next = randomSyncDelay();
-                syncForced = true;
-            }
-
-            if (syncDelayCounter.compareAndSet(prev, next)) {
-                return syncForced;
-            }
+        if (oldSyncDelay == 1) {
+            int newSyncDelay = randomSyncDelay();
+            syncDelays[index] = newSyncDelay;
+            return true;
         }
-    }
 
-    AtomicInteger syncDelayCounter(Operation op) {
-        int partitionId = op.getPartitionId();
-        if (partitionId < 0) {
-            return syncDelays[partitionCount];
-        } else {
-            return syncDelays[partitionId];
-        }
-    }
-
-    // just for testing
-    int syncDelay(Operation op) {
-        return syncDelayCounter(op).get();
+        syncDelays[index] = oldSyncDelay - 1;
+        return false;
     }
 
     private int randomSyncDelay() {
-        if (syncWindow == 0) {
-            return 0;
+        if (syncWindow == 1) {
+            return 1;
         }
 
         Random random = THREAD_LOCAL_RANDOM.get();
-        return round((1 - RANGE) * syncWindow + random.nextInt(round(2 * RANGE * syncWindow)));
+        int randomSyncWindow = round((1 - RANGE) * syncWindow + random.nextInt(round(2 * RANGE * syncWindow)));
+        return max(1, randomSyncWindow);
     }
 }

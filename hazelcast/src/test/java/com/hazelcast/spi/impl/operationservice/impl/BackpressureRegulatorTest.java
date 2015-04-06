@@ -6,6 +6,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -15,8 +16,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.instance.GroupProperties.PROP_BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
@@ -45,22 +44,21 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
         assertFalse(regulator.isEnabled());
     }
 
-
     @Test(expected = IllegalArgumentException.class)
     public void testConstruction_invalidSyncWindow() {
         Config config = new Config();
         config.setProperty(PROP_BACKPRESSURE_ENABLED, "true");
-        config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "" + -1);
+        config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "" + 0);
         GroupProperties groupProperties = new GroupProperties(config);
 
         new BackpressureRegulator(groupProperties, logger);
     }
 
     @Test
-    public void testConstruction_zeroSyncWindow_syncOnEveryCall() {
+    public void testConstruction_OneSyncWindow_syncOnEveryCall() {
         Config config = new Config();
         config.setProperty(PROP_BACKPRESSURE_ENABLED, "true");
-        config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "0");
+        config.setProperty(GroupProperties.PROP_BACKPRESSURE_SYNCWINDOW, "1");
         GroupProperties groupProperties = new GroupProperties(config);
         BackpressureRegulator regulator = new BackpressureRegulator(groupProperties, logger);
         for (int k = 0; k < 1000; k++) {
@@ -103,6 +101,7 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
     public void isSyncForced_whenUrgentOperation_thenFalse() {
         BackpressureRegulator regulator = newEnabledBackPressureService();
         UrgentOperation operation = new UrgentOperation();
+        operation.setPartitionId(1);
 
         boolean result = regulator.isSyncForced(operation);
 
@@ -142,28 +141,14 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
     @Test
     public void isSyncForced_whenPartitionSpecific() {
-        isSyncForced_whenNormalOperation(true);
-    }
-
-    @Test
-    public void isSyncForced_whenGeneric() {
-        isSyncForced_whenNormalOperation(false);
-    }
-
-    public void isSyncForced_whenNormalOperation(boolean partitionSpecific) {
         BackpressureRegulator regulator = newEnabledBackPressureService();
 
-        BackupAwareOperation op;
-        if (partitionSpecific) {
-            op = new PartitionSpecificOperation(10);
-        } else {
-            op = new GenericOperation();
-        }
+        BackupAwareOperation op = new PartitionSpecificOperation(10);
 
         for (int iteration = 0; iteration < 10; iteration++) {
             int initialSyncDelay = regulator.syncDelay((Operation) op);
             int remainingSyncDelay = initialSyncDelay - 1;
-            for (int k = 0; k < initialSyncDelay; k++) {
+            for (int k = 0; k < initialSyncDelay-1; k++) {
                 boolean result = regulator.isSyncForced(op);
                 assertFalse("no sync force expected", result);
 
@@ -175,14 +160,21 @@ public class BackpressureRegulatorTest extends HazelcastTestSupport {
             boolean result = regulator.isSyncForced(op);
             assertTrue("sync force expected", result);
 
-            AtomicInteger syncDelay = regulator.syncDelayCounter((Operation) op);
+            int syncDelay = regulator.syncDelay((Operation) op);
             assertValidSyncDelay(syncDelay);
         }
     }
 
-    private void assertValidSyncDelay(AtomicInteger synDelay) {
-        assertTrue("syncDelayCounter is " + synDelay, synDelay.get() >= (1 - BackpressureRegulator.RANGE) * SYNC_WINDOW);
-        assertTrue("syncDelayCounter is " + synDelay, synDelay.get() <= (1 + BackpressureRegulator.RANGE) * SYNC_WINDOW);
+    @Test(expected = IllegalArgumentException.class)
+    public void isSyncForced_whenGeneric_thenIllegalArgumentException() {
+        GenericOperation op = new GenericOperation();
+        BackpressureRegulator regulator = newEnabledBackPressureService();
+        regulator.isSyncForced(op);
+    }
+
+    private void assertValidSyncDelay(int synDelay) {
+        assertTrue("syncDelayCounter is " + synDelay, synDelay >= (1 - BackpressureRegulator.RANGE) * SYNC_WINDOW);
+        assertTrue("syncDelayCounter is " + synDelay, synDelay <= (1 + BackpressureRegulator.RANGE) * SYNC_WINDOW);
     }
 
     private class UrgentOperation extends AbstractOperation implements UrgentSystemOperation, BackupAwareOperation {
