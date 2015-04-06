@@ -50,7 +50,7 @@ import static org.junit.Assert.fail;
 public class UTFEncoderDecoderTest  {
 
     private static final Random RANDOM = new Random();
-    private static final int BENCHMARK_ROUNDS = 10; // 100;
+    private final int BENCHMARK_ROUNDS = 3; // 100;
 
     @Test(expected = IllegalArgumentException.class)
     public void testReadUTF_bufferSizeMustAlwaysBePowerOfTwo() throws IOException {
