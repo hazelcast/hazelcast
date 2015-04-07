@@ -86,7 +86,6 @@ public class LocalOperationStatsImpl implements LocalOperationStats {
     public void fromJson(JsonObject json) {
         maxVisibleSlowOperationCount = getLong(json, "maxVisibleSlowOperationCount", Long.MAX_VALUE);
         for (JsonValue jsonValue : getArray(json, "slowOperations")) {
-            getObject(json, "operationServiceBean");
             SlowOperationDTO slowOperationDTO = new SlowOperationDTO();
             slowOperationDTO.fromJson(jsonValue.asObject());
             slowOperations.add(slowOperationDTO);
