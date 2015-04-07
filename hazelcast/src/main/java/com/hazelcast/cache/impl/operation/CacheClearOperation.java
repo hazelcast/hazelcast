@@ -32,7 +32,6 @@ public class CacheClearOperation
         extends PartitionWideCacheOperation
         implements BackupAwareOperation {
 
-
     private transient ICacheRecordStore cache;
 
     public CacheClearOperation() {
