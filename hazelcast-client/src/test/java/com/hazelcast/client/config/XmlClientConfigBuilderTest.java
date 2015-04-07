@@ -148,6 +148,7 @@ public class XmlClientConfigBuilderTest {
     public void testNetworkConfig() {
 
         final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+        assertEquals(0,networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
         assertTrue(networkConfig.getAddresses().contains("127.0.0.1"));
         assertTrue(networkConfig.getAddresses().contains("127.0.0.2"));

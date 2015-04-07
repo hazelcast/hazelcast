@@ -29,6 +29,7 @@
     </properties>
 
     <network>
+        <connection-attempt-limit>0</connection-attempt-limit>
         <cluster-members>
             <address>127.0.0.1</address>
             <address>127.0.0.2</address>

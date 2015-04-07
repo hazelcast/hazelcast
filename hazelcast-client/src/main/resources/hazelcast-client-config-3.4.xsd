@@ -133,7 +133,7 @@
     <xs:element name="connection-attempt-limit" default="2">
         <xs:simpleType>
             <xs:restriction base="xs:int">
-                <xs:minInclusive value="1"/>
+                <xs:minInclusive value="0"/>
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
