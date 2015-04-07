@@ -52,6 +52,7 @@ import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.LISTENERS;
 import static com.hazelcast.client.config.ClientXmlElements.LOAD_BALANCER;
+import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
 import static com.hazelcast.client.config.ClientXmlElements.NATIVE_MEMORY;
 import static com.hazelcast.client.config.ClientXmlElements.NEAR_CACHE;
 import static com.hazelcast.client.config.ClientXmlElements.NETWORK;
@@ -226,6 +227,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleNearCache(node);
         } else if (EXECUTOR_POOL_SIZE.isEqual(nodeName)) {
             handleExecutorPoolSize(node);
+        } else if (LICENSE_KEY.isEqual(nodeName)) {
+            clientConfig.setLicenseKey(getTextContent(node));
         }
     }
 
