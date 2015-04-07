@@ -146,18 +146,18 @@ public class ClientMessage
     }
 
     /**
-     * return version field value
+     * Returns the version field value.
      *
-     * @return ver field value
+     * @return The version field value.
      */
     public short getVersion() {
         return uint8Get(offset() + VERSION_FIELD_OFFSET);
     }
 
     /**
-     * set version field value
+     * Sets the version field value.
      *
-     * @param ver field value
+     * @param version The field value to set.
      * @return ClientMessage
      */
     public ClientMessage setVersion(final short ver) {
@@ -166,18 +166,18 @@ public class ClientMessage
     }
 
     /**
-     * return flags field value
+     * Returns the flags field value.
      *
-     * @return flags field value
+     * @return The flags field value.
      */
     public short getFlags() {
         return uint8Get(offset() + FLAGS_FIELD_OFFSET);
     }
 
     /**
-     * set the flags field value
+     * Sets the flags field value.
      *
-     * @param flags field value
+     * @param flags The field value to set.
      * @return ClientMessage
      */
     public ClientMessage setFlags(final short flags) {
@@ -186,18 +186,18 @@ public class ClientMessage
     }
 
     /**
-     * return message type field
+     * Returns the message type field.
      *
-     * @return type field value
+     * @return The message type field value.
      */
     public int getMessageType() {
         return uint16Get(offset() + TYPE_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
     /**
-     * set message type field
+     * Sets the message type field.
      *
-     * @param type field value
+     * @param message The message type field value to set.
      * @return ClientMessage
      */
     public ClientMessage setMessageType(final int type) {
@@ -206,18 +206,18 @@ public class ClientMessage
     }
 
     /**
-     * return frame length field
+     * Returns the frame length field.
      *
-     * @return frame length field
+     * @return The frame length field.
      */
     public int getFrameLength() {
         return (int) uint32Get(offset() + FRAME_LENGTH_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
     /**
-     * set frame length field
+     * Sets the frame length field.
      *
-     * @param length field value
+     * @param frame The frame length field value to set.
      * @return ClientMessage
      */
     public ClientMessage setFrameLength(final int length) {
@@ -226,18 +226,18 @@ public class ClientMessage
     }
 
     /**
-     * return correlation id field
+     * Returns the correlation id field.
      *
-     * @return correlation id field
+     * @return The correlation id field.
      */
     public int getCorrelationId() {
         return (int) uint32Get(offset() + CORRELATION_ID_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
     /**
-     * set correlation id field
+     * Sets the correlation id field.
      *
-     * @param correlationId field value
+     * @param correlationId The correlation id field value to set.
      * @return ClientMessage
      */
     public ClientMessage setCorrelationId(final int correlationId) {
@@ -246,18 +246,18 @@ public class ClientMessage
     }
 
     /**
-     * return partition id field
+     * Returns the partition id field.
      *
-     * @return partition id field
+     * @return The partition id field.
      */
     public int getPartitionId() {
         return (int) uint32Get(offset() + PARTITION_ID_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
     /**
-     * set partition id field
+     * Sets the partition id field.
      *
-     * @param partitionId field value
+     * @param partitionId The partitions id field value to set.
      * @return ClientMessage
      */
     public ClientMessage setPartitionId(final int partitionId) {
@@ -266,18 +266,18 @@ public class ClientMessage
     }
 
     /**
-     * return setDataOffset field
+     * Returns the setDataOffset field.
      *
-     * @return type field value
+     * @return The setDataOffset type field value.
      */
     public int getDataOffset() {
         return uint16Get(offset() + DATA_OFFSET_FIELD_OFFSET, LITTLE_ENDIAN);
     }
 
     /**
-     * set dataOffset field
+     * Sets the dataOffset field.
      *
-     * @param dataOffset field value
+     * @param dataOffset The dataOffset field value to set.
      * @return ClientMessage
      */
     public ClientMessage setDataOffset(final int dataOffset) {
@@ -286,9 +286,9 @@ public class ClientMessage
     }
 
     /**
-     * copy into payload data region located at data Offset
+     * Copy into the payload data region located at data Offset.
      *
-     * @param payload the payload data
+     * @param payload The data being copied into the payload data region.
      * @return ClientMessage
      */
     public ClientMessage putPayloadData(byte[] payload) {
@@ -299,9 +299,9 @@ public class ClientMessage
     }
 
     /**
-     * reads from payload data region into the provided array
+     * Reads from the payload data region into the provided array.
      *
-     * @param payload destination array that payload will be copied into
+     * @param The payload destination array that the payload will be copied into.
      * @return ClientMessage
      */
     public ClientMessage getPayloadData(byte[] payload) {
@@ -380,8 +380,8 @@ public class ClientMessage
     }
 
     /**
-     * checks frame size and total data size to validate message size
-     * @return true if message is constructed
+     * Checks the frame size and total data size to validate the message size.
+     * @return true if the message is constructed.
      */
     public boolean isComplete() {
         return (index() > HEADER_SIZE) && (index() == getFrameLength());
