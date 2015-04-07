@@ -1977,6 +1977,6 @@
     <xs:complexType name="wan-replication-ref">
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
-        <xs:attribute name="republish-enabled" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="republishing-enabled" use="optional" type="xs:boolean" default="true"/>
     </xs:complexType>
 </xs:schema>

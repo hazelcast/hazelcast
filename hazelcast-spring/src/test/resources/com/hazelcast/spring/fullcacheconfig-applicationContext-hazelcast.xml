@@ -159,7 +159,7 @@
                     merge-policy="PUT_IF_ABSENT">
                 <hz:map-store enabled="true" implementation="dummyMapStore" write-delay-seconds="0"
                               initial-mode="LAZY"/>
-                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT" republish-enabled="true"/>
+                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
 
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
@@ -206,7 +206,7 @@
             <hz:map name="mapWithDefaultOptimizedQueries"/>
 
             <hz:cache name="testCache">
-                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT" republish-enabled="true"/>
+                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT" republishing-enabled="false"/>
             </hz:cache>
 
             <hz:multimap name="testMultimap"

@@ -30,23 +30,23 @@ public class WanReplicationRef implements DataSerializable, Serializable {
 
     private String name;
     private String mergePolicy;
-    private boolean republishEnabled;
+    private boolean republishingEnabled = true;
 
     private WanReplicationRefReadOnly readOnly;
 
     public WanReplicationRef() {
     }
 
-    public WanReplicationRef(String name, String mergePolicy, boolean republishEnabled) {
+    public WanReplicationRef(String name, String mergePolicy, boolean republishingEnabled) {
         this.name = name;
         this.mergePolicy = mergePolicy;
-        this.republishEnabled = republishEnabled;
+        this.republishingEnabled = republishingEnabled;
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
         name = ref.name;
         mergePolicy = ref.mergePolicy;
-        republishEnabled = ref.republishEnabled;
+        republishingEnabled = ref.republishingEnabled;
     }
 
     public WanReplicationRefReadOnly getAsReadOnly() {
@@ -74,12 +74,12 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return this;
     }
 
-    public boolean isRepublishEnabled() {
-        return republishEnabled;
+    public boolean isRepublishingEnabled() {
+        return republishingEnabled;
     }
 
-    public WanReplicationRef setRepublishEnabled(boolean republishEnabled) {
-        this.republishEnabled = republishEnabled;
+    public WanReplicationRef setRepublishingEnabled(boolean republishEnabled) {
+        this.republishingEnabled = republishEnabled;
         return this;
     }
 
@@ -87,19 +87,22 @@ public class WanReplicationRef implements DataSerializable, Serializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(mergePolicy);
+        out.writeBoolean(republishingEnabled);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         mergePolicy = in.readUTF();
+        republishingEnabled = in.readBoolean();
     }
 
     @Override
     public String toString() {
         return "WanReplicationRef{"
                 + "name='" + name + '\''
-                + ", mergePolicy='" + mergePolicy
+                + ", mergePolicy='" + mergePolicy + '\''
+                + ", republishingEnabled='" + republishingEnabled
                 + '\''
                 + '}';
     }

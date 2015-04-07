@@ -33,7 +33,7 @@ public class WanReplicationRefReadOnly extends WanReplicationRef {
     }
 
     @Override
-    public WanReplicationRef setRepublishEnabled(boolean republishEnabled) {
+    public WanReplicationRef setRepublishingEnabled(boolean republishingEnabled) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }

@@ -555,7 +555,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "  <map name=\"" + mapName + "\">\n" +
                         "    <wan-replication-ref name=\"test\">\n" +
                         "      <merge-policy>TestMergePolicy</merge-policy>\n" +
-                        "      <republish-enabled>true</republish-enabled>\n" +
                         "    </wan-replication-ref>\n" +
                         "  </map>\n" +
                         "</hazelcast>";
@@ -564,7 +563,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         WanReplicationRef wanRef = config.getMapConfig(mapName).getWanReplicationRef();
         assertEquals(refName, wanRef.getName());
         assertEquals(mergePolicy, wanRef.getMergePolicy());
-        assertTrue(wanRef.isRepublishEnabled());
+        assertTrue(wanRef.isRepublishingEnabled());
     }
 
     @Test(expected = InvalidConfigurationException.class)

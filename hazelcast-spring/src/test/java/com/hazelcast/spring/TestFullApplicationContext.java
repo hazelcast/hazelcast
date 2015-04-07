@@ -207,7 +207,7 @@ public class TestFullApplicationContext {
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
         assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
-        assertTrue(wanRef.isRepublishEnabled());
+        assertFalse(wanRef.isRepublishingEnabled());
     }
 
     @Test
@@ -266,7 +266,7 @@ public class TestFullApplicationContext {
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
         assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
-        assertTrue(wanReplicationRef.isRepublishEnabled());
+        assertTrue(wanReplicationRef.isRepublishingEnabled());
 
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());

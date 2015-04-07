@@ -1002,8 +1002,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String wanChildValue = getTextContent(wanChild);
             if ("merge-policy".equals(wanChildName)) {
                 wanReplicationRef.setMergePolicy(wanChildValue);
-            } else if ("republish-enabled".equals(wanChildName)) {
-                wanReplicationRef.setRepublishEnabled(checkTrue(wanChildValue));
+            } else if ("republishing-enabled".equals(wanChildName)) {
+                wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
             }
         }
         cacheConfig.setWanReplicationRef(wanReplicationRef);
@@ -1038,8 +1038,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String wanChildValue = getTextContent(wanChild);
             if ("merge-policy".equals(wanChildName)) {
                 wanReplicationRef.setMergePolicy(wanChildValue);
-            } else if ("republish-enabled".equals(wanChildName)) {
-                wanReplicationRef.setRepublishEnabled(checkTrue(wanChildValue));
+            } else if ("republishing-enabled".equals(wanChildName)) {
+                wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
             }
         }
         mapConfig.setWanReplicationRef(wanReplicationRef);
