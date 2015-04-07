@@ -17,16 +17,21 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -88,7 +93,7 @@ public class ClientCacheConfigTest {
     @Test
     public void cacheManagerByLocationClasspathTest()
             throws URISyntaxException {
-        assertEquals(0, HazelcastClient.getAllHazelcastClients().size() );
+        assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
         URI uri1 = new URI("MY-SCOPE");
 
         Properties properties = new Properties();
@@ -96,23 +101,22 @@ public class ClientCacheConfigTest {
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null, properties);
         assertNotNull(cacheManager);
 
-        assertEquals(1, HazelcastClient.getAllHazelcastClients().size() );
+        assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
         Caching.getCachingProvider().close();
 
         cacheManager.close();
 
-        assertEquals(0, HazelcastClient.getAllHazelcastClients().size() );
-
+        assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
     }
 
     @Test
     public void cacheManagerByLocationFileTest()
             throws URISyntaxException {
-        assertEquals(0, HazelcastClient.getAllHazelcastClients().size() );
+        assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
         URI uri = new URI("MY-SCOPE");
 
         String urlStr = configUrl1.toString();
-        assertEquals("file", urlStr.substring(0,4));
+        assertEquals("file", urlStr.substring(0, 4));
         Properties properties = new Properties();
         properties.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, urlStr);
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri, null, properties);
@@ -120,7 +124,7 @@ public class ClientCacheConfigTest {
 
         URI uri2 = new URI("MY-SCOPE-OTHER");
         String urlStr2 = configUrl2.toString();
-        assertEquals("file", urlStr2.substring(0,4));
+        assertEquals("file", urlStr2.substring(0, 4));
         Properties properties2 = new Properties();
         properties2.setProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION, urlStr2);
         CacheManager cacheManager2 = Caching.getCachingProvider().getCacheManager(uri2, null, properties2);
@@ -133,13 +137,13 @@ public class ClientCacheConfigTest {
     @Test
     public void cacheManagerByInstanceNameTest()
             throws URISyntaxException {
-        assertEquals(0, HazelcastClient.getAllHazelcastClients().size() );
+        assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("cluster1");
         clientConfig.getGroupConfig().setPassword("cluster1pass");
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        String instanceName =client.getName();
+        String instanceName = client.getName();
 
         URI uri1 = new URI("MY-SCOPE");
         Properties properties = new Properties();
@@ -147,7 +151,7 @@ public class ClientCacheConfigTest {
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager(uri1, null, properties);
         assertNotNull(cacheManager);
 
-        assertEquals(1, HazelcastClient.getAllHazelcastClients().size() );
+        assertEquals(1, HazelcastClient.getAllHazelcastClients().size());
         client.shutdown();
 
         Caching.getCachingProvider().close();
@@ -168,4 +172,68 @@ public class ClientCacheConfigTest {
             Assert.assertNotNull("Cache cannot be retrieved on client: " + i, cache);
         }
     }
+
+    @Test
+    public void createCacheConfigOnAllNodes() {
+        final String CACHE_NAME = "myCache";
+
+        HazelcastInstance client = null;
+        HazelcastInstance server1 = null;
+        HazelcastInstance server2 = null;
+
+        try {
+            Config config = new Config();
+            CacheSimpleConfig cacheSimpleConfig =
+                    new CacheSimpleConfig()
+                            .setName(CACHE_NAME)
+                            .setBackupCount(1); // Be sure that cache put operation is mirrored to backup node
+            config.addCacheConfig(cacheSimpleConfig);
+
+            // Create servers with configured caches
+            server1 = Hazelcast.newHazelcastInstance(config);
+            server2 = Hazelcast.newHazelcastInstance(config);
+
+            ICacheService cacheService1 = getCacheService(server1);
+            ICacheService cacheService2 = getCacheService(server2);
+
+            // Create the hazelcast client instance
+            client = HazelcastClient.newHazelcastClient();
+
+            // Create the client cache manager
+            CachingProvider cachingProvider =
+                    HazelcastClientCachingProvider.createCachingProvider(client);
+            CacheManager cacheManager = cachingProvider.getCacheManager();
+
+            Cache<String, String> cache = cacheManager.getCache(CACHE_NAME);
+
+            assertNotNull(cache);
+
+            CacheConfig cacheConfig = cache.getConfiguration(CacheConfig.class);
+
+            assertNotNull(cacheService1.getCacheConfig(cacheConfig.getNameWithPrefix()));
+            assertNotNull(cacheService2.getCacheConfig(cacheConfig.getNameWithPrefix()));
+
+            // First attempt to use the cache will trigger to create its record store.
+            // So, we are testing also this case. There should not be any exception.
+            // In here, we are testing both of nodes since there is a backup,
+            // put is also applied to other (backup node).
+            cache.put("key", "value");
+        } finally {
+            if (client != null) {
+                client.shutdown();
+            }
+            if (server1 != null) {
+                server1.shutdown();
+            }
+            if (server2 != null) {
+                server2.shutdown();
+            }
+        }
+    }
+
+    private ICacheService getCacheService(HazelcastInstance instance) {
+        Node node = TestUtil.getNode(instance);
+        return node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
+    }
+
 }
