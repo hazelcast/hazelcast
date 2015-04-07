@@ -42,6 +42,11 @@ public class InvocationBuilderImpl extends InvocationBuilder {
 
     @Override
     public InternalCompletableFuture invoke() {
+        Object callback = this.callback;
+        if (callback == null) {
+            callback = this.executionCallback;
+        }
+
         if (target == null) {
             return new PartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
                     tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized).invoke();

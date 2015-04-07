@@ -51,13 +51,19 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private final Invocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
 
-    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, Callback<E> callback) {
+    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, Object callback) {
         this.invocation = invocation;
         this.operationService = operationService;
 
         if (callback != null) {
-            ExecutorCallbackAdapter<E> adapter = new ExecutorCallbackAdapter<E>(callback);
-            callbackHead = new ExecutionCallbackNode<E>(adapter, operationService.asyncExecutor, null);
+            ExecutionCallback executionCallback;
+            if (callback instanceof ExecutionCallback) {
+                executionCallback = (ExecutionCallback) callback;
+            } else {
+                executionCallback = new ExecutorCallbackAdapter<E>((Callback) callback);
+            }
+
+            callbackHead = new ExecutionCallbackNode<E>(executionCallback, operationService.asyncExecutor, null);
         }
     }
 

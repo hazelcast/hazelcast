@@ -22,7 +22,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
@@ -109,7 +108,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     private volatile int invokeCount;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback,
+               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Object callback,
                boolean resultDeserialized) {
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;

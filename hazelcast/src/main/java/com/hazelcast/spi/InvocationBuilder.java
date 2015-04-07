@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -59,6 +60,7 @@ public abstract class InvocationBuilder {
     protected final int partitionId;
     protected final Address target;
     protected Callback<Object> callback;
+    protected ExecutionCallback<Object> executionCallback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
     protected int replicaIndex;
@@ -219,12 +221,47 @@ public abstract class InvocationBuilder {
         return callTimeout;
     }
 
+    /**
+     * This method is deprecated since HZ 3.5. Please use the {@link #getExecutionCallback()}
+     */
+    @Deprecated
     public Callback getCallback() {
         return callback;
     }
 
+    /**
+     * This method is deprecated since HZ 3.5. Please use the {@link #setExecutionCallback(ExecutionCallback)}
+     */
+    @Deprecated
     public InvocationBuilder setCallback(Callback<Object> callback) {
+        if (executionCallback != null) {
+            throw new IllegalStateException("Can't set the callback if executionCallback already is set");
+        }
         this.callback = callback;
+        return this;
+    }
+
+    /**
+     * Gets the ExecutionCallback. If none is set, null is returned.
+     *
+     * @return gets the ExecutionCallback.
+     */
+    public ExecutionCallback<Object> getExecutionCallback() {
+        return executionCallback;
+    }
+
+    /**
+     * Sets the ExecutionCallback.
+     *
+     * @param executionCallback the new ExecutionCallback. If null is passed, the ExecutionCallback is unset.
+     * @return the updated InvocationBuilder.
+     * @throws java.lang.IllegalStateException if a {@link com.hazelcast.spi.Callback} already has been set.
+     */
+    public InvocationBuilder setExecutionCallback(ExecutionCallback<Object> executionCallback) {
+        if (callback != null) {
+            throw new IllegalStateException("Can't set the executionCallback if callback already is set");
+        }
+        this.executionCallback = executionCallback;
         return this;
     }
 
