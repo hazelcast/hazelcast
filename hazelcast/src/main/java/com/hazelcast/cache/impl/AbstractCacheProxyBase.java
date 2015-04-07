@@ -233,13 +233,13 @@ abstract class AbstractCacheProxyBase<K, V> {
                 OperationService operationService = getNodeEngine().getOperationService();
                 OperationFactory operationFactory;
 
-                InternalPartitionService ps = getNodeEngine().getPartitionService();
-                Map<Address, List<Integer>> memberPartitionsMap = ps.getMemberPartitionsMap();
+                InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+                Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
                 Map<Integer, Object> results = new HashMap<Integer, Object>();
 
                 for (Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
-                    List<Integer> partitions = memberPartitions.getValue();
-                    Set<Data> ownerKeys = filterOwnerKeys(ps, memberPartitions.getKey());
+                    Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
+                    Set<Data> ownerKeys = filterOwnerKeys(partitionService, partitions);
                     operationFactory = operationProvider.createLoadAllOperationFactory(ownerKeys, replaceExistingValues);
                     Map<Integer, Object> memberResults;
                     memberResults = operationService.invokeOnPartitions(getServiceName(), operationFactory, partitions);
@@ -257,13 +257,11 @@ abstract class AbstractCacheProxyBase<K, V> {
             }
         }
 
-        private Set<Data> filterOwnerKeys(InternalPartitionService ps,
-                Address owner) {
+        private Set<Data> filterOwnerKeys(InternalPartitionService partitionService, Set<Integer> partitions) {
             Set<Data> ownerKeys = new HashSet<Data>();
             for (Data key: keysData) {
-                int keyPartitionId = ps.getPartitionId(key);
-                Address keyOwner = ps.getPartitionOwner(keyPartitionId);
-                if (owner.equals(keyOwner)) {
+                int keyPartitionId = partitionService.getPartitionId(key);
+                if (partitions.contains(keyPartitionId)) {
                     ownerKeys.add(key);
                 }
             }
