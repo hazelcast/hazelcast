@@ -66,4 +66,15 @@
         </wan-replication-ref>
     </cache>
 
+    <cache name="wanRefDisabledRepublishingTestCache">
+        <key-type class-name="java.lang.Integer"/>
+        <value-type class-name="java.lang.String"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+        <wan-replication-ref name="testWanRef">
+            <merge-policy>TestMergePolicy</merge-policy>
+            <republishing-enabled>false</republishing-enabled>
+        </wan-replication-ref>
+    </cache>
+
 </hazelcast>

@@ -204,11 +204,11 @@
             <hz:map name="mapWithOptimizedQueries" optimize-queries="true"/>
             <hz:map name="mapWithNotOptimizedQueries" optimize-queries="false"/>
             <hz:map name="mapWithDefaultOptimizedQueries"/>
-            
+
             <hz:cache name="testCache">
-                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT"/>
+                <hz:wan-replication-ref name="testWan" merge-policy="PUT_IF_ABSENT" republishing-enabled="false"/>
             </hz:cache>
-            
+
             <hz:multimap name="testMultimap"
                          value-collection-type="LIST">
 

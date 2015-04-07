@@ -1317,9 +1317,10 @@
     </xs:complexType>
 
     <xs:complexType name="wan-replication-ref">
-        <xs:sequence>
+        <xs:all>
             <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1"/>
-        </xs:sequence>
+            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+        </xs:all>
         <xs:attribute name="name" type="xs:string" use="required"/>
     </xs:complexType>
 

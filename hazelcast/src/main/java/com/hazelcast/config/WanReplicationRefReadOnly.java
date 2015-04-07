@@ -31,4 +31,9 @@ public class WanReplicationRefReadOnly extends WanReplicationRef {
     public WanReplicationRef setMergePolicy(String mergePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
+    @Override
+    public WanReplicationRef setRepublishingEnabled(boolean republishingEnabled) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
 }

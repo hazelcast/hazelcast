@@ -563,6 +563,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         WanReplicationRef wanRef = config.getMapConfig(mapName).getWanReplicationRef();
         assertEquals(refName, wanRef.getName());
         assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertTrue(wanRef.isRepublishingEnabled());
     }
 
     @Test(expected = InvalidConfigurationException.class)

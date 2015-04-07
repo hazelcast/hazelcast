@@ -27,22 +27,26 @@ import java.io.Serializable;
  * Configuration for Wan target replication reference
  */
 public class WanReplicationRef implements DataSerializable, Serializable {
+
     private String name;
     private String mergePolicy;
+    private boolean republishingEnabled = true;
 
     private WanReplicationRefReadOnly readOnly;
 
     public WanReplicationRef() {
     }
 
-    public WanReplicationRef(String name, String mergePolicy) {
+    public WanReplicationRef(String name, String mergePolicy, boolean republishingEnabled) {
         this.name = name;
         this.mergePolicy = mergePolicy;
+        this.republishingEnabled = republishingEnabled;
     }
 
     public WanReplicationRef(WanReplicationRef ref) {
         name = ref.name;
         mergePolicy = ref.mergePolicy;
+        republishingEnabled = ref.republishingEnabled;
     }
 
     public WanReplicationRefReadOnly getAsReadOnly() {
@@ -61,7 +65,6 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return this;
     }
 
-
     public String getMergePolicy() {
         return mergePolicy;
     }
@@ -71,23 +74,35 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return this;
     }
 
+    public boolean isRepublishingEnabled() {
+        return republishingEnabled;
+    }
+
+    public WanReplicationRef setRepublishingEnabled(boolean republishEnabled) {
+        this.republishingEnabled = republishEnabled;
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(mergePolicy);
+        out.writeBoolean(republishingEnabled);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         mergePolicy = in.readUTF();
+        republishingEnabled = in.readBoolean();
     }
 
     @Override
     public String toString() {
         return "WanReplicationRef{"
                 + "name='" + name + '\''
-                + ", mergePolicy='" + mergePolicy
+                + ", mergePolicy='" + mergePolicy + '\''
+                + ", republishingEnabled='" + republishingEnabled
                 + '\''
                 + '}';
     }
