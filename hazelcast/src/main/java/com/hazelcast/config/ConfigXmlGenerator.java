@@ -389,7 +389,7 @@ public class ConfigXmlGenerator {
             final WanReplicationRef wan = m.getWanReplicationRef();
             xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\">");
             xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
-            xml.append("<republish-enabled").append(wan.isRepublishEnabled()).append("</republish-enabled");
+            xml.append("<republish-enabled>").append(wan.isRepublishEnabled()).append("</republish-enabled>");
             xml.append("</wan-replication-ref>");
         }
     }
