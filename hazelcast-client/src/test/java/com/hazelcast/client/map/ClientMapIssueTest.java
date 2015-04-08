@@ -31,6 +31,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -87,6 +88,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
@@ -121,6 +123,7 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown_withOneExecutorPoolSize() throws InterruptedException {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
