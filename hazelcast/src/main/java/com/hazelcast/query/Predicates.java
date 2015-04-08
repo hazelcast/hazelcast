@@ -731,6 +731,11 @@ public final class Predicates {
 
         @Override
         public boolean apply(Map.Entry entry) {
+            Comparable entryValue = readAttribute(entry);
+            if (entryValue == null) {
+                return false;
+            }
+
             return !super.apply(entry);
         }
 

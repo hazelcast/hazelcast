@@ -175,6 +175,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertFalse_withNullEntry(greaterThan("nullField", 1));
         assertFalse_withNullEntry(equal("nullField", 1));
         assertFalse_withNullEntry(notEqual("nullField", null));
+        assertFalse_withNullEntry(notEqual("nullField", 1));
         assertFalse_withNullEntry(between("nullField", 1, 1));
         assertTrue_withNullEntry(like("nullField", null));
         assertTrue_withNullEntry(ilike("nullField", null));
