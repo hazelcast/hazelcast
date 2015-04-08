@@ -21,6 +21,11 @@ import java.util.EventListener;
 /**
  * Message listener for {@link ITopic}.
  *
+ * Provided that a MessageListener is not registered twice, a MessageListener will never be called concurrently. So there
+ * is no need to provide thread-safety on internal state in the MessageListener. Also there is no need to enforce safe
+ * publication, the ITopic is responsible for the memory consistency effects. In other words, there is no need to make
+ * internal fields of the MessageListener volatile or access them using synchronized blocks.
+ *
  * @param <E> message
  */
 public interface MessageListener<E> extends EventListener {
