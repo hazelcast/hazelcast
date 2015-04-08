@@ -51,7 +51,7 @@ import java.util.Set;
  * extended by the term <tt>Async</tt>; for example, the asynchronous version of {@link javax.cache.Cache#get(Object)}
  * is {@link #getAsync(Object)}.<br>
  * These methods return an {@link com.hazelcast.core.ICompletableFuture} that can be used to get the result by
- * implementing a callback based on {@link com.hazelcast.core.ExecutionCallback} or wait for the operation to be
+ * either implementing a callback based on {@link com.hazelcast.core.ExecutionCallback}, or waiting for the operation to be
  * completed in a blocking fashion {@link java.util.concurrent.Future#get()} or
  * {@link java.util.concurrent.Future#get(long, java.util.concurrent.TimeUnit)}.<p>
  * In a reactive way:
@@ -75,14 +75,14 @@ import java.util.Set;
  * </pre><p><p>
  *
  * <b>Custom ExpirePolicy:</b><br>
- * Again for most of the typical operations, Hazelcast provides overloaded versions with an additional
+ * For most of the typical operations, Hazelcast provides overloaded versions with an additional
  * {@link javax.cache.expiry.ExpiryPolicy} parameter to configure a different expiration policy from the
  * default one set in the {@link javax.cache.configuration.CompleteConfiguration} passed to the cache
  * creation. Therefore the {@link javax.cache.Cache#put(Object, Object)} operation has an overload
  * {@link com.hazelcast.cache.ICache#put(Object, Object, javax.cache.expiry.ExpiryPolicy)} to pass in the
  * special policy.<p>
- * <b><i>Important to note: The overloads use an instance of {@link javax.cache.expiry.ExpiryPolicy} and not
- * a {@link javax.cache.configuration.Factory} instance as used in the configuration.</i></b>
+ * <b><i>Important: The overloads use an instance of {@link javax.cache.expiry.ExpiryPolicy}, not
+ * a {@link javax.cache.configuration.Factory} instance as is used in the configuration.</i></b>
  * <pre>
  *   unwrappedCache.put( "key", "value", new AccessedExpiryPolicy( Duration.ONE_DAY ) );
  * </pre>
@@ -108,13 +108,13 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key the key whose associated value is to be returned
+     * @param key The key whose associated value is to be returned.
      *
-     * @return ICompletableFuture to retrieve the value assigned to the given key
+     * @return ICompletableFuture to retrieve the value assigned to the given key.
      *
      * @throws java.lang.NullPointerException if given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException if the cache is {@link #isClosed()}
      *
      * @see javax.cache.Cache#get(K)
@@ -134,16 +134,16 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key the key whose associated value is to be returned
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAsync(Object)}
+     * @param key The key whose associated value is to be returned.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #getAsync(Object)}.
      *
-     * @return ICompletableFuture to retrieve the value assigned to the given key
+     * @return ICompletableFuture to retrieve the value assigned to the given key.
      *
-     * @throws java.lang.NullPointerException if given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if given key is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      *
      * @see javax.cache.Cache#get(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -160,19 +160,19 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key the key whose associated value is to be returned
-     * @param value the value to be associated with the specified key
+     * @param key The key whose associated value is to be returned.
+     * @param value The value to be associated with the specified key.
      *
-     * @return ICompletableFuture to get notified when the operation succeed
+     * @return ICompletableFuture to get notified when the operation succeeds.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#put(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -190,21 +190,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key the key whose associated value is to be returned
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #putAsync(Object, Object)}
+     * @param key The key whose associated value is to be returned.
+     * @param value The value to be associated with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #putAsync(Object, Object)}.
      *
-     * @return ICompletableFuture to get notified when the operation succeed
+     * @return ICompletableFuture to get notified when the operation succeeds.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#put(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -213,7 +213,7 @@ public interface ICache<K, V>
 
     /**
      * Asynchronously associates the specified key with the given value if and only if there is not yet
-     * a mapping for the specified key defined.
+     * a mapping defined for the specified key.
      * <p>
      * This is equivalent to:
      * <pre>
@@ -230,14 +230,14 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the value to be associated with the specified key
+     * @param key   The key that is associated with the specified value.
+     * @param value The value to which the specified key is associated.
      *
      * @return ICompletableFuture to retrieve if a previous value was assigned with the key
      *
      * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException if the cache is {@link #isClosed()}
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
@@ -251,7 +251,7 @@ public interface ICache<K, V>
 
     /**
      * Asynchronously associates the specified key with the given value if and only if there is not yet
-     * a mapping for the specified key defined.
+     * a mapping defined for the specified key.
      * using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      * <p>
      * This is equivalent to:
@@ -269,8 +269,8 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the value to be associated with the specified key
+     * @param key   The key that is associated with the specified value.
+     * @param value The value to which the specified key is associated.
      * @param expiryPolicy custom expiry policy for this operation,
      *                     a null value is equivalent to
      *                     {@link #putIfAbsentAsync(Object, Object)}
@@ -278,8 +278,8 @@ public interface ICache<K, V>
      * @return ICompletableFuture to retrieve if a previous value was assigned with the key
      *
      * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException if the cache is {@link #isClosed()}
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
@@ -303,19 +303,19 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key the key whose associated value is to be returned
-     * @param value the value to be associated with the specified key
+     * @param key The key whose associated value is to be returned.
+     * @param value The value that is associated with the specified key.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
+     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAndPut(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -334,21 +334,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key the key whose associated value is to be returned.
-     * @param value the value to be associated with the specified key.
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAndPutAsync(Object, Object)}
+     * @param key The key whose associated value is to be returned.
+     * @param value The value to associate with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #getAndPutAsync(Object, Object)}.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
+     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAndPut(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -367,14 +367,14 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key the key whose associated value is to be returned
+     * @param key The key whose mapping is to be removed.
      *
-     * @return ICompletableFuture to retrieve if value could be removed or not
+     * @return ICompletableFuture to retrieve if mapping could be removed or not.
      *
-     * @throws java.lang.NullPointerException if the given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      *
      * @see javax.cache.Cache#remove(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -405,15 +405,15 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key the key whose associated value is to be returned.
-     * @param oldValue the value expected to be associated with the specified key.
+     * @param key The key whose mapping is to be removed if the mapped value is oldValue.
+     * @param oldValue The value expected to be associated with the specified key.
      *
-     * @return ICompletableFuture to retrieve if value could be removed or not
+     * @return ICompletableFuture to retrieve if mapping could be removed or not.
      *
-     * @throws java.lang.NullPointerException if the given key or oldValue is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or oldValue is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      *
      * @see javax.cache.Cache#remove(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -433,14 +433,14 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key the key whose associated value is to be returned
+     * @param key The key to be removed and whose associated value is to be returned.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the removed key
+     * @return ICompletableFuture to retrieve a possible previously assigned value for the removed key.
      *
-     * @throws java.lang.NullPointerException if the given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      *
      * @see javax.cache.Cache#getAndRemove(K)
      * @see com.hazelcast.core.ICompletableFuture
@@ -454,19 +454,19 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key the key whose associated value is to be returned
-     * @param value the value to be associated with the specified key
+     * @param key The key whose associated value is to be replaced.
+     * @param value The new value to be associated with the specified key.
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not
+     * @return ICompletableFuture to get notified if the operation succeed or not.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#replace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -481,21 +481,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key  the key with which the specified value is associated
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
+     * @param key  The key whose assigned value is replaced by the specified value.
+     * @param value The specified value to be associated with the given key.
+     * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #replaceAsync(Object, Object)}
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not
+     * @return ICompletableFuture to get notified if the operation succeed or not.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#replace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -527,15 +527,15 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key     the key with which the specified value is associated
-     * @param oldValue the value expected to be associated with the specified key
-     * @param newValue the value to be associated with the specified key
+     * @param key     The key that will have its assigned value replaced.
+     * @param oldValue The old value expected to be associated with the specified key.
+     * @param newValue The new value to be associated with the specified key.
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not
+     * @return ICompletableFuture to get notified if the operation succeed or not.
      *
-     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
+     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException if the cache is {@link #isClosed()}
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
@@ -572,22 +572,22 @@ public interface ICache<K, V>
      * is configured to perform runtime-type-checking, and the key or value types are incompatible
      * with those that have been configured for the {@link javax.cache.Cache}.
      *
-     * @param key      the key with which the specified value is associated
-     * @param oldValue the value expected to be associated with the specified key
-     * @param newValue the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #replaceAsync(Object, Object, Object)}
+     * @param key     The key that will have its assigned value replaced.
+     * @param oldValue The old value expected to be associated with the specified key.
+     * @param newValue The new value to be associated with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #replaceAsync(Object, Object, Object)}.
      *
-     * @return ICompletableFuture to get notified if the operation succeed or not
+     * @return ICompletableFuture to get notified if the operation succeed or not.
      *
-     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#replace(K,V,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -603,19 +603,19 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key  the key with which the specified value is associated
-     * @param value the value to be associated with the specified key
+     * @param key  The key whose value is replaced.
+     * @param value The new value to be associated with the specified key.
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
+     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAndReplace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -630,21 +630,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key  the key with which the specified value is associated
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
+     * @param key  The key whose value is replaced.
+     * @param value The new value to be associated with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #getAndReplace(Object, Object)}
      *
-     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key
+     * @return ICompletableFuture to retrieve a possible previously assigned value for the given key.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAndReplace(K,V)
      * @see com.hazelcast.core.ICompletableFuture
@@ -659,16 +659,16 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the value of the key from any kind of external resource.
      *
-     * @param key the key whose associated value is to be returned
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #get(Object)}
+     * @param key The key whose mapped value is to be returned.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #get(Object)}.
      *
-     * @return returns the value assigned to the given key or null if not assigned
+     * @return The value assigned to the given key, or null if not assigned.
      *
-     * @throws java.lang.NullPointerException if the given key is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
@@ -686,21 +686,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheLoader} might be called to retrieve
      * the values of the keys from any kind of external resource.
      *
-     * @param keys the keys whose associated values are to be returned
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAll(java.util.Set)}
+     * @param keys The keys whose associated values are to be returned.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #getAll(java.util.Set)}.
      *
      * @return A map of entries that were found for the given keys. Keys not found
      *         in the cache are not in the returned map.
      *
-     * @throws java.lang.NullPointerException if the given keys are null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
+     * @throws java.lang.NullPointerException if the given keys are null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
      * @throws IllegalStateException if the cache is {@link #isClosed()}
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAll(java.util.Set)
      */
@@ -709,19 +709,19 @@ public interface ICache<K, V>
     /**
      * Associates the specified value with the specified key in the cache using a custom {@link javax.cache.expiry.ExpiryPolicy}.
      *
-     * @param key   the key with which the specified value is to be associated
-     * @param value value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #put(Object, Object)}
+     * @param key   The key that has the specified value associated with it.
+     * @param value The value to be associated with the key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #put(Object, Object)}.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#put(K,V)
      */
@@ -731,21 +731,21 @@ public interface ICache<K, V>
      * Associates the specified value with the specified key in this cache using a custom {@link javax.cache.expiry.ExpiryPolicy},
      * returning an existing value if one existed.
      *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAndPut(Object, Object)}
+     * @param key   The key that has the specified value associated with it.
+     * @param value The value to be associated with the key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #getAndPut(Object, Object)}.
      *
-     * @return returns the value previously assigned to the given key or null if not assigned
+     * @return The value previously assigned to the given key, or null if not assigned.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAndPut(K,V)
      */
@@ -763,18 +763,18 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the values of the keys to any kind of external resource.
      *
-     * @param map the mappings to be stored in this cache
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #putAll(java.util.Map)}
+     * @param map The mappings to be stored in this cache.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #putAll(java.util.Map)}.
      *
-     * @throws java.lang.NullPointerException if the given map is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given map is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#putAll(java.util.Map)
      */
@@ -782,7 +782,7 @@ public interface ICache<K, V>
 
     /**
      * Associates the specified key with the given value if and only if there is not yet
-     * a mapping for the specified key defined.
+     * a mapping defined for the specified key.
      * <p>
      * This is equivalent to:
      * <pre>
@@ -799,21 +799,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #putIfAbsent(Object, Object)}
+     * @param key   The key that is associated with the specified value.
+     * @param value The value that has the specified key associated with it.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #putIfAbsent(Object, Object)}.
      *
-     * @return true if a value was set
+     * @return true if a value was set, false otherwise.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#putIfAbsent(K,V)
      */
@@ -839,22 +839,22 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key      the key with which the specified value is associated
-     * @param oldValue the value expected to be associated with the specified key
-     * @param newValue the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #replace(Object, Object, Object)}
+     * @param key      The key with whose value is replaced.
+     * @param oldValue The old value expected to be associated with the specified key.
+     * @param newValue The new value to be associated with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #replace(Object, Object, Object)}.
      *
-     * @return true if a value was replaced
+     * @return true if a value was replaced, false otherwise.
      *
      * @throws java.lang.NullPointerException if given key, oldValue or newValue is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#replace(K,V,V)
      */
@@ -868,21 +868,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key  the key with which the specified value is associated
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
+     * @param key  The key whose value is replaced.
+     * @param value The new value to be associated with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
      *                     a null value is equivalent to {@link #replace(Object, Object)}
      *
-     * @return true if a value was replaced
+     * @return true if a value was replaced, false otherwise.
      *
-     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key, oldValue or newValue is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#replace(K,V)
      */
@@ -896,21 +896,21 @@ public interface ICache<K, V>
      * configured {@link javax.cache.integration.CacheWriter} might be called to store
      * the value of the key to any kind of external resource.
      *
-     * @param key   the key with which the specified value is associated
-     * @param value the value to be associated with the specified key
-     * @param expiryPolicy custom expiry policy for this operation,
-     *                     a null value is equivalent to {@link #getAndReplace(Object, Object)}
+     * @param key   The key whose value is replaced.
+     * @param value The new value to be associated with the specified key.
+     * @param expiryPolicy The custom expiry policy for this operation,
+     *                     a null value is equivalent to {@link #getAndReplace(Object, Object)}.
      *
-     * @return the value previously assigned to the given key
+     * @return The old value previously assigned to the given key.
      *
-     * @throws java.lang.NullPointerException if the given key or value is null
-     * @throws javax.cache.CacheException if anything exceptional
-     *         happens while invoking the request, other exceptions are wrapped
-     * @throws IllegalStateException if the cache is {@link #isClosed()}
+     * @throws java.lang.NullPointerException if the given key or value is null.
+     * @throws javax.cache.CacheException if any exception
+     *         happens while invoking the request, other exceptions are wrapped.
+     * @throws IllegalStateException if the cache is {@link #isClosed()}.
      * @throws ClassCastException    if the implementation is configured to perform
      *                               runtime-type-checking, and the key or value
      *                               types are incompatible with those that have been
-     *                               configured for the {@link javax.cache.Cache}
+     *                               configured for the {@link javax.cache.Cache}.
      *
      * @see javax.cache.Cache#getAndReplace(K,V)
      */
@@ -933,14 +933,14 @@ public interface ICache<K, V>
     /**
      * Determines whether this Cache instance has been destroyed.
      *
-     * @return <code>true</code> if this Cache instance is destroyed; <code>false</code> if it is still open
+     * @return <code>true</code> if this Cache instance is destroyed; <code>false</code> if it is still open.
      */
     boolean isDestroyed();
 
     /**
      * Directly access local Cache Statistics.
      *
-     * @return CacheStatistics instance or an empty statistics if not enabled
+     * @return CacheStatistics instance or an empty statistics if not enabled.
      */
     CacheStatistics getLocalCacheStatistics();
 
