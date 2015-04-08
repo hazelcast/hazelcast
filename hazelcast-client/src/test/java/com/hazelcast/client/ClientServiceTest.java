@@ -32,6 +32,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -137,6 +138,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
 
     @Test
+    @Category(NightlyTest.class)
     public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode_twoClient() {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
