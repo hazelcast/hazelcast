@@ -56,9 +56,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -432,6 +435,50 @@ public class BasicCacheTest
             for (CacheEntryEvent<? extends K, ? extends V> cacheEntryEvent : cacheEntryEvents) {
                 updated.incrementAndGet();
             }
+        }
+    }
+
+    @Test
+    public void getAndOperateOnCacheAfterClose() {
+        final String CACHE_NAME = "myCache";
+
+        CacheManager cacheManager = cachingProvider1.getCacheManager();
+        ICache<Object, Object> cache = (ICache<Object, Object>) cacheManager.createCache(CACHE_NAME, new CacheConfig());
+        cache.close();
+        assertTrue(cache.isClosed());
+        assertFalse(cache.isDestroyed());
+
+        Cache<Object, Object> cacheAfterClose = cacheManager.getCache(CACHE_NAME);
+        assertNotNull(cacheAfterClose);
+        assertFalse(cacheAfterClose.isClosed());
+
+        cache.put(1, 1);
+    }
+
+    @Test
+    public void getButCantOperateOnCacheAfterDestroy() {
+        final String CACHE_NAME = "myCache";
+
+        CacheManager cacheManager = cachingProvider1.getCacheManager();
+        ICache<Object, Object> cache = (ICache<Object, Object>) cacheManager.createCache(CACHE_NAME, new CacheConfig());
+        cache.destroy();
+        assertTrue(cache.isClosed());
+        assertTrue(cache.isDestroyed());
+
+        Cache<Object, Object> cacheAfterClose = cacheManager.getCache(CACHE_NAME);
+        assertNotNull(cacheAfterClose);
+        assertTrue(cache.isClosed());
+        assertTrue(cache.isDestroyed());
+
+        try {
+            cache.put(1, 1);
+            fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException'");
+        } catch (IllegalStateException e) {
+            // Expect this exception since cache is closed and destroyed
+        } catch (Throwable t) {
+            t.printStackTrace();
+            fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException', " +
+                 "not with " + t.getMessage());
         }
     }
 

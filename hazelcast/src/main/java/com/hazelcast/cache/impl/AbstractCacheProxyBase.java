@@ -65,7 +65,7 @@ abstract class AbstractCacheProxyBase<K, V> {
 
     private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private final CacheLoader<K, V> cacheLoader;
+    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -76,15 +76,19 @@ abstract class AbstractCacheProxyBase<K, V> {
         this.cacheConfig = cacheConfig;
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
-        this.serializationService = this.nodeEngine.getSerializationService();
+        this.serializationService = nodeEngine.getSerializationService();
+        this.operationProvider =
+                cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
+        init();
+    }
+
+    private void init() {
         if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         } else {
             cacheLoader = null;
         }
-
-        operationProvider = cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
     }
 
     //region close&destroy
@@ -142,6 +146,16 @@ abstract class AbstractCacheProxyBase<K, V> {
 
     public boolean isDestroyed() {
         return isDestroyed.get();
+    }
+
+    public void open() {
+        if (isDestroyed.get()) {
+            throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
+        }
+        if (!isClosed.compareAndSet(true, false)) {
+            return;
+        }
+        init();
     }
 
     protected abstract void closeListeners();

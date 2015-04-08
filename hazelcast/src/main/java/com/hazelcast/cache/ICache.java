@@ -944,4 +944,12 @@ public interface ICache<K, V>
      */
     CacheStatistics getLocalCacheStatistics();
 
+    /**
+     * Opens cache if available (not destroyed).
+     * If cache is already open, does nothing.
+     *
+     * @throws java.lang.IllegalStateException if cache is already destroyed
+     */
+    void open();
+
 }

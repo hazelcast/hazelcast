@@ -157,7 +157,7 @@ public abstract class AbstractHazelcastCacheManager
             Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
             if (configuration.getKeyType() != null && configuration.getKeyType().equals(keyType)) {
                 if (configuration.getValueType() != null && configuration.getValueType().equals(valueType)) {
-                    return (ICache<K, V>) cache;
+                    return ensureOpenIfAvailable((ICache<K, V>) cache);
                 } else {
                     throw new ClassCastException(
                             "Incompatible cache value types specified, expected " + configuration.getValueType() + " but "
@@ -179,7 +179,7 @@ public abstract class AbstractHazelcastCacheManager
         if (cache == null) {
             cache = createCache(cacheName, cacheConfig);
         }
-        return (ICache<K, V>) cache;
+        return ensureOpenIfAvailable((ICache<K, V>) cache);
     }
 
     @Override
@@ -190,7 +190,7 @@ public abstract class AbstractHazelcastCacheManager
             Configuration<?, ?> configuration = cache.getConfiguration(CacheConfig.class);
 
             if (Object.class.equals(configuration.getKeyType()) && Object.class.equals(configuration.getValueType())) {
-                return (ICache<K, V>) cache;
+                return ensureOpenIfAvailable((ICache<K, V>) cache);
             } else {
                 throw new IllegalArgumentException(
                         "Cache " + cacheName + " was " + "defined with specific types Cache<" + configuration.getKeyType() + ", "
@@ -199,6 +199,13 @@ public abstract class AbstractHazelcastCacheManager
             }
         }
         return null;
+    }
+
+    protected <K, V> ICache<K, V> ensureOpenIfAvailable(ICache<K, V> cache) {
+        if (cache != null && cache.isClosed() && !cache.isDestroyed()) {
+            cache.open();
+        }
+        return cache;
     }
 
     protected <K, V> ICache<?, ?> getCacheUnchecked(String cacheName) {
