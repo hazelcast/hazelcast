@@ -29,7 +29,6 @@ import java.util.List;
 
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getObject;
 
 /**
  * Hazelcast statistic implementations for local operations.
