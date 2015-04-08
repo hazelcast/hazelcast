@@ -39,6 +39,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -219,6 +220,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testTxnOwnerDies() throws TransactionException, InterruptedException {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance h1 = factory.newHazelcastInstance();
