@@ -23,73 +23,73 @@ public interface AtomicBuffer
     /**
      * Get the value at a given index with volatile semantics.
      *
-     * @param index in bytes from which to get.
-     * @return the value for at a given index
+     * @param index The index in bytes from where to get the value.
+     * @return The value retrieved from the given index.
      */
     long getLongVolatile(int index);
 
     /**
      * Put a value to a given index with volatile semantics.
      *
-     * @param index in bytes for where to put.
-     * @param value for at a given index
+     * @param index The index in bytes for where to put the value.
+     * @param value The value to put at the given index.
      */
     void putLongVolatile(int index, long value);
 
     /**
      * Put a value to a given index with ordered store semantics.
      *
-     * @param index in bytes for where to put.
-     * @param value for at a given index
+     * @param index The index in bytes for where to put the value.
+     * @param value The value to put at the given index.
      */
     void putLongOrdered(int index, long value);
 
     /**
      * Add a value to a given index with ordered store semantics. Use a negative increment to decrement.
      *
-     * @param index     in bytes for where to put.
-     * @param increment by which the value at the index will be adjusted.
+     * @param index     The index in bytes for where to increment or decrement the value.
+     * @param increment The increment or decrement by which the value at the index will be adjusted.
      */
     void addLongOrdered(int index, long increment);
 
     /**
-     * Atomic compare and set of a long given an expected value.
+     * Performs an atomic compare and set of a long, given an expected value.
      *
-     * @param index         in bytes for where to put.
-     * @param expectedValue at to be compared
-     * @param updateValue   to be exchanged
-     * @return set successful or not
+     * @param index         The index in bytes for where to put the value.
+     * @param expectedValue at to be compared   The expected value that is compared to the value at the index.
+     * @param updateValue   The value to be exchanged with the value at the index.
+     * @return true if the compare and put were successful, false otherwise.
      */
     boolean compareAndSetLong(int index, long expectedValue, long updateValue);
 
     /**
      * Get the value at a given index with volatile semantics.
      *
-     * @param index in bytes from which to get.
-     * @return the value for at a given index
+     * @param index The index in bytes from where to get the value.
+     * @return The value retrieved from the given index.
      */
     int getIntVolatile(int index);
 
     /**
      * Put a value to a given index with volatile semantics.
      *
-     * @param index in bytes for where to put.
-     * @param value for at a given index
+     * @param index The index in bytes for where to put the value.
+     * @param value The value to put at the given index.
      */
     void putIntVolatile(int index, int value);
 
     /**
      * Put a value to a given index with ordered semantics.
      *
-     * @param index in bytes for where to put.
-     * @param value for at a given index
+     * @param index The index in bytes for where to put the value.
+     * @param value The value to put at the given index.
      */
     void putIntOrdered(int index, int value);
 
     /**
      * Add a value to a given index with ordered store semantics. Use a negative increment to decrement.
      *
-     * @param index     in bytes for where to put.
+     * @param index     The index in bytes for where to put the value.
      * @param increment by which the value at the index will be adjusted.
      */
     void addIntOrdered(int index, int increment);
@@ -97,26 +97,26 @@ public interface AtomicBuffer
     /**
      * Atomic compare and set of a int given an expected value.
      *
-     * @param index         in bytes for where to put.
-     * @param expectedValue at to be compared
-     * @param updateValue   to be exchanged
-     * @return successful or not
+     * @param index         The index in bytes for where to put the value.
+     * @param expectedValue at to be compared   The expected value that is compared to the value at the index.
+     * @param updateValue   The value to be exchanged with the value at the index.
+     * @return true if the compare and put were successful, false otherwise.
      */
     boolean compareAndSetInt(int index, int expectedValue, int updateValue);
 
     /**
      * Get the value at a given index with volatile semantics.
      *
-     * @param index in bytes from which to get.
-     * @return the value for at a given index
+     * @param index The index in bytes from where to get the value.
+     * @return The value retrieved from the given index.
      */
     short getShortVolatile(int index);
 
     /**
      * Put a value to a given index with volatile semantics.
      *
-     * @param index in bytes for where to put.
-     * @param value for at a given index
+     * @param index The index in bytes for where to put the value.
+     * @param value The value to put at the given index.
      */
     void putShortVolatile(int index, short value);
 }

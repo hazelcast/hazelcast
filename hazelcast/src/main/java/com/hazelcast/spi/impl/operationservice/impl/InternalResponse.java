@@ -20,7 +20,7 @@ final class InternalResponse {
     static final Object TIMEOUT_RESPONSE = new InternalResponse("Invocation::TIMEOUT_RESPONSE");
 
     /**
-     * A response indicating that the operation execution was interrupted
+     * A response indicating that the operation execution was interrupted.
      */
     static final Object INTERRUPTED_RESPONSE = new InternalResponse("Invocation::INTERRUPTED_RESPONSE");
 

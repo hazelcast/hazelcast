@@ -74,7 +74,7 @@ public class InvocationRegistry {
     /**
      * Registers an invocation.
      *
-     * @param invocation the invocation to register.
+     * @param invocation The invocation to register.
      */
     public void register(Invocation invocation) {
         assert invocation.op.getCallId() == 0 : "can't register twice:" + invocation;
@@ -94,7 +94,7 @@ public class InvocationRegistry {
      * <p/>
      * If the invocation registration was skipped, the call is ignored.
      *
-     * @param invocation the Invocation to deregister.
+     * @param invocation The Invocation to deregister.
      */
     public void deregister(Invocation invocation) {
         long callId = invocation.op.getCallId();
@@ -118,7 +118,7 @@ public class InvocationRegistry {
     /**
      * Returns the number of pending invocations.
      *
-     * @return the number of the pending invocations.
+     * @return the number of pending invocations.
      */
     public int size() {
         return invocations.size();
@@ -128,7 +128,7 @@ public class InvocationRegistry {
      * Gets the invocation for the given call id.
      *
      * @param callId the callId.
-     * @return the found Invocation or null if no invocation was found.
+     * @return the Invocation for the given callId, or null if no invocation was found.
      */
     public Invocation get(long callId) {
         return invocations.get(callId);
@@ -137,7 +137,7 @@ public class InvocationRegistry {
     /**
      * Notifies the invocation that a Response is available.
      *
-     * @param response
+     * @param response The response that is available.
      */
     public void notify(Response response) {
         if (response instanceof NormalResponse) {

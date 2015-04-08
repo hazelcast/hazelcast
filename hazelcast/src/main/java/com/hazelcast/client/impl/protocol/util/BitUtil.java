@@ -86,53 +86,53 @@ public final class BitUtil {
      * <p/>
      * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
      *
-     * @param value from which to search for next power of 2
-     * @return The next power of 2 or the value itself if it is a power of 2
+     * @param value The value from which to search for the next power of 2.
+     * @return The next power of 2 or the value itself if it is a power of 2.
      */
     public static int findNextPositivePowerOfTwo(final int value) {
         return 1 << (UINT_BIT_SIZE - Integer.numberOfLeadingZeros(value - 1));
     }
 
     /**
-     * Align a value to the next multiple up of alignment.
-     * If the value equals an alignment multiple then it is returned unchanged.
+     * Align a value to the next multiple up of an alignment number.
+     * If the value equals a multiple of the alignment number, then the value is returned unchanged.
      * <p/>
      * This method executes without branching.
      *
-     * @param value     to be aligned up.
-     * @param alignment to be used.
-     * @return the value aligned to the next boundary.
+     * @param value     The value to be aligned to the next multiple up of the alignment number.
+     * @param alignment The alignment number to be used.
+     * @return the value aligned to the next multiple up of the alignment number.
      */
     public static int align(final int value, final int alignment) {
         return (value + (alignment - 1)) & ~(alignment - 1);
     }
 
     /**
-     * Is a number even.
+     * Checks to see if a value is an even number.
      *
-     * @param value to check.
-     * @return true if the number is even otherwise false.
+     * @param value The value to check.
+     * @return true if the value is an even number, false otherwise.
      */
     public static boolean isEven(final int value) {
         return (value & LAST_DIGIT_MASK) == 0;
     }
 
     /**
-     * Is a value a positive power of two.
+     * Checks to see if a value is a positive power of two.
      *
-     * @param value to be checked.
-     * @return true if the number is a positive power of two otherwise false.
+     * @param value The value to check.
+     * @return true if the number is a positive power of two, false otherwise.
      */
     public static boolean isPowerOfTwo(final int value) {
         return value > 0 && ((value & (~value + 1)) == value);
     }
 
     /**
-     * Cycles indices of an array one at a time in a forward fashion
+     * Cycles the indices of an array one at a time in a forward fashion.
      *
-     * @param current value to be incremented.
-     * @param max     value for the cycle.
-     * @return the next value, or zero if max is reached.
+     * @param current The index array value to be incremented.
+     * @param max     The maximum value for the index cycle.
+     * @return The next value, or zero if max is reached.
      */
     public static int next(final int current, final int max) {
         int next = current + 1;
@@ -144,11 +144,11 @@ public final class BitUtil {
     }
 
     /**
-     * Cycles indices of an array one at a time in a backwards fashion
+     * Cycles the indices of an array one at a time in a backwards fashion.
      *
-     * @param current value to be decremented.
-     * @param max     value of the cycle.
-     * @return the next value, or max - 1 if current is zero
+     * @param current The index array value to be decremented.
+     * @param max     The maximum value for the index cycle.
+     * @return The next value, or max - 1 if current is zero.
      */
     public static int previous(final int current, final int max) {
         if (0 == current) {

@@ -12,12 +12,12 @@ import static java.lang.Math.round;
 
 
 /**
- * The BackpressureRegulator is responsible for regulating invocation 'pressure'. If sees that the system
- * is getting overloaded, it will apply back pressure, so the the system won't crash.
+ * The BackpressureRegulator is responsible for regulating invocation 'pressure'. If it sees that the system
+ * is getting overloaded, it will apply back pressure so the the system won't crash.
  * <p/>
  * The BackpressureRegulator is responsible for regulating invocation pressure on the Hazelcast system to prevent it from
- * crashing on overload. Most Hazelcast invocations on Hazelcast are simple; you do e.g. a map.get and you wait for the
- * response (synchronous call) So won't get more requests than you have threads.
+ * crashing on overload. Most Hazelcast invocations on Hazelcast are simple; you do (for example) a map.get and you wait for the
+ * response (synchronous call) so you won't get more requests than you have threads.
  * <p/>
  * But if there is no balance between the number of invocations and the number of threads, then it is very easy to produce
  * more invocations that the system can handle. To prevent the system crashing under overload, back pressure is applied
@@ -25,13 +25,13 @@ import static java.lang.Math.round;
  * <p/>
  * The BackpressureRegulator needs to be hooked into 2 parts:
  * <ol>
- * <li>when a new invocation is about to be made; if there are too many requests, then the invocation is delayed
+ * <li>when a new invocation is about to be made. If there are too many requests, then the invocation is delayed
  * until there is space or eventually a timeout happens and the {@link com.hazelcast.core.HazelcastOverloadException}
  * is thrown.
  * </li>
  * <li>
- * when asynchronous backups are made. In this case we rely no periodically making the async backups sync. By
- * doing this we force the invocation to wait for operation queues to drain and this prevent them from getting
+ * when asynchronous backups are made. In this case, we rely on periodically making the async backups sync. By
+ * doing this, we force the invocation to wait for operation queues to drain and this prevents them from getting
  * overloaded.
  * </li>
  * </ol>
@@ -148,7 +148,7 @@ public class BackpressureRegulator {
      *
      * For {@link com.hazelcast.spi.UrgentSystemOperation} no sync will be forced.
      *
-     * @param backupAwareOp the BackupAwareOperation to check
+     * @param backupAwareOp The BackupAwareOperation to check.
      * @return true if a sync needs to be forced, false otherwise.
      */
     public boolean isSyncForced(BackupAwareOperation backupAwareOp) {

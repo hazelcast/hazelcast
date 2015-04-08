@@ -58,7 +58,7 @@ public class UnsafeBuffer
     /**
      * Attach a view to a byte[] for providing direct access.
      *
-     * @param buffer to which the view is attached.
+     * @param buffer The buffer to which the view is attached.
      */
     public UnsafeBuffer(final byte[] buffer) {
         wrap(buffer);
@@ -67,9 +67,9 @@ public class UnsafeBuffer
     /**
      * Attach a view to a byte[] for providing direct access.
      *
-     * @param buffer to which the view is attached.
-     * @param offset within the buffer to begin.
-     * @param length of the buffer to be included.
+     * @param buffer The buffer to which the view is attached.
+     * @param offset The offest within the buffer to begin the view.
+     * @param length The length of the buffer to be included.
      */
     public UnsafeBuffer(final byte[] buffer, final int offset, final int length) {
         wrap(buffer, offset, length);
@@ -79,7 +79,7 @@ public class UnsafeBuffer
      * Attach a view to a {@link java.nio.ByteBuffer} for providing direct access, the {@link java.nio.ByteBuffer} can be
      * heap based or direct.
      *
-     * @param buffer to which the view is attached.
+     * @param buffer The buffer to which the view is attached.
      */
     public UnsafeBuffer(final ByteBuffer buffer) {
         wrap(buffer);
@@ -89,29 +89,29 @@ public class UnsafeBuffer
      * Attach a view to a {@link java.nio.ByteBuffer} for providing direct access, the {@link java.nio.ByteBuffer} can be
      * heap based or direct.
      *
-     * @param buffer to which the view is attached.
-     * @param offset within the buffer to begin.
-     * @param length of the buffer to be included.
+     * @param buffer The buffer to which the view is attached.
+     * @param offset The offset within the buffer to begin the attach.
+     * @param length The length of the buffer to be included in the attach.
      */
     public UnsafeBuffer(final ByteBuffer buffer, final int offset, final int length) {
         wrap(buffer, offset, length);
     }
 
     /**
-     * Attach a view to an existing {@link DirectBuffer}
+     * Attach a view to an existing {@link DirectBuffer}.
      *
-     * @param buffer to which the view is attached.
+     * @param buffer The buffer to which the view is attached.
      */
     public UnsafeBuffer(final DirectBuffer buffer) {
         wrap(buffer);
     }
 
     /**
-     * Attach a view to an existing {@link DirectBuffer}
+     * Attach a view to an existing {@link DirectBuffer}.
      *
-     * @param buffer to which the view is attached.
-     * @param offset within the buffer to begin.
-     * @param length of the buffer to be included.
+     * @param buffer The buffer to which the view is attached.
+     * @param offset The offset within the buffer to begin the attach.
+     * @param length The length of the view to be included in the attach.
      */
     public UnsafeBuffer(final DirectBuffer buffer, final int offset, final int length) {
         wrap(buffer, offset, length);
@@ -120,8 +120,8 @@ public class UnsafeBuffer
     /**
      * Attach a view to an off-heap memory region by address.
      *
-     * @param address where the memory begins off-heap
-     * @param length  of the buffer from the given address
+     * @param address The address where the off-heap memory region begins.
+     * @param length  The length of the view to be included in the attach.
      */
     public UnsafeBuffer(final long address, final int length) {
         wrap(address, length);

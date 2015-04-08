@@ -135,7 +135,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * Can be called multiple times, but only the first answer will lead to the future getting triggered. All subsequent
      * 'set' calls are ignored.
      *
-     * @param offeredResponse
+     * @param offeredResponse The type of response to offer.
      */
     public void set(Object offeredResponse) {
         assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
@@ -147,7 +147,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
             if (response != null && !(response instanceof InternalResponse)) {
-                //it can be that this invocation future already received an answer, e.g. when a an invocation
+                //it can be that this invocation future already received an answer, e.g. when an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
 

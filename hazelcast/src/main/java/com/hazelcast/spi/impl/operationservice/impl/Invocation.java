@@ -270,7 +270,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     /**
      * Initializes the invocation target.
      *
-     * @return true of the initialization was a success
+     * @return true if the initialization was a success.
      */
      boolean initInvocationTarget() {
         Address thisAddress = nodeEngine.getThisAddress();
