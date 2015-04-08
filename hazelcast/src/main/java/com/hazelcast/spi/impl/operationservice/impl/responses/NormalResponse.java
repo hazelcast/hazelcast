@@ -53,10 +53,20 @@ public class NormalResponse extends Response {
         this.backupCount = backupCount;
     }
 
+    /**
+     * Returns the object value of the operation.
+     *
+     * @return The object value.
+     */
     public Object getValue() {
         return value;
     }
 
+    /**
+     * Returns the number of synchronous backups for the operation.
+     *
+     * @return The number of synchronous backups.
+     */
     public int getBackupCount() {
         return backupCount;
     }
