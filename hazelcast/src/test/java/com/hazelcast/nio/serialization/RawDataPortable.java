@@ -10,7 +10,6 @@ import java.util.Arrays;
 * @author mdogan 22/05/14
 */
 class RawDataPortable implements Portable {
-    static final short CLASS_ID = 4;
 
     long l;
     char[] c;
@@ -32,7 +31,7 @@ class RawDataPortable implements Portable {
     }
 
     public int getClassId() {
-        return CLASS_ID;
+        return TestSerializationConstants.RAW_DATA_PORTABLE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
@@ -84,6 +83,6 @@ class RawDataPortable implements Portable {
     }
 
     public int getFactoryId() {
-        return PortableTest.FACTORY_ID;
+        return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }
 }

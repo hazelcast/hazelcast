@@ -39,7 +39,7 @@ class NamedPortableV2 extends NamedPortable implements VersionedPortable {
     }
 
     public int getFactoryId() {
-        return PortableTest.FACTORY_ID;
+        return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }
 
     @Override
