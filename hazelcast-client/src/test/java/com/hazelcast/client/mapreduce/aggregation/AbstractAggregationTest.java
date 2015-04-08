@@ -34,7 +34,7 @@ import java.util.Random;
 public class AbstractAggregationTest
         extends HazelcastTestSupport {
 
-    private static final int VALUES_COUNT = 10000;
+    private static final int VALUES_COUNT = 1000;
     private static final Random RANDOM = new Random();
 
     protected static HazelcastInstance HAZELCAST_INSTANCE;
