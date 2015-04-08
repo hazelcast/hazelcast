@@ -50,6 +50,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -599,11 +600,13 @@ public class ClientRegressionTest
 
     }
 
+    @Category(NightlyTest.class)
     @Test
     public void testLock_WhenDummyClientAndOwnerNodeDiesTogether() throws InterruptedException {
         testLock_WhenClientAndOwnerNodeDiesTogether(false);
     }
 
+    @Category(NightlyTest.class)
     @Test
     public void testLock_WhenSmartClientAndOwnerNodeDiesTogether() throws InterruptedException {
         testLock_WhenClientAndOwnerNodeDiesTogether(true);
