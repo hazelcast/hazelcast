@@ -21,7 +21,7 @@ import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 
 /**
- * A ProxyRegistry contains all proxies for a given service. For example it contains all proxies for the IMap.
+ * A ProxyRegistry contains all proxies for a given service. For example, it contains all proxies for the IMap.
  */
 public final class ProxyRegistry {
 
@@ -50,14 +50,30 @@ public final class ProxyRegistry {
         }
     }
 
+    /**
+     * Returns the name of the service for this ProxyRegistry.
+     *
+     * @return The name of the service for this ProxyRegistry.
+     */
     public String getServiceName() {
         return serviceName;
     }
 
+    /**
+     * Returns the number of proxies for this ProxyRegistry.
+     *
+     * @return The number of proxies for this ProxyRegistry.
+     */
     public int getProxyCount() {
         return proxies.size();
     }
 
+    /**
+     * Checks if the ProxyRegistry contains the given key.
+     *
+     * @param name         name of the key
+     * @return true if the ProxyRegistry contains the key, false otherwise.
+     */
     boolean contains(String name) {
         return proxies.containsKey(name);
     }
@@ -69,6 +85,8 @@ public final class ProxyRegistry {
 
     /**
      * Gets the ProxyInfo of all proxies in this registry. The result is written into 'result'.
+     *
+     * @param result  The ProxyInfo of all proxies in this registry.
      */
     public void getProxyInfos(Collection<ProxyInfo> result) {
         for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
@@ -86,6 +104,8 @@ public final class ProxyRegistry {
 
     /**
      * Gets the DistributedObjects in this registry. The result is written into 'result'.
+     *
+     * @param result  The DistributedObjects in this registry.
      */
     public void getDistributedObjects(Collection<DistributedObject> result) {
         Collection<DistributedObjectFuture> futures = proxies.values();
@@ -101,12 +121,12 @@ public final class ProxyRegistry {
     }
 
     /**
-     * Retrieves a DistributedObject proxy or creates it if it's not available
+     * Retrieves a DistributedObject proxy or creates it if it is not available.
      *
-     * @param name         name of the proxy object
-     * @param publishEvent true if a DistributedObjectEvent should  be fired
-     * @param initialize   true if proxy object should be initialized
-     * @return a DistributedObject instance
+     * @param name         The name of the DistributedObject proxy object to retrieve or create.
+     * @param publishEvent true if a DistributedObjectEvent should be fired.
+     * @param initialize   true if the DistributedObject proxy object should be initialized.
+     * @return The DistributedObject instance.
      */
     DistributedObject getOrCreateProxy(String name, boolean publishEvent, boolean initialize) {
         DistributedObjectFuture proxyFuture = proxies.get(name);
@@ -124,12 +144,12 @@ public final class ProxyRegistry {
     }
 
     /**
-     * Creates a DistributedObject proxy if it's not created yet
+     * Creates a DistributedObject proxy if it is not created yet
      *
-     * @param name         name of the proxy object
-     * @param publishEvent true if a DistributedObjectEvent should  be fired
-     * @param initialize   true if proxy object should be initialized
-     * @return a DistributedObject instance if it's created by this method, null otherwise
+     * @param name         The name of the istributedObject proxy object.
+     * @param publishEvent true if a DistributedObjectEvent should be fired.
+     * @param initialize   true if he DistributedObject proxy object should be initialized.
+     * @return The DistributedObject instance if it is created by this method, null otherwise.
      */
     public DistributedObjectFuture createProxy(String name, boolean publishEvent, boolean initialize) {
         if (proxies.containsKey(name)) {
@@ -178,6 +198,12 @@ public final class ProxyRegistry {
         return proxyFuture;
     }
 
+    /**
+     * Destroys a proxy.
+     *
+     * @param name         The name of the proxy to destroy.
+     * @param publishEvent true if this destroy should be published.
+     */
     void destroyProxy(String name, boolean publishEvent) {
         final DistributedObjectFuture proxyFuture = proxies.remove(name);
         if (proxyFuture == null) {
@@ -189,7 +215,7 @@ public final class ProxyRegistry {
             proxy = proxyFuture.get();
         } catch (Throwable t) {
             proxyService.logger.warning("Cannot destroy proxy [" + serviceName + ":" + name
-                    + "], since it's creation is failed with "
+                    + "], since its creation is failed with "
                     + t.getClass().getName() + ": " + t.getMessage());
             return;
         }
@@ -208,6 +234,9 @@ public final class ProxyRegistry {
         eventService.publishEvent(ProxyServiceImpl.SERVICE_NAME, registrations, event, event.getName().hashCode());
     }
 
+    /**
+     * Destroys this proxy registry.
+     */
     void destroy() {
         for (DistributedObjectFuture future : proxies.values()) {
             if (!future.isSet()) {
