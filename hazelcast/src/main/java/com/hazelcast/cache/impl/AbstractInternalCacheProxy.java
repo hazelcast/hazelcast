@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -60,7 +59,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
  */
 abstract class AbstractInternalCacheProxy<K, V>
         extends AbstractCacheProxyBase<K, V>
-        implements ICache<K, V>, CacheSyncListenerCompleter {
+        implements ICacheInternal<K, V>, CacheSyncListenerCompleter {
 
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
