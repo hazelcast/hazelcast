@@ -42,6 +42,11 @@ public class IsStillRunningService {
         this.nodeEngine = nodeEngine;
     }
 
+    /**
+     * Checks if an operation is still running.
+     * @param invocation The invocation for this operation.
+     * @return true if the operation is running, false otherwise.
+     */
     public boolean isOperationExecuting(Invocation invocation) {
         // ask if op is still being executed?
         Boolean executing = Boolean.FALSE;
@@ -71,6 +76,14 @@ public class IsStillRunningService {
         }
     }
 
+    /**
+     * Checks if an operation is still running.
+     * @param callerAddress The caller address for this operation.
+     * @param callerUuid The caller Uuid for this operation.
+     * @param serviceName The service name for this operation.
+     * @param identifier The object identifier for this operation.
+     * @return true if the operation is running, false otherwise.
+     */
     public boolean isOperationExecuting(Address callerAddress, String callerUuid, String serviceName, Object identifier) {
         Object service = nodeEngine.getService(serviceName);
         if (service == null) {
@@ -87,12 +100,16 @@ public class IsStillRunningService {
     /**
      * Checks if an operation is still running.
      * <p/>
-     * If the partition id is set, then it is super cheap since it just involves some volatiles reads since the right worker
+     * If the partition id is set, then it is super cheap: it just involves some volatile reads since the right worker
      * thread can be found and in the worker-thread the current operation is stored in a volatile field.
      * <p/>
      * If the partition id isn't set, then we iterate over all generic-operationthread and check if one of them is running
-     * the given operation. So this is a more expensive, but in most cases this should not be an issue since most of the data
+     * the given operation. So this is more expensive, but in most cases this should not be an issue since most of the data
      * is hot in cache.
+     * @param callerAddress The caller address for this operation.
+     * @param partitionId The id of the partition where this operation resides.
+     * @param operationCallId The call id for this operation.
+     * @return true if the operation is running, false otherwise.
      */
     public boolean isOperationExecuting(Address callerAddress, int partitionId, long operationCallId) {
         if (partitionId < 0) {
