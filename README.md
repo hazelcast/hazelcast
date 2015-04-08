@@ -4,7 +4,7 @@ With its various distributed data structures, distributed caching capabilities, 
 integration with Spring and Hibernate and more importantly with so many happy users, Hazelcast is feature-rich,
 enterprise-ready and developer-friendly in-memory data grid solution.
 
-### Features:
+### Features: 
 
 * Distributed implementations of `java.util.{Queue, Set, List, Map}`
 * Distributed implementation of `java.util.concurrent.locks.Lock`
