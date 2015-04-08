@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -306,31 +307,37 @@ public class UTFEncoderDecoderTest  {
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testLongSizedText_min3Chunks_Default() throws Exception {
         testLongSizedText_min3Chunks(false, UtfWriterType.DEFAULT);
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testLongSizedText_min3Chunks_Unsafe() throws Exception {
         testLongSizedText_min3Chunks(false, UtfWriterType.UNSAFE);
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testLongSizedText_min3Chunks_Reflection() throws Exception {
         testLongSizedText_min3Chunks(false, UtfWriterType.REFLECTION);
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testLongSizedText_min3Chunks_Fast_Default() throws Exception {
         testLongSizedText_min3Chunks(true, UtfWriterType.DEFAULT);
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testLongSizedText_min3Chunks_Fast_Unsafe() throws Exception {
         testLongSizedText_min3Chunks(true, UtfWriterType.UNSAFE);
     }
 
     @Test
+    @Category(NightlyTest.class)
     public void testLongSizedText_min3Chunks_Fast_Reflection() throws Exception {
         testLongSizedText_min3Chunks(true, UtfWriterType.REFLECTION);
     }
