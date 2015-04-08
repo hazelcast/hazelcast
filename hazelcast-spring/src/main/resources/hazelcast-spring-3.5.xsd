@@ -1996,7 +1996,7 @@
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
-        <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
     </xs:complexType>
     <xs:complexType name="memory-size">
         <xs:attribute name="value" type="xs:int" default="128"/>
