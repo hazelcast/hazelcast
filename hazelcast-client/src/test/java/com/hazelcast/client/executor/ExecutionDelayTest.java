@@ -24,6 +24,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -45,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class ExecutionDelayTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;
