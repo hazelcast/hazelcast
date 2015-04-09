@@ -24,18 +24,18 @@ public interface PacketTransceiver {
     /**
      * Transmits a packet to a certain connection.
      *
-     * @param packet the Packet to transmit
-     * @param connection the Connection the Packet should be transmitted to.
+     * @param packet The Packet to transmit.
+     * @param connection The connection to where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure. There is no guarantee that the packet is actually going
      * to be received since the Packet perhaps is stuck in some buffer. It just means that it is buffered somewhere.
      */
     boolean transmit(Packet packet, Connection connection);
 
     /**
-     * Transmits a packet to a certain address
+     * Transmits a packet to a certain address.
      *
-     * @param packet the Packet to transmit
-     * @param target the Address of the target machine the Packet should be transmitted to.
+     * @param packet The Packet to transmit.
+     * @param target The address of the target machine where the Packet should be transmitted.
      * @return true if the transmit was a success, false if a failure.
      * @see #transmit(com.hazelcast.nio.Packet, com.hazelcast.nio.Connection)
      */
