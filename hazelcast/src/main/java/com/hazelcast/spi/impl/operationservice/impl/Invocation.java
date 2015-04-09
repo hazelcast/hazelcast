@@ -76,36 +76,35 @@ abstract class Invocation implements ResponseHandler, Runnable {
     private static final int LOG_MAX_INVOCATION_COUNT = 99;
     private static final int LOG_INVOCATION_COUNT_MOD = 10;
 
-    /**
-     * The time in millis when the response of the primary has been received.
-     */
-    protected long pendingResponseReceivedMillis = -1;
-    protected final long callTimeout;
-    protected final NodeEngineImpl nodeEngine;
-    protected final String serviceName;
-    protected final Operation op;
-    protected final int partitionId;
-    protected final int replicaIndex;
-    protected final int tryCount;
-    protected final long tryPauseMillis;
-    protected final ILogger logger;
+    // The time in millis when the response of the primary has been received.
+    volatile long pendingResponseReceivedMillis = -1;
+    // contains the pending response from the primary. It is pending because it could be that backups need to complete.
+    volatile Object pendingResponse;
+    // number of expected backups. Is set correctly as soon as the pending response is set. See {@link NormalResponse}
+    volatile int backupsExpected;
+    // number of backups that have completed. See {@link BackupResponse}.
+    volatile int backupsCompleted;
+    // A flag to prevent multiple responses to be send tot he Invocation. Only needed for local operations.
+    volatile Boolean responseReceived = FALSE;
+
+    final long callTimeout;
+    final NodeEngineImpl nodeEngine;
+    final String serviceName;
+    final Operation op;
+    final int partitionId;
+    final int replicaIndex;
+    final int tryCount;
+    final long tryPauseMillis;
+    final ILogger logger;
     final boolean resultDeserialized;
     boolean remote;
-
-    volatile Object pendingResponse;
-    volatile int backupsExpected;
-    volatile int backupsCompleted;
     Address invTarget;
     MemberImpl targetMember;
     final InvocationFuture invocationFuture;
+    final OperationServiceImpl operationService;
 
-    private final OperationServiceImpl operationService;
-
-    //needs to be a Boolean because it is updated through the RESPONSE_RECEIVED
-    private volatile Boolean responseReceived = FALSE;
-
-    //writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
-    private volatile int invokeCount;
+    // writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    volatile int invokeCount;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Object callback,
@@ -272,7 +271,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
      *
      * @return true if the initialization was a success.
      */
-     boolean initInvocationTarget() {
+    boolean initInvocationTarget() {
         Address thisAddress = nodeEngine.getThisAddress();
 
         invTarget = getTarget();
@@ -453,31 +452,22 @@ abstract class Invocation implements ResponseHandler, Runnable {
         invocationFuture.set(pendingResponse);
     }
 
-    void notifyInvocationTimeout() {
-        if (pendingResponse != null) {
-            return;
-        }
-
-        if (invocationFuture.getWaitingThreadsCount() > 0) {
-            // there are already waiting threads
-            // no need to check timeout implicitly
-            return;
-        }
-
+    boolean checkInvocationTimeout() {
         long maxCallTimeout = invocationFuture.getMaxCallTimeout();
-        if (maxCallTimeout == Long.MAX_VALUE) {
-            return;
-        }
-
         long expirationTime = op.getInvocationTime() + maxCallTimeout;
-        if (expirationTime < 0) {
-            // impossible to expire
-            return;
+
+        boolean hasResponse = pendingResponse != null;
+        boolean hasWaitingThreads = invocationFuture.getWaitingThreadsCount() > 0;
+        boolean notExpired = maxCallTimeout == Long.MAX_VALUE
+                || expirationTime < 0
+                || expirationTime >= Clock.currentTimeMillis();
+
+        if (hasResponse || hasWaitingThreads || notExpired) {
+            return false;
         }
 
-        if (expirationTime < Clock.currentTimeMillis()) {
-            invocationFuture.set(newOperationTimeoutException(maxCallTimeout));
-        }
+        invocationFuture.set(newOperationTimeoutException(maxCallTimeout));
+        return true;
     }
 
     Object newOperationTimeoutException(long totalTimeoutMs) {
@@ -528,26 +518,23 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
     }
 
-    void checkBackupTimeout(long timeoutMillis) {
+    boolean checkBackupTimeout(long timeoutMillis) {
         // If the backups have completed, we are done.
         // This check also filters out all non backup-aware operations since they backupsExpected will always be equal to the
         // backupsCompleted.
-        if (backupsExpected == backupsCompleted) {
-            return;
-        }
+        boolean allBackupsComplete = backupsExpected == backupsCompleted;
+        long responseReceivedMillis = pendingResponseReceivedMillis;
 
-        long responseReceivedMillis = this.pendingResponseReceivedMillis;
-        if (responseReceivedMillis == -1) {
-            // no response has yet been received, so we we are done. We are only going to re-invoke an operation
-            // if the response of the primary has been received, but the backups have not replied.
-            return;
-        }
-
+        // If this has not yet expired (so has not been in the system for a too long period) we ignore it.
         long expirationTime = responseReceivedMillis + timeoutMillis;
-        boolean expired = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
-        if (!expired) {
-            // This invocation has not yet expired (so has not been in the system for a too long period) we ignore it.
-            return;
+        boolean timeout = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+
+        // If no response has yet been received, we we are done. We are only going to re-invoke an operation
+        // if the response of the primary has been received, but the backups have not replied.
+        boolean responseReceived = pendingResponse != null;
+
+        if (allBackupsComplete || !responseReceived || !timeout) {
+            return false;
         }
 
         boolean targetDead = nodeEngine.getClusterService().getMember(invTarget) == null;
@@ -559,14 +546,12 @@ abstract class Invocation implements ResponseHandler, Runnable {
             // it returned a value, will never be visible. So if we would complete the future, a response is send even though
             // its changes never made it into the system.
             resetAndReInvoke();
-            return;
+            return false;
         }
 
-        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
-        Object pendingResponse = this.pendingResponse;
-        if (pendingResponse != null) {
-            invocationFuture.set(pendingResponse);
-        }
+         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        invocationFuture.set(pendingResponse);
+        return true;
     }
 
     private void resetAndReInvoke() {

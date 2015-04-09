@@ -42,7 +42,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     // activity. It is very easy to detect when back pressure is disabled.
     public static final int MEMORY_STRESS_PAYLOAD_SIZE = 100000;
 
-    private static final int runningTimeMs = (int) TimeUnit.SECONDS.toMillis(300);
+    private static final int runningTimeMs = (int) TimeUnit.MINUTES.toMillis(30);
 
     private final Random random = new Random();
     private final AtomicLong completedCall = new AtomicLong();
@@ -57,8 +57,9 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config()
+                .setProperty(PROP_OPERATION_BACKUP_TIMEOUT_MILLIS,"60000")
                 .setProperty(PROP_BACKPRESSURE_ENABLED, "true")
-                .setProperty(PROP_BACKPRESSURE_SYNCWINDOW, "100")
+                .setProperty(PROP_BACKPRESSURE_SYNCWINDOW, "10")
                 .setProperty(PROP_BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION, "2");
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
         local = cluster[0];
@@ -66,7 +67,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         localOperationService = (OperationServiceImpl) getOperationService(local);
     }
 
-    // works
+    // verified
     @Test
     public void test_asyncInvocation() throws Exception {
         test(new StressThreadFactory() {
@@ -86,7 +87,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    // works
+    // verified
     @Test
     public void test_asyncInvocation_and_syncBackups() throws Exception{
         test(new StressThreadFactory() {
@@ -106,6 +107,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
+    // current
     @Test
     public void test_asyncInvocation_and_asyncBackups()throws Exception {
         test(new StressThreadFactory() {
@@ -125,7 +127,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    // current
+    // verified
     @Test
     public void test_syncInvocation_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
@@ -145,6 +147,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
+    // verified
     @Test
     public void test_asyncInvocation_and_syncBackups_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
@@ -197,7 +200,6 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         public int partitionId;
         public boolean syncInvocation;
-
         public int asyncBackups;
         public int syncBackups;
         public boolean shouldBackup;
@@ -211,6 +213,14 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         @Override
         public void run() {
+            try {
+                doRun();
+            }catch (Throwable t){
+                t.printStackTrace();
+            }
+        }
+
+        private void doRun() {
             long operationCount = 0;
 
             long lastSecond = System.currentTimeMillis() / 1000;

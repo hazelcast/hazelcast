@@ -6,6 +6,8 @@ import com.hazelcast.spi.BackupAwareOperation;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
+import static com.hazelcast.nio.Bits.CACHE_LINE_LENGTH;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 
 /**
@@ -25,10 +27,9 @@ import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
  * In the future we could add a CallIdSequence per partition or using some 'concurrency level' and do a mod based on the
  * partition-id. The advantage is that you reduce contention and improved isolation, at the expensive of:
  * <ol>
- *     <li>increased complexity</li>
- *     <li>not always being able to fully utilize the number of invocations.</li>
+ * <li>increased complexity</li>
+ * <li>not always being able to fully utilize the number of invocations.</li>
  * </ol>
- *
  */
 public abstract class CallIdSequence {
 
@@ -127,7 +128,7 @@ public abstract class CallIdSequence {
         private static final int INDEX_TAIL = 15;
 
         // instead of using 2 AtomicLongs, we use an array if width of 3 cache lines to prevent any false sharing.
-        private final AtomicLongArray longs = new AtomicLongArray(24);
+        private final AtomicLongArray longs = new AtomicLongArray(3 * CACHE_LINE_LENGTH / LONG_SIZE_IN_BYTES);
 
         private final int maxConcurrentInvocations;
         private final long backoffTimeoutMs;

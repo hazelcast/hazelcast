@@ -6,10 +6,10 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
@@ -156,8 +156,14 @@ public class InvocationRegistry {
     public void notifyBackupComplete(long callId) {
         try {
             Invocation invocation = invocations.get(callId);
+
+            // It can happen that a {@link BackupResponse} is send without the Invocation being available anymore.
+            // This is because the InvocationRegistry will automatically release invocations where the backup is
+            // taking too much time.
             if (invocation == null) {
-                logger.warning("No Invocation found for response: " + callId);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("No Invocation found for BackupResponse with callId " + callId);
+                }
                 return;
             }
 
@@ -289,24 +295,39 @@ public class InvocationRegistry {
                 return;
             }
 
+            // todo: these 2 measurements should be added to the black-box.
+            int backupTimeouts = 0;
+            int invocationTimeouts = 0;
             for (Invocation invocation : invocations.values()) {
                 if (shutdown) {
                     return;
                 }
 
                 try {
-                    invocation.notifyInvocationTimeout();
+                    if (invocation.checkInvocationTimeout()) {
+                        invocationTimeouts++;
+                    }
                 } catch (Throwable t) {
                     inspectOutputMemoryError(t);
                     logger.severe("Failed to handle operation timeout of invocation:" + invocation, t);
                 }
 
                 try {
-                    invocation.checkBackupTimeout(backupTimeoutMillis);
+                    if (invocation.checkBackupTimeout(backupTimeoutMillis)) {
+                        backupTimeouts++;
+                    }
                 } catch (Throwable t) {
                     inspectOutputMemoryError(t);
                     logger.severe("Failed to handle backup timeout of invocation:" + invocation, t);
                 }
+            }
+
+            log(backupTimeouts, invocationTimeouts);
+        }
+
+        private void log(int backupTimeouts, int invocationTimeouts) {
+            if (backupTimeouts > 0 || invocationTimeouts > 0) {
+                logger.info("Handled " + invocationTimeouts + " invocation timeouts and " + backupTimeouts + " backupTimeouts");
             }
         }
     }

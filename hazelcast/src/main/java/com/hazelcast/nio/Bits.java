@@ -45,6 +45,10 @@ public final class Bits {
      * Double size in bytes
      */
     public static final int DOUBLE_SIZE_IN_BYTES = 8;
+    /**
+     * Length of the data blocks used by the CPU cache sub-system in bytes.
+     */
+    public static final int CACHE_LINE_LENGTH = 64;
 
     private Bits() {
     }

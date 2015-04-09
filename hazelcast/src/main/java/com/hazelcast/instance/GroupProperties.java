@@ -216,8 +216,18 @@ public class GroupProperties {
     public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
 
     /**
-     * This property only has meaning when back-pressure is enabled. The larger the sync-window the less frequent a
-     * asynchronous backup is converted to a sync backup.
+     * Control the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
+     * to prevent an accumulation of asynchronous backups and eventually running into stability issues.
+     *
+     * A sync window of 10 means that 1 in 10 BackupAwareOperations get their async backups convert to sync backups.
+     *
+     * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. This
+     * is also the smallest legal value for the sync window.
+     *
+     * There is some randomization going on to prevent resonance. So with a sync window of n, not every n'th BackupAwareOperation
+     * operation is getting its async backups converted to sync.
+     *
+     * This property only has meaning when backpressure is enabled.
      */
     public static final String PROP_BACKPRESSURE_SYNCWINDOW = "hazelcast.backpressure.syncwindow";
 
