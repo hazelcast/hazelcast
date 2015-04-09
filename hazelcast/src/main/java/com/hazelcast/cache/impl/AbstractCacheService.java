@@ -23,6 +23,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventRegistration;
@@ -34,8 +35,11 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.io.Closeable;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -43,6 +47,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
+    protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<String, CacheOperationProvider>();
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
@@ -137,6 +142,7 @@ public abstract class AbstractCacheService implements ICacheService {
         setManagementEnabled(config, objectName, false);
         deleteCacheConfig(objectName);
         deleteCacheStat(objectName);
+        deleteCacheResources(objectName);
         if (!isLocal) {
             destroyCacheOnAllMembers(objectName, callerUuid);
         }
@@ -363,5 +369,29 @@ public abstract class AbstractCacheService implements ICacheService {
         cacheOperationProvider = new DefaultOperationProvider(nameWithPrefix);
         CacheOperationProvider current = operationProviderCache.putIfAbsent(nameWithPrefix, cacheOperationProvider);
         return current == null ? cacheOperationProvider : current;
+    }
+
+    // This method will be called at cache creation from each partition while creating cache record store.
+    // A better synchronization may be implemented but since this is not called so much, it is not needed at this time.
+    public void addCacheResource(String name, Closeable resource) {
+        Set<Closeable> cacheResources;
+        synchronized (resources) {
+            cacheResources = resources.get(name);
+            if (cacheResources == null) {
+                cacheResources = new HashSet<Closeable>();
+                resources.put(name, cacheResources);
+            }
+        }
+        cacheResources.add(resource);
+    }
+
+    private void deleteCacheResources(String name) {
+        Set<Closeable> cacheResources = resources.remove(name);
+        if (cacheResources != null) {
+            for (Closeable resource : cacheResources) {
+                IOUtil.closeResource(resource);
+            }
+            cacheResources.clear();
+        }
     }
 }
