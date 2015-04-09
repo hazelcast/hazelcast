@@ -35,6 +35,16 @@ public class ConsoleCommandHandler {
         this.app = new ConsoleHandlerApp(instance);
     }
 
+
+   /**
+    * Runs a command on the console. Will not run "exit" or "quit".
+    *
+    * @param command The command to run.
+    *
+    * @return either the command is handled, or a console message is returned if the command is not handled.
+    *
+    * @throws java.lang.InterruptedException.
+    */
     public String handleCommand(final String command) throws InterruptedException {
         if ("exit".equals(command) || "quit".equals(command)) {
             return "'" + command + "' is not allowed!";
@@ -50,6 +60,9 @@ public class ConsoleCommandHandler {
         return "'" + command + "' execution is timed out!";
     }
 
+   /**
+    * Called by handleCommand. 
+    */
     String doHandleCommand(final String command) {
         app.handleCommand(command);
         final String output = buffer.toString();
