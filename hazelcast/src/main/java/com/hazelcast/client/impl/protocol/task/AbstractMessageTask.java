@@ -1,10 +1,28 @@
-package com.hazelcast.client.impl.protocol;
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.ExceptionResultParameters;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -50,6 +68,10 @@ public abstract class AbstractMessageTask<P>
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
+    }
+
+    public <S> S getService(String serviceName) {
+        return (S) node.nodeEngine.getService(serviceName);
     }
 
     protected ClientEndpointImpl getEndpoint() {
@@ -158,14 +180,23 @@ public abstract class AbstractMessageTask<P>
         getEndpoint().sendClientMessage(resultClientMessage);
     }
 
+    protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {
+        int partitionId = key == null ? -1 : nodeEngine.getPartitionService().getPartitionId(key);
+        resultClientMessage.setPartitionId(partitionId);
+        sendClientMessage(resultClientMessage);
+    }
+
     protected void sendClientMessage(Throwable throwable) {
         ClientMessage exception = createExceptionMessage(throwable);
         sendClientMessage(exception);
     }
 
-    @Override
-    public String getDistributedObjectType() {
+    public String getServiceName() {
         return null;
+    }
+
+    public String getDistributedObjectType() {
+        return getServiceName();
     }
 
     @Override

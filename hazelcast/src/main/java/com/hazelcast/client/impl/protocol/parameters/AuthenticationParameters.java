@@ -1,6 +1,9 @@
-package com.hazelcast.client.impl.protocol;
+package com.hazelcast.client.impl.protocol.parameters;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 /**
  * AuthenticationParameters
@@ -11,7 +14,7 @@ public class AuthenticationParameters {
     /**
      * ClientMessageType of this message
      */
-    public static final ClientMessageType TYPE = ClientMessageType.AUTHENTICATION_DEFAULT;
+    public static final ClientMessageType TYPE = ClientMessageType.AUTHENTICATION_DEFAULT_REQUEST;
     public String username;
     public String password;
     public String uuid;
@@ -46,13 +49,13 @@ public class AuthenticationParameters {
      * @return encoded ClientMessage
      */
     public static ClientMessage encode(String username, String password, String uuid, String ownerUuid,
-                                                  boolean isOwnerConnection) {
+                                       boolean isOwnerConnection) {
         final int requiredDataSize = calculateDataSize(username, password, uuid, ownerUuid, isOwnerConnection);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(username).set(password).set(uuid).set(ownerUuid).set(isOwnerConnection);
-        clientMessage.updateFrameLenght();
+        clientMessage.updateFrameLength();
         return clientMessage;
     }
 
@@ -62,11 +65,11 @@ public class AuthenticationParameters {
      */
     public static int calculateDataSize(String username, String password, String uuid, String ownerUuid,
                                         boolean isOwnerConnection) {
-        return ClientMessage.HEADER_SIZE//
-                + (BitUtil.SIZE_OF_INT + username.length() * 3)//
-                + (BitUtil.SIZE_OF_INT + password.length() * 3)//
-                + (BitUtil.SIZE_OF_INT + uuid.length() * 3)//
-                + (BitUtil.SIZE_OF_INT + ownerUuid.length() * 3)//
+        return ClientMessage.HEADER_SIZE
+                + ParameterUtil.calculateStringDataSize(username)
+                + ParameterUtil.calculateStringDataSize(password)
+                + ParameterUtil.calculateStringDataSize(uuid)
+                + ParameterUtil.calculateStringDataSize(ownerUuid)
                 + BitUtil.SIZE_OF_BYTE;
     }
 

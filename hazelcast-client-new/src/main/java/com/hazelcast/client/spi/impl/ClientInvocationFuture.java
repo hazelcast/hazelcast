@@ -107,7 +107,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                         long elapsed = Clock.currentTimeMillis() - start;
                         waitMillis -= elapsed;
                         if (!invocation.isConnectionHealthy(elapsed)) {
-                            invocation.notify(new TargetDisconnectedException());
+                            invocation.notifyException(new TargetDisconnectedException());
                         }
                     }
                 }
@@ -192,10 +192,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             }
             callbackNodeList.add(new ExecutionCallbackNode(callback, executor, false));
         }
-    }
-
-    public ClientMessage getClientMessage() {
-        return clientMessage;
     }
 
     public EventHandler getHandler() {

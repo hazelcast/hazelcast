@@ -1,8 +1,7 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.Connection;
 
 import java.nio.ByteBuffer;
 
@@ -17,16 +16,22 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
  */
 public class ClientMessageBuilder {
 
+    public interface MessageDelegator {
+
+        void delegate(ClientMessage message, Connection connection);
+    }
+
+
     private final Int2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Int2ObjectHashMap<BufferBuilder>();
+
+    private final MessageDelegator delegator;
+    private final Connection connection;
 
     private ClientMessage message = ClientMessage.create();
 
-    final TcpIpConnection connection;
-    final IOService ioService;
-
-    public ClientMessageBuilder(TcpIpConnection connection) {
+    public ClientMessageBuilder(Connection connection, MessageDelegator delegator) {
         this.connection = connection;
-        this.ioService = connection.getConnectionManager().getIOHandler();
+        this.delegator = delegator;
     }
 
     public void onData(final ByteBuffer buffer) {
@@ -36,14 +41,12 @@ public class ClientMessageBuilder {
         }
 
         //MESSAGE IS COMPLETE HERE
-        final byte flags = (byte) message.getFlags();
-
-        if ((flags & BEGIN_AND_END_FLAGS) == BEGIN_AND_END_FLAGS) {
+        if (message.isFlagSet(BEGIN_AND_END_FLAGS)) {
             //HANDLE-MESSAGE
             handleMessage(message);
             message = ClientMessage.create();
         } else {
-            if ((flags & BEGIN_FLAG) == BEGIN_FLAG) {
+            if (message.isFlagSet(BEGIN_FLAG)) {
                 final BufferBuilder builder = builderBySessionIdMap
                         .getOrDefault(message.getCorrelationId(), new Int2ObjectHashMap.Supplier<BufferBuilder>() {
                             @Override
@@ -57,7 +60,7 @@ public class ClientMessageBuilder {
                 if (null != builder && builder.limit() != 0) {
                     builder.append(message.buffer(), message.getDataOffset(), message.getFrameLength() - message.getDataOffset());
 
-                    if ((flags & END_FLAG) == END_FLAG) {
+                    if (message.isFlagSet(END_FLAG)) {
                         final int msgLength = builder.limit();
                         ClientMessage cm = ClientMessage.createForDecode(ByteBuffer.wrap(builder.buffer().byteArray()), 0);
                         cm.setFrameLength(msgLength);
@@ -72,7 +75,7 @@ public class ClientMessageBuilder {
 
     protected void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset() + message.offset());
-        this.ioService.handleClientMessage(message, connection);
+        delegator.delegate(message, connection);
     }
 
 }

@@ -1,8 +1,8 @@
 package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.impl.protocol.AuthenticationParameters;
-import com.hazelcast.client.impl.protocol.AuthenticationResultParameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
@@ -100,14 +100,13 @@ public class RawProtocolTest {
 
         assertTrue(clientMessage.isComplete());
 
-        ClientMessage cmResult = ClientMessage.createForDecode(clientMessage.buffer().byteBuffer(),0);
+        ClientMessage cmResult = ClientMessage.createForDecode(clientMessage.buffer().byteBuffer(), 0);
         final AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(cmResult);
 
         assertEquals(cmResult.getCorrelationId(), 1);
         assertEquals(resultParameters.ownerUuid, server.getCluster().getLocalMember().getUuid());
         assertNotNull(UUID.fromString(resultParameters.uuid));
-        assertEquals(resultParameters.host, "127.0.0.1");
-        assertEquals(resultParameters.port, 5701);
+        assertEquals(new Address("127.0.0.1", 5701), resultParameters.address);
     }
 
 }

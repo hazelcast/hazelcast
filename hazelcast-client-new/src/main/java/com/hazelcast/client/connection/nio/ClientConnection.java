@@ -101,7 +101,7 @@ public class ClientConnection implements Connection, Closeable {
 
     public void init() throws IOException {
         final ByteBuffer buffer = ByteBuffer.allocate(6);
-        buffer.put(stringToBytes(Protocols.CLIENT_BINARY));
+        buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
         buffer.put(stringToBytes(ClientTypes.JAVA));
         buffer.flip();
         socketChannelWrapper.write(buffer);

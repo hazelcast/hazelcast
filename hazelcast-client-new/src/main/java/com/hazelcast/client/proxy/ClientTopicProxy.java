@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -97,8 +97,8 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     }
 
     @Override
-    protected  <T> T invoke(ClientRequest req) {
-        return super.invoke(req, getKey());
+    protected  <T> T invoke(ClientMessage clientMessage) {
+        return super.invoke(clientMessage, getKey());
     }
 
     @Override

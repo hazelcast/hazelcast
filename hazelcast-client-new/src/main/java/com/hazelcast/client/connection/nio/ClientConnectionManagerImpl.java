@@ -25,6 +25,7 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -38,7 +39,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
@@ -47,7 +47,9 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
@@ -238,7 +240,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             socket.setSendBufferSize(bufferSize);
             socket.setReceiveBufferSize(bufferSize);
-            socketChannel.socket().connect(address.getInetSocketAddress(), connectionTimeout);
+            InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
+            socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
             SocketChannelWrapper socketChannelWrapper =
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
             final ClientConnection clientConnection = new ClientConnection(client, inSelector,
@@ -279,15 +282,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     @Override
-    public void handlePacket(Packet packet) {
-        final ClientConnection conn = (ClientConnection) packet.getConn();
+    public void handleClientMessage(ClientMessage message, Connection connection) {
+        final ClientConnection conn = (ClientConnection) connection;
+        ClientInvocationService invocationService = client.getInvocationService();
         conn.incrementPacketCount();
-        if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+        if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
-            listenerService.handleEventPacket(packet);
+            listenerService.handleClientMessage(message);
         } else {
-            ClientInvocationService invocationService = client.getInvocationService();
-            invocationService.handlePacket(packet);
+            invocationService.handleClientMessage(message, connection);
         }
     }
 
@@ -320,7 +323,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 }
                 if (now - connection.lastReadTime() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
-                    new ClientInvocation(client, request, connection).invoke();
+                    ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
+                    clientInvocation.setBypassHeartbeat(true);
+                    clientInvocation.invoke();
                 } else {
                     if (!connection.isHeartBeating()) {
                         connection.heartBeatingSucceed();

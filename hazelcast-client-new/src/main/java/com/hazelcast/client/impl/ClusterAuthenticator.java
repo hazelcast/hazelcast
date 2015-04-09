@@ -3,25 +3,25 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationCustomCredentialsParameters;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.concurrent.Future;
 
 /**
  * Used to authenticate client connections to cluster as parameter to ClientConnectionManager.
  *
- * @see com.hazelcast.client.connection.ClientConnectionManager#getOrConnect(Address, Authenticator)
  */
 public class ClusterAuthenticator implements Authenticator {
 
@@ -36,23 +36,33 @@ public class ClusterAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
+        final SerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         final ClientPrincipal principal = clusterService.getPrincipal();
-        final SerializationService ss = client.getSerializationService();
-        AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
+        String uuid = principal.getUuid();
+        String ownerUuid = principal.getOwnerUuid();
+
+        ClientMessage clientMessage;
+        if (credentials instanceof UsernamePasswordCredentials) {
+            UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+            clientMessage = AuthenticationParameters.encode(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, false);
+        } else {
+            Data data = ss.toData(credentials);
+            clientMessage = AuthenticationCustomCredentialsParameters.encode(data.toByteArray(), uuid, ownerUuid, false);
+
+        }
         connection.init();
-        //contains remoteAddress and principal
-        SerializableCollection collectionWrapper;
-        final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-        final Future<SerializableCollection> future = clientInvocation.invoke();
+
+        ClientMessage response;
+        final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
+        final Future<ClientMessage> future = clientInvocation.invoke();
         try {
-            collectionWrapper = ss.toObject(future.get());
+            response = ss.toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e, IOException.class);
         }
-        final Iterator<Data> iter = collectionWrapper.iterator();
-        final Data addressData = iter.next();
-        final Address address = ss.toObject(addressData);
-        connection.setRemoteEndpoint(address);
+        AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(response);
+
+        connection.setRemoteEndpoint(resultParameters.address);
     }
 }

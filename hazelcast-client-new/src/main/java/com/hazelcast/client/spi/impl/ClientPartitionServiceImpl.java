@@ -17,6 +17,9 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.GetPartitionsParameters;
+import com.hazelcast.client.impl.protocol.parameters.GetPartitionsResultParameters;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -27,8 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.client.GetPartitionsRequest;
-import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,7 +87,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private boolean getPartitions() {
         ClientClusterService clusterService = client.getClientClusterService();
         Address master = clusterService.getMasterAddress();
-        PartitionsResponse response = getPartitionsFrom(master);
+        GetPartitionsResultParameters response = getPartitionsFrom(master);
         if (response != null) {
             processPartitionResponse(response);
             return true;
@@ -94,11 +95,14 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return false;
     }
 
-    private PartitionsResponse getPartitionsFrom(Address address) {
+    private GetPartitionsResultParameters getPartitionsFrom(Address address) {
         try {
-            final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, address).invoke();
-            return client.getSerializationService().toObject(future.get());
+            ClientMessage requestMessage = GetPartitionsParameters.encode();
+            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, address).invoke();
+            ClientMessage responseMessage = future.get();
+            GetPartitionsResultParameters partitionsResponse = GetPartitionsResultParameters.decode(responseMessage);
+
+            return partitionsResponse;
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
                 LOGGER.severe("Error while fetching cluster partition table!", e);
@@ -107,9 +111,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return null;
     }
 
-    private void processPartitionResponse(PartitionsResponse response) {
-        Address[] members = response.getMembers();
-        int[] ownerIndexes = response.getOwnerIndexes();
+    private void processPartitionResponse(GetPartitionsResultParameters response) {
+        Address[] members = response.members;
+        int[] ownerIndexes = response.ownerIndexes;
         if (partitionCount == 0) {
             partitionCount = ownerIndexes.length;
         }

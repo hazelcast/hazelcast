@@ -1,6 +1,8 @@
-package com.hazelcast.client.impl.protocol;
+package com.hazelcast.client.impl.protocol.parameters;
 
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 /**
  * ExceptionResultParameters
@@ -32,19 +34,20 @@ public class ExceptionResultParameters {
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(className).set(message).set(stacktrace);
-        clientMessage.updateFrameLenght();
+        clientMessage.updateFrameLength();
         return clientMessage;
     }
 
     /**
      * sample data size estimation
+     *
      * @return size
      */
     public static int calculateDataSize(String className, String message, String stacktrace) {
         return ClientMessage.HEADER_SIZE//
-                + (BitUtil.SIZE_OF_INT + className.length() * 3)//host
-                + (BitUtil.SIZE_OF_INT + message.length() * 3)//
-                + (BitUtil.SIZE_OF_INT + stacktrace.length() * 3);//
+                + ParameterUtil.calculateStringDataSize(className)
+                + ParameterUtil.calculateStringDataSize(message)
+                + ParameterUtil.calculateStringDataSize(stacktrace);
     }
 
 }

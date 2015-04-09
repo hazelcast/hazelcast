@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * Client Protocol Map related details
+ * <p>Client protocol parameter implementations for client requests and responses</p>
  */
-package com.hazelcast.client.impl.protocol.map;
+package com.hazelcast.client.impl.protocol.parameters;

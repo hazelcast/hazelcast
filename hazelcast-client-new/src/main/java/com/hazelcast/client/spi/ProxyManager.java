@@ -22,9 +22,10 @@ import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientCreateRequest;
 import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.CreateProxyParameters;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -202,9 +203,9 @@ public final class ProxyManager {
     }
 
     private void initialize(ClientProxy clientProxy) throws Exception {
-        ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
+        ClientMessage clientMessage = CreateProxyParameters.encode(clientProxy.getName(), clientProxy.getServiceName());
         final ClientContext context = new ClientContext(client, this);
-        new ClientInvocation(client, request).invoke().get();
+        new ClientInvocation(client, clientMessage).invoke().get();
         clientProxy.setContext(context);
         clientProxy.onInitialize();
     }
