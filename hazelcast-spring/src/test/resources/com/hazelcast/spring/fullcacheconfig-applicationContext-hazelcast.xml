@@ -267,6 +267,10 @@
                 </hz:serializers>
             </hz:serialization>
 
+            <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2" min-block-size="10"
+                              page-size="20">
+                <hz:size unit="MEGABYTES" value="256"/>
+            </hz:native-memory>
             <hz:member-attributes>
                 <hz:attribute name="cluster.group.name">spring-group</hz:attribute>
                 <hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
