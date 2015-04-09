@@ -79,6 +79,9 @@ public class TestClientApplicationContext {
     @Resource(name = "client4")
     private HazelcastClientProxy client4;
 
+    @Resource(name = "client5")
+    private HazelcastClientProxy client5;
+
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
@@ -222,6 +225,16 @@ public class TestClientApplicationContext {
         assertEquals("sample-tag-key", awsConfig.getTagKey());
         assertEquals("sample-tag-value", awsConfig.getTagValue());
     }
+
+    @Test
+    public void testUnlimitedConnectionAttempt() {
+        assertNotNull(client5);
+        ClientConfig config = client5.getClientConfig();
+        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+
+        assertEquals(0, networkConfig.getConnectionAttemptLimit());
+    }
+
 
     @Test
     public void testHazelcastInstances() {
