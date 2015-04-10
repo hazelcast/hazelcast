@@ -35,9 +35,10 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,6 +49,7 @@ public abstract class AbstractCacheService implements ICacheService {
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
+    protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<String, CacheOperationProvider>();
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
@@ -197,7 +199,6 @@ public abstract class AbstractCacheService implements ICacheService {
             if (enabled) {
                 final CacheStatisticsImpl cacheStatistics = createCacheStatIfAbsent(cacheNameWithPrefix);
                 final CacheStatisticsMXBeanImpl mxBean = new CacheStatisticsMXBeanImpl(cacheStatistics);
-
                 MXBeanUtil.registerCacheObject(mxBean, cacheManagerName, cacheConfig.getName(), true);
             } else {
                 MXBeanUtil.unregisterCacheObject(cacheManagerName, cacheConfig.getName(), true);
@@ -239,8 +240,9 @@ public abstract class AbstractCacheService implements ICacheService {
         //remote check
         final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
-        final InternalCompletableFuture<CacheConfig> f = nodeEngine.getOperationService()
-                .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+        final InternalCompletableFuture<CacheConfig> f =
+                nodeEngine.getOperationService()
+                    .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.getSafely();
     }
 
@@ -286,8 +288,9 @@ public abstract class AbstractCacheService implements ICacheService {
             case UPDATED:
             case REMOVED:
             case EXPIRED:
-                final CacheEventData cacheEventData = new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue,
-                        dataOldValue, isOldValueAvailable);
+                final CacheEventData cacheEventData =
+                        new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue,
+                                               dataOldValue, isOldValueAvailable);
                 CacheEventSet eventSet = new CacheEventSet(eventType, completionId);
                 eventSet.addEventData(cacheEventData);
                 eventData = eventSet;
@@ -299,8 +302,9 @@ public abstract class AbstractCacheService implements ICacheService {
                 eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED, dataKey, null, null, false);
                 break;
             case COMPLETED:
-                CacheEventData completedEventData = new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED,
-                        dataKey, dataValue, null, false);
+                CacheEventData completedEventData =
+                        new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED,
+                                               dataKey, dataValue, null, false);
                 eventSet = new CacheEventSet(eventType, completionId);
                 eventSet.addEventData(completedEventData);
                 eventData = eventSet;
@@ -316,7 +320,6 @@ public abstract class AbstractCacheService implements ICacheService {
     public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
         final EventService eventService = getNodeEngine().getEventService();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
-
         if (candidates.isEmpty()) {
             return;
         }
@@ -336,20 +339,46 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public String registerListener(String distributedObjectName, CacheEventListener listener) {
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService
-                .registerListener(AbstractCacheService.SERVICE_NAME, distributedObjectName, listener);
-        return registration.getId();
+        final EventRegistration registration =
+                eventService.registerListener(AbstractCacheService.SERVICE_NAME,
+                                              distributedObjectName,
+                                              listener);
+        final String id = registration.getId();
+        if (listener instanceof Closeable) {
+            closeableListeners.put(id, (Closeable) listener);
+        } else if (listener instanceof CacheEntryListenerProvider) {
+            CacheEntryListener cacheEntryListener = ((CacheEntryListenerProvider) listener).getCacheEntryListener();
+            if (cacheEntryListener instanceof Closeable) {
+                closeableListeners.put(id, (Closeable) cacheEntryListener);
+            }
+        }
+        return id;
     }
 
     @Override
     public boolean deregisterListener(String name, String registrationId) {
         final EventService eventService = getNodeEngine().getEventService();
-        return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
+        boolean result = eventService.deregisterListener(SERVICE_NAME, name, registrationId);
+        Closeable listener = closeableListeners.remove(registrationId);
+        if (listener != null) {
+            IOUtil.closeResource(listener);
+        }
+        return result;
     }
 
     @Override
     public void deregisterAllListener(String name) {
-        nodeEngine.getEventService().deregisterAllListeners(AbstractCacheService.SERVICE_NAME, name);
+        final EventService eventService = getNodeEngine().getEventService();
+        final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        if (registrations != null) {
+            for (EventRegistration registration : registrations) {
+                Closeable listener = closeableListeners.remove(registration.getId());
+                if (listener != null) {
+                    IOUtil.closeResource(listener);
+                }
+            }
+        }
+        eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, name);
     }
 
     @Override
@@ -372,14 +401,21 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     // This method will be called at cache creation from each partition while creating cache record store.
-    // A better synchronization may be implemented but since this is not called so much, it is not needed at this time.
+    // A better synchronization may be implemented but
+    // since these are not called so much periodically, but it is not needed at this time.
     public void addCacheResource(String name, Closeable resource) {
-        Set<Closeable> cacheResources;
-        synchronized (resources) {
-            cacheResources = resources.get(name);
-            if (cacheResources == null) {
-                cacheResources = new HashSet<Closeable>();
-                resources.put(name, cacheResources);
+        Set<Closeable> cacheResources = resources.get(name);
+        if (cacheResources == null) {
+            synchronized (resources) {
+                // In case of creation of resource set for specified cache name, we checks double from resources map.
+                // But this happens only once for each cache and this prevents other calls
+                // from unnecessary "synchronized" lock on "resources" instance
+                // since "cacheResources" will not be for specified cache name.
+                cacheResources = resources.get(name);
+                if (cacheResources == null) {
+                    cacheResources = Collections.newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
+                    resources.put(name, cacheResources);
+                }
             }
         }
         cacheResources.add(resource);

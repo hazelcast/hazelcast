@@ -16,20 +16,13 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.CacheConcurrentHashMap;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,14 +35,8 @@ import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
-import javax.cache.configuration.MutableConfiguration;
 import javax.cache.event.CacheEntryCreatedListener;
-import javax.cache.event.CacheEntryEvent;
-import javax.cache.event.CacheEntryExpiredListener;
-import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryListenerException;
-import javax.cache.event.CacheEntryRemovedListener;
-import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriter;
@@ -58,21 +45,12 @@ import javax.cache.spi.CachingProvider;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -205,6 +183,46 @@ public class CacheResourceTest
 
         @Override
         public void writeAll(Collection collection) throws CacheWriterException {
+            if (closed) {
+                throw new IllegalStateException();
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            closed = true;
+        }
+
+    }
+
+    @Test
+    public void testCloseableCacheListener() {
+        CachingProvider provider =
+                HazelcastServerCachingProvider
+                    .createCachingProvider(factory.newHazelcastInstance());
+
+        CacheManager cacheManager = provider.getCacheManager();
+
+        CloseableListener listener = new CloseableListener();
+
+        Factory<CloseableListener> listenerFactory = FactoryBuilder.factoryOf(listener);
+        CompleteConfiguration<Object, Object> configuration =
+                new CacheConfig()
+                    .addCacheEntryListenerConfiguration(
+                        new MutableCacheEntryListenerConfiguration(listenerFactory, null, true, false));
+
+        Cache<Object, Object> cache = cacheManager.createCache("test", configuration);
+        cache.close();
+
+        assertTrue("CloseableListener.close() should be called when cache is closed!", listener.closed);
+    }
+
+    private static class CloseableListener implements CacheEntryCreatedListener, Closeable, Serializable {
+
+        private volatile boolean closed = false;
+
+        @Override
+        public void onCreated(Iterable iterable) throws CacheEntryListenerException {
             if (closed) {
                 throw new IllegalStateException();
             }
