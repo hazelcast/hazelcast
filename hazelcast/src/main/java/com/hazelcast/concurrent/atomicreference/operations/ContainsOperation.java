@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.ReferenceContainer;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,8 +39,8 @@ public class ContainsOperation extends AtomicReferenceBaseOperation {
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer referenceContainer = getReferenceContainer();
-        returnValue = referenceContainer.contains(contains);
+        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
+        returnValue = atomicReferenceContainer.contains(contains);
     }
 
     @Override

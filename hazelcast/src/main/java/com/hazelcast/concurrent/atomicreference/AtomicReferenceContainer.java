@@ -14,42 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.atomicreference;
 
-public class LongContainer {
+import com.hazelcast.nio.serialization.Data;
 
-    private long value;
+public class AtomicReferenceContainer {
 
-    public long get() {
+    private Data value;
+
+    public Data get() {
         return value;
     }
 
-    public long addAndGet(long delta) {
-        value += delta;
-        return value;
-    }
-
-    public void set(long value) {
+    public void set(Data value) {
         this.value = value;
     }
 
-    public boolean compareAndSet(long expect, long value) {
-        if (this.value != expect) {
+    public boolean compareAndSet(Data expect, Data value) {
+        if (!contains(expect)) {
             return false;
         }
         this.value = value;
         return true;
     }
 
-    public long getAndAdd(long delta) {
-        long tempValue = value;
-        value += delta;
+    public boolean contains(Data expected) {
+        if (value == null) {
+            return expected == null;
+        }
+        return value.equals(expected);
+    }
+
+    public Data getAndSet(Data value) {
+        Data tempValue = this.value;
+        this.value = value;
         return tempValue;
     }
 
-    public long getAndSet(long value) {
-        long tempValue = this.value;
-        this.value = value;
-        return tempValue;
+    public boolean isNull() {
+        return value == null;
     }
 }
