@@ -41,7 +41,7 @@ public class PartitionLostListenerStressTest
     }
 
     protected int getMapEntryCount() {
-        return 10000;
+        return 5000;
     }
 
     @Test
