@@ -334,7 +334,7 @@
 
 
                             <includes>
-                                <include>**/**Quorum**.java</include>
+                                <include>**/YourTestFileHear.java</include>
                             </includes>
 
                         </configuration>
