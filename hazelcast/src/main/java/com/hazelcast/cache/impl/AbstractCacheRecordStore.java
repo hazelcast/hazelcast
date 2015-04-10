@@ -30,7 +30,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -128,6 +127,19 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.evictionPolicyEvaluator = creatEvictionPolicyEvaluator(evictionConfig);
         this.evictionChecker = createEvictionChecker(evictionConfig);
         this.evictionStrategy = creatEvictionStrategy(evictionConfig);
+
+        // Register "cacheWriter" if it is "Closable" to be closed while cache is being destroyed
+        if (cacheWriter instanceof Closeable) {
+            cacheService.addCacheResource(name, (Closeable) cacheWriter);
+        }
+        // Register "cacheLoader" if it is "Closable" to be closed while cache is being destroyed
+        if (cacheLoader instanceof Closeable) {
+            cacheService.addCacheResource(name, (Closeable) cacheLoader);
+        }
+        // Register "defaultExpiryPolicy" if it is "Closable" to be closed while cache is being destroyed
+        if (defaultExpiryPolicy instanceof Closeable) {
+            cacheService.addCacheResource(name, (Closeable) defaultExpiryPolicy);
+        }
     }
     //CHECKSTYLE:ON
 
@@ -1351,7 +1363,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void destroy() {
         clear();
-        closeResources();
         closeListeners();
     }
 
@@ -1369,23 +1380,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     EmptyStatement.ignore(e);
                 }
             }
-        }
-    }
-
-    protected void closeResources() {
-        //close the configured CacheWriter
-        if (cacheWriter instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheWriter);
-        }
-
-        //close the configured CacheLoader
-        if (cacheLoader instanceof Closeable) {
-            IOUtil.closeResource((Closeable) cacheLoader);
-        }
-
-        //close the configured defaultExpiryPolicy
-        if (defaultExpiryPolicy instanceof Closeable) {
-            IOUtil.closeResource((Closeable) defaultExpiryPolicy);
         }
     }
 
