@@ -50,8 +50,9 @@ import java.util.HashSet;
  * @see javax.cache.event.CacheEntryEventFilter
  */
 public class CacheEventListenerAdaptor<K, V>
-        implements CacheEventListener {
+        implements CacheEventListener, CacheEntryListenerProvider<K, V> {
 
+    private final CacheEntryListener<K, V> cacheEntryListener;
     private final CacheEntryCreatedListener cacheEntryCreatedListener;
     private final CacheEntryRemovedListener cacheEntryRemovedListener;
     private final CacheEntryUpdatedListener cacheEntryUpdatedListener;
@@ -68,8 +69,10 @@ public class CacheEventListenerAdaptor<K, V>
         this.source = source;
         this.serializationService = serializationService;
 
-        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration
-                .getCacheEntryListenerFactory().create();
+        final CacheEntryListener<? super K, ? super V> cacheEntryListener =
+                cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
+
+        this.cacheEntryListener = (CacheEntryListener<K, V>) cacheEntryListener;
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
             this.cacheEntryCreatedListener = (CacheEntryCreatedListener) cacheEntryListener;
         } else {
@@ -90,14 +93,19 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.cacheEntryExpiredListener = null;
         }
-        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory = cacheEntryListenerConfiguration
-                .getCacheEntryEventFilterFactory();
+        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
+                cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
         if (filterFactory != null) {
-            filter = filterFactory.create();
+            this.filter = filterFactory.create();
         } else {
-            filter = null;
+            this.filter = null;
         }
-        isOldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
+        this.isOldValueRequired = cacheEntryListenerConfiguration.isOldValueRequired();
+    }
+
+    @Override
+    public CacheEntryListener<K, V> getCacheEntryListener() {
+        return cacheEntryListener;
     }
 
     @Override
@@ -115,7 +123,8 @@ public class CacheEventListenerAdaptor<K, V>
     }
 
     private void handleEvent(CacheEventSet cacheEventSet) {
-        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(cacheEventSet);
+        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent =
+                createCacheEntryEvent(cacheEventSet);
 
         switch (cacheEventSet.getEventType()) {
             case CREATED:
@@ -155,7 +164,8 @@ public class CacheEventListenerAdaptor<K, V>
             } else {
                 oldValue = null;
             }
-            final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+            final CacheEntryEventImpl<K, V> event =
+                    new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
             if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }
