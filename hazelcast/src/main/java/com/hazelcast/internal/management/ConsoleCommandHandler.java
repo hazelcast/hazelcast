@@ -61,7 +61,7 @@ public class ConsoleCommandHandler {
     }
 
    /**
-    * Called by handleCommand. 
+    * Called by handleCommand.
     */
     String doHandleCommand(final String command) {
         app.handleCommand(command);
