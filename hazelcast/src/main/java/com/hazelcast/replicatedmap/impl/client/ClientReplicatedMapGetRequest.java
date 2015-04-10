@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
@@ -49,14 +49,14 @@ public class ClientReplicatedMapGetRequest
     public Object call()
             throws Exception {
 
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        ReplicatedRecord record = recordStore.getReplicatedRecord(key);
+        ReplicatedMapContainer replicatedMapContainer = getReplicatedMapContainer();
+        ReplicatedRecord record = replicatedMapContainer.getReplicatedRecord(key);
 
         Object value = null;
         long ttl = 0;
         long updateTime = 0;
         if (record != null) {
-            value = recordStore.unmarshallValue(record.getValue());
+            value = replicatedMapContainer.unmarshallValue(record.getValue());
             ttl = record.getTtlMillis();
             updateTime = record.getUpdateTime();
         }

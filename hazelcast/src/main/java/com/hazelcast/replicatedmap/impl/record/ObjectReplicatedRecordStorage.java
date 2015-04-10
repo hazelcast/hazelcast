@@ -21,13 +21,13 @@ import com.hazelcast.spi.NodeEngine;
 
 /**
  * This is a {@link com.hazelcast.config.InMemoryFormat#OBJECT} based
- * {@link ReplicatedRecordStore} implementation
+ * {@link ReplicatedMapContainer} implementation
  *
  * @param <K> key type
  * @param <V> value type
  */
 public class ObjectReplicatedRecordStorage<K, V>
-        extends AbstractReplicatedRecordStore<K, V> {
+        extends AbstractReplicatedMapContainer<K, V> {
 
     public ObjectReplicatedRecordStorage(String name, NodeEngine nodeEngine,
                                          ReplicatedMapService replicatedMapService) {

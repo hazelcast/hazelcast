@@ -21,16 +21,16 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.NodeEngine;
 
 /**
- * This is a {@link com.hazelcast.nio.serialization.Data} based {@link ReplicatedRecordStore}
+ * This is a {@link com.hazelcast.nio.serialization.Data} based {@link ReplicatedMapContainer}
  * implementation
  */
-public class DataReplicatedRecordStore
-        extends AbstractReplicatedRecordStore<Data, Data> {
+public class DataReplicatedMapContainer
+        extends AbstractReplicatedMapContainer<Data, Data> {
 
     private final NodeEngine nodeEngine;
 
-    public DataReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                     ReplicatedMapService replicatedMapService) {
+    public DataReplicatedMapContainer(String name, NodeEngine nodeEngine,
+                                      ReplicatedMapService replicatedMapService) {
         super(name, nodeEngine, replicatedMapService);
         this.nodeEngine = nodeEngine;
     }

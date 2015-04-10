@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedMapContainer;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -62,8 +62,8 @@ public class ReplicatedMapPostJoinOperation
         for (MemberMapPair replicatedMap : replicatedMaps) {
             String mapName = replicatedMap.getName();
             if (localMember.equals(replicatedMap.getMember())) {
-                AbstractReplicatedRecordStore recordStorage = (AbstractReplicatedRecordStore) replicatedMapService
-                        .getReplicatedRecordStore(mapName, false);
+                AbstractReplicatedMapContainer recordStorage = (AbstractReplicatedMapContainer) replicatedMapService
+                        .getReplicatedMapContainer(mapName, false);
 
                 if (recordStorage != null && recordStorage.isLoaded()) {
                     ReplicationPublisher replicationPublisher = recordStorage.getReplicationPublisher();

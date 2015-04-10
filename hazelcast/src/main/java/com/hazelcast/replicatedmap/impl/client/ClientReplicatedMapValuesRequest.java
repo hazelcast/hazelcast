@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
@@ -39,8 +39,8 @@ public class ClientReplicatedMapValuesRequest
     @Override
     public Object call()
             throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new ReplicatedMapValueCollection(recordStore.values());
+        ReplicatedMapContainer replicatedMapContainer = getReplicatedMapContainer();
+        return new ReplicatedMapValueCollection(replicatedMapContainer.values());
     }
 
     @Override

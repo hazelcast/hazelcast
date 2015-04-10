@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
@@ -48,10 +48,10 @@ public class ClientReplicatedMapPutAllRequest
     @Override
     public Object call()
             throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
+        ReplicatedMapContainer replicatedMapContainer = getReplicatedMapContainer();
         Set<Map.Entry> entries = entrySet.getEntrySet();
         for (Map.Entry entry : entries) {
-            recordStore.put(entry.getKey(), entry.getValue());
+            replicatedMapContainer.put(entry.getKey(), entry.getValue());
         }
         return null;
     }

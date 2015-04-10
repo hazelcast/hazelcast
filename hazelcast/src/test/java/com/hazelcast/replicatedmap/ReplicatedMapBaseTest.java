@@ -5,7 +5,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedMapContainer;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -22,7 +22,7 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
 
     static {
         try {
-            REPLICATED_RECORD_STORE = ReplicatedMapProxy.class.getDeclaredField("replicatedRecordStore");
+            REPLICATED_RECORD_STORE = ReplicatedMapProxy.class.getDeclaredField("replicatedMapContainer");
             REPLICATED_RECORD_STORE.setAccessible(true);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -68,13 +68,13 @@ public abstract class ReplicatedMapBaseTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     protected <K, V> ReplicatedRecord<K, V> getReplicatedRecord(ReplicatedMap<K, V> map, K key) throws Exception {
         ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
-        return ((AbstractReplicatedRecordStore<K, V>) REPLICATED_RECORD_STORE.get(proxy)).getReplicatedRecord(key);
+        return ((AbstractReplicatedMapContainer<K, V>) REPLICATED_RECORD_STORE.get(proxy)).getReplicatedRecord(key);
     }
 
     @SuppressWarnings("unchecked")
     protected <K, V> ReplicationPublisher<K, V> getReplicationPublisher(ReplicatedMap<K, V> map) throws Exception {
         ReplicatedMapProxy<K, V> proxy = (ReplicatedMapProxy<K, V>) map;
-        return ((AbstractReplicatedRecordStore<K, V>) REPLICATED_RECORD_STORE.get(proxy)).getReplicationPublisher();
+        return ((AbstractReplicatedMapContainer<K, V>) REPLICATED_RECORD_STORE.get(proxy)).getReplicationPublisher();
     }
 
     @SuppressWarnings("unchecked")

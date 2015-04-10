@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -41,18 +41,19 @@ public class ReplicatedMapEvictionProcessor
     }
 
     public void process(EntryTaskScheduler<Object, Object> scheduler, Collection<ScheduledEntry<Object, Object>> entries) {
-        final ReplicatedRecordStore replicatedRecordStore = replicatedMapService.getReplicatedRecordStore(mapName, false);
+        final ReplicatedMapContainer replicatedMapContainer = replicatedMapService.getReplicatedMapContainer(mapName, false);
 
-        if (replicatedRecordStore != null) {
-            for (ScheduledEntry<Object, Object> entry : entries) {
-                Object key = entry.getKey();
-                if (entry.getValue() == null) {
-                    replicatedRecordStore.removeTombstone(key);
-                } else {
-                    replicatedRecordStore.evict(key);
-                }
+        if (replicatedMapContainer == null) {
+            return;
+        }
+
+        for (ScheduledEntry<Object, Object> entry : entries) {
+            Object key = entry.getKey();
+            if (entry.getValue() == null) {
+                replicatedMapContainer.removeTombstone(key);
+            } else {
+                replicatedMapContainer.evict(key);
             }
         }
     }
-
 }

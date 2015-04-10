@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -49,9 +49,9 @@ public class ReplicatedMapClearOperation
             throws Exception {
 
         ReplicatedMapService service = getService();
-        ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(mapName, false);
-        if (recordStore != null) {
-            recordStore.clear(false, emptyReplicationQueue);
+        ReplicatedMapContainer replicatedMapContainer = service.getReplicatedMapContainer(mapName, false);
+        if (replicatedMapContainer != null) {
+            replicatedMapContainer.clear(false, emptyReplicationQueue);
         }
     }
 

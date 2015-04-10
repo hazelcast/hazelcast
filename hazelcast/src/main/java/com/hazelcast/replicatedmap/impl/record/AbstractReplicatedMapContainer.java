@@ -38,13 +38,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This is the base class for all {@link ReplicatedRecordStore} implementations
+ * This is the base class for all {@link ReplicatedMapContainer} implementations
  *
  * @param <K> key type
  * @param <V> value type
  */
-public abstract class AbstractReplicatedRecordStore<K, V>
-        extends AbstractBaseReplicatedRecordStore<K, V> {
+public abstract class AbstractReplicatedMapContainer<K, V>
+        extends AbstractBaseReplicatedMapContainer<K, V> {
     static final String CLEAR_REPLICATION_MAGIC_KEY = ReplicatedMapService.SERVICE_NAME + "$CLEAR$MESSAGE$";
 
     // entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
@@ -52,8 +52,8 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     // keep the tombstone alive. if there is no event in this period then the tombstone is removed.
     static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
 
-    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                         ReplicatedMapService replicatedMapService) {
+    public AbstractReplicatedMapContainer(String name, NodeEngine nodeEngine,
+                                          ReplicatedMapService replicatedMapService) {
 
         super(name, nodeEngine, replicatedMapService);
     }
