@@ -42,7 +42,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     // activity. It is very easy to detect when back pressure is disabled.
     public static final int MEMORY_STRESS_PAYLOAD_SIZE = 100000;
 
-    private static final int runningTimeMs = (int) TimeUnit.MINUTES.toMillis(30);
+    private static final int runningTimeMs = (int) TimeUnit.MINUTES.toMillis(5);
 
     private final Random random = new Random();
     private final AtomicLong completedCall = new AtomicLong();
