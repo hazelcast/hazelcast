@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedMapContainer;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
@@ -73,8 +73,8 @@ public class ReplicatedMapInitChunkOperation
             throws Exception {
         ReplicatedMapService replicatedMapService = getService();
 
-        AbstractReplicatedRecordStore recordStorage;
-        recordStorage = (AbstractReplicatedRecordStore) replicatedMapService.getReplicatedRecordStore(name, true);
+        AbstractReplicatedMapContainer recordStorage;
+        recordStorage = (AbstractReplicatedMapContainer) replicatedMapService.getReplicatedMapContainer(name, true);
 
         ReplicationPublisher replicationPublisher = recordStorage.getReplicationPublisher();
 

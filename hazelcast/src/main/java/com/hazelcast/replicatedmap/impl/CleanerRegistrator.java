@@ -16,16 +16,16 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 
 import java.util.concurrent.ScheduledFuture;
 
 /**
- * This interface is used to give {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore} implementations
+ * This interface is used to give {@link com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer} implementations
  * a chance to register themself to being cleaned up from expired entries
  */
 public interface CleanerRegistrator {
 
-    <V> ScheduledFuture<V> registerCleaner(ReplicatedRecordStore replicatedRecordStorage);
+    <V> ScheduledFuture<V> registerCleaner(ReplicatedMapContainer replicatedRecordStorage);
 
 }

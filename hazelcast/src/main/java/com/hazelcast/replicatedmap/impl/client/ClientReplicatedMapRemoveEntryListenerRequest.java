@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
@@ -39,17 +39,17 @@ public class ClientReplicatedMapRemoveEntryListenerRequest
 
     public Object call()
             throws Exception {
-        final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
-        return replicatedRecordStore.removeEntryListenerInternal(registrationId);
+        final ReplicatedMapContainer replicatedMapContainer = getReplicatedMapContainer();
+        return replicatedMapContainer.removeEntryListenerInternal(registrationId);
     }
 
     public int getClassId() {
         return ReplicatedMapPortableHook.REMOVE_LISTENER;
     }
 
-    protected ReplicatedRecordStore getReplicatedRecordStore() {
+    protected ReplicatedMapContainer getReplicatedMapContainer() {
         ReplicatedMapService replicatedMapService = getService();
-        return replicatedMapService.getReplicatedRecordStore(name, true);
+        return replicatedMapService.getReplicatedMapContainer(name, true);
     }
 
     @Override

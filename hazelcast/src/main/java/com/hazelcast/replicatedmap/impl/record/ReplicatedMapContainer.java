@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This interface describes a common record store for replicated maps and their actual records
  */
-public interface ReplicatedRecordStore {
+public interface ReplicatedMapContainer {
 
     String getName();
 

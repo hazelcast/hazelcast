@@ -36,7 +36,7 @@ import java.util.List;
 final class RemoteProvisionTask<K, V>
         implements Runnable {
 
-    private final AbstractBaseReplicatedRecordStore<K, V> replicatedRecordStore;
+    private final AbstractBaseReplicatedMapContainer<K, V> replicatedMapContainer;
     private final OperationService operationService;
     private final Address callerAddress;
     private final int chunkSize;
@@ -44,10 +44,10 @@ final class RemoteProvisionTask<K, V>
     private ReplicatedRecord[] recordCache;
     private int recordCachePos;
 
-    RemoteProvisionTask(AbstractBaseReplicatedRecordStore<K, V> replicatedRecordStore, NodeEngine nodeEngine,
+    RemoteProvisionTask(AbstractBaseReplicatedMapContainer<K, V> replicatedMapContainer, NodeEngine nodeEngine,
                         Address callerAddress, int chunkSize) {
 
-        this.replicatedRecordStore = replicatedRecordStore;
+        this.replicatedMapContainer = replicatedMapContainer;
         this.operationService = nodeEngine.getOperationService();
         this.callerAddress = callerAddress;
         this.chunkSize = chunkSize;
@@ -57,7 +57,7 @@ final class RemoteProvisionTask<K, V>
     public void run() {
         recordCache = new ReplicatedRecord[chunkSize];
         List<ReplicatedRecord<K, V>> replicatedRecords = new ArrayList<ReplicatedRecord<K, V>>(
-                replicatedRecordStore.storage.values());
+                replicatedMapContainer.storage.values());
 
         for (int i = 0; i < replicatedRecords.size(); i++) {
             ReplicatedRecord<K, V> replicatedRecord = replicatedRecords.get(i);
@@ -66,8 +66,8 @@ final class RemoteProvisionTask<K, V>
     }
 
     private void processReplicatedRecord(ReplicatedRecord<K, V> replicatedRecord, boolean finalRecord) {
-        Object marshalledKey = replicatedRecordStore.marshallKey(replicatedRecord.getKeyInternal());
-        synchronized (replicatedRecordStore.getMutex(marshalledKey)) {
+        Object marshalledKey = replicatedMapContainer.marshallKey(replicatedRecord.getKeyInternal());
+        synchronized (replicatedMapContainer.getMutex(marshalledKey)) {
             pushReplicatedRecord(replicatedRecord, finalRecord);
         }
     }
@@ -78,8 +78,8 @@ final class RemoteProvisionTask<K, V>
         }
 
         int hash = replicatedRecord.getLatestUpdateHash();
-        Object key = replicatedRecordStore.unmarshallKey(replicatedRecord.getKeyInternal());
-        Object value = replicatedRecordStore.unmarshallValue(replicatedRecord.getValueInternal());
+        Object key = replicatedMapContainer.unmarshallKey(replicatedRecord.getKeyInternal());
+        Object value = replicatedMapContainer.unmarshallValue(replicatedRecord.getValueInternal());
         VectorClockTimestamp vectorClockTimestamp = replicatedRecord.getVectorClockTimestamp();
         long originalTtlMillis = replicatedRecord.getTtlMillis();
         long remainingTtlMillis = getRemainingTtl(replicatedRecord);
@@ -104,8 +104,8 @@ final class RemoteProvisionTask<K, V>
 
     private void sendChunk(boolean finalChunk) {
         if (recordCachePos > 0) {
-            String name = replicatedRecordStore.getName();
-            Member localMember = replicatedRecordStore.localMember;
+            String name = replicatedMapContainer.getName();
+            Member localMember = replicatedMapContainer.localMember;
             Operation operation = new ReplicatedMapInitChunkOperation(name, localMember, recordCache, recordCachePos, finalChunk);
             operationService.send(operation, callerAddress);
 

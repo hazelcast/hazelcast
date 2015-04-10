@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 
 import java.io.IOException;
 
@@ -72,9 +72,9 @@ public abstract class AbstractReplicatedMapClientRequest
         return ReplicatedMapPortableHook.F_ID;
     }
 
-    protected ReplicatedRecordStore getReplicatedRecordStore() {
+    protected ReplicatedMapContainer getReplicatedMapContainer() {
         ReplicatedMapService replicatedMapService = getService();
-        return replicatedMapService.getReplicatedRecordStore(mapName, true);
+        return replicatedMapService.getReplicatedMapContainer(mapName, true);
     }
 
     @Override

@@ -47,13 +47,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
+ * Internal base class to encapsulate the internals from the interface methods of ReplicatedMapContainer
  *
  * @param <K> key type
  * @param <V> value type
  */
-abstract class AbstractBaseReplicatedRecordStore<K, V>
-        implements ReplicatedRecordStore, InitializingObject {
+abstract class AbstractBaseReplicatedMapContainer<K, V>
+        implements ReplicatedMapContainer, InitializingObject {
 
     protected final LocalReplicatedMapStatsImpl mapStats = new LocalReplicatedMapStatsImpl();
     protected final InternalReplicatedMapStorage<K, V> storage;
@@ -71,8 +71,8 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     private final Object[] mutexes;
     private final String name;
 
-    protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                                ReplicatedMapService replicatedMapService) {
+    protected AbstractBaseReplicatedMapContainer(String name, NodeEngine nodeEngine,
+                                                 ReplicatedMapService replicatedMapService) {
         this.name = name;
 
         this.nodeEngine = nodeEngine;
@@ -231,7 +231,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
             return false;
         }
 
-        AbstractBaseReplicatedRecordStore that = (AbstractBaseReplicatedRecordStore) o;
+        AbstractBaseReplicatedMapContainer that = (AbstractBaseReplicatedMapContainer) o;
 
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;

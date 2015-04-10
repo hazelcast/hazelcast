@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
@@ -60,13 +60,13 @@ public class ClientReplicatedMapAddEntryListenerRequest
     public Object call()
             throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
+        final ReplicatedMapContainer replicatedMapContainer = getReplicatedMapContainer();
         final EntryListener<Object, Object> listener = new ClientReplicatedMapEntryListener();
         String registrationId;
         if (predicate == null) {
-            registrationId = replicatedRecordStore.addEntryListener(listener, key);
+            registrationId = replicatedMapContainer.addEntryListener(listener, key);
         } else {
-            registrationId = replicatedRecordStore.addEntryListener(listener, predicate, key);
+            registrationId = replicatedMapContainer.addEntryListener(listener, predicate, key);
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
         return registrationId;

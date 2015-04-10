@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedMapContainer;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * The internal {@link com.hazelcast.core.ReplicatedMap} implementation proxying the requests to the underlying
- * {@code ReplicatedRecordStore}
+ * {@code ReplicatedMapContainer}
  *
  * @param <K> key type
  * @param <V> value type
@@ -43,16 +43,16 @@ public class ReplicatedMapProxy<K, V>
         extends AbstractDistributedObject
         implements ReplicatedMap<K, V>, InitializingObject {
 
-    private final AbstractReplicatedRecordStore<K, V> replicatedRecordStore;
+    private final AbstractReplicatedMapContainer<K, V> replicatedMapContainer;
 
-    ReplicatedMapProxy(NodeEngine nodeEngine, AbstractReplicatedRecordStore<K, V> replicatedRecordStore) {
-        super(nodeEngine, replicatedRecordStore.getReplicatedMapService());
-        this.replicatedRecordStore = replicatedRecordStore;
+    ReplicatedMapProxy(NodeEngine nodeEngine, AbstractReplicatedMapContainer<K, V> replicatedMapContainer) {
+        super(nodeEngine, replicatedMapContainer.getReplicatedMapService());
+        this.replicatedMapContainer = replicatedMapContainer;
     }
 
     @Override
     public String getName() {
-        return replicatedRecordStore.getName();
+        return replicatedMapContainer.getName();
     }
 
     @Override
@@ -67,42 +67,42 @@ public class ReplicatedMapProxy<K, V>
 
     @Override
     public int size() {
-        return replicatedRecordStore.size();
+        return replicatedMapContainer.size();
     }
 
     @Override
     public boolean isEmpty() {
-        return replicatedRecordStore.isEmpty();
+        return replicatedMapContainer.isEmpty();
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return replicatedRecordStore.containsKey(key);
+        return replicatedMapContainer.containsKey(key);
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return replicatedRecordStore.containsValue(value);
+        return replicatedMapContainer.containsValue(value);
     }
 
     @Override
     public V get(Object key) {
-        return (V) replicatedRecordStore.get(key);
+        return (V) replicatedMapContainer.get(key);
     }
 
     @Override
     public V put(K key, V value) {
-        return (V) replicatedRecordStore.put(key, value);
+        return (V) replicatedMapContainer.put(key, value);
     }
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeUnit) {
-        return (V) replicatedRecordStore.put(key, value, ttl, timeUnit);
+        return (V) replicatedMapContainer.put(key, value, ttl, timeUnit);
     }
 
     @Override
     public V remove(Object key) {
-        return (V) replicatedRecordStore.remove(key);
+        return (V) replicatedMapContainer.remove(key);
     }
 
     @Override
@@ -117,52 +117,52 @@ public class ReplicatedMapProxy<K, V>
 
     @Override
     public void clear() {
-        replicatedRecordStore.clear(true, true);
+        replicatedMapContainer.clear(true, true);
     }
 
     @Override
     public boolean removeEntryListener(String id) {
-        return replicatedRecordStore.removeEntryListenerInternal(id);
+        return replicatedMapContainer.removeEntryListenerInternal(id);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
-        return replicatedRecordStore.addEntryListener(listener, null);
+        return replicatedMapContainer.addEntryListener(listener, null);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key) {
-        return replicatedRecordStore.addEntryListener(listener, key);
+        return replicatedMapContainer.addEntryListener(listener, key);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        return replicatedRecordStore.addEntryListener(listener, predicate, null);
+        return replicatedMapContainer.addEntryListener(listener, predicate, null);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
-        return replicatedRecordStore.addEntryListener(listener, predicate, key);
+        return replicatedMapContainer.addEntryListener(listener, predicate, key);
     }
 
     @Override
     public Set<K> keySet() {
-        return replicatedRecordStore.keySet();
+        return replicatedMapContainer.keySet();
     }
 
     @Override
     public Collection<V> values() {
-        return replicatedRecordStore.values();
+        return replicatedMapContainer.values();
     }
 
     @Override
     public Collection<V> values(Comparator<V> comparator) {
-        return replicatedRecordStore.values(comparator);
+        return replicatedMapContainer.values(comparator);
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return replicatedRecordStore.entrySet();
+        return replicatedMapContainer.entrySet();
     }
 
     public boolean storageEquals(Object o) {
@@ -178,7 +178,7 @@ public class ReplicatedMapProxy<K, V>
 
         ReplicatedMapProxy that = (ReplicatedMapProxy) o;
 
-        if (!replicatedRecordStore.equals(that.replicatedRecordStore)) {
+        if (!replicatedMapContainer.equals(that.replicatedMapContainer)) {
             return false;
         }
 
@@ -188,26 +188,26 @@ public class ReplicatedMapProxy<K, V>
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + replicatedRecordStore.hashCode();
+        result = 31 * result + replicatedMapContainer.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " -> " + replicatedRecordStore.getName();
+        return getClass().getSimpleName() + " -> " + replicatedMapContainer.getName();
     }
 
     @Override
     public void initialize() {
-        replicatedRecordStore.initialize();
+        replicatedMapContainer.initialize();
     }
 
     public LocalReplicatedMapStats getReplicatedMapStats() {
-        return replicatedRecordStore.createReplicatedMapStats();
+        return replicatedMapContainer.createReplicatedMapStats();
     }
 
     public void setPreReplicationHook(PreReplicationHook preReplicationHook) {
-        ReplicationPublisher<K, V> replicationPublisher = replicatedRecordStore.getReplicationPublisher();
+        ReplicationPublisher<K, V> replicationPublisher = replicatedMapContainer.getReplicationPublisher();
         replicationPublisher.setPreReplicationHook(preReplicationHook);
     }
 

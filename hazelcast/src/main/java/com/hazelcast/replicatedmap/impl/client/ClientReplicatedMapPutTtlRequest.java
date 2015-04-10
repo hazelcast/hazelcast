@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapContainer;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
@@ -53,8 +53,8 @@ public class ClientReplicatedMapPutTtlRequest
     @Override
     public Object call()
             throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
+        ReplicatedMapContainer replicatedMapContainer = getReplicatedMapContainer();
+        return replicatedMapContainer.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
