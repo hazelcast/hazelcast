@@ -293,7 +293,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>2.6</version>
+                        <version>2.0</version>
                         <configuration>
                             <instrumentation>
                                 <ignores>
@@ -334,7 +334,7 @@
 
 
                             <includes>
-                                <include>**/YourTestFileHear.java</include>
+                                <include>**/**Quorum**.java</include>
                             </includes>
 
                         </configuration>
@@ -347,7 +347,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>cobertura-maven-plugin</artifactId>
-                        <version>2.6</version>
+                        <version>2.0</version>
                     </plugin>
                 </plugins>
             </reporting>
