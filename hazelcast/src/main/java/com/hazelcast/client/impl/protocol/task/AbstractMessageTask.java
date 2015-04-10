@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -42,7 +41,7 @@ import java.util.logging.Level;
  * Base Message task
  */
 public abstract class AbstractMessageTask<P>
-        implements PartitionSpecificRunnable, SecureRequest {
+        implements MessageTask, SecureRequest {
 
     protected final P parameters;
     protected final ClientMessage clientMessage;

@@ -25,8 +25,9 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
-import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -162,7 +163,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         //TODO: FIXME
         int partitionId = clientMessage.getPartitionId();
-        final PartitionSpecificRunnable messageTask = messageTaskFactory.createMessageTask(clientMessage, connection);
+        final MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         if (partitionId < 0) {
             executor.execute(messageTask);
         } else {

@@ -22,17 +22,17 @@ import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
 import com.hazelcast.client.impl.protocol.task.MapAddEntryListenerTask;
 import com.hazelcast.client.impl.protocol.task.MapPutMessageTask;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
 import com.hazelcast.client.impl.protocol.task.RegisterMembershipListenerMessageTask;
 import com.hazelcast.client.impl.protocol.util.Int2ObjectHashMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 /**
  * Message task factory
  */
-public class MessageTaskFactoryImpl {
+public class MessageTaskFactoryImpl implements MessageTaskFactory {
 
     private final Int2ObjectHashMap<MessageTaskFactory> tasks = new Int2ObjectHashMap<MessageTaskFactory>();
 
@@ -45,37 +45,37 @@ public class MessageTaskFactoryImpl {
 
     public void initFactories() {
         tasks.put(ClientMessageType.AUTHENTICATION_DEFAULT_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AuthenticationMessageTask(clientMessage, node, connection);
             }
         });
         tasks.put(ClientMessageType.AUTHENTICATION_CUSTOM_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new AuthenticationCustomCredentialsMessageTask(clientMessage, node, connection);
             }
         });
         tasks.put(ClientMessageType.MAP_PUT_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new MapPutMessageTask(clientMessage, node, connection);
             }
         });
         tasks.put(ClientMessageType.ADD_ENTRY_LISTENER_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new MapAddEntryListenerTask(clientMessage, node, connection);
             }
         });
         tasks.put(ClientMessageType.REGISTER_MEMBERSHIP_LISTENER_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new RegisterMembershipListenerMessageTask(clientMessage, node, connection);
             }
         });
         tasks.put(ClientMessageType.CREATE_PROXY_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new CreateProxyMessageTask(clientMessage, node, connection);
             }
         });
         tasks.put(ClientMessageType.GET_PARTITIONS_REQUEST.id(), new MessageTaskFactory() {
-            public PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection) {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new GetPartitionsMessageTask(clientMessage, node, connection);
             }
         });
@@ -83,10 +83,11 @@ public class MessageTaskFactoryImpl {
         //TODO more factories to come here
     }
 
-    public PartitionSpecificRunnable createMessageTask(ClientMessage clientMessage, Connection connection) {
+    @Override
+    public MessageTask create(ClientMessage clientMessage, Connection connection) {
         final MessageTaskFactory factory = tasks.get(clientMessage.getMessageType());
         if (factory != null) {
-            return factory.create(clientMessage, node, connection);
+            return factory.create(clientMessage, connection);
         }
         return new NoSuchMessageTask(clientMessage, node, connection);
     }

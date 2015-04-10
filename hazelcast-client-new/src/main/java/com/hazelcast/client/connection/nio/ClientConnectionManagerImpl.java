@@ -324,7 +324,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 if (now - connection.lastReadTime() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
                     ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-                    clientInvocation.setBypassHeartbeat(true);
+                    clientInvocation.setBypassHeartbeatCheck(true);
                     clientInvocation.invoke();
                 } else {
                     if (!connection.isHeartBeating()) {

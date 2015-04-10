@@ -42,9 +42,7 @@ class SocketClientDataReaderNew
 
     public void read(ByteBuffer inBuffer)
             throws Exception {
-        while (inBuffer.hasRemaining()) {
-            builder.onData(inBuffer);
-        }
+        builder.onData(inBuffer);
     }
 
     public boolean setConnectionType(ByteBuffer inBuffer) {

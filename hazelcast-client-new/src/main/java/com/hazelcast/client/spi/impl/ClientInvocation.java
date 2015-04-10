@@ -45,7 +45,7 @@ public class ClientInvocation implements Runnable {
     private final int partitionId;
     private final Connection connection;
     private volatile ClientConnection sendConnection;
-    private boolean bypassHeartbeat;
+    private boolean bypassHeartbeatCheck;
 
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -248,12 +248,12 @@ public class ClientInvocation implements Runnable {
         return heartBeatInterval;
     }
 
-    public boolean isBypassHeartbeat() {
-        return bypassHeartbeat;
+    public boolean shouldBypassHeartbeatCheck() {
+        return bypassHeartbeatCheck;
     }
 
-    public void setBypassHeartbeat(boolean bypassHeartbeat) {
-        this.bypassHeartbeat = bypassHeartbeat;
+    public void setBypassHeartbeatCheck(boolean bypassHeartbeatCheck) {
+        this.bypassHeartbeatCheck = bypassHeartbeatCheck;
     }
 
     public void setSendConnection(ClientConnection connection) {

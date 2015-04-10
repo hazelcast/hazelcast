@@ -1,14 +1,13 @@
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 
 /**
  * Message task factory interface
  */
 public interface MessageTaskFactory {
 
-    PartitionSpecificRunnable create(ClientMessage clientMessage, Node node, Connection connection);
+    MessageTask create(ClientMessage clientMessage, Connection connection);
 
 }

@@ -93,7 +93,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     private boolean isAllowedToSendRequest(ClientConnection connection, ClientInvocation invocation) {
         if (!connection.isHeartBeating()) {
-            if (invocation.isBypassHeartbeat()) {
+            if (invocation.shouldBypassHeartbeatCheck()) {
                 //ping and removeAllListeners should be send even though heart is not beating
                 return true;
             }
@@ -175,7 +175,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     public void heartBeatStopped(Connection connection) {
         final RemoveAllListeners request = new RemoveAllListeners();
         ClientInvocation removeListenerInvocation = new ClientInvocation(client, request, connection);
-        removeListenerInvocation.setBypassHeartbeat(true);
+        removeListenerInvocation.setBypassHeartbeatCheck(true);
         removeListenerInvocation.invoke();
 
         final Address remoteEndpoint = connection.getEndPoint();
