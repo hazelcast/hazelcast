@@ -17,10 +17,10 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
@@ -136,7 +136,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         return new ClientCacheProxy<K, V>(cacheConfig, clientContext, this);
     }
 
