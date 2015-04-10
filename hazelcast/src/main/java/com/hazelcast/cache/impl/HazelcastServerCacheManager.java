@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
@@ -174,7 +173,7 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> ICache<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
+    protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         return new CacheProxy<K, V>(cacheConfig, nodeEngine, cacheService, this);
     }
 

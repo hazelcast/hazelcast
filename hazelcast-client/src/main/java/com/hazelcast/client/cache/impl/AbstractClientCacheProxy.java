@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
@@ -55,7 +55,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  */
 abstract class AbstractClientCacheProxy<K, V>
         extends AbstractClientInternalCacheProxy<K, V>
-        implements ICache<K, V> {
+        implements ICacheInternal<K, V> {
 
     protected AbstractClientCacheProxy(CacheConfig cacheConfig, ClientContext clientContext) {
         super(cacheConfig, clientContext);
