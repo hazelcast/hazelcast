@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongContainer;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,8 +39,8 @@ public class ApplyOperation<R> extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        LongContainer longContainer = getLongContainer();
-        returnValue = function.apply(longContainer.get());
+        AtomicLongContainer atomicLongContainer = getLongContainer();
+        returnValue = function.apply(atomicLongContainer.get());
     }
 
     @Override

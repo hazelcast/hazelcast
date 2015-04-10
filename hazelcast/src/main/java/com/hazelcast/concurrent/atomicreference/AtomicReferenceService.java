@@ -47,18 +47,19 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
 
     private NodeEngine nodeEngine;
-    private final ConcurrentMap<String, ReferenceContainer> containers = new ConcurrentHashMap<String, ReferenceContainer>();
-    private final ConstructorFunction<String, ReferenceContainer> atomicReferenceConstructorFunction =
-            new ConstructorFunction<String, ReferenceContainer>() {
-                public ReferenceContainer createNew(String key) {
-                    return new ReferenceContainer();
+    private final ConcurrentMap<String, AtomicReferenceContainer> containers
+            = new ConcurrentHashMap<String, AtomicReferenceContainer>();
+    private final ConstructorFunction<String, AtomicReferenceContainer> atomicReferenceConstructorFunction =
+            new ConstructorFunction<String, AtomicReferenceContainer>() {
+                public AtomicReferenceContainer createNew(String key) {
+                    return new AtomicReferenceContainer();
                 }
             };
 
     public AtomicReferenceService() {
     }
 
-    public ReferenceContainer getReferenceContainer(String name) {
+    public AtomicReferenceContainer getReferenceContainer(String name) {
         return getOrPutIfAbsent(containers, name, atomicReferenceConstructorFunction);
     }
 
@@ -106,8 +107,8 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         int partitionId = event.getPartitionId();
         for (String name : containers.keySet()) {
             if (partitionId == getPartitionId(name)) {
-                ReferenceContainer referenceContainer = containers.get(name);
-                Data value = referenceContainer.get();
+                AtomicReferenceContainer atomicReferenceContainer = containers.get(name);
+                Data value = atomicReferenceContainer.get();
                 data.put(name, value);
             }
         }

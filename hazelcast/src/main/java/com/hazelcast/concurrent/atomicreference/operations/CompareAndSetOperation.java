@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.ReferenceContainer;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -42,8 +42,8 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
 
     @Override
     public void run() throws Exception {
-        ReferenceContainer referenceContainer = getReferenceContainer();
-        returnValue = referenceContainer.compareAndSet(expect, update);
+        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
+        returnValue = atomicReferenceContainer.compareAndSet(expect, update);
         shouldBackup = !returnValue;
     }
 

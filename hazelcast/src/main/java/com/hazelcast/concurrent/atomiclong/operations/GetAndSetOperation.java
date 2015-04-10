@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongContainer;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -39,8 +39,8 @@ public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        LongContainer longContainer = getLongContainer();
-        returnValue = longContainer.getAndSet(newValue);
+        AtomicLongContainer atomicLongContainer = getLongContainer();
+        returnValue = atomicLongContainer.getAndSet(newValue);
     }
 
     @Override
