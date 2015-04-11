@@ -399,6 +399,7 @@ public abstract class AbstractCacheService implements ICacheService {
     // This method will be called at cache creation from each partition while creating cache record store.
     // A better synchronization may be implemented but
     // since these are not called so much periodically, but it is not needed at this time.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     public void addCacheResource(String name, Closeable resource) {
         Set<Closeable> cacheResources = resources.get(name);
         if (cacheResources == null) {
