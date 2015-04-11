@@ -1,6 +1,9 @@
-package com.hazelcast.client.impl.protocol;
+package com.hazelcast.client.impl.protocol.parameters;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 /**
  * AuthenticationParameters
@@ -11,7 +14,7 @@ public class AuthenticationCustomCredentialsParameters {
     /**
      * ClientMessageType of this message
      */
-    public static final ClientMessageType TYPE = ClientMessageType.AUTHENTICATION_CUSTOM;
+    public static final ClientMessageType TYPE = ClientMessageType.AUTHENTICATION_CUSTOM_REQUEST;
     public byte[] credentials;
     public String uuid;
     public String ownerUuid;
@@ -42,25 +45,26 @@ public class AuthenticationCustomCredentialsParameters {
      * @return encoded ClientMessage
      */
     public static ClientMessage encode(byte[] credentials, String uuid, String ownerUuid,
-                                                                   boolean isOwnerConnection) {
+                                       boolean isOwnerConnection) {
         final int requiredDataSize = calculateDataSize(credentials, uuid, ownerUuid, isOwnerConnection);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(credentials).set(uuid).set(ownerUuid).set(isOwnerConnection);
-        clientMessage.updateFrameLenght();
+        clientMessage.updateFrameLength();
         return clientMessage;
     }
 
     /**
      * sample data size estimation
+     *
      * @return size
      */
     public static int calculateDataSize(byte[] credentials, String uuid, String ownerUuid, boolean isOwnerConnection) {
         return ClientMessage.HEADER_SIZE//
-                + (BitUtil.SIZE_OF_INT + credentials.length)//
-                + (BitUtil.SIZE_OF_INT + uuid.length() * 3)//
-                + (BitUtil.SIZE_OF_INT + ownerUuid.length() * 3)//
+                + ParameterUtil.calculateByteArrayDataSize(credentials)
+                + ParameterUtil.calculateStringDataSize(uuid)
+                + ParameterUtil.calculateStringDataSize(ownerUuid)
                 + BitUtil.SIZE_OF_BYTE;
     }
 

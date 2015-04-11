@@ -1,10 +1,9 @@
-package com.hazelcast.client.impl.protocol.map;
+package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
-
-import java.nio.ByteBuffer;
+import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 /**
  * Sample Put parameter
@@ -15,7 +14,7 @@ public class MapPutParameters /*extends ClientMessage*/ {
     /**
      * ClientMessageType of this message
      */
-    public static final MapMessageType TYPE = MapMessageType.MAP_PUT;
+    public static final ClientMessageType TYPE = ClientMessageType.MAP_PUT_REQUEST;
     public byte[] key;
     public byte[] value;
     public String name;
@@ -43,7 +42,7 @@ public class MapPutParameters /*extends ClientMessage*/ {
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(name).set(key).set(value).set(ttl).set(threadId).set(async);
-        clientMessage.updateFrameLenght();
+        clientMessage.updateFrameLength();
         return clientMessage;
     }
 
@@ -53,9 +52,9 @@ public class MapPutParameters /*extends ClientMessage*/ {
      */
     public static int calculateDataSize(String name, byte[] key, byte[] value, long threadId, long ttl, boolean async) {
         return ClientMessage.HEADER_SIZE//
-                + (BitUtil.SIZE_OF_INT + name.length() * 3)//
-                + (BitUtil.SIZE_OF_INT + key.length)//
-                + (BitUtil.SIZE_OF_INT + value.length)//
+                + ParameterUtil.calculateStringDataSize(name)
+                + ParameterUtil.calculateByteArrayDataSize(key)
+                + ParameterUtil.calculateByteArrayDataSize(value)
                 + BitUtil.SIZE_OF_LONG//
                 + BitUtil.SIZE_OF_LONG//
                 + BitUtil.SIZE_OF_BYTE;

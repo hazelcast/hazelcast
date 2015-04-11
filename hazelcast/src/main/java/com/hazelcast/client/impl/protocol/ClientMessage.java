@@ -78,6 +78,11 @@ public class ClientMessage
     public static final short BEGIN_AND_END_FLAGS = (short) (BEGIN_FLAG | END_FLAG);
 
     /**
+     * Listener Event Flag
+     */
+    public static final short LISTENER_EVENT_FLAG = 0x01;
+
+    /**
      * ClientMessage Fixed Header size in bytes
      */
     public static final int HEADER_SIZE;
@@ -165,6 +170,15 @@ public class ClientMessage
         return this;
     }
 
+
+    /**
+     * @return true if given flag is set, false otherwise
+     */
+    public boolean isFlagSet(short flag) {
+        int i = getFlags() & flag;
+        return i == flag;
+    }
+
     /**
      * Returns the flags field value.
      *
@@ -181,7 +195,7 @@ public class ClientMessage
      * @return ClientMessage
      */
     public ClientMessage setFlags(final short flags) {
-        uint8Put(offset() + FLAGS_FIELD_OFFSET, flags);
+        uint8Put(offset() + FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
         return this;
     }
 
@@ -314,7 +328,7 @@ public class ClientMessage
         return this;
     }
 
-    public ClientMessage updateFrameLenght() {
+    public ClientMessage updateFrameLength() {
         setFrameLength(index());
         return this;
     }
@@ -322,7 +336,7 @@ public class ClientMessage
     @Override
     public boolean writeTo(ByteBuffer destination) {
         byte[] byteArray = buffer().byteArray();
-        int size = byteArray.length;
+        int size = getFrameLength();
 
         // the number of bytes that can be written to the bb.
         int bytesWritable = destination.remaining();
@@ -384,7 +398,7 @@ public class ClientMessage
      * @return true if the message is constructed.
      */
     public boolean isComplete() {
-        return (index() > HEADER_SIZE) && (index() == getFrameLength());
+        return (index() >= HEADER_SIZE) && (index() == getFrameLength());
     }
 
     @Override

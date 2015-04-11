@@ -202,10 +202,12 @@
     <!--Parameters class are gonna be auto generated-->
     <suppress checks="" files="com.hazelcast.client.impl.protocol.map.*Parameters"/>
     <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.ClientMessage"/>
+    <suppress checks="JavadocType" files="com.hazelcast.client.impl.protocol.ClientMessageType"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.client.impl.protocol.ClientMessageType"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client.impl[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
 
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
 

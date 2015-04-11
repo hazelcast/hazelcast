@@ -1,7 +1,8 @@
-package com.hazelcast.client.impl.protocol;
+package com.hazelcast.client.impl.protocol.parameters;
 
-import com.hazelcast.client.impl.protocol.map.MapMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 /**
  * Sample Put parameter
@@ -29,17 +30,18 @@ public class GenericResultParameters {
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(result);
-        clientMessage.updateFrameLenght();
+        clientMessage.updateFrameLength();
         return clientMessage;
     }
 
     /**
      * sample data size estimation
+     *
      * @return size
      */
     public static int calculateDataSize(byte[] result) {
-        return ClientMessage.HEADER_SIZE//
-                + (BitUtil.SIZE_OF_INT + result.length);
+        return ClientMessage.HEADER_SIZE
+                + ParameterUtil.calculateByteArrayDataSize(result);
     }
 
 

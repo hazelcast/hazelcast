@@ -37,14 +37,15 @@ public class ClientInvocation implements Runnable {
     private final ClientMessage clientMessage;
     private final EventHandler handler;
     private final long retryCountLimit;
-
     private final ClientInvocationFuture clientInvocationFuture;
+
     private final int heartBeatInterval;
     private final AtomicInteger reSendCount = new AtomicInteger();
     private final Address address;
     private final int partitionId;
     private final Connection connection;
     private volatile ClientConnection sendConnection;
+    private boolean bypassHeartbeatCheck;
 
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -133,7 +134,7 @@ public class ClientInvocation implements Runnable {
         try {
             invokeOnSelection();
         } catch (Exception e) {
-            notify(e);
+            notifyException(e);
         }
         return clientInvocationFuture;
 
@@ -165,25 +166,21 @@ public class ClientInvocation implements Runnable {
     }
 
 
-    public void notify(Object response) {
-        if (response == null) {
+    public void notify(ClientMessage clientMessage) {
+        if (clientMessage == null) {
             throw new IllegalArgumentException("response can't be null");
         }
-        if (!(response instanceof Exception)) {
-            clientInvocationFuture.setResponse(response);
-            return;
-        }
+        clientInvocationFuture.setResponse(clientMessage);
 
-        Exception exception = (Exception) response;
+    }
+
+    public void notifyException(Throwable exception) {
+
         if (!lifecycleService.isRunning()) {
             clientInvocationFuture.setResponse(new HazelcastClientNotActiveException(exception.getMessage()));
             return;
         }
-        notifyException(exception);
 
-    }
-
-    private void notifyException(Exception exception) {
         if (exception instanceof IOException || exception instanceof HazelcastInstanceNotActiveException) {
             if (handleRetry()) {
                 return;
@@ -249,6 +246,14 @@ public class ClientInvocation implements Runnable {
 
     public int getHeartBeatInterval() {
         return heartBeatInterval;
+    }
+
+    public boolean shouldBypassHeartbeatCheck() {
+        return bypassHeartbeatCheck;
+    }
+
+    public void setBypassHeartbeatCheck(boolean bypassHeartbeatCheck) {
+        this.bypassHeartbeatCheck = bypassHeartbeatCheck;
     }
 
     public void setSendConnection(ClientConnection connection) {

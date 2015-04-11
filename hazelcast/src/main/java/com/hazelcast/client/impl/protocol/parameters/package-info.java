@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.hazelcast.client.protocol.impl;
-
-public class MessageFactory {
-}
+/**
+ * <p>Client protocol parameter implementations for client requests and responses</p>
+ */
+package com.hazelcast.client.impl.protocol.parameters;

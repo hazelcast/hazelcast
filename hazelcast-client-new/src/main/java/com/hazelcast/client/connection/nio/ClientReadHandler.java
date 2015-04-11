@@ -16,7 +16,9 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.Packet;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
 
@@ -28,15 +30,15 @@ import java.nio.channels.SelectionKey;
 public class ClientReadHandler extends AbstractClientSelectionHandler {
 
     private final ByteBuffer buffer;
+    private final ClientMessageBuilder builder;
 
     private volatile long lastHandle;
-
-    private Packet packet;
 
     public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
         super(connection, ioSelector);
         buffer = ByteBuffer.allocate(bufferSize);
         lastHandle = Clock.currentTimeMillis();
+        builder = new ClientMessageBuilder(connection, new Delegator());
     }
 
     @Override
@@ -69,7 +71,7 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
             }
             buffer.flip();
 
-            readPacket();
+            builder.onData(buffer);
 
             if (buffer.hasRemaining()) {
                 buffer.compact();
@@ -82,24 +84,15 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
 
     }
 
-    private void readPacket() {
-        while (buffer.hasRemaining()) {
-            if (packet == null) {
-                packet = new Packet();
-            }
-            boolean complete = packet.readFrom(buffer);
-            if (complete) {
-                packet.setConn(connection);
-                connectionManager.handlePacket(packet);
-                packet = null;
-            } else {
-                break;
-            }
-        }
-    }
-
     long getLastHandle() {
         return lastHandle;
     }
 
+
+    private class Delegator implements ClientMessageBuilder.MessageDelegator {
+        @Override
+        public void delegate(ClientMessage message, Connection connection) {
+            connectionManager.handleClientMessage(message, connection);
+        }
+    }
 }

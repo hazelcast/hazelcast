@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
- * <p>Implementation classes of the com.hazelcast.client.protocol.impl.MessageFactory interface</p>
- *
- * These message factories will be directly used by client proxies to generate related client message of the
- * client operation.
+ * Client tasks associated with requests. These tasks are the actual processes that run on server side depending
+ * on the request coming from clients.
  */
-package com.hazelcast.client.protocol.impl;
+package com.hazelcast.client.impl.protocol.task;

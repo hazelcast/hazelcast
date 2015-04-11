@@ -1,17 +1,13 @@
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
@@ -48,24 +44,24 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 client.getThreadGroup(), eventThreadCount, eventQueueCapacity);
     }
 
-    public StripedExecutor getEventExecutor() {
-        return eventExecutor;
-    }
-
     @Override
-    public String startListening(ClientRequest request, Object key, EventHandler handler) {
-        final Future future;
+    public String startListening(ClientMessage clientMessage, Object key, EventHandler handler) {
+        final ClientInvocationFuture future;
         try {
             handler.beforeListenerRegister();
 
             if (key == null) {
-                future = new ClientInvocation(client, handler, request).invoke();
+                future = new ClientInvocation(client, handler, clientMessage).invoke();
             } else {
                 final int partitionId = client.getClientPartitionService().getPartitionId(key);
-                future = new ClientInvocation(client, handler, request, partitionId).invoke();
+                future = new ClientInvocation(client, handler, clientMessage, partitionId).invoke();
             }
-            String registrationId = serializationService.toObject(future.get());
-            registerListener(registrationId, request.getCallId());
+            ClientMessage responseMessage = (ClientMessage) future.get();
+            AddListenerResultParameters eventResultParameters = AddListenerResultParameters.decode(responseMessage);
+
+            String registrationId = eventResultParameters.registrationId;
+
+            registerListener(registrationId, clientMessage.getCorrelationId());
             return registrationId;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -73,14 +69,13 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     }
 
     @Override
-    public boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId) {
+    public boolean stopListening(ClientMessage clientMessage, String registrationId) {
         try {
             String realRegistrationId = deRegisterListener(registrationId);
             if (realRegistrationId == null) {
                 return false;
             }
-            request.setRegistrationId(realRegistrationId);
-            final Future<Boolean> future = new ClientInvocation(client, request).invoke();
+            final Future<Boolean> future = new ClientInvocation(client, clientMessage).invoke();
             return (Boolean) serializationService.toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -96,7 +91,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         while (iterator.hasNext()) {
             final ClientInvocation failedListener = iterator.next();
             iterator.remove();
-            failedListener.notify(new TargetDisconnectedException());
+            failedListener.notifyException(new TargetDisconnectedException());
         }
     }
 
@@ -122,11 +117,11 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         return uuid;
     }
 
-    public void handleEventPacket(Packet packet) {
+    public void handleClientMessage(ClientMessage clientMessage) {
         try {
-            eventExecutor.execute(new ClientEventProcessor(packet));
+            eventExecutor.execute(new ClientEventProcessor(clientMessage));
         } catch (RejectedExecutionException e) {
-            logger.log(Level.WARNING, " event packet could not be handled ", e);
+            logger.log(Level.WARNING, " event clientMessage could not be handled ", e);
         }
     }
 
@@ -135,34 +130,27 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     }
 
     private final class ClientEventProcessor implements StripedRunnable {
-        final Packet packet;
+        final ClientMessage clientMessage;
 
-        private ClientEventProcessor(Packet packet) {
-            this.packet = packet;
+        private ClientEventProcessor(ClientMessage clientMessage) {
+            this.clientMessage = clientMessage;
         }
 
         @Override
         public void run() {
-            final ClientConnection conn = (ClientConnection) packet.getConn();
-            final ClientResponse clientResponse = serializationService.toObject(packet.getData());
-            final int callId = clientResponse.getCallId();
-            final Data response = clientResponse.getResponse();
-            handleEvent(response, callId, conn);
-        }
-
-        private void handleEvent(Data event, int callId, ClientConnection conn) {
-            final Object eventObject = serializationService.toObject(event);
-            final EventHandler eventHandler = invocationService.getEventHandler(callId);
+            int correlationId = clientMessage.getCorrelationId();
+            final EventHandler eventHandler = invocationService.getEventHandler(correlationId);
             if (eventHandler == null) {
-                logger.warning("No eventHandler for callId: " + callId + ", event: " + eventObject + ", conn: " + conn);
+                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
                 return;
             }
-            eventHandler.handle(eventObject);
+
+            eventHandler.handle(clientMessage);
         }
 
         @Override
         public int getKey() {
-            return packet.getPartitionId();
+            return clientMessage.getPartitionId();
         }
     }
 }

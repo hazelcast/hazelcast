@@ -24,8 +24,11 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationCustomCredentialsParameters;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
+import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.MemberImpl;
@@ -37,7 +40,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -46,7 +49,6 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -108,24 +110,37 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
             final SerializationService ss = client.getSerializationService();
-            AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
+            String uuid = "";
+            String ownerUuid = "";
+            if (principal != null) {
+                uuid = principal.getUuid();
+                ownerUuid = principal.getOwnerUuid();
+            }
+
+            ClientMessage clientMessage;
+            if (credentials instanceof UsernamePasswordCredentials) {
+                UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
+                clientMessage = AuthenticationParameters.encode(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, true);
+            } else {
+                Data data = ss.toData(credentials);
+                clientMessage = AuthenticationCustomCredentialsParameters.encode(data.toByteArray(), uuid, ownerUuid, true);
+
+            }
             connection.init();
-            auth.setOwnerConnection(true);
-            //contains remoteAddress and principal
-            SerializableCollection collectionWrapper;
-            final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
+
+            ClientMessage response;
+            final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
+            final Future<ClientMessage> future = clientInvocation.invoke();
             try {
-                collectionWrapper = ss.toObject(future.get());
+                response = ss.toObject(future.get());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }
-            final Iterator<Data> iter = collectionWrapper.iterator();
-            final Data addressData = iter.next();
-            final Address address = ss.toObject(addressData);
-            connection.setRemoteEndpoint(address);
-            final Data principalData = iter.next();
-            principal = ss.toObject(principalData);
+            AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(response);
+
+            connection.setRemoteEndpoint(resultParameters.address);
+
+            principal = new ClientPrincipal(resultParameters.uuid, resultParameters.ownerUuid);
         }
     }
 

@@ -22,19 +22,14 @@ package com.hazelcast.client.impl.protocol;
 public enum ClientMessageType {
 
     /**
-     * Heart beat
-     */
-    HEART_BEAT(0),
-
-    /**
      * Default Authentication with user-name and password
      */
-    AUTHENTICATION_DEFAULT(1),
+    AUTHENTICATION_DEFAULT_REQUEST(1),
 
     /**
      * Custom Authentication with custom credentials impl
      */
-    AUTHENTICATION_CUSTOM(2),
+    AUTHENTICATION_CUSTOM_REQUEST(2),
 
     /**
      * Exception
@@ -44,7 +39,32 @@ public enum ClientMessageType {
     /**
      * Result wrapper message type
      */
-    RESULT(4);
+    RESULT(4),
+
+
+    /**
+     * Event registration id
+     */
+    ADD_LISTENER_RESULT(5),
+
+
+    ADD_ENTRY_LISTENER_EVENT(6),
+
+    ADD_ENTRY_LISTENER_REQUEST(7),
+
+    REGISTER_MEMBERSHIP_LISTENER_REQUEST(8),
+
+    REGISTER_MEMBERSHIP_LISTENER_EVENT(9),
+
+    MAP_PUT_REQUEST(10),
+
+    CREATE_PROXY_REQUEST(11),
+
+    GET_PARTITIONS_REQUEST(12),
+
+    GET_PARTITIONS_RESULT(13),
+
+    AUTHENTICATION_RESULT(14);
 
     private final int id;
 

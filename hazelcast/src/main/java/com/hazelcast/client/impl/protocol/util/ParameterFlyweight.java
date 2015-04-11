@@ -55,6 +55,12 @@ public class ParameterFlyweight
         return this;
     }
 
+    public ParameterFlyweight set(byte value) {
+        buffer.putByte(index, value);
+        index += SIZE_OF_BYTE;
+        return this;
+    }
+
     public ParameterFlyweight set(short value) {
         buffer.putShort(index, value, LITTLE_ENDIAN);
         index += SIZE_OF_SHORT;
@@ -107,6 +113,13 @@ public class ParameterFlyweight
         byte result = buffer.getByte(index);
         index += SIZE_OF_BYTE;
         return result != 0;
+    }
+
+
+    public byte getByte() {
+        byte result = buffer.getByte(index);
+        index += SIZE_OF_BYTE;
+        return result;
     }
 
     public short getShort() {

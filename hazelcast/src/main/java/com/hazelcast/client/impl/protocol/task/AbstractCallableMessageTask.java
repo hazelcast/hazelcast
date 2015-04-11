@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol;
+package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
@@ -32,7 +34,10 @@ public abstract class AbstractCallableMessageTask<P>
     @Override
     public final void processMessage() {
         try {
-            final ClientMessage result = call();
+            ClientMessage result = call();
+            if (result == null) {
+                result = GenericResultParameters.encode(null);
+            }
             sendClientMessage(result);
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
