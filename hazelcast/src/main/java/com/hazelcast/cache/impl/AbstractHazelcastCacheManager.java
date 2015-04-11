@@ -188,7 +188,7 @@ public abstract class AbstractHazelcastCacheManager
                                 + "in which case CacheManager.getCache(String, Class, Class) must be used");
             }
         }
-        return ensureOpenIfAvailable((ICacheInternal<K, V>) cache);
+        return null;
     }
 
     protected <K, V> ICacheInternal<K, V> ensureOpenIfAvailable(ICacheInternal<K, V> cache) {
