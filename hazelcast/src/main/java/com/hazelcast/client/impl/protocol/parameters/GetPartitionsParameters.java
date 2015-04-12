@@ -3,6 +3,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class GetPartitionsParameters {
 
     public static final ClientMessageType TYPE = ClientMessageType.GET_PARTITIONS_REQUEST;

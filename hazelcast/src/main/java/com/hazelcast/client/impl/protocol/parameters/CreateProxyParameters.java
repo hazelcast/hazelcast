@@ -4,8 +4,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class CreateProxyParameters {
-
 
     public static final ClientMessageType TYPE = ClientMessageType.CREATE_PROXY_REQUEST;
     public String name;

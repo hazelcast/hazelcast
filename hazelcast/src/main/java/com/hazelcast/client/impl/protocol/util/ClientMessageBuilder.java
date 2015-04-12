@@ -12,24 +12,15 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
 /**
  * Builds {@link ClientMessage}s from byte chunks. Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageBuilder {
-
-    public interface MessageDelegator {
-
-        void delegate(ClientMessage message, Connection connection);
-    }
-
+public class ClientMessageBuilder{
 
     private final Int2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Int2ObjectHashMap<BufferBuilder>();
 
-    private final MessageDelegator delegator;
-    private final Connection connection;
-
+    private final MessageHandler delegate;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageBuilder(Connection connection, MessageDelegator delegator) {
-        this.connection = connection;
-        this.delegator = delegator;
+    public ClientMessageBuilder(MessageHandler delegate) {
+        this.delegate = delegate;
     }
 
     public void onData(final ByteBuffer buffer) {
@@ -73,9 +64,22 @@ public class ClientMessageBuilder {
         }
     }
 
-    protected void handleMessage(ClientMessage message) {
+    private void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset() + message.offset());
-        delegator.delegate(message, connection);
+        delegate.handleMessage(message);
     }
+
+    /**
+     * Implementers will be responsible to delegate the constructed message
+     */
+    public interface MessageHandler {
+
+        /**
+         * Received message to be processed
+         * @param message the ClientMessage
+         */
+        void handleMessage(ClientMessage message);
+    }
+
 
 }

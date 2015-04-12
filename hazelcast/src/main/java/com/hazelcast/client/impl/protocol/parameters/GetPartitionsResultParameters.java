@@ -8,6 +8,7 @@ import com.hazelcast.nio.Address;
 
 import java.net.UnknownHostException;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class GetPartitionsResultParameters {
 
     public static final ClientMessageType TYPE = ClientMessageType.GET_PARTITIONS_RESULT;
