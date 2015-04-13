@@ -19,6 +19,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.UUID;
@@ -53,7 +54,8 @@ public class RawProtocolTest {
     @Before
     public void setUp()
             throws IOException, InterruptedException {
-        Address address = new Address("127.0.0.1", 5701);
+        final InetSocketAddress socketAddress = server.getCluster().getLocalMember().getSocketAddress();
+        final Address address = new Address(socketAddress);
         channel = SocketChannel.open();
         channel.socket().connect(address.getInetSocketAddress());
         channel.configureBlocking(true);
