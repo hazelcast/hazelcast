@@ -145,7 +145,9 @@ public class TestClientApplicationContext {
         assertEquals(3, config.getNetworkConfig().getConnectionAttemptLimit());
         assertEquals(1000, config.getNetworkConfig().getConnectionTimeout());
         assertEquals(3000, config.getNetworkConfig().getConnectionAttemptPeriod());
-
+        assertEquals(4,config.getNetworkConfig().getAddresses().size());
+        assertTrue(config.getNetworkConfig().getAddresses().contains("127.0.0.2:5701"));
+        assertTrue(config.getNetworkConfig().getAddresses().contains("127.0.0.2:5702"));
         ClientConfig config2 = client2.getClientConfig();
         assertEquals(credentials, config2.getSecurityConfig().getCredentials());
 

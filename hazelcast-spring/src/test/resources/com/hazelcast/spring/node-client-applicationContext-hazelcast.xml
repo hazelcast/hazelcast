@@ -70,6 +70,7 @@
                     smart-routing="true">
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.2:5701,127.0.0.2:5702</hz:member>
 
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
