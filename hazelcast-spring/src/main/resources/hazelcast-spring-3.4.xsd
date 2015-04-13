@@ -838,6 +838,7 @@
                         </xs:element>
                         <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="member-attributes" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
@@ -1732,6 +1733,44 @@
         </xs:complexContent>
     </xs:complexType>
 
+    <xs:complexType name="native-memory">
+        <xs:all>
+            <xs:element name="size" type="memory-size" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="min-block-size" use="optional" type="xs:positiveInteger"/>
+        <xs:attribute name="page-size" use="optional" type="xs:positiveInteger"/>
+        <xs:attribute name="metadata-space-percentage" use="optional">
+            <xs:simpleType>
+                <xs:restriction base="xs:decimal">
+                    <xs:totalDigits value="3"/>
+                    <xs:fractionDigits value="1"/>
+                    <xs:minInclusive value="5"/>
+                    <xs:maxInclusive value="95"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
+        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+    </xs:complexType>
+    <xs:complexType name="memory-size">
+        <xs:attribute name="value" type="xs:int" default="128"/>
+        <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
+    </xs:complexType>
+    <xs:simpleType name="memory-unit">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BYTES"/>
+            <xs:enumeration value="KILOBYTES"/>
+            <xs:enumeration value="MEGABYTES"/>
+            <xs:enumeration value="GIGABYTES"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="memory-allocator-type">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="STANDARD"/>
+            <xs:enumeration value="POOLED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="near-cache">
         <xs:sequence/>
         <xs:attribute name="max-size" use="optional" type="xs:string" default="0"/>
@@ -1796,7 +1835,7 @@
     </xs:complexType>
 
     <xs:complexType name="spring-aware">
-        <xs:attribute name="enabled" type="xs:string" default="true" use="optional" />
+        <xs:attribute name="enabled" type="xs:string" default="true" use="optional"/>
     </xs:complexType>
 
 </xs:schema>
