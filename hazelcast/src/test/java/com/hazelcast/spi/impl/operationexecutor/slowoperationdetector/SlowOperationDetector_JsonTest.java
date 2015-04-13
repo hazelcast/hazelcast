@@ -59,8 +59,14 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
 
     @Test
     public void testJSON() throws InterruptedException {
+        final String operationDetails = "FakeOperation(id=255, partitionId=2)";
+        Object operation = new Object() {
+            @Override
+            public String toString() {
+                return operationDetails;
+            }
+        };
         String stackTrace = "stackTrace";
-        String operation = "fakeOperation";
         int id = 5;
         int durationMs = 4444;
         long nowMillis = System.currentTimeMillis();
@@ -69,20 +75,22 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
 
         SlowOperationLog log = new SlowOperationLog(stackTrace, operation);
         log.totalInvocations.incrementAndGet();
-        log.getOrCreate(id, durationNanos, nowNanos, nowMillis);
+        log.getOrCreate(id, operationDetails, durationNanos, nowNanos, nowMillis);
 
         JsonObject json = log.createDTO().toJson();
         logger.finest(json.toString());
 
         SlowOperationDTO slowOperationDTO = new SlowOperationDTO();
         slowOperationDTO.fromJson(json);
+        assertTrue(format("Expected operation '%s' to contain inner class", slowOperationDTO.operation),
+                slowOperationDTO.operation.contains("SlowOperationDetector_JsonTest$1"));
         assertEqualsStringFormat("Expected stack trace '%s', but was '%s'", stackTrace, slowOperationDTO.stackTrace);
-        assertEqualsStringFormat("Expected operation '%s', but was '%s'", operation, slowOperationDTO.operation);
         assertEqualsStringFormat("Expected totalInvocations '%d', but was '%d'", 1, slowOperationDTO.totalInvocations);
         assertEqualsStringFormat("Expected invocations.size() '%d', but was '%d'", 1, slowOperationDTO.invocations.size());
 
         SlowOperationInvocationDTO invocationDTO = slowOperationDTO.invocations.get(0);
         assertEqualsStringFormat("Expected id '%d', but was '%d'", id, invocationDTO.id);
+        assertEqualsStringFormat("Expected details '%s', but was '%s'", operationDetails, invocationDTO.operationDetails);
         assertEqualsStringFormat("Expected startedAt '%d', but was '%d'", nowMillis - durationMs, invocationDTO.startedAt);
         assertEqualsStringFormat("Expected durationMs '%d', but was '%d'", durationMs, invocationDTO.durationMs);
     }
