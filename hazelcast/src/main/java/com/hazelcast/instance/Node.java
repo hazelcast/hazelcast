@@ -567,7 +567,6 @@ public class Node {
                     SpiJoiner joiner = SpiJoinerLoadService.getInstance().getJoiner(type);
                     joiner.initialize(this, joinerConfig);
                     return joiner;
-                    //TODO return which joiner???
                 }
             }
         }
