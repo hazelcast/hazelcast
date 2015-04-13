@@ -23,20 +23,20 @@ import org.w3c.dom.Node;
 public class SpiJoinerConfig {
     private boolean enabled;
     private String type;
-    private Node node;
+    private Node xmlNode;
 
-    public SpiJoinerConfig(boolean enabled, String type, Node node) {
+    public SpiJoinerConfig(boolean enabled, String type, Node xmlNode) {
         this.enabled = enabled;
         this.type = type;
-        this.node = node;
+        this.xmlNode = xmlNode;
     }
 
     public String getType() {
         return type;
     }
 
-    public Node getNode() {
-        return node;
+    public Node getXmlNode() {
+        return xmlNode;
     }
 
     public boolean isEnabled() {
