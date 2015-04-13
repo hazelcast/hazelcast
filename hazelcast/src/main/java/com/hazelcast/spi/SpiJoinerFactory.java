@@ -20,8 +20,9 @@ import com.hazelcast.config.SpiJoinerConfig;
 import com.hazelcast.instance.Node;
 
 /**
- * interface of SPI joiner.
+ * interface of the factory for creating joiner via spi.
  */
-public interface SpiJoiner extends Joiner {
-    void initialize(Node node, SpiJoinerConfig joinConfig);
+public interface SpiJoinerFactory {
+    String getType();
+    Joiner createJoiner(Node node, SpiJoinerConfig joinConfig);
 }

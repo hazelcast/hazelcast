@@ -17,7 +17,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.SpiJoiner;
+import com.hazelcast.spi.SpiJoinerFactory;
 
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
@@ -31,10 +31,10 @@ public class SpiJoinerLoadService {
     private static final ILogger LOGGER = Logger.getLogger(SpiJoinerLoadService.class);
 
     private static SpiJoinerLoadService service;
-    private ServiceLoader<SpiJoiner> loader;
+    private ServiceLoader<SpiJoinerFactory> loader;
 
     private SpiJoinerLoadService() {
-        loader = ServiceLoader.load(SpiJoiner.class);
+        loader = ServiceLoader.load(SpiJoinerFactory.class);
     }
 
     public static synchronized SpiJoinerLoadService getInstance() {
@@ -48,13 +48,13 @@ public class SpiJoinerLoadService {
      * get the joiner service with the given type.
      * @param type
      */
-    public SpiJoiner getJoiner(String type) {
-        SpiJoiner result = null;
+    public SpiJoinerFactory getJoiner(String type) {
+        SpiJoinerFactory result = null;
 
         try {
-            Iterator<SpiJoiner> joiners = loader.iterator();
+            Iterator<SpiJoinerFactory> joiners = loader.iterator();
             while (result == null && joiners.hasNext()) {
-                SpiJoiner joiner = joiners.next();
+                SpiJoinerFactory joiner = joiners.next();
                 if(type.equals(joiner.getType())) {
                     result = joiner;
                 }

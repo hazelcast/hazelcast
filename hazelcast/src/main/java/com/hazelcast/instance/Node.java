@@ -45,7 +45,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.SpiJoiner;
+import com.hazelcast.spi.SpiJoinerFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -564,9 +564,10 @@ public class Node {
                 if (joinerConfig.isEnabled()) {
                     String type = joinerConfig.getType();
                     logger.info("Creating Joiner via spi for type:" + type);
-                    SpiJoiner joiner = SpiJoinerLoadService.getInstance().getJoiner(type);
-                    joiner.initialize(this, joinerConfig);
-                    return joiner;
+                    SpiJoinerFactory joinerFactory = SpiJoinerLoadService.getInstance().getJoiner(type);
+                    if (joinerFactory != null) {
+                        return joinerFactory.createJoiner(this, joinerConfig);
+                    }
                 }
             }
         }
