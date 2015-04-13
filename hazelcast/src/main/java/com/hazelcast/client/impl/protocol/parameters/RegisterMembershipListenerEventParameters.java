@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class RegisterMembershipListenerEventParameters {
 
     public static final int MEMBER_ADDED = 1;

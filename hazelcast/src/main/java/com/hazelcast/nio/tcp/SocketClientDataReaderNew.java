@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 
@@ -35,9 +34,15 @@ class SocketClientDataReaderNew
 
     private final TcpIpConnection connection;
 
-    public SocketClientDataReaderNew(TcpIpConnection connection) {
+    public SocketClientDataReaderNew(final TcpIpConnection connection) {
         this.connection = connection;
-        this.builder = new ClientMessageBuilder(connection, new Delegator());
+        this.builder = new ClientMessageBuilder(new ClientMessageBuilder.MessageHandler() {
+            @Override
+            public void handleMessage(ClientMessage message) {
+                IOService ioService = connection.getConnectionManager().getIOHandler();
+                ioService.handleClientMessage(message, connection);
+            }
+        });
     }
 
     public void read(ByteBuffer inBuffer)
@@ -70,12 +75,4 @@ class SocketClientDataReaderNew
         return false;
     }
 
-    private class Delegator implements ClientMessageBuilder.MessageDelegator {
-        @Override
-        public void delegate(ClientMessage message, Connection connection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-            IOService ioService = tcpIpConnection.getConnectionManager().getIOHandler();
-            ioService.handleClientMessage(message, connection);
-        }
-    }
 }

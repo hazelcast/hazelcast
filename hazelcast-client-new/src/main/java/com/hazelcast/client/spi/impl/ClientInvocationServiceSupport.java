@@ -269,7 +269,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         responseThread.workQueue.add(new ClientPacket((ClientConnection) connection, message));
     }
 
-    private class ClientPacket {
+    private static class ClientPacket {
         private final ClientConnection clientConnection;
         private final ClientMessage clientMessage;
 
