@@ -510,6 +510,7 @@
 
     <!-- Spring-->
     <suppress checks="MethodCount" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
+    <suppress checks="MethodLength" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.spring.HazelcastConfigBeanDefinitionParser"/>
 
     <!-- Spring Framework breaks the rule IllegalTypeCheck in its own implementation -->
