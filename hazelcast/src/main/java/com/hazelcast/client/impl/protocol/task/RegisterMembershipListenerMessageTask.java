@@ -63,6 +63,21 @@ public class RegisterMembershipListenerMessageTask extends AbstractCallableMessa
         return ClusterServiceImpl.SERVICE_NAME;
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
     public Permission getRequiredPermission() {
         return null;
     }
