@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
@@ -29,7 +32,7 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
-    private ConsulConfig consulConfig = new ConsulConfig();
+    private Map<String, SpiJoinerConfig> spiJoinerConfigs = new HashMap<String, SpiJoinerConfig>();
 
     /**
      * @return the multicastConfig join configuration
@@ -78,18 +81,16 @@ public class JoinConfig {
         this.awsConfig = isNotNull(awsConfig, "awsConfig");
         return this;
     }
-   
-    
-    public ConsulConfig getConsulConfig() {
-        return consulConfig;
+
+    public Map<String,SpiJoinerConfig> getSpiJoinerConfigs(){
+        return this.spiJoinerConfigs;
     }
 
-    public JoinConfig setConsulConfig(final ConsulConfig consulConfig) {
-        this.consulConfig = isNotNull(consulConfig, "consulConfig");
-        return this;
+    public void addSpiJoinerConfig(SpiJoinerConfig config) {
+        isNotNull(config, config.getType());
+        this.spiJoinerConfigs.put(config.getType(), config);
     }
 
-    
     /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *

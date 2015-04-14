@@ -18,10 +18,10 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.impl.ConfigCheck;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ConfigCheck;
+import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.NodeMulticastListener;
@@ -31,6 +31,8 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.SpiJoinerConfig;
+import com.hazelcast.config.SpiJoinerLoadService;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -49,6 +51,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.SpiJoinerFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -562,15 +565,16 @@ public class Node {
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
-        } else if (join.getConsulConfig().isEnabled()) {
-            Class clazz;
-            try {
-                logger.info("Creating ConsulJoiner");
-                clazz = Class.forName("com.hazelcast.consul.TcpIpJoinerOverConsul");
-                Constructor constructor = clazz.getConstructor(Node.class);
-                return (Joiner) constructor.newInstance(this);                
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+        } else {
+            for(SpiJoinerConfig joinerConfig : join.getSpiJoinerConfigs().values()) {
+                if (joinerConfig.isEnabled()) {
+                    String type = joinerConfig.getType();
+                    logger.info("Creating Joiner via spi for type:" + type);
+                    SpiJoinerFactory joinerFactory = SpiJoinerLoadService.getInstance().getJoiner(type);
+                    if (joinerFactory != null) {
+                        return joinerFactory.createJoiner(this, joinerConfig);
+                    }
+                }
             }
         }
 
