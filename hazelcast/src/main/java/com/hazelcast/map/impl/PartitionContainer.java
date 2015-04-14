@@ -32,7 +32,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.map.impl.MapKeyLoader.getMaxSize;
+import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSize;
 
 public class PartitionContainer {
 

@@ -9,7 +9,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
 
@@ -139,63 +139,6 @@ public class MapLoaderMultiNodeTest extends HazelcastTestSupport {
 
         assertEquals(1, mapLoader.getLoadAllKeysInvocations());
         assertSizeAndLoadCount(map);
-    }
-
-    @Test(timeout = MINUTE)
-    public void testLoads_whenInitialLoaderNodeRemoved() throws Exception {
-        Config cfg = newConfig("default", LAZY);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
-        HazelcastInstance hz3 = nodes[2];
-
-        String mapName = generateKeyOwnedBy(hz3);
-        IMap<Object, Object> map = nodes[0].getMap(mapName);
-        hz3.getLifecycleService().terminate();
-
-        // trigger loading
-        map.size();
-
-        assertEquals(1, mapLoader.getLoadAllKeysInvocations());
-        assertSizeAndLoadCount(map);
-    }
-
-    @Test(timeout = MINUTE)
-    public void testDoesntLoadAgain_whenLoaderNodeGoesDown() throws Exception {
-        Config cfg = newConfig("default", LAZY);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
-        HazelcastInstance hz3 = nodes[2];
-
-        String mapName = generateKeyOwnedBy(hz3);
-        IMap<Object, Object> map = nodes[0].getMap(mapName);
-
-        map.size();
-        assertSizeAndLoadCount(map);
-
-        hz3.getLifecycleService().terminate();
-        waitAllForSafeState(nodeFactory.getAllHazelcastInstances());
-
-        assertSizeAndLoadCount(map);
-        assertEquals(1, mapLoader.getLoadAllKeysInvocations());
-    }
-
-    @Test(timeout = MINUTE)
-    public void testLoadsAll_whenInitialLoaderNodeRemovedAfterLoading() throws Exception {
-        Config cfg = newConfig("default", LAZY);
-        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
-        HazelcastInstance hz3 = nodes[2];
-
-        String mapName = generateKeyOwnedBy(hz3);
-        IMap<Object, Object> map = nodes[0].getMap(mapName);
-
-        map.size();
-        assertSizeAndLoadCount(map);
-
-        hz3.getLifecycleService().terminate();
-        assertClusterSize(2, nodes[0]);
-        map.loadAll(true);
-
-        assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
-        assertEquals(2, mapLoader.getLoadAllKeysInvocations());
-        assertEquals(2 * MAP_STORE_ENTRY_COUNT, mapLoader.getLoadedValueCount());
     }
 
     private void assertSizeAndLoadCount(IMap<Object, Object> map) {

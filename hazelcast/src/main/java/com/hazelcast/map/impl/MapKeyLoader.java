@@ -1,7 +1,5 @@
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.MaxSizeConfig.MaxSizePolicy;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
@@ -14,14 +12,11 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.UnmodifiableIterator;
-import com.hazelcast.util.ValidationUtil;
+import com.hazelcast.util.StateMachine;
 
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +27,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
+import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
+import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.eviction.MaxSizeChecker.getApproximateMaxSize;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
 import static com.hazelcast.util.IterableUtil.limit;
@@ -53,9 +50,34 @@ public class MapKeyLoader {
     private int maxSize;
     private int maxBatch;
     private int mapNamePartition;
-    private boolean loadInitiated;
 
     private LoadFinishedFuture loadFinished = new LoadFinishedFuture(true);
+
+    /** Role of this MapKeyLoader **/
+    enum Role {
+        NONE,
+        /** Sends out keys to all other partitions **/
+        SENDER,
+        /** Receives keys from sender **/
+        RECEIVER,
+        /** Restarts sending if SENDER fails **/
+        SENDER_BACKUP
+    }
+
+    enum State {
+        NOT_LOADED,
+        LOADING,
+        LOADED
+    }
+
+    private final StateMachine<Role> role = StateMachine.of(Role.NONE)
+            .withTransition(Role.NONE, Role.SENDER, Role.RECEIVER, Role.SENDER_BACKUP)
+            .withTransition(Role.SENDER_BACKUP, Role.SENDER);
+
+    private final StateMachine<State> state = StateMachine.of(State.NOT_LOADED)
+            .withTransition(State.NOT_LOADED, State.LOADING)
+            .withTransition(State.LOADING, State.LOADED, State.NOT_LOADED)
+            .withTransition(State.LOADED, State.LOADING);
 
     public MapKeyLoader(String mapName, OperationService opService, InternalPartitionService ps,
             ExecutionService execService, IFunction<Object, Data> serialize) {
@@ -66,6 +88,25 @@ public class MapKeyLoader {
         this.execService = execService;
     }
 
+    public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
+
+        this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
+        Role newRole = assignRole(partitionService, mapNamePartition, partitionId);
+
+        role.nextOrStay(newRole);
+        state.next(State.LOADING);
+
+        switch(newRole) {
+            case SENDER:
+                return sendKeys(mapStoreContext, false);
+            case SENDER_BACKUP:
+            case RECEIVER:
+                return triggerLoading();
+            default:
+                return loadFinished;
+        }
+    }
+
     /**
      * Sends keys to all partitions in batches.
      */
@@ -74,7 +115,6 @@ public class MapKeyLoader {
         if (loadFinished.isDone()) {
 
             loadFinished = new LoadFinishedFuture();
-            loadInitiated = true;
 
             Future<Boolean> sent = execService.submit(MAP_LOAD_ALL_KEYS_EXECUTOR, new Callable<Boolean>() {
                 @Override
@@ -92,7 +132,8 @@ public class MapKeyLoader {
     }
 
     /**
-     * Check if loaded on loader partition. Triggers key loading if it hadn't started
+     * Check if loaded on SENDER partition. Triggers key loading if it hadn't started
+     * @param partitionId
      */
     public Future triggerLoading() {
 
@@ -104,7 +145,8 @@ public class MapKeyLoader {
                 @Override
                 public void run() {
                     Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
-                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition).andThen(loadFinished);
+                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
+                        .andThen(ifLoadedCallback());
                 }
             });
         }
@@ -112,25 +154,41 @@ public class MapKeyLoader {
         return loadFinished;
     }
 
-    public void completeLoading() {
-        if (!loadFinished.isDone()) {
+    public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
+
+        role.nextOrStay(Role.SENDER);
+
+        if (state.is(State.LOADING)) {
+            return loadFinished;
+        }
+        state.next(State.LOADING);
+
+        return sendKeys(mapStoreContext, replaceExistingValues);
+    }
+
+    public void trackLoading(boolean lastBatch) {
+        if (lastBatch) {
+            state.nextOrStay(State.LOADED);
             loadFinished.setResult(true);
+        } else if (state.is(State.LOADED)) {
+            state.next(State.LOADING);
         }
     }
 
-    public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
+    public boolean shouldDoInitialLoad() {
 
-        this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
+        if (role.is(Role.SENDER_BACKUP)) {
+            // was backup. become primary sender
+            role.next(Role.SENDER);
 
-        if (!partitionService.isPartitionOwner(partitionId)) {
-            return loadFinished;
+            if (state.is(State.LOADING)) {
+                // previous loading was in progress. cancel and start from scratch
+                state.next(State.NOT_LOADED);
+                loadFinished.setResult(false);
+            }
         }
 
-        if (partitionId == mapNamePartition) {
-            return sendKeys(mapStoreContext, false);
-        } else {
-            return triggerLoading();
-        }
+        return state.is(State.NOT_LOADED);
     }
 
     private void sendKeysInBatches(Iterable<Object> allKeys, boolean replaceExistingValues) {
@@ -142,7 +200,7 @@ public class MapKeyLoader {
             dataKeys = limit(dataKeys, maxSize);
         }
 
-        Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition());
+        Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
         Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
 
         while (batches.hasNext()) {
@@ -157,58 +215,13 @@ public class MapKeyLoader {
         }
     }
 
-    public static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
-            final int maxBatch) {
-
-        return new UnmodifiableIterator<Map<Integer, List<Data>>>() {
-            @Override
-            public boolean hasNext() {
-                return entries.hasNext();
-            }
-
-            @Override
-            public Map<Integer, List<Data>> next() {
-                ValidationUtil.checkHasNext(entries, "No next element");
-                return nextBatch(entries, maxBatch);
-            }
-        };
-    }
-
-    private IFunction<Data, Entry<Integer, Data>> toPartition() {
-        return new IFunction<Data, Entry<Integer, Data>>() {
-            @Override
-            public Entry<Integer, Data> apply(Data input) {
-                Integer partition = partitionService.getPartitionId(input);
-                return new MapEntrySimple<Integer, Data>(partition, input);
-            }
-        };
-    }
-
-    private static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
-
-        Map<Integer, List<Data>> batch = new HashMap<Integer, List<Data>>();
-
-        while (entries.hasNext()) {
-            Entry<Integer, Data> e = entries.next();
-            List<Data> partitionKeys = CollectionUtil.addToValueList(batch, e.getKey(), e.getValue());
-
-            if (partitionKeys.size() >= maxBatch) {
-                break;
-            }
-        }
-
-        return batch;
-    }
-
     private void sendBatch(Map<Integer, List<Data>> batch, boolean replaceExistingValues) {
-
         for (Entry<Integer, List<Data>> e : batch.entrySet()) {
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
             LoadAllOperation op = new LoadAllOperation(mapName, keys, replaceExistingValues, false);
             opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
         }
-
     }
 
     private List<Future<Object>> sendLoadCompleted(int partitions, boolean replaceExistingValues) {
@@ -221,21 +234,12 @@ public class MapKeyLoader {
             futures.add(opService.invokeOnPartition(SERVICE_NAME, op, partitionId));
         }
 
+        LoadAllOperation op = new LoadAllOperation(mapName, Collections.<Data>emptyList(), replaceExistingValues, lastBatch);
+
+        // notify SENDER_BACKUP
+        futures.add(opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke());
+
         return futures;
-    }
-
-    public static int getMaxSize(int clusterSize, MaxSizeConfig maxSizeConfig) {
-        int maxSizePerNode = getApproximateMaxSize(maxSizeConfig, MaxSizePolicy.PER_NODE);
-        if (maxSizePerNode == MaxSizeConfig.DEFAULT_MAX_SIZE) {
-            // unlimited
-            return -1;
-        }
-        int maxSize = clusterSize * maxSizePerNode;
-        return maxSize;
-    }
-
-    public boolean isLoadInitiated() {
-        return loadInitiated;
     }
 
     public void setMaxBatch(int maxBatch) {
@@ -244,6 +248,23 @@ public class MapKeyLoader {
 
     public void setMaxSize(int maxSize) {
         this.maxSize = maxSize;
+    }
+
+    private ExecutionCallback<Boolean> ifLoadedCallback() {
+        return new ExecutionCallback<Boolean>() {
+            @Override
+            public void onResponse(Boolean loaded) {
+                if (loaded) {
+                    state.nextOrStay(State.LOADED);
+                    loadFinished.setResult(true);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                loadFinished.setResult(t);
+            }
+        };
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
@@ -294,4 +315,6 @@ public class MapKeyLoader {
             return getClass().getSimpleName() + "{done=" + isDone() + "}";
         }
     }
+
+
 }

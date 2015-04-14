@@ -167,4 +167,16 @@ public final class ValidationUtil {
         }
         return iterator;
     }
+
+    /**
+     * Check the state of a condition
+     * @param condition
+     * @param message
+     * @throws IllegalStateException if condition if false
+     */
+    public static void checkState(boolean condition, String message) throws IllegalStateException {
+        if (!condition) {
+            throw new IllegalStateException(message);
+        }
+    }
 }
