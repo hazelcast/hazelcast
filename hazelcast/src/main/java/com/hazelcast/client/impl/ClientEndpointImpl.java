@@ -269,7 +269,6 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         clientEngine.sendResponse(this, null, clientResponseObject, callId, isError, false);
     }
 
-    @Override
     public void sendClientMessage(ClientMessage clientMessage) {
         Connection conn = this.getConnection();
         //TODO framing not implemented yet, should be split into frames before writing to connection

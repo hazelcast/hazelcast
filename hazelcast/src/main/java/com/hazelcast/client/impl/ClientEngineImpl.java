@@ -93,7 +93,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      * Service Name of clientEngine to be used in requests
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
-    private static final int ENDPOINT_REMOVE_DELAY_MS = 10;
+    private static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
 
@@ -276,7 +276,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final String deadMemberUuid = event.getMember().getUuid();
         try {
             nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
-                    ENDPOINT_REMOVE_DELAY_MS, TimeUnit.SECONDS);
+                    ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
 
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {

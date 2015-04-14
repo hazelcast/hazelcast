@@ -161,13 +161,12 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    protected ClientMessage createExceptionMessage(Throwable throwable) {
+    private ClientMessage createExceptionMessage(Throwable throwable) {
         String className = throwable.getClass().getName();
         String message = throwable.getMessage();
         StringWriter sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
-        final ClientMessage parameters = ExceptionResultParameters.encode(className, message, sw.toString());
-        return parameters;
+        return ExceptionResultParameters.encode(className, message, sw.toString());
     }
 
     protected abstract void processMessage();
@@ -190,26 +189,18 @@ public abstract class AbstractMessageTask<P>
         sendClientMessage(exception);
     }
 
-    public String getServiceName() {
-        return null;
-    }
+    public abstract String getServiceName();
 
-    public String getDistributedObjectType() {
+    public final String getDistributedObjectType() {
         return getServiceName();
     }
 
     @Override
-    public String getDistributedObjectName() {
-        return null;
-    }
+    public abstract String getDistributedObjectName();
 
     @Override
-    public String getMethodName() {
-        return null;
-    }
+    public abstract String getMethodName() ;
 
     @Override
-    public Object[] getParameters() {
-        return null;
-    }
+    public abstract Object[] getParameters();
 }

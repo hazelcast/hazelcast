@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.impl.client;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
@@ -45,6 +43,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, SecureRequest,
         RetryableRequest {

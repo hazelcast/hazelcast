@@ -41,10 +41,9 @@ public abstract class AbstractCallableMessageTask<P>
             sendClientMessage(result);
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
-            final ClientMessage exceptionMessage = createExceptionMessage(e);
-            sendClientMessage(exceptionMessage);
+            sendClientMessage(e);
         }
     }
 
-    protected abstract ClientMessage call();
+    protected abstract ClientMessage call() throws Exception;
 }

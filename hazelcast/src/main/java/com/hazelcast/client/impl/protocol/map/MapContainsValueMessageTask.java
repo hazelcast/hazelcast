@@ -14,44 +14,49 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package com.hazelcast.client.impl.protocol.map;
 
-import com.hazelcast.client.impl.protocol.parameters.MapPutParameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapContainsValueParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.PutOperation;
+import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
-public class MapPutMessageTask extends AbstractKeyBasedMessageTask<MapPutParameters> {
+public class MapContainsValueMessageTask extends AbstractAllPartitionsMessageTask<MapContainsValueParameters> {
 
-    public MapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapContainsValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        PutOperation op = new PutOperation(parameters.name, new DefaultData(parameters.key), new DefaultData(parameters.value),
-                parameters.ttl);
-        op.setThreadId(parameters.threadId);
-        return op;
+    protected OperationFactory createOperationFactory() {
+        return new ContainsValueOperationFactory(parameters.name, parameters.value);
     }
 
     @Override
-    protected MapPutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapPutParameters.decode(clientMessage);
+    protected ClientMessage reduce(Map<Integer, Object> map) {
+        boolean result = false;
+        for (Object contains : map.values()) {
+            if (Boolean.TRUE.equals(contains)) {
+                result = true;
+                break;
+            }
+        }
+        return BooleanResultParameters.encode(result);
     }
 
     @Override
-    protected Object getKey() {
-        return new DefaultData(parameters.key);
+    protected MapContainsValueParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapContainsValueParameters.decode(clientMessage);
     }
 
     @Override
@@ -59,9 +64,8 @@ public class MapPutMessageTask extends AbstractKeyBasedMessageTask<MapPutParamet
         return MapService.SERVICE_NAME;
     }
 
-    @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_PUT);
+        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -71,16 +75,12 @@ public class MapPutMessageTask extends AbstractKeyBasedMessageTask<MapPutParamet
 
     @Override
     public String getMethodName() {
-        return "put";
+        return "containsValue";
     }
 
     @Override
     public Object[] getParameters() {
-        if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.value};
-        }
-        //TODO what should be the types of the key and value passed to securityContext
-        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
+        return new Object[]{parameters.value};
     }
 
 

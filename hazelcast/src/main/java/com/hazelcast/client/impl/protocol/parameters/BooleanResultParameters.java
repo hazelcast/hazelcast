@@ -19,32 +19,30 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
-import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class AddEntryListenerParameters {
+public class BooleanResultParameters {
 
-    public static final ClientMessageType TYPE = ClientMessageType.ADD_ENTRY_LISTENER_REQUEST;
-    public String name;
-    public byte[] key;
-    public boolean includeValue;
+    /**
+     * ClientMessageType of this message
+     */
+    public static final ClientMessageType TYPE = ClientMessageType.BOOLEAN_RESULT;
+    public boolean result;
 
-    private AddEntryListenerParameters(ClientMessage flyweight) {
-        name = flyweight.getStringUtf8();
-        key = flyweight.getByteArray();
-        includeValue = flyweight.getBoolean();
+    private BooleanResultParameters(ClientMessage flyweight) {
+        result = flyweight.getBoolean();
     }
 
-    public static AddEntryListenerParameters decode(ClientMessage flyweight) {
-        return new AddEntryListenerParameters(flyweight);
+    public static BooleanResultParameters decode(ClientMessage flyweight) {
+        return new BooleanResultParameters(flyweight);
     }
 
-    public static ClientMessage encode(String name, byte[] key, boolean includeValue) {
-        final int requiredDataSize = calculateDataSize(name, key, includeValue);
+    public static ClientMessage encode(boolean result) {
+        final int requiredDataSize = calculateDataSize(result);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.setMessageType(TYPE.id());
         clientMessage.ensureCapacity(requiredDataSize);
-        clientMessage.set(name).set(key).set(includeValue);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(result);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -54,10 +52,8 @@ public class AddEntryListenerParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(String name, byte[] key, boolean includeValue) {
+    public static int calculateDataSize(boolean result) {
         return ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateStringDataSize(name)//name
-                + ParameterUtil.calculateByteArrayDataSize(key)
-                + (BitUtil.SIZE_OF_BOOLEAN);//include value
+                + BitUtil.SIZE_OF_BOOLEAN;
     }
 }

@@ -20,8 +20,6 @@ import com.hazelcast.client.impl.protocol.task.AuthenticationCustomCredentialsMe
 import com.hazelcast.client.impl.protocol.task.AuthenticationMessageTask;
 import com.hazelcast.client.impl.protocol.task.CreateProxyMessageTask;
 import com.hazelcast.client.impl.protocol.task.GetPartitionsMessageTask;
-import com.hazelcast.client.impl.protocol.task.MapAddEntryListenerTask;
-import com.hazelcast.client.impl.protocol.task.MapPutMessageTask;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
 import com.hazelcast.client.impl.protocol.task.RegisterMembershipListenerMessageTask;
@@ -54,16 +52,7 @@ public class MessageTaskFactoryImpl implements MessageTaskFactory {
                 return new AuthenticationCustomCredentialsMessageTask(clientMessage, node, connection);
             }
         });
-        tasks.put(ClientMessageType.MAP_PUT_REQUEST.id(), new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new MapPutMessageTask(clientMessage, node, connection);
-            }
-        });
-        tasks.put(ClientMessageType.ADD_ENTRY_LISTENER_REQUEST.id(), new MessageTaskFactory() {
-            public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new MapAddEntryListenerTask(clientMessage, node, connection);
-            }
-        });
+
         tasks.put(ClientMessageType.REGISTER_MEMBERSHIP_LISTENER_REQUEST.id(), new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new RegisterMembershipListenerMessageTask(clientMessage, node, connection);
@@ -79,6 +68,7 @@ public class MessageTaskFactoryImpl implements MessageTaskFactory {
                 return new GetPartitionsMessageTask(clientMessage, node, connection);
             }
         });
+
 
         //TODO more factories to come here
     }

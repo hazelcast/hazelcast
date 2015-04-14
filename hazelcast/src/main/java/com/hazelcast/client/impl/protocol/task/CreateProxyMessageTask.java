@@ -64,4 +64,14 @@ public class CreateProxyMessageTask extends AbstractCallableMessageTask<CreatePr
     public String getDistributedObjectName() {
         return parameters.name;
     }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

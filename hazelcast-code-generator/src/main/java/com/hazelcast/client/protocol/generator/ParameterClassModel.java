@@ -68,21 +68,38 @@ public class ParameterClassModel {
         }
 
         public String getSizeString() {
-            if (type.equals("java.lang.String")) {
+            if (type.equals("com.hazelcast.nio.serialization.Data")) {
+                return "ParameterUtil.calculateDataSize(" + name + ")";
+            } else if (type.equals("java.lang.String")) {
                 return "ParameterUtil.calculateStringDataSize(" + name + ")";
             } else if (type.equals("byte[]")) {
                 return "ParameterUtil.calculateByteArrayDataSize(" + name + ")";
+            } else if (type.equals("java.util.List<com.hazelcast.nio.serialization.Data>")
+                    || type.equals("java.util.Set<com.hazelcast.nio.serialization.Data>")
+                    || type.equals("java.util.Collection<com.hazelcast.nio.serialization.Data>")) {
+                return "ParameterUtil.calculateCollectionDataSize(" + name + ")";
             }
             return "BitUtil.SIZE_OF_" + type.toUpperCase();
         }
 
         public String getDataGetterString() {
-            if (type.equals("java.lang.String")) {
-                return "getStringUtf8";
+            String getterString;
+            if (type.equals("com.hazelcast.nio.serialization.Data")) {
+                getterString = "getData";
+            } else if (type.equals("java.lang.String")) {
+                getterString = "getStringUtf8";
             } else if (type.equals("byte[]")) {
-                return "getByteArray";
+                getterString = "getByteArray";
+            } else if (type.equals("java.util.List<com.hazelcast.nio.serialization.Data>")) {
+                getterString = "getDataList";
+            } else if (type.equals("java.util.Set<com.hazelcast.nio.serialization.Data>")) {
+                getterString = "getDataSet";
+            } else if (type.equals("java.util.Collection<com.hazelcast.nio.serialization.Data>")) {
+                getterString = "getDataSet";
+            } else {
+                getterString = "get" + CodeGenerationUtils.capitalizeFirstLetter(type);
             }
-            return "get" + CodeGenerationUtils.capitalizeFirstLetter(type);
+            return getterString;
         }
     }
 }

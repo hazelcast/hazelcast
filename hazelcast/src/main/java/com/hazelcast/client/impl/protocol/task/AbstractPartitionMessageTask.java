@@ -71,8 +71,6 @@ public abstract class AbstractPartitionMessageTask<P>
 
     protected abstract Operation prepareOperation();
 
-    protected abstract int getPartition();
-
     protected int getReplicaIndex() {
         return 0;
     }

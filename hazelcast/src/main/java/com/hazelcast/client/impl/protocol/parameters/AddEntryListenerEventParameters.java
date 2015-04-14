@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.serialization.Data;
 
 /**
  * EntryEventParameters
@@ -28,17 +29,17 @@ import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 public class AddEntryListenerEventParameters {
 
     public static final ClientMessageType TYPE = ClientMessageType.ADD_ENTRY_LISTENER_EVENT;
-    public byte[] key;
-    public byte[] value;
-    public byte[] oldValue;
+    public Data key;
+    public Data value;
+    public Data oldValue;
     public int eventType;
     public String uuid;
     public int numberOfAffectedEntries = 1;
 
     private AddEntryListenerEventParameters(ClientMessage flyweight) {
-        key = flyweight.getByteArray();
-        value = flyweight.getByteArray();
-        oldValue = flyweight.getByteArray();
+        key = flyweight.getData();
+        value = flyweight.getData();
+        oldValue = flyweight.getData();
         eventType = flyweight.getInt();
         uuid = flyweight.getStringUtf8();
         numberOfAffectedEntries = flyweight.getInt();
@@ -48,7 +49,7 @@ public class AddEntryListenerEventParameters {
         return new AddEntryListenerEventParameters(flyweight);
     }
 
-    public static ClientMessage encode(byte[] key, byte[] value, byte[] oldValue, int eventType, String uuid, int numberOfAffectedEntries) {
+    public static ClientMessage encode(Data key, Data value, Data oldValue, int eventType, String uuid, int numberOfAffectedEntries) {
         final int requiredDataSize = calculateDataSize(key, value, oldValue, eventType, uuid, numberOfAffectedEntries);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
@@ -64,11 +65,11 @@ public class AddEntryListenerEventParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(byte[] key, byte[] value, byte[] oldValue, int eventType, String uuid, int numberOfAffectedEntries) {
+    public static int calculateDataSize(Data key, Data value, Data oldValue, int eventType, String uuid, int numberOfAffectedEntries) {
         return ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateByteArrayDataSize(key)
-                + ParameterUtil.calculateByteArrayDataSize(value)
-                + ParameterUtil.calculateByteArrayDataSize(oldValue)
+                + ParameterUtil.calculateDataSize(key)
+                + ParameterUtil.calculateDataSize(value)
+                + ParameterUtil.calculateDataSize(oldValue)
                 + BitUtil.SIZE_OF_INT//eventType
                 + ParameterUtil.calculateStringDataSize(uuid)
                 + BitUtil.SIZE_OF_INT;//numberOfAffectedEntries
