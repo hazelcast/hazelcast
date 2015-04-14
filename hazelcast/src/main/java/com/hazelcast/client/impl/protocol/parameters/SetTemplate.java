@@ -14,7 +14,7 @@ public interface SetTemplate {
     void size(String name);
 
     @EncodeMethod(id = 2)
-    void contains(String name, Set<Data> valueSet);
+    void contains(String name, Data value);
 
     @EncodeMethod(id = 2)
     void containsAll(String name, Set<Data> valueSet);
@@ -29,21 +29,24 @@ public interface SetTemplate {
     void addAll(String name, List<Data> valueList);
 
     @EncodeMethod(id = 6)
-    void compareAndRemove(String name, Set<Data> valueSet, boolean retain);
+    void compareAndRemoveAll(String name, Set<Data> valueSet);
 
     @EncodeMethod(id = 7)
-    void clear(String name);
+    void compareAndRetainAll(String name, Set<Data> valueSet);
 
     @EncodeMethod(id = 8)
-    void getAll(String name);
+    void clear(String name);
 
     @EncodeMethod(id = 9)
-    void addListener(String name, boolean includeValue);
+    void getAll(String name);
 
     @EncodeMethod(id = 10)
-    void removeListener(String name);
+    void addListener(String name, boolean includeValue);
 
     @EncodeMethod(id = 11)
+    void removeListener(String name, String registrationId);
+
+    @EncodeMethod(id = 12)
     void isEmpty(String name);
 
 }
