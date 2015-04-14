@@ -182,7 +182,7 @@ public class ClientNetworkConfig {
     // required for spring module
     public ClientNetworkConfig setAddresses(List<String> addresses) {
         addressList.clear();
-        for(String address : addresses){
+        for (String address : addresses) {
             addAddress(address);
         }
         return this;

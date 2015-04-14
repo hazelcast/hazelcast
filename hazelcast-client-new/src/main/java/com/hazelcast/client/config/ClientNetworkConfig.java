@@ -20,8 +20,10 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.StringTokenizer;
+
+import static com.hazelcast.util.ValidationUtil.hasText;
 
 /**
  * Contains configuration parameters for client network related behaviour
@@ -160,7 +162,14 @@ public class ClientNetworkConfig {
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining
      */
     public ClientNetworkConfig addAddress(String... addresses) {
-        Collections.addAll(addressList, addresses);
+        for (String address : addresses) {
+            String memberText = hasText(address, "address");
+            StringTokenizer tokenizer = new StringTokenizer(memberText, ",");
+            while (tokenizer.hasMoreTokens()) {
+                String s = tokenizer.nextToken();
+                this.addressList.add(s.trim());
+            }
+        }
         return this;
     }
 
@@ -173,7 +182,9 @@ public class ClientNetworkConfig {
     // required for spring module
     public ClientNetworkConfig setAddresses(List<String> addresses) {
         addressList.clear();
-        addressList.addAll(addresses);
+        for (String address : addresses) {
+            addAddress(address);
+        }
         return this;
     }
 
