@@ -67,13 +67,14 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
+                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, type, uuid);
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, mergingValue
+                            , type, uuid);
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
-
             @Override
             public void onMapEvent(MapEvent event) {
                 if (endpoint.isAlive()) {

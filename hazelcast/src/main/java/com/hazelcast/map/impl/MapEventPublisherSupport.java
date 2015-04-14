@@ -90,6 +90,13 @@ class MapEventPublisherSupport implements MapEventPublisher {
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
                              final Data dataKey, Data dataOldValue, Data dataValue) {
+        publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, dataOldValue, dataValue, null);
+
+    }
+
+    @Override
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
+                             final Data dataKey, Data dataOldValue, Data dataValue, Data dataMergingValue) {
         final Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (registrations.isEmpty()) {
             return;
@@ -116,7 +123,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
         }
 
         final EntryEventData eventData = createEntryEventData(mapName, caller,
-                dataKey, dataValue, dataOldValue, eventType.getType());
+                dataKey, dataValue, dataOldValue, dataMergingValue, eventType.getType());
         final int orderKey = pickOrderKey(dataKey);
 
         if (withValueRegistrationExists) {
@@ -296,10 +303,10 @@ class MapEventPublisherSupport implements MapEventPublisher {
 
     private EntryEventData createEntryEventData(String mapName, Address caller,
                                                 Data dataKey, Data dataNewValue, Data dataOldValue,
-                                                int eventType) {
+                                                Data dataMergingValue, int eventType) {
         final String thisNodesAddress = getThisNodesAddress();
         return new EntryEventData(thisNodesAddress, mapName, caller,
-                dataKey, dataNewValue, dataOldValue, eventType);
+                dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
 
     private static enum Result {

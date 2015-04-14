@@ -26,6 +26,13 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.EnumMap;
 import java.util.Map;
 
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.REMOVED;
+import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.core.EntryEventType.EVICT_ALL;
+import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
+
 /**
  * Used to support deprecated {@link com.hazelcast.core.IMap IMap} listener related methods
  * such as {@link com.hazelcast.core.IMap#addLocalEntryListener(EntryListener)}.
@@ -147,12 +154,12 @@ public final class EntryListenerAdaptors {
      * according to {@link com.hazelcast.core.EntryEventType}s.
      */
     static {
-        CONSTRUCTORS.put(EntryEventType.ADDED, ENTRY_ADDED_LISTENER_ADAPTER_CONSTRUCTOR);
-        CONSTRUCTORS.put(EntryEventType.REMOVED, ENTRY_REMOVED_LISTENER_ADAPTER_CONSTRUCTOR);
-        CONSTRUCTORS.put(EntryEventType.EVICTED, ENTRY_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
-        CONSTRUCTORS.put(EntryEventType.UPDATED, ENTRY_UPDATED_LISTENER_ADAPTER_CONSTRUCTOR);
-        CONSTRUCTORS.put(EntryEventType.EVICT_ALL, MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
-        CONSTRUCTORS.put(EntryEventType.CLEAR_ALL, MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(ADDED, ENTRY_ADDED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(REMOVED, ENTRY_REMOVED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(EVICTED, ENTRY_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(UPDATED, ENTRY_UPDATED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(EVICT_ALL, MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(CLEAR_ALL, MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR);
     }
 
     private EntryListenerAdaptors() {
@@ -166,7 +173,8 @@ public final class EntryListenerAdaptors {
      * @return an array of {@link com.hazelcast.map.impl.ListenerAdapter}
      */
     public static ListenerAdapter[] createListenerAdapters(EntryListener listener) {
-        EntryEventType[] values = EntryEventType.values();
+        // We only care about these reference event types for backward compatibility.
+        EntryEventType[] values = new EntryEventType[] { ADDED, REMOVED, EVICTED , UPDATED , EVICT_ALL, CLEAR_ALL};
         ListenerAdapter[] listenerAdapters = new ListenerAdapter[values.length];
         for (EntryEventType eventType : values) {
             listenerAdapters[eventType.ordinal()] = createListenerAdapter(eventType, listener);

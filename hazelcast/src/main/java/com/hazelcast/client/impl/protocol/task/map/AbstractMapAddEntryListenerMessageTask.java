@@ -30,12 +30,12 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
-
 import java.security.Permission;
+
+import static com.hazelcast.nio.serialization.DefaultData.NULL_DATA;
 
 public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter> {
@@ -85,10 +85,10 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                             "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                ClientMessage entryEvent = AddEntryListenerEventParameters
-                        .encode(dataAwareEntryEvent.getKeyData(), dataAwareEntryEvent.getNewValueData(),
-                                dataAwareEntryEvent.getOldValueData(), event.getEventType().getType(),
-                                event.getMember().getUuid(), 1);
+                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(dataAwareEntryEvent.getKeyData()
+                        , dataAwareEntryEvent.getNewValueData(), dataAwareEntryEvent.getOldValueData(),
+                        dataAwareEntryEvent.getMeringValueData(), event.getEventType().getType(),
+                        event.getMember().getUuid(), 1);
                 sendClientMessage(entryEvent);
             }
         }
@@ -99,9 +99,8 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(DefaultData.NULL_DATA,
-                        DefaultData.NULL_DATA, DefaultData.NULL_DATA, type.getType(),
-                        uuid, numberOfEntriesAffected);
+                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(NULL_DATA,
+                        NULL_DATA, NULL_DATA, NULL_DATA, type.getType(), uuid, numberOfEntriesAffected);
                 sendClientMessage(entryEvent);
             }
         }

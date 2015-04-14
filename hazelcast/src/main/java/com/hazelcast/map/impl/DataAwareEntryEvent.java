@@ -35,16 +35,20 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     private final transient Data dataOldValue;
 
+    private final transient Data dataMergingValue;
+
     private final transient SerializationService serializationService;
 
     public DataAwareEntryEvent(Member from, int eventType,
                                String source, Data dataKey,
                                Data dataNewValue, Data dataOldValue,
+                               Data dataMergingValue,
                                SerializationService serializationService) {
         super(source, from, eventType, null, null);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;
+        this.dataMergingValue = dataMergingValue;
         this.serializationService = serializationService;
     }
 
@@ -58,6 +62,10 @@ public class DataAwareEntryEvent extends EntryEvent {
 
     public Data getOldValueData() {
         return dataOldValue;
+    }
+
+    public Data getMeringValueData() {
+        return dataMergingValue;
     }
 
     public Object getKey() {
@@ -80,6 +88,14 @@ public class DataAwareEntryEvent extends EntryEvent {
         }
         return value;
     }
+
+    public Object getMergingValue() {
+        if (mergingValue == null && dataMergingValue != null) {
+            mergingValue = serializationService.toObject(dataMergingValue);
+        }
+        return mergingValue;
+    }
+
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         throw new NotSerializableException();

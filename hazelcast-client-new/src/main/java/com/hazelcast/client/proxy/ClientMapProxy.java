@@ -113,7 +113,6 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
@@ -128,7 +127,6 @@ import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1163,6 +1161,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
+                case MERGED:
                     iMapEvent = createEntryEvent(event, member);
                     break;
                 case EVICT_ALL:
@@ -1183,12 +1182,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         private EntryEvent<K, V> createEntryEvent(AddEntryListenerEventParameters event, Member member) {
             V value = null;
             V oldValue = null;
+            V mergingValue = null;
             if (includeValue) {
                 value = toObject(event.value);
                 oldValue = toObject(event.oldValue);
+                mergingValue = toObject(event.mergingValue);
             }
             K key = toObject(event.key);
-            return new EntryEvent<K, V>(name, member, event.eventType, key, oldValue, value);
+            return new EntryEvent<K, V>(name, member, event.eventType, key, oldValue, value, mergingValue);
         }
 
         @Override
@@ -1278,6 +1279,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                         case ADDED:
                         case REMOVED:
                         case UPDATED:
+                        case MERGED:
                         case EVICTED:
                             final Data key = event.getKey();
                             nearCache.remove(key);

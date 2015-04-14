@@ -32,6 +32,7 @@ public class AddEntryListenerEventParameters {
     public Data key;
     public Data value;
     public Data oldValue;
+    public Data mergingValue;
     public int eventType;
     public String uuid;
     public int numberOfAffectedEntries = 1;
@@ -40,6 +41,7 @@ public class AddEntryListenerEventParameters {
         key = flyweight.getData();
         value = flyweight.getData();
         oldValue = flyweight.getData();
+        mergingValue = flyweight.getData();
         eventType = flyweight.getInt();
         uuid = flyweight.getStringUtf8();
         numberOfAffectedEntries = flyweight.getInt();
@@ -49,12 +51,12 @@ public class AddEntryListenerEventParameters {
         return new AddEntryListenerEventParameters(flyweight);
     }
 
-    public static ClientMessage encode(Data key, Data value, Data oldValue, int eventType, String uuid, int numberOfAffectedEntries) {
-        final int requiredDataSize = calculateDataSize(key, value, oldValue, eventType, uuid, numberOfAffectedEntries);
+    public static ClientMessage encode(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries) {
+        final int requiredDataSize = calculateDataSize(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.ensureCapacity(requiredDataSize);
-        clientMessage.set(key).set(value).set(oldValue).set(eventType).set(uuid).set(numberOfAffectedEntries);
+        clientMessage.set(key).set(value).set(oldValue).set(mergingValue).set(eventType).set(uuid).set(numberOfAffectedEntries);
         clientMessage.setFlags(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.updateFrameLength();
         return clientMessage;
@@ -65,11 +67,12 @@ public class AddEntryListenerEventParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(Data key, Data value, Data oldValue, int eventType, String uuid, int numberOfAffectedEntries) {
+    public static int calculateDataSize(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries) {
         return ClientMessage.HEADER_SIZE
                 + ParameterUtil.calculateDataSize(key)
                 + ParameterUtil.calculateDataSize(value)
                 + ParameterUtil.calculateDataSize(oldValue)
+                + ParameterUtil.calculateDataSize(mergingValue)
                 + BitUtil.SIZE_OF_INT//eventType
                 + ParameterUtil.calculateStringDataSize(uuid)
                 + BitUtil.SIZE_OF_INT;//numberOfAffectedEntries

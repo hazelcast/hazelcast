@@ -33,7 +33,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-
 import java.security.Permission;
 
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P> {
@@ -94,7 +93,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 final String uuid = event.getMember().getUuid();
 
                 ClientMessage entryEvent = AddEntryListenerEventParameters.encode(key, value, DefaultData.NULL_DATA,
-                        type.getType(), uuid, 1);
+                        DefaultData.NULL_DATA, type.getType(), uuid, 1);
                 sendClientMessage(entryEvent);
             }
         }
@@ -105,7 +104,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 ClientMessage entryEvent = AddEntryListenerEventParameters.encode(DefaultData.NULL_DATA,
-                        DefaultData.NULL_DATA, DefaultData.NULL_DATA, type.getType(),
+                        DefaultData.NULL_DATA, DefaultData.NULL_DATA, DefaultData.NULL_DATA, type.getType(),
                         uuid, event.getNumberOfEntriesAffected());
                 sendClientMessage(entryEvent);
             }
