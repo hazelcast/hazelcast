@@ -1273,8 +1273,8 @@
     <xs:complexType name="aws">
         <xs:sequence/>
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
-        <xs:attribute name="access-key" type="xs:string" use="optional" default=""/>
-        <xs:attribute name="secret-key" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="access-key"  type="xs:string" use="optional"/>
+        <xs:attribute name="secret-key" type="xs:string" use="optional"/>
         <xs:attribute name="region" type="xs:string" use="optional" default="us-east-1"/>
         <xs:attribute name="host-header" type="xs:string" use="optional" default="ec2.amazonaws.com"/>
         <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
