@@ -20,11 +20,23 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.monitor.NearCacheStats;
 
 /**
+ * {@link NearCache} is the contract point to store keys and values in underlying
+ * {@link com.hazelcast.cache.impl.nearcache.NearCacheRecordStore}.
  *
  * @param <K> the type of the key
  * @param <V> the type of the value
  */
 public interface NearCache<K, V> {
+
+    /**
+     * Default expiration task initial delay time as seconds
+     */
+    int DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS = 5;
+
+    /**
+     * Default expiration task delay time as seconds
+     */
+    int DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS = 5;
 
     /**
      * NULL Object

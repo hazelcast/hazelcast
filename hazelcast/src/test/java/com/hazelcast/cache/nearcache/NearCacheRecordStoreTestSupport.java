@@ -205,4 +205,36 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         }
     }
 
+    protected void expiredRecordsCleanedUpSuccessfully(InMemoryFormat inMemoryFormat, boolean useIdleTime) {
+        final int CLEAN_UP_THRESHOLD_SECONDS = 3;
+
+        NearCacheConfig nearCacheConfig =
+                createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
+        if (useIdleTime) {
+            nearCacheConfig.setMaxIdleSeconds(CLEAN_UP_THRESHOLD_SECONDS);
+        } else {
+            nearCacheConfig.setTimeToLiveSeconds(CLEAN_UP_THRESHOLD_SECONDS);
+        }
+
+        NearCacheRecordStore<Integer, String> nearCacheRecordStore =
+                createNearCacheRecordStore(
+                        nearCacheConfig,
+                        createNearCacheContext(),
+                        inMemoryFormat);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            nearCacheRecordStore.put(i, "Record-" + i);
+        }
+
+        sleepSeconds(CLEAN_UP_THRESHOLD_SECONDS + 1);
+
+        nearCacheRecordStore.doExpiration();
+
+        assertEquals(0, nearCacheRecordStore.size());
+
+        NearCacheStats nearCacheStats = nearCacheRecordStore.getNearCacheStats();
+        assertEquals(0, nearCacheStats.getOwnedEntryCount());
+        assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
+    }
+
 }

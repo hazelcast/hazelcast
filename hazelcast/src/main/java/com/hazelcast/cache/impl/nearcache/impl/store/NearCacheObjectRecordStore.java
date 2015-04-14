@@ -23,6 +23,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -78,7 +79,9 @@ public class NearCacheObjectRecordStore<K, V>
 
     @Override
     protected NearCacheObjectRecord putRecord(K key, NearCacheObjectRecord record) {
-        return store.put(key, record);
+        NearCacheObjectRecord oldRecord = store.put(key, record);
+        nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+        return oldRecord;
     }
 
     @Override
@@ -88,7 +91,11 @@ public class NearCacheObjectRecordStore<K, V>
 
     @Override
     protected NearCacheObjectRecord removeRecord(K key) {
-        return store.remove(key);
+        NearCacheObjectRecord removedRecord =  store.remove(key);
+        if (removedRecord != null) {
+            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, removedRecord));
+        }
+        return removedRecord;
     }
 
     @Override
@@ -135,6 +142,20 @@ public class NearCacheObjectRecordStore<K, V>
         checkAvailable();
 
         return store.size();
+    }
+
+    @Override
+    public void doExpiration() {
+        for (Map.Entry<K, NearCacheObjectRecord> entry : store.entrySet()) {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
+            K key = entry.getKey();
+            NearCacheObjectRecord value = entry.getValue();
+            if (isRecordExpired(value)) {
+                remove(key);
+            }
+        }
     }
 
 }

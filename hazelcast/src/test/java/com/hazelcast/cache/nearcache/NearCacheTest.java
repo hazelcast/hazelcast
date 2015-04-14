@@ -19,9 +19,9 @@ public class NearCacheTest extends NearCacheTestSupport {
                                                          NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
         return new DefaultNearCache<Integer, String>(name,
-                nearCacheConfig,
-                createNearCacheContext(),
-                nearCacheRecordStore);
+                                                     nearCacheConfig,
+                                                     createNearCacheContext(),
+                                                     nearCacheRecordStore);
     }
 
     @Test
@@ -77,6 +77,16 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Test
     public void selectToSaveFromNearCache() {
         doSelectToSaveFromNearCache();
+    }
+
+    @Test
+    public void createNearCacheAndWaitForExpirationCalledWithTTL() {
+        doCreateNearCacheAndWaitForExpirationCalled(true);
+    }
+
+    @Test
+    public void createNearCacheAndWaitForExpirationCalledWithMaxIdleTime() {
+        doCreateNearCacheAndWaitForExpirationCalled(false);
     }
 
 }
