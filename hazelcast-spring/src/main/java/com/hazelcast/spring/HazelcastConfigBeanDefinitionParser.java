@@ -42,6 +42,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
@@ -63,6 +64,8 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
@@ -198,6 +201,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSecurity(node);
                     } else if ("member-attributes".equals(nodeName)) {
                         handleMemberAttributes(node);
+                    } else if ("native-memory".equals(nodeName)) {
+                        handleNativeMemory(node);
                     } else if ("instance-name".equals(nodeName)) {
                         configBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(node));
                     } else if ("listeners".equals(nodeName)) {
@@ -812,6 +817,29 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             securityConfigBuilder.addPropertyValue("securityInterceptorConfigs", lms);
+        }
+
+        private void handleNativeMemory(final Node node) {
+            final BeanDefinitionBuilder nativeMemoryConfigBuilder = createBeanBuilder(NativeMemoryConfig.class);
+            final AbstractBeanDefinition beanDefinition = nativeMemoryConfigBuilder.getBeanDefinition();
+            fillAttributeValues(node, nativeMemoryConfigBuilder);
+            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(child);
+                if ("size".equals(nodeName)) {
+                    handleMemorySizeConfig(child, nativeMemoryConfigBuilder);
+                }
+            }
+            configBuilder.addPropertyValue("nativeMemoryConfig", beanDefinition);
+        }
+
+        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
+            final NamedNodeMap attrs = node.getAttributes();
+            final Node value = attrs.getNamedItem("value");
+            final Node unit = attrs.getNamedItem("unit");
+            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
+            memorySizeConfigBuilder.addConstructorArgValue(MemoryUnit.valueOf(getTextContent(unit)));
+            nativeMemoryConfigBuilder.addPropertyValue("size", memorySizeConfigBuilder.getBeanDefinition());
         }
 
         private void handleCredentialsFactory(final Node node, final BeanDefinitionBuilder securityConfigBuilder) {
