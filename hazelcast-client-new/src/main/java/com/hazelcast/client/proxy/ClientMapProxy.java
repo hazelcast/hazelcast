@@ -370,7 +370,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         invalidateNearCache(keyData);
 
         ClientMessage putMessage = MapPutParameters.encode(name, keyData.toByteArray(), valueData.toByteArray(),
-                ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit), false);
+                ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         return invoke(putMessage, keyData);
     }
 
