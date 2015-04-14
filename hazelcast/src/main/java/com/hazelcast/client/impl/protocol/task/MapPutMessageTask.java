@@ -71,9 +71,6 @@ public class MapPutMessageTask extends AbstractKeyBasedMessageTask<MapPutParamet
 
     @Override
     public String getMethodName() {
-        if (parameters.async) {
-            return "putAsync";
-        }
         return "put";
     }
 
