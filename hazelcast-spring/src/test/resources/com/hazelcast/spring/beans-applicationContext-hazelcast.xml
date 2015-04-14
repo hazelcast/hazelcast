@@ -33,6 +33,7 @@
                         <hz:interface>127.0.0.1:5701</hz:interface>
                         <hz:interface>127.0.0.1:5702</hz:interface>
                     </hz:tcp-ip>
+                    <hz:aws enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>
