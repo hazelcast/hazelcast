@@ -146,6 +146,11 @@ public final class AuthenticationRequest extends CallableClientRequest {
             }
         }
 
+        if (clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null) {
+            return new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
+                    + ", it's not member of this cluster!");
+        }
+
         endpoint.authenticated(principal, credentials, ownerConnection);
         clientEngine.getEndpointManager().registerEndpoint(endpoint);
         clientEngine.bind(endpoint);

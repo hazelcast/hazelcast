@@ -76,15 +76,17 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_COUNT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperties.PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT;
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
-    private static final int RETRY_COUNT = 20;
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
     private static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
@@ -94,6 +96,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     };
 
+    private final int retryCount;
+    private final long retryInterval;
     private final int connectionTimeout;
     private final int heartBeatInterval;
     private final int heartBeatTimeout;
@@ -138,8 +142,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         int timeout = clientProperties.getHeartbeatTimeout().getInteger();
         this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_HEARTBEAT_TIMEOUT_DEFAULT);
 
-        int interval = clientProperties.getHeartbeatInterval().getInteger();
-        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+        int hInterval = clientProperties.getHeartbeatInterval().getInteger();
+        heartBeatInterval = hInterval  > 0 ? hInterval  : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+
+        int retry = clientProperties.getRetryCount().getInteger();
+        retryCount = retry > 0 ? retry : Integer.parseInt(PROP_REQUEST_RETRY_COUNT_DEFAULT);
+
+        long rInterval = clientProperties.getRetryWaitTime().getLong();
+        retryInterval = rInterval > 0 ? rInterval : Long.parseLong(PROP_REQUEST_RETRY_WAIT_TIME_DEFAULT);
 
         smartRouting = networkConfig.isSmartRouting();
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
@@ -244,10 +254,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public ClientConnection connectToAddress(Address target) throws Exception {
+        ensureOwnerConnection();
+
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
         Exception lastError = null;
-        while (count < RETRY_COUNT) {
+        while (count < retryCount) {
             try {
                 return getOrConnect(target, authenticator);
             } catch (IOException e) {
@@ -255,6 +267,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             } catch (HazelcastInstanceNotActiveException e) {
                 lastError = e;
             }
+            retryWait();
             count++;
         }
         throw lastError;
@@ -262,10 +275,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public ClientConnection tryToConnect(Address target) throws Exception {
+        ensureOwnerConnection();
+
         Authenticator authenticator = new ClusterAuthenticator();
         int count = 0;
         Exception lastError = null;
-        while (count < RETRY_COUNT) {
+        while (count < retryCount) {
             try {
                 if (target == null || !isMember(target)) {
                     Address address = getAddressFromLoadBalancer();
@@ -279,9 +294,27 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 lastError = e;
             }
             target = null;
+            retryWait();
             count++;
         }
         throw lastError;
+    }
+
+    private void retryWait() {
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(retryInterval));
+    }
+
+    private void ensureOwnerConnection() throws IOException {
+        int retries = 0;
+        while (ownerConnectionFuture.ownerConnection == null) {
+            if (!alive) {
+                throw new HazelcastException("ConnectionManager is not active!");
+            }
+            if (retries++ > retryCount) {
+                throw new IOException("Not able to setup owner connection!");
+            }
+            retryWait();
+        }
     }
 
     private Address getAddressFromLoadBalancer() {

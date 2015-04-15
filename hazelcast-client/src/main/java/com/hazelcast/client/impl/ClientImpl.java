@@ -48,4 +48,13 @@ public class ClientImpl implements Client {
     public ClientType getClientType() {
         return ClientType.JAVA;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Client[");
+        sb.append("uuid='").append(uuid).append('\'');
+        sb.append(", socketAddress=").append(socketAddress);
+        sb.append(']');
+        return sb.toString();
+    }
 }
