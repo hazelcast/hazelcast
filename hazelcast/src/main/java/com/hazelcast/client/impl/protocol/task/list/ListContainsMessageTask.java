@@ -1,13 +1,10 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllWithIndexParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListAddParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListContainsParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
-import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
-import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -19,26 +16,26 @@ import java.security.Permission;
 /**
  * ListAddAllMessageTask
  */
-public class ListAddAllMessageTask
-        extends AbstractPartitionMessageTask<ListAddAllParameters> {
+public class ListContainsMessageTask
+        extends AbstractPartitionMessageTask<ListContainsParameters> {
 
-    public ListAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ListContainsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(parameters.name, parameters.valueList);
+        return new CollectionAddOperation(parameters.name, parameters.value);
     }
 
     @Override
-    protected ListAddAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddAllParameters.decode(clientMessage);
+    protected ListContainsParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListContainsParameters.decode(clientMessage);
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueList};
+        return new Object[]{ parameters.value};
     }
 
     @Override
@@ -48,7 +45,7 @@ public class ListAddAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return "contains";
     }
 
 }

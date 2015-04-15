@@ -16,6 +16,9 @@ public interface SetTemplate {
     @EncodeMethod(id = 2)
     void contains(String name, Set<Data> valueSet);
 
+    @EncodeMethod(id = 2)
+    void containsAll(String name, Set<Data> valueSet);
+
     @EncodeMethod(id = 3)
     void add(String name, Data value);
 
