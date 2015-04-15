@@ -19,13 +19,11 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -33,10 +31,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -50,13 +48,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -242,90 +240,107 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(expected = ExecutionException.class)
-    public void testPropagateSerializationErrorOnResponseToCallerGithubIssue2559()
-            throws Exception {
+    /*
+     * Github Issue 2559
+     */
+    @Test(expected = HazelcastSerializationException.class)
+    public void testPropagateSerializationErrorOnOperationToCaller() throws Exception {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
-        original.setAccessible(true);
-
-        HazelcastInstanceImpl impl = (HazelcastInstanceImpl) original.get(hz1);
-        OperationService operationService = impl.node.nodeEngine.getOperationService();
+        Node node = getNode(hz1);
+        OperationService operationService = node.nodeEngine.getOperationService();
 
         Address address = ((MemberImpl) hz2.getCluster().getLocalMember()).getAddress();
 
-        Operation operation = new GithubIssue2559Operation();
-        String serviceName = DistributedExecutorService.SERVICE_NAME;
-        InvocationBuilder invocationBuilder = operationService.createInvocationBuilder(serviceName, operation, address);
-        invocationBuilder.invoke().get();
+        Operation operation = new OperationWithFailingSerializableParameter(new FailingSerializableValue());
+        operationService.invokeOnTarget(null, operation, address);
     }
 
-    public static class GithubIssue2559Operation
-            extends Operation {
+    /*
+     * Github Issue 2559
+     */
+    @Test
+    public void testPropagateSerializationErrorOnResponseToCaller() throws Exception {
 
-        private GithubIssue2559Value value;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
 
-        @Override
-        public void beforeRun()
-                throws Exception {
+        Node node = getNode(hz1);
+        OperationService operationService = node.nodeEngine.getOperationService();
+
+        Address address = ((MemberImpl) hz2.getCluster().getLocalMember()).getAddress();
+
+        Operation operation = new OperationWithFailingSerializableResponse();
+        ICompletableFuture<Object> future = operationService.invokeOnTarget(null, operation, address);
+        try {
+            future.get(30, TimeUnit.SECONDS);
+            fail("Invocation should fail!");
+        } catch (ExecutionException e) {
+            assertNotNull(e.getCause());
+            assertEquals("Cause of failure should be " + HazelcastSerializationException.class.getName(),
+                    e.getCause().getClass(), HazelcastSerializationException.class);
+        }
+    }
+
+    static class OperationWithFailingSerializableParameter extends AbstractOperation {
+
+        private FailingSerializableValue value;
+
+        public OperationWithFailingSerializableParameter() {
+        }
+
+        public OperationWithFailingSerializableParameter(FailingSerializableValue value) {
+            this.value = value;
         }
 
         @Override
-        public void run()
-                throws Exception {
-
-            value = new GithubIssue2559Value();
-            value.foo = 10;
+        public void run() throws Exception {
         }
 
         @Override
-        public void afterRun()
-                throws Exception {
+        public Object getResponse() {
+            return null;
         }
 
         @Override
-        public boolean returnsResponse() {
-            return true;
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            value.writeData(out);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            value = new FailingSerializableValue();
+        }
+    }
+
+    static class OperationWithFailingSerializableResponse extends AbstractOperation {
+
+        private FailingSerializableValue value;
+
+        @Override
+        public void run() throws Exception {
+            value = new FailingSerializableValue();
         }
 
         @Override
         public Object getResponse() {
             return value;
         }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out)
-                throws IOException {
-
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in)
-                throws IOException {
-
-        }
     }
 
-    public static class GithubIssue2559Value
-            implements DataSerializable {
-
-        private int foo;
+    public static class FailingSerializableValue implements DataSerializable {
 
         @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-
+        public void writeData(ObjectDataOutput out) throws IOException {
             throw new RuntimeException("BAM!");
         }
 
         @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
-            foo = in.readInt();
+        public void readData(ObjectDataInput in) throws IOException {
         }
     }
 

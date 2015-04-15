@@ -51,6 +51,7 @@ import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
@@ -851,7 +852,7 @@ final class BasicOperationService implements InternalOperationService {
                 }
                 try {
                     responseHandler.sendResponse(response);
-                } catch (Throwable e) {
+                } catch (ResponseAlreadySentException e) {
                     logOperationError(op, e);
                 }
             }
@@ -1064,13 +1065,14 @@ final class BasicOperationService implements InternalOperationService {
                 assertNoBackupOnPrimaryMember(partition, target);
 
                 boolean isSyncBackup = true;
+                Operation op = (Operation) backupAwareOp;
                 if (replicaIndex > syncBackupCount) {
                     // it is an async-backup
 
                     if (backPressureNeeded == null) {
                         // back-pressure was not yet calculated, so lets calculate it. Once it is calculated
                         // we'll use that value for all the backups for the 'backupAwareOp'.
-                        backPressureNeeded = backPressureService.isBackPressureNeeded((Operation) backupAwareOp);
+                        backPressureNeeded = backPressureService.isBackPressureNeeded(op);
                     }
 
                     if (!backPressureNeeded) {
@@ -1080,7 +1082,8 @@ final class BasicOperationService implements InternalOperationService {
                 }
 
                 Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
-                ICompletableFuture<Object> future = invokeBackup(partitionId, replicaIndex, backup);
+                long callTimeout = Math.min(op.getCallTimeout(), getDefaultCallTimeoutMillis()) / 2;
+                ICompletableFuture<Object> future = invokeBackup(partitionId, replicaIndex, callTimeout, backup);
 
                 if (isSyncBackup) {
                     if (callback != null) {
@@ -1092,11 +1095,12 @@ final class BasicOperationService implements InternalOperationService {
             return sentSyncBackupCount;
         }
 
-        private ICompletableFuture<Object> invokeBackup(int partitionId, int replicaIndex, Backup backup) {
+        private ICompletableFuture<Object> invokeBackup(int partitionId, int replicaIndex,
+                long callTimeout, Backup backup) {
 
             BasicPartitionInvocation invocation = new BasicPartitionInvocation(nodeEngine, null,
                 backup, partitionId, replicaIndex, InvocationBuilder.DEFAULT_TRY_COUNT,
-                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS, InvocationBuilder.DEFAULT_CALL_TIMEOUT,
+                InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS, callTimeout,
                 null, null, false);
 
             return invocation.invoke();

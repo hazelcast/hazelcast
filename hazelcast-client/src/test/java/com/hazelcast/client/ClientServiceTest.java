@@ -231,7 +231,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
     @Test
     public void testConnectedClientsWithReAuth() throws InterruptedException {
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1000 * 10);
+        clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1000);
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
 
         final CountDownLatch countDownLatch = new CountDownLatch(2);
 
@@ -250,7 +251,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
         //restart the node
         instance.shutdown();
-        Thread.sleep(1000);
+        sleepSeconds(1);
         final HazelcastInstance restartedInstance = Hazelcast.newHazelcastInstance();
 
         client.getMap(randomMapName()).size(); // do any operation

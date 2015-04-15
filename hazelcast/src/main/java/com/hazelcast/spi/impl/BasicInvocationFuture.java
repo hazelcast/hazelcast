@@ -244,6 +244,9 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
                     boolean executing = isOperationExecuting(target);
                     if (!executing) {
                         Object operationTimeoutException = newOperationTimeoutException(pollCount * pollTimeoutMs);
+                        if (response != null) {
+                            continue;
+                        }
                         // tries to set an OperationTimeoutException response if response is not set yet
                         set(operationTimeoutException);
                     }
