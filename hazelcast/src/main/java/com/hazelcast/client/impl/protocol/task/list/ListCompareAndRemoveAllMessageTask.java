@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListCompareAndRemoveAllParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndRemoveOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -28,38 +28,38 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
- * ListAddAllMessageTask
+ * ListCompareAndRemoveAllMessageTask
  */
-public class ListAddAllMessageTask
-        extends AbstractPartitionMessageTask<ListAddAllParameters> {
+public class ListCompareAndRemoveAllMessageTask
+        extends AbstractPartitionMessageTask<ListCompareAndRemoveAllParameters> {
 
-    public ListAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ListCompareAndRemoveAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(parameters.name, parameters.valueList);
+        return new CollectionCompareAndRemoveOperation(parameters.name, false, parameters.valueSet);
     }
 
     @Override
-    protected ListAddAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddAllParameters.decode(clientMessage);
+    protected ListCompareAndRemoveAllParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListCompareAndRemoveAllParameters.decode(clientMessage);
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueList};
+        return new Object[]{parameters.valueSet};
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_ADD);
+        return new ListPermission(parameters.name, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return "removeAll";
     }
 
 }

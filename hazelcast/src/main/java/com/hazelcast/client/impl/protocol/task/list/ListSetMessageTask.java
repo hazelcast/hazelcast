@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListSetParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
+import com.hazelcast.collection.impl.list.operations.ListSetOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -28,28 +28,28 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
- * ListAddAllMessageTask
+ * ListSetMessageTask
  */
-public class ListAddAllMessageTask
-        extends AbstractPartitionMessageTask<ListAddAllParameters> {
+public class ListSetMessageTask
+        extends AbstractPartitionMessageTask<ListSetParameters> {
 
-    public ListAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ListSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(parameters.name, parameters.valueList);
+        return new ListSetOperation(parameters.name, parameters.index, parameters.value);
     }
 
     @Override
-    protected ListAddAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddAllParameters.decode(clientMessage);
+    protected ListSetParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListSetParameters.decode(clientMessage);
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueList};
+        return new Object[]{parameters.index, parameters.value};
     }
 
     @Override
@@ -59,7 +59,7 @@ public class ListAddAllMessageTask
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return "set";
     }
 
 }

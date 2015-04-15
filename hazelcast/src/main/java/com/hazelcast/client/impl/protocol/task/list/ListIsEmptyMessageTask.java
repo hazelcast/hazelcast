@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListIsEmptyParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -28,38 +28,33 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
- * ListAddAllMessageTask
+ * ListIsEmptyMessageTask
  */
-public class ListAddAllMessageTask
-        extends AbstractPartitionMessageTask<ListAddAllParameters> {
+public class ListIsEmptyMessageTask
+        extends AbstractPartitionMessageTask<ListIsEmptyParameters> {
 
-    public ListAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ListIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(parameters.name, parameters.valueList);
+        return new CollectionIsEmptyOperation(parameters.name);
     }
 
     @Override
-    protected ListAddAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddAllParameters.decode(clientMessage);
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.valueList};
+    protected ListIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListIsEmptyParameters.decode(clientMessage);
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_ADD);
+        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return "isEmpty";
     }
 
 }

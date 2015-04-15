@@ -17,49 +17,51 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOperation;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListRemoveListenerParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.EventService;
 import java.security.Permission;
 
 /**
- * ListAddAllMessageTask
+ * ListRemoveListenerMessageTask
  */
-public class ListAddAllMessageTask
-        extends AbstractPartitionMessageTask<ListAddAllParameters> {
+public class ListRemoveListenerMessageTask
+        extends AbstractCallableMessageTask<ListRemoveListenerParameters> {
 
-    public ListAddAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ListRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(parameters.name, parameters.valueList);
+    protected ClientMessage call() {
+        final EventService eventService = clientEngine.getEventService();
+        boolean result = eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
+        return BooleanResultParameters.encode(result);
     }
 
     @Override
-    protected ListAddAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddAllParameters.decode(clientMessage);
+    protected ListRemoveListenerParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListRemoveListenerParameters.decode(clientMessage);
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.valueList};
+        return new Object[]{parameters.registrationId};
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_ADD);
+        return new ListPermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
     @Override
     public String getMethodName() {
-        return "addAll";
+        return "removeItemListener";
     }
 
 }

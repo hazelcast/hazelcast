@@ -3,8 +3,6 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
-import org.omg.CORBA.DATA_CONVERSION;
-
 import java.util.List;
 import java.util.Set;
 
@@ -31,7 +29,10 @@ public interface ListTemplate {
     void addAll(String name, List<Data> valueList);
 
     @EncodeMethod(id = 6)
-    void compareAndRemove(String name, Set<Data> valueSet, boolean retain);
+    void compareAndRemoveAll(String name, Set<Data> valueSet);
+
+    @EncodeMethod(id = 6)
+    void compareAndRetainAll(String name, Set<Data> valueSet);
 
     @EncodeMethod(id = 7)
     void clear(String name);
@@ -43,7 +44,7 @@ public interface ListTemplate {
     void addListener(String name, boolean includeValue);
 
     @EncodeMethod(id = 10)
-    void removeListener(String name);
+    void removeListener(String name, String registrationId);
 
     @EncodeMethod(id = 11)
     void isEmpty(String name);

@@ -2,20 +2,17 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.ListContainsAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListContainsParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
-
 import java.security.Permission;
 
 /**
- * ListAddAllMessageTask
+ * ListContainsAllMessageTask
  */
 public class ListContainsAllMessageTask
         extends AbstractPartitionMessageTask<ListContainsAllParameters> {
@@ -41,7 +38,7 @@ public class ListContainsAllMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_ADD);
+        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

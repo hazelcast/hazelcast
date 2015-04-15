@@ -1,21 +1,18 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListAddParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListSizeParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
-
 import java.security.Permission;
 
 /**
- * ListAddAllMessageTask
+ * ListSizeMessageTask
  */
 public class ListSizeMessageTask
         extends AbstractPartitionMessageTask<ListSizeParameters> {
