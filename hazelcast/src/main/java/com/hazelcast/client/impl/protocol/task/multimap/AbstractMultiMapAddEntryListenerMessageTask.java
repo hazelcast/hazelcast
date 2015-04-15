@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.map;
+package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -27,68 +27,74 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.security.permission.MultiMapPermission;
 
 import java.security.Permission;
 
-public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
-        extends AbstractCallableMessageTask<Parameter> {
+public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P> {
 
-    public AbstractMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AbstractMultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected ClientMessage call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final MapService mapService = getService(MapService.SERVICE_NAME);
+        final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        EntryAdapter listener = new MultiMapListener();
 
-        EntryAdapter<Object, Object> listener = new MapListener();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final String name = getDistributedObjectName();
-        final String registrationId = mapServiceContext.addEventListener(listener, getEventFilter(), name);
-        endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
+        Data key = getKey();
+        boolean includeValue = shouldIncludeValue();
+        String registrationId = service.addListener(name, listener, key, includeValue, false);
+        endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
         return AddListenerResultParameters.encode(registrationId);
     }
 
-    protected abstract EventFilter getEventFilter();
+    protected abstract boolean shouldIncludeValue();
 
     @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return MultiMapService.SERVICE_NAME;
     }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    }
+
 
     @Override
     public String getMethodName() {
         return "addEntryListener";
     }
 
-    @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
+    public Data getKey() {
+        return null;
     }
 
-    private class MapListener
-            extends EntryAdapter<Object, Object> {
+    private class MultiMapListener extends EntryAdapter<Object, Object> {
 
         @Override
-        public void onEntryEvent(EntryEvent<Object, Object> event) {
+        public void onEntryEvent(EntryEvent event) {
             if (endpoint.isAlive()) {
                 if (!(event instanceof DataAwareEntryEvent)) {
-                    throw new IllegalArgumentException(
-                            "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
+                    throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                            + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                ClientMessage entryEvent = AddEntryListenerEventParameters
-                        .encode(dataAwareEntryEvent.getKeyData(), dataAwareEntryEvent.getNewValueData(),
-                                dataAwareEntryEvent.getOldValueData(), event.getEventType().getType(),
-                                event.getMember().getUuid(), 1);
+                Data key = dataAwareEntryEvent.getKeyData();
+                Data value = dataAwareEntryEvent.getNewValueData();
+                final EntryEventType type = event.getEventType();
+                final String uuid = event.getMember().getUuid();
+
+                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(key, value, DefaultData.NULL_DATA,
+                        type.getType(), uuid, 1);
                 sendClientMessage(entryEvent);
             }
         }
@@ -98,10 +104,9 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
             if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
-                int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
                 ClientMessage entryEvent = AddEntryListenerEventParameters.encode(DefaultData.NULL_DATA,
                         DefaultData.NULL_DATA, DefaultData.NULL_DATA, type.getType(),
-                        uuid, numberOfEntriesAffected);
+                        uuid, event.getNumberOfEntriesAffected());
                 sendClientMessage(entryEvent);
             }
         }

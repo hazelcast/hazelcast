@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -47,7 +47,7 @@ public abstract class AbstractMessageTask<P>
     protected final ClientMessage clientMessage;
 
     protected final Connection connection;
-    protected final ClientEndpointImpl endpoint;
+    protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final SerializationService serializationService;
     protected final ILogger logger;
@@ -73,8 +73,8 @@ public abstract class AbstractMessageTask<P>
         return (S) node.nodeEngine.getService(serviceName);
     }
 
-    protected ClientEndpointImpl getEndpoint() {
-        return (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+    protected ClientEndpoint getEndpoint() {
+        return endpointManager.getEndpoint(connection);
     }
 
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
@@ -151,7 +151,7 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    private void checkPermissions(ClientEndpointImpl endpoint) {
+    private void checkPermissions(ClientEndpoint endpoint) {
         SecurityContext securityContext = clientEngine.getSecurityContext();
         if (securityContext != null) {
             Permission permission = getRequiredPermission();
@@ -175,7 +175,9 @@ public abstract class AbstractMessageTask<P>
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
-        getEndpoint().sendClientMessage(resultClientMessage);
+        final Connection connection = endpoint.getConnection();
+        //TODO framing not implemented yet, should be split into frames before writing to connection
+        connection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {
@@ -199,7 +201,7 @@ public abstract class AbstractMessageTask<P>
     public abstract String getDistributedObjectName();
 
     @Override
-    public abstract String getMethodName() ;
+    public abstract String getMethodName();
 
     @Override
     public abstract Object[] getParameters();

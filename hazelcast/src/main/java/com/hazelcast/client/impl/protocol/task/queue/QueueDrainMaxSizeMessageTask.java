@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueDrainToMaxSizeParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -76,7 +76,7 @@ public class QueueDrainMaxSizeMessageTask
         if (response instanceof SerializableCollection) {
             SerializableCollection serializableCollection = (SerializableCollection) response;
             Collection<Data> coll = serializableCollection.getCollection();
-            final ClientMessage encode = DataListResultParameters.encode(coll);
+            final ClientMessage encode = DataCollectionResultParameters.encode(coll);
             return encode;
         }
         return super.encodeResponse(response);

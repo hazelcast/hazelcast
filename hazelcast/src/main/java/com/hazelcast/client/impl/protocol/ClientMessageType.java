@@ -68,7 +68,9 @@ public enum ClientMessageType {
 
     DATA_LIST_RESULT(17),
 
-    DATA_ENTRY_LIST_RESULT(18);
+    DATA_ENTRY_LIST_RESULT(18),
+
+    VOID_RESULT(19);
 
     private final int id;
 

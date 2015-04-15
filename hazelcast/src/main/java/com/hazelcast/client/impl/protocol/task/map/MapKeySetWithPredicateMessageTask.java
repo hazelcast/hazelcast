@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapKeySetWithPredicateParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -41,7 +41,7 @@ public class MapKeySetWithPredicateMessageTask extends AbstractMapQueryMessageTa
         for (QueryResultEntry resultEntry : result) {
             keys.add(resultEntry.getKeyData());
         }
-        return DataListResultParameters.encode(keys);
+        return DataCollectionResultParameters.encode(keys);
     }
 
     @Override

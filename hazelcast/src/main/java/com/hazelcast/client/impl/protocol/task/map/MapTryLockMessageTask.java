@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapTryLockParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.instance.Node;
@@ -33,23 +33,23 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_LOCK}
+ * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_TRYLOCK}
  */
-public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockParameters> {
+public class MapTryLockMessageTask extends AbstractPartitionMessageTask<MapTryLockParameters> {
 
-    public MapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapTryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
         return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, -1, -1);
+                parameters.threadId, Long.MAX_VALUE, -1);
     }
 
     @Override
-    protected MapLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLockParameters.decode(clientMessage);
+    protected MapTryLockParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapTryLockParameters.decode(clientMessage);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return "tryLock";
     }
 
     @Override

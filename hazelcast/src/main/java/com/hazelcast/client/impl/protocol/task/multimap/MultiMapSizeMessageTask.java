@@ -14,63 +14,60 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.map;
+package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapKeySetParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapSizeParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapKeySet;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapKeySetOperationFactory;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKeySetParameters> {
+/**
+ * Client Protocol Task for handling messages with type id:
+ * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_SIZE}
+ */
+public class MultiMapSizeMessageTask extends AbstractAllPartitionsMessageTask<MultiMapSizeParameters> {
 
-    public MapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MultiMapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MapKeySetOperationFactory(parameters.name);
+        return new MultiMapOperationFactory(parameters.name, MultiMapOperationFactory.OperationFactoryType.SIZE);
     }
-
 
     @Override
     protected ClientMessage reduce(Map<Integer, Object> map) {
-        List<Data> res = new ArrayList<Data>();
-        MapService service = getService(MapService.SERVICE_NAME);
-        for (Object o : map.values()) {
-            Set keys = ((MapKeySet) service.getMapServiceContext().toObject(o)).getKeySet();
-            res.addAll(keys);
+        int total = 0;
+        for (Object obj : map.values()) {
+            total += (Integer) obj;
         }
-        return DataCollectionResultParameters.encode(res);
+        return IntResultParameters.encode(total);
     }
 
     @Override
-    protected MapKeySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapKeySetParameters.decode(clientMessage);
+    protected MultiMapSizeParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapSizeParameters.decode(clientMessage);
     }
 
-
+    @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return MultiMapService.SERVICE_NAME;
     }
 
+    @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
+        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -80,7 +77,7 @@ public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKe
 
     @Override
     public String getMethodName() {
-        return "keySet";
+        return "size";
     }
 
     @Override
