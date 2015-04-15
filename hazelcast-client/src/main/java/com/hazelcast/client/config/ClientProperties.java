@@ -40,7 +40,7 @@ public class ClientProperties {
     /**
      * Default value of heartbeat timeout when user not set it explicitly
      */
-    public static final String PROP_HEARTBEAT_TIMEOUT_DEFAULT = "60000";
+    public static final String PROP_HEARTBEAT_TIMEOUT_DEFAULT = "300000";
 
     /**
      * Time interval between heartbeats to nodes from client
