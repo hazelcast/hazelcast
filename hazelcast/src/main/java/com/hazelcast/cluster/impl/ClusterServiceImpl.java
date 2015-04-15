@@ -32,7 +32,6 @@ import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
@@ -176,6 +175,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
         setMembers(thisMember);
+        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitMillisBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
@@ -185,7 +185,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
         heartbeatIntervalMillis = heartbeatInterval > 0 ? heartbeatInterval * 1000L : 1000L;
-        pingIntervalMillis = heartbeatIntervalMillis * 5;
+        pingIntervalMillis = heartbeatIntervalMillis * 10;
         node.connectionManager.addConnectionListener(this);
     }
 
@@ -325,6 +325,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             removeAddress(member.getAddress());
             return true;
         }
+        if (logger.isFinestEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * 10) {
+            logger.finest("Not receiving any heartbeats from " + member + " since " + new Date(heartbeatTime));
+        }
         return false;
     }
 
@@ -411,7 +414,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         try {
-            node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
+            node.nodeEngine.getOperationService().send(new HeartbeatOperation(getClusterTime()), target);
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Error while sending heartbeat -> "
@@ -437,7 +440,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (logger.isFinestEnabled()) {
             logger.finest("Sending MasterConfirmation to " + masterMember);
         }
-        nodeEngine.getOperationService().send(new MasterConfirmationOperation(), masterAddress);
+        nodeEngine.getOperationService().send(new MasterConfirmationOperation(getClusterTime()), masterAddress);
     }
 
     // Will be called just before this node becomes the master
@@ -793,10 +796,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public void acceptMasterConfirmation(MemberImpl member) {
+    public void acceptMasterConfirmation(MemberImpl member, long timestamp) {
         if (member != null) {
             if (logger.isFinestEnabled()) {
                 logger.finest("MasterConfirmation has been received from " + member);
+            }
+            long clusterTime = getClusterTime();
+            if (clusterTime - timestamp > maxNoMasterConfirmationMillis / 2) {
+                logger.warning("Ignoring master confirmation from " + member + ", since it's expired."
+                                + " Now: " + new Date(clusterTime) + ", Timestamp: " + new Date(timestamp));
+                return;
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
         }
@@ -996,27 +1005,57 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     return;
                 }
             }
-            MemberImpl[] newMembers = new MemberImpl[members.size()];
+
+            MemberImpl[] updatedMembers = new MemberImpl[members.size()];
+            Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
             int k = 0;
             for (MemberInfo memberInfo : members) {
                 MemberImpl member = oldMemberMap.get(memberInfo.getAddress());
                 if (member == null) {
                     member = createMember(memberInfo.getAddress(), memberInfo.getUuid(),
                             thisAddress.getScopeId(), memberInfo.getAttributes());
-                    onHeartbeat(member);
+
+                    newMembers.add(member);
+                    long now = Clock.currentTimeMillis();
+                    onHeartbeat(member, now);
+                    masterConfirmationTimes.put(member, now);
                 }
-                newMembers[k++] = member;
+                updatedMembers[k++] = member;
             }
-            setMembers(newMembers);
-            if (!getMemberList().contains(thisMember)) {
-                throw new HazelcastException("Member list doesn't contain local member!");
-            }
+
+            setMembers(updatedMembers);
+            sendMembershipEvents(oldMemberMap.values(), newMembers);
+
             joinReset();
             heartBeater();
             node.setJoined();
             logger.info(membersString());
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers) {
+        Set<Member> eventMembers = new LinkedHashSet<Member>(currentMembers);
+        if (!newMembers.isEmpty()) {
+            if (newMembers.size() == 1) {
+                MemberImpl newMember = newMembers.iterator().next();
+                // sync call
+                node.getPartitionService().memberAdded(newMember);
+
+                // async events
+                eventMembers.add(newMember);
+                sendMembershipEventNotifications(newMember, unmodifiableSet(eventMembers), true);
+            } else {
+                for (MemberImpl newMember : newMembers) {
+                    // sync call
+                    node.getPartitionService().memberAdded(newMember);
+
+                    // async events
+                    eventMembers.add(newMember);
+                    sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true);
+                }
+            }
         }
     }
 
@@ -1057,13 +1096,21 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     @Override
-    public void connectionAdded(final Connection connection) {
-        MemberImpl member = getMember(connection.getEndPoint());
-        onHeartbeat(member);
+    public void connectionAdded(Connection connection) {
     }
 
-    public void onHeartbeat(MemberImpl member) {
+    public void onHeartbeat(MemberImpl member, long timestamp) {
         if (member != null) {
+            long clusterTime = getClusterTime();
+            if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
+                logger.warning("Ignoring heartbeat from " + member
+                        + ", since it's expired. Now: " + new Date(clusterTime)
+                        + ", Timestamp: " + new Date(timestamp));
+                return;
+            }
+            if (isMaster(member)) {
+                setMasterTime(timestamp);
+            }
             heartbeatTimes.put(member, Clock.currentTimeMillis());
         }
     }
@@ -1099,34 +1146,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         lock.lock();
         try {
-            Map<Address, MemberImpl> oldMemberMap = membersMapRef.get();
             final Map<Address, MemberImpl> memberMap = new LinkedHashMap<Address, MemberImpl>();  // ! ORDERED !
-            final Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
             for (MemberImpl member : members) {
-                MemberImpl currentMember = oldMemberMap.get(member.getAddress());
-                if (currentMember == null) {
-                    newMembers.add(member);
-                    masterConfirmationTimes.put(member, Clock.currentTimeMillis());
-                }
                 memberMap.put(member.getAddress(), member);
             }
             setMembersRef(memberMap);
-
-            if (!newMembers.isEmpty()) {
-                Set<Member> eventMembers = new LinkedHashSet<Member>(oldMemberMap.values());
-                if (newMembers.size() == 1) {
-                    MemberImpl newMember = newMembers.iterator().next();
-                    node.getPartitionService().memberAdded(newMember); // sync call
-                    eventMembers.add(newMember);
-                    sendMembershipEventNotifications(newMember, unmodifiableSet(eventMembers), true); // async events
-                } else {
-                    for (MemberImpl newMember : newMembers) {
-                        node.getPartitionService().memberAdded(newMember); // sync call
-                        eventMembers.add(newMember);
-                        sendMembershipEventNotifications(newMember, unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true); // async events
-                    }
-                }
-            }
         } finally {
             lock.unlock();
         }
