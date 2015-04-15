@@ -1,8 +1,11 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.AbstractPartitionLostListenerTest;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
@@ -12,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -175,6 +179,35 @@ public class MapPartitionLostListenerStressTest
         }
 
         return listeners;
+    }
+
+    private Map<Integer, Integer> getMinReplicaIndicesByPartitionId(final List<HazelcastInstance> instances) {
+        final Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
+
+        for (HazelcastInstance instance : instances) {
+            final Node survivingNode = getNode(instance);
+            final Address survivingNodeAddress = survivingNode.getThisAddress();
+
+            for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+                if (partition.isOwnerOrBackup(survivingNodeAddress)) {
+                    for (int replicaIndex = 0; replicaIndex < getNodeCount(); replicaIndex++) {
+                        if (survivingNodeAddress.equals(partition.getReplicaAddress(replicaIndex))) {
+                            final Integer replicaIndexOfOtherInstance = survivingPartitions.get(partition.getPartitionId());
+                            if (replicaIndexOfOtherInstance != null) {
+                                survivingPartitions
+                                        .put(partition.getPartitionId(), Math.min(replicaIndex, replicaIndexOfOtherInstance));
+                            } else {
+                                survivingPartitions.put(partition.getPartitionId(), replicaIndex);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return survivingPartitions;
     }
 
 }

@@ -2,8 +2,6 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
@@ -12,11 +10,11 @@ import org.junit.Before;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {
+public abstract class AbstractPartitionLostListenerTest
+        extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory hazelcastInstanceFactory;
 
@@ -43,7 +41,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         }
     }
 
-    final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp(){
+    final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {
         return getCreatedInstancesShuffledAfterWarmedUp(getNodeCount());
     }
 
@@ -73,35 +71,6 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         return config;
     }
 
-    final protected Map<Integer, Integer> getMinReplicaIndicesByPartitionId(final List<HazelcastInstance> instances) {
-        final Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
-
-        for(HazelcastInstance instance : instances) {
-            final Node survivingNode = getNode(instance);
-            final Address survivingNodeAddress = survivingNode.getThisAddress();
-
-            for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
-                if (partition.isOwnerOrBackup(survivingNodeAddress)) {
-                    for (int replicaIndex = 0; replicaIndex < getNodeCount(); replicaIndex++) {
-                        if (survivingNodeAddress.equals(partition.getReplicaAddress(replicaIndex))) {
-                            final Integer replicaIndexOfOtherInstance = survivingPartitions.get(partition.getPartitionId());
-                            if (replicaIndexOfOtherInstance != null) {
-                                survivingPartitions.put(partition.getPartitionId(),
-                                        Math.min(replicaIndex, replicaIndexOfOtherInstance));
-                            } else {
-                                survivingPartitions.put(partition.getPartitionId(), replicaIndex);
-                            }
-
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        return survivingPartitions;
-    }
-
     final protected void populateMaps(final HazelcastInstance instance) {
         for (int i = 0; i < getNodeCount(); i++) {
             final Map<Integer, Integer> map = instance.getMap(getIthMapName(i));
@@ -114,4 +83,5 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     final protected String getIthMapName(final int i) {
         return "map-" + i;
     }
+
 }
