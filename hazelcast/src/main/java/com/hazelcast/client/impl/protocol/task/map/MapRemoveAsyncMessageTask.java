@@ -14,33 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task;
+package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
-/**
- * Base callable Message task.
- */
-public abstract class AbstractCallableMessageTask<P>
-        extends AbstractMessageTask<P> {
+public class MapRemoveAsyncMessageTask extends MapRemoveMessageTask {
 
-    protected AbstractCallableMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapRemoveAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    public final void processMessage() {
-        try {
-            ClientMessage result = call();
-            sendClientMessage(result);
-        } catch (Exception e) {
-            clientEngine.getLogger(getClass()).warning(e);
-            sendClientMessage(e);
-        }
+    public String getMethodName() {
+        return "removeAsync";
     }
-
-    protected abstract ClientMessage call()
-            throws Exception;
 }
