@@ -3,6 +3,7 @@ package com.hazelcast.client.impl.protocol.task.list;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.ListRemoveWithIndexParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListRemoveOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,6 +30,11 @@ public class ListRemoveWithIndexMessageTask
     @Override
     protected ListRemoveWithIndexParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListRemoveWithIndexParameters.decode(clientMessage);
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override

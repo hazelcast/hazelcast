@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.parameters.ListAddListenerParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.Node;
@@ -93,6 +94,11 @@ public class ListAddListenerMessageTask
     @Override
     protected ListAddListenerParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListAddListenerParameters.decode(clientMessage);
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override

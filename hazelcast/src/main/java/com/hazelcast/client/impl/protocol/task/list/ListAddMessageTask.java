@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.ListAddParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -45,6 +46,11 @@ public class ListAddMessageTask
     @Override
     protected ListAddParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListAddParameters.decode(clientMessage);
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override

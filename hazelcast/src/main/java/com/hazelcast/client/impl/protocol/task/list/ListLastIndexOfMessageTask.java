@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.list;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.ListLastIndexOfParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListIndexOfOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -45,6 +46,11 @@ public class ListLastIndexOfMessageTask
     @Override
     protected ListLastIndexOfParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListLastIndexOfParameters.decode(clientMessage);
+    }
+
+    @Override
+    public String getServiceName() {
+        return ListService.SERVICE_NAME;
     }
 
     @Override
