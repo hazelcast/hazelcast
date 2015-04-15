@@ -48,7 +48,7 @@ final class SlowOperationLog {
     private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<Integer, Invocation>();
 
     SlowOperationLog(String stackTrace, Object operation) {
-        this.operation = operation.toString();
+        this.operation = operation.getClass().getName();
         this.stackTrace = stackTrace;
         if (stackTrace.length() <= SHORT_STACKTRACE_LENGTH) {
             this.shortStackTrace = stackTrace;
@@ -57,7 +57,7 @@ final class SlowOperationLog {
         }
     }
 
-    Invocation getOrCreate(Integer operationHashCode, long lastDurationNanos, long nowNanos, long nowMillis) {
+    Invocation getOrCreate(Integer operationHashCode, Object operation, long lastDurationNanos, long nowNanos, long nowMillis) {
         Invocation candidate = invocations.get(operationHashCode);
         if (candidate != null) {
             return candidate;
@@ -65,7 +65,7 @@ final class SlowOperationLog {
 
         int durationMs = (int) TimeUnit.NANOSECONDS.toMillis(lastDurationNanos);
         long startedAt = nowMillis - durationMs;
-        candidate = new Invocation(startedAt, nowNanos, durationMs);
+        candidate = new Invocation(operation.toString(), startedAt, nowNanos, durationMs);
         invocations.put(operationHashCode, candidate);
 
         return candidate;
@@ -91,6 +91,7 @@ final class SlowOperationLog {
 
     static final class Invocation {
 
+        private final String operationDetails;
         private final long startedAt;
 
         private long lastAccessNanos;
@@ -98,7 +99,8 @@ final class SlowOperationLog {
         // this field will be written by single SlowOperationDetectorThread (it can be read by multiple threads)
         private volatile int durationMs;
 
-        private Invocation(long startedAt, long lastAccessNanos, int durationMs) {
+        private Invocation(String operationDetails, long startedAt, long lastAccessNanos, int durationMs) {
+            this.operationDetails = operationDetails;
             this.startedAt = startedAt;
             this.lastAccessNanos = lastAccessNanos;
             this.durationMs = durationMs;
@@ -110,7 +112,7 @@ final class SlowOperationLog {
         }
 
         SlowOperationInvocationDTO createDTO(int id) {
-            return new SlowOperationInvocationDTO(id, startedAt, durationMs);
+            return new SlowOperationInvocationDTO(id, operationDetails, startedAt, durationMs);
         }
     }
 }

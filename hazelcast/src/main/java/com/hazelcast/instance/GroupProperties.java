@@ -188,6 +188,13 @@ public class GroupProperties {
     public static final String PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS
             = "hazelcast.slow.operation.detector.log.purge.interval.seconds";
 
+    /**
+     * Defines if the stack traces of slow operations are logged in the log file. Stack traces will always be reported to the
+     * Management Center, but as default they are not printed to keep the log size small.
+     */
+    public static final String PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
+            = "hazelcast.slow.operation.detector.stacktrace.logging.enabled";
+
     // OLD ELASTIC MEMORY PROPS
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
@@ -407,6 +414,7 @@ public class GroupProperties {
     public final GroupProperty SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
     public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
     public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
+    public final GroupProperty SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
@@ -533,6 +541,8 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, "3600");
         SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "300");
+        SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
+                = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "false");
 
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
