@@ -26,7 +26,6 @@ import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -84,7 +83,7 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
     @Override
     protected List<FrameworkMethod> getChildren() {
         List<FrameworkMethod> children = super.getChildren();
-        LinkedList<FrameworkMethod> modifiableList = new LinkedList<FrameworkMethod>(children);
+        List<FrameworkMethod> modifiableList = new ArrayList<FrameworkMethod>(children);
         Collections.shuffle(modifiableList);
         return modifiableList;
     }
