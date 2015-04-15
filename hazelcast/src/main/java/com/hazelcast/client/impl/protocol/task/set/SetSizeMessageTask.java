@@ -67,4 +67,9 @@ public class SetSizeMessageTask
         return "size";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

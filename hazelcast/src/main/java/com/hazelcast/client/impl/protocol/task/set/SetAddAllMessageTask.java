@@ -52,4 +52,9 @@ public class SetAddAllMessageTask
         return "addAll";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

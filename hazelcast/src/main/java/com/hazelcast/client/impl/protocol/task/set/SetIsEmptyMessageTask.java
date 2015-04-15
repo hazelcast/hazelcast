@@ -68,5 +68,9 @@ public class SetIsEmptyMessageTask
         return "isEmpty";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
 
 }

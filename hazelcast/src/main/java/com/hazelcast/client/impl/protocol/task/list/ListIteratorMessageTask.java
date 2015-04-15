@@ -68,4 +68,9 @@ public class ListIteratorMessageTask
         return "listIterator";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

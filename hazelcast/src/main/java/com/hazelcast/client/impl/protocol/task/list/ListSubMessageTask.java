@@ -68,4 +68,9 @@ public class ListSubMessageTask
         return "subList";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

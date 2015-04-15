@@ -68,4 +68,9 @@ public class ListCompareAndRemoveAllMessageTask
         return "removeAll";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

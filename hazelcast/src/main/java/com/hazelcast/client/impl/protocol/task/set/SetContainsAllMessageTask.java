@@ -68,4 +68,9 @@ public class SetContainsAllMessageTask
         return "containsAll";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

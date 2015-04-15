@@ -68,4 +68,9 @@ public class ListIndexOfMessageTask
         return "indexOf";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

@@ -116,4 +116,9 @@ public class SetAddListenerMessageTask
         return "addItemListener";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

@@ -68,4 +68,9 @@ public class ListClearMessageTask
         return "clear";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

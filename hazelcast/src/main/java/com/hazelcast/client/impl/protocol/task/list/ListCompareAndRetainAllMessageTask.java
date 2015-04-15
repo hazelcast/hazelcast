@@ -68,4 +68,9 @@ public class ListCompareAndRetainAllMessageTask
         return "retainAll";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

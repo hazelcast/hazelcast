@@ -68,4 +68,9 @@ public class ListRemoveMessageTask
         return "remove";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

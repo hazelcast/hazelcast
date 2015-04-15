@@ -52,4 +52,9 @@ public class ListAddWithIndexMessageTask
         return "add";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

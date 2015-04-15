@@ -70,4 +70,9 @@ public class ListRemoveListenerMessageTask
         return "removeItemListener";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

@@ -52,4 +52,9 @@ public class ListRemoveWithIndexMessageTask
         return "remove";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

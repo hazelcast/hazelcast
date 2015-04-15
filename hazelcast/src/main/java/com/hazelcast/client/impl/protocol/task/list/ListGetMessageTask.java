@@ -68,4 +68,9 @@ public class ListGetMessageTask
         return "get";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }

@@ -68,4 +68,9 @@ public class ListLastIndexOfMessageTask
         return "lastIndexOf";
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
 }
