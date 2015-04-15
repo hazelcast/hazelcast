@@ -23,23 +23,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 public class NearCacheDataRecordStore<K, V>
-        extends AbstractNearCacheRecordStore<K, V, NearCacheDataRecord> {
-
-    private ConcurrentMap<K, NearCacheDataRecord> store =
-            new ConcurrentHashMap<K, NearCacheDataRecord>();
+        extends BaseNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
     public NearCacheDataRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         super(nearCacheConfig, nearCacheContext);
-    }
-
-    @Override
-    protected boolean isAvailable() {
-        return store != null;
     }
 
     @Override
@@ -96,41 +84,8 @@ public class NearCacheDataRecordStore<K, V>
     }
 
     @Override
-    protected NearCacheDataRecord getRecord(K key) {
-        return store.get(key);
-    }
-
-    @Override
-    protected NearCacheDataRecord putRecord(K key, NearCacheDataRecord record) {
-        NearCacheDataRecord oldRecord = store.put(key, record);
-        nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
-        return oldRecord;
-    }
-
-    @Override
     protected void putToRecord(NearCacheDataRecord record, V value) {
         record.setValue(toData(value));
-    }
-
-    @Override
-    protected NearCacheDataRecord removeRecord(K key) {
-        NearCacheDataRecord removedRecord =  store.remove(key);
-        if (removedRecord != null) {
-            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, removedRecord));
-        }
-        return removedRecord;
-    }
-
-    @Override
-    protected void clearRecords() {
-        store.clear();
-    }
-
-    @Override
-    protected void destroyStore() {
-        clearRecords();
-        // Clear reference so GC can collect it
-        store = null;
     }
 
     @Override
@@ -158,27 +113,6 @@ public class NearCacheDataRecordStore<K, V>
             }
         }
         return selectedCandidate;
-    }
-
-    @Override
-    public int size() {
-        checkAvailable();
-
-        return store.size();
-    }
-
-    @Override
-    public void doExpiration() {
-        for (Map.Entry<K, NearCacheDataRecord> entry : store.entrySet()) {
-            if (Thread.currentThread().isInterrupted()) {
-                return;
-            }
-            K key = entry.getKey();
-            NearCacheDataRecord value = entry.getValue();
-            if (isRecordExpired(value)) {
-                remove(key);
-            }
-        }
     }
 
 }
