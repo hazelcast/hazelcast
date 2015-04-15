@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Collection;
 import java.util.List;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -40,7 +41,7 @@ public class DataListResultParameters {
         return new DataListResultParameters(flyweight);
     }
 
-    public static ClientMessage encode(List<Data> result) {
+    public static ClientMessage encode(Collection<Data> result) {
         final int requiredDataSize = calculateDataSize(result);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
@@ -55,7 +56,7 @@ public class DataListResultParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(List<Data> result) {
+    public static int calculateDataSize(Collection<Data> result) {
         int dataSize = ClientMessage.HEADER_SIZE;
         dataSize += ParameterUtil.calculateCollectionDataSize(result);
         return dataSize;

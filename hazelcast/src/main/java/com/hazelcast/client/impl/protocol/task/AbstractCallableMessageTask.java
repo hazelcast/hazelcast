@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
@@ -35,9 +34,6 @@ public abstract class AbstractCallableMessageTask<P>
     public final void processMessage() {
         try {
             ClientMessage result = call();
-            if (result == null) {
-                result = GenericResultParameters.encode(null);
-            }
             sendClientMessage(result);
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
@@ -45,5 +41,6 @@ public abstract class AbstractCallableMessageTask<P>
         }
     }
 
-    protected abstract ClientMessage call() throws Exception;
+    protected abstract ClientMessage call()
+            throws Exception;
 }

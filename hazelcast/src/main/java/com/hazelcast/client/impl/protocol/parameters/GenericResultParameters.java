@@ -41,7 +41,7 @@ public class GenericResultParameters {
         return new GenericResultParameters(flyweight);
     }
 
-    public static ClientMessage encode(byte[] result) {
+    public static ClientMessage encode(Data result) {
         final int requiredDataSize = calculateDataSize(result);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
@@ -56,10 +56,8 @@ public class GenericResultParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(byte[] result) {
-        return ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateByteArrayDataSize(result);
+    public static int calculateDataSize(Data result) {
+        return ClientMessage.HEADER_SIZE + ParameterUtil.calculateDataSize(result);
     }
-
 
 }

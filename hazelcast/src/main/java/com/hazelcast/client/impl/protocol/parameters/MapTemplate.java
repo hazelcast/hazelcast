@@ -143,7 +143,6 @@ public interface MapTemplate {
     @EncodeMethod(id = 42)
     void values(String name);
 
-
     @EncodeMethod(id = 43)
     void entrySet(String name);
 

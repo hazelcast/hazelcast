@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
@@ -36,7 +35,8 @@ import com.hazelcast.spi.EventFilter;
 
 import java.security.Permission;
 
-public abstract class AbstractMapAddEntryListenerMessageTask<Parameter> extends AbstractCallableMessageTask<Parameter> {
+public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
+        extends AbstractCallableMessageTask<Parameter> {
 
     public AbstractMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -55,7 +55,6 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter> extends 
         return AddListenerResultParameters.encode(registrationId);
     }
 
-
     protected abstract EventFilter getEventFilter();
 
     @Override
@@ -73,19 +72,21 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter> extends 
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
-    private class MapListener extends EntryAdapter<Object, Object> {
+    private class MapListener
+            extends EntryAdapter<Object, Object> {
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {
             if (endpoint.isAlive()) {
                 if (!(event instanceof DataAwareEntryEvent)) {
-                    throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
-                            + event.getClass().getSimpleName());
+                    throw new IllegalArgumentException(
+                            "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(dataAwareEntryEvent.getKeyData()
-                        , dataAwareEntryEvent.getNewValueData(), dataAwareEntryEvent.getOldValueData(),
-                        event.getEventType().getType(), event.getMember().getUuid(), 1);
+                ClientMessage entryEvent = AddEntryListenerEventParameters
+                        .encode(dataAwareEntryEvent.getKeyData(), dataAwareEntryEvent.getNewValueData(),
+                                dataAwareEntryEvent.getOldValueData(), event.getEventType().getType(),
+                                event.getMember().getUuid(), 1);
                 sendClientMessage(entryEvent);
             }
         }
@@ -93,12 +94,14 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter> extends 
         @Override
         public void onMapEvent(MapEvent event) {
             if (endpoint.isAlive()) {
-                final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
-                int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(null, null, null, type.getType(),
-                        uuid, numberOfEntriesAffected);
-                sendClientMessage(entryEvent);
+                //FIXME remove below null parameters, use NULL-DATA
+                throw new UnsupportedOperationException();
+                //final EntryEventType type = event.getEventType();
+                //final String uuid = event.getMember().getUuid();
+                //int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
+                //ClientMessage entryEvent = AddEntryListenerEventParameters.encode(null, null, null, type.getType(), uuid,
+                // numberOfEntriesAffected);
+                //sendClientMessage(entryEvent);
             }
         }
     }
