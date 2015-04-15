@@ -50,6 +50,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -74,12 +75,18 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
             };
 
+    private final long maxLeaseTimeInMillis;
+
     public LockServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.containers = new LockStoreContainer[nodeEngine.getPartitionService().getPartitionCount()];
         for (int i = 0; i < containers.length; i++) {
             containers[i] = new LockStoreContainer(this, i);
         }
+
+        long maxLeaseTime = nodeEngine.getGroupProperties().LOCK_MAX_LEASE_TIME_SECONDS.getLong();
+        maxLeaseTime = TimeUnit.SECONDS.toMillis(maxLeaseTime);
+        maxLeaseTimeInMillis = maxLeaseTime;
     }
 
     @Override
@@ -115,6 +122,11 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         for (LockStoreContainer container : containers) {
             container.clear();
         }
+    }
+
+    @Override
+    public long getMaxLeaseTimeInMillis() {
+        return maxLeaseTimeInMillis;
     }
 
     @Override
@@ -272,7 +284,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
 
                 long leaseTime = expirationTime - now;
-                scheduleEviction(ls.getNamespace(), lock.getKey(), 0, leaseTime);
+                scheduleEviction(ls.getNamespace(), lock.getKey(), lock.getVersion(), leaseTime);
             }
         }
     }

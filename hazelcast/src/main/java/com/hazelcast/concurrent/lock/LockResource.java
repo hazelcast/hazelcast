@@ -39,4 +39,6 @@ public interface LockResource {
     long getRemainingLeaseTime();
 
     long getExpirationTime();
+
+    int getVersion();
 }

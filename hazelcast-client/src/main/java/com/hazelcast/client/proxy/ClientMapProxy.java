@@ -461,7 +461,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         MapLockRequest request = new MapLockRequest(name, keyData,
-                ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, timeunit));
+                ThreadUtil.getThreadId(), -1, getTimeInMillis(time, timeunit));
         Boolean result = invoke(request, keyData);
         return result;
     }

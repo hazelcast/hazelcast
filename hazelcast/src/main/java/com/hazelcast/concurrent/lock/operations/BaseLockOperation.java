@@ -32,13 +32,12 @@ import java.io.IOException;
 public abstract class BaseLockOperation extends AbstractOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
-    public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
     public static final int ANY_THREAD = 0;
 
     protected ObjectNamespace namespace;
     protected Data key;
     protected long threadId;
-    protected long ttl = DEFAULT_LOCK_TTL;
+    protected long leaseTime = -1L;
     protected transient Object response;
     private transient boolean asyncBackup;
     private long referenceCallId;
@@ -59,11 +58,11 @@ public abstract class BaseLockOperation extends AbstractOperation
         setWaitTimeout(timeout);
     }
 
-    public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
+    public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
-        this.ttl = ttl;
+        this.leaseTime = leaseTime;
         setWaitTimeout(timeout);
     }
 
@@ -133,7 +132,7 @@ public abstract class BaseLockOperation extends AbstractOperation
         out.writeObject(namespace);
         out.writeData(key);
         out.writeLong(threadId);
-        out.writeLong(ttl);
+        out.writeLong(leaseTime);
         out.writeLong(referenceCallId);
     }
 
@@ -143,7 +142,7 @@ public abstract class BaseLockOperation extends AbstractOperation
         namespace = in.readObject();
         key = in.readData();
         threadId = in.readLong();
-        ttl = in.readLong();
+        leaseTime = in.readLong();
         referenceCallId = in.readLong();
     }
 }

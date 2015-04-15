@@ -38,10 +38,13 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         int lockVersion = lockStore.getVersion(key);
+        ILogger logger = getLogger();
         if (version == lockVersion) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Releasing a lock owned by " + lockStore.getOwnerInfo(key) + " after lease timeout!");
+            }
             forceUnlock();
         } else {
-            ILogger logger = getLogger();
             if (logger.isFinestEnabled()) {
                 logger.finest("Won't unlock since lock version is not matching expiration version: "
                         + lockVersion + " vs " + version);

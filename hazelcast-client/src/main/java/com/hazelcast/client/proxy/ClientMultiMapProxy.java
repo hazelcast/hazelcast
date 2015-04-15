@@ -273,7 +273,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
-                Long.MAX_VALUE, getTimeInMillis(time, timeunit), name);
+                -1, getTimeInMillis(time, timeunit), name);
         Boolean result = invoke(request, keyData);
         return result;
     }

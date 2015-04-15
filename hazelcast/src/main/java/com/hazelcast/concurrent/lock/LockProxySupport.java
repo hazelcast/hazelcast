@@ -21,11 +21,14 @@ import com.hazelcast.concurrent.lock.operations.GetRemainingLeaseTimeOperation;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
@@ -35,9 +38,11 @@ import static com.hazelcast.util.ThreadUtil.getThreadId;
 public final class LockProxySupport {
 
     private final ObjectNamespace namespace;
+    private final long maxLeaseTimeInMillis;
 
-    public LockProxySupport(ObjectNamespace namespace) {
+    public LockProxySupport(ObjectNamespace namespace, long maxLeaseTimeInMillis) {
         this.namespace = namespace;
+        this.maxLeaseTimeInMillis = maxLeaseTimeInMillis;
     }
 
     public boolean isLocked(NodeEngine nodeEngine, Data key) {
@@ -73,11 +78,19 @@ public final class LockProxySupport {
         lock(nodeEngine, key, -1);
     }
 
-    public void lock(NodeEngine nodeEngine, Data key, long ttl) {
-        LockOperation operation = new LockOperation(namespace, key, getThreadId(), ttl, -1);
-        InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
-        if (!f.getSafely()) {
-            throw new IllegalStateException();
+    public void lock(NodeEngine nodeEngine, Data key, long leaseTime) {
+        leaseTime = getLeaseTime(leaseTime);
+
+        LockOperation operation;
+        try {
+            operation = new LockOperation(namespace, key, getThreadId(), leaseTime, -1);
+            InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
+            if (!f.getSafely()) {
+                throw new IllegalStateException();
+            }
+        } catch (OperationTimeoutException e) {
+            safeUnlock(nodeEngine, key);
+            throw e;
         }
     }
 
@@ -85,14 +98,30 @@ public final class LockProxySupport {
         lockInterruptly(nodeEngine, key, -1);
     }
 
-    public void lockInterruptly(NodeEngine nodeEngine, Data key, long ttl) throws InterruptedException {
-        LockOperation operation = new LockOperation(namespace, key, getThreadId(), ttl, -1);
+    public void lockInterruptly(NodeEngine nodeEngine, Data key, long leaseTime) throws InterruptedException {
+        leaseTime = getLeaseTime(leaseTime);
+
+        LockOperation operation = new LockOperation(namespace, key, getThreadId(), leaseTime, -1);
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
         try {
             f.get();
+        } catch (OperationTimeoutException e) {
+            safeUnlock(nodeEngine, key);
+            throw e;
         } catch (Throwable t) {
             throw rethrowAllowInterrupted(t);
         }
+    }
+
+    private long getLeaseTime(long leaseTime) {
+        if (leaseTime > maxLeaseTimeInMillis) {
+            throw new IllegalArgumentException("Max allowed lease time: " + maxLeaseTimeInMillis + "ms. "
+                    + "Given lease time: " + leaseTime + "ms.");
+        }
+        if (leaseTime < 0) {
+            leaseTime = maxLeaseTimeInMillis;
+        }
+        return leaseTime;
     }
 
     public boolean tryLock(NodeEngine nodeEngine, Data key) {
@@ -110,8 +139,23 @@ public final class LockProxySupport {
 
         try {
             return f.get();
+        } catch (OperationTimeoutException e) {
+            safeUnlock(nodeEngine, key);
+            throw e;
         } catch (Throwable t) {
             throw rethrowAllowInterrupted(t);
+        }
+    }
+
+    private void safeUnlock(NodeEngine nodeEngine, Data key) {
+        try {
+            UnlockOperation operation = new UnlockOperation(namespace, key, getThreadId());
+            invoke(nodeEngine, operation, key);
+        } catch (Throwable e) {
+            ILogger logger = nodeEngine.getLogger(getClass());
+            if (logger.isFinestEnabled()) {
+                logger.finest("Error while unlocking because of a lock operation timeout!", e);
+            }
         }
     }
 

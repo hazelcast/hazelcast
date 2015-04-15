@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.proxy;
 
 import com.hazelcast.concurrent.lock.LockProxySupport;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
@@ -139,7 +140,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.name = name;
         partitionStrategy = service.getMapServiceContext().getMapContainer(name).getPartitioningStrategy();
         localMapStats = service.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(name);
-        lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        if (lockService != null) {
+            lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
+                    lockService.getMaxLeaseTimeInMillis());
+        } else {
+            lockSupport = null;
+        }
     }
 
     @Override
