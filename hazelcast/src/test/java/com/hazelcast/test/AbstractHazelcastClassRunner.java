@@ -83,9 +83,10 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
 
     @Override
     protected List<FrameworkMethod> getChildren() {
-        final List<FrameworkMethod> children = super.getChildren();
-        Collections.shuffle(new LinkedList<FrameworkMethod>(children));
-        return children;
+        List<FrameworkMethod> children = super.getChildren();
+        LinkedList<FrameworkMethod> modifiableList = new LinkedList<FrameworkMethod>(children);
+        Collections.shuffle(modifiableList);
+        return modifiableList;
     }
 
     @Override
