@@ -23,22 +23,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 public class NearCacheObjectRecordStore<K, V>
-        extends AbstractNearCacheRecordStore<K, V, NearCacheObjectRecord> {
-
-    private ConcurrentMap<K, NearCacheObjectRecord> store =
-            new ConcurrentHashMap<K, NearCacheObjectRecord>();
+        extends BaseNearCacheRecordStore<K, V, NearCacheObjectRecord> {
 
     public NearCacheObjectRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         super(nearCacheConfig, nearCacheContext);
-    }
-
-    @Override
-    protected boolean isAvailable() {
-        return store != null;
     }
 
     @Override
@@ -72,35 +61,8 @@ public class NearCacheObjectRecordStore<K, V>
     }
 
     @Override
-    protected NearCacheObjectRecord getRecord(K key) {
-        return store.get(key);
-    }
-
-    @Override
-    protected NearCacheObjectRecord putRecord(K key, NearCacheObjectRecord record) {
-        return store.put(key, record);
-    }
-
-    @Override
     protected void putToRecord(NearCacheObjectRecord record, V value) {
         record.setValue(value);
-    }
-
-    @Override
-    protected NearCacheObjectRecord removeRecord(K key) {
-        return store.remove(key);
-    }
-
-    @Override
-    protected void clearRecords() {
-        store.clear();
-    }
-
-    @Override
-    protected void destroyStore() {
-        clearRecords();
-        // Clear reference so GC can collect it
-        store = null;
     }
 
     @Override
@@ -128,13 +90,6 @@ public class NearCacheObjectRecordStore<K, V>
             }
         }
         return selectedCandidate;
-    }
-
-    @Override
-    public int size() {
-        checkAvailable();
-
-        return store.size();
     }
 
 }

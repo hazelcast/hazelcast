@@ -166,11 +166,6 @@ public class CachePortableHook
                         return new CacheRemoveInvalidationListenerRequest();
                     }
                 };
-                //  constructors[SEND_STATS] = new ConstructorFunction<Integer, Portable>() {
-                //      public Portable createNew(Integer arg) {
-                //          return new CachePushStatsRequest();
-                //      }
-                //  };
                 constructors[CREATE_CONFIG] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheCreateConfigRequest();

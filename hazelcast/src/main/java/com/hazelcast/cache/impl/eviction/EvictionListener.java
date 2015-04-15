@@ -26,6 +26,13 @@ public interface EvictionListener<A, E extends Evictable> {
 
     EvictionListener NO_LISTENER = null;
 
-    <C extends EvictionCandidate<A, E>> void onEvict(C candidate);
+    /**
+     * Called when an {@link com.hazelcast.cache.impl.eviction.Evictable} entry is evicted.
+     *
+     * @param evictedEntryAccessor  Accessor of {@link com.hazelcast.cache.impl.eviction.Evictable} entry
+     *                              which is evicted
+     * @param evictedEntry          {@link com.hazelcast.cache.impl.eviction.Evictable} entry which is evicted
+     */
+    void onEvict(A evictedEntryAccessor, E evictedEntry);
 
 }

@@ -23,32 +23,21 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 public class NearCacheDataRecordStore<K, V>
-        extends AbstractNearCacheRecordStore<K, V, NearCacheDataRecord> {
-
-    private ConcurrentMap<K, NearCacheDataRecord> store =
-            new ConcurrentHashMap<K, NearCacheDataRecord>();
+        extends BaseNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
     public NearCacheDataRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         super(nearCacheConfig, nearCacheContext);
     }
 
     @Override
-    protected boolean isAvailable() {
-        return store != null;
-    }
-
-    @Override
     protected long getKeyStorageMemoryCost(K key) {
         if (key instanceof Data) {
             return
-                    // Reference to this key data inside map ("store" field)
-                    REFERENCE_SIZE
-                            // Heap cost of this key data
-                            + ((Data) key).getHeapCost();
+                // Reference to this key data inside map ("store" field)
+                REFERENCE_SIZE
+                // Heap cost of this key data
+                + ((Data) key).getHeapCost();
         } else {
             // Memory cost for non-data typed instance is not supported.
             return 0L;
@@ -58,20 +47,23 @@ public class NearCacheDataRecordStore<K, V>
     // TODO We don't handle object header (mark, class definition) for heap memory cost
     @Override
     protected long getRecordStorageMemoryCost(NearCacheDataRecord record) {
+        if (record == null) {
+            return 0L;
+        }
         Data value = record.getValue();
         return
-                // Reference to this record inside map ("store" field)
-                REFERENCE_SIZE
-                        // Reference to "value" field
-                        + REFERENCE_SIZE
-                        // Heap cost of this value data
-                        + (value != null ? value.getHeapCost() : 0)
-                        // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
-                        + (3 * (Long.SIZE / Byte.SIZE))
-                        // Reference to "accessHit" field
-                        + REFERENCE_SIZE
-                        // Primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
-                        + (Integer.SIZE / Byte.SIZE);
+            // Reference to this record inside map ("store" field)
+            REFERENCE_SIZE
+            // Reference to "value" field
+            + REFERENCE_SIZE
+            // Heap cost of this value data
+            + (value != null ? value.getHeapCost() : 0)
+            // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
+            + (3 * (Long.SIZE / Byte.SIZE))
+            // Reference to "accessHit" field
+            + REFERENCE_SIZE
+            // Primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
+            + (Integer.SIZE / Byte.SIZE);
     }
 
     @Override
@@ -92,35 +84,8 @@ public class NearCacheDataRecordStore<K, V>
     }
 
     @Override
-    protected NearCacheDataRecord getRecord(K key) {
-        return store.get(key);
-    }
-
-    @Override
-    protected NearCacheDataRecord putRecord(K key, NearCacheDataRecord record) {
-        return store.put(key, record);
-    }
-
-    @Override
     protected void putToRecord(NearCacheDataRecord record, V value) {
         record.setValue(toData(value));
-    }
-
-    @Override
-    protected NearCacheDataRecord removeRecord(K key) {
-        return store.remove(key);
-    }
-
-    @Override
-    protected void clearRecords() {
-        store.clear();
-    }
-
-    @Override
-    protected void destroyStore() {
-        clearRecords();
-        // Clear reference so GC can collect it
-        store = null;
     }
 
     @Override
@@ -148,13 +113,6 @@ public class NearCacheDataRecordStore<K, V>
             }
         }
         return selectedCandidate;
-    }
-
-    @Override
-    public int size() {
-        checkAvailable();
-
-        return store.size();
     }
 
 }

@@ -41,7 +41,6 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
         this.value = value;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
-        this.accessTime = creationTime;
     }
 
     @Override
@@ -111,8 +110,12 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public boolean isIdleAt(long maxIdleMilliSeconds, long now) {
-        if (accessTime > TIME_NOT_SET && maxIdleMilliSeconds > 0) {
-            return accessTime + maxIdleMilliSeconds < now;
+        if (maxIdleMilliSeconds > 0) {
+            if (accessTime > TIME_NOT_SET) {
+                return accessTime + maxIdleMilliSeconds < now;
+            } else {
+                return creationTime + maxIdleMilliSeconds < now;
+            }
         } else {
             return false;
         }

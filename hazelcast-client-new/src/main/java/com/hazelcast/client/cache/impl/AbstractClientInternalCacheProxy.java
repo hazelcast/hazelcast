@@ -34,6 +34,7 @@ import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
+import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -72,8 +73,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -106,7 +107,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     protected final ConcurrentMap<Member, String> nearCacheInvalidationListeners =
         new ConcurrentHashMap<Member, String>();
 
-    private final boolean cacheOnUpdate;
+    private boolean cacheOnUpdate;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> asyncListenerRegistrations;
     private final ConcurrentMap<CacheEntryListenerConfiguration, String> syncListenerRegistrations;
     private final ConcurrentMap<Integer, CountDownLatch> syncLocks;
@@ -127,32 +128,30 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
             NearCacheContext nearCacheContext =
                     new NearCacheContext(clientContext.getSerializationService(),
-                            createNearCacheExecutor(clientContext.getExecutionService()));
+                                         createNearCacheExecutor(clientContext.getExecutionService()));
             nearCache = nearCacheManager
                     .getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
-        } else {
-            nearCache = null;
-            cacheOnUpdate = false;
         }
     }
 
-    protected class ClientNearCacheExecutor implements Executor {
+    private static class ClientNearCacheExecutor implements NearCacheExecutor {
 
-        protected ClientExecutionService clientExecutionService;
+        private ClientExecutionService clientExecutionService;
 
-        protected ClientNearCacheExecutor(ClientExecutionService clientExecutionService) {
+        private ClientNearCacheExecutor(ClientExecutionService clientExecutionService) {
             this.clientExecutionService = clientExecutionService;
         }
 
         @Override
-        public void execute(Runnable runnable) {
-            clientExecutionService.execute(runnable);
+        public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
+                                                         long delay, TimeUnit unit) {
+            return clientExecutionService.scheduleWithFixedDelay(command, initialDelay, delay, unit);
         }
 
     }
 
-    protected Executor createNearCacheExecutor(ClientExecutionService clientExecutionService) {
+    private NearCacheExecutor createNearCacheExecutor(ClientExecutionService clientExecutionService) {
         return new ClientNearCacheExecutor(clientExecutionService);
     }
 
@@ -170,7 +169,6 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         if (nearCache != null) {
             removeInvalidationListener();
             nearCacheManager.destroyNearCache(nearCache.getName());
-            nearCache = null;
         }
         super.destroy();
     }
@@ -529,25 +527,28 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 clientContext.getExecutionService().getAsyncExecutor());
     }
 
-    protected final class NearCacheMembershipListener implements MembershipListener {
+    private class NearCacheMembershipListener implements MembershipListener {
 
+        @Override
         public void memberAdded(MembershipEvent event) {
             MemberImpl member = (MemberImpl) event.getMember();
             addInvalidationListener(member);
         }
 
+        @Override
         public void memberRemoved(MembershipEvent event) {
             MemberImpl member = (MemberImpl) event.getMember();
             removeInvalidationListener(member, false);
         }
 
+        @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
 
         }
 
     }
 
-    protected final class NearCacheInvalidationHandler implements EventHandler<CacheInvalidationMessage> {
+    private class NearCacheInvalidationHandler implements EventHandler<CacheInvalidationMessage> {
 
         private final Client client;
 
@@ -580,7 +581,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     }
 
-    protected void registerInvalidationListener() {
+    private void registerInvalidationListener() {
         if (nearCache != null && nearCache.isInvalidateOnChange()) {
             ClientClusterService clusterService = clientContext.getClusterService();
             nearCacheMembershipRegistrationId =
@@ -592,7 +593,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void removeInvalidationListener() {
+    private void removeInvalidationListener() {
         if (nearCache != null && nearCache.isInvalidateOnChange()) {
             String registrationId = nearCacheMembershipRegistrationId;
             ClientClusterService clusterService = clientContext.getClusterService();
@@ -606,7 +607,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void addInvalidationListener(MemberImpl member) {
+    private void addInvalidationListener(MemberImpl member) {
         if (nearCacheInvalidationListeners.containsKey(member)) {
             return;
         }
@@ -626,7 +627,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    protected void removeInvalidationListener(MemberImpl member, boolean removeFromMemberAlso) {
+    private void removeInvalidationListener(MemberImpl member, boolean removeFromMemberAlso) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
         if (registrationId != null) {
             try {

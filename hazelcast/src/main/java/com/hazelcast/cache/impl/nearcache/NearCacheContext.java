@@ -18,8 +18,6 @@ package com.hazelcast.cache.impl.nearcache;
 
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.concurrent.Executor;
-
 /**
  * Context to hold all required external services and utilities to be used by
  * {@link com.hazelcast.cache.impl.nearcache.NearCache}.
@@ -27,14 +25,14 @@ import java.util.concurrent.Executor;
 public class NearCacheContext {
 
     private SerializationService serializationService;
-    private Executor nearCacheExecutor;
+    private NearCacheExecutor nearCacheExecutor;
 
     public NearCacheContext() {
 
     }
 
     public NearCacheContext(SerializationService serializationService,
-                            Executor nearCacheExecutor) {
+                            NearCacheExecutor nearCacheExecutor) {
         this.serializationService = serializationService;
         this.nearCacheExecutor = nearCacheExecutor;
     }
@@ -48,11 +46,11 @@ public class NearCacheContext {
         return this;
     }
 
-    public Executor getNearCacheExecutor() {
+    public NearCacheExecutor getNearCacheExecutor() {
         return nearCacheExecutor;
     }
 
-    public NearCacheContext setNearCacheExecutor(Executor nearCacheExecutor) {
+    public NearCacheContext setNearCacheExecutor(NearCacheExecutor nearCacheExecutor) {
         this.nearCacheExecutor = nearCacheExecutor;
         return this;
     }

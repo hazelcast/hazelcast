@@ -82,4 +82,24 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
         maxIdleTimeEvaluatedSuccessfully(InMemoryFormat.BINARY);
     }
 
+    @Test
+    public void expiredRecordsCleanedUpSuccessfullyBecauseOfTTLOnNearCacheObjectRecordStore() {
+        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.OBJECT, false);
+    }
+
+    @Test
+    public void expiredRecordsCleanedUpSuccessfullyBecauseOfTTLOnNearCacheDataRecordStore() {
+        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.BINARY, false);
+    }
+
+    @Test
+    public void expiredRecordsCleanedUpSuccessfullyBecauseOfIdleTimeOnNearCacheObjectRecordStore() {
+        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.OBJECT, true);
+    }
+
+    @Test
+    public void expiredRecordsCleanedUpSuccessfullyBecauseOfIdleTimeOnNearCacheDataRecordStore() {
+        expiredRecordsCleanedUpSuccessfully(InMemoryFormat.BINARY, true);
+    }
+
 }
