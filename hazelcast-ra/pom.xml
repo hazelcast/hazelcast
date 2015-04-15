@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.4.2-gem</version>
+        <version>3.4.2-gem2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
