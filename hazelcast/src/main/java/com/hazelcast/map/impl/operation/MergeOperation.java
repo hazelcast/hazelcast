@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
@@ -26,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class MergeOperation extends BasePutOperation {
@@ -34,6 +35,7 @@ public class MergeOperation extends BasePutOperation {
     private MapMergePolicy mergePolicy;
     private EntryView<Data, Data> mergingEntry;
     private boolean merged;
+    private Data mergingValue;
 
     public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
         super(name, dataKey, null);
@@ -46,15 +48,18 @@ public class MergeOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
-        if (!merged) {
-            return;
+        Record oldRecord = recordStore.getRecord(dataKey);
+        if (oldRecord != null) {
+            dataOldValue = mapService.getMapServiceContext().toData(oldRecord.getValue());
         }
-
-        Record record = recordStore.getRecord(dataKey);
-        if (record != null) {
-            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-            dataValue = mapServiceContext.toData(record.getValue());
+        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
+        if (merged) {
+            Record record = recordStore.getRecord(dataKey);
+            if (record != null) {
+                MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+                dataValue = mapServiceContext.toData(record.getValue());
+                mergingValue = mapService.getMapServiceContext().toData(mergingEntry.getValue());
+            }
         }
     }
 
@@ -72,6 +77,11 @@ public class MergeOperation extends BasePutOperation {
     @Override
     public void afterRun() {
         if (merged) {
+            final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            final MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+            mapServiceContext.interceptAfterPut(name, dataValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, false, dataKey, dataOldValue,
+                    dataValue, mergingValue);
             invalidateNearCaches();
             evict(false);
         }

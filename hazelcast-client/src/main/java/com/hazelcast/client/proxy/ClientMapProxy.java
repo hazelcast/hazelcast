@@ -1136,6 +1136,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
+                case MERGED:
                     iMapEvent = createEntryEvent(event, member);
                     break;
                 case EVICT_ALL:
@@ -1156,13 +1157,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
             V value = null;
             V oldValue = null;
+            V mergingValue = null;
             if (includeValue) {
                 value = toObject(event.getValue());
                 oldValue = toObject(event.getOldValue());
+                mergingValue = toObject(event.getMergingValue());
             }
             K key = toObject(event.getKey());
             return new EntryEvent<K, V>(name, member,
-                    event.getEventType().getType(), key, oldValue, value);
+                    event.getEventType().getType(), key, oldValue, value, mergingValue);
         }
 
         @Override
@@ -1252,6 +1255,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                         case ADDED:
                         case REMOVED:
                         case UPDATED:
+                        case MERGED:
                         case EVICTED:
                             final Data key = event.getKey();
                             nearCache.remove(key);
