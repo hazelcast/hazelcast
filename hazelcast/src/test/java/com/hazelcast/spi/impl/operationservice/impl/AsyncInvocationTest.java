@@ -29,7 +29,6 @@ import java.util.concurrent.CountDownLatch;
 public class AsyncInvocationTest extends HazelcastTestSupport {
 
     @Test
-    @Ignore
     public void testAsyncInvocation_SamePartitionThread_DifferentPartition() {
         HazelcastInstance instance = createHazelcastInstance();
         String name = randomString();
