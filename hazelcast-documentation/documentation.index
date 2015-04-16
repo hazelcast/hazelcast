@@ -187,13 +187,11 @@ src/HazelcastSimulator/SimulatorOverview.md
 	src/HazelcastSimulator/PerformanceAndBenchmarking.md
 src/WAN.md
 #	src/TopologyAwarePartitionManagement.md
-#src/Config.md
 src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/ConfigurationOverview.md
 	src/HazelcastConfiguration/UsingWildcard.md
 	src/HazelcastConfiguration/UsingVariables.md
 	src/HazelcastConfiguration/ComposingXML.md
-#	src/NetworkConfig.md
 	src/HazelcastConfiguration/NetworkConfiguration.md
 	src/HazelcastConfiguration/GroupConfiguration.md
 	src/HazelcastConfiguration/MapConfiguration.md
@@ -209,14 +207,10 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/ServicesConfiguration.md
 	src/HazelcastConfiguration/MgtCenterConfiguration.md
 	src/HazelcastConfiguration/WANReplConfiguration.md
-#		src/ConfigSpecifyInterfaces.md
-#		src/EC2AutoDiscovery.md
-#		src/Ports.md
-#		src/IPv6.md
-		src/PartitionGroupConfig.md
+	src/PartitionGroupConfig.md
 	src/ListenerConfig.md
 	src/Logging.md
-	src/ConfigurationProperties.md
+	src/HazelcastConfiguration/AdvConfProperties.md
 src/NetworkPartitioning.md
 src/Licenses.md
 src/FAQ.md
