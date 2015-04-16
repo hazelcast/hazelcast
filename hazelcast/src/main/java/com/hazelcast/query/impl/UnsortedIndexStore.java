@@ -134,19 +134,19 @@ public class UnsortedIndexStore extends BaseIndexStore {
             Set<Comparable> values = recordMap.keySet();
             for (Comparable value : values) {
                 boolean valid;
-                int result = value.compareTo(searchedValue);
+                int result = searchedValue.compareTo(value);
                 switch (comparisonType) {
                     case LESSER:
-                        valid = result < 0;
-                        break;
-                    case LESSER_EQUAL:
-                        valid = result <= 0;
-                        break;
-                    case GREATER:
                         valid = result > 0;
                         break;
-                    case GREATER_EQUAL:
+                    case LESSER_EQUAL:
                         valid = result >= 0;
+                        break;
+                    case GREATER:
+                        valid = result < 0;
+                        break;
+                    case GREATER_EQUAL:
+                        valid = result <= 0;
                         break;
                     case NOT_EQUAL:
                         valid = result != 0;
