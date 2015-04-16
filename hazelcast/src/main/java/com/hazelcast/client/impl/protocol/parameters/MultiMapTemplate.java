@@ -20,7 +20,7 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 1, name = "MultiMap", ns = "Hazelcast.Client.Protocol.MultiMap")
+@GenerateParameters(id = 2, name = "MultiMap", ns = "Hazelcast.Client.Protocol.MultiMap")
 public interface MultiMapTemplate {
 
     @EncodeMethod(id = 1)
