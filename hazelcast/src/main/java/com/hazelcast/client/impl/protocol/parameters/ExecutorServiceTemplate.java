@@ -30,15 +30,15 @@ public interface ExecutorServiceTemplate {
     void isShutdown(String name);
 
     @EncodeMethod(id = 3)
-    void cancelPartitionCallable(String name, int partitionId, boolean interrupt);
+    void cancelOnPartition(String name, int partitionId, boolean interrupt);
 
     @EncodeMethod(id = 4)
-    void cancelTargetCallable(String name, String hostname, int port, boolean interrupt);
+    void cancelOnAddress(String name, String hostname, int port, boolean interrupt);
 
     @EncodeMethod(id = 5)
-    void partitionTargetCallable(String name, String uuid, Data callable, int partitionId);
+    void submitToPartition(String name, String uuid, Data callable, int partitionId);
 
     @EncodeMethod(id = 6)
-    void specificTargetCallable(String name, String uuid, Data callable, String hostname, int port);
+    void submitToAddress(String name, String uuid, Data callable, String hostname, int port);
 
 }
