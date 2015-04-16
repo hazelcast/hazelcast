@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapValuesParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -53,7 +53,7 @@ public class MapValuesMessageTask extends AbstractAllPartitionsMessageTask<MapVa
         for (Object result : results.values()) {
             values.addAll(((MapValueCollection) mapService.getMapServiceContext().toObject(result)).getValues());
         }
-        return DataListResultParameters.encode(values);
+        return DataCollectionResultParameters.encode(values);
     }
 
     @Override

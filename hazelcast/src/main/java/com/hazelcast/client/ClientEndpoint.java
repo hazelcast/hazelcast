@@ -44,6 +44,8 @@ public interface ClientEndpoint {
 
     String getUuid();
 
+    Credentials getCredentials();
+
     void setTransactionContext(TransactionContext context);
 
     TransactionContext getTransactionContext(String txnId);

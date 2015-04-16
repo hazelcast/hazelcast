@@ -14,70 +14,65 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.map;
+package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapTryLockParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_LOCK}
+ * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_TRYLOCK}
  */
-public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockParameters> {
+public class MultiMapTryLockMessageTask extends AbstractPartitionMessageTask<MultiMapTryLockParameters> {
 
-    public MapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MultiMapTryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, -1, -1);
+
+        DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
+        return new LockOperation(namespace, parameters.key, parameters.threadId, Long.MAX_VALUE);
     }
 
     @Override
-    protected MapLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLockParameters.decode(clientMessage);
+    protected MultiMapTryLockParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapTryLockParameters.decode(clientMessage);
     }
 
     @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);
-    }
-
-    private ObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(MapService.SERVICE_NAME, parameters.name);
-    }
-
-    @Override
-    public String getDistributedObjectName() {
-        return parameters.name;
+        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return "tryLock";
     }
 
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.key};
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_LOCK);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
     }
 }

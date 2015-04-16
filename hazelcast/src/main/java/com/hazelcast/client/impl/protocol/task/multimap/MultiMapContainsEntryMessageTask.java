@@ -14,56 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.map;
+package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsEntryParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_LOCK}
+ * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_CONTAINSENTRY}
  */
-public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockParameters> {
+public class MultiMapContainsEntryMessageTask extends AbstractPartitionMessageTask<MultiMapContainsEntryParameters> {
 
-    public MapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MultiMapContainsEntryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, -1, -1);
+        ContainsEntryOperation operation = new ContainsEntryOperation(parameters.name, parameters.key, parameters.value);
+        operation.setThreadId(parameters.threadId);
+        return operation;
     }
 
     @Override
-    protected MapLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLockParameters.decode(clientMessage);
+    protected MultiMapContainsEntryParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapContainsEntryParameters.decode(clientMessage);
     }
 
     @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);
-    }
-
-    private ObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(MapService.SERVICE_NAME, parameters.name);
+        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -73,11 +63,17 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return "containsEntry";
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.key};
+        return new Object[]{parameters.key, parameters.value};
     }
 }
+

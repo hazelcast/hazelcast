@@ -22,23 +22,22 @@ import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
-import java.util.List;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class DataListResultParameters {
+public class DataCollectionResultParameters {
 
     /**
      * ClientMessageType of this message
      */
     public static final ClientMessageType TYPE = ClientMessageType.DATA_LIST_RESULT;
-    public List<Data> result;
+    public Collection<Data> result;
 
-    private DataListResultParameters(ClientMessage flyweight) {
+    private DataCollectionResultParameters(ClientMessage flyweight) {
         result = flyweight.getDataList();
     }
 
-    public static DataListResultParameters decode(ClientMessage flyweight) {
-        return new DataListResultParameters(flyweight);
+    public static DataCollectionResultParameters decode(ClientMessage flyweight) {
+        return new DataCollectionResultParameters(flyweight);
     }
 
     public static ClientMessage encode(Collection<Data> result) {

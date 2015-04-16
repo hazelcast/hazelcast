@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapTryLockWithTimeoutParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.instance.Node;
@@ -30,26 +30,27 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_LOCK}
+ * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_TRYLOCKWITHTIMEOUT}
  */
-public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockParameters> {
+public class MapTryLockWithTimeoutMessageTask extends AbstractPartitionMessageTask<MapTryLockWithTimeoutParameters> {
 
-    public MapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapTryLockWithTimeoutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
         return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, -1, -1);
+                parameters.threadId, Long.MAX_VALUE, parameters.timeout);
     }
 
     @Override
-    protected MapLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLockParameters.decode(clientMessage);
+    protected MapTryLockWithTimeoutParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapTryLockWithTimeoutParameters.decode(clientMessage);
     }
 
     @Override
@@ -73,11 +74,11 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return "tryLock";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.key};
+        return new Object[]{parameters.key, parameters.timeout, TimeUnit.MILLISECONDS};
     }
 }
