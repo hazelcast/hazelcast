@@ -16,13 +16,19 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static java.lang.Integer.valueOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 import static com.hazelcast.client.impl.protocol.util.BitUtil.*;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class BitUtilTest
 {
     @Test

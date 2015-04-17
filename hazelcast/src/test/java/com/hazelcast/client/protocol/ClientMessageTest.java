@@ -2,9 +2,13 @@ package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -18,6 +22,8 @@ import static org.junit.Assert.assertThat;
 /**
  * ClientMessage Tests of Flyweight functionality
  */
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class ClientMessageTest {
 
     private static final String DEFAULT_ENCODING = "UTF8";
@@ -39,7 +45,7 @@ public class ClientMessageTest {
         ByteBuffer byteBuffer = ByteBuffer.allocate(512);
 
         TestClientMessage cmEncode = new TestClientMessage();
-        cmEncode.wrapForEncode(byteBuffer, 0);
+        cmEncode.wrapForEncode(byteBuffer.array(), 0, byteBuffer.capacity());
 
         cmEncode.setMessageType(0x1122).setVersion((short) 0xEF).setFlags(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(0x12345678)
                 .setPartitionId(0x11223344);
@@ -81,17 +87,17 @@ public class ClientMessageTest {
 
     @Test
     public void shouldEncodeAndDecodeClientMessageCorrectly() {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(512);
+        byte[] byteBuffer = new byte[512];
 
         TestClientMessage cmEncode = new TestClientMessage();
-        cmEncode.wrapForEncode(byteBuffer, 0);
+        cmEncode.wrapForEncode(byteBuffer, 0, byteBuffer.length);
 
         cmEncode.setMessageType(7)
                 .setVersion((short) 3)
                 .setFlags(ClientMessage.BEGIN_AND_END_FLAGS)
                 .setCorrelationId(66).setPartitionId(77);
 
-        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0);
+        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0, byteBuffer.length);
 
         assertEquals(7, cmDecode.getMessageType());
         assertEquals(3, cmDecode.getVersion());
@@ -104,10 +110,10 @@ public class ClientMessageTest {
     @Test
     public void shouldEncodeAndDecodeClientMessageCorrectly_withPayLoadData()
             throws UnsupportedEncodingException {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byte[] byteBuffer = new byte[1024];
 
         TestClientMessage cmEncode = new TestClientMessage();
-        cmEncode.wrapForEncode(byteBuffer, 0);
+        cmEncode.wrapForEncode(byteBuffer, 0, byteBuffer.length);
 
         cmEncode.setMessageType(7)
                 .setVersion((short) 3)
@@ -118,7 +124,7 @@ public class ClientMessageTest {
         final int calculatedFrameSize = ClientMessage.HEADER_SIZE + data1.length;
         cmEncode.putPayloadData(data1);
 
-        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0);
+        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0, byteBuffer.length);
 
         final byte[] cmDecodeVarData1 = new byte[data1.length];
         cmDecode.getPayloadData(cmDecodeVarData1);
@@ -130,10 +136,10 @@ public class ClientMessageTest {
     @Test
     public void shouldEncodeWithNewVersionAndDecodeWithOldVersionCorrectly_withPayLoadData()
             throws UnsupportedEncodingException {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byte[] byteBuffer = new byte[1024];
 
         FutureClientMessage cmEncode = new FutureClientMessage();
-        cmEncode.wrapForEncode(byteBuffer, 0);
+        cmEncode.wrapForEncode(byteBuffer, 0, byteBuffer.length);
 
         cmEncode.theNewField(999)
                 .setMessageType(7).setVersion((short) 3)
@@ -143,7 +149,7 @@ public class ClientMessageTest {
         final int calculatedFrameSize = FutureClientMessage.THE_NEW_HEADER_SIZE + BYTE_DATA.length;
         cmEncode.putPayloadData(BYTE_DATA);
 
-        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0);
+        ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0, byteBuffer.length);
 
         final byte[] cmDecodeVarData1 = new byte[BYTE_DATA.length];
         cmDecode.getPayloadData(cmDecodeVarData1);
@@ -160,10 +166,10 @@ public class ClientMessageTest {
     @Test
     public void shouldEncodeWithOldVersionAndDecodeWithNewVersionCorrectly_withPayLoadData()
             throws UnsupportedEncodingException {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byte[] byteBuffer = new byte[1024];
 
         TestClientMessage cmEncode = new TestClientMessage();
-        cmEncode.wrapForEncode(byteBuffer, 0);
+        cmEncode.wrapForEncode(byteBuffer, 0, byteBuffer.length);
 
         cmEncode.setMessageType(7).setVersion((short) 3)
                 .setFlags(ClientMessage.BEGIN_AND_END_FLAGS)
@@ -173,7 +179,7 @@ public class ClientMessageTest {
         cmEncode.putPayloadData(BYTE_DATA);
 
         FutureClientMessage cmDecode = new FutureClientMessage();
-        cmDecode.wrapForDecode(byteBuffer, 0);
+        cmDecode.wrapForDecode(byteBuffer, 0, byteBuffer.length);
 
         final byte[] cmDecodeVarData1 = new byte[BYTE_DATA.length];
         cmDecode.getPayloadData(cmDecodeVarData1);
@@ -190,9 +196,9 @@ public class ClientMessageTest {
     @Test
     public void shouldEncodeAndDecodeClientMessageCorrectly_withPayLoadData_multipleMessages()
             throws UnsupportedEncodingException {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(1024);
+        byte[] byteBuffer = new byte[1024];
         TestClientMessage cmEncode = new TestClientMessage();
-        cmEncode.wrapForEncode(byteBuffer, 0);
+        cmEncode.wrapForEncode(byteBuffer, 0, byteBuffer.length);
         cmEncode.setMessageType(7).setVersion((short) 3).setFlags(ClientMessage.BEGIN_AND_END_FLAGS)
                 .setCorrelationId(1).setPartitionId(77);
         cmEncode.putPayloadData(BYTE_DATA);
@@ -200,13 +206,13 @@ public class ClientMessageTest {
 
         final int nexMessageOffset = cmEncode.getFrameLength();
         TestClientMessage cmEncode2 = new TestClientMessage();
-        cmEncode2.wrapForEncode(byteBuffer, nexMessageOffset);
+        cmEncode2.wrapForEncode(byteBuffer, nexMessageOffset, byteBuffer.length - nexMessageOffset);
         cmEncode2.setMessageType(7).setVersion((short) 3).setFlags(ClientMessage.BEGIN_AND_END_FLAGS)
                  .setCorrelationId(2).setPartitionId(77);
         cmEncode2.putPayloadData(BYTE_DATA);
         final int calculatedFrame2Size = ClientMessage.HEADER_SIZE + BYTE_DATA.length;
 
-        ClientMessage cmDecode1 = ClientMessage.createForDecode(byteBuffer, 0);
+        ClientMessage cmDecode1 = ClientMessage.createForDecode(byteBuffer, 0, byteBuffer.length);
 
         final byte[] cmDecodeVarData = new byte[BYTE_DATA.length];
         cmDecode1.getPayloadData(cmDecodeVarData);
@@ -219,7 +225,8 @@ public class ClientMessageTest {
         assertEquals(calculatedFrame1Size, cmDecode1.getFrameLength());
         assertArrayEquals(cmDecodeVarData, BYTE_DATA);
 
-        ClientMessage cmDecode2 = ClientMessage.createForDecode(byteBuffer, cmDecode1.getFrameLength());
+        ClientMessage cmDecode2 = ClientMessage.createForDecode(byteBuffer, cmDecode1.getFrameLength(),
+                byteBuffer.length - cmDecode1.getFrameLength());
         cmDecode2.getPayloadData(cmDecodeVarData);
 
         assertEquals(7, cmDecode2.getMessageType());
@@ -237,8 +244,8 @@ public class ClientMessageTest {
         private static final int THE_NEW_HEADER_SIZE = HEADER_SIZE + BitUtil.SIZE_OF_INT;
 
         @Override
-        public void wrapForEncode(final ByteBuffer buffer, final int offset) {
-            super.wrap(buffer, offset);
+        public void wrapForEncode(byte[] buffer, final int offset, int length) {
+            super.wrap(buffer, offset, length);
             setDataOffset(THE_NEW_HEADER_SIZE);
             setFrameLength(THE_NEW_HEADER_SIZE);
             index(getDataOffset());

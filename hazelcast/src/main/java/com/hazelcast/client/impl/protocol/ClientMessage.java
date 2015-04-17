@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.client.impl.protocol.util.MutableDirectBuffer;
 import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
 import com.hazelcast.nio.SocketReadable;
 import com.hazelcast.nio.SocketWritable;
@@ -106,47 +107,61 @@ public class ClientMessage
         super();
     }
 
-    protected ClientMessage(boolean encode, final ByteBuffer buffer, final int offset) {
+    protected ClientMessage(boolean encode, byte[] buffer, int offset, int length) {
+        super(buffer, offset, length);
+        if (encode) {
+            wrapForEncode(buffer, offset, length);
+        } else {
+            wrapForDecode(buffer, offset, length);
+        }
+    }
+
+    public ClientMessage(boolean encode, MutableDirectBuffer buffer, int offset) {
         super(buffer, offset);
         if (encode) {
-            wrapForEncode(buffer, offset);
-        } else {
-            wrapForDecode(buffer, offset);
+            setDataOffset(HEADER_SIZE);
+            setFrameLength(HEADER_SIZE);
+            setPartitionId(-1);
         }
+        index(getDataOffset() + offset);
     }
 
     public static ClientMessage create() {
         final ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrap(ByteBuffer.allocate(INITIAL_BUFFER_CAPACITY), 0);
+        clientMessage.wrap(new byte[INITIAL_BUFFER_CAPACITY]);
         return clientMessage;
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
-        return new ClientMessage(true, ByteBuffer.allocate(initialCapacity), 0);
+        return new ClientMessage(true, new byte[initialCapacity], 0, initialCapacity);
     }
 
     public static ClientMessage createForDecode(int initialCapacity) {
-        return new ClientMessage(false, ByteBuffer.allocate(initialCapacity), 0);
+        return new ClientMessage(false, new byte[initialCapacity], 0, initialCapacity);
     }
 
-    public static ClientMessage createForEncode(final ByteBuffer buffer, final int offset) {
-        return new ClientMessage(true, buffer, offset);
+    public static ClientMessage createForEncode(byte[] buffer, final int offset, int length) {
+        return new ClientMessage(true, buffer, offset, length);
     }
 
-    public static ClientMessage createForDecode(final ByteBuffer buffer, final int offset) {
+    public static ClientMessage createForDecode(byte[] buffer, final int offset, int length) {
+        return new ClientMessage(false, buffer, offset, length);
+    }
+
+    public static ClientMessage createForDecode(final MutableDirectBuffer buffer, final int offset) {
         return new ClientMessage(false, buffer, offset);
     }
 
-    public void wrapForEncode(final ByteBuffer buffer, final int offset) {
-        super.wrap(buffer, offset);
+    public void wrapForEncode(byte[] buffer, int offset, int length) {
+        super.wrap(buffer, offset, length);
         setDataOffset(HEADER_SIZE);
         setFrameLength(HEADER_SIZE);
         index(getDataOffset() + offset);
         setPartitionId(-1);
     }
 
-    public void wrapForDecode(final ByteBuffer buffer, final int offset) {
-        super.wrap(buffer, offset);
+    public void wrapForDecode(byte[] buffer, int offset, int length) {
+        super.wrap(buffer, offset, length);
         index(getDataOffset() + offset);
     }
 
@@ -165,8 +180,8 @@ public class ClientMessage
      * @param version The field value to set.
      * @return ClientMessage
      */
-    public ClientMessage setVersion(final short ver) {
-        uint8Put(offset() + VERSION_FIELD_OFFSET, ver);
+    public ClientMessage setVersion(final short version) {
+        uint8Put(offset() + VERSION_FIELD_OFFSET, version);
         return this;
     }
 
@@ -211,7 +226,7 @@ public class ClientMessage
     /**
      * Sets the message type field.
      *
-     * @param message The message type field value to set.
+     * @param type The message type field value to set.
      * @return ClientMessage
      */
     public ClientMessage setMessageType(final int type) {
@@ -231,7 +246,7 @@ public class ClientMessage
     /**
      * Sets the frame length field.
      *
-     * @param frame The frame length field value to set.
+     * @param length The frame length field value to set.
      * @return ClientMessage
      */
     public ClientMessage setFrameLength(final int length) {
@@ -315,7 +330,7 @@ public class ClientMessage
     /**
      * Reads from the payload data region into the provided array.
      *
-     * @param The payload destination array that the payload will be copied into.
+     * @param payload destination array that the payload will be copied into.
      * @return ClientMessage
      */
     public ClientMessage getPayloadData(byte[] payload) {

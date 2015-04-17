@@ -1,7 +1,6 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.Connection;
 
 import java.nio.ByteBuffer;
 
@@ -12,7 +11,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
 /**
  * Builds {@link ClientMessage}s from byte chunks. Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageBuilder{
+public class ClientMessageBuilder {
 
     private final Int2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Int2ObjectHashMap<BufferBuilder>();
 
@@ -35,32 +34,33 @@ public class ClientMessageBuilder{
                 //HANDLE-MESSAGE
                 handleMessage(message);
                 message = ClientMessage.create();
-            } else {
-                if (message.isFlagSet(BEGIN_FLAG)) {
-                    final BufferBuilder builder = builderBySessionIdMap
-                            .getOrDefault(message.getCorrelationId(), new Int2ObjectHashMap.Supplier<BufferBuilder>() {
-                                @Override
-                                public BufferBuilder get() {
-                                    return new BufferBuilder();
-                                }
-                            });
-                    builder.reset().append(message.buffer(), 0, message.getFrameLength());
-                } else {
-                    final BufferBuilder builder = builderBySessionIdMap.get(message.getCorrelationId());
-                    if (null != builder && builder.limit() != 0) {
-                        builder.append(message.buffer(), message.getDataOffset(), message.getFrameLength() - message.getDataOffset());
+                continue;
+            }
 
-                        if (message.isFlagSet(END_FLAG)) {
-                            final int msgLength = builder.limit();
-                            ClientMessage cm = ClientMessage.createForDecode(ByteBuffer.wrap(builder.buffer().byteArray()), 0);
-                            cm.setFrameLength(msgLength);
-                            //HANDLE-MESSAGE
-                            handleMessage(cm);
-                            builder.reset().compact();
-                        }
-                    }
+            if (message.isFlagSet(BEGIN_FLAG)) {     // first fragment
+                final BufferBuilder builder = new BufferBuilder();
+                builderBySessionIdMap.put(message.getCorrelationId(), builder);
+                builder.append(message.buffer(), 0, message.getFrameLength());
+            } else {
+                final BufferBuilder builder = builderBySessionIdMap.get(message.getCorrelationId());
+                if (builder.limit() == 0) {
+                    throw new IllegalStateException();
+                }
+
+                builder.append(message.buffer(), message.getDataOffset(), message.getFrameLength() - message.getDataOffset());
+
+                if (message.isFlagSet(END_FLAG)) {
+                    final int msgLength = builder.limit();
+                    ClientMessage cm = ClientMessage.createForDecode(builder.buffer(), 0);
+                    cm.setFrameLength(msgLength);
+                    //HANDLE-MESSAGE
+                    handleMessage(cm);
+                    builderBySessionIdMap.remove(message.getCorrelationId());
+
                 }
             }
+
+            message = ClientMessage.create();
         }
     }
 

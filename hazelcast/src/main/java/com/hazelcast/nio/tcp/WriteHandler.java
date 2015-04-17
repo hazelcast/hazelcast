@@ -90,7 +90,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                 socketWriter = new SocketClientDataWriter();
             } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
-                socketWriter = new SocketClientDataWriterNew();
+                socketWriter = new SocketClientMessageWriter();
             } else {
                 socketWriter = new SocketTextWriter(connection);
             }

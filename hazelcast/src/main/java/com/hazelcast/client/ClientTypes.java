@@ -22,6 +22,11 @@ package com.hazelcast.client;
 public final class ClientTypes {
 
     /**
+     * Length of type information in bytes
+     */
+    public static final int TYPE_LENGTH = 3;
+
+    /**
      * Jvm clients protocol id
      */
     public static final String JAVA = "JVM";

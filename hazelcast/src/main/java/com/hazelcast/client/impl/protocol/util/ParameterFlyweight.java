@@ -3,7 +3,6 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -30,16 +29,20 @@ public class ParameterFlyweight
         super();
     }
 
-    public ParameterFlyweight(ByteBuffer buffer, int offset) {
+    public ParameterFlyweight(byte[] buffer, int offset, int length) {
+        super(buffer, offset, length);
+    }
+
+    public ParameterFlyweight(MutableDirectBuffer buffer, int offset) {
         super(buffer, offset);
     }
 
-    public ParameterFlyweight wrap(final ByteBuffer buffer) {
-        return wrap(buffer, 0);
+    public ParameterFlyweight wrap(byte[] buffer) {
+        return wrap(buffer, 0, buffer.length);
     }
 
-    public ParameterFlyweight wrap(final ByteBuffer buffer, final int offset) {
-        super.wrap(buffer, offset);
+    public ParameterFlyweight wrap(byte[] buffer, int offset, int length) {
+        super.wrap(buffer, offset, length);
         this.index = offset;
         return this;
     }

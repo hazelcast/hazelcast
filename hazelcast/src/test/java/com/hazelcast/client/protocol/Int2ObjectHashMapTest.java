@@ -16,8 +16,12 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.util.Int2ObjectHashMap;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,6 +35,8 @@ import static org.hamcrest.number.IsCloseTo.closeTo;
 import static org.hamcrest.number.OrderingComparison.lessThan;
 import static org.junit.Assert.assertThat;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class Int2ObjectHashMapTest
 {
     private final Int2ObjectHashMap<String> intToObjectMap = new Int2ObjectHashMap<String>();
