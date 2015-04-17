@@ -28,9 +28,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -59,9 +60,9 @@ public class RegisterMembershipListenerEventParameters {
 
     }
 
-    private LinkedList<MemberImpl> decodeMemberList(ClientMessage flyweight) {
-        LinkedList<MemberImpl> members = new LinkedList<MemberImpl>();
+    private List<MemberImpl> decodeMemberList(ClientMessage flyweight) {
         int size = flyweight.getInt();
+        List<MemberImpl> members = new ArrayList<MemberImpl>(size);
         for (int i = 0; i < size; i++) {
             members.add(decodeMember(flyweight));
         }
@@ -75,7 +76,7 @@ public class RegisterMembershipListenerEventParameters {
         }
         String uuid = flyweight.getStringUtf8();
         String key = flyweight.getStringUtf8();
-        MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(flyweight.getByte());
+        MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(flyweight.getInt());
         Object value = null;
         if (operationType == PUT) {
             value = decodePrimitive(flyweight);
@@ -145,11 +146,11 @@ public class RegisterMembershipListenerEventParameters {
     }
 
     public static ClientMessage encode(MemberImpl member, int eventType) {
-        return encode(member, null, eventType, Collections.EMPTY_LIST);
+        return encode(member, null, eventType, Collections.<MemberImpl>emptyList());
     }
 
     public static ClientMessage encode(MemberImpl member, MemberAttributeChange memberAttributeChange) {
-        return encode(member, memberAttributeChange, MEMBER_ATTRIBUTE_CHANGED, Collections.EMPTY_LIST);
+        return encode(member, memberAttributeChange, MEMBER_ATTRIBUTE_CHANGED, Collections.<MemberImpl>emptyList());
     }
 
     public static ClientMessage encode(Collection<MemberImpl> members) {

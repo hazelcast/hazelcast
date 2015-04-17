@@ -33,7 +33,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,7 +47,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMemberAttributeTest extends HazelcastTestSupport {
 
     @After
@@ -62,10 +60,11 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     public void testChangeMemberAttributes() throws Exception {
         final int count = 10;
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
         final ClientConfig config = new ClientConfig();
         final ListenerConfig listenerConfig = new ListenerConfig();
         final CountDownLatch countDownLatch = new CountDownLatch(count);
-        listenerConfig.setImplementation(new LatchMembershipListener(countDownLatch));
+        listenerConfig.setImplementation(new LatchMemberAttributeListener(countDownLatch));
         config.addListenerConfig(listenerConfig);
         HazelcastClient.newHazelcastClient(config);
 
@@ -195,7 +194,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         final CountDownLatch latch = new CountDownLatch(3);
-        final MembershipListener listener = new LatchMembershipListener(latch);
+        final MembershipListener listener = new LatchMemberAttributeListener(latch);
         h2.getCluster().addMembershipListener(listener);
         h1.getCluster().addMembershipListener(listener);
         client.getCluster().addMembershipListener(listener);
@@ -254,7 +253,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         final CountDownLatch latch = new CountDownLatch(3);
-        final MembershipListener listener = new LatchMembershipListener(latch);
+        final MembershipListener listener = new LatchMemberAttributeListener(latch);
         h2.getCluster().addMembershipListener(listener);
         h1.getCluster().addMembershipListener(listener);
         client.getCluster().addMembershipListener(listener);
@@ -313,7 +312,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         final CountDownLatch latch = new CountDownLatch(3);
-        final MembershipListener listener = new LatchMembershipListener(latch);
+        final MembershipListener listener = new LatchMemberAttributeListener(latch);
         h2.getCluster().addMembershipListener(listener);
         h1.getCluster().addMembershipListener(listener);
         client.getCluster().addMembershipListener(listener);
@@ -341,10 +340,10 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         h2.shutdown();
     }
 
-    private static class LatchMembershipListener implements MembershipListener {
+    private static class LatchMemberAttributeListener implements MembershipListener {
         private final CountDownLatch latch;
 
-        private LatchMembershipListener(CountDownLatch latch) {
+        private LatchMemberAttributeListener(CountDownLatch latch) {
             this.latch = latch;
         }
 
