@@ -27,7 +27,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
@@ -145,11 +144,11 @@ public class RegisterMembershipListenerEventParameters {
         return new RegisterMembershipListenerEventParameters(flyweight);
     }
 
-    public static ClientMessage encode(Member member, int eventType) {
+    public static ClientMessage encode(MemberImpl member, int eventType) {
         return encode(member, null, eventType, Collections.EMPTY_LIST);
     }
 
-    public static ClientMessage encode(Member member, MemberAttributeChange memberAttributeChange) {
+    public static ClientMessage encode(MemberImpl member, MemberAttributeChange memberAttributeChange) {
         return encode(member, memberAttributeChange, MEMBER_ATTRIBUTE_CHANGED, Collections.EMPTY_LIST);
     }
 
@@ -157,7 +156,7 @@ public class RegisterMembershipListenerEventParameters {
         return encode(null, null, INITIAL_MEMBERS, members);
     }
 
-    private static ClientMessage encode(Member member, MemberAttributeChange memberAttributeChange, int eventType, Collection<MemberImpl> members) {
+    private static ClientMessage encode(MemberImpl member, MemberAttributeChange memberAttributeChange, int eventType, Collection<MemberImpl> members) {
         final int requiredDataSize = calculateDataSize(member, memberAttributeChange, eventType, members);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
@@ -197,14 +196,14 @@ public class RegisterMembershipListenerEventParameters {
         }
     }
 
-    private static void encodeMember(Member member, ClientMessage clientMessage) {
+    private static void encodeMember(MemberImpl member, ClientMessage clientMessage) {
         boolean isNull = member == null;
         clientMessage.set(isNull);
         if(isNull){
             return;
         }
-        InetSocketAddress socketAddress = member.getSocketAddress();
-        clientMessage.set(socketAddress.getHostName()).set(socketAddress.getPort()).set(member.getUuid());
+        Address address = member.getAddress();
+        clientMessage.set(address.getHost()).set(address.getPort()).set(member.getUuid());
         Map<String, Object> attributes = member.getAttributes();
         clientMessage.set(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {

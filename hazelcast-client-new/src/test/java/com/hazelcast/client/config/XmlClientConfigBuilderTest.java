@@ -64,7 +64,6 @@ import static org.junit.Assert.fail;
 //tests need to be executed sequentially because of system properties being set/unset
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class XmlClientConfigBuilderTest {
 
     ClientConfig clientConfig;

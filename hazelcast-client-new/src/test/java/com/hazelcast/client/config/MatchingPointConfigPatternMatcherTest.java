@@ -31,7 +31,6 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class MatchingPointConfigPatternMatcherTest {
 
     @Test
