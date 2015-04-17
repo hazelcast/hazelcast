@@ -220,6 +220,42 @@ public class MapConfigTest {
         assertNotNull(config.getMapConfig("test").getMapStoreConfig());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenItsNegative(){
+        MapConfig config = new MapConfig();
+        config.setAsyncBackupCount(-1);
+    }
+
+    @Test
+    public void setAsyncBackupCount_whenItsZero(){
+        MapConfig config = new MapConfig();
+        config.setAsyncBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenTooLarge(){
+        MapConfig config = new MapConfig();
+        config.setAsyncBackupCount(200); //max allowed is 6..
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_whenItsNegative(){
+        MapConfig config = new MapConfig();
+        config.setBackupCount(-1);
+    }
+
+    @Test
+    public void setBackupCount_whenItsZero(){
+        MapConfig config = new MapConfig();
+        config.setBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_tooLarge(){
+        MapConfig config = new MapConfig();
+        config.setBackupCount(200); //max allowed is 6..
+    }
+
     /**
      * Test method for {@link com.hazelcast.config.MapStoreConfig#setWriteBatchSize(int)}.
      */
