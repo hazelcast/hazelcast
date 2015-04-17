@@ -3,6 +3,7 @@ package com.hazelcast.client.protocol;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
 import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
+import com.hazelcast.client.impl.protocol.util.MutableDirectBuffer;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Hazelcast;
@@ -83,8 +84,8 @@ public class RawProtocolTest {
         final ClientMessage parameters = AuthenticationParameters.encode(username, pass, "", "", true);
         parameters.setCorrelationId(1).setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
 
-        final ByteBuffer byteBuffer = parameters.buffer().byteBuffer();
-        channel.write(byteBuffer);
+        final MutableDirectBuffer byteBuffer = parameters.buffer();
+        channel.write(ByteBuffer.wrap(byteBuffer.byteArray()));
 
         final ByteBuffer socketBuffer = ByteBuffer.allocate(4096);
         ClientMessage clientMessage = ClientMessage.create();
@@ -102,7 +103,7 @@ public class RawProtocolTest {
 
         assertTrue(clientMessage.isComplete());
 
-        ClientMessage cmResult = ClientMessage.createForDecode(clientMessage.buffer().byteBuffer(), 0);
+        ClientMessage cmResult = ClientMessage.createForDecode(clientMessage.buffer(), 0);
         final AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(cmResult);
 
         assertEquals(cmResult.getCorrelationId(), 1);

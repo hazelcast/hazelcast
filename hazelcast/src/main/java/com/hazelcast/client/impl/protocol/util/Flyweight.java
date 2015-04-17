@@ -17,7 +17,6 @@ package com.hazelcast.client.impl.protocol.util;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import static com.hazelcast.client.impl.protocol.util.BitUtil.BYTE_MASK;
 import static com.hazelcast.client.impl.protocol.util.BitUtil.INT_MASK;
@@ -32,13 +31,28 @@ public class Flyweight {
     protected final MutableDirectBuffer buffer;
     private int offset;
 
-    protected Flyweight(){
-        buffer= new UnsafeBuffer(ByteBuffer.allocate(0));
+    protected Flyweight() {
+        buffer = new UnsafeBuffer(ByteBuffer.allocate(0));
     }
 
-    protected Flyweight(final ByteBuffer buffer, final int offset){
-        this.buffer = new UnsafeBuffer(buffer);
+    protected Flyweight(byte[] buffer, int offset, int length) {
+        this.buffer = new UnsafeBuffer(buffer, offset, length);
         this.offset = offset;
+    }
+
+    public Flyweight(MutableDirectBuffer buffer, final int offset) {
+        this.buffer = buffer;
+        this.offset = offset;
+    }
+
+    public Flyweight wrap(byte[] buffer) {
+        return wrap(buffer, 0, buffer.length);
+    }
+
+    public Flyweight wrap(byte[] buffer, int offset, int length) {
+        this.buffer.wrap(buffer, offset, length);
+        this.offset = offset;
+        return this;
     }
 
     public Flyweight wrap(final ByteBuffer buffer) {

@@ -1,9 +1,13 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
 
@@ -15,6 +19,8 @@ import static org.junit.Assert.assertThat;
 /**
  * Flyweight Tests
  */
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class FlyweightTest {
 
     private static byte[] DATA = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,

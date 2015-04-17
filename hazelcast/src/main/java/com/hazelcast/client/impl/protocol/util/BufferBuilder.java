@@ -26,7 +26,7 @@ public class BufferBuilder {
     private final MutableDirectBuffer mutableDirectBuffer;
 
     private byte[] buffer;
-    private int limit = 0;
+    private int limit; // positition
     private int capacity;
 
     /**
