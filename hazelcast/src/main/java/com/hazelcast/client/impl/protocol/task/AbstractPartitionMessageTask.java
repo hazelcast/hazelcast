@@ -18,10 +18,11 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -29,7 +30,8 @@ import com.hazelcast.spi.Operation;
  * AbstractPartitionMessageTask
  */
 public abstract class AbstractPartitionMessageTask<P>
-        extends AbstractMessageTask<P> {
+        extends AbstractMessageTask<P>
+        implements ExecutionCallback {
 
     private static final int TRY_COUNT = 100;
 
@@ -61,42 +63,40 @@ public abstract class AbstractPartitionMessageTask<P>
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = nodeEngine.getOperationService()
-                      .createInvocationBuilder(getServiceName(), op, getPartitionId())
-                      .setReplicaIndex(getReplicaIndex())
-                      .setTryCount(TRY_COUNT)
-                      .setResultDeserialized(false)
-                      .setCallback(new CallbackImpl());
-        builder.invoke();
+                                              .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                                              .setTryCount(TRY_COUNT).setResultDeserialized(false);
+
+        ICompletableFuture future = builder.invoke();
+        future.andThen(this);
     }
 
     protected abstract Operation prepareOperation();
 
-    protected abstract int getPartition();
-
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    protected byte[] filter(Object response) {
-        if (response == null) {
-            return null;
-        }
-        Data data = (Data) response;
-        return data.toByteArray();
-    }
-
-    private class CallbackImpl implements Callback<Object> {
-
-        public CallbackImpl() {
-        }
-
-        @Override
-        public void notify(Object object) {
-            beforeResponse();
-            final byte[] result = filter(object);
-            final ClientMessage resultParameters = GenericResultParameters.encode(result);
-            sendClientMessage(resultParameters);
-            afterResponse();
+    protected ClientMessage encodeResponse(Object response) {
+        final ClientMessage resultParameters;
+        try {
+            final Data responseData = (Data) response;
+            resultParameters = GenericResultParameters.encode(responseData);
+            return resultParameters;
+        } catch (ClassCastException e) {
+            logger.severe("Unsupported response type :" + response.getClass().getName());
+            throw e;
         }
     }
+
+    @Override
+    public void onResponse(Object response) {
+        beforeResponse();
+        final ClientMessage resultParameters = encodeResponse(response);
+        sendClientMessage(resultParameters);
+        afterResponse();
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        beforeResponse();
+        sendClientMessage(t);
+        afterResponse();
+    }
+
 }

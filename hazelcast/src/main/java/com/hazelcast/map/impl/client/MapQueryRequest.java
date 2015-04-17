@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.IterationType;
+
 import java.io.IOException;
 
 public final class MapQueryRequest extends AbstractMapQueryRequest {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap;
 
-
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;

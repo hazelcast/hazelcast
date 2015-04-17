@@ -86,6 +86,21 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<GetPar
     }
 
     @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
         return null;
     }

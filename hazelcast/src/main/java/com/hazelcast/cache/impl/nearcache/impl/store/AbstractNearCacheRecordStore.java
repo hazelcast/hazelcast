@@ -214,7 +214,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
                 onRecordCreate(record);
                 putRecord(key, record);
                 nearCacheStats.incrementOwnedEntryCount();
-                nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
             } else {
                 long oldRecordMemoryCost = getRecordStorageMemoryCost(record);
                 putToRecord(record, value);
@@ -239,7 +238,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
             if (record != null) {
                 removed = true;
                 nearCacheStats.decrementOwnedEntryCount();
-                nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
             }
             onRemove(key, record, removed);
             return record != null;

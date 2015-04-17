@@ -4,6 +4,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_BYTE;
 import static com.hazelcast.client.impl.protocol.util.BitUtil.SIZE_OF_DOUBLE;
@@ -26,7 +31,7 @@ public class ParameterFlyweight
     }
 
     public ParameterFlyweight(ByteBuffer buffer, int offset) {
-        super(buffer,offset);
+        super(buffer, offset);
     }
 
     public ParameterFlyweight wrap(final ByteBuffer buffer) {
@@ -96,12 +101,29 @@ public class ParameterFlyweight
         return this;
     }
 
+    public ParameterFlyweight set(Data data) {
+        final byte[] bytes = data.toByteArray();
+        set(bytes);
+        return this;
+    }
+
     public ParameterFlyweight set(final byte[] value) {
         final int length = value != null ? value.length : 0;
         set(length);
-        if(length > 0) {
+        if (length > 0) {
             buffer.putBytes(index, value);
             index += length;
+        }
+        return this;
+    }
+
+    public ParameterFlyweight set(final Collection<Data> value) {
+        final int length = value != null ? value.size() : 0;
+        set(length);
+        if(length > 0) {
+            for(Data v:value){
+                set(v);
+            }
         }
         return this;
     }
@@ -171,6 +193,27 @@ public class ParameterFlyweight
     public Data getData() {
         return new DefaultData(getByteArray());
     }
+
+    public List<Data> getDataList() {
+        final int length = buffer.getInt(index, LITTLE_ENDIAN);
+        index += SIZE_OF_INT;
+        final List<Data> result = new ArrayList<Data>();
+        for(int i=0; i <length; i++) {
+            result.add(getData());
+        }
+        return result;
+    }
+
+    public Set<Data> getDataSet() {
+        final int length = buffer.getInt(index, LITTLE_ENDIAN);
+        index += SIZE_OF_INT;
+        final Set<Data> result = new HashSet<Data>();
+        for(int i=0; i <length; i++) {
+            result.add(getData());
+        }
+        return result;
+    }
+
     //endregion GET Overloads
 
 }

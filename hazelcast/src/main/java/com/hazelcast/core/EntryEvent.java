@@ -36,6 +36,8 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     protected V value;
 
+    protected V mergingValue;
+
     /**
      * Constructs an entry event.
      *
@@ -49,6 +51,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
+
 
     /**
      * Constructs an entry event.
@@ -66,6 +69,26 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
         this.key = key;
         this.oldValue = oldValue;
         this.value = value;
+    }
+
+    /**
+     * Constructs an entry event.
+     *
+     * @param source       The object on which the Event initially occurred.
+     * @param member       The interface to the cluster member (node).
+     * @param eventType    The event type as an enum {@link EntryEventType} integer.
+     * @param key          The key of this entry event.
+     * @param oldValue     The old value of the entry event.
+     * @param value        The value of the entry event.
+     * @param mergingValue The incoming merging value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
+    public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value, V mergingValue) {
+        super(source, member, eventType);
+        this.key = key;
+        this.oldValue = oldValue;
+        this.value = value;
+        this.mergingValue = mergingValue;
     }
 
     /**
@@ -95,6 +118,15 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
         return value;
     }
 
+    /**
+     * Returns the incoming merging value of the entry event.
+     *
+     * @return merge value
+     */
+    public V getMergingValue() {
+        return mergingValue;
+    }
+
     @Override
     public String toString() {
         return "EntryEvent{"
@@ -102,6 +134,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
                 + ", key=" + getKey()
                 + ", oldValue=" + getOldValue()
                 + ", value=" + getValue()
+                + ", mergingValue=" + getMergingValue()
                 + '}';
     }
 }

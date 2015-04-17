@@ -83,4 +83,9 @@ public interface NearCacheRecordStore<K, V> {
      */
     int size();
 
+    /**
+     * Does expiration and evicts expired records.
+     */
+    void doExpiration();
+
 }

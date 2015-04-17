@@ -248,7 +248,7 @@
                 <dependency>
                     <groupId>org.hibernate</groupId>
                     <artifactId>hibernate-core</artifactId>
-                    <version>3.5.4-Final</version>
+                    <version>3.6.10.Final</version>
                     <scope>test</scope>
                 </dependency>
             </dependencies>

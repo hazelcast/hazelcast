@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryEventType;
@@ -74,6 +90,13 @@ class MapEventPublisherSupport implements MapEventPublisher {
     @Override
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
                              final Data dataKey, Data dataOldValue, Data dataValue) {
+        publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, dataOldValue, dataValue, null);
+
+    }
+
+    @Override
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
+                             final Data dataKey, Data dataOldValue, Data dataValue, Data dataMergingValue) {
         final Collection<EventRegistration> registrations = getRegistrations(mapName);
         if (registrations.isEmpty()) {
             return;
@@ -100,7 +123,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
         }
 
         final EntryEventData eventData = createEntryEventData(mapName, caller,
-                dataKey, dataValue, dataOldValue, eventType.getType());
+                dataKey, dataValue, dataOldValue, dataMergingValue, eventType.getType());
         final int orderKey = pickOrderKey(dataKey);
 
         if (withValueRegistrationExists) {
@@ -280,10 +303,10 @@ class MapEventPublisherSupport implements MapEventPublisher {
 
     private EntryEventData createEntryEventData(String mapName, Address caller,
                                                 Data dataKey, Data dataNewValue, Data dataOldValue,
-                                                int eventType) {
+                                                Data dataMergingValue, int eventType) {
         final String thisNodesAddress = getThisNodesAddress();
         return new EntryEventData(thisNodesAddress, mapName, caller,
-                dataKey, dataNewValue, dataOldValue, eventType);
+                dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
 
     private static enum Result {

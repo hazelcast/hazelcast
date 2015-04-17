@@ -2,6 +2,7 @@ package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.parameters.MapMessageType;
 import com.hazelcast.client.impl.protocol.parameters.MapPutParameters;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -24,10 +25,7 @@ public class MapMessageEncodeDecodeTest {
 
     private static final String NAME = "name";
     private static final Data DATA = serializationService.toData("The Test");
-    private static final byte[] BYTES_DATA = DATA.toByteArray();
     private static final long THE_LONG = 0xFFFFl;
-
-    private static final boolean THE_BOOLEAN = true;
 
     private ByteBuffer byteBuffer;
 
@@ -38,10 +36,8 @@ public class MapMessageEncodeDecodeTest {
 
     @Test
     public void shouldEncodeDecodeCorrectly_PUT() {
-        final int calculatedSize =
-                (BitUtil.SIZE_OF_INT + NAME.length()) + (BitUtil.SIZE_OF_INT + BYTES_DATA.length) * 2 + 8 * 2 + 1
-                        + ClientMessage.HEADER_SIZE;
-        ClientMessage cmEncode = MapPutParameters.encode(NAME, BYTES_DATA, BYTES_DATA, THE_LONG, THE_LONG, THE_BOOLEAN);
+        final int calculatedSize = MapPutParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG);
+        ClientMessage cmEncode = MapPutParameters.encode(NAME, DATA, DATA, THE_LONG, THE_LONG);
         cmEncode.setVersion((short) 3).setFlags(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
 
         byteBuffer = cmEncode.buffer().byteBuffer();
@@ -52,18 +48,17 @@ public class MapMessageEncodeDecodeTest {
 
         assertEquals(calculatedSize, cmEncode.getFrameLength());
 
-        assertEquals(ClientMessageType.MAP_PUT_REQUEST.id(), cmDecode.getMessageType());
+        assertEquals(MapMessageType.MAP_PUT.id(), cmDecode.getMessageType());
         assertEquals(3, cmDecode.getVersion());
         assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
         assertEquals(66, cmDecode.getCorrelationId());
         assertEquals(77, cmDecode.getPartitionId());
 
         assertEquals(NAME, decodeParams.name);
-        assertArrayEquals(BYTES_DATA, decodeParams.key);
-        assertArrayEquals(BYTES_DATA, decodeParams.value);
+        assertEquals(DATA, decodeParams.key);
+        assertEquals(DATA, decodeParams.value);
         assertEquals(THE_LONG, decodeParams.threadId);
         assertEquals(THE_LONG, decodeParams.ttl);
-        assertEquals(THE_BOOLEAN, decodeParams.async);
     }
 
 }

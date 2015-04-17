@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
 import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
@@ -294,8 +293,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public <C extends EvictionCandidate<Data, R>> void onEvict(C candidate) {
-        invalidateEntry(candidate.getAccessor());
+    public void onEvict(Data key, R record) {
+        invalidateEntry(key);
     }
 
     protected void invalidateEntry(Data key) {

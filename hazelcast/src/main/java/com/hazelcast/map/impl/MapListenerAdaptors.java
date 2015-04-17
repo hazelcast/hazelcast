@@ -22,6 +22,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapClearedListener;
@@ -170,6 +171,27 @@ public final class MapListenerAdaptors {
             };
 
     /**
+     * Converts an {@link com.hazelcast.map.listener.EntryMergedListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
+     */
+    private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_MERGED_LISTENER_ADAPTER_CONSTRUCTOR =
+            new ConstructorFunction<MapListener, ListenerAdapter>() {
+                @Override
+                public ListenerAdapter createNew(MapListener mapListener) {
+                    if (!(mapListener instanceof EntryMergedListener)) {
+                        return null;
+                    }
+                    final EntryMergedListener listener = (EntryMergedListener) mapListener;
+                    return new ListenerAdapter() {
+                        @Override
+                        public void onEvent(IMapEvent event) {
+                            listener.entryMerged((EntryEvent) event);
+                        }
+                    };
+                }
+            };
+
+
+    /**
      * Register all {@link com.hazelcast.map.impl.ListenerAdapter} constructors
      * according to {@link com.hazelcast.core.EntryEventType}s.
      */
@@ -180,6 +202,7 @@ public final class MapListenerAdaptors {
         CONSTRUCTORS.put(EntryEventType.UPDATED, ENTRY_UPDATED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.EVICT_ALL, MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.CLEAR_ALL, MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(EntryEventType.MERGED, ENTRY_MERGED_LISTENER_ADAPTER_CONSTRUCTOR);
     }
 
     private MapListenerAdaptors() {

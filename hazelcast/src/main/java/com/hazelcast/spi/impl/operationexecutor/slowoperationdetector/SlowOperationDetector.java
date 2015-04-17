@@ -52,6 +52,7 @@ public final class SlowOperationDetector {
     private final long slowOperationThresholdNanos;
     private final long logPurgeIntervalNanos;
     private final long logRetentionNanos;
+    private final boolean isStackTraceLoggingEnabled;
 
     private final OperationRunner[] genericOperationRunners;
     private final OperationRunner[] partitionOperationRunners;
@@ -73,6 +74,7 @@ public final class SlowOperationDetector {
         this.slowOperationThresholdNanos = getMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
         this.logPurgeIntervalNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
         this.logRetentionNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
+        this.isStackTraceLoggingEnabled = groupProperties.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getBoolean();
 
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
@@ -190,9 +192,9 @@ public final class SlowOperationDetector {
                 // create the log for this operation and cache the invocation for upcoming updates
                 SlowOperationLog log = getOrCreate(stackTrace, operation);
                 int totalInvocations = log.totalInvocations.incrementAndGet();
-                operationData.invocation = log.getOrCreate(operationHashCode, durationNanos, nowNanos, nowMillis);
+                operationData.invocation = log.getOrCreate(operationHashCode, operation, durationNanos, nowNanos, nowMillis);
 
-                logSlowOperation(operation, log, totalInvocations);
+                logSlowOperation(log, totalInvocations);
             }
         }
 
@@ -227,14 +229,24 @@ public final class SlowOperationDetector {
             return candidate;
         }
 
-        private void logSlowOperation(Object operation, SlowOperationLog log, int totalInvocations) {
-            if (totalInvocations == 1) {
-                logger.warning(format("Slow operation detected: %s%n%s", operation, log.stackTrace));
+        private void logSlowOperation(SlowOperationLog log, int totalInvocations) {
+            if (isStackTraceLoggingEnabled) {
+                // log with stack traces
+                if (totalInvocations == 1) {
+                    logger.warning(format("Slow operation detected: %s%n%s", log.operation, log.stackTrace));
+                    return;
+                }
+                // print the full stack trace each FULL_LOG_FREQUENCY invocations
+                logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", log.operation, totalInvocations,
+                        (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.stackTrace : log.shortStackTrace));
                 return;
             }
-            // print the full stack trace each FULL_LOG_FREQUENCY invocations
-            logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", operation, totalInvocations,
-                    (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.stackTrace : log.shortStackTrace));
+            // log without stack traces
+            if (totalInvocations == 1) {
+                logger.warning(format("Slow operation detected: %s", log.operation));
+                return;
+            }
+            logger.warning(format("Slow operation detected: %s (%d invocations)", log.operation, totalInvocations));
         }
 
         private boolean purge(long nowNanos, long lastLogPurge) {

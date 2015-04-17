@@ -23,6 +23,7 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -142,15 +143,27 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test(expected = CancellationException.class)
     public void cancelWhileQueued() throws ExecutionException, InterruptedException {
-        Callable task1 = new SleepingTask(1);
-        executor.submit(task1);
+        Callable task1 = new SleepingTask(100);
+        Future inProgFuture = executor.submit(task1);
+
         Callable task2 = new BasicTestTask();
+        /* This future should not be an instance of CompletedFuture
+         * Because even if we get an exception, isDone is returning true */
         Future queuedFuture = executor.submit(task2);
-        assertFalse(queuedFuture.isDone());
-        assertTrue(queuedFuture.cancel(true));
-        assertTrue(queuedFuture.isCancelled());
-        assertTrue(queuedFuture.isDone());
+
+        try {
+            assertFalse(queuedFuture.isDone());
+            assertTrue(queuedFuture.cancel(true));
+            assertTrue(queuedFuture.isCancelled());
+            assertTrue(queuedFuture.isDone());
+        } catch (AssertionError e) {
+            throw e;
+        } finally {
+            inProgFuture.cancel(true);
+        }
+
         queuedFuture.get();
+
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
+import com.hazelcast.test.AssertTask;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,8 +24,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
     protected NearCache<Integer, String> createNearCache(String name,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
         return createNearCache(name,
-                createNearCacheConfig(name, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
-                nearCacheRecordStore);
+                               createNearCacheConfig(name, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
+                               nearCacheRecordStore);
     }
 
     protected class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
@@ -43,6 +44,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         protected boolean selectToSaveCalled;
         protected final Object selectedCandidateToSave = new Object();
         protected int latestSize;
+        protected volatile boolean doExpirationCalled;
 
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
@@ -117,6 +119,14 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             }
             latestSize = expectedKeyValueMappings.size();
             return latestSize;
+        }
+
+        @Override
+        public void doExpiration() {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
+            doExpirationCalled = true;
         }
 
     }
@@ -331,6 +341,33 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         assertTrue(managedNearCacheRecordStore.selectToSaveCalled);
         assertEquals(managedNearCacheRecordStore.selectedCandidateToSave, selectedCandidate);
+    }
+
+    protected void doCreateNearCacheAndWaitForExpirationCalled(boolean useTTL) {
+        final ManagedNearCacheRecordStore managedNearCacheRecordStore =
+                createManagedNearCacheRecordStore();
+
+        NearCacheConfig nearCacheConfig =
+                createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME,
+                                      NearCacheConfig.DEFAULT_MEMORY_FORMAT);
+        if (useTTL) {
+            nearCacheConfig.setTimeToLiveSeconds(NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS - 1);
+        } else {
+            nearCacheConfig.setMaxIdleSeconds(NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS - 1);
+        }
+
+        createNearCache(DEFAULT_NEAR_CACHE_NAME, nearCacheConfig, managedNearCacheRecordStore);
+
+        sleepSeconds(NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS + 1);
+
+        // Expiration will be called eventually
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(managedNearCacheRecordStore.doExpirationCalled);
+            }
+        });
     }
 
 }

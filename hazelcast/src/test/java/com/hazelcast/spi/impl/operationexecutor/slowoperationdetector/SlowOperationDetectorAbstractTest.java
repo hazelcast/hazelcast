@@ -140,7 +140,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static void assertEntryProcessorOperation(SlowOperationLog log) {
         String operation = log.operation;
-        assertEqualsStringFormat("Expected operation %s, but was %s", "PartitionWideEntryWithPredicateOperation{}", operation);
+        assertEqualsStringFormat("Expected operation %s, but was %s",
+                "com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperation", operation);
     }
 
     static void assertOperationContainsClassName(SlowOperationLog log, String className) {

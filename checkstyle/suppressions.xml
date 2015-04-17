@@ -6,7 +6,11 @@
 
 <suppressions>
 
-    <!-- Suppress duplicate checking of copyright notice -->
+    <!-- Suppress checking of copyright notice -->
+    <suppress checks="Header" files="com.hazelcast.logging.Log4j2Factory.java"/>
+    <suppress checks="Header" files="[\\/]hazelcast-code-generator[\\/]"/>
+
+    <!-- Suppress strict duplicate code checking -->
     <suppress checks="StrictDuplicateCode" files=".java" lines="1-15"/>
 
     <!-- Suppressing warnings on the PortableHook -->
@@ -202,6 +206,9 @@
     <!--Parameters class are gonna be auto generated-->
     <suppress checks="" files="com.hazelcast.client.impl.protocol.map.*Parameters"/>
     <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.parameters.MapTemplate"/>
+    <suppress checks="ParameterNumber" files="com.hazelcast.client.impl.protocol.parameters.MapReduceTemplate"/>
+
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.ClientMessage"/>
     <suppress checks="JavadocType" files="com.hazelcast.client.impl.protocol.ClientMessageType"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.client.impl.protocol.ClientMessageType"/>
@@ -286,7 +293,7 @@
 
     <suppress checks="MethodCount"
               files="com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl"/>
-     <!-- the invocation just has many parameters because there are a lot of things to tune.-->
+    <!-- the invocation just has many parameters because there are a lot of things to tune.-->
     <suppress checks="ParameterNumber"
               files="com.hazelcast.spi.impl.operationservice.impl.InvocationImpl"/>
     <!-- the partition-invocation just has many parameters because there are a lot of things to tune.-->

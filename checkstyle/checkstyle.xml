@@ -80,10 +80,10 @@
 
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
-     <!--<module name="Header">-->
-       <!--<property name="headerFile" value="${basedir}/checkstyle/ClassHeader.txt"/>-->
-       <!--<property name="fileExtensions" value="java"/>-->
-     <!--</module>-->
+    <module name="Header">
+       <property name="headerFile" value="${main.basedir}/checkstyle/ClassHeader.txt"/>
+       <property name="fileExtensions" value="java"/>
+     </module>
 
     <module name="TreeWalker">
         <!-- Activate comment suppression filters -->
@@ -112,7 +112,6 @@
         </module>
 
         <module name="TrailingComment"/>
-
 
 
         <!-- Checks for Naming Conventions.                  -->
@@ -178,7 +177,6 @@
         <module name="MethodCount">
             <property name="maxTotal" value="30"/>
         </module>
-
 
 
         <!-- Checks for whitespace                               -->
@@ -268,7 +266,6 @@
         <module name="MissingSwitchDefault"/>
 
 
-
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->
         <!-- module name="DesignForExtension"/ -->
@@ -297,7 +294,6 @@
         <module name="NPathComplexity">
             <property name="max" value="50"/>
         </module>
-
 
 
         <!-- Miscellaneous other checks.                   -->

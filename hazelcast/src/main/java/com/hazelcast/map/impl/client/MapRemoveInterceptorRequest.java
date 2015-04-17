@@ -96,6 +96,7 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
         id = reader.readUTF("id");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_INTERCEPT);
     }

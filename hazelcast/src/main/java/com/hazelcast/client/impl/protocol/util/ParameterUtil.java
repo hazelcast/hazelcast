@@ -18,8 +18,10 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 
 import java.net.UnknownHostException;
+import java.util.Collection;
 
 public class ParameterUtil {
 
@@ -27,7 +29,7 @@ public class ParameterUtil {
         if (string == null) {
             return BitUtil.SIZE_OF_INT * 5;
         }
-        return BitUtil.SIZE_OF_INT + string.length() * 3;
+        return BitUtil.SIZE_OF_INT + string.length() * 4;
     }
 
     public static int calculateByteArrayDataSize(byte[] bytes) {
@@ -69,4 +71,15 @@ public class ParameterUtil {
 
     }
 
+    public static int calculateDataSize(Data key) {
+        return calculateByteArrayDataSize(key.toByteArray());
+    }
+
+    public static int calculateCollectionDataSize(Collection<Data> dataCollection) {
+        int total = BitUtil.SIZE_OF_INT;
+        for (Data data : dataCollection) {
+            total += calculateDataSize(data);
+        }
+        return total;
+    }
 }

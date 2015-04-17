@@ -67,7 +67,6 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final MapService mapService = getService();
 
         EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
-
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.isAlive()) {
@@ -79,12 +78,12 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue,
+                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
                             event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
-
             @Override
             public void onMapEvent(MapEvent event) {
                 if (endpoint.isAlive()) {

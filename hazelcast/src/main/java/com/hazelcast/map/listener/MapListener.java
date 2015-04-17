@@ -41,6 +41,7 @@ import java.util.EventListener;
  * @see EntryAddedListener
  * @see EntryEvictedListener
  * @see EntryRemovedListener
+ * @see EntryMergedListener
  * @see EntryUpdatedListener
  * @since 3.5
  */

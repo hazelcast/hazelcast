@@ -84,7 +84,7 @@ public class CacheRecordHashMap
             if (remove(evictionCandidate.getAccessor()) != null) {
                 actualEvictedCount++;
                 if (evictionListener != null) {
-                    evictionListener.onEvict(evictionCandidate);
+                    evictionListener.onEvict(evictionCandidate.getAccessor(), evictionCandidate.getEvictable());
                 }
             }
         }

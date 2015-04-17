@@ -47,6 +47,26 @@ public class AuthenticationCustomCredentialsMessageTask
         return AuthenticationCustomCredentialsParameters.decode(clientMessage);
     }
 
+    @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
     protected boolean authenticate() {
         Connection connection = endpoint.getConnection();
         boolean authenticated = (clientEngine.getSecurityContext() != null) && authenticateWithCustomCredentials(

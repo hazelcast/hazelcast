@@ -38,6 +38,7 @@
         <module>hazelcast-cloud</module>
         <module>hazelcast-ra</module>
         <module>hazelcast-build-utils</module>
+        <module>hazelcast-code-generator</module>
     </modules>
 
     <properties>
@@ -158,6 +159,7 @@
                 <includes>
                     <include>**/*.license</include>
                     <include>**/*.key</include>
+                    <include>**/*.ftl</include>
                     <include>**/META-INF/services/*.*</include>
                 </includes>
             </resource>

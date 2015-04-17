@@ -43,6 +43,26 @@ public class NoSuchMessageTask
 
     }
 
+    @Override
+    public String getServiceName() {
+        return null;
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return null;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
     //Overriding the partition id send from client as it is not recognized
     @Override
     public int getPartitionId() {
