@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author ali 6/10/13
+ * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
  */
 public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements TransactionalMap<K, V> {
 
@@ -39,150 +39,162 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         super(name, proxy);
     }
 
+    @Override
     public boolean containsKey(Object key) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.CONTAINS_KEY, toData(key));
-        Boolean result = invoke(request);
-        return result;
+        return this.<Boolean>invoke(request);
     }
 
+    @Override
     public V get(Object key) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.GET, toData(key));
         return invoke(request);
     }
 
+    @Override
     public V getForUpdate(Object key) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.GET_FOR_UPDATE, toData(key));
         return invoke(request);
     }
 
+    @Override
     public int size() {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.SIZE);
-        Integer result = invoke(request);
-        return result;
+        return this.<Integer>invoke(request);
     }
 
+    @Override
     public boolean isEmpty() {
         return size() == 0;
     }
 
+    @Override
     public V put(K key, V value) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT, toData(key), toData(value));
         return invoke(request);
     }
 
+    @Override
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.PUT_WITH_TTL, toData(key), toData(value), ttl, timeunit);
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_WITH_TTL, toData(key),
+                toData(value), ttl, timeunit);
         return invoke(request);
     }
 
+    @Override
     public void set(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.SET, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.SET, toData(key), toData(value));
         invoke(request);
     }
 
+    @Override
     public V putIfAbsent(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.PUT_IF_ABSENT, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_IF_ABSENT, toData(key),
+                toData(value));
         return invoke(request);
     }
 
+    @Override
     public V replace(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.REPLACE, toData(key), toData(value));
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE, toData(key), toData(value));
         return invoke(request);
     }
 
+    @Override
     public boolean replace(K key, V oldValue, V newValue) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.REPLACE_IF_SAME, toData(key), toData(oldValue), toData(newValue));
-        Boolean result = invoke(request);
-        return result;
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE_IF_SAME, toData(key),
+                toData(oldValue), toData(newValue));
+        return this.<Boolean>invoke(request);
     }
 
+    @Override
     public V remove(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.REMOVE, toData(key));
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE, toData(key));
         return invoke(request);
     }
 
+    @Override
     public void delete(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.DELETE, toData(key));
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.DELETE, toData(key));
         invoke(request);
     }
 
+    @Override
     public boolean remove(Object key, Object value) {
-        TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.REMOVE_IF_SAME, toData(key), toData(value));
-        Boolean result = invoke(request);
-        return result;
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE_IF_SAME, toData(key),
+                toData(value));
+        return this.<Boolean>invoke(request);
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet() {
-        final TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.KEYSET);
-        final MapKeySet result = invoke(request);
-        final Set<Data> dataKeySet = result.getKeySet();
-        final HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET);
+        MapKeySet result = invoke(request);
+        Set<Data> dataKeySet = result.getKeySet();
+        HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
             keySet.add((K) toObject(data));
         }
         return keySet;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        final TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate);
-        final MapKeySet result = invoke(request);
-        final Set<Data> dataKeySet = result.getKeySet();
-        final HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate);
+        MapKeySet result = invoke(request);
+        Set<Data> dataKeySet = result.getKeySet();
+        HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
             keySet.add((K) toObject(data));
         }
         return keySet;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public Collection<V> values() {
-        final TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.VALUES);
-        final MapValueCollection result = invoke(request);
-        final Collection<Data> dataValues = result.getValues();
-        final HashSet<V> values = new HashSet<V>(dataValues.size());
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES);
+        MapValueCollection result = invoke(request);
+        Collection<Data> dataValues = result.getValues();
+        HashSet<V> values = new HashSet<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));
         }
         return values;
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        final TxnMapRequest request = new TxnMapRequest(getName(),
-                TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
-        final MapValueCollection result = invoke(request);
-        final Collection<Data> dataValues = result.getValues();
-        final HashSet<V> values = new HashSet<V>(dataValues.size());
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
+        MapValueCollection result = invoke(request);
+        Collection<Data> dataValues = result.getValues();
+        HashSet<V> values = new HashSet<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));
         }
         return values;
     }
 
-
+    @Override
     public String getName() {
         return (String) getId();
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     void onDestroy() {
     }
 }

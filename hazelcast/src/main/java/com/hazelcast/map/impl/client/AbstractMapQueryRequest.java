@@ -50,6 +50,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         RetryableRequest {
 
     protected IterationType iterationType;
+
     private String name;
 
     public AbstractMapQueryRequest() {
@@ -94,6 +95,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void collectResults(QueryResultSet result, List<Future> futures, Set<Integer> finishedPartitions)
             throws InterruptedException, java.util.concurrent.ExecutionException {
 
@@ -137,6 +139,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {

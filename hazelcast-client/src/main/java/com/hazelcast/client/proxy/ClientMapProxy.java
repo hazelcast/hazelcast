@@ -756,6 +756,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Set<Entry<K, V>> entrySet() {
         MapEntrySetRequest request = new MapEntrySetRequest(name);
         MapEntrySet result = invoke(request);
+
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>();
         Set<Entry<Data, Data>> entries = result.getEntrySet();
         for (Entry<Data, Data> dataEntry : entries) {
@@ -792,11 +793,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             return keySet;
         }
 
-
         final Comparator<Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.KEY);
         final SortedQueryResultSet sortedResult = new SortedQueryResultSet(comparator, IterationType.KEY,
                 pagingPredicate.getPageSize());
-
 
         final Iterator<Entry> iterator = result.rawIterator();
         while (iterator.hasNext()) {

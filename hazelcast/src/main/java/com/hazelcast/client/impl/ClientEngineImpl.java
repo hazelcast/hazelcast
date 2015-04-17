@@ -376,6 +376,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                     handleAuthenticationFailure(endpoint, request);
                 }
             } catch (Throwable e) {
+                logProcessingFailure(request, e);
                 handleProcessingFailure(endpoint, request, packet.getData(), e);
             }
         }
@@ -404,7 +405,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             }
         }
 
-        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Data data, Throwable e) {
+        private void logProcessingFailure(ClientRequest request, Throwable e) {
             Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
                 if (request == null) {
@@ -413,7 +414,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                     logger.log(level, "While executing request: " + request + " -> " + e.getMessage(), e);
                 }
             }
+        }
 
+        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Data data, Throwable e) {
             if (request != null && endpoint != null) {
                 endpoint.sendResponse(e, request.getCallId());
             } else if (data != null && endpoint != null) {
