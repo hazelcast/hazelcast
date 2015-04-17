@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -22,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import static java.lang.Math.min;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -87,11 +85,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest
                 smallestSurvivingReplicaIndexByPartitionId);
 
         terminateInstances(terminatingInstances);
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(isAllInSafeState(survivingInstances));
-            }
-        }, 300);
+        waitAllForSafeState(survivingInstances, 300);
 
         validateReplicaVersions(numberOfNodesToCrash, log, survivingInstances, replicaVersionsByPartitionId,
                 partitionReplicaAddresses, smallestSurvivingReplicaIndexByPartitionId);

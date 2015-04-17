@@ -124,7 +124,7 @@ public class PartitionLostListenerStressTest
         collectMinReplicaIndicesAndPartitionTablesByPartitionId(survivingInstances, survivingPartitions, partitionTables);
 
         terminateInstances(terminatingInstances);
-        waitAllForSafeState(survivingInstances);
+        waitAllForSafeState(survivingInstances, 300);
 
         assertTrueEventually(new AssertTask() {
             @Override
