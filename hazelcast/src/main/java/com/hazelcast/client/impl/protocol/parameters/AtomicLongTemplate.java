@@ -51,7 +51,7 @@ public interface AtomicLongTemplate {
     void getAndAdd(String name, long delta);
 
     @EncodeMethod(id = 10)
-    void getAndSet(String name, boolean newValue);
+    void getAndSet(String name, long newValue);
 
     @EncodeMethod(id = 11)
     void incrementAndGet(String name);
@@ -60,6 +60,6 @@ public interface AtomicLongTemplate {
     void getAndIncrement(String name);
 
     @EncodeMethod(id = 13)
-    void set(String name, int newValue);
+    void set(String name, long newValue);
 
 }
