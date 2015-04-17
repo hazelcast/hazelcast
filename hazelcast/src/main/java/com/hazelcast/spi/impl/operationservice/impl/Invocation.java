@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
+import static com.hazelcast.spi.OperationAccessor.isWanReplicationOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
@@ -288,7 +289,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         targetMember = nodeEngine.getClusterService().getMember(invTarget);
-        if (!isJoinOperation(op) && targetMember == null) {
+        if (!(isJoinOperation(op) || isWanReplicationOperation(op)) && targetMember == null) {
             notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return false;
         }
