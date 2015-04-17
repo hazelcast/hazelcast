@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.map.impl.operation.QueryOperation;
@@ -50,6 +51,16 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     }
 
     @Override
+    public final String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_READ);
+    }
+
+    @Override
     protected final ClientMessage call() throws Exception {
         Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
 
@@ -72,6 +83,8 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         return reduce(result);
     }
 
+    protected abstract Predicate getPredicate();
+
     protected abstract ClientMessage reduce(Collection<QueryResultEntry> result);
 
     private void createInvocations(Collection<MemberImpl> members, List<Future> futures, Predicate predicate) {
@@ -90,6 +103,11 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
+
+                if (queryResult.isResultLimitExceeded()) {
+                    throw new QueryResultSizeExceededException();
+                }
+
                 Collection<Integer> partitionIds = queryResult.getPartitionIds();
                 if (partitionIds != null) {
                     finishedPartitions.addAll(partitionIds);
@@ -133,21 +151,12 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
+
+            if (queryResult.isResultLimitExceeded()) {
+                throw new QueryResultSizeExceededException();
+            }
+
             result.addAll(queryResult.getResult());
         }
     }
-
-
-    @Override
-    public final String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_READ);
-    }
-
-
-    protected abstract Predicate getPredicate();
 }

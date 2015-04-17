@@ -59,41 +59,48 @@ public class QueryOperation extends AbstractMapOperation {
     private static final long QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
     private Predicate predicate;
-    private QueryResult result;
     private PagingPredicate pagingPredicate;
+
+    private QueryResult result;
+
+    private transient boolean nodeResultLimitEnabled;
+    private transient long nodeResultLimit;
+    private transient long resultSize;
+
+    @SuppressWarnings("unused")
+    public QueryOperation() {
+    }
 
     public QueryOperation(String mapName, Predicate predicate) {
         super(mapName);
         this.predicate = predicate;
         if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
+            this.pagingPredicate = (PagingPredicate) predicate;
         }
+        this.resultSize = 0;
     }
 
-    public QueryOperation() {
-    }
-
+    @Override
     public void run() throws Exception {
-        NodeEngine nodeEngine = getNodeEngine();
         MapService service = getService();
-        final MapServiceContext mapServiceContext = service.getMapServiceContext();
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        Collection<Integer> initialPartitions = mapService.getMapServiceContext().getOwnedPartitions();
-        int partitionStateVersion = partitionService.getPartitionStateVersion();
-        IndexService indexService = mapService.getMapServiceContext().getMapContainer(name).getIndexService();
-        Set<QueryableEntry> entries = null;
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
 
+        int partitionStateVersion = partitionService.getPartitionStateVersion();
+        Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
+        nodeResultLimitEnabled = mapQuerySupport.isQueryResultLimitEnabled();
+        nodeResultLimit = nodeResultLimitEnabled ? mapQuerySupport.getNodeResultLimit(initialPartitions.size()) : 0;
+
+        IndexService indexService = mapServiceContext.getMapContainer(name).getIndexService();
+        Set<QueryableEntry> entries = null;
         if (!partitionService.hasOnGoingMigrationLocal()) {
             entries = indexService.query(predicate);
         }
 
         result = new QueryResult();
         if (entries != null) {
-            for (QueryableEntry entry : entries) {
-                QueryResultEntryImpl resultEntry = new QueryResultEntryImpl(
-                        entry.getKeyData(), entry.getKeyData(), entry.getValueData());
-                result.add(resultEntry);
-            }
+            addQueryEntriesToResult(entries);
         } else {
             // run in parallel
             if (pagingPredicate != null) {
@@ -115,53 +122,41 @@ public class QueryOperation extends AbstractMapOperation {
         checkPartitionStateChanges(partitionService, partitionStateVersion);
     }
 
-    private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {
-        if (partitionStateVersion != partitionService.getPartitionStateVersion()) {
-            getLogger().info("Partition assignments changed while executing query: " + predicate);
-        }
-    }
+    private void runParallel(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+        NodeEngine nodeEngine = getNodeEngine();
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(
+                initialPartitions.size());
 
-    protected void runParallel(final Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final ExecutorService executor
-                = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<Collection<QueryableEntry>>> lsFutures
-                = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
         for (Integer partitionId : initialPartitions) {
             Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(partitionId));
             lsFutures.add(f);
         }
 
-        final Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
+        Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             if (returnedResult == null) {
                 continue;
             }
-            for (QueryableEntry entry : returnedResult) {
-                result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+            if (!addQueryEntriesToResult(returnedResult)) {
+                break;
             }
         }
     }
 
-    private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
-        return returnWithDeadline(lsFutures,
-                QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
-    }
+    private void runParallelForPaging(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
+        NodeEngine nodeEngine = getNodeEngine();
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(
+                initialPartitions.size());
 
-    protected void runParallelForPaging(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final ExecutorService executor
-                = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
-        final List<Future<Collection<QueryableEntry>>> lsFutures
-                = new ArrayList<Future<Collection<QueryableEntry>>>(initialPartitions.size());
-
-        final Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
-        for (final Integer partitionId : initialPartitions) {
+        Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
+        for (Integer partitionId : initialPartitions) {
             Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(partitionId));
             lsFutures.add(f);
         }
         List<QueryableEntry> toMerge = new LinkedList<QueryableEntry>();
-        final Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
+        Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             toMerge.addAll(returnedResult);
         }
@@ -171,8 +166,27 @@ public class QueryOperation extends AbstractMapOperation {
         if (toMerge.size() > pagingPredicate.getPageSize()) {
             toMerge = toMerge.subList(0, pagingPredicate.getPageSize());
         }
-        for (QueryableEntry entry : toMerge) {
+        addQueryEntriesToResult(toMerge);
+    }
+
+    private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
+        return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
+    }
+
+    private boolean addQueryEntriesToResult(Collection<QueryableEntry> queryableEntries) {
+        for (QueryableEntry entry : queryableEntries) {
+            if (nodeResultLimitEnabled && ++resultSize > nodeResultLimit) {
+                result.setResultLimitExceeded();
+                return false;
+            }
             result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
+        }
+        return true;
+    }
+
+    private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {
+        if (partitionStateVersion != partitionService.getPartitionStateVersion()) {
+            getLogger().info("Partition assignments changed while executing query: " + predicate);
         }
     }
 
@@ -211,7 +225,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     private final class PartitionCallable implements Callable<Collection<QueryableEntry>> {
 
-        final int partition;
+        private final int partition;
 
         private PartitionCallable(int partitionId) {
             this.partition = partitionId;
@@ -219,10 +233,8 @@ public class QueryOperation extends AbstractMapOperation {
 
         @Override
         public Collection<QueryableEntry> call() throws Exception {
-            MapContextQuerySupport mapContextQuerySupport = mapService.getMapServiceContext()
-                    .getMapContextQuerySupport();
+            MapContextQuerySupport mapContextQuerySupport = mapService.getMapServiceContext().getMapContextQuerySupport();
             return mapContextQuerySupport.queryOnPartition(name, predicate, partition);
         }
     }
-
 }
