@@ -39,7 +39,7 @@ public interface AtomicReferenceTemplate {
     void compareAndSet(String name, Data expected, Data updated);
 
     @EncodeMethod(id = 5)
-    void contains(String name, Data delta);
+    void contains(String name, Data expected);
 
     @EncodeMethod(id = 8)
     void get(String name);
