@@ -362,7 +362,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 return;
             }
 
-            if (ClientMessageType.EXCEPTION.ordinal() == clientMessage.getMessageType()) {
+            if (ClientMessageType.EXCEPTION.id() == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
                 Class<?> clazz = Class.forName(exceptionResultParameters.className);
                 Throwable exception = (Throwable) clazz.newInstance();

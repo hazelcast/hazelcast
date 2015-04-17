@@ -133,7 +133,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
             final Future<ClientMessage> future = clientInvocation.invoke();
             try {
-                response = ss.toObject(future.get());
+                response = future.get();
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }
