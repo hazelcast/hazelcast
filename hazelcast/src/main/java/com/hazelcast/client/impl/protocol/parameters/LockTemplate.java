@@ -23,7 +23,7 @@ import com.hazelcast.annotation.GenerateParameters;
 public interface LockTemplate {
 
     @EncodeMethod(id = 1)
-    void isLocked(String name);
+    void isLocked(String name, long threadId);
 
     @EncodeMethod(id = 2)
     void isLockedByCurrentThread(String name, long threadId);
@@ -35,7 +35,7 @@ public interface LockTemplate {
     void getRemainingLeaseTime(String name);
 
     @EncodeMethod(id = 5)
-    void lockWithLeaseTime(String name, long ttl);
+    void lockWithLeaseTime(String name, long leaseTime , long threadId);
 
     @EncodeMethod(id = 6)
     void lock(String name, long threadId);
