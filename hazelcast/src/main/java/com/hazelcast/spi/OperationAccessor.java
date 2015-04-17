@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.cluster.impl.operations.JoinOperation;
+import com.hazelcast.cluster.impl.operations.WanReplicationOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.MigrationCycleOperation;
@@ -40,6 +41,11 @@ public final class OperationAccessor {
 
     public static boolean isMigrationOperation(Operation op) {
         return op instanceof MigrationCycleOperation
+                && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
+    }
+
+    public static boolean isWanReplicationOperation(Operation op) {
+        return op instanceof WanReplicationOperation
                 && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
     }
 

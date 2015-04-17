@@ -203,7 +203,12 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
+
     public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
+    public static final String PROP_ENTERPRISE_WAN_REP_BATCHSIZE = "hazelcast.enterprise.wanrep.batchsize";
+    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY = "hazelcast.enterprise.wanrep.batchfrequency";
+    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT = "hazelcast.enterprise.wanrep.optimeout";
+
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
@@ -441,6 +446,9 @@ public class GroupProperties {
     public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
     public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
+    public final GroupProperty ENTERPRISE_WAN_REP_BATCHSIZE;
+    public final GroupProperty ENTERPRISE_WAN_REP_BATCH_FREQUENCY;
+    public final GroupProperty ENTERPRISE_WAN_REP_OP_TIMEOUT;
 
     public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
@@ -552,7 +560,12 @@ public class GroupProperties {
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
         MAP_WRITE_BEHIND_QUEUE_CAPACITY
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
+
         ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
+        ENTERPRISE_WAN_REP_BATCHSIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCHSIZE, "50");
+        ENTERPRISE_WAN_REP_BATCH_FREQUENCY = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY, "5");
+        ENTERPRISE_WAN_REP_OP_TIMEOUT = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT, "-1");
+
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
