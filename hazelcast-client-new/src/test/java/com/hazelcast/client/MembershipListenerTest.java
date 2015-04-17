@@ -19,7 +19,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,11 +31,10 @@ import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class MembershipListenerTest extends HazelcastTestSupport {
 
-    private HazelcastInstance server1 = null;
-    private HazelcastInstance client = null;
+    private HazelcastInstance server1;
+    private HazelcastInstance client ;
 
     @Before
     public void setup() {

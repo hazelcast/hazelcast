@@ -37,7 +37,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class XmlClientConfigImportVariableReplacementTest {
 
 
