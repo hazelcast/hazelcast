@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 /**
  * This annotation is for marking template interfaces to be processed
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface GenerateParameters {
     short id();

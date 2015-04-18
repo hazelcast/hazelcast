@@ -14,10 +14,18 @@
  * limitations under the License.
  */
 
-/**
- * <p>Client protocol tasks implementations for Semaphore</p>
- */
-@GenerateMessageTaskFactory
-package com.hazelcast.client.impl.protocol.task.semaphore;
+package com.hazelcast.annotation;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * This annotation is for marking packages to generate MessageTaskFactory registry
+ */
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.PACKAGE)
+public @interface GenerateMessageTaskFactory {
+}
+

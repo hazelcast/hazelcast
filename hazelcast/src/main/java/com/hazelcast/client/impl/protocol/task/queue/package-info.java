@@ -17,4 +17,7 @@
 /**
  * <p>Client protocol tasks implementations for Queue</p>
  */
+@GenerateMessageTaskFactory
 package com.hazelcast.client.impl.protocol.task.queue;
+
+import com.hazelcast.annotation.GenerateMessageTaskFactory;

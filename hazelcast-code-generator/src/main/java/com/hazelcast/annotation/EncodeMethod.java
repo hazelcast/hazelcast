@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation for marking a method as encode to generate code
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
 public @interface EncodeMethod {
     short id();

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import com.hazelcast.annotation.GenerateParameters;
+import com.hazelcast.annotation.GenerateMessageTaskFactory;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.log.Logger;
 import freemarker.template.Configuration;
@@ -33,7 +33,15 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
@@ -41,24 +49,28 @@ import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@SupportedAnnotationTypes("com.hazelcast.annotation.GenerateParameters")
+@SupportedAnnotationTypes("com.hazelcast.annotation.GenerateMessageTaskFactory")
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
-public class CodeGenerator
+public class CodeGeneratorMessageTaskFactory
         extends AbstractProcessor {
 
     private Filer filer;
     private Messager messager;
-    private Template parameterTemplate;
-    private Template parameterTemplateCSharp;
-    private Template messageTypeTemplate;
+    private Template messageFactoryTemplate;
+
+    private Types typeUtils;
+    private Elements elementUtils;
 
     @Override
     public void init(ProcessingEnvironment env) {
         filer = env.getFiler();
         messager = env.getMessager();
+        typeUtils = env.getTypeUtils();
+        elementUtils = env.getElementUtils();
 
         try {
             Logger.selectLoggerLibrary(Logger.LIBRARY_LOG4J);
@@ -68,9 +80,7 @@ public class CodeGenerator
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/"));
         try {
-            parameterTemplate = cfg.getTemplate("parameter-template-java.ftl");
-            parameterTemplateCSharp = cfg.getTemplate("parameter-template-csharp.ftl");
-            messageTypeTemplate = cfg.getTemplate("messagetype-template-java.ftl");
+            messageFactoryTemplate = cfg.getTemplate("messagefactory-template-java.ftl");
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
             throw new RuntimeException(e);
@@ -79,42 +89,43 @@ public class CodeGenerator
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
-        for (Element element : env.getElementsAnnotatedWith(GenerateParameters.class)) {
-            generate((TypeElement) element);
+        Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
+        for (Element element : env.getElementsAnnotatedWith(GenerateMessageTaskFactory.class)) {
+            map.put(element.toString(), addAllFromPackage((PackageElement) element) );
         }
+
+        final String content = generateFromTemplate(messageFactoryTemplate, map);
+        saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
         return true;
     }
 
-    public void generate(TypeElement classElement) {
-        generateMessageTypeEnum(classElement);
-
-        for (Element enclosedElement : classElement.getEnclosedElements()) {
-            if (!enclosedElement.getKind().equals(ElementKind.METHOD)) {
+    private Map<String, String> addAllFromPackage(PackageElement packageElement) {
+        Map<String, String> map = new HashMap<String, String>();
+        for (Element enclosedElement : packageElement.getEnclosedElements()) {
+            if (!enclosedElement.getKind().equals(ElementKind.CLASS)) {
                 continue;
             }
-            ExecutableElement methodElement = (ExecutableElement) enclosedElement;
-            generateParameterClass(classElement, methodElement);
-            //TODO: make this enabled by a parameter
-            //generateParameterClassCSharp(classElement, methodElement);
+
+            TypeElement typeElement = (TypeElement) enclosedElement;
+
+            final Set<Modifier> modifiers = typeElement.getModifiers();
+            if(modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED) || typeElement.getKind().isInterface()) {
+                continue;
+            }
+
+            final DeclaredType superclass = (DeclaredType) typeElement.getSuperclass();
+
+            final List<? extends TypeMirror> typeArguments = superclass.getTypeArguments();
+            if (typeArguments.size() > 0) {
+                final TypeMirror typeMirror = typeArguments.get(0);
+                final String key = typeMirror.toString();
+                if(key.endsWith("Parameters")) {
+                    final String fullNameKey = key.startsWith("com.") ? key : "com.hazelcast.client.impl.protocol.parameters." + key;
+                    map.put(fullNameKey, typeElement.toString());
+                }
+            }
         }
-    }
-
-    private void generateMessageTypeEnum(TypeElement classElement) {
-        MessageTypeEnumModel clazz = new MessageTypeEnumModel(classElement);
-        final String content = generateFromTemplate(messageTypeTemplate, clazz);
-        saveClass( clazz.getPackageName(), clazz.getClassName(), content);
-    }
-
-    private void generateParameterClassCSharp(TypeElement classElement, ExecutableElement methodElement) {
-        ParameterClassModel clazz = new ParameterClassModel(classElement, methodElement, Lang.CSHARP);
-        final String content = generateFromTemplate(parameterTemplateCSharp, clazz);
-        saveFile(classElement, clazz.getPackageName(), clazz.getClassName(), content);
-    }
-
-    private void generateParameterClass(TypeElement classElement, ExecutableElement methodElement) {
-        ParameterClassModel clazz = new ParameterClassModel(classElement, methodElement, Lang.JAVA);
-        final String content = generateFromTemplate(parameterTemplate, clazz);
-        saveClass( clazz.getPackageName(), clazz.getClassName(), content);
+        return map;
     }
 
     private void saveClass(String packageName, String className, String content) {
@@ -122,19 +133,6 @@ public class CodeGenerator
         try {
             final String fullClassName = packageName + "." + className;
             file = filer.createSourceFile(fullClassName);
-            file.openWriter().append(content).close();
-        } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
-        }
-    }
-
-    private void saveFile(TypeElement classElement, String packageName, String className, String content) {
-        FileObject file;
-        try {
-            final String fullName = className + ".cs";
-            file = filer
-                    .createResource(StandardLocation.locationFor(StandardLocation.SOURCE_OUTPUT.name()), packageName, fullName,
-                            classElement);
             file.openWriter().append(content).close();
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());

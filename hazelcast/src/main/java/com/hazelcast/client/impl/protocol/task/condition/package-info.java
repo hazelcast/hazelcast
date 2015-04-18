@@ -17,4 +17,7 @@
 /**
  * <p>Client protocol tasks implementations for Condition</p>
  */
+@GenerateMessageTaskFactory
 package com.hazelcast.client.impl.protocol.task.condition;
+
+import com.hazelcast.annotation.GenerateMessageTaskFactory;

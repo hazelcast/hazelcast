@@ -17,4 +17,7 @@
 /**
  * <p>Client protocol tasks implementations for AtomicReference</p>
  */
+@GenerateMessageTaskFactory
 package com.hazelcast.client.impl.protocol.task.atomicreference;
+
+import com.hazelcast.annotation.GenerateMessageTaskFactory;
