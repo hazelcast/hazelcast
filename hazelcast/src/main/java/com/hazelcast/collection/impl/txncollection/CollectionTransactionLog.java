@@ -16,13 +16,15 @@
 
 package com.hazelcast.collection.impl.txncollection;
 
-import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
@@ -80,6 +82,12 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     }
 
     @Override
+    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(serviceName, op, partitionId, callback);
+    }
+
+    @Override
     public Future rollback(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
         CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
@@ -88,6 +96,14 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    @Override
+    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
+        CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(serviceName, operation, partitionId, callback);
     }
 
     @Override

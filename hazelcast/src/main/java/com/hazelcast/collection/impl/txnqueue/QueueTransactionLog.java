@@ -16,16 +16,18 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPrepareOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -81,6 +83,12 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
     }
 
     @Override
+    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(QueueService.SERVICE_NAME, op, partitionId, callback);
+    }
+
+    @Override
     public Future rollback(NodeEngine nodeEngine) {
         boolean pollOperation = op instanceof TxnPollOperation;
         TxnRollbackOperation operation = new TxnRollbackOperation(name, itemId, pollOperation);
@@ -89,6 +97,14 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    @Override
+    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        boolean pollOperation = op instanceof TxnPollOperation;
+        TxnRollbackOperation operation = new TxnRollbackOperation(name, itemId, pollOperation);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId, callback);
     }
 
     @Override

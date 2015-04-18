@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.LogEvent;
@@ -155,8 +156,16 @@ public class TransactionImplTest {
         }
 
         @Override
+        public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        }
+
+        @Override
         public Future rollback(NodeEngine nodeEngine) {
             return failRollback ? new FailingFuture() : new FutureAdapter();
+        }
+
+        @Override
+        public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
         }
 
         @Override
@@ -173,19 +182,23 @@ public class TransactionImplTest {
         public Object get() throws InterruptedException, ExecutionException {
             return null;
         }
+
         @Override
         public Object get(long timeout, TimeUnit unit)
                 throws InterruptedException, ExecutionException, TimeoutException {
             return null;
         }
+
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             return false;
         }
+
         @Override
         public boolean isCancelled() {
             return false;
         }
+
         @Override
         public boolean isDone() {
             return false;
@@ -197,6 +210,7 @@ public class TransactionImplTest {
         public Object get() throws InterruptedException, ExecutionException {
             throw new TransactionException();
         }
+
         @Override
         public Object get(long timeout, TimeUnit unit)
                 throws InterruptedException, ExecutionException, TimeoutException {

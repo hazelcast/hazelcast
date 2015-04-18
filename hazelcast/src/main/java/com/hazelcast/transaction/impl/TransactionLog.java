@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
@@ -28,4 +29,8 @@ public interface TransactionLog extends DataSerializable {
     Future commit(NodeEngine nodeEngine);
 
     Future rollback(NodeEngine nodeEngine);
+
+    void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback);
+
+    void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback);
 }

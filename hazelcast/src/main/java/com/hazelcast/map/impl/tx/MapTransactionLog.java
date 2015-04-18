@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
@@ -80,6 +82,16 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         }
     }
 
+    @Override
+    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        MapTxnOperation txnOp = (MapTxnOperation) op;
+        txnOp.setThreadId(threadId);
+        txnOp.setOwnerUuid(ownerUuid);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, op, partitionId, callback);
+    }
+
     public Future rollback(NodeEngine nodeEngine) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key, ownerUuid);
@@ -89,6 +101,15 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    @Override
+    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, ownerUuid);
+        operation.setThreadId(threadId);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, operation, partitionId, callback);
     }
 
     @Override
