@@ -18,21 +18,20 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
-import com.hazelcast.nio.serialization.Data;
 
 @GenerateParameters(id = 8, name = "Condition", ns = "Hazelcast.Client.Protocol.Condition")
 public interface ConditionTemplate {
 
     @EncodeMethod(id = 1)
-    void await(String name, long threadId, long timeout, String conditionId);
+    void await(String name, long threadId, long timeout, String lockName);
 
     @EncodeMethod(id = 2)
-    void beforeAwait(String name, long threadId, String conditionId, Data key);
+    void beforeAwait(String name, long threadId, String lockName);
 
     @EncodeMethod(id = 3)
-    void signal(String name);
+    void signal(String name, long threadId, String lockName);
 
     @EncodeMethod(id = 4)
-    void signalAll(String name);
+    void signalAll(String name, long threadId, String lockName);
 
 }
