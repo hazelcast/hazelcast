@@ -35,7 +35,7 @@ import com.hazelcast.executor.impl.client.IsShutdownRequest;
 import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;

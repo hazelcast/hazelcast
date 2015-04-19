@@ -17,9 +17,11 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.RegisterMembershipListenerEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MemberAttributeChangeResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MemberListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MemberResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.RegisterMembershipListenerParameters;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
@@ -36,7 +38,8 @@ import com.hazelcast.nio.Connection;
 import java.security.Permission;
 import java.util.Collection;
 
-public class RegisterMembershipListenerMessageTask extends AbstractCallableMessageTask<RegisterMembershipListenerParameters> {
+public class RegisterMembershipListenerMessageTask
+        extends AbstractCallableMessageTask<RegisterMembershipListenerParameters> {
 
     public RegisterMembershipListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -82,7 +85,8 @@ public class RegisterMembershipListenerMessageTask extends AbstractCallableMessa
         return null;
     }
 
-    private class MembershipListenerImpl implements InitialMembershipListener {
+    private class MembershipListenerImpl
+            implements InitialMembershipListener {
         private final ClientEndpoint endpoint;
 
         public MembershipListenerImpl(ClientEndpoint endpoint) {
@@ -93,7 +97,7 @@ public class RegisterMembershipListenerMessageTask extends AbstractCallableMessa
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
             Collection<MemberImpl> memberList = service.getMemberList();
-            ClientMessage eventMessage = RegisterMembershipListenerEventParameters.encode(memberList);
+            ClientMessage eventMessage = MemberListResultParameters.encode(memberList);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -105,8 +109,7 @@ public class RegisterMembershipListenerMessageTask extends AbstractCallableMessa
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
 
-            ClientMessage eventMessage = RegisterMembershipListenerEventParameters.encode(member,
-                    RegisterMembershipListenerEventParameters.MEMBER_ADDED);
+            ClientMessage eventMessage = MemberResultParameters.encode(member, MemberResultParameters.MEMBER_ADDED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -117,8 +120,7 @@ public class RegisterMembershipListenerMessageTask extends AbstractCallableMessa
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMessage eventMessage = RegisterMembershipListenerEventParameters.encode(member,
-                    RegisterMembershipListenerEventParameters.MEMBER_REMOVED);
+            ClientMessage eventMessage = MemberResultParameters.encode(member, MemberResultParameters.MEMBER_REMOVED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -134,8 +136,7 @@ public class RegisterMembershipListenerMessageTask extends AbstractCallableMessa
             String key = memberAttributeEvent.getKey();
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            ClientMessage eventMessage = RegisterMembershipListenerEventParameters.encode(member,
-                    memberAttributeChange);
+            ClientMessage eventMessage = MemberAttributeChangeResultParameters.encode(member, memberAttributeChange);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
     }

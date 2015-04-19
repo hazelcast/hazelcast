@@ -41,12 +41,10 @@ public enum ClientMessageType {
      */
     RESULT(4),
 
-
     /**
      * Event registration id
      */
     ADD_LISTENER_RESULT(5),
-
 
     ADD_ENTRY_LISTENER_EVENT(6),
 
@@ -70,7 +68,13 @@ public enum ClientMessageType {
 
     DATA_ENTRY_LIST_RESULT(18),
 
-    VOID_RESULT(19);
+    MEMBER_RESULT(19),
+
+    MEMBER_LIST_RESULT(20),
+
+    MEMBER_ATTRIBUTE_RESULT(21),
+
+    VOID_RESULT(22);
 
     private final int id;
 
