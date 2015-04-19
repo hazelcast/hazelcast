@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 
-@GenerateParameters(id = 1, name = "ReplicatedMap", ns = "Hazelcast.Client.Protocol.ReplicatedMap")
+@GenerateParameters(id = 15, name = "ReplicatedMap", ns = "Hazelcast.Client.Protocol.ReplicatedMap")
 public interface ReplicatedMapTemplate {
 
     @EncodeMethod(id = 1)
