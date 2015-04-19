@@ -340,8 +340,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
         InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
-        String remoteHost = remoteSocketAddress.getHostName();
-        int index = getSelectorIndex(remoteHost);
+        int index = getSelectorIndex(remoteSocketAddress);
 
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
@@ -355,9 +354,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connection;
     }
 
-    private int getSelectorIndex(String remoteHost) {
+    private int getSelectorIndex(InetSocketAddress remoteSocketAddress) {
         Integer index;
         if (selectorImbalanceWorkaroundEnabled) {
+            String remoteHost = remoteSocketAddress.getHostName();
             synchronized (selectorIndexPerHostMap) {
                 index = selectorIndexPerHostMap.get(remoteHost);
                 if (index == null) {
