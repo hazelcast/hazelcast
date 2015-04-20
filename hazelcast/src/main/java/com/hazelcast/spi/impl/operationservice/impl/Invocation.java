@@ -45,12 +45,12 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
-import static com.hazelcast.spi.OperationAccessor.isMigrationOperation;
-import static com.hazelcast.spi.OperationAccessor.isWanReplicationOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
+import static com.hazelcast.spi.Operations.isJoinOperation;
+import static com.hazelcast.spi.Operations.isMigrationOperation;
+import static com.hazelcast.spi.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
