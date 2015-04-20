@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.mock.MockUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
@@ -120,6 +121,8 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     private static Config newConfig(final Map<Integer, Employee> employees) {
         Config conf = new Config();
         conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
+        // disabling replication since we don't use backups in this test
+        conf.setProperty(GroupProperties.PROP_PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
         return conf;
     }
 
