@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
+import static com.hazelcast.spi.OperationAccessor.isWanReplicationOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
@@ -311,7 +312,9 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean ensureValidMember(Operation op) {
-        if (isJoinOperation(op) || node.clusterService.getMember(op.getCallerAddress()) != null) {
+        if (node.clusterService.getMember(op.getCallerAddress()) != null
+                || isJoinOperation(op)
+                || isWanReplicationOperation(op)) {
             return true;
         }
 
