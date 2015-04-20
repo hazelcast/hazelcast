@@ -22,7 +22,6 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -248,7 +247,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         return new ScheduledExecutorServiceDelegate(scheduledExecutorService, getExecutor(name));
     }
 
-    @PrivateApi
     public void shutdown() {
         logger.finest("Stopping executors...");
         for (ExecutorService executorService : executors.values()) {

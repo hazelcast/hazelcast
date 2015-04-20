@@ -35,7 +35,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -99,7 +98,6 @@ public class NodeEngineImpl implements NodeEngine {
         return packetTransceiver;
     }
 
-    @PrivateApi
     public void start() {
         serviceManager.start();
         proxyService.init();
@@ -226,7 +224,6 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getGroupProperties();
     }
 
-    @PrivateApi
     public <T> T getService(String serviceName) {
         final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
@@ -249,34 +246,28 @@ public class NodeEngineImpl implements NodeEngine {
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      */
-    @PrivateApi
     public <S> Collection<S> getServices(Class<S> serviceClass) {
         return serviceManager.getServices(serviceClass);
     }
 
-    @PrivateApi
     public Collection<ServiceInfo> getServiceInfos(Class serviceClass) {
         return serviceManager.getServiceInfos(serviceClass);
     }
 
-    @PrivateApi
     public Node getNode() {
         return node;
     }
 
-    @PrivateApi
     public void onMemberLeft(MemberImpl member) {
         waitNotifyService.onMemberLeft(member);
         operationService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
 
-    @PrivateApi
     public void onClientDisconnected(String clientUuid) {
         waitNotifyService.onClientDisconnected(clientUuid);
     }
 
-    @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
         waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
     }
@@ -288,7 +279,6 @@ public class NodeEngineImpl implements NodeEngine {
      * Post join operations should return response, at least a null response.
      * <p/>
      */
-    @PrivateApi
     public Operation[] getPostJoinOperations() {
         final Collection<Operation> postJoinOps = new LinkedList<Operation>();
         Operation eventPostJoinOp = eventService.getPostJoinOperation();
@@ -317,13 +307,11 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getNodeExtension().getNativeDataStorage();
     }
 
-    @PrivateApi
     public void reset() {
         waitNotifyService.reset();
         operationService.reset();
     }
 
-    @PrivateApi
     public void shutdown(final boolean terminate) {
         logger.finest("Shutting down services...");
         waitNotifyService.shutdown();
