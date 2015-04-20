@@ -32,6 +32,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExponentialBackoffSleeper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -134,13 +135,14 @@ public abstract class AbstractJoiner implements Joiner {
         if (node.joined()) {
             logger.finest("Waiting for all connections");
             int connectAllWaitSeconds = node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger();
-            int checkCount = 0;
-            while (checkCount++ < connectAllWaitSeconds && !allConnected) {
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(1000);
-                } catch (InterruptedException ignored) {
-                }
+            ExponentialBackoffSleeper sleeper = ExponentialBackoffSleeper.builder()
+                    .factor(1.3)
+                    .initialMs(50)
+                    .maxMs(1000)
+                    .timeoutMs(TimeUnit.SECONDS.toMillis(connectAllWaitSeconds))
+                    .build();
+            while (sleeper.isTimedOut() && !allConnected) {
+                sleeper.sleepQuietly();
 
                 allConnected = true;
                 Collection<Member> members = node.getClusterService().getMembers();

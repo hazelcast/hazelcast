@@ -24,6 +24,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ExponentialBackoffSleeper;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -197,12 +198,15 @@ public final class HazelcastInstanceFactory {
             throws InterruptedException {
 
         final int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
-        while (node.getClusterService().getSize() < initialMinClusterSize) {
-            try {
-                hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);
-                //noinspection BusyWait
-                Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-            } catch (InterruptedException ignored) {
+        if (node.getClusterService().getSize() < initialMinClusterSize) {
+            ExponentialBackoffSleeper sleeper = ExponentialBackoffSleeper.builder()
+                    .factor(1.3)
+                    .initialMs(100)
+                    .maxMs(TimeUnit.SECONDS.toMillis(1))
+                    .build();
+            hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);
+            while (node.getClusterService().getSize() < initialMinClusterSize) {
+                sleeper.sleepQuietly();
             }
         }
         if (initialMinClusterSize > 1) {
