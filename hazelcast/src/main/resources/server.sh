@@ -2,7 +2,7 @@
 
 PRG="$0"
 PRGDIR=`dirname "$PRG"`
-HAZELCAST_HOME=../$PRGDIR
+HAZELCAST_HOME=$PRGDIR/..
 
 if [ $JAVA_HOME ]
 then
