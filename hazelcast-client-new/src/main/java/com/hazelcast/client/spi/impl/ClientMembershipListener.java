@@ -18,8 +18,12 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.RegisterMembershipListenerEventParameters;
+import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.parameters.MemberAttributeChangeResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MemberListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MemberResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.RegisterMembershipListenerParameters;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
@@ -28,11 +32,11 @@ import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,7 +48,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-class ClientMembershipListener implements EventHandler<ClientMessage> {
+class ClientMembershipListener
+        implements EventHandler<ClientMessage> {
 
     public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
     private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(ClientMembershipListener.class);
@@ -65,21 +70,33 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
 
     @Override
     public void handle(ClientMessage clientMessage) {
-        RegisterMembershipListenerEventParameters event = RegisterMembershipListenerEventParameters.decode(clientMessage);
-
-        final MemberImpl member = (MemberImpl) event.member;
-        if (event.eventType == RegisterMembershipListenerEventParameters.INITIAL_MEMBERS) {
-            initialMembers(event);
+        if (clientMessage.getMessageType() == ClientMessageType.MEMBER_LIST_RESULT.id()) {
+            final MemberListResultParameters memberListResultParameters = MemberListResultParameters.decode(clientMessage);
+            initialMembers(memberListResultParameters.memberList);
             initialListFetchedLatch.countDown();
-        } else if (event.eventType == RegisterMembershipListenerEventParameters.MEMBER_ADDED) {
-            memberAdded(member);
-            partitionService.refreshPartitions();
-        } else if (event.eventType == RegisterMembershipListenerEventParameters.MEMBER_REMOVED) {
-            memberRemoved(member);
-            partitionService.refreshPartitions();
-        } else if (event.eventType == RegisterMembershipListenerEventParameters.MEMBER_ATTRIBUTE_CHANGED) {
-            memberAttributeChanged(event);
+        } else if (clientMessage.getMessageType() == ClientMessageType.MEMBER_RESULT.id()) {
+            handleMember(clientMessage);
+        } else if (clientMessage.getMessageType() == ClientMessageType.MEMBER_ATTRIBUTE_RESULT.id()) {
+            final MemberAttributeChangeResultParameters parameters = MemberAttributeChangeResultParameters.decode(clientMessage);
+            memberAttributeChanged(parameters.memberAttributeChange);
+        } else {
+            LOGGER.warning("Unknown message type :" + clientMessage.getMessageType());
         }
+    }
+
+    private void handleMember(ClientMessage clientMessage) {
+        final MemberResultParameters memberResultParameters = MemberResultParameters.decode(clientMessage);
+        switch (memberResultParameters.eventType) {
+            case MemberResultParameters.MEMBER_ADDED:
+                memberAdded(memberResultParameters.member);
+                break;
+            case MemberResultParameters.MEMBER_REMOVED:
+                memberRemoved(memberResultParameters.member);
+                break;
+            default:
+                LOGGER.warning("Unknown event type :" + memberResultParameters.eventType);
+        }
+        partitionService.refreshPartitions();
     }
 
     @Override
@@ -100,8 +117,9 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
             Connection connection = connectionManager.getConnection(ownerConnectionAddress);
             if (connection == null) {
                 System.out.println("FATAL connection null " + ownerConnectionAddress);
-                throw new IllegalStateException("Can not load initial members list because owner connection is null. "
-                        + "Address " + ownerConnectionAddress);
+                throw new IllegalStateException(
+                        "Can not load initial members list because owner connection is null. " + "Address "
+                                + ownerConnectionAddress);
             }
             ClientInvocation invocation = new ClientInvocation(client, this, clientMessage, connection);
             invocation.invoke().get();
@@ -112,21 +130,22 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
                 } else {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress
-                            + ", Error: " + e.toString());
+                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress + ", Error: " + e
+                            .toString());
                 }
             }
         }
     }
 
-    private void waitInitialMemberListFetched() throws InterruptedException {
+    private void waitInitialMemberListFetched()
+            throws InterruptedException {
         boolean success = initialListFetchedLatch.await(INITIAL_MEMBERS_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         if (!success) {
             LOGGER.warning("Error while getting initial member list from cluster!");
         }
     }
 
-    void initialMembers(RegisterMembershipListenerEventParameters event) {
+    void initialMembers(Collection<MemberImpl> memberList) {
 
         Map<String, MemberImpl> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
@@ -136,8 +155,7 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
             }
             members.clear();
         }
-        members.addAll(event.memberList);
-
+        members.addAll(memberList);
 
         final List<MembershipEvent> events = detectMembershipEvents(prevMembers);
         if (events.size() != 0) {
@@ -146,7 +164,6 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
         fireMembershipEvent(events);
     }
 
-
     private void memberRemoved(MemberImpl member) {
         members.remove(member);
         final Connection connection = connectionManager.getConnection(member.getAddress());
@@ -154,16 +171,17 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
             connectionManager.destroyConnection(connection);
         }
         applyMemberListChanges();
-        MembershipEvent event = new MembershipEvent(client.getCluster(), member,
-                ClientInitialMembershipEvent.MEMBER_REMOVED,
+        MembershipEvent event = new MembershipEvent(client.getCluster(), member, ClientInitialMembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
         clusterService.fireMembershipEvent(event);
     }
 
-    private void memberAttributeChanged(RegisterMembershipListenerEventParameters event) {
-        MemberAttributeChange memberAttributeChange = event.memberAttributeChange;
+    private void memberAttributeChanged(MemberAttributeChange memberAttributeChange) {
         Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
         if (memberMap == null) {
+            return;
+        }
+        if (memberAttributeChange == null) {
             return;
         }
         for (MemberImpl target : memberMap.values()) {
@@ -172,8 +190,8 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
                 final String key = memberAttributeChange.getKey();
                 final Object value = memberAttributeChange.getValue();
                 target.updateAttribute(operationType, key, value);
-                MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
-                        client.getCluster(), target, operationType, key, value);
+                MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(client.getCluster(), target, operationType,
+                        key, value);
                 clusterService.fireMemberAttributeEvent(memberAttributeEvent);
                 break;
             }
@@ -216,8 +234,7 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
     private void memberAdded(MemberImpl member) {
         members.add(member);
         applyMemberListChanges();
-        MembershipEvent event = new MembershipEvent(client.getCluster(), member,
-                ClientInitialMembershipEvent.MEMBER_ADDED,
+        MembershipEvent event = new MembershipEvent(client.getCluster(), member, ClientInitialMembershipEvent.MEMBER_ADDED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
         clusterService.fireMembershipEvent(event);
     }
@@ -229,6 +246,5 @@ class ClientMembershipListener implements EventHandler<ClientMessage> {
         }
         clusterService.setMembersRef(Collections.unmodifiableMap(map));
     }
-
 
 }

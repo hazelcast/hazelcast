@@ -39,7 +39,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
     }
 
-    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType,
+    public MemberAttributeEvent(Cluster cluster, Member member, MemberAttributeOperationType operationType,
                                 String key, Object value) {
         super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
         this.member = member;

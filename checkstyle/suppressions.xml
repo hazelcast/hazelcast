@@ -187,6 +187,7 @@
     <!-- TODO: We need to get this wildcard suppressions fixed -->
     <suppress checks="" files="com.hazelcast.client.connection.nio.ClientConnectionManagerImpl"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.config.XmlClientConfigBuilder"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.impl.MemberImpl"/>
 
     <suppress checks="JavadocMethod" files="com.hazelcast.client[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.client[\\/]"/>

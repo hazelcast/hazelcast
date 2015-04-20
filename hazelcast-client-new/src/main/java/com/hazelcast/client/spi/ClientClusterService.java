@@ -18,7 +18,7 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
@@ -79,13 +79,13 @@ public interface ClientClusterService {
     long getClusterTime();
 
     /**
-     * @param The listener to be registered.
+     * @param listener The listener to be registered.
      * @return The registration id.
      */
     String addMembershipListener(MembershipListener listener);
 
     /**
-     * @param The registrationId of the listener to be removed.
+     * @param registrationId The registrationId of the listener to be removed.
      * @return true if successfully removed, false otherwise.
      */
     boolean removeMembershipListener(String registrationId);

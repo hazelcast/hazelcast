@@ -32,7 +32,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;

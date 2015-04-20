@@ -32,7 +32,7 @@ import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParamet
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;

@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
 /**
