@@ -29,7 +29,6 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperation;
@@ -391,7 +390,7 @@ public class EventServiceImpl implements InternalEventService {
         }
     }
 
-    @PrivateApi
+    @Override
     public void handleEvent(Packet packet) {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(this, packet));

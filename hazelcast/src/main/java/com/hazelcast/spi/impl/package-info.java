@@ -16,6 +16,9 @@
 
 /**
  * Contains implementations for Hazelcast SPI.
+ *
+ * All classes/interfaces/packages in or underneath this com.hazelcast.spi.impl package are private. They are for
+ * internal usage only and we do not provide backwards compatibility on them. These classes should not be used by
+ * anyone apart from developers working on Hazelcast itself.
  */
-
 package com.hazelcast.spi.impl;

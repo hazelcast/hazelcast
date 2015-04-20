@@ -46,7 +46,6 @@ import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -64,7 +63,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-@PrivateApi
 final class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
