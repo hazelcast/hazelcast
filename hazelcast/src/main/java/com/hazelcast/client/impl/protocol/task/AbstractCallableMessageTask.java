@@ -41,6 +41,5 @@ public abstract class AbstractCallableMessageTask<P>
         }
     }
 
-    protected abstract ClientMessage call()
-            throws Exception;
+    protected abstract ClientMessage call() throws Exception;
 }

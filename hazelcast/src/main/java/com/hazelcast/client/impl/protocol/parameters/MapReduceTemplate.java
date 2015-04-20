@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 
-@GenerateParameters(id = 1, name = "MapReduce", ns = "Hazelcast.Client.Protocol.MapReduce")
+@GenerateParameters(id = 14, name = "MapReduce", ns = "Hazelcast.Client.Protocol.MapReduce")
 public interface MapReduceTemplate {
 
     @EncodeMethod(id = 1)
@@ -32,30 +32,30 @@ public interface MapReduceTemplate {
     void jobProcessInformation(String name, String jobId);
 
     @EncodeMethod(id = 3)
-    void mapReduceForMap(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                         Data reducerFactory, String mapName, int chunkSize, List<Data> keys,
-                         String topologyChangedStrategy);
+    void forMap(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
+                Data reducerFactory, String mapName, int chunkSize, List<Data> keys,
+                String topologyChangedStrategy);
 
     @EncodeMethod(id = 4)
-    void mapReduceForList(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                          Data reducerFactory, String listName, int chunkSize, List<Data> keys,
-                          String topologyChangedStrategy);
+    void forList(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
+                 Data reducerFactory, String listName, int chunkSize, List<Data> keys,
+                 String topologyChangedStrategy);
 
 
     @EncodeMethod(id = 5)
-    void mapReduceForSet(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                         Data reducerFactory, String setName, int chunkSize, List<Data> keys,
-                         String topologyChangedStrategy);
+    void forSet(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
+                Data reducerFactory, String setName, int chunkSize, List<Data> keys,
+                String topologyChangedStrategy);
 
     @EncodeMethod(id = 6)
-    void mapReduceForMultiMap(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                              Data reducerFactory, String multiMapName, int chunkSize, List<Data> keys,
-                              String topologyChangedStrategy);
+    void forMultiMap(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
+                     Data reducerFactory, String multiMapName, int chunkSize, List<Data> keys,
+                     String topologyChangedStrategy);
 
     @EncodeMethod(id = 7)
-    void mapReduceForCustom(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                            Data reducerFactory, Data keyValueSource, int chunkSize, List<Data> keys,
-                            String topologyChangedStrategy);
+    void forCustom(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
+                   Data reducerFactory, Data keyValueSource, int chunkSize, List<Data> keys,
+                   String topologyChangedStrategy);
 
 }
 
