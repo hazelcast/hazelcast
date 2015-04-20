@@ -33,7 +33,7 @@
     <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <atomikos-version>3.9.2</atomikos-version>
+        <atomikos-version>3.9.3</atomikos-version>
     </properties>
 
     <build>

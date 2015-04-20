@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -26,7 +27,6 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionSupport;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -180,8 +180,6 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     }
 
 
-
-
     private Config createConfigWithDummyTxService() {
         Config config = new Config();
         ServicesConfig servicesConfig = config.getServicesConfig();
@@ -201,6 +199,23 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         producerThread.join(10000);
     }
 
+    @Test
+    public void testTxnGetForUpdateAndIncrementStressTest() throws TransactionException, InterruptedException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, Integer> map = h2.getMap("default");
+        final String key = "count";
+        int count1 = 13000;
+        int count2 = 15000;
+        final CountDownLatch latch = new CountDownLatch(count1 + count2);
+        map.put(key, 0);
+        new Thread(new TxnIncrementor(count1, h1, latch)).start();
+        new Thread(new TxnIncrementor(count2, h2, latch)).start();
+        latch.await(600, TimeUnit.SECONDS);
+        assertEquals(new Integer(count1 + count2), map.get(key));
+    }
 
     public static class ProducerThread extends Thread {
         public static final String value = "some-value";
@@ -326,6 +341,14 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        }
+
+        @Override
+        public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
         }
 
@@ -367,30 +390,11 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-
-    @Test
-    public void testTxnGetForUpdateAndIncrementStressTest() throws TransactionException, InterruptedException {
-        Config config = new Config();
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap<String, Integer> map = h2.getMap("default");
-        final String key = "count";
-        int count1 = 13000;
-        int count2 = 15000;
-        final CountDownLatch latch = new CountDownLatch(count1 + count2);
-        map.put(key, 0);
-        new Thread(new TxnIncrementor(count1, h1, latch)).start();
-        new Thread(new TxnIncrementor(count2, h2, latch)).start();
-        latch.await(600, TimeUnit.SECONDS);
-        assertEquals(new Integer(count1 + count2), map.get(key));
-    }
-
     static class TxnIncrementor implements Runnable {
-        int count = 0;
-        HazelcastInstance instance;
         final String key = "count";
         final CountDownLatch latch;
+        int count = 0;
+        HazelcastInstance instance;
 
 
         TxnIncrementor(int count, HazelcastInstance instance, CountDownLatch latch) {
