@@ -43,11 +43,16 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         return instance.getExecutorService(name);
     }
 
-    static class BasicTestTask implements Callable<String>, Serializable {
+    static class BasicTestTask implements Callable<String>, Serializable, PartitionAware {
         public static String RESULT = "Task completed";
 
         @Override public String call() {
             return RESULT;
+        }
+
+        @Override
+        public Object getPartitionKey() {
+            return "key";
         }
     }
 
