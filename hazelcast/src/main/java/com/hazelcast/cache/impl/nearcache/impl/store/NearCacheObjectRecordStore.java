@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
 public class NearCacheObjectRecordStore<K, V>
-        extends BaseNearCacheRecordStore<K, V, NearCacheObjectRecord> {
+        extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord> {
 
     public NearCacheObjectRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         super(nearCacheConfig, nearCacheContext);

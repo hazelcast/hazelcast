@@ -2,7 +2,7 @@ package com.hazelcast.cache.eviction;
 
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionConfig;
+import com.hazelcast.cache.impl.eviction.EvictionConfiguration;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
@@ -56,7 +56,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        EvictionConfig evictionConfig = new EvictionConfig() {
+        EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
             public EvictionStrategyType getEvictionStrategyType() {
                 return null;
@@ -109,7 +109,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        EvictionConfig evictionConfig = new EvictionConfig() {
+        EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
             public EvictionStrategyType getEvictionStrategyType() {
                 return null;

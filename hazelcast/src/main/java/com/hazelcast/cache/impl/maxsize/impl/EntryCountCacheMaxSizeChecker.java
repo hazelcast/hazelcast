@@ -16,14 +16,14 @@
 
 package com.hazelcast.cache.impl.maxsize.impl;
 
-import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
 
 /**
  * Cache max-size policy implementation for
- * {@link com.hazelcast.config.CacheEvictionConfig.CacheMaxSizePolicy#ENTRY_COUNT}
+ * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}
  */
-public class EntryCountCacheMaxSizeChecker implements CacheMaxSizeChecker {
+public class EntryCountCacheMaxSizeChecker implements MaxSizeChecker {
 
     private static final int MAX_ENTRY_COUNT_FOR_THRESHOLD_USAGE = 1000000;
     private static final int STD_DEV_OF_5_THRESHOLD = 4000;

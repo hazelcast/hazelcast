@@ -47,7 +47,7 @@ public class CacheSimpleConfig {
     /**
      * Default Eviction Policy.
      */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
 
     private String name;
 
@@ -72,8 +72,9 @@ public class CacheSimpleConfig {
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
+    private NearCacheConfig nearCacheConfig;
 
     private CacheSimpleConfig readOnly;
 
@@ -93,10 +94,11 @@ public class CacheSimpleConfig {
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
         // Eviction config cannot be null
-        if (evictionConfig != null) {
+        if (cacheSimpleConfig.evictionConfig != null) {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
+        this.nearCacheConfig = cacheSimpleConfig.nearCacheConfig;
     }
 
     public CacheSimpleConfig() {
@@ -243,11 +245,11 @@ public class CacheSimpleConfig {
         return this;
     }
 
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
-    public CacheSimpleConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
+    public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         // Eviction config cannot be null
         if (evictionConfig != null) {
             this.evictionConfig = evictionConfig;
@@ -262,4 +264,13 @@ public class CacheSimpleConfig {
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
     }
+
+    public NearCacheConfig getNearCacheConfig() {
+        return nearCacheConfig;
+    }
+
+    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+        this.nearCacheConfig = nearCacheConfig;
+    }
+
 }

@@ -31,8 +31,8 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheEvictionConfig getEvictionConfig() {
-        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+    public EvictionConfig getEvictionConfig() {
+        final EvictionConfig evictionConfig = super.getEvictionConfig();
         if (evictionConfig == null) {
             return null;
         }
@@ -76,7 +76,7 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
+    public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
@@ -129,4 +129,15 @@ public class CacheSimpleConfigReadOnly
     public CacheSimpleConfig addEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
+
+    @Override
+    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
 }

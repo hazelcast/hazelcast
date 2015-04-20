@@ -26,7 +26,9 @@ import java.io.Serializable;
 /**
  * Contains configuration for an NearCache.
  */
-public class NearCacheConfig implements DataSerializable , Serializable {
+public class NearCacheConfig
+        implements DataSerializable , Serializable {
+
     /**
      * Default value of time to live in seconds.
      */
@@ -42,7 +44,7 @@ public class NearCacheConfig implements DataSerializable , Serializable {
     /**
      * Default eviction policy
      */
-    public static final String DEFAULT_EVICTION_POLICY = "LRU";
+    public static final String DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
     /**
      * Default memory format
      */
@@ -68,6 +70,11 @@ public class NearCacheConfig implements DataSerializable , Serializable {
 
     private LocalUpdatePolicy localUpdatePolicy = LocalUpdatePolicy.INVALIDATE;
 
+    // Default value of eviction config is
+    //      * ENTRY_COUNT with 10.000 max entry count
+    //      * LRU as eviction policy
+    private EvictionConfig evictionConfig = new EvictionConfig();
+
     /**
      * Local Update Policy enum.
      */
@@ -90,13 +97,22 @@ public class NearCacheConfig implements DataSerializable , Serializable {
     }
 
     public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
-            boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
+                           boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
+        this(timeToLiveSeconds, maxSize, evictionPolicy, maxIdleSeconds, invalidateOnChange, inMemoryFormat, null);
+    }
+
+    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
+                           boolean invalidateOnChange, InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
         this.evictionPolicy = evictionPolicy;
         this.maxIdleSeconds = maxIdleSeconds;
         this.invalidateOnChange = invalidateOnChange;
         this.inMemoryFormat = inMemoryFormat;
+        // Eviction config cannot be null
+        if (evictionConfig != null) {
+            this.evictionConfig = evictionConfig;
+        }
     }
 
     public NearCacheConfig(NearCacheConfig config) {
@@ -109,6 +125,10 @@ public class NearCacheConfig implements DataSerializable , Serializable {
         timeToLiveSeconds = config.getTimeToLiveSeconds();
         cacheLocalEntries = config.isCacheLocalEntries();
         localUpdatePolicy = config.localUpdatePolicy;
+        // Eviction config cannot be null
+        if (config.evictionConfig != null) {
+            this.evictionConfig = config.evictionConfig;
+        }
     }
 
     public NearCacheConfigReadOnly getAsReadOnly() {
@@ -205,6 +225,18 @@ public class NearCacheConfig implements DataSerializable , Serializable {
         return this;
     }
 
+    public EvictionConfig getEvictionConfig() {
+        return evictionConfig;
+    }
+
+    public NearCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        // Eviction config cannot be null
+        if (evictionConfig != null) {
+            this.evictionConfig = evictionConfig;
+        }
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
@@ -215,6 +247,7 @@ public class NearCacheConfig implements DataSerializable , Serializable {
         out.writeBoolean(cacheLocalEntries);
         out.writeInt(inMemoryFormat.ordinal());
         out.writeInt(localUpdatePolicy.ordinal());
+        out.writeObject(evictionConfig);
     }
 
     @Override
@@ -229,6 +262,7 @@ public class NearCacheConfig implements DataSerializable , Serializable {
         inMemoryFormat = InMemoryFormat.values()[inMemoryFormatInt];
         final int localUpdatePolicyInt = in.readInt();
         localUpdatePolicy = LocalUpdatePolicy.values()[localUpdatePolicyInt];
+        evictionConfig = in.readObject();
     }
 
     @Override
@@ -242,6 +276,7 @@ public class NearCacheConfig implements DataSerializable , Serializable {
         sb.append(", inMemoryFormat=").append(inMemoryFormat);
         sb.append(", cacheLocalEntries=").append(cacheLocalEntries);
         sb.append(", localUpdatePolicy=").append(localUpdatePolicy);
+        sb.append(", evictionConfig=").append(evictionConfig);
         sb.append('}');
         return sb.toString();
     }

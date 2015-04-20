@@ -44,11 +44,11 @@ public final class EvictionStrategyProvider {
     /**
      * Gets the {@link EvictionStrategy} implementation specified with <code>evictionStrategyType</code>.
      *
-     * @param evictionConfig {@link EvictionConfig} for the requested {@link EvictionStrategy} implementation
+     * @param evictionConfig {@link EvictionConfiguration} for the requested {@link EvictionStrategy} implementation
      *
      * @return the requested {@link EvictionStrategy} implementation
      */
-    public static EvictionStrategy getEvictionStrategy(EvictionConfig evictionConfig) {
+    public static EvictionStrategy getEvictionStrategy(EvictionConfiguration evictionConfig) {
         if (evictionConfig == null) {
             return null;
         }

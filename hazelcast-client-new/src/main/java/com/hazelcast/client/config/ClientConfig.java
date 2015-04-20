@@ -196,13 +196,13 @@ public class ClientConfig {
     /**
      * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
      *
-     * @param mapName         name of the IMap that near cache config will be applied to
+     * @param name            name of the IMap / ICache that near cache config will be applied to
      * @param nearCacheConfig nearCacheConfig
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     @Deprecated
-    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig) {
-        nearCacheConfig.setName(mapName);
+    public ClientConfig addNearCacheConfig(String name, NearCacheConfig nearCacheConfig) {
+        nearCacheConfig.setName(name);
         return addNearCacheConfig(nearCacheConfig);
     }
 
@@ -243,14 +243,14 @@ public class ClientConfig {
     }
 
     /**
-     * Gets the {@link NearCacheConfig} configured for the map with mapName
+     * Gets the {@link NearCacheConfig} configured for the map / cache with name
      *
-     * @param mapName name of the map
+     * @param name name of the map / cache
      * @return Configured {@link NearCacheConfig}
      * @see com.hazelcast.config.NearCacheConfig
      */
-    public NearCacheConfig getNearCacheConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, mapName);
+    public NearCacheConfig getNearCacheConfig(String name) {
+        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, name);
         if (nearCacheConfig == null) {
             nearCacheConfig = nearCacheConfigMap.get("default");
         }
@@ -258,7 +258,7 @@ public class ClientConfig {
     }
 
     /**
-     * Map of all configured NearCacheConfig's with the map name key and configuration as the value
+     * Map of all configured NearCacheConfig's with the name key and configuration as the value
      *
      * @return map of NearCacheConfig
      * @see com.hazelcast.config.NearCacheConfig
@@ -270,7 +270,7 @@ public class ClientConfig {
     /**
      * Sets all {@link NearCacheConfig}'s with the provided map
      *
-     * @param nearCacheConfigMap map of (mapName, {@link NearCacheConfig})
+     * @param nearCacheConfigMap map of (name, {@link NearCacheConfig})
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setNearCacheConfigMap(Map<String, NearCacheConfig> nearCacheConfigMap) {

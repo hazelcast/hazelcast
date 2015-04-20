@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.maxsize;
+package com.hazelcast.cache.impl.nearcache.impl;
 
-/**
- * Interface for implementations of {@link com.hazelcast.config.CacheEvictionConfig.CacheMaxSizePolicy}.
- */
-public interface CacheMaxSizeChecker {
+import com.hazelcast.cache.impl.eviction.EvictableStore;
+import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 
-    /**
-     * Checks the state of cache to see if it has reached its maximum configured size
-     * {@link com.hazelcast.config.CacheEvictionConfig.CacheMaxSizePolicy}
-     *
-     * @return true if cache has reached maximum size, false otherwise
-     */
-    boolean isReachedToMaxSize();
+import java.util.concurrent.ConcurrentMap;
+
+public interface NearCacheRecordMap<K, V extends NearCacheRecord>
+        extends ConcurrentMap<K, V>, EvictableStore<K, V> {
 
 }

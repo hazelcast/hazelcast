@@ -88,4 +88,10 @@ public interface NearCacheRecordStore<K, V> {
      */
     void doExpiration();
 
+    /**
+     * Does eviction as specified configuration {@link com.hazelcast.config.EvictionConfig}
+     * in {@link com.hazelcast.config.NearCacheConfig}.
+     */
+    void doEvictionIfRequired();
+
 }

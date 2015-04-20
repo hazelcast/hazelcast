@@ -45,11 +45,11 @@ public final class EvictionPolicyEvaluatorProvider {
     /**
      * Gets the {@link EvictionPolicyEvaluator} implementation specified with <code>evictionPolicy</code>.
      *
-     * @param evictionConfig {@link EvictionConfig} for requested {@link EvictionPolicyEvaluator} implementation
+     * @param evictionConfig {@link EvictionConfiguration} for requested {@link EvictionPolicyEvaluator} implementation
      *
      * @return the requested {@link EvictionPolicyEvaluator} implementation
      */
-    public static EvictionPolicyEvaluator getEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
+    public static EvictionPolicyEvaluator getEvictionPolicyEvaluator(EvictionConfiguration evictionConfig) {
         if (evictionConfig == null) {
             return null;
         }

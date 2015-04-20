@@ -123,7 +123,31 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
 
-        NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
+        NearCacheConfig clientNearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
+        NearCacheConfig cacheNearCacheConfig = cacheConfig.getNearCacheConfig();
+        NearCacheConfig nearCacheConfig;
+        if (clientNearCacheConfig == null) {
+            // If client near-cache config is not defined, use cache's near-cache config
+            nearCacheConfig = cacheNearCacheConfig;
+        } else {
+            // There is defined client near-cache config
+            if (cacheNearCacheConfig != null) {
+                // If cache's near-cache config is exist
+                if ("default".equals(clientNearCacheConfig.getName())) {
+                    // If client near-cache config is "default" near-cache config
+                    // and also if there is defined cache's near-cache config,
+                    // give more priority to cache's near-cache config and use it.
+                    nearCacheConfig = cacheNearCacheConfig;
+                } else {
+                    // If client near-cache config is not "default" near-cache config (specified for this cache),
+                    // give more priority to client near-cache config and use it.
+                    nearCacheConfig = clientNearCacheConfig;
+                }
+            } else {
+                // If there is no defined cache's near-cache config, use client near-cache config
+                nearCacheConfig = clientNearCacheConfig;
+            }
+        }
         if (nearCacheConfig != null) {
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
             NearCacheContext nearCacheContext =

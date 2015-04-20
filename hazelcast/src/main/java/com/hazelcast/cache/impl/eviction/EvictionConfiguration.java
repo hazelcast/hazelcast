@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl.eviction;
 /**
  * Interface for configuration information about eviction.
  */
-public interface EvictionConfig {
+public interface EvictionConfiguration {
 
     /**
      * Gets the type of eviction strategy.

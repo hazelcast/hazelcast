@@ -968,29 +968,67 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
-                final CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
-                final Node size = n.getAttributes().getNamedItem("size");
-                final Node maxSizePolicy = n.getAttributes().getNamedItem("max-size-policy");
-                final Node evictionPolicy = n.getAttributes().getNamedItem("eviction-policy");
-                if (size != null) {
-                    evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
-                }
-                if (maxSizePolicy != null) {
-                    evictionConfig.setMaxSizePolicy(
-                            CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
-                                    upperCaseInternal(getTextContent(maxSizePolicy)))
-                    );
-                }
-                if (evictionPolicy != null) {
-                    evictionConfig.setEvictionPolicy(
-                            EvictionPolicy.valueOf(
-                                    upperCaseInternal(getTextContent(evictionPolicy)))
-                    );
-                }
-                cacheConfig.setEvictionConfig(evictionConfig);
+                cacheConfig.setEvictionConfig(getEvictionConfig(n));
+            } else if ("near-cache".equals(nodeName)) {
+                cacheConfig.setNearCacheConfig(getNearCacheConfig(n));
             }
         }
         this.config.addCacheConfig(cacheConfig);
+    }
+
+    private NearCacheConfig getNearCacheConfig(final org.w3c.dom.Node node) {
+        final String name = getAttribute(node, "name");
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("max-size".equals(nodeName)) {
+                nearCacheConfig.setMaxSize(
+                        getIntegerValue("max-size", value, NearCacheConfig.DEFAULT_MAX_SIZE));
+            } else if ("time-to-live-seconds".equals(nodeName)) {
+                nearCacheConfig.setTimeToLiveSeconds(
+                        getIntegerValue("time-to-live-seconds", value, NearCacheConfig.DEFAULT_TTL_SECONDS));
+            } else if ("max-idle-seconds".equals(nodeName)) {
+                nearCacheConfig.setMaxIdleSeconds(
+                        getIntegerValue("max-idle-seconds", value, NearCacheConfig.DEFAULT_MAX_IDLE_SECONDS));
+            } else if ("eviction-policy".equals(nodeName)) {
+                   nearCacheConfig.setEvictionPolicy(value);
+            } else if ("invalidate-on-change".equals(nodeName)) {
+                    nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
+            } else if ("in-memory-format".equals(nodeName)) {
+                nearCacheConfig.setInMemoryFormat(
+                        InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("cache-local-entries".equals(nodeName)) {
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
+            } else if ("eviction".equals(nodeName)) {
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(n));
+            }
+        }
+        return nearCacheConfig;
+    }
+
+    private EvictionConfig getEvictionConfig(final org.w3c.dom.Node node) {
+        final EvictionConfig evictionConfig = new EvictionConfig();
+        final Node size = node.getAttributes().getNamedItem("size");
+        final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+        final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        if (size != null) {
+            evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+        }
+        if (maxSizePolicy != null) {
+            evictionConfig.setMaxSizePolicy(
+                    EvictionConfig.MaxSizePolicy.valueOf(
+                            upperCaseInternal(getTextContent(maxSizePolicy)))
+            );
+        }
+        if (evictionPolicy != null) {
+            evictionConfig.setEvictionPolicy(
+                    EvictionPolicy.valueOf(
+                            upperCaseInternal(getTextContent(evictionPolicy)))
+            );
+        }
+        return evictionConfig;
     }
 
     private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {

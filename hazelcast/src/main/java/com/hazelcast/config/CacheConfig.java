@@ -52,7 +52,7 @@ public class CacheConfig<K, V>
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
 
     private NearCacheConfig nearCacheConfig;
 
@@ -77,7 +77,7 @@ public class CacheConfig<K, V>
             this.inMemoryFormat = config.inMemoryFormat;
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
-                this.evictionConfig = config.evictionConfig;
+                this.evictionConfig = new EvictionConfig(config.evictionConfig);
             }
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
@@ -114,7 +114,10 @@ public class CacheConfig<K, V>
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
         // Eviction config cannot be null
         if (simpleConfig.getEvictionConfig() != null) {
-            this.evictionConfig = simpleConfig.getEvictionConfig();
+            this.evictionConfig = new EvictionConfig(simpleConfig.getEvictionConfig());
+        }
+        if (simpleConfig.getNearCacheConfig() != null) {
+            this.nearCacheConfig = new NearCacheConfig(simpleConfig.getNearCacheConfig());
         }
         if (simpleConfig.getWanReplicationRef() != null) {
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
@@ -283,21 +286,21 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the {@link CacheEvictionConfig} instance for eviction configuration of the cache config.
+     * Gets the {@link EvictionConfig} instance for eviction configuration of the cache config.
      *
-     * @return the {@link CacheEvictionConfig} instance for eviction configuration
+     * @return the {@link EvictionConfig} instance for eviction configuration
      */
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
     /**
-     * Sets the {@link CacheEvictionConfig} instance for eviction configuration of the cache config.
+     * Sets the {@link EvictionConfig} instance for eviction configuration of the cache config.
      *
-     * @param evictionConfig the {@link CacheEvictionConfig} instance for eviction configuration to set
+     * @param evictionConfig the {@link EvictionConfig} instance for eviction configuration to set
      * @return current cache config instance
      */
-    public CacheConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
+    public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
         // Eviction config cannot be null
         if (evictionConfig != null) {
             this.evictionConfig = evictionConfig;
