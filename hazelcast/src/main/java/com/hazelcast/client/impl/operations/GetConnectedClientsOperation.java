@@ -39,7 +39,6 @@ public class GetConnectedClientsOperation extends AbstractOperation implements R
     @Override
     public void run() throws Exception {
         ClientEngineImpl service = getService();
-        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         this.clients = new HashMap<String, ClientType>();
         for (Client clientEndpoint : service.getClients()) {
             ClientEndpointImpl clientEndpointImpl = (ClientEndpointImpl) clientEndpoint;

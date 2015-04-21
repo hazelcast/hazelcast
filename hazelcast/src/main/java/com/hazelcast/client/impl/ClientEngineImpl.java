@@ -468,7 +468,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
             final SecurityContext securityContext = getSecurityContext();
             final String methodName = request.getMethodName();
             BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
-            if (securityContext != null) {
+            if (securityContext != null && methodName != null) {
                 final String objectType = request.getDistributedObjectType();
                 final String objectName = request.getDistributedObjectName();
                 securityContext.interceptBefore(credentials, objectType, objectName, methodName, request.getParameters());
