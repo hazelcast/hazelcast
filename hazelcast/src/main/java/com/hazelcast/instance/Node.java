@@ -50,6 +50,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.license.LicenseContext;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
@@ -121,6 +122,8 @@ public class Node {
 
     public final SecurityContext securityContext;
 
+    public final LicenseContext licenseContext;
+
     private final ClassLoader configClassLoader;
 
     private final BuildInfo buildInfo;
@@ -159,6 +162,7 @@ public class Node {
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
+            licenseContext  = nodeExtension.getLicenseContext();
             nodeEngine = new NodeEngineImpl(this);
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);

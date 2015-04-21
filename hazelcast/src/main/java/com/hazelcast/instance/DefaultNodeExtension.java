@@ -39,6 +39,7 @@ import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
+import com.hazelcast.security.license.LicenseContext;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -188,6 +189,11 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeJoin() {
+    }
+
+    @Override
+    public LicenseContext getLicenseContext() {
+        return null;
     }
 
 }

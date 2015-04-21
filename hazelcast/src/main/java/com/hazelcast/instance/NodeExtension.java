@@ -24,6 +24,7 @@ import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.security.license.LicenseContext;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
@@ -151,4 +152,10 @@ public interface NodeExtension {
      */
     void beforeJoin();
 
+    /**
+     * Responsible for creation of license check context,
+     * between client and server handshake process. Handshake
+     * algorithm is implemented on enterprise version side.
+     */
+    LicenseContext getLicenseContext();
 }
