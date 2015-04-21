@@ -203,7 +203,8 @@ public final class AuthenticationRequest extends CallableClientRequest {
             writer.writeNullPortable("principal", ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
         }
         writer.writeBoolean("firstConnection", ownerConnection);
-        writer.writeByteArray("enterpriseSecret", enterpriseSecret.getBytes());
+        writer.writeUTF("enterpriseSecret", enterpriseSecret);
+
     }
 
     @Override
@@ -211,7 +212,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
         ownerConnection = reader.readBoolean("firstConnection");
-        enterpriseSecret = StringUtil.bytesToString(reader.readByteArray("enterpriseSecret"));
+        enterpriseSecret = reader.readUTF("enterpriseSecret");
     }
 
     @Override

@@ -210,7 +210,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         int numberOfCppClients    = 0;
         int numberOfDotNetClients = 0;
         int numberOfJavaClients   = 0;
-        int numberOfEnterpriseJavaClients   = 0;
 
         Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService1 = node.nodeEngine.getOperationService();
@@ -249,15 +248,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (clientType == ClientType.JAVA){
                 numberOfJavaClients++;
             }
-            if (clientType == ClientType.JAVAENTERPRISE){
-                numberOfEnterpriseJavaClients++;
-            }
         }
 
         resultMap.put(ClientType.CPP, numberOfCppClients);
         resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
         resultMap.put(ClientType.JAVA, numberOfJavaClients);
-        resultMap.put(ClientType.JAVAENTERPRISE, numberOfEnterpriseJavaClients);
 
         return resultMap;
     }
