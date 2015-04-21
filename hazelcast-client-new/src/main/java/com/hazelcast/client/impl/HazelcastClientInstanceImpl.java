@@ -130,9 +130,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         final GroupConfig groupConfig = config.getGroupConfig();
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         clientExtension = createClientInitializer(config.getClassLoader());
-        clientExtension.beforeStart(this);
-
+        
         credentials = initCredentials(config);
+        clientExtension.beforeStart(this);
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         clientProperties = new ClientProperties(config);
