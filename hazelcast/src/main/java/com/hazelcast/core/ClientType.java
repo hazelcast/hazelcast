@@ -21,6 +21,7 @@ package com.hazelcast.core;
  */
 public enum ClientType {
     JAVA,
+    JAVAENTERPRISE,
     CSHARP,
     CPP,
     PYTHON,

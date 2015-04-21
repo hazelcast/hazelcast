@@ -16,12 +16,14 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.core.ClientType;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * A service responsible for member related functionality. So members joining, leaving etc.
@@ -100,4 +102,13 @@ public interface ClusterService extends CoreService {
      * @return the ClusterClock.
      */
     ClusterClock getClusterClock();
+
+    /**
+     * Returns Map which contains number of connected clients to the cluster.
+     *
+     * The returned map can be used to get information about connected clients to the cluster.
+     *
+     * @return Map<ClientType,Integer> .
+     */
+    Map<ClientType, Integer> getConnectedClientStats();
 }
