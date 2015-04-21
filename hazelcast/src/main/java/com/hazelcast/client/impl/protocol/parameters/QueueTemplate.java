@@ -38,10 +38,10 @@ public interface QueueTemplate {
     void remove(String name, Data value);
 
     @EncodeMethod(id = 4)
-    void poll(String name);
+    void poll(String name, long timeoutMillis);
 
     @EncodeMethod(id = 4)
-    void take(String name, long timeoutMillis);
+    void take(String name);
 
     @EncodeMethod(id = 5)
     void peek(String name);

@@ -17,38 +17,36 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryListenerParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.operations.RemoveOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVEENTRYLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVEENTRY}
  */
-public class MultiMapRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<MultiMapRemoveEntryListenerParameters> {
+public class MultiMapRemoveEntryMessageTask extends AbstractPartitionMessageTask<MultiMapRemoveEntryParameters> {
 
-    protected MultiMapRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MultiMapRemoveEntryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
-        final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        boolean success = service.removeListener(parameters.name, parameters.registrationId);
-        return BooleanResultParameters.encode(success);
+    protected Operation prepareOperation() {
+        return new RemoveOperation(parameters.name, parameters.key, parameters.threadId, parameters.value);
     }
 
     @Override
-    protected MultiMapRemoveEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapRemoveEntryListenerParameters.decode(clientMessage);
+    protected MultiMapRemoveEntryParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapRemoveEntryParameters.decode(clientMessage);
     }
 
     @Override
@@ -58,7 +56,7 @@ public class MultiMapRemoveEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
     }
 
     @Override
@@ -68,11 +66,11 @@ public class MultiMapRemoveEntryListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeEntryListener";
+        return "remove";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
+        return new Object[]{parameters.key, parameters.value};
     }
 }
