@@ -316,6 +316,19 @@ public class GroupProperties {
             = "hazelcast.backpressure.max.concurrent.invocations.per.partition";
 
 
+    /**
+     * Run Query Evaluations for multiple partitions in parallel.
+     *
+     * Each Hazelcast member evaluates query predicates using a single thread by default. In most cases the overhead of
+     * inter-thread communication overweight benefit of parallel execution.
+     *
+     * When you have a large dataset and/or slow predicate you may benefit from parallel predicate evaluations.
+     * Set to true if you are using slow predicates or have > 100,000s entries per member.
+     *
+     * Default: false
+     *
+     */
+    public static final String PROP_QUERY_PREDICATE_PARALLEL_EVALUATION = "hazelcast.query.predicate.parallel.evaluation";
 
 
     /**
@@ -542,6 +555,8 @@ public class GroupProperties {
     public final GroupProperty QUERY_RESULT_SIZE_LIMIT;
     public final GroupProperty QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
 
+    public final GroupProperty QUERY_PREDICATE_PARALLEL_EVALUATION;
+
     public GroupProperties(Config config) {
         HEALTH_MONITORING_LEVEL
                 = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
@@ -664,6 +679,9 @@ public class GroupProperties {
         QUERY_RESULT_SIZE_LIMIT = new GroupProperty(config, PROP_QUERY_RESULT_SIZE_LIMIT, "-1");
         QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
                 = new GroupProperty(config, PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, "3");
+
+        QUERY_PREDICATE_PARALLEL_EVALUATION
+                = new GroupProperty(config, PROP_QUERY_PREDICATE_PARALLEL_EVALUATION, "false");
     }
 
     public static class GroupProperty {

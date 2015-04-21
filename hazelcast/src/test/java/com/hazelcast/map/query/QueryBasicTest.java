@@ -6,6 +6,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
@@ -50,6 +51,14 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
+
+    @Test
+    public void testPredicatedEvaluatedSingleThreadedByDefault() {
+        Config config = new Config();
+        GroupProperties properties = new GroupProperties(config);
+        boolean parallelEvaluation = properties.QUERY_PREDICATE_PARALLEL_EVALUATION.getBoolean();
+        assertEquals(false, parallelEvaluation);
+    }
 
     @Test(timeout = 1000 * 60)
     public void testInPredicateWithEmptyArray() {
@@ -757,8 +766,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryPortableObject() {
+    public void testQueryPortableObject_serial() {
         testQueryUsingPortableObject(new Config(), randomMapName());
+    }
+
+    @Test
+    public void testQueryPortableObject_parallel() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_QUERY_PREDICATE_PARALLEL_EVALUATION, "true");
+        testQueryUsingPortableObject(config, randomMapName());
     }
 
     @Test

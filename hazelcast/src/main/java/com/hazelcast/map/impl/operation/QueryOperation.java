@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.FutureUtil;
 import java.io.IOException;
@@ -74,6 +76,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
     @Override
     public void run() throws Exception {
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+        NodeEngine nodeEngine = getNodeEngine();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
 
@@ -89,12 +92,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         if (entries != null) {
             result.addAll(entries);
         } else {
-            // run in parallel
-            if (pagingPredicate != null) {
-                runParallelForPaging(initialPartitions);
-            } else {
-                runParallel(initialPartitions);
-            }
+            fullTableScan(initialPartitions, nodeEngine.getGroupProperties());
         }
         Collection<Integer> finalPartitions = mapServiceContext.getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
@@ -106,6 +104,42 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         }
 
         checkPartitionStateChanges(partitionService, partitionStateVersion);
+    }
+
+    private void fullTableScan(Collection<Integer> initialPartitions, GroupProperties groupProperties)
+            throws InterruptedException, ExecutionException {
+        if (pagingPredicate != null) {
+            runParallelForPaging(initialPartitions);
+        } else {
+            boolean parallelEvaluation = groupProperties.QUERY_PREDICATE_PARALLEL_EVALUATION.getBoolean();
+            if (parallelEvaluation) {
+                runParallel(initialPartitions);
+            } else {
+                runSingleThreaded(initialPartitions);
+            }
+        }
+    }
+
+    protected void runSingleThreaded(final Collection<Integer> initialPartitions) {
+        RetryableHazelcastException storedException = null;
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContextQuerySupport querySupport = mapServiceContext.getMapContextQuerySupport();
+        for (Integer partitionId : initialPartitions) {
+            try {
+                Collection<QueryableEntry> entries = querySupport.queryOnPartition(name, predicate, partitionId);
+                result.addAll(entries);
+            } catch (RetryableHazelcastException e) {
+                // RetryableHazelcastException are stored and re-thrown later. this is to ensure all partitions
+                // are touched as when the parallel execution was used.
+                // see discussion at https://github.com/hazelcast/hazelcast/pull/5049#discussion_r28773099 for details.
+                if (storedException == null) {
+                    storedException = e;
+                }
+            }
+        }
+        if (storedException != null) {
+            throw storedException;
+        }
     }
 
     private void runParallel(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
