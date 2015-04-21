@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -130,8 +131,13 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             }
 
             if (this.response != null && !(response instanceof Throwable)) {
-                String uuid = serializationService.toObject(this.response);
-                String alias = serializationService.toObject(response);
+                AddListenerResultParameters resultParameters =
+                        AddListenerResultParameters.decode((ClientMessage) this.response);
+                String uuid = resultParameters.registrationId;
+
+                AddListenerResultParameters newResultParameters =
+                        AddListenerResultParameters.decode((ClientMessage) response);
+                String alias = serializationService.toObject(newResultParameters.registrationId);
                 clientListenerService.reRegisterListener(uuid, alias, clientMessage.getCorrelationId());
                 return;
             }

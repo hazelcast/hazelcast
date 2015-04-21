@@ -19,13 +19,11 @@ package com.hazelcast.client.spi;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientDestroyRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -52,8 +50,8 @@ public abstract class ClientProxy implements DistributedObject {
         return context.getListenerService().startListening(registrationRequest, null, handler);
     }
 
-    protected final boolean stopListening(ClientMessage clientMessageuest, String registrationId) {
-        return context.getListenerService().stopListening(clientMessageuest, registrationId);
+    protected final boolean stopListening(ClientMessage clientMessage, String registrationId) {
+        return context.getListenerService().stopListening(clientMessage, registrationId);
     }
 
     protected final ClientContext getContext() {
@@ -127,8 +125,7 @@ public abstract class ClientProxy implements DistributedObject {
         try {
             final int partitionId = context.getPartitionService().getPartitionId(key);
             final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
-            ClientMessage response = (ClientMessage) future.get();
-            return toObject(response);
+            return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -138,8 +135,7 @@ public abstract class ClientProxy implements DistributedObject {
         try {
             final int partitionId = context.getPartitionService().getPartitionId(key);
             final Future future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
-            ClientMessage response = (ClientMessage) future.get();
-            return toObject(response);
+            return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrowAllowInterrupted(e);
         }
@@ -148,8 +144,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected <T> T invoke(ClientMessage clientMessage) {
         try {
             final Future future = new ClientInvocation(getClient(), clientMessage).invoke();
-            ClientMessage response = (ClientMessage) future.get();
-            return toObject(response);
+            return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -158,8 +153,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected <T> T invoke(ClientMessage clientMessage, Address address) {
         try {
             final Future future = new ClientInvocation(getClient(), clientMessage, address).invoke();
-            ClientMessage response = (ClientMessage) future.get();
-            return toObject(response);
+            return (T) future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -171,11 +165,6 @@ public abstract class ClientProxy implements DistributedObject {
 
     protected <T> T toObject(Object data) {
         return getContext().getSerializationService().toObject(data);
-    }
-
-    protected <T> T toObject(ClientMessage clientMessage) {
-        GenericResultParameters resultParameters = GenericResultParameters.decode(clientMessage);
-        return getContext().getSerializationService().toObject(new DefaultData(resultParameters.result));
     }
 
     protected void throwExceptionIfNull(Object o) {
