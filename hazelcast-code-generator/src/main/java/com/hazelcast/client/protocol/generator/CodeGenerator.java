@@ -61,7 +61,7 @@ public class CodeGenerator
         messager = env.getMessager();
 
         try {
-            Logger.selectLoggerLibrary(Logger.LIBRARY_JAVA);
+            Logger.selectLoggerLibrary(Logger.LIBRARY_NONE);
         } catch (ClassNotFoundException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }

@@ -37,6 +37,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -56,13 +57,16 @@ public class CodeGeneratorMessageTaskFactory
     private Template messageFactoryTemplate;
     private Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
 
+    private Elements elementUtils;
+
     @Override
     public void init(ProcessingEnvironment env) {
         filer = env.getFiler();
         messager = env.getMessager();
+        elementUtils = env.getElementUtils();
 
         try {
-            Logger.selectLoggerLibrary(Logger.LIBRARY_JAVA);
+            Logger.selectLoggerLibrary(Logger.LIBRARY_NONE);
         } catch (ClassNotFoundException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }
@@ -78,15 +82,15 @@ public class CodeGeneratorMessageTaskFactory
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
-        for (Element element : env.getElementsAnnotatedWith(GenerateMessageTaskFactory.class)) {
+        final Set<? extends Element> elementsAnnotatedWith = env.getElementsAnnotatedWith(GenerateMessageTaskFactory.class);
+        if (elementsAnnotatedWith == null || elementsAnnotatedWith.size() == 0) {
+            return false;
+        }
+        for (Element element : elementsAnnotatedWith) {
             map.put(element.toString(), addAllFromPackage((PackageElement) element));
         }
-
-        if (env.processingOver()) {
-            final String content = generateFromTemplate(messageFactoryTemplate, map);
-            saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
-        }
-
+        final String content = generateFromTemplate(messageFactoryTemplate, map);
+        saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
         return true;
     }
 
@@ -100,8 +104,8 @@ public class CodeGeneratorMessageTaskFactory
             TypeElement typeElement = (TypeElement) enclosedElement;
 
             final Set<Modifier> modifiers = typeElement.getModifiers();
-            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED)
-                    || typeElement.getKind().isInterface()) {
+            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED) || typeElement.getKind()
+                                                                                                              .isInterface()) {
                 continue;
             }
 
@@ -125,7 +129,9 @@ public class CodeGeneratorMessageTaskFactory
         JavaFileObject file;
         try {
             final String fullClassName = packageName + "." + className;
-            file = filer.createSourceFile(fullClassName);
+
+            file = filer
+                    .createSourceFile(fullClassName, elementUtils.getTypeElement("com.hazelcast.client.impl.ClientEngineImpl"));
             file.openWriter().append(content).close();
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());

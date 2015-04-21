@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
@@ -37,7 +38,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
@@ -66,11 +66,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
-import java.lang.reflect.Constructor;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
@@ -121,22 +119,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
         this.executor = newExecutor();
-        this.messageTaskFactory = createMessageTaskFactory(node);
+        this.messageTaskFactory = new MessageTaskFactoryImpl(node);
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
         heartBeatMonitor.start();
-    }
-
-    private MessageTaskFactory createMessageTaskFactory(Node node) {
-        try {
-            Class<?> aClass = ClassLoaderUtil.loadClass(ClientEngineImpl.class.getClassLoader(),
-                    "com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl");
-            Constructor<?> constructor = aClass.getConstructor(new Class[]{Node.class});
-            return (MessageTaskFactory) constructor.newInstance(new Object[]{node});
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
     }
 
     private Executor newExecutor() {
