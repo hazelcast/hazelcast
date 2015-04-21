@@ -32,7 +32,6 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.util.StringUtil;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginContext;

@@ -43,11 +43,7 @@ public class GetConnectedClientsOperation extends AbstractOperation implements R
         this.clients = new HashMap<String, ClientType>();
         for (Client clientEndpoint : service.getClients()) {
             ClientEndpointImpl clientEndpointImpl = (ClientEndpointImpl) clientEndpoint;
-            if (buildInfo.isEnterprise() && clientEndpointImpl.getClientType() == ClientType.JAVA) {
-                this.clients.put(clientEndpointImpl.getUuid(), ClientType.JAVAENTERPRISE);
-            } else {
-                this.clients.put(clientEndpointImpl.getUuid(), clientEndpointImpl.getClientType());
-            }
+            this.clients.put(clientEndpointImpl.getUuid(), clientEndpointImpl.getClientType());
         }
     }
 

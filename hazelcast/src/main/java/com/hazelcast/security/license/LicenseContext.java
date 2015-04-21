@@ -23,7 +23,7 @@ package com.hazelcast.security.license;
 public interface LicenseContext {
     /**
      * intercepts a authentication request before enterprise server client communication.
-     * 
+     *
      * @param enterpriseSecret
      */
     void interceptBefore(String enterpriseSecret);
