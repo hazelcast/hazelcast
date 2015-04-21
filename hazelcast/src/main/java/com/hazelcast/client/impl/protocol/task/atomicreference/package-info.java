@@ -21,3 +21,4 @@
 package com.hazelcast.client.impl.protocol.task.atomicreference;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactory;
+

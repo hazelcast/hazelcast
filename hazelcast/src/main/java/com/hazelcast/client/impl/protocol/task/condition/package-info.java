@@ -21,3 +21,4 @@
 package com.hazelcast.client.impl.protocol.task.condition;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactory;
+

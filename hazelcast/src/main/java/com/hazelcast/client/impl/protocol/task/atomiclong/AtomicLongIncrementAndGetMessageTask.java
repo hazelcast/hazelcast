@@ -31,7 +31,7 @@ import java.security.Permission;
 
 public class AtomicLongIncrementAndGetMessageTask extends AbstractPartitionMessageTask<AtomicLongIncrementAndGetParameters> {
 
-    protected AtomicLongIncrementAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AtomicLongIncrementAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

@@ -61,7 +61,7 @@ public class CodeGenerator
         messager = env.getMessager();
 
         try {
-            Logger.selectLoggerLibrary(Logger.LIBRARY_LOG4J);
+            Logger.selectLoggerLibrary(Logger.LIBRARY_JAVA);
         } catch (ClassNotFoundException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }
@@ -102,7 +102,7 @@ public class CodeGenerator
     private void generateMessageTypeEnum(TypeElement classElement) {
         MessageTypeEnumModel clazz = new MessageTypeEnumModel(classElement);
         final String content = generateFromTemplate(messageTypeTemplate, clazz);
-        saveClass( clazz.getPackageName(), clazz.getClassName(), content);
+        saveClass(clazz.getPackageName(), clazz.getClassName(), content);
     }
 
     private void generateParameterClassCSharp(TypeElement classElement, ExecutableElement methodElement) {
@@ -114,7 +114,7 @@ public class CodeGenerator
     private void generateParameterClass(TypeElement classElement, ExecutableElement methodElement) {
         ParameterClassModel clazz = new ParameterClassModel(classElement, methodElement, Lang.JAVA);
         final String content = generateFromTemplate(parameterTemplate, clazz);
-        saveClass( clazz.getPackageName(), clazz.getClassName(), content);
+        saveClass(clazz.getPackageName(), clazz.getClassName(), content);
     }
 
     private void saveClass(String packageName, String className, String content) {

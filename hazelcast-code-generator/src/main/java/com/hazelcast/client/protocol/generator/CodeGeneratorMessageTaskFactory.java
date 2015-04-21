@@ -32,20 +32,13 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -61,19 +54,15 @@ public class CodeGeneratorMessageTaskFactory
     private Filer filer;
     private Messager messager;
     private Template messageFactoryTemplate;
-
-    private Types typeUtils;
-    private Elements elementUtils;
+    private Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
 
     @Override
     public void init(ProcessingEnvironment env) {
         filer = env.getFiler();
         messager = env.getMessager();
-        typeUtils = env.getTypeUtils();
-        elementUtils = env.getElementUtils();
 
         try {
-            Logger.selectLoggerLibrary(Logger.LIBRARY_LOG4J);
+            Logger.selectLoggerLibrary(Logger.LIBRARY_JAVA);
         } catch (ClassNotFoundException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }
@@ -89,13 +78,15 @@ public class CodeGeneratorMessageTaskFactory
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
-        Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
         for (Element element : env.getElementsAnnotatedWith(GenerateMessageTaskFactory.class)) {
-            map.put(element.toString(), addAllFromPackage((PackageElement) element) );
+            map.put(element.toString(), addAllFromPackage((PackageElement) element));
         }
 
-        final String content = generateFromTemplate(messageFactoryTemplate, map);
-        saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
+        if (env.processingOver()) {
+            final String content = generateFromTemplate(messageFactoryTemplate, map);
+            saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
+        }
+
         return true;
     }
 
@@ -109,7 +100,8 @@ public class CodeGeneratorMessageTaskFactory
             TypeElement typeElement = (TypeElement) enclosedElement;
 
             final Set<Modifier> modifiers = typeElement.getModifiers();
-            if(modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED) || typeElement.getKind().isInterface()) {
+            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED)
+                    || typeElement.getKind().isInterface()) {
                 continue;
             }
 
@@ -119,8 +111,9 @@ public class CodeGeneratorMessageTaskFactory
             if (typeArguments.size() > 0) {
                 final TypeMirror typeMirror = typeArguments.get(0);
                 final String key = typeMirror.toString();
-                if(key.endsWith("Parameters")) {
-                    final String fullNameKey = key.startsWith("com.") ? key : "com.hazelcast.client.impl.protocol.parameters." + key;
+                if (key.endsWith("Parameters")) {
+                    final String fullNameKey = key.startsWith("com.") ? key
+                            : "com.hazelcast.client.impl.protocol.parameters." + key;
                     map.put(fullNameKey, typeElement.toString());
                 }
             }
