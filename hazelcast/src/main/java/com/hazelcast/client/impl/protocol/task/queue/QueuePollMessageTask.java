@@ -28,11 +28,11 @@ import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_POLL}
- *
  */
 public class QueuePollMessageTask
         extends AbstractPartitionMessageTask<QueuePollParameters> {
@@ -43,7 +43,7 @@ public class QueuePollMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new PollOperation(parameters.name, -1);
+        return new PollOperation(parameters.name, parameters.timeoutMillis);
     }
 
     @Override
@@ -68,7 +68,7 @@ public class QueuePollMessageTask
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.timeoutMillis, TimeUnit.MILLISECONDS};
     }
 
     @Override

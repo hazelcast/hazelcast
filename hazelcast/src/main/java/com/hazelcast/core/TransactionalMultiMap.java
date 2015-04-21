@@ -21,13 +21,12 @@ import com.hazelcast.transaction.TransactionalObject;
 import java.util.Collection;
 
 /**
- *
  * Transactional implementation of {@link BaseMultiMap}.
  *
- * @see BaseMultiMap
- * @see MultiMap
  * @param <K> key
  * @param <V> value
+ * @see BaseMultiMap
+ * @see MultiMap
  */
 public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
 

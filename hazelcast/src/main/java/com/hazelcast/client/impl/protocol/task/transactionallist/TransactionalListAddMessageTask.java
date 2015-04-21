@@ -14,51 +14,55 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.multimap;
+package com.hazelcast.client.impl.protocol.task.transactionallist;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryListenerParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListAddParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.core.TransactionalList;
 import com.hazelcast.instance.Node;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MultiMapPermission;
+import com.hazelcast.security.permission.ListPermission;
+import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
 
-/**
- * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVEENTRYLISTENER}
- */
-public class MultiMapRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<MultiMapRemoveEntryListenerParameters> {
+public class TransactionalListAddMessageTask
+        extends AbstractTransactionalMessageTask<TransactionalListAddParameters> {
 
-    public MultiMapRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public TransactionalListAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
-        final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        boolean success = service.removeListener(parameters.name, parameters.registrationId);
+    protected ClientMessage innerCall() throws Exception {
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
+        TransactionalList<Object> list = context.getList(parameters.name);
+        boolean success = list.add(parameters.item);
         return BooleanResultParameters.encode(success);
     }
 
     @Override
-    protected MultiMapRemoveEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapRemoveEntryListenerParameters.decode(clientMessage);
+    protected long getClientThreadId() {
+        return parameters.threadId;
+    }
+
+    @Override
+    protected TransactionalListAddParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalListAddParameters.decode(clientMessage);
     }
 
     @Override
     public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
+        return ListService.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new ListPermission(parameters.name, ActionConstants.ACTION_ADD);
     }
 
     @Override
@@ -68,11 +72,11 @@ public class MultiMapRemoveEntryListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return "removeEntryListener";
+        return "set";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
+        return new Object[]{parameters.item};
     }
 }
