@@ -300,6 +300,7 @@ public final class FutureUtil {
         if (future instanceof InternalCompletableFuture) {
             return ((InternalCompletableFuture<V>) future).getSafely();
         }
+
         return future.get();
     }
 
@@ -318,5 +319,32 @@ public final class FutureUtil {
      */
     public interface ExceptionHandler {
         void handleException(Throwable throwable);
+    }
+
+    /**
+     * Check if all futures are done
+     * @param futures
+     * @return true if all futures are done. false otherwise
+     */
+    public static boolean allDone(Collection<Future> futures) {
+        for (Future f: futures) {
+            if (!f.isDone()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Rethrow exeception of the fist future that completed with an exception
+     * @param futures
+     * @throws Exception
+     */
+    public static void checkAllDone(Collection<Future> futures) throws Exception {
+        for (Future f: futures) {
+            if (f.isDone()) {
+                f.get();
+            }
+        }
     }
 }

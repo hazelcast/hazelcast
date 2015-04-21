@@ -59,6 +59,7 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -257,10 +258,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
-    public Address getPartitionOwnerOrWait(int partition) throws InterruptedException {
+    public Address getPartitionOwnerOrWait(int partition) {
         Address owner = getPartitionOwner(partition);
         while (owner == null) {
-            Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
+            try {
+                Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
+            } catch (InterruptedException e) {
+                ExceptionUtil.rethrow(e);
+            }
             owner = getPartitionOwner(partition);
         }
         return owner;
@@ -1513,6 +1518,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     public Node getNode() {
         return node;
+    }
+
+    @Override
+    public boolean isPartitionOwner(int partitionId) {
+        InternalPartitionImpl partition = getPartition(partitionId);
+        return node.getThisAddress().equals(partition.getOwnerOrNull());
     }
 
     @Override

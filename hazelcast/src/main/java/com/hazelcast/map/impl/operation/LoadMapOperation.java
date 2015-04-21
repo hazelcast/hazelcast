@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
-import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -42,14 +41,8 @@ public class LoadMapOperation extends AbstractMapOperation {
     @Override
     public void run() throws Exception {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
-
-        mapStoreContext.triggerInitialKeyLoad();
-
-        for (int partition :  mapServiceContext.getOwnedPartitions()) {
-            RecordStore recordStore = mapServiceContext.getRecordStore(partition, name);
-            recordStore.loadAllFromStore(replaceExistingValues);
-        }
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+        recordStore.loadAll(replaceExistingValues);
     }
 
     @Override

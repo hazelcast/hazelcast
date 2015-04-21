@@ -16,7 +16,10 @@
 
 package com.hazelcast.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Various collection utility methods, mainly targeted to use internally.
@@ -44,5 +47,25 @@ public final class CollectionUtil {
      */
     public static boolean isNotEmpty(Collection collection) {
         return !isEmpty(collection);
+    }
+
+    /**
+     * Add value to list of values in the map. Creates a new list if it doesn't exist for the key
+     *
+     * @param map
+     * @param key
+     * @param value
+     * @return the updated list of values.
+     */
+    public static <K, V> List<V> addToValueList(Map<K, List<V>> map, K key, V value) {
+
+        List<V> values = map.get(key);
+        if (values == null) {
+            values = new ArrayList<V>();
+            map.put(key, values);
+        }
+        values.add(value);
+
+        return values;
     }
 }
