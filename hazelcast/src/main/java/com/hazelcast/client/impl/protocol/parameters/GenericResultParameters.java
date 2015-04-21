@@ -31,10 +31,10 @@ public class GenericResultParameters {
      * ClientMessageType of this message
      */
     public static final ClientMessageType TYPE = ClientMessageType.RESULT;
-    public byte[] result;
+    public Data result;
 
     private GenericResultParameters(ClientMessage flyweight) {
-        result = flyweight.getByteArray();
+        result = flyweight.getData();
     }
 
     public static GenericResultParameters decode(ClientMessage flyweight) {

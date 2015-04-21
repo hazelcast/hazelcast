@@ -16,25 +16,68 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryViewParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapAddEntryListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapAddEntryListenerToKeyParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapAddEntryListenerToKeyWithPredicateParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapAddEntryListenerWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapAddIndexParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapAddInterceptorParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapAddNearCacheEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapAddPartitionLostListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapClearParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapContainsKeyParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapContainsValueParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapDeleteParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapEntriesWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapEntrySetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapEvictAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapEvictParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnAllKeysParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnKeyParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnKeysParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapExecuteWithPredicateParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapFlushParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapGetAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapGetAsyncParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapGetEntryViewParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapIsLockedParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapKeySetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapKeySetWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapLoadAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapLoadGivenKeysParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapLockWithLeaseTimeParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapPutAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutAsyncParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapPutIfAbsentParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapPutTransientParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveAsyncParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapRemoveEntryListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveIfSameParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapReplaceIfSameParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapReplaceParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapSetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapSubmitToKeyParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapTryLockWithTimeoutParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapTryPutParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapTryRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapUnlockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapValuesParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapValuesWithPredicateParameters;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
@@ -58,45 +101,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.ListenerAdapter;
-import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapKeySet;
-import com.hazelcast.map.impl.MapValueCollection;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.client.MapAddIndexRequest;
-import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
-import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
-import com.hazelcast.map.impl.client.MapAddPartitionLostListenerRequest;
-import com.hazelcast.map.impl.client.MapClearRequest;
-import com.hazelcast.map.impl.client.MapEntrySetRequest;
-import com.hazelcast.map.impl.client.MapEvictAllRequest;
-import com.hazelcast.map.impl.client.MapEvictRequest;
-import com.hazelcast.map.impl.client.MapExecuteOnAllKeysRequest;
-import com.hazelcast.map.impl.client.MapExecuteOnKeyRequest;
-import com.hazelcast.map.impl.client.MapExecuteOnKeysRequest;
-import com.hazelcast.map.impl.client.MapExecuteWithPredicateRequest;
-import com.hazelcast.map.impl.client.MapGetAllRequest;
-import com.hazelcast.map.impl.client.MapGetEntryViewRequest;
-import com.hazelcast.map.impl.client.MapIsEmptyRequest;
-import com.hazelcast.map.impl.client.MapIsLockedRequest;
-import com.hazelcast.map.impl.client.MapKeySetRequest;
-import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
-import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
-import com.hazelcast.map.impl.client.MapLockRequest;
-import com.hazelcast.map.impl.client.MapPutAllRequest;
-import com.hazelcast.map.impl.client.MapPutIfAbsentRequest;
-import com.hazelcast.map.impl.client.MapPutTransientRequest;
-import com.hazelcast.map.impl.client.MapQueryRequest;
-import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
-import com.hazelcast.map.impl.client.MapRemoveInterceptorRequest;
-import com.hazelcast.map.impl.client.MapRemovePartitionLostListenerRequest;
-import com.hazelcast.map.impl.client.MapReplaceIfSameRequest;
-import com.hazelcast.map.impl.client.MapReplaceRequest;
-import com.hazelcast.map.impl.client.MapSetRequest;
-import com.hazelcast.map.impl.client.MapSizeRequest;
-import com.hazelcast.map.impl.client.MapTryPutRequest;
-import com.hazelcast.map.impl.client.MapTryRemoveRequest;
-import com.hazelcast.map.impl.client.MapUnlockRequest;
-import com.hazelcast.map.impl.client.MapValuesRequest;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -116,17 +121,16 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -175,8 +179,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
         }
         ClientMessage message = MapContainsKeyParameters.encode(name, keyData, ThreadUtil.getThreadId());
-        Boolean result = invoke(message, keyData);
-        return result;
+        BooleanResultParameters resultParameters =
+                BooleanResultParameters.decode((ClientMessage) invoke(message, keyData));
+        return resultParameters.result;
     }
 
     @Override
@@ -184,9 +189,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
-        ClientMessage message = MapContainsValueParameters.encode(name, valueData);
-        Boolean result = invoke(message);
-        return result;
+        ClientMessage request = MapContainsValueParameters.encode(name, valueData);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
@@ -204,9 +210,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 return (V) cached;
             }
         }
-        ClientMessage message = MapGetParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MapGetParameters.encode(name, keyData, ThreadUtil.getThreadId());
 
-        final V result = invoke(message, keyData);
+        ClientMessage response = invoke(request, keyData);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        V result = toObject(resultParameters.result);
         if (nearCache != null) {
             nearCache.put(keyData, result);
         }
@@ -224,8 +232,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
 
-        final ClientMessage message = MapRemoveParameters.encode(name, keyData, ThreadUtil.getThreadId());
-        return invoke(message, keyData);
+        ClientMessage request = MapRemoveParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     @Override
@@ -240,10 +250,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
 
-        final ClientMessage message = MapRemoveIfSameParameters.encode(name, keyData,
+        final ClientMessage request = MapRemoveIfSameParameters.encode(name, keyData,
                 valueData, ThreadUtil.getThreadId());
-        Boolean result = invoke(message, keyData);
-        return result;
+
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
@@ -251,14 +263,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
-        final ClientMessage message = MapDeleteParameters.encode(name, keyData, ThreadUtil.getThreadId());
-        invoke(message, keyData);
+        final ClientMessage request = MapDeleteParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        invoke(request, keyData);
     }
 
     @Override
     public void flush() {
-        ClientMessage message = MapFlushParameters.encode(name);
-        invoke(message);
+        ClientMessage request = MapFlushParameters.encode(name);
+        invoke(request);
     }
 
     @Override
@@ -274,9 +286,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
         }
 
-        final ClientMessage message = MapGetAsyncParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        final ClientMessage request = MapGetAsyncParameters.encode(name, keyData, ThreadUtil.getThreadId());
         try {
-            final ICompletableFuture future = invokeOnKeyOwner(message, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             final DelegatingFuture<V> delegatingFuture = new DelegatingFuture<V>(future, getContext().getSerializationService());
             delegatingFuture.andThen(new ExecutionCallback<V>() {
                 @Override
@@ -297,9 +309,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
     }
 
-    private ICompletableFuture invokeOnKeyOwner(ClientMessage clientMessage, Data keyData) {
+    private ICompletableFuture invokeOnKeyOwner(ClientMessage request, Data keyData) {
         int partitionId = getContext().getPartitionService().getPartitionId(keyData);
-        final ClientInvocation clientInvocation = new ClientInvocation(getClient(), clientMessage, partitionId);
+        final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
         return clientInvocation.invoke();
     }
 
@@ -316,10 +328,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
-        ClientMessage clientMessage = MapPutAsyncParameters.encode(name, keyData,
+        ClientMessage request = MapPutAsyncParameters.encode(name, keyData,
                 valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         try {
-            final ICompletableFuture future = invokeOnKeyOwner(clientMessage, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture<V>(future, getContext().getSerializationService());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -331,9 +343,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
-        ClientMessage message = MapRemoveAsyncParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MapRemoveAsyncParameters.encode(name, keyData, ThreadUtil.getThreadId());
         try {
-            final ICompletableFuture future = invokeOnKeyOwner(message, keyData);
+            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture<V>(future, getContext().getSerializationService());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -345,10 +357,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         invalidateNearCache(keyData);
-        MapTryRemoveRequest request = new MapTryRemoveRequest(name, keyData,
+        ClientMessage request = MapTryRemoveParameters.encode(name, keyData,
                 ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
@@ -358,10 +371,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
-        MapTryPutRequest request = new MapTryPutRequest(name, keyData, valueData,
+
+        ClientMessage request = MapTryPutParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
@@ -374,7 +389,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
         ClientMessage putMessage = MapPutParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
-        return invoke(putMessage, keyData);
+        ClientMessage request = invoke(putMessage, keyData);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(request);
+        return toObject(resultParameters);
     }
 
     @Override
@@ -384,7 +401,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
-        MapPutTransientRequest request = new MapPutTransientRequest(name, keyData, valueData,
+        ClientMessage request = MapPutTransientParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         invoke(request);
     }
@@ -401,9 +418,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
-        MapPutIfAbsentRequest request = new MapPutIfAbsentRequest(name, keyData, valueData,
+        ClientMessage request = MapPutIfAbsentParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
-        return invoke(request, keyData);
+        ClientMessage result = invoke(request, keyData);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(result);
+        return toObject(resultParameters.result);
     }
 
     @Override
@@ -416,10 +435,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data oldValueData = toData(oldValue);
         final Data newValueData = toData(newValue);
         invalidateNearCache(keyData);
-        MapReplaceIfSameRequest request = new MapReplaceIfSameRequest(name, keyData, oldValueData, newValueData,
+
+        ClientMessage request = MapReplaceIfSameParameters.encode(name, keyData, oldValueData, newValueData,
                 ThreadUtil.getThreadId());
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
@@ -429,9 +450,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
-        MapReplaceRequest request = new MapReplaceRequest(name, keyData, valueData,
+        ClientMessage request = MapReplaceParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId());
-        return invoke(request, keyData);
+        ClientMessage response = invoke(request, keyData);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     @Override
@@ -441,8 +464,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
-        MapSetRequest request = new MapSetRequest(name, keyData, valueData,
+        ClientMessage request = MapSetParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+
         invoke(request, keyData);
     }
 
@@ -450,7 +474,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void lock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapLockRequest request = new MapLockRequest(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MapLockParameters.encode(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
     }
 
@@ -458,8 +482,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapLockRequest request = new MapLockRequest(name, keyData,
-                ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
+        ClientMessage request = MapLockWithLeaseTimeParameters.encode(name, keyData,
+                ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
         invoke(request, keyData);
     }
 
@@ -467,9 +491,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean isLocked(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapIsLockedRequest request = new MapIsLockedRequest(name, keyData);
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MapIsLockedParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
@@ -485,17 +510,19 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapLockRequest request = new MapLockRequest(name, keyData,
-                ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, timeunit));
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MapTryLockWithTimeoutParameters.encode(name, keyData,
+                ThreadUtil.getThreadId(), getTimeInMillis(time, timeunit));
+
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
     public void unlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), false);
+        ClientMessage request = MapUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId(), false);
         invoke(request, keyData);
     }
 
@@ -503,7 +530,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), true);
+        ClientMessage request = MapUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId(), true);
         invoke(request, keyData);
     }
 
@@ -541,118 +568,133 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public String addInterceptor(MapInterceptor interceptor) {
-        MapAddInterceptorRequest request = new MapAddInterceptorRequest(name, interceptor);
-        return invoke(request);
+        Data data = toData(interceptor);
+        ClientMessage request = MapAddInterceptorParameters.encode(name, data);
+        ClientMessage response = invoke(request);
+        AddListenerResultParameters resultParameters = AddListenerResultParameters.decode(response);
+        return resultParameters.registrationId;
     }
 
     @Override
     public void removeInterceptor(String id) {
-        MapRemoveInterceptorRequest request = new MapRemoveInterceptorRequest(name, id);
+        ClientMessage request = MapRemoveEntryListenerParameters.encode(name, id);
         invoke(request);
     }
 
     @Override
     public String addEntryListener(MapListener listener, boolean includeValue) {
-        ClientMessage clientMessage = MapAddEntryListenerParameters.encode(name, includeValue);
+        ClientMessage request = MapAddEntryListenerParameters.encode(name, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(clientMessage, handler);
+        return listen(request, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, boolean includeValue) {
-        ClientMessage clientMessage = MapAddEntryListenerParameters.encode(name, includeValue);
+        ClientMessage request = MapAddEntryListenerParameters.encode(name, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(clientMessage, handler);
+        return listen(request, handler);
     }
 
     @Override
     public boolean removeEntryListener(String id) {
-        final MapRemoveEntryListenerRequest request = new MapRemoveEntryListenerRequest(name, id);
+        ClientMessage request = MapRemoveEntryListenerParameters.encode(name, id);
         return stopListening(request, id);
     }
 
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
-        final MapAddPartitionLostListenerRequest request = new MapAddPartitionLostListenerRequest(name);
+        ClientMessage request = MapAddPartitionLostListenerParameters.encode(name);
         final EventHandler<PortableMapPartitionLostEvent> handler = new ClientMapPartitionLostEventHandler(listener);
         return listen(request, handler);
     }
 
     @Override
     public boolean removePartitionLostListener(String id) {
-        final MapRemovePartitionLostListenerRequest request = new MapRemovePartitionLostListenerRequest(name, id);
+        ClientMessage request = MapRemoveEntryListenerParameters.encode(name, id);
         return stopListening(request, id);
     }
 
     @Override
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
         Data keyData = toData(key);
-        ClientMessage message = MapAddEntryListenerToKeyParameters.encode(name, keyData, includeValue);
+        ClientMessage request = MapAddEntryListenerToKeyParameters.encode(name, keyData, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(message, keyData, handler);
+        return listen(request, keyData, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
-        ClientMessage message = MapAddEntryListenerToKeyParameters.encode(name, keyData, includeValue);
+        ClientMessage request = MapAddEntryListenerToKeyParameters.encode(name, keyData, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(message, keyData, handler);
+        return listen(request, keyData, handler);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
-        ClientMessage message =
+        ClientMessage request =
                 MapAddEntryListenerToKeyWithPredicateParameters.encode(name, keyData, predicateData, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(message, keyData, handler);
+        return listen(request, keyData, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
-        ClientMessage message =
+        ClientMessage request =
                 MapAddEntryListenerToKeyWithPredicateParameters.encode(name, keyData, predicateData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(message, keyData, handler);
+        return listen(request, keyData, handler);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         final Data predicateData = toData(predicate);
-        ClientMessage message =
+        ClientMessage request =
                 MapAddEntryListenerWithPredicateParameters.encode(name, predicateData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(message, null, handler);
+        return listen(request, null, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
         final Data predicateData = toData(predicate);
-        ClientMessage message =
+        ClientMessage request =
                 MapAddEntryListenerWithPredicateParameters.encode(name, predicateData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(message, null, handler);
+        return listen(request, null, handler);
     }
 
     @Override
     public EntryView<K, V> getEntryView(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData, ThreadUtil.getThreadId());
-        SimpleEntryView entryView = invoke(request, keyData);
-        if (entryView == null) {
+        ClientMessage request = MapGetEntryViewParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        EntryViewParameters parameters = EntryViewParameters.decode(response);
+
+        if (parameters == null) {
             return null;
         }
-        final Data value = (Data) entryView.getValue();
+        SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
         entryView.setKey(key);
-        entryView.setValue(toObject(value));
+        entryView.setValue((V) toObject(parameters.value));
+        entryView.setCost(parameters.cost);
+        entryView.setCreationTime(parameters.creationTime);
+        entryView.setExpirationTime(parameters.expirationTime);
+        entryView.setHits(parameters.hits);
+        entryView.setLastAccessTime(parameters.lastAccessTime);
+        entryView.setLastStoredTime(parameters.lastStoredTime);
+        entryView.setLastUpdateTime(parameters.lastUpdateTime);
+        entryView.setVersion(parameters.version);
+        entryView.setEvictionCriteriaNumber(parameters.evictionCriteriaNumber);
+        entryView.setTtl(parameters.ttl);
         //TODO putCache
         return entryView;
     }
@@ -661,15 +703,16 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean evict(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapEvictRequest request = new MapEvictRequest(name, keyData, ThreadUtil.getThreadId());
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = MapEvictParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
     public void evictAll() {
         clearNearCache();
-        MapEvictAllRequest request = new MapEvictAllRequest(name);
+        ClientMessage request = MapEvictAllParameters.encode(name);
         invoke(request);
     }
 
@@ -678,7 +721,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (replaceExistingValues) {
             clearNearCache();
         }
-        final MapLoadAllKeysRequest request = new MapLoadAllKeysRequest(name, replaceExistingValues);
+        ClientMessage request = MapLoadAllParameters.encode(name, replaceExistingValues);
         invoke(request);
     }
 
@@ -692,7 +735,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (replaceExistingValues) {
             invalidateNearCache(dataKeys);
         }
-        final MapLoadGivenKeysRequest request = new MapLoadGivenKeysRequest(name, dataKeys, replaceExistingValues);
+        ClientMessage request = MapLoadGivenKeysParameters.encode(name, dataKeys, replaceExistingValues);
         invoke(request);
     }
 
@@ -713,11 +756,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Set<K> keySet() {
-        MapKeySetRequest request = new MapKeySetRequest(name);
-        MapKeySet mapKeySet = invoke(request);
-        Set<Data> keySetData = mapKeySet.getKeySet();
-        Set<K> keySet = new HashSet<K>(keySetData.size());
-        for (Data data : keySetData) {
+        ClientMessage request = MapKeySetParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> result = resultParameters.result;
+        Set<K> keySet = new HashSet<K>(result.size());
+        for (Data data : result) {
             final K key = toObject(data);
             keySet.add(key);
         }
@@ -746,15 +790,18 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (keySet.isEmpty()) {
             return result;
         }
-        MapGetAllRequest request = new MapGetAllRequest(name, keySet);
-        MapEntrySet mapEntrySet = invoke(request);
-        Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-        for (Entry<Data, Data> dataEntry : entrySet) {
-            final V value = toObject(dataEntry.getValue());
-            final K key = toObject(dataEntry.getKey());
+        ClientMessage request = MapGetAllParameters.encode(name, keySet);
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
+        int size = resultParameters.keys.size();
+
+        for (int i = 0; i < size; i++) {
+            Data dataKey = resultParameters.keys.get(i);
+            final V value = toObject(resultParameters.values.get(i));
+            final K key = toObject(dataKey);
             result.put(key, value);
             if (nearCache != null) {
-                nearCache.put(dataEntry.getKey(), value);
+                nearCache.put(dataKey, value);
             }
         }
         return result;
@@ -762,10 +809,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Collection<V> values() {
-        MapValuesRequest request = new MapValuesRequest(name);
-        MapValueCollection mapValueCollection = invoke(request);
-
-        Collection<Data> collectionData = mapValueCollection.getValues();
+        ClientMessage request = MapValuesParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> collectionData = resultParameters.result;
         Collection<V> collection = new ArrayList<V>(collectionData.size());
         for (Data data : collectionData) {
             V value = toObject(data);
@@ -776,13 +823,16 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        MapEntrySetRequest request = new MapEntrySetRequest(name);
-        MapEntrySet result = invoke(request);
+        ClientMessage request = MapEntrySetParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>();
-        Set<Entry<Data, Data>> entries = result.getEntrySet();
-        for (Entry<Data, Data> dataEntry : entries) {
-            Data keyData = dataEntry.getKey();
-            Data valueData = dataEntry.getValue();
+
+        int size = resultParameters.keys.size();
+
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
             K key = toObject(keyData);
             V value = toObject(valueData);
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -803,11 +853,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 pagingPredicate.nextPage();
             }
         }
-        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
-        QueryResultSet result = invoke(request);
+        ClientMessage request = MapKeySetWithPredicateParameters.encode(name, toData(predicate));
+
         if (pagingPredicate == null) {
+            ClientMessage response = invoke(request);
+            DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+
             final HashSet<K> keySet = new HashSet<K>();
-            for (Object o : result) {
+            for (Data o : resultParameters.result) {
                 final K key = toObject(o);
                 keySet.add(key);
             }
@@ -815,16 +868,22 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
 
 
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
+
         final Comparator<Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.KEY);
         final SortedQueryResultSet sortedResult = new SortedQueryResultSet(comparator, IterationType.KEY,
                 pagingPredicate.getPageSize());
 
 
-        final Iterator<Entry> iterator = result.rawIterator();
-        while (iterator.hasNext()) {
-            final Entry entry = iterator.next();
-            final K key = toObject(entry.getKey());
-            final V value = toObject(entry.getValue());
+        int size = resultParameters.keys.size();
+
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
+
+            final K key = toObject(keyData);
+            final V value = toObject(valueData);
             sortedResult.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
         }
 
@@ -847,19 +906,24 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
         }
 
-        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
-        QueryResultSet result = invoke(request);
+        ClientMessage request = MapEntriesWithPredicateParameters.encode(name, toData(predicate));
+
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
+
         Set entrySet;
         if (pagingPredicate == null) {
-            entrySet = new HashSet<Entry<K, V>>(result.size());
+            entrySet = new HashSet<Entry<K, V>>(resultParameters.keys.size());
         } else {
             entrySet = new SortedQueryResultSet(pagingPredicate.getComparator(), IterationType.ENTRY,
                     pagingPredicate.getPageSize());
         }
-        for (Object data : result) {
-            AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
-            K key = toObject(dataEntry.getKey());
-            V value = toObject(dataEntry.getValue());
+
+        for (int i = 0; i < resultParameters.keys.size(); i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
+            K key = toObject(keyData);
+            V value = toObject(valueData);
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
         if (pagingPredicate != null) {
@@ -874,11 +938,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             return valuesForPagingPredicate((PagingPredicate) predicate);
         }
 
-        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
-        QueryResultSet result = invoke(request);
+        ClientMessage request = MapValuesWithPredicateParameters.encode(name, toData(predicate));
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
 
+        Collection<Data> result = resultParameters.result;
         List<V> values = new ArrayList<V>(result.size());
-        for (Object data : result) {
+        for (Data data : result) {
             V value = toObject(data);
             values.add(value);
         }
@@ -894,16 +960,21 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             pagingPredicate.nextPage();
         }
 
-        MapQueryRequest request = new MapQueryRequest(name, pagingPredicate, IterationType.VALUE);
-        QueryResultSet result = invoke(request);
 
-        List<Entry<Object, V>> valueEntryList = new ArrayList<Entry<Object, V>>(result.size());
-        Iterator<Entry> iterator = result.rawIterator();
-        while (iterator.hasNext()) {
-            Entry entry = iterator.next();
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
-            valueEntryList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
+        ClientMessage request = MapValuesWithPredicateParameters.encode(name, toData(pagingPredicate));
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
+
+
+        int size = resultParameters.keys.size();
+        List<Entry<K, V>> valueEntryList = new ArrayList<Entry<K, V>>(size);
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
+
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            valueEntryList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
         }
 
         Collections.sort(valueEntryList, SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.VALUE));
@@ -918,7 +989,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, anchor);
 
         ArrayList<V> values = new ArrayList<V>(valueEntryList.size());
-        for (Entry<Object, V> entry : valueEntryList) {
+        for (Entry<K, V> entry : valueEntryList) {
             values.add(entry.getValue());
         }
 
@@ -937,7 +1008,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void addIndex(String attribute, boolean ordered) {
-        MapAddIndexRequest request = new MapAddIndexRequest(name, attribute, ordered);
+        ClientMessage request = MapAddIndexParameters.encode(name, attribute, ordered);
         invoke(request);
     }
 
@@ -955,15 +1026,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        ClientMessage request = MapExecuteOnKeyParameters.encode(name, toData(entryProcessor), keyData);
         return invoke(request, keyData);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
-        request.setAsSubmitToKey();
+        ClientMessage request = MapSubmitToKeyParameters.encode(name, toData(entryProcessor), keyData);
         try {
             final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             future.andThen(callback);
@@ -975,8 +1045,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
-        request.setAsSubmitToKey();
+        ClientMessage request = MapSubmitToKeyParameters.encode(name, toData(entryProcessor), keyData);
+
         try {
             final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             return new DelegatingFuture(future, getContext().getSerializationService());
@@ -987,12 +1057,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
-        MapExecuteOnAllKeysRequest request = new MapExecuteOnAllKeysRequest(name, entryProcessor);
-        MapEntrySet entrySet = invoke(request);
+        ClientMessage request = MapExecuteOnAllKeysParameters.encode(name, toData(entryProcessor));
+
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(request);
+
+        int size = resultParameters.keys.size();
         Map<K, Object> result = new HashMap<K, Object>();
-        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
-            final Data keyData = dataEntry.getKey();
-            final Data valueData = dataEntry.getValue();
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
             K key = toObject(keyData);
             result.put(key, toObject(valueData));
         }
@@ -1001,12 +1074,17 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
-        MapExecuteWithPredicateRequest request = new MapExecuteWithPredicateRequest(name, entryProcessor, predicate);
-        MapEntrySet entrySet = invoke(request);
+
+        ClientMessage request = MapExecuteWithPredicateParameters.encode(name,
+                toData(entryProcessor), toData(predicate));
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(request);
+
+
+        int size = resultParameters.keys.size();
         Map<K, Object> result = new HashMap<K, Object>();
-        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
-            final Data keyData = dataEntry.getKey();
-            final Data valueData = dataEntry.getValue();
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
             K key = toObject(keyData);
             result.put(key, toObject(valueData));
         }
@@ -1058,12 +1136,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             dataKeys.add(toData(key));
         }
 
-        MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name, entryProcessor, dataKeys);
-        MapEntrySet entrySet = invoke(request);
+        ClientMessage request = MapExecuteOnKeysParameters.encode(name, toData(entryProcessor), dataKeys);
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
+
+        int size = resultParameters.keys.size();
         Map<K, Object> result = new HashMap<K, Object>();
-        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
-            final Data keyData = dataEntry.getKey();
-            final Data valueData = dataEntry.getValue();
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
             K key = toObject(keyData);
             result.put(key, toObject(valueData));
         }
@@ -1078,33 +1159,40 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public int size() {
-        MapSizeRequest request = new MapSizeRequest(name);
-        Integer result = invoke(request);
-        return result;
+        ClientMessage request = MapSizeParameters.encode(name);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
     public boolean isEmpty() {
-        MapIsEmptyRequest request = new MapIsEmptyRequest(name);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = MapIsEmptyParameters.encode(name);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        MapEntrySet entrySet = new MapEntrySet();
+        int len = m.size();
+        List<Data> keys = new ArrayList<Data>(len);
+        List<Data> values = new ArrayList<Data>(len);
+
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
-            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
+            keys.add(keyData);
+            values.add(toData(entry.getValue()));
         }
-        MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
+
+        ClientMessage request = MapPutAllParameters.encode(name, keys, values);
         invoke(request);
     }
 
     @Override
     public void clear() {
-        MapClearRequest request = new MapClearRequest(name);
+        ClientMessage request = MapClearParameters.encode(name);
         invalidateNearCache();
         invoke(request);
     }
@@ -1145,8 +1233,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             this.includeValue = includeValue;
         }
 
-        public void handle(ClientMessage clientMessage) {
-            AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(clientMessage);
+        public void handle(ClientMessage request) {
+            AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(request);
 
             Member member = getContext().getClusterService().getMember(event.uuid);
             final IMapEvent iMapEvent = createIMapEvent(event, member);
@@ -1271,25 +1359,27 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientRequest request = new MapAddNearCacheEntryListenerRequest(name, false);
-            EventHandler handler = new EventHandler<PortableEntryEvent>() {
+            ClientMessage request = MapAddNearCacheEntryListenerParameters.encode(name, false);
+            EventHandler handler = new EventHandler<ClientMessage>() {
                 @Override
-                public void handle(PortableEntryEvent event) {
-                    switch (event.getEventType()) {
+                public void handle(ClientMessage eventMessage) {
+                    AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(eventMessage);
+
+                    EntryEventType entryEventType = EntryEventType.getByType(event.eventType);
+                    switch (entryEventType) {
                         case ADDED:
                         case REMOVED:
                         case UPDATED:
                         case MERGED:
                         case EVICTED:
-                            final Data key = event.getKey();
-                            nearCache.remove(key);
+                            nearCache.remove(event.key);
                             break;
                         case CLEAR_ALL:
                         case EVICT_ALL:
                             nearCache.clear();
                             break;
                         default:
-                            throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+                            throw new IllegalArgumentException("Not a known event type " + entryEventType);
                     }
                 }
 
@@ -1315,7 +1405,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
-            BaseClientRemoveListenerRequest request = new MapRemoveEntryListenerRequest(name, registrationId);
+            ClientMessage request = MapRemoveEntryListenerParameters.encode(name, registrationId);
             getContext().getListenerService().stopListening(request, registrationId);
         }
     }

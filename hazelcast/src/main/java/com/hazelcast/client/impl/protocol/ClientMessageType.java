@@ -74,7 +74,9 @@ public enum ClientMessageType {
 
     MEMBER_ATTRIBUTE_RESULT(21),
 
-    VOID_RESULT(22);
+    VOID_RESULT(22),
+
+    ENTRY_VIEW(23);
 
     private final int id;
 
