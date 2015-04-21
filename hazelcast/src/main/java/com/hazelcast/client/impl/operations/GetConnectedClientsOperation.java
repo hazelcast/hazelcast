@@ -20,8 +20,6 @@ import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import java.util.HashMap;
