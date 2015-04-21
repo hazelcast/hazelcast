@@ -9,17 +9,20 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.After;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class GetConnectedClientOperationTest extends HazelcastTestSupport {
 
     @BeforeClass
@@ -57,7 +60,5 @@ public class GetConnectedClientOperationTest extends HazelcastTestSupport {
         assertEquals(6, clientStats.get(ClientType.JAVA).intValue());
         assertEquals(0, clientStats.get(ClientType.CPP).intValue());
         assertEquals(0, clientStats.get(ClientType.CSHARP).intValue());
-        assertEquals(0, clientStats.get(ClientType.JAVAENTERPRISE).intValue());
-
     }
 }
