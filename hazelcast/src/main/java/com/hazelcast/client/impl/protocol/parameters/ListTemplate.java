@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
+
 import java.util.List;
 import java.util.Set;
 
@@ -79,7 +80,7 @@ public interface ListTemplate {
     void addWithIndex(String name, int index, Data value);
 
     @EncodeMethod(id = 16)
-    void removeWithIndex(String name, int index, Data value);
+    void removeWithIndex(String name, int index);
 
     @EncodeMethod(id = 17)
     void lastIndexOf(String name, Data value);
