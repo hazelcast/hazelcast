@@ -28,6 +28,7 @@ import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class SemaphoreTryAcquireMessageTask
         extends AbstractPartitionMessageTask<SemaphoreTryAcquireParameters> {
@@ -68,7 +69,10 @@ public class SemaphoreTryAcquireMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.permits};
+        if (parameters.timeout == -1) {
+            return new Object[]{parameters.permits};
+        }
+        return new Object[]{parameters.permits, parameters.timeout, TimeUnit.MILLISECONDS};
     }
 }
 

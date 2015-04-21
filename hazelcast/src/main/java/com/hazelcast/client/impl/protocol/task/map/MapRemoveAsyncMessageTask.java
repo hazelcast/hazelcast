@@ -17,17 +17,77 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.MapRemoveParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.Operation;
 
-public class MapRemoveAsyncMessageTask extends MapRemoveMessageTask {
+import java.security.Permission;
+
+public class MapRemoveAsyncMessageTask extends AbstractPartitionMessageTask<MapRemoveParameters> {
+
+    protected transient long startTime;
 
     public MapRemoveAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
+    protected void beforeProcess() {
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void beforeResponse() {
+        final long latency = System.currentTimeMillis() - startTime;
+        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
+                    .incrementRemoves(latency);
+        }
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        RemoveOperation op = new RemoveOperation(parameters.name, parameters.key);
+        op.setThreadId(parameters.threadId);
+        return op;
+    }
+
+    @Override
+    protected MapRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapRemoveParameters.decode(clientMessage);
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
+    @Override
     public String getMethodName() {
         return "removeAsync";
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.key};
+    }
+
 }

@@ -29,12 +29,13 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_LOCK}
  */
-public class MultiMapLockMessageTask  extends AbstractPartitionMessageTask<MultiMapLockParameters> {
+public class MultiMapLockMessageTask extends AbstractPartitionMessageTask<MultiMapLockParameters> {
 
     public MultiMapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +44,7 @@ public class MultiMapLockMessageTask  extends AbstractPartitionMessageTask<Multi
     @Override
     protected Operation prepareOperation() {
         DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
-        return new LockOperation(namespace, parameters.key, parameters.threadId, -1, -1);
+        return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.ttl, -1);
     }
 
     @Override
@@ -63,6 +64,9 @@ public class MultiMapLockMessageTask  extends AbstractPartitionMessageTask<Multi
 
     @Override
     public Object[] getParameters() {
+        if (parameters.ttl == -1) {
+            return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
+        }
         return new Object[]{parameters.key};
     }
 

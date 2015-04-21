@@ -81,16 +81,10 @@ public interface MapTemplate {
     void set(String name, Data key, Data value, long threadId, long ttl);
 
     @EncodeMethod(id = 19)
-    void lock(String name, Data key, long threadId);
-
-    @EncodeMethod(id = 20)
-    void lockWithLeaseTime(String name, Data key, long threadId, long ttl);
+    void lock(String name, Data key, long threadId, long ttl);
 
     @EncodeMethod(id = 21)
-    void tryLock(String name, Data key, long threadId);
-
-    @EncodeMethod(id = 22)
-    void tryLockWithTimeout(String name, Data key, long threadId, long timeout);
+    void tryLock(String name, Data key, long threadId, long timeout);
 
     @EncodeMethod(id = 23)
     void isLocked(String name, Data key, long threadId);

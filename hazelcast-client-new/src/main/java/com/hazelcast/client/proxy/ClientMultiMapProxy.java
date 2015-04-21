@@ -17,10 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapAddEntryListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapAddEntryListenerToKeyParameters;
@@ -34,7 +34,6 @@ import com.hazelcast.client.impl.protocol.parameters.MultiMapGetParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapIsLockedParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapKeySetParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapLockParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapLockWithLeaseTimeParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapPutParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryParameters;
@@ -287,11 +286,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-        final Data keyData = toData(key);
-        ClientMessage request = MultiMapLockParameters.encode(name, keyData, ThreadUtil.getThreadId());
-        invoke(request, keyData);
+        lock(key, -1, TimeUnit.MILLISECONDS);
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
@@ -299,7 +294,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         shouldBePositive(leaseTime, "leaseTime");
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapLockWithLeaseTimeParameters.encode(name, keyData, ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
+        ClientMessage request = MultiMapLockParameters.encode(name, keyData,
+                ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
         invoke(request, keyData);
     }
 
@@ -327,7 +323,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapTryLockParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request =
+                MultiMapTryLockParameters.encode(name, keyData, ThreadUtil.getThreadId(), timeunit.toMillis(time));
         ClientMessage response = invoke(request, keyData);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;
@@ -429,14 +426,14 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         }
 
         public void handle(ClientMessage clientMessage) {
-            AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(clientMessage);
+            EntryEventParameters event = EntryEventParameters.decode(clientMessage);
 
             Member member = getContext().getClusterService().getMember(event.uuid);
             final IMapEvent iMapEvent = createIMapEvent(event, member);
             listenerAdapter.onEvent(iMapEvent);
         }
 
-        private IMapEvent createIMapEvent(AddEntryListenerEventParameters event, Member member) {
+        private IMapEvent createIMapEvent(EntryEventParameters event, Member member) {
             IMapEvent iMapEvent;
             EntryEventType entryEventType = EntryEventType.getByType(event.eventType);
             switch (entryEventType) {
@@ -454,11 +451,11 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             return iMapEvent;
         }
 
-        private MapEvent createMapEvent(AddEntryListenerEventParameters event, Member member) {
+        private MapEvent createMapEvent(EntryEventParameters event, Member member) {
             return new MapEvent(name, member, event.eventType, event.numberOfAffectedEntries);
         }
 
-        private EntryEvent<K, V> createEntryEvent(AddEntryListenerEventParameters event, Member member) {
+        private EntryEvent<K, V> createEntryEvent(EntryEventParameters event, Member member) {
             V value = null;
             V oldValue = null;
             if (includeValue) {

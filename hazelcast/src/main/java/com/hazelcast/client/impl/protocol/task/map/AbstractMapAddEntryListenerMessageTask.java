@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
@@ -85,7 +85,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                             "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(dataAwareEntryEvent.getKeyData()
+                ClientMessage entryEvent = EntryEventParameters.encode(dataAwareEntryEvent.getKeyData()
                         , dataAwareEntryEvent.getNewValueData(), dataAwareEntryEvent.getOldValueData(),
                         dataAwareEntryEvent.getMeringValueData(), event.getEventType().getType(),
                         event.getMember().getUuid(), 1);
@@ -99,7 +99,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(NULL_DATA,
+                ClientMessage entryEvent = EntryEventParameters.encode(NULL_DATA,
                         NULL_DATA, NULL_DATA, NULL_DATA, type.getType(), uuid, numberOfEntriesAffected);
                 sendClientMessage(entryEvent);
             }

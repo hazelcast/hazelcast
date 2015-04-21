@@ -17,11 +17,11 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.EntryViewParameters;
 import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
@@ -57,7 +57,6 @@ import com.hazelcast.client.impl.protocol.parameters.MapKeySetWithPredicateParam
 import com.hazelcast.client.impl.protocol.parameters.MapLoadAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapLoadGivenKeysParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapLockWithLeaseTimeParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutAsyncParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutIfAbsentParameters;
@@ -72,7 +71,7 @@ import com.hazelcast.client.impl.protocol.parameters.MapReplaceParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapSetParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapSizeParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapSubmitToKeyParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapTryLockWithTimeoutParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapTryLockParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapTryPutParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapTryRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapUnlockParameters;
@@ -472,17 +471,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void lock(K key) {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        final Data keyData = toData(key);
-        ClientMessage request = MapLockParameters.encode(name, keyData, ThreadUtil.getThreadId());
-        invoke(request, keyData);
+        lock(key, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapLockWithLeaseTimeParameters.encode(name, keyData,
+        ClientMessage request = MapLockParameters.encode(name, keyData,
                 ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
         invoke(request, keyData);
     }
@@ -510,7 +506,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapTryLockWithTimeoutParameters.encode(name, keyData,
+        ClientMessage request = MapTryLockParameters.encode(name, keyData,
                 ThreadUtil.getThreadId(), getTimeInMillis(time, timeunit));
 
         ClientMessage response = invoke(request, keyData);
@@ -1233,15 +1229,16 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             this.includeValue = includeValue;
         }
 
-        public void handle(ClientMessage request) {
-            AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(request);
+
+        public void handle(ClientMessage clientMessage) {
+            EntryEventParameters event = EntryEventParameters.decode(clientMessage);
 
             Member member = getContext().getClusterService().getMember(event.uuid);
             final IMapEvent iMapEvent = createIMapEvent(event, member);
             listenerAdapter.onEvent(iMapEvent);
         }
 
-        private IMapEvent createIMapEvent(AddEntryListenerEventParameters event, Member member) {
+        private IMapEvent createIMapEvent(EntryEventParameters event, Member member) {
             IMapEvent iMapEvent;
             EntryEventType entryEventType = EntryEventType.getByType(event.eventType);
             switch (entryEventType) {
@@ -1263,11 +1260,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             return iMapEvent;
         }
 
-        private MapEvent createMapEvent(AddEntryListenerEventParameters event, Member member) {
+        private MapEvent createMapEvent(EntryEventParameters event, Member member) {
             return new MapEvent(name, member, event.eventType, event.numberOfAffectedEntries);
         }
 
-        private EntryEvent<K, V> createEntryEvent(AddEntryListenerEventParameters event, Member member) {
+        private EntryEvent<K, V> createEntryEvent(EntryEventParameters event, Member member) {
             V value = null;
             V oldValue = null;
             V mergingValue = null;
@@ -1363,7 +1360,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             EventHandler handler = new EventHandler<ClientMessage>() {
                 @Override
                 public void handle(ClientMessage eventMessage) {
-                    AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(eventMessage);
+                    EntryEventParameters event = EntryEventParameters.decode(eventMessage);
 
                     EntryEventType entryEventType = EntryEventType.getByType(event.eventType);
                     switch (entryEventType) {

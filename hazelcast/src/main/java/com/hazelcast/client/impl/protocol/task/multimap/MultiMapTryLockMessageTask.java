@@ -29,6 +29,7 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -44,7 +45,7 @@ public class MultiMapTryLockMessageTask extends AbstractPartitionMessageTask<Mul
     protected Operation prepareOperation() {
 
         DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
-        return new LockOperation(namespace, parameters.key, parameters.threadId, Long.MAX_VALUE);
+        return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.timeout);
     }
 
     @Override
@@ -64,7 +65,10 @@ public class MultiMapTryLockMessageTask extends AbstractPartitionMessageTask<Mul
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.key};
+        if (parameters.timeout == -1) {
+            return new Object[]{parameters.key};
+        }
+        return new Object[]{parameters.key, parameters.timeout, TimeUnit.MILLISECONDS};
     }
 
     public Permission getRequiredPermission() {
