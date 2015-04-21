@@ -33,10 +33,12 @@ import com.hazelcast.client.impl.protocol.parameters.QueueIteratorParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueOfferParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueuePeekParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueuePollParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueuePutParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueRemainingCapacityParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueRemoveListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueTakeParameters;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.impl.queue.QueueIterator;
@@ -132,7 +134,9 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public void put(E e) throws InterruptedException {
-        offer(e, -1, TimeUnit.MILLISECONDS);
+        Data data = toData(e);
+        ClientMessage request = QueuePutParameters.encode(name, data);
+        invokeInterruptibly(request);
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
@@ -144,11 +148,14 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public E take() throws InterruptedException {
-        return poll(-1, TimeUnit.MILLISECONDS);
+        ClientMessage request = QueueTakeParameters.encode(name);
+        ClientMessage response = invokeInterruptibly(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        ClientMessage request = QueuePollParameters.encode(name);
+        ClientMessage request = QueuePollParameters.encode(name, unit.toMillis(timeout));
         ClientMessage response = invokeInterruptibly(request);
         GenericResultParameters resultParameters = GenericResultParameters.decode(response);
         return toObject(resultParameters.result);
