@@ -1075,6 +1075,8 @@ public interface IMap<K, V>
 
     /**
      * Returns a set clone of the keys contained in this map.
+     * <p/>
+     * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
@@ -1084,6 +1086,8 @@ public interface IMap<K, V>
 
     /**
      * Returns a collection clone of the values contained in this map.
+     * <p/>
+     * <p><b>Warning:</b></p>
      * The collection is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the collection, and vice-versa.
      *
@@ -1093,6 +1097,8 @@ public interface IMap<K, V>
 
     /**
      * Returns a {@link Set} clone of the mappings contained in this map.
+     * <p/>
+     * <p><b>Warning:</b></p>
      * The set is <b>NOT</b> backed by the map,
      * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
@@ -1128,7 +1134,6 @@ public interface IMap<K, V>
      * @param predicate specified query criteria.
      * @return result entry set of the query.
      */
-
     Set<Map.Entry<K, V>> entrySet(Predicate predicate);
 
     /**
@@ -1144,7 +1149,6 @@ public interface IMap<K, V>
      * @param predicate specified query criteria.
      * @return result value collection of the query.
      */
-
     Collection<V> values(Predicate predicate);
 
     /**
