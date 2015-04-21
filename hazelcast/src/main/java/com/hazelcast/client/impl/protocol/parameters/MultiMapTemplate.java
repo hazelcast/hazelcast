@@ -89,4 +89,9 @@ public interface MultiMapTemplate {
     @EncodeMethod(id = 22)
     void forceUnlock(String name, Data key, long threadId);
 
+    @EncodeMethod(id = 23)
+    void removeEntry(String name, Data key, Data value, long threadId);
+
+    @EncodeMethod(id = 24)
+    void valueCount(String name, Data key, long threadId);
 }

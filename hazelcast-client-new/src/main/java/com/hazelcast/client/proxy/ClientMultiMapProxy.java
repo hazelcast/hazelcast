@@ -16,17 +16,47 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapAddEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapAddEntryListenerToKeyParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapClearParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsEntryParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsKeyParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsValueParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapEntrySetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapForceUnlockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapIsLockedParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapKeySetParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapLockWithLeaseTimeParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapPutParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapTryLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapUnlockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapValueCountParameters;
+import com.hazelcast.client.impl.protocol.parameters.MultiMapValuesParameters;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -39,37 +69,20 @@ import com.hazelcast.mapreduce.ReducingSubmittableJob;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.multimap.impl.client.AddEntryListenerRequest;
-import com.hazelcast.multimap.impl.client.ClearRequest;
-import com.hazelcast.multimap.impl.client.ContainsRequest;
-import com.hazelcast.multimap.impl.client.CountRequest;
-import com.hazelcast.multimap.impl.client.EntrySetRequest;
-import com.hazelcast.multimap.impl.client.GetAllRequest;
-import com.hazelcast.multimap.impl.client.KeyBasedContainsRequest;
-import com.hazelcast.multimap.impl.client.KeySetRequest;
-import com.hazelcast.multimap.impl.client.MultiMapIsLockedRequest;
-import com.hazelcast.multimap.impl.client.MultiMapLockRequest;
-import com.hazelcast.multimap.impl.client.MultiMapUnlockRequest;
-import com.hazelcast.multimap.impl.client.PortableEntrySetResponse;
-import com.hazelcast.multimap.impl.client.PutRequest;
-import com.hazelcast.multimap.impl.client.RemoveAllRequest;
-import com.hazelcast.multimap.impl.client.RemoveEntryListenerRequest;
-import com.hazelcast.multimap.impl.client.RemoveRequest;
-import com.hazelcast.multimap.impl.client.SizeRequest;
-import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
-import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.ValidationUtil;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.util.ValidationUtil.checkNotNull;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
@@ -96,18 +109,26 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        PutRequest request = new PutRequest(name, keyData, valueData, -1, ThreadUtil.getThreadId());
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapPutParameters.encode(name, keyData, valueData, ThreadUtil.getThreadId(), -1);
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public Collection<V> get(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        GetAllRequest request = new GetAllRequest(name, keyData, ThreadUtil.getThreadId());
-        PortableCollection result = invoke(request, keyData);
-        return toObjectCollection(result);
+        ClientMessage request = MultiMapGetParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> result = resultParameters.result;
+        Collection<V> resultCollection = new ArrayList<V>(result.size());
+        for (Data data : result) {
+            final V value = toObject(data);
+            resultCollection.add(value);
+        }
+        return resultCollection;
     }
 
     public boolean remove(Object key, Object value) {
@@ -116,18 +137,26 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        RemoveRequest request = new RemoveRequest(name, keyData, valueData, ThreadUtil.getThreadId());
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapRemoveEntryParameters.encode(name, keyData, valueData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public Collection<V> remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        RemoveAllRequest request = new RemoveAllRequest(name, keyData, ThreadUtil.getThreadId());
-        PortableCollection result = invoke(request, keyData);
-        return toObjectCollection(result);
+        ClientMessage request = MultiMapRemoveParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> result = resultParameters.result;
+        Collection<V> resultCollection = new ArrayList<V>(result.size());
+        for (Data data : result) {
+            final V value = toObject(data);
+            resultCollection.add(value);
+        }
+        return resultCollection;
     }
 
     public Set<K> localKeySet() {
@@ -135,26 +164,45 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public Set<K> keySet() {
-        KeySetRequest request = new KeySetRequest(name);
-        PortableCollection result = invoke(request);
-        return (Set) toObjectCollection(result);
+        ClientMessage request = MultiMapKeySetParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> result = resultParameters.result;
+        Set<K> keySet = new HashSet<K>(result.size());
+        for (Data data : result) {
+            final K key = toObject(data);
+            keySet.add(key);
+        }
+        return keySet;
     }
 
     public Collection<V> values() {
-        ValuesRequest request = new ValuesRequest(name);
-        PortableCollection result = invoke(request);
-        return toObjectCollection(result);
+        ClientMessage request = MultiMapValuesParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> result = resultParameters.result;
+        Collection<V> resultCollection = new ArrayList<V>(result.size());
+        for (Data data : result) {
+            final V value = toObject(data);
+            resultCollection.add(value);
+        }
+        return resultCollection;
     }
 
     public Set<Map.Entry<K, V>> entrySet() {
-        EntrySetRequest request = new EntrySetRequest(name);
-        PortableEntrySetResponse result = invoke(request);
-        Set<Map.Entry> dataEntrySet = result.getEntrySet();
-        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>(dataEntrySet.size());
-        for (Map.Entry entry : dataEntrySet) {
-            Object key = toObject((Data) entry.getKey());
-            Object val = toObject((Data) entry.getValue());
-            entrySet.add(new AbstractMap.SimpleEntry(key, val));
+        ClientMessage request = MultiMapEntrySetParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
+        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
+        int size = resultParameters.keys.size();
+
+        for (int i = 0; i < size; i++) {
+            Data keyData = resultParameters.keys.get(i);
+            Data valueData = resultParameters.values.get(i);
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+
+            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
         return entrySet;
     }
@@ -163,18 +211,20 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        ClientRequest request = new KeyBasedContainsRequest(name, keyData, null, ThreadUtil.getThreadId());
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapContainsKeyParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean containsValue(Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data valueData = toData(value);
-        ClientRequest request = new ContainsRequest(name, valueData);
-        Boolean result = invoke(request);
-        return result;
+        Data keyValue = toData(value);
+        ClientMessage request = MultiMapContainsValueParameters.encode(name, keyValue);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean containsEntry(K key, V value) {
@@ -183,19 +233,21 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ClientRequest request = new KeyBasedContainsRequest(name, keyData, valueData, ThreadUtil.getThreadId());
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapContainsEntryParameters.encode(name, keyData, valueData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public int size() {
-        SizeRequest request = new SizeRequest(name);
-        Integer result = invoke(request);
-        return result;
+        ClientMessage request = MultiMapSizeParameters.encode(name);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public void clear() {
-        ClearRequest request = new ClearRequest(name);
+        ClientMessage request = MultiMapClearParameters.encode(name);
         invoke(request);
     }
 
@@ -203,9 +255,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        CountRequest request = new CountRequest(name, keyData, ThreadUtil.getThreadId());
-        Integer result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapValueCountParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public String addLocalEntryListener(EntryListener<K, V> listener) {
@@ -214,20 +267,22 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         isNotNull(listener, "listener");
-        AddEntryListenerRequest request = new AddEntryListenerRequest(name, null, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        ClientMessage request = MultiMapAddEntryListenerParameters.encode(name, includeValue);
+
+        EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
         return listen(request, handler);
     }
 
     public boolean removeEntryListener(String registrationId) {
-        final RemoveEntryListenerRequest request = new RemoveEntryListenerRequest(name, registrationId);
+        ClientMessage request = MultiMapRemoveEntryListenerParameters.encode(name, registrationId);
         return stopListening(request, registrationId);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final Data keyData = toData(key);
-        AddEntryListenerRequest request = new AddEntryListenerRequest(name, keyData, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        ClientMessage request = MultiMapAddEntryListenerToKeyParameters.encode(name, keyData, includeValue);
+
+        EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
         return listen(request, keyData, handler);
     }
 
@@ -235,7 +290,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(), name);
+        ClientMessage request = MultiMapLockParameters.encode(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
     }
 
@@ -244,8 +299,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         shouldBePositive(leaseTime, "leaseTime");
         final Data keyData = toData(key);
-        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
-                getTimeInMillis(leaseTime, timeUnit), -1, name);
+        ClientMessage request = MultiMapLockWithLeaseTimeParameters.encode(name, keyData, ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
         invoke(request, keyData);
     }
 
@@ -253,9 +307,10 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        final MultiMapIsLockedRequest request = new MultiMapIsLockedRequest(keyData, name);
-        final Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapIsLockedParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean tryLock(K key) {
@@ -272,17 +327,17 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
-                Long.MAX_VALUE, getTimeInMillis(time, timeunit), name);
-        Boolean result = invoke(request, keyData);
-        return result;
+        ClientMessage request = MultiMapTryLockParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public void unlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), name);
+        ClientMessage request = MultiMapUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
     }
 
@@ -290,7 +345,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), true, name);
+        ClientMessage request = MultiMapForceUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
     }
 
@@ -353,53 +408,73 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
-        return new EventHandler<PortableEntryEvent>() {
-            public void handle(PortableEntryEvent event) {
-                Member member = getContext().getClusterService().getMember(event.getUuid());
-                switch (event.getEventType()) {
-                    case ADDED:
-                        listener.entryAdded(createEntryEvent(event, member));
-                        break;
-                    case REMOVED:
-                        listener.entryRemoved(createEntryEvent(event, member));
-                        break;
-                    case CLEAR_ALL:
-                        listener.mapCleared(createMapEvent(event, member));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Not a known event type " + event.getEventType());
-                }
-            }
-
-            private MapEvent createMapEvent(PortableEntryEvent event, Member member) {
-                return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfAffectedEntries());
-            }
-
-            private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-                V value = null;
-                V oldValue = null;
-                if (includeValue) {
-                    value = toObject(event.getValue());
-                    oldValue = toObject(event.getOldValue());
-                }
-                K key = toObject(event.getKey());
-                return new EntryEvent<K, V>(name, member,
-                        event.getEventType().getType(), key, oldValue, value);
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-            }
-        };
+    private EventHandler<ClientMessage> createHandler(final Object listener, final boolean includeValue) {
+        final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
+        return new ClientMultiMapEventHandler(listenerAdaptor, includeValue);
     }
 
     @Override
     public String toString() {
         return "MultiMap{" + "name='" + getName() + '\'' + '}';
+    }
+
+    private class ClientMultiMapEventHandler implements EventHandler<ClientMessage> {
+
+        private final ListenerAdapter listenerAdapter;
+        private final boolean includeValue;
+
+        public ClientMultiMapEventHandler(ListenerAdapter listenerAdapter, boolean includeValue) {
+            this.listenerAdapter = listenerAdapter;
+            this.includeValue = includeValue;
+        }
+
+        public void handle(ClientMessage clientMessage) {
+            AddEntryListenerEventParameters event = AddEntryListenerEventParameters.decode(clientMessage);
+
+            Member member = getContext().getClusterService().getMember(event.uuid);
+            final IMapEvent iMapEvent = createIMapEvent(event, member);
+            listenerAdapter.onEvent(iMapEvent);
+        }
+
+        private IMapEvent createIMapEvent(AddEntryListenerEventParameters event, Member member) {
+            IMapEvent iMapEvent;
+            EntryEventType entryEventType = EntryEventType.getByType(event.eventType);
+            switch (entryEventType) {
+                case ADDED:
+                case REMOVED:
+                    iMapEvent = createEntryEvent(event, member);
+                    break;
+                case CLEAR_ALL:
+                    iMapEvent = createMapEvent(event, member);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known event type " + entryEventType);
+            }
+
+            return iMapEvent;
+        }
+
+        private MapEvent createMapEvent(AddEntryListenerEventParameters event, Member member) {
+            return new MapEvent(name, member, event.eventType, event.numberOfAffectedEntries);
+        }
+
+        private EntryEvent<K, V> createEntryEvent(AddEntryListenerEventParameters event, Member member) {
+            V value = null;
+            V oldValue = null;
+            if (includeValue) {
+                value = toObject(event.value);
+                oldValue = toObject(event.oldValue);
+            }
+            K key = toObject(event.key);
+            return new EntryEvent<K, V>(name, member, event.eventType, key, oldValue, value);
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+        }
+
+        @Override
+        public void onListenerRegister() {
+        }
     }
 }
