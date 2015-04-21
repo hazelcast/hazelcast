@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.cluster.ClusterService;
@@ -109,7 +110,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
-    private final MessageTaskFactoryImpl messageTaskFactory;
+    private final MessageTaskFactory messageTaskFactory;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);

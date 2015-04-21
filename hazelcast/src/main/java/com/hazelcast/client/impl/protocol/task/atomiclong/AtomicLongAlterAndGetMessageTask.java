@@ -32,7 +32,7 @@ import java.security.Permission;
 
 public class AtomicLongAlterAndGetMessageTask extends AbstractPartitionMessageTask<AtomicLongAlterAndGetParameters> {
 
-    protected AtomicLongAlterAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AtomicLongAlterAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

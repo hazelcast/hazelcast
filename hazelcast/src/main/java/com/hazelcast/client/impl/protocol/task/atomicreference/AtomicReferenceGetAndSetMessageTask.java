@@ -31,7 +31,7 @@ import java.security.Permission;
 
 public class AtomicReferenceGetAndSetMessageTask extends AbstractPartitionMessageTask<AtomicReferenceGetAndSetParameters> {
 
-    protected AtomicReferenceGetAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AtomicReferenceGetAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

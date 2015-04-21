@@ -29,7 +29,7 @@ import java.security.Permission;
 public class ExecutorServiceShutdownMessageTask
         extends AbstractCallableMessageTask<ExecutorServiceShutdownParameters> {
 
-    protected ExecutorServiceShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ExecutorServiceShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

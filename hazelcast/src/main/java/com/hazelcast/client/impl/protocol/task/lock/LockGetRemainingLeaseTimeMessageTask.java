@@ -33,7 +33,7 @@ import java.security.Permission;
 
 public class LockGetRemainingLeaseTimeMessageTask extends AbstractPartitionMessageTask<LockGetRemainingLeaseTimeParameters> {
 
-    protected LockGetRemainingLeaseTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public LockGetRemainingLeaseTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
