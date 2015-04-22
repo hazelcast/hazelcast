@@ -69,16 +69,10 @@ public interface MultiMapTemplate {
     void removeEntryListener(String name, String registrationId);
 
     @EncodeMethod(id = 16)
-    void lock(String name, Data key, long threadId);
-
-    @EncodeMethod(id = 17)
-    void lockWithLeaseTime(String name, Data key, long threadId, long ttl);
-
-    @EncodeMethod(id = 18)
-    void tryLockWithTimeout(String name, Data key, long threadId, long timeout);
+    void lock(String name, Data key, long threadId, long ttl);
 
     @EncodeMethod(id = 19)
-    void tryLock(String name, Data key, long threadId);
+    void tryLock(String name, Data key, long threadId, long timeout);
 
     @EncodeMethod(id = 20)
     void isLocked(String name, Data key, long threadId);

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
@@ -92,7 +92,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
 
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(key, value, DefaultData.NULL_DATA,
+                ClientMessage entryEvent = EntryEventParameters.encode(key, value, DefaultData.NULL_DATA,
                         DefaultData.NULL_DATA, type.getType(), uuid, 1);
                 sendClientMessage(entryEvent);
             }
@@ -103,7 +103,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
             if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
-                ClientMessage entryEvent = AddEntryListenerEventParameters.encode(DefaultData.NULL_DATA,
+                ClientMessage entryEvent = EntryEventParameters.encode(DefaultData.NULL_DATA,
                         DefaultData.NULL_DATA, DefaultData.NULL_DATA, DefaultData.NULL_DATA, type.getType(),
                         uuid, event.getNumberOfEntriesAffected());
                 sendClientMessage(entryEvent);

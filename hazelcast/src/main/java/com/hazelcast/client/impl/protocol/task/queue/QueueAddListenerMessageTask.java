@@ -16,12 +16,19 @@
 
 package com.hazelcast.client.impl.protocol.task.queue;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueAddListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 
@@ -30,7 +37,6 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_ADDLISTENER}
- *
  */
 public class QueueAddListenerMessageTask
         extends AbstractCallableMessageTask<QueueAddListenerParameters> {
@@ -41,9 +47,40 @@ public class QueueAddListenerMessageTask
 
     @Override
     protected ClientMessage call() {
+        final ClientEndpoint endpoint = getEndpoint();
+        final QueueService service = getService(QueueService.SERVICE_NAME);
+        final Data partitionKey = serializationService.toData(parameters.name);
+        ItemListener listener = new ItemListener() {
+            @Override
+            public void itemAdded(ItemEvent item) {
+                send(item);
+            }
 
-        //FIXME
-        throw new UnsupportedOperationException();
+            @Override
+            public void itemRemoved(ItemEvent item) {
+                send(item);
+            }
+
+            private void send(ItemEvent event) {
+                if (endpoint.isAlive()) {
+
+                    if (!(event instanceof DataAwareItemEvent)) {
+                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
+                                + event.getClass().getSimpleName());
+                    }
+
+                    DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
+                    Data item = dataAwareItemEvent.getItemData();
+                    ClientMessage clientMessage =
+                            ItemEventParameters.encode(item, event.getMember().getUuid(), event.getEventType());
+                    sendClientMessage(partitionKey, clientMessage);
+                }
+            }
+        };
+        String registrationId = service.addItemListener(parameters.name, listener, parameters.includeValue);
+        endpoint.setListenerRegistration(QueueService.SERVICE_NAME, parameters.name, registrationId);
+        return AddListenerResultParameters.encode(registrationId);
+
     }
 
     @Override

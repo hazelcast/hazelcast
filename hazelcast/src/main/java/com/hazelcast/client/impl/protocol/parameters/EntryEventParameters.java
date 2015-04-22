@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
  * EntryEventParameters
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class AddEntryListenerEventParameters {
+public class EntryEventParameters {
 
     public static final ClientMessageType TYPE = ClientMessageType.ADD_ENTRY_LISTENER_EVENT;
     public Data key;
@@ -37,7 +37,7 @@ public class AddEntryListenerEventParameters {
     public String uuid;
     public int numberOfAffectedEntries = 1;
 
-    private AddEntryListenerEventParameters(ClientMessage flyweight) {
+    private EntryEventParameters(ClientMessage flyweight) {
         key = flyweight.getData();
         value = flyweight.getData();
         oldValue = flyweight.getData();
@@ -47,8 +47,8 @@ public class AddEntryListenerEventParameters {
         numberOfAffectedEntries = flyweight.getInt();
     }
 
-    public static AddEntryListenerEventParameters decode(ClientMessage flyweight) {
-        return new AddEntryListenerEventParameters(flyweight);
+    public static EntryEventParameters decode(ClientMessage flyweight) {
+        return new EntryEventParameters(flyweight);
     }
 
     public static ClientMessage encode(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries) {

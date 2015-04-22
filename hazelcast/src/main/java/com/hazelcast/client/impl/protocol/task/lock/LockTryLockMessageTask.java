@@ -30,6 +30,7 @@ import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class LockTryLockMessageTask extends AbstractPartitionMessageTask<LockTryLockParameters> {
 
@@ -41,7 +42,7 @@ public class LockTryLockMessageTask extends AbstractPartitionMessageTask<LockTry
     protected Operation prepareOperation() {
         final Data key = serializationService.toData(parameters.name);
         return new LockOperation(new InternalLockNamespace(parameters.name)
-                , key, parameters.threadId, -1, 0);
+                , key, parameters.threadId, -1, parameters.timeout);
     }
 
     @Override
@@ -66,12 +67,15 @@ public class LockTryLockMessageTask extends AbstractPartitionMessageTask<LockTry
 
     @Override
     public String getMethodName() {
-        return "lock";
+        return "tryLock";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        if (parameters.timeout == -1) {
+            return null;
+        }
+        return new Object[]{parameters.timeout, TimeUnit.MILLISECONDS};
     }
 }
 

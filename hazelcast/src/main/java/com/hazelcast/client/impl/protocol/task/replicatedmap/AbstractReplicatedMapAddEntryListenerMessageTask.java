@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddEntryListenerEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryEvent;
@@ -86,7 +86,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             final Data newValue = dataAwareEntryEvent.getNewValueData();
             final Data oldValue = dataAwareEntryEvent.getOldValueData();
             final Data mergingValue = dataAwareEntryEvent.getMeringValueData();
-            ClientMessage entryEvent = AddEntryListenerEventParameters.encode(key
+            ClientMessage entryEvent = EntryEventParameters.encode(key
                     , newValue, oldValue, mergingValue, event.getEventType().getType(),
                     event.getMember().getUuid(), 1);
 

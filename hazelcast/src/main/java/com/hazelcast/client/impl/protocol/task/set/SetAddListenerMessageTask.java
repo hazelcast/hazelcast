@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.set;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetAddListenerParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.common.DataAwareItemEvent;
@@ -33,7 +34,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.impl.PortableItemEvent;
 import java.security.Permission;
 
 /**
@@ -82,9 +82,9 @@ public class SetAddListenerMessageTask
 
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(),
-                            event.getMember().getUuid());
-                    endpoint.sendEvent(partitionKey, portableItemEvent, clientMessage.getCorrelationId());
+                    ClientMessage clientMessage =
+                            ItemEventParameters.encode(item, event.getMember().getUuid(), event.getEventType());
+                    sendClientMessage(partitionKey, clientMessage);
                 }
             }
         };

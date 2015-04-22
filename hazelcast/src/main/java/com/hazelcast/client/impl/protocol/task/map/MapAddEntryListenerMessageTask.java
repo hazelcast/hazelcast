@@ -23,7 +23,8 @@ import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.EventFilter;
 
-public class MapAddEntryListenerMessageTask extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerParameters> {
+public class MapAddEntryListenerMessageTask
+        extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerParameters> {
 
     public MapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

@@ -35,21 +35,15 @@ public interface LockTemplate {
     void getRemainingLeaseTime(String name);
 
     @EncodeMethod(id = 5)
-    void lockWithLeaseTime(String name, long leaseTime , long threadId);
+    void lock(String name, long leaseTime, long threadId);
 
     @EncodeMethod(id = 6)
-    void lock(String name, long threadId);
-
-    @EncodeMethod(id = 7)
     void unlock(String name, long threadId);
 
-    @EncodeMethod(id = 8)
+    @EncodeMethod(id = 7)
     void forceUnlock(String name);
 
-    @EncodeMethod(id = 9)
-    void tryLock(String name, long threadId);
-
-    @EncodeMethod(id = 10)
-    void tryLockWithTimeout(String name, long threadId, long timeout);
+    @EncodeMethod(id = 8)
+    void tryLock(String name, long threadId, long timeout);
 
 }

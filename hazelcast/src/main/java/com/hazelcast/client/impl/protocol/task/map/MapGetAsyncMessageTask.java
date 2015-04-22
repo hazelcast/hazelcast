@@ -17,14 +17,73 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.MapGetAsyncParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.Operation;
 
-public class MapGetAsyncMessageTask extends MapGetMessageTask {
+import java.security.Permission;
 
+public class MapGetAsyncMessageTask extends AbstractPartitionMessageTask<MapGetAsyncParameters> {
+
+    private transient long startTime;
 
     public MapGetAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected MapGetAsyncParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapGetAsyncParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        GetOperation operation = new GetOperation(parameters.name, parameters.key);
+        operation.setThreadId(parameters.threadId);
+        return operation;
+    }
+
+    @Override
+    protected void beforeProcess() {
+        startTime = System.currentTimeMillis();
+    }
+
+    @Override
+    protected void beforeResponse() {
+        final long latency = System.currentTimeMillis() - startTime;
+        final MapService mapService = getService(MapService.SERVICE_NAME);
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(parameters.name);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            mapService.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(parameters.name)
+                    .incrementGets(latency);
+        }
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new MapPermission(parameters.name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.key};
     }
 
     @Override

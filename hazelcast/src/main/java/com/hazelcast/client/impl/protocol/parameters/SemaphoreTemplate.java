@@ -41,11 +41,7 @@ public interface SemaphoreTemplate {
     void release(String name, int permits);
 
     @EncodeMethod(id = 7)
-    void tryAcquire(String name, int permits);
-
-    @EncodeMethod(id = 8)
-    void tryAcquireWithTimeout(String name, int permits, long timeout);
-
+    void tryAcquire(String name, int permits, long timeout);
 
 }
 
