@@ -23,7 +23,7 @@ import com.hazelcast.map.MapInterceptor;
  */
 public interface MapServiceContextInterceptorSupport {
 
-    void interceptAfterGet(String mapNname, Object value);
+    void interceptAfterGet(String mapName, Object value);
 
     Object interceptPut(String mapName, Object oldValue, Object newValue);
 
