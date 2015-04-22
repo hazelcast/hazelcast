@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.util.ValidationUtil;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -33,6 +32,7 @@ import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
@@ -301,7 +301,7 @@ public class CacheConfig<K, V>
      * @return current cache config instance
      */
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        ValidationUtil.isNotNull(evictionConfig, "Eviction config cannot be null !");
+        isNotNull(evictionConfig, "Eviction config cannot be null !");
 
         this.evictionConfig = evictionConfig;
         return this;
@@ -356,7 +356,7 @@ public class CacheConfig<K, V>
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+        isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
 
         this.inMemoryFormat = inMemoryFormat;
         return this;

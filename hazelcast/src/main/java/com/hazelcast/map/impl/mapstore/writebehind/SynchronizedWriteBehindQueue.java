@@ -19,6 +19,8 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Wrapper for a not thread safe {@link WriteBehindQueue},
  * only provides thread-safe access, if all accesses to the underlying wrapped {@link WriteBehindQueue}
@@ -33,10 +35,7 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     private final Object mutex;
 
     SynchronizedWriteBehindQueue(WriteBehindQueue<E> queue) {
-        if (queue == null) {
-            throw new NullPointerException();
-        }
-        this.queue = queue;
+        this.queue = checkNotNull(queue, "queue can't be null");
         this.mutex = this;
     }
 

@@ -30,6 +30,9 @@ import com.hazelcast.spi.UrgentSystemOperation;
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hazelcast.util.Preconditions.checkNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation, JoinOperation {
 
     private Operation[] operations;
@@ -39,12 +42,8 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
 
     public PostJoinOperation(final Operation... ops) {
         for (Operation op : ops) {
-            if (op == null) {
-                throw new NullPointerException();
-            }
-            if (op.getPartitionId() >= 0) {
-                throw new IllegalArgumentException("Post join operation can not have a partition-id!");
-            }
+            checkNotNull(op, "op can't be null");
+            checkNegative(op.getPartitionId(), "Post join operation can not have a partition-id!");
         }
         // we may need to do array copy!
         operations = ops;

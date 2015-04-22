@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> extends AbstractDistributedObject<S>
         implements InitializingObject {
 
@@ -93,7 +95,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean add(E e) {
-        throwExceptionIfNull(e);
+        checkObjectNotNull(e);
         final Data value = getNodeEngine().toData(e);
         final CollectionAddOperation operation = new CollectionAddOperation(name, value);
         final Boolean result = invoke(operation);
@@ -101,7 +103,8 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean remove(Object o) {
-        throwExceptionIfNull(o);
+        checkObjectNotNull(o);
+
         final Data value = getNodeEngine().toData(o);
         final CollectionRemoveOperation operation = new CollectionRemoveOperation(name, value);
         final Boolean result = invoke(operation);
@@ -121,7 +124,8 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean contains(Object o) {
-        throwExceptionIfNull(o);
+        checkObjectNotNull(o);
+
         Set<Data> valueSet = new HashSet<Data>(1);
         valueSet.add(getNodeEngine().toData(o));
         final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
@@ -130,11 +134,12 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean containsAll(Collection<?> c) {
-        throwExceptionIfNull(c);
+        checkObjectNotNull(c);
+
         Set<Data> valueSet = new HashSet<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
-            throwExceptionIfNull(o);
+            checkObjectNotNull(o);
             valueSet.add(nodeEngine.toData(o));
         }
         final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
@@ -143,11 +148,12 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        throwExceptionIfNull(c);
+        checkObjectNotNull(c);
+
         List<Data> valueList = new ArrayList<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
-            throwExceptionIfNull(e);
+            checkObjectNotNull(e);
             valueList.add(nodeEngine.toData(e));
         }
         final CollectionAddAllOperation operation = new CollectionAddAllOperation(name, valueList);
@@ -164,11 +170,12 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     private boolean compareAndRemove(boolean retain, Collection<?> c) {
-        throwExceptionIfNull(c);
+        checkObjectNotNull(c);
+
         Set<Data> valueSet = new HashSet<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
-            throwExceptionIfNull(o);
+            checkObjectNotNull(o);
             valueSet.add(nodeEngine.toData(o));
         }
         final CollectionCompareAndRemoveOperation operation = new CollectionCompareAndRemoveOperation(name, retain, valueSet);
@@ -227,13 +234,11 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         }
     }
 
-    protected void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
+    protected void checkObjectNotNull(Object o) {
+        checkNotNull(o, "Object is null");
     }
 
-    protected void throwExceptionIfNegative(int index) {
+    protected void checkIndexNotNegative(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index is negative");
         }

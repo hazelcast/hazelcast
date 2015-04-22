@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.ValidationUtil;
-
 import java.util.Properties;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a Map Store.
@@ -259,8 +259,7 @@ public class MapStoreConfig {
      * @return this MapStoreConfig
      */
     public MapStoreConfig setProperties(Properties properties) {
-        ValidationUtil.isNotNull(properties, "properties");
-        this.properties = properties;
+        this.properties = isNotNull(properties, "properties");
         return this;
     }
 

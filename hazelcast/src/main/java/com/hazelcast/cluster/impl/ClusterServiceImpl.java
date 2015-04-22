@@ -16,10 +16,13 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.operations.AuthenticationFailureOperation;
+import com.hazelcast.cluster.impl.operations.BeforeJoinCheckFailureOperation;
 import com.hazelcast.cluster.impl.operations.ConfigMismatchOperation;
 import com.hazelcast.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.cluster.impl.operations.GroupMismatchOperation;
@@ -32,9 +35,7 @@ import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.cluster.impl.operations.SetMasterOperation;
-import com.hazelcast.cluster.impl.operations.BeforeJoinCheckFailureOperation;
-import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -44,7 +45,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
@@ -72,7 +72,6 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ValidationUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginContext;
@@ -84,13 +83,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,6 +111,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
@@ -792,7 +793,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (node.joined()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Ignoring master response: " + masterAddress + " from: " + callerAddress
-                    + ". This node is already joined...");
+                        + ". This node is already joined...");
             }
             return;
         }
@@ -816,9 +817,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (currentMaster == null || currentMaster.equals(masterAddress)) {
                 setMasterAndJoin(masterAddress);
             } else if (currentMaster.equals(callerAddress)) {
-                    logger.info("Setting master to: " + masterAddress + ", since "
-                            + currentMaster + " says it's not master anymore.");
-                    setMasterAndJoin(masterAddress);
+                logger.info("Setting master to: " + masterAddress + ", since "
+                        + currentMaster + " says it's not master anymore.");
+                setMasterAndJoin(masterAddress);
             } else {
                 final Connection conn = node.connectionManager.getConnection(currentMaster);
                 if (conn != null && conn.isAlive()) {
@@ -827,8 +828,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     sendJoinRequest(currentMaster, true);
                 } else {
                     logger.warning("Ambiguous master response, this node has a master: " + currentMaster
-                        + ", but doesn't have a connection to. " + callerAddress + " sent master response as: "
-                        + masterAddress + ". Master field will be unset now...");
+                            + ", but doesn't have a connection to. " + callerAddress + " sent master response as: "
+                            + masterAddress + ". Master field will be unset now...");
                     node.setMasterAddress(null);
                 }
             }
@@ -914,7 +915,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private <V> V waitOnFutureInterruptible(Future<V> future, long timeout, TimeUnit timeUnit)
             throws ExecutionException, InterruptedException, TimeoutException {
 
-        ValidationUtil.isNotNull(timeUnit, "timeUnit");
+        isNotNull(timeUnit, "timeUnit");
         long deadline = Clock.currentTimeMillis() + timeUnit.toMillis(timeout);
         while (true) {
             long localTimeout = Math.min(1000 * 10, deadline);
@@ -1077,9 +1078,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public boolean sendMasterQuestion(Address toAddress) {
-        if (toAddress == null) {
-            throw new NullPointerException("No endpoint is specified!");
-        }
+        checkNotNull(toAddress, "No endpoint is specified!");
+
         BuildInfo buildInfo = node.getBuildInfo();
         JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), thisAddress,
                 thisMember.getUuid(), node.createConfigCheck(), getSize());
@@ -1295,9 +1295,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
-        int numberOfCppClients    = 0;
+        int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
-        int numberOfJavaClients   = 0;
+        int numberOfJavaClients = 0;
 
         Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService1 = node.nodeEngine.getOperationService();
@@ -1375,10 +1375,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return members != null ? members.size() : 0;
     }
 
-      public String addMembershipListener(MembershipListener listener) {
-        if (listener == null) {
-            throw new NullPointerException("listener can't be null");
-        }
+    public String addMembershipListener(MembershipListener listener) {
+        checkNotNull(listener, "listener can't be null");
 
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
@@ -1398,9 +1396,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public boolean removeMembershipListener(String registrationId) {
-        if (registrationId == null) {
-            throw new NullPointerException("registrationId can't be null");
-        }
+        checkNotNull(registrationId, "registrationId can't be null");
 
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);

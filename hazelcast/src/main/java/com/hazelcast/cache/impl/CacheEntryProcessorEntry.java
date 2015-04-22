@@ -23,12 +23,15 @@ import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * This class is an implementation of {@link MutableEntry} which is provided into
  * {@link javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)}.
  * <p>CacheEntryProcessorEntry may face multiple mutating operations like setValue, remove or CacheLoading, etc.</p>
  * <p>This implementation may handle multiple operations executed on this entry and persist the resultant state into
  * {@link CacheRecordStore} after entry processor get completed.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)
@@ -81,9 +84,8 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
 
     @Override
     public void setValue(V value) {
-        if (value == null) {
-            throw new NullPointerException("Null value not allowed");
-        }
+        checkNotNull(value, "Null value not allowed");
+
         if (this.record == null) {
             this.state = State.CREATE;
         } else {

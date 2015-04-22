@@ -28,7 +28,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -37,6 +36,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This is the node based implementation of the job's reactive {@link com.hazelcast.core.ICompletableFuture}
@@ -118,7 +119,7 @@ public class TrackableJobFuture<V>
     @Override
     public V get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        ValidationUtil.isNotNull(unit, "unit");
+        isNotNull(unit, "unit");
         if (!latch.await(timeout, unit) || !isDone()) {
             throw new TimeoutException("timeout reached");
         }

@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
@@ -89,7 +89,7 @@ public class TopicConfig {
      * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {
-        this.name = hasText(name, "name");
+        this.name = checkHasText(name, "name must contain text");
         return this;
     }
 

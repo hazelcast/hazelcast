@@ -21,7 +21,7 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IMap}.

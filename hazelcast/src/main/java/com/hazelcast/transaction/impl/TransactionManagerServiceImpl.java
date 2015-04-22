@@ -61,6 +61,7 @@ import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
@@ -93,9 +94,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        if (task == null) {
-            throw new NullPointerException("TransactionalTask is required!");
-        }
+        checkNotNull(task, "TransactionalTask is required!");
+
         final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
         context.beginTransaction();
         try {

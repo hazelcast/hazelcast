@@ -38,7 +38,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -49,6 +48,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientMapReduceProxy
         extends ClientProxy
@@ -203,7 +204,7 @@ public class ClientMapReduceProxy
 
         @Override
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            ValidationUtil.isNotNull(unit, "unit");
+            isNotNull(unit, "unit");
             if (!latch.await(timeout, unit) || !isDone()) {
                 throw new TimeoutException("timeout reached");
             }

@@ -28,6 +28,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,6 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
@@ -315,12 +319,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @SuppressWarnings("unchecked")
     public Set keySet(Predicate predicate) {
         checkTransactionState();
-        if (predicate == null) {
-            throw new NullPointerException("Predicate should not be null!");
-        }
-        if (predicate instanceof PagingPredicate) {
-            throw new NullPointerException("Paging is not supported for Transactional queries!");
-        }
+        checkNotNull(predicate, "Predicate should not be null!");
+        checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries!");
+
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         SerializationService ss = getNodeEngine().getSerializationService();
@@ -384,12 +385,9 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @SuppressWarnings("unchecked")
     public Collection values(Predicate predicate) {
         checkTransactionState();
-        if (predicate == null) {
-            throw new NullPointerException("Predicate can not be null!");
-        }
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Paging is not supported for Transactional queries");
-        }
+        checkNotNull(predicate, "Predicate can not be null!");
+        checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries");
+
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
         QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);

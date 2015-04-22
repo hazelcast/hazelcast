@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
@@ -83,7 +83,7 @@ public class SemaphoreConfig {
      * @throws IllegalArgumentException if name is null or empty.
      */
     public SemaphoreConfig setName(String name) {
-        this.name = hasText(name, "name");
+        this.name = checkHasText(name, "name must contain text");
         return this;
     }
 

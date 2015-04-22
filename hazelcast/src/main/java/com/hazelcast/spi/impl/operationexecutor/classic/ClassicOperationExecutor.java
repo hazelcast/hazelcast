@@ -22,16 +22,18 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A {@link com.hazelcast.spi.impl.operationexecutor.OperationExecutor} that schedules:
@@ -201,9 +203,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public boolean isAllowedToRunInCurrentThread(Operation op) {
-        if (op == null) {
-            throw new NullPointerException("op can't be null");
-        }
+        checkNotNull(op, "op can't be null");
 
         Thread currentThread = Thread.currentThread();
 
@@ -237,9 +237,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public boolean isInvocationAllowedFromCurrentThread(Operation op, boolean isAsync) {
-        if (op == null) {
-            throw new NullPointerException("op can't be null");
-        }
+        checkNotNull(op, "op can't be null");
 
         Thread currentThread = Thread.currentThread();
 
@@ -326,17 +324,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public void execute(Operation op) {
-        if (op == null) {
-            throw new NullPointerException("op can't be null");
-        }
+        checkNotNull(op, "op can't be null");
         execute(op, op.getPartitionId(), op.isUrgent());
     }
 
     @Override
     public void execute(PartitionSpecificRunnable task) {
-        if (task == null) {
-            throw new NullPointerException("task can't be null");
-        }
+        checkNotNull(task, "task can't be null");
         execute(task, task.getPartitionId(), false);
     }
 
@@ -351,9 +345,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public void execute(Packet packet) {
-        if (packet == null) {
-            throw new NullPointerException("packet can't be null");
-        }
+        checkNotNull(packet, "packet can't be null");
 
         if (!packet.isHeaderSet(Packet.HEADER_OP)) {
             throw new IllegalStateException("Packet " + packet + " doesn't have Packet.HEADER_OP set");
@@ -372,9 +364,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public void runOnCallingThread(Operation operation) {
-        if (operation == null) {
-            throw new NullPointerException("operation can't be null");
-        }
+        checkNotNull(operation, "operation can't be null");
 
         if (!isAllowedToRunInCurrentThread(operation)) {
             throw new IllegalThreadStateException("Operation '" + operation + "' cannot be run in current thread: "
@@ -446,14 +436,14 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     public void dumpPerformanceMetrics(StringBuffer sb) {
         for (PartitionOperationThread operationThread : partitionOperationThreads) {
             sb.append(operationThread.getName())
-              .append(" processedCount=").append(operationThread.processedCount)
-              .append(" pendingCount=").append(operationThread.scheduleQueue.size())
-              .append('\n');
+                    .append(" processedCount=").append(operationThread.processedCount)
+                    .append(" pendingCount=").append(operationThread.scheduleQueue.size())
+                    .append('\n');
         }
         sb.append("pending generic operations ").append(genericScheduleQueue.size()).append('\n');
         for (GenericOperationThread operationThread : genericOperationThreads) {
             sb.append(operationThread.getName())
-              .append(" processedCount=").append(operationThread.processedCount).append('\n');
+                    .append(" processedCount=").append(operationThread.processedCount).append('\n');
         }
         sb.append(responseThread.getName())
                 .append(" processedCount=").append(responseThread.processedResponses)

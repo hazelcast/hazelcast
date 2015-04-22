@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 
 import java.util.Arrays;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * A DTO for Partition Information.

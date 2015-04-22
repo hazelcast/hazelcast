@@ -43,8 +43,9 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
 
     @Override
     public boolean add(E e) {
-        checkTransactionState();
-        throwExceptionIfNull(e);
+        checkTransactionActive();
+        checkObjectNotNull(e);
+
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
         if (!getCollection().add(new CollectionItem(-1, value))) {

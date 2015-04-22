@@ -19,8 +19,8 @@ package com.hazelcast.config;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for the multicast discovery mechanism.
@@ -114,7 +114,7 @@ public class MulticastConfig {
      * @see #setMulticastPort(int)
      */
     public MulticastConfig setMulticastGroup(String multicastGroup) {
-        this.multicastGroup = hasText(multicastGroup, "multicastGroup");
+        this.multicastGroup = checkHasText(multicastGroup, "multicastGroup must contain text");
         return this;
     }
 

@@ -28,7 +28,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the serialization configuration of {@link com.hazelcast.core.HazelcastInstance}.

@@ -20,7 +20,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class DefaultScheduleQueue implements ScheduleQueue {
 
@@ -45,18 +45,14 @@ public final class DefaultScheduleQueue implements ScheduleQueue {
 
     @Override
     public void add(Object task) {
-        if (task == null) {
-            throw new NullPointerException("task can't be null");
-        }
+        checkNotNull(task, "task can't be null");
 
         normalQueue.add(task);
     }
 
     @Override
     public void addUrgent(Object task) {
-        if (task == null) {
-            throw new NullPointerException("task can't be null");
-        }
+        checkNotNull(task, "task can't be null");
 
         priorityQueue.add(task);
         normalQueue.add(TRIGGER_TASK);

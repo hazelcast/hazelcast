@@ -19,16 +19,19 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
+
+import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains configuration for an NearCache.
  */
 public class NearCacheConfig
-        implements DataSerializable , Serializable {
+        implements DataSerializable, Serializable {
 
     /**
      * Default value of time to live in seconds.
@@ -81,11 +84,11 @@ public class NearCacheConfig
      */
     public enum LocalUpdatePolicy {
         /**
-         *INVALIDATE POLICY
+         * INVALIDATE POLICY
          */
         INVALIDATE,
         /**
-         *CACHE ON UPDATE POLICY
+         * CACHE ON UPDATE POLICY
          */
         CACHE
     }
@@ -153,9 +156,7 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-        ValidationUtil.isNotNegative(timeToLiveSeconds, "TTL seconds cannot be negative !");
-
-        this.timeToLiveSeconds = timeToLiveSeconds;
+        this.timeToLiveSeconds = checkNotNegative(timeToLiveSeconds, "TTL seconds cannot be negative !");
         return this;
     }
 
@@ -164,9 +165,7 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setMaxSize(int maxSize) {
-        ValidationUtil.isNotNegative(maxSize, "Max-Size cannot be negative !");
-
-        this.maxSize = maxSize;
+        this.maxSize = checkNotNegative(maxSize, "Max-Size cannot be negative !");
         return this;
     }
 
@@ -175,9 +174,7 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setEvictionPolicy(String evictionPolicy) {
-        ValidationUtil.isNotNull(evictionPolicy, "Eviction policy cannot be null !");
-
-        this.evictionPolicy = evictionPolicy;
+        this.evictionPolicy = checkNotNull(evictionPolicy, "Eviction policy cannot be null !");
         return this;
     }
 
@@ -186,9 +183,7 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
-        ValidationUtil.isNotNegative(maxIdleSeconds, "Max-Idle seconds cannot be negative !");
-
-        this.maxIdleSeconds = maxIdleSeconds;
+        this.maxIdleSeconds = checkNotNegative(maxIdleSeconds, "Max-Idle seconds cannot be negative !");
         return this;
     }
 
@@ -206,9 +201,7 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
-
-        this.inMemoryFormat = inMemoryFormat;
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 
@@ -226,15 +219,13 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setLocalUpdatePolicy(LocalUpdatePolicy localUpdatePolicy) {
-        ValidationUtil.isNotNull(localUpdatePolicy, "Local update policy cannot be null !");
-
-        this.localUpdatePolicy = localUpdatePolicy;
+        this.localUpdatePolicy = checkNotNull(localUpdatePolicy, "Local update policy cannot be null !");
         return this;
     }
 
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
-        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+        checkNotNull(inMemoryFormat, "In-Memory format cannot be null !");
 
         this.inMemoryFormat = InMemoryFormat.valueOf(inMemoryFormat);
         return this;
@@ -245,9 +236,7 @@ public class NearCacheConfig
     }
 
     public NearCacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        ValidationUtil.isNotNull(evictionConfig, "Eviction config cannot be null !");
-
-        this.evictionConfig = evictionConfig;
+        this.evictionConfig = checkNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
     }
 
