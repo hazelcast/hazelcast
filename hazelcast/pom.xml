@@ -335,7 +335,7 @@
         <dependency>
             <groupId>com.eclipsesource.minimal-json</groupId>
             <artifactId>minimal-json</artifactId>
-            <version>0.9.1</version>
+            <version>0.9.2</version>
             <scope>compile</scope>
         </dependency>
 
