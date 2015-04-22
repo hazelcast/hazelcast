@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
@@ -49,7 +51,7 @@ import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapSt
 /**
  * Map container.
  */
-public class MapContainer extends MapContainerSupport {
+public class MapContainer {
 
     private final RecordFactory recordFactory;
 
@@ -71,13 +73,24 @@ public class MapContainer extends MapContainerSupport {
 
     private MapMergePolicy wanMergePolicy;
 
+    private volatile MapConfig mapConfig;
+
+    private final long maxIdleMillis;
+
+    private final long ttlMillisFromConfig;
+
+    private final String name;
+
     /**
      * Operations which are done in this constructor should obey the rules defined
      * in the method comment {@link com.hazelcast.spi.PostJoinAwareService#getPostJoinOperation()}
      * Otherwise undesired situations, like deadlocks, may appear.
      */
     public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
-        super(name, mapConfig);
+        this.name = name;
+        this.mapConfig = mapConfig;
+        this.maxIdleMillis = calculateMaxIdleMillis(mapConfig);
+        this.ttlMillisFromConfig = calculateTTLMillis(mapConfig);
         this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -221,6 +234,26 @@ public class MapContainer extends MapContainerSupport {
 
     public MapStoreContext getMapStoreContext() {
         return mapStoreContext;
+    }
+
+    public MapConfig getMapConfig() {
+        return mapConfig;
+    }
+
+    public void setMapConfig(MapConfig mapConfig) {
+        this.mapConfig = mapConfig;
+    }
+
+    public long getMaxIdleMillis() {
+        return maxIdleMillis;
+    }
+
+    public long getTtlMillisFromConfig() {
+        return ttlMillisFromConfig;
+    }
+
+    public String getName() {
+        return name;
     }
 }
 
