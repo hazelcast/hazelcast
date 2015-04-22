@@ -90,7 +90,7 @@ public interface MapTemplate {
     void isLocked(String name, Data key, long threadId);
 
     @EncodeMethod(id = 22)
-    void unlock(String name, Data key, long threadId, boolean force);
+    void unlock(String name, Data key, long threadId);
 
     @EncodeMethod(id = 23)
     void addInterceptor(String name, Data interceptor);
@@ -187,5 +187,8 @@ public interface MapTemplate {
 
     @EncodeMethod(id = 54)
     void executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
+
+    @EncodeMethod(id = 55)
+    void forceUnlock(String name, Data key);
 
 }

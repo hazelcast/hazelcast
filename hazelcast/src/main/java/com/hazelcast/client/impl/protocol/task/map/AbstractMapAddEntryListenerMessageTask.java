@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -30,9 +30,12 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
+
 import java.security.Permission;
 
 import static com.hazelcast.nio.serialization.DefaultData.NULL_DATA;
@@ -85,12 +88,19 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                             "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                ClientMessage entryEvent = EntryEventParameters.encode(dataAwareEntryEvent.getKeyData()
-                        , dataAwareEntryEvent.getNewValueData(), dataAwareEntryEvent.getOldValueData(),
-                        dataAwareEntryEvent.getMeringValueData(), event.getEventType().getType(),
+                Data keyData = resolveData(dataAwareEntryEvent.getKeyData());
+                Data newValueData = resolveData(dataAwareEntryEvent.getNewValueData());
+                Data oldValueData = resolveData(dataAwareEntryEvent.getOldValueData());
+                Data meringValueData = resolveData(dataAwareEntryEvent.getMeringValueData());
+                ClientMessage entryEvent = EntryEventParameters.encode(keyData
+                        , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
                         event.getMember().getUuid(), 1);
                 sendClientMessage(entryEvent);
             }
+        }
+
+        private Data resolveData(Data data) {
+            return data == null ? DefaultData.NULL_DATA : data;
         }
 
         @Override

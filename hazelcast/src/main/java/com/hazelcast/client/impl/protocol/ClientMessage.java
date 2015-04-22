@@ -209,7 +209,7 @@ public class ClientMessage
      * @param flags The field value to set.
      * @return ClientMessage
      */
-    public ClientMessage setFlags(final short flags) {
+    public ClientMessage addFlag(final short flags) {
         uint8Put(offset() + FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
         return this;
     }

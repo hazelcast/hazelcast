@@ -17,40 +17,34 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapRemoveIfSameParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapForceUnlockParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapRemoveIfSameMessageTask extends AbstractPartitionMessageTask<MapRemoveIfSameParameters> {
+public class MapForceUnlockMessageTask extends AbstractPartitionMessageTask<MapForceUnlockParameters> {
 
-    public MapRemoveIfSameMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapForceUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        RemoveIfSameOperation op = new RemoveIfSameOperation(parameters.name, parameters.key, parameters.value);
-        op.setThreadId(parameters.threadId);
-        return op;
+        return new UnlockOperation(getNamespace(), parameters.key, -1, true);
     }
 
     @Override
-    protected MapRemoveIfSameParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapRemoveIfSameParameters.decode(clientMessage);
-    }
-
-    @Override
-    protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+    protected MapForceUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapForceUnlockParameters.decode(clientMessage);
     }
 
     @Override
@@ -58,9 +52,8 @@ public class MapRemoveIfSameMessageTask extends AbstractPartitionMessageTask<Map
         return MapService.SERVICE_NAME;
     }
 
-    @Override
     public Permission getRequiredPermission() {
-        return new MapPermission(parameters.name, ActionConstants.ACTION_REMOVE);
+        return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }
 
     @Override
@@ -68,15 +61,18 @@ public class MapRemoveIfSameMessageTask extends AbstractPartitionMessageTask<Map
         return parameters.name;
     }
 
+    private ObjectNamespace getNamespace() {
+        return new DefaultObjectNamespace(MapService.SERVICE_NAME, parameters.name);
+    }
+
     @Override
     public String getMethodName() {
-        return "remove";
+        return "forceUnlock";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.key, parameters.value};
+        return new Object[]{parameters.key};
     }
-
-
 }
+

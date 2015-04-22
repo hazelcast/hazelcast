@@ -108,7 +108,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
         Data keyData = toData(key);
         Data valueData = toData(value);
-        ClientMessage request = MultiMapPutParameters.encode(name, keyData, valueData, ThreadUtil.getThreadId(), -1);
+        ClientMessage request = MultiMapPutParameters.encode(name, keyData, valueData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;
@@ -342,7 +342,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapForceUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MultiMapForceUnlockParameters.encode(name, keyData);
         invoke(request, keyData);
     }
 

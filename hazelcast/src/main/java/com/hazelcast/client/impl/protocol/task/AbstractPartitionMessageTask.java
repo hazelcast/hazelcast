@@ -23,6 +23,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -32,8 +33,6 @@ import com.hazelcast.spi.Operation;
 public abstract class AbstractPartitionMessageTask<P>
         extends AbstractMessageTask<P>
         implements ExecutionCallback {
-
-    private static final int TRY_COUNT = 100;
 
     protected AbstractPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -63,8 +62,8 @@ public abstract class AbstractPartitionMessageTask<P>
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = nodeEngine.getOperationService()
-                                              .createInvocationBuilder(getServiceName(), op, getPartitionId())
-                                              .setTryCount(TRY_COUNT).setResultDeserialized(false);
+                .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                .setResultDeserialized(false);
 
         ICompletableFuture future = builder.invoke();
         future.andThen(this);
@@ -73,15 +72,8 @@ public abstract class AbstractPartitionMessageTask<P>
     protected abstract Operation prepareOperation();
 
     protected ClientMessage encodeResponse(Object response) {
-        final ClientMessage resultParameters;
-        try {
-            final Data responseData = (Data) response;
-            resultParameters = GenericResultParameters.encode(responseData);
-            return resultParameters;
-        } catch (ClassCastException e) {
-            logger.severe("Unsupported response type :" + response.getClass().getName());
-            throw e;
-        }
+        final Data responseData = response == null ? DefaultData.NULL_DATA : (Data) response;
+        return GenericResultParameters.encode(responseData);
     }
 
     @Override

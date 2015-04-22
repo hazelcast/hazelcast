@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class ItemEventParameters {
 
-    public static final ClientMessageType TYPE = ClientMessageType.ADD_LISTENER_RESULT;
+    public static final ClientMessageType TYPE = ClientMessageType.ITEM_EVENT;
     public Data item;
     public String uuid;
     public ItemEventType eventType;

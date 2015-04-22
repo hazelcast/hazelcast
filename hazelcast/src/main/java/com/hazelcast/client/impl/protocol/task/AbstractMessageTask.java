@@ -173,7 +173,7 @@ public abstract class AbstractMessageTask<P>
 
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
-        resultClientMessage.setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
+        resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
         final Connection connection = endpoint.getConnection();
         //TODO framing not implemented yet, should be split into frames before writing to connection

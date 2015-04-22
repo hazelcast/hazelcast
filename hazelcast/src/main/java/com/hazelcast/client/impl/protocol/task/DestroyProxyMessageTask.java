@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CreateProxyParameters;
+import com.hazelcast.client.impl.protocol.parameters.DestroyProxyParameters;
 import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -25,25 +25,25 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.ProxyService;
 
 import java.security.Permission;
-import java.util.Collection;
 
-public class CreateProxyMessageTask extends AbstractCallableMessageTask<CreateProxyParameters> {
+import static com.hazelcast.security.permission.ActionConstants.getPermission;
 
-    public CreateProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+public class DestroyProxyMessageTask extends AbstractCallableMessageTask<DestroyProxyParameters> {
+
+    public DestroyProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-
     @Override
-    protected ClientMessage call() {
-        ProxyService proxyService = clientEngine.getProxyService();
-        proxyService.initializeDistributedObject(parameters.serviceName, parameters.name);
+    protected ClientMessage call() throws Exception {
+        ProxyService proxyService = nodeEngine.getProxyService();
+        proxyService.destroyDistributedObject(parameters.serviceName, parameters.name);
         return VoidResultParameters.encode();
     }
 
     @Override
-    protected CreateProxyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CreateProxyParameters.decode(clientMessage);
+    protected DestroyProxyParameters decodeClientMessage(ClientMessage clientMessage) {
+        return DestroyProxyParameters.decode(clientMessage);
     }
 
     @Override
@@ -53,12 +53,7 @@ public class CreateProxyMessageTask extends AbstractCallableMessageTask<CreatePr
 
     @Override
     public Permission getRequiredPermission() {
-        ProxyService proxyService = clientEngine.getProxyService();
-        Collection<String> distributedObjectNames = proxyService.getDistributedObjectNames(parameters.serviceName);
-        if (distributedObjectNames.contains(parameters.name)) {
-            return null;
-        }
-        return ActionConstants.getPermission(parameters.name, parameters.serviceName, ActionConstants.ACTION_CREATE);
+        return getPermission(parameters.name, parameters.serviceName, ActionConstants.ACTION_DESTROY);
     }
 
     @Override

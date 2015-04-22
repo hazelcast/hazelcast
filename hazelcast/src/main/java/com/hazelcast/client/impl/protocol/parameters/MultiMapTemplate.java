@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 public interface MultiMapTemplate {
 
     @EncodeMethod(id = 1)
-    void put(String name, Data key, Data value, long threadId, long ttl);
+    void put(String name, Data key, Data value, long threadId);
 
     @EncodeMethod(id = 2)
     void get(String name, Data key, long threadId);
@@ -81,7 +81,7 @@ public interface MultiMapTemplate {
     void unlock(String name, Data key, long threadId);
 
     @EncodeMethod(id = 20)
-    void forceUnlock(String name, Data key, long threadId);
+    void forceUnlock(String name, Data key);
 
     @EncodeMethod(id = 21)
     void removeEntry(String name, Data key, Data value, long threadId);

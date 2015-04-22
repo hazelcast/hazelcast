@@ -46,6 +46,7 @@ import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnKeyParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnKeysParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapExecuteWithPredicateParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapFlushParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapForceUnlockParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapGetAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapGetAsyncParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapGetEntryViewParameters;
@@ -178,8 +179,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             }
         }
         ClientMessage message = MapContainsKeyParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage result = invoke(message, keyData);
         BooleanResultParameters resultParameters =
-                BooleanResultParameters.decode((ClientMessage) invoke(message, keyData));
+                BooleanResultParameters.decode((ClientMessage) result);
         return resultParameters.result;
     }
 
@@ -390,7 +392,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         ClientMessage request = invoke(putMessage, keyData);
         GenericResultParameters resultParameters = GenericResultParameters.decode(request);
-        return toObject(resultParameters);
+        return toObject(resultParameters.result);
     }
 
     @Override
@@ -402,7 +404,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         invalidateNearCache(keyData);
         ClientMessage request = MapPutTransientParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
-        invoke(request);
+        invoke(request, keyData);
     }
 
     @Override
@@ -518,7 +520,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void unlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId(), false);
+        ClientMessage request = MapUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId());
         invoke(request, keyData);
     }
 
@@ -526,7 +528,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapUnlockParameters.encode(name, keyData, ThreadUtil.getThreadId(), true);
+        ClientMessage request = MapForceUnlockParameters.encode(name, keyData);
         invoke(request, keyData);
     }
 

@@ -45,7 +45,7 @@ public class MemberAttributeChangeResultParameters {
         MemberCodec.encode(member, clientMessage);
         MemberAttributeChangeCodec.encode(memberAttributeChange, clientMessage);
 
-        clientMessage.setFlags(ClientMessage.LISTENER_EVENT_FLAG);
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.updateFrameLength();
         return clientMessage;
     }

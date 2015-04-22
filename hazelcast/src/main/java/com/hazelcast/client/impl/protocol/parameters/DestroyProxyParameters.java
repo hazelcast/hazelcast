@@ -18,48 +18,38 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
-import com.hazelcast.nio.serialization.Data;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class TopicEventParameters {
+public class DestroyProxyParameters {
 
-    public static final ClientMessageType TYPE = ClientMessageType.TOPIC_EVENT;
-    public Data message;
-    public long publishTime;
-    public String uuid;
+    public static final ClientMessageType TYPE = ClientMessageType.DESTROY_PROXY_REQUEST;
+    public String name;
+    public String serviceName;
 
-
-    private TopicEventParameters(ClientMessage flyweight) {
-        message = flyweight.getData();
-        publishTime = flyweight.getLong();
-        uuid = flyweight.getStringUtf8();
+    private DestroyProxyParameters(ClientMessage flyweight) {
+        name = flyweight.getStringUtf8();
+        serviceName = flyweight.getStringUtf8();
     }
 
-    public static TopicEventParameters decode(ClientMessage flyweight) {
-        return new TopicEventParameters(flyweight);
+    public static DestroyProxyParameters decode(ClientMessage flyweight) {
+        return new DestroyProxyParameters(flyweight);
     }
 
-    public static ClientMessage encode(Data message, long publishTime, String uuid) {
-        final int requiredDataSize = calculateDataSize(message, publishTime, uuid);
+    public static ClientMessage encode(String name, String serviceName) {
+        final int requiredDataSize = calculateDataSize(name, serviceName);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.setMessageType(TYPE.id());
         clientMessage.ensureCapacity(requiredDataSize);
-        clientMessage.set(message).set(publishTime).set(uuid);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(name).set(serviceName);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
 
-    /**
-     * sample data size estimation
-     *
-     * @return size
-     */
-    public static int calculateDataSize(Data message, long publishTime, String uuid) {
+    public static int calculateDataSize(String name, String serviceName) {
         return ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateDataSize(message)
-                + BitUtil.SIZE_OF_LONG
-                + ParameterUtil.calculateStringDataSize(uuid);
+                + ParameterUtil.calculateStringDataSize(name)
+                + ParameterUtil.calculateStringDataSize(serviceName);
     }
 }
+
