@@ -17,6 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.*;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.atomiclong.client.ApplyRequest;
 import com.hazelcast.concurrent.atomiclong.client.AlterRequest;
@@ -47,39 +49,45 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     @Override
     public <R> R apply(IFunction<Long, R> function) {
         isNotNull(function, "function");
-        return invoke(new ApplyRequest(name, toData(function)));
+        ClientMessage request = AtomicLongApplyParameters.encode(name, toData(function));
+        return invoke(request);
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        invoke(new AlterRequest(name, toData(function)));
+        ClientMessage request = AtomicLongAlterParameters.encode(name, toData(function));
+        invoke(request);
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        return (Long) invoke(new AlterAndGetRequest(name, toData(function)));
+        ClientMessage request = AtomicLongAlterAndGetParameters.encode(name, toData(function));
+        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        return (Long) invoke(new GetAndAlterRequest(name, toData(function)));
+        ClientMessage request = AtomicLongGetAndAlterParameters.encode(name, toData(function));
+        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;
     }
 
     @Override
     public long addAndGet(long delta) {
-        AddAndGetRequest request = new AddAndGetRequest(name, delta);
-        Long result = invoke(request);
-        return result;
+        ClientMessage request = AtomicLongAddAndGetParameters.encode(name, delta);
+        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        CompareAndSetRequest request = new CompareAndSetRequest(name, expect, update);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = AtomicLongCompareAndSetParameters.encode(name, expect, update);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;
     }
 
     @Override
@@ -94,16 +102,16 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public long getAndAdd(long delta) {
-        GetAndAddRequest request = new GetAndAddRequest(name, delta);
-        Long result = invoke(request);
-        return result;
+        ClientMessage request  = AtomicLongGetAndAddParameters.encode(name, delta);
+        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;
     }
 
     @Override
     public long getAndSet(long newValue) {
-        GetAndSetRequest request = new GetAndSetRequest(name, newValue);
-        Long result = invoke(request);
-        return result;
+        ClientMessage request  = AtomicLongGetAndSetParameters.encode(name, newValue);
+        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     @Override
@@ -118,11 +126,11 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public void set(long newValue) {
-        SetRequest request = new SetRequest(name, newValue);
+        ClientMessage request = AtomicLongSetParameters.encode(name, newValue);
         invoke(request);
     }
 
-    protected <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientMessage req) {
         return super.invoke(req, getKey());
     }
 
