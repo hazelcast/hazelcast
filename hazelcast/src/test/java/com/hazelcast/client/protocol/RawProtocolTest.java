@@ -82,7 +82,7 @@ public class RawProtocolTest {
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
         final ClientMessage parameters = AuthenticationParameters.encode(username, pass, "", "", true);
-        parameters.setCorrelationId(1).setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
+        parameters.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final MutableDirectBuffer byteBuffer = parameters.buffer();
         channel.write(ByteBuffer.wrap(byteBuffer.byteArray()));

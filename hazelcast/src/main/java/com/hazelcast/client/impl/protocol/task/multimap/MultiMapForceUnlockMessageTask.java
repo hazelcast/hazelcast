@@ -34,7 +34,7 @@ import java.security.Permission;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_FORCEUNLOCK}
  */
-public class MultiMapForceUnlockMessageTask  extends AbstractPartitionMessageTask<MultiMapForceUnlockParameters> {
+public class MultiMapForceUnlockMessageTask extends AbstractPartitionMessageTask<MultiMapForceUnlockParameters> {
 
     public MultiMapForceUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +43,7 @@ public class MultiMapForceUnlockMessageTask  extends AbstractPartitionMessageTas
     @Override
     protected Operation prepareOperation() {
         DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
-        return new UnlockOperation(namespace, parameters.key, parameters.threadId, true);
+        return new UnlockOperation(namespace, parameters.key, -1, true);
     }
 
     @Override

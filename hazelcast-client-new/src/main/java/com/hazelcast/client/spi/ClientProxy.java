@@ -17,8 +17,8 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientDestroyRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.DestroyProxyParameters;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
@@ -90,10 +90,10 @@ public abstract class ClientProxy implements DistributedObject {
     public final void destroy() {
 
         onDestroy();
-        ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        ClientMessage clientMessage = DestroyProxyParameters.encode(objectName, getServiceName());
         context.removeProxy(this);
         try {
-            new ClientInvocation(getClient(), request).invoke().get();
+            new ClientInvocation(getClient(), clientMessage).invoke().get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

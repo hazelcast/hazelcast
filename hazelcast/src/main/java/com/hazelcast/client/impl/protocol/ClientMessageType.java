@@ -76,7 +76,13 @@ public enum ClientMessageType {
 
     VOID_RESULT(22),
 
-    ENTRY_VIEW(23);
+    ENTRY_VIEW(23),
+
+    DESTROY_PROXY_REQUEST(24),
+
+    ITEM_EVENT(25),
+
+    TOPIC_EVENT(26);
 
     private final int id;
 
