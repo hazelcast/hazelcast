@@ -29,15 +29,15 @@ import com.hazelcast.spi.TransactionalService;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Default implementation of {@link MapServiceContextAwareFactory}
+ * Default implementation of {@link MapServiceFactory}
  *
- * @see MapServiceContextAwareFactory
+ * @see MapServiceFactory
  */
-class DefaultMapServiceContextAwareFactory extends AbstractMapServiceContextAwareFactory {
+class DefaultMapServiceFactory extends AbstractMapServiceFactory {
 
     private final MapServiceContext mapServiceContext;
 
-    public DefaultMapServiceContextAwareFactory(MapServiceContext mapServiceContext) {
+    public DefaultMapServiceFactory(MapServiceContext mapServiceContext) {
         this.mapServiceContext = checkNotNull(mapServiceContext, "mapServiceContext should not be null");
     }
 
@@ -48,42 +48,42 @@ class DefaultMapServiceContextAwareFactory extends AbstractMapServiceContextAwar
 
     @Override
     ManagedService createManagedService() {
-        return new MapManagedService(getMapServiceContext());
+        return new MapManagedService(mapServiceContext);
     }
 
     @Override
     MigrationAwareService createMigrationAwareService() {
-        return new MapMigrationAwareService(getMapServiceContext());
+        return new MapMigrationAwareService(mapServiceContext);
     }
 
     @Override
     TransactionalService createTransactionalService() {
-        return new MapTransactionalService(getMapServiceContext());
+        return new MapTransactionalService(mapServiceContext);
     }
 
     @Override
     RemoteService createRemoteService() {
-        return new MapRemoteService(getMapServiceContext());
+        return new MapRemoteService(mapServiceContext);
     }
 
     @Override
     EventPublishingService createEventPublishingService() {
-        return new MapEventPublishingService(getMapServiceContext());
+        return new MapEventPublishingService(mapServiceContext);
     }
 
     @Override
     PostJoinAwareService createPostJoinAwareService() {
-        return new MapPostJoinAwareService(getMapServiceContext());
+        return new MapPostJoinAwareService(mapServiceContext);
     }
 
     @Override
     SplitBrainHandlerService createSplitBrainHandlerService() {
-        return new MapSplitBrainHandlerService(getMapServiceContext());
+        return new MapSplitBrainHandlerService(mapServiceContext);
     }
 
     @Override
     ReplicationSupportingService createReplicationSupportingService() {
-        return new MapReplicationSupportingService(getMapServiceContext());
+        return new MapReplicationSupportingService(mapServiceContext);
     }
 
     /**
@@ -94,12 +94,12 @@ class DefaultMapServiceContextAwareFactory extends AbstractMapServiceContextAwar
      */
     @Override
     StatisticsAwareService createStatisticsAwareService() {
-        return new MapStatisticsAwareService(getMapServiceContext());
+        return new MapStatisticsAwareService(mapServiceContext);
     }
 
     @Override
     MapPartitionAwareService createPartitionAwareService() {
-        return new MapPartitionAwareService(getMapServiceContext());
+        return new MapPartitionAwareService(mapServiceContext);
     }
 
 }
