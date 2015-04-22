@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.Configuration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryListenerException;
@@ -211,7 +212,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
         CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
 
         try {
-            cacheManager.createCache(cacheName, null);
+            cacheManager.createCache(cacheName, (Configuration<Object, Object>) null);
             fail("NullPointerException expected");
         } catch (NullPointerException expected) {
             EmptyStatement.ignore(expected);
