@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -134,9 +135,9 @@ public class EvictionConfig
     }
 
     public EvictionConfig setSize(int size) {
-        if (size > 0) {
-            this.size = size;
-        }
+        ValidationUtil.shouldBePositive(size, "Size must be positive number !");
+
+        this.size = size;
         return this;
     }
 
@@ -145,10 +146,9 @@ public class EvictionConfig
     }
 
     public EvictionConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
-        // Max-Size policy cannot be null
-        if (maxSizePolicy != null) {
-            this.maxSizePolicy = maxSizePolicy;
-        }
+        ValidationUtil.checkNotNull(maxSizePolicy, "Max-Size policy cannot be null !");
+
+        this.maxSizePolicy = maxSizePolicy;
         return this;
     }
 
@@ -157,10 +157,10 @@ public class EvictionConfig
     }
 
     public EvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        // Eviction policy cannot be null or NONE
-        if (evictionPolicy != null && evictionPolicy != EvictionPolicy.NONE) {
-            this.evictionPolicy = evictionPolicy;
-        }
+        ValidationUtil.checkNotNull(evictionPolicy, "Eviction policy cannot be null !");
+        ValidationUtil.checkFalse(EvictionPolicy.NONE == evictionPolicy, "Eviction policy cannot be \"NONE\" !");
+
+        this.evictionPolicy = evictionPolicy;
         return this;
     }
 

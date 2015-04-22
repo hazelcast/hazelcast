@@ -123,6 +123,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
 
+        initNearCache();
+    }
+
+    private void initNearCache() {
         NearCacheConfig clientNearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         NearCacheConfig cacheNearCacheConfig = cacheConfig.getNearCacheConfig();
         NearCacheConfig nearCacheConfig;
@@ -152,7 +156,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
             NearCacheContext nearCacheContext =
                     new NearCacheContext(clientContext.getSerializationService(),
-                                         createNearCacheExecutor(clientContext.getExecutionService()));
+                            createNearCacheExecutor(clientContext.getExecutionService()));
             nearCache = nearCacheManager
                     .getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();

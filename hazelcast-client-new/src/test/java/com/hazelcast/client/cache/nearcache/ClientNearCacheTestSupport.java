@@ -72,8 +72,7 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
-        return
-                new NearCacheConfig()
+        return new NearCacheConfig()
                         .setName(DEFAULT_CACHE_NAME)
                         .setInMemoryFormat(inMemoryFormat);
     }

@@ -71,8 +71,8 @@
                         <hz:eviction size="100" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
                     </hz:near-cache>
                     <hz:cache-entry-listeners>
-                        <hz:cache-entry-listener cache-entry-event-filter-factory="om.hazelcast.cache.MyCacheFilterFactory"
-                                                 cache-entry-listener-factory="om.hazelcast.cache.MyCacheListenerFactory"
+                        <hz:cache-entry-listener cache-entry-event-filter-factory="com.hazelcast.cache.MyCacheFilterFactory"
+                                                 cache-entry-listener-factory="com.hazelcast.cache.MyCacheListenerFactory"
                                                  old-value-required="false" synchronous="false"/>
                     </hz:cache-entry-listeners>
             </hz:cache>

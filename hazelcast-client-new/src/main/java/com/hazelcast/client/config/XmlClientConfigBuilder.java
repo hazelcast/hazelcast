@@ -34,6 +34,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -263,7 +264,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         clientConfig.addNearCacheConfig(name, nearCacheConfig);
     }
 
-    private EvictionConfig getEvictionConfig(final org.w3c.dom.Node node) {
+    private EvictionConfig getEvictionConfig(final Node node) {
         final EvictionConfig evictionConfig = new EvictionConfig();
         final Node size = node.getAttributes().getNamedItem("size");
         final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");

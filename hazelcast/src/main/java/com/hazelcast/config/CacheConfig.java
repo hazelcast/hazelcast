@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.ValidationUtil;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -32,7 +33,6 @@ import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
@@ -238,10 +238,10 @@ public class CacheConfig<K, V>
      */
     public CacheConfig<K, V> setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
+            throw new IllegalArgumentException("Cache backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
         }
         if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
+            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
         }
         this.backupCount = backupCount;
         return this;
@@ -267,10 +267,10 @@ public class CacheConfig<K, V>
      */
     public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
+            throw new IllegalArgumentException("Cache async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
         }
         if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
+            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
         }
         this.asyncBackupCount = asyncBackupCount;
         return this;
@@ -301,10 +301,9 @@ public class CacheConfig<K, V>
      * @return current cache config instance
      */
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        // Eviction config cannot be null
-        if (evictionConfig != null) {
-            this.evictionConfig = evictionConfig;
-        }
+        ValidationUtil.isNotNull(evictionConfig, "Eviction config cannot be null !");
+
+        this.evictionConfig = evictionConfig;
         return this;
     }
 
@@ -357,7 +356,9 @@ public class CacheConfig<K, V>
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
+        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+
+        this.inMemoryFormat = inMemoryFormat;
         return this;
     }
 
