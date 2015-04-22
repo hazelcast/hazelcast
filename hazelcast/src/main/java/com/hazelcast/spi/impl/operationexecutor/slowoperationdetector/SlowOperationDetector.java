@@ -62,6 +62,8 @@ public final class SlowOperationDetector {
 
     private final DetectorThread detectorThread;
 
+    private boolean isFirstLog = true;
+
     @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP2" })
     public SlowOperationDetector(LoggingService loggingServices,
                                  OperationRunner[] genericOperationRunners,
@@ -133,6 +135,7 @@ public final class SlowOperationDetector {
             super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("SlowOperationDetectorThread"));
         }
 
+        @Override
         public void run() {
             long lastLogPurge = System.nanoTime();
             while (running) {
@@ -231,22 +234,39 @@ public final class SlowOperationDetector {
 
         private void logSlowOperation(SlowOperationLog log, int totalInvocations) {
             if (isStackTraceLoggingEnabled) {
-                // log with stack traces
-                if (totalInvocations == 1) {
-                    logger.warning(format("Slow operation detected: %s%n%s", log.operation, log.stackTrace));
-                    return;
-                }
+                logWithStackTrace(log, totalInvocations);
+            } else if (!isFirstLog) {
+                logWithoutStackTrace(log, totalInvocations);
+            } else {
+                logWithConfigHint(log, totalInvocations);
+            }
+        }
+
+        private void logWithStackTrace(SlowOperationLog log, int totalInvocations) {
+            if (totalInvocations == 1) {
+                logger.warning(format("Slow operation detected: %s%n%s", log.operation, log.stackTrace));
+            } else {
                 // print the full stack trace each FULL_LOG_FREQUENCY invocations
                 logger.warning(format("Slow operation detected: %s (%d invocations)%n%s", log.operation, totalInvocations,
                         (totalInvocations % FULL_LOG_FREQUENCY == 0) ? log.stackTrace : log.shortStackTrace));
-                return;
             }
-            // log without stack traces
+        }
+
+        private void logWithoutStackTrace(SlowOperationLog log, int totalInvocations) {
             if (totalInvocations == 1) {
                 logger.warning(format("Slow operation detected: %s", log.operation));
-                return;
+            } else {
+                logger.warning(format("Slow operation detected: %s (%d invocations)", log.operation, totalInvocations));
             }
-            logger.warning(format("Slow operation detected: %s (%d invocations)", log.operation, totalInvocations));
+        }
+
+        private void logWithConfigHint(SlowOperationLog log, int totalInvocations) {
+            // print a hint once how to enable logging of stack traces
+            logger.warning(format("Slow operation detected: %s"
+                            + "%nHint: You can enable the logging of stack traces with the following config property:"
+                            + GroupProperties.PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED,
+                    log.operation));
+            isFirstLog = false;
         }
 
         private boolean purge(long nowNanos, long lastLogPurge) {

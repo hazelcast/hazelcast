@@ -19,11 +19,9 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -32,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -54,27 +51,18 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS,
                 String.valueOf(slowOperationThresholdMillis));
 
-        return getSingleNodeCluster(config);
-    }
-
-    HazelcastInstance getSingleNodeCluster(Config config) {
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("slowOperation*");
-        config.addMapConfig(mapConfig);
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        return factory.newHazelcastInstance(config);
+        return createHazelcastInstance(config);
     }
 
     static IMap<String, String> getMapWithSingleElement(HazelcastInstance instance) {
-        IMap<String, String> map = instance.getMap("slowOperation" + randomMapName());
+        IMap<String, String> map = instance.getMap(randomMapName());
         map.put(DEFAULT_KEY, DEFAULT_VALUE);
 
         return map;
     }
 
     static void executeOperation(HazelcastInstance instance, Operation operation) {
-        getInternalOperationService(instance).executeOperation(operation);
+        getOperationService(instance).executeOperation(operation);
     }
 
     static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String> entryProcessor) {
@@ -83,7 +71,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static void waitForAllOperationsToComplete(final HazelcastInstance instance) {
         sleepSeconds(1);
-        final InternalOperationService operationService = getInternalOperationService(instance);
+        final InternalOperationService operationService = getOperationService(instance);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -96,12 +84,12 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         if (instance == null) {
             return;
         }
-        OperationServiceImpl operationService = (OperationServiceImpl) getInternalOperationService(instance);
+        OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(instance);
         operationService.shutdown();
     }
 
     static Collection<SlowOperationLog> getSlowOperationLogs(HazelcastInstance instance) {
-        InternalOperationService operationService = getInternalOperationService(instance);
+        InternalOperationService operationService = getOperationService(instance);
         SlowOperationDetector slowOperationDetector = getFieldFromObject(operationService, "slowOperationDetector");
         Map<Integer, SlowOperationLog> slowOperationLogs = getFieldFromObject(slowOperationDetector, "slowOperationLogs");
 
@@ -111,10 +99,6 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     static Collection<SlowOperationLog.Invocation> getInvocations(SlowOperationLog log) {
         Map<Integer, SlowOperationLog.Invocation> invocationMap = getFieldFromObject(log, "invocations");
         return invocationMap.values();
-    }
-
-    static InternalOperationService getInternalOperationService(HazelcastInstance instance) {
-        return TestUtil.getNode(instance).nodeEngine.getOperationService();
     }
 
     static int getDefaultPartitionId(HazelcastInstance instance) {
