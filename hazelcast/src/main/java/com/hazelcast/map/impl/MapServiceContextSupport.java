@@ -24,8 +24,6 @@ import com.hazelcast.nio.serialization.Data;
  */
 interface MapServiceContextSupport {
 
-    long getNow();
-
     Object toObject(Object data);
 
     Data toData(Object object, PartitioningStrategy partitionStrategy);
