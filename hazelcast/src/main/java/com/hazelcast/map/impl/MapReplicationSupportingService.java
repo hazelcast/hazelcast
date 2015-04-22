@@ -45,33 +45,39 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     public void onReplicationEvent(WanReplicationEvent replicationEvent) {
         Object eventObject = replicationEvent.getEventObject();
         if (eventObject instanceof MapReplicationUpdate) {
-            MapReplicationUpdate replicationUpdate = (MapReplicationUpdate) eventObject;
-            EntryView entryView = replicationUpdate.getEntryView();
-            MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
-            String mapName = replicationUpdate.getMapName();
-            MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-            MergeOperation operation = new MergeOperation(mapName, mapServiceContext.toData(entryView.getKey(),
-                    mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
-            try {
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
-                Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                f.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
+            handleUpdate((MapReplicationUpdate) eventObject);
         } else if (eventObject instanceof MapReplicationRemove) {
-            MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-            WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
-                    replicationRemove.getKey());
-            try {
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
-                Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                f.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
+            handleRemove((MapReplicationRemove) eventObject);
+        }
+    }
+
+    private void handleRemove(MapReplicationRemove replicationRemove) {
+         WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
+                replicationRemove.getKey());
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
+            Future f = nodeEngine.getOperationService()
+                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    private void handleUpdate(MapReplicationUpdate replicationUpdate) {
+        EntryView entryView = replicationUpdate.getEntryView();
+        MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
+        String mapName = replicationUpdate.getMapName();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MergeOperation operation = new MergeOperation(mapName, mapServiceContext.toData(entryView.getKey(),
+                mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
+            Future f = nodeEngine.getOperationService()
+                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 }
