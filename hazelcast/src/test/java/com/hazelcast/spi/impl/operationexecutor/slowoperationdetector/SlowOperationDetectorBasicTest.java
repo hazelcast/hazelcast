@@ -25,7 +25,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(SlowTest.class)
+@Category(QuickTest.class)
 public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstractTest {
 
     private HazelcastInstance instance;
@@ -46,10 +46,25 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     }
 
     @Test
+    public void testDisabled() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_ENABLED, "false");
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
+
+        instance = createHazelcastInstance(config);
+
+        getOperationService(instance).execute(new SlowRunnable(3, Operation.GENERIC_PARTITION_ID));
+        waitForAllOperationsToComplete(instance);
+
+        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
+        assertNumberOfSlowOperationLogs(logs, 0);
+    }
+
+    @Test
     public void testSlowRunnableOnGenericOperationThread() {
         instance = getSingleNodeCluster(1000);
 
-        getInternalOperationService(instance).execute(new SlowRunnable(3, Operation.GENERIC_PARTITION_ID));
+        getOperationService(instance).execute(new SlowRunnable(3, Operation.GENERIC_PARTITION_ID));
         waitForAllOperationsToComplete(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
@@ -65,7 +80,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     public void testSlowRunnableOnPartitionOperationThread() {
         instance = getSingleNodeCluster(1000);
 
-        getInternalOperationService(instance).execute(new SlowRunnable(3, 1));
+        getOperationService(instance).execute(new SlowRunnable(3, 1));
         waitForAllOperationsToComplete(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
@@ -154,13 +169,13 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
         config.setProperty(GroupProperties.PROP_PARTITION_OPERATION_THREAD_COUNT, String.valueOf(partitionThreads));
 
-        instance = getSingleNodeCluster(config);
+        instance = createHazelcastInstance(config);
 
         int partitionCount = TestUtil.getNode(instance).nodeEngine.getPartitionService().getPartitionCount();
         int partitionIndex = 1;
         for (int i = 0; i < numberOfOperations; i++) {
             int partitionId = partitionIndex % partitionCount;
-            executeOperation(instance, new SlowRecursiveOperation(partitionId, recursionDepth, 10));
+            executeOperation(instance, new SlowRecursiveOperation(partitionId, recursionDepth, 3));
             partitionIndex += partitionCount / partitionThreads + 1;
         }
         waitForAllOperationsToComplete(instance);
@@ -246,8 +261,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
 
         @Override
         public void run() throws Exception {
-            getInternalOperationService(instance)
-                    .executeOperation(new SlowOperation(sleepSeconds, GENERIC_PARTITION_ID));
+            getOperationService(instance).executeOperation(new SlowOperation(sleepSeconds, GENERIC_PARTITION_ID));
         }
     }
 

@@ -41,8 +41,9 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, logRetentionSeconds);
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "true");
 
-        instance = getSingleNodeCluster(config);
+        instance = createHazelcastInstance(config);
         map = getMapWithSingleElement(instance);
     }
 
