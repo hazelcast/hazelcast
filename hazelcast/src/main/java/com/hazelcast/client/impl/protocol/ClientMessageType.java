@@ -76,7 +76,10 @@ public enum ClientMessageType {
 
     VOID_RESULT(22),
 
-    ENTRY_VIEW(23);
+    ENTRY_VIEW(23),
+
+    LONG_RESULT(24);
+
 
     private final int id;
 

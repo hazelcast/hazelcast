@@ -17,6 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.*;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.countdownlatch.client.AwaitRequest;
 import com.hazelcast.concurrent.countdownlatch.client.CountDownRequest;
@@ -36,29 +38,29 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     }
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        AwaitRequest request = new AwaitRequest(getName(), getTimeInMillis(timeout, unit));
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = CountDownLatchAwaitParameters.encode(getName(), getTimeInMillis(timeout, unit));
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public void countDown() {
-        CountDownRequest request = new CountDownRequest(getName());
+        ClientMessage request = CountDownLatchCountDownParameters.encode(getName());
         invoke(request);
     }
 
     public int getCount() {
-        GetCountRequest request = new GetCountRequest(getName());
-        Integer result = invoke(request);
-        return result;
+        ClientMessage request = CountDownLatchGetCountParameters.encode(getName());
+        IntResultParameters resultParameters = IntResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public boolean trySetCount(int count) {
         if (count < 0) {
             throw new IllegalArgumentException("count can't be negative");
         }
-        SetCountRequest request = new SetCountRequest(getName(), count);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = CountDownLatchTrySetCountParameters.encode(getName(), count);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     private Data getKey() {

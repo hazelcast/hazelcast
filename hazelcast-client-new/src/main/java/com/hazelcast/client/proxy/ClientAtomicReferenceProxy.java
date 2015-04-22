@@ -17,6 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.*;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.atomicreference.client.GetRequest;
 import com.hazelcast.concurrent.atomicreference.client.ApplyRequest;
@@ -48,67 +50,86 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     @Override
     public <R> R apply(IFunction<E, R> function) {
         isNotNull(function, "function");
-        return invoke(new ApplyRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceApplyParameters.encode(name, toData(function));
+        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage)invoke(request));
+        return toObject(resultParameters.result);
     }
 
     @Override
     public void alter(IFunction<E, E> function) {
         isNotNull(function, "function");
-        invoke(new AlterRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceAlterParameters.encode(name, toData(function));
+        invoke(request);
     }
 
     @Override
     public E alterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
-        return invoke(new AlterAndGetRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceAlterAndGetParameters.encode(name, toData(function));
+        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage)invoke(request));
+        return toObject(resultParameters.result);
     }
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
-        return invoke(new GetAndAlterRequest(name, toData(function)));
+        ClientMessage request = AtomicReferenceGetAndAlterParameters.encode(name, toData(function));
+        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage)invoke(request));
+        return toObject(resultParameters.result);
+
     }
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        return (Boolean) invoke(new CompareAndSetRequest(name, toData(expect), toData(update)));
+        ClientMessage request = AtomicReferenceCompareAndSetParameters.encode(name, toData(expect), toData(update));
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;
     }
 
     @Override
     public boolean contains(E expected) {
-        return (Boolean) invoke(new ContainsRequest(name, toData(expected)));
-    }
+        ClientMessage request = AtomicReferenceContainsParameters.encode(name, toData(expected));
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;    }
 
     @Override
     public E get() {
-        return invoke(new GetRequest(name));
+        ClientMessage request = AtomicReferenceGetParameters.encode(name);
+        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage)invoke(request));
+        return toObject(resultParameters.result);
     }
 
     @Override
     public void set(E newValue) {
-        invoke(new SetRequest(name, toData(newValue)));
+        ClientMessage request = AtomicReferenceSetParameters.encode(name, toData(newValue));
+        invoke(request);
     }
 
     @Override
     public void clear() {
-        set(null);
+        ClientMessage request = AtomicReferenceClearParameters.encode(name);
+        invoke(request);
     }
 
     @Override
     public E getAndSet(E newValue) {
-        return invoke(new GetAndSetRequest(name, toData(newValue)));
+        ClientMessage request = AtomicReferenceGetAndSetParameters.encode(name, toData(newValue));
+        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage)invoke(request));
+        return toObject(resultParameters.result);
     }
 
     @Override
     public E setAndGet(E update) {
-        invoke(new SetRequest(name, toData(update)));
-        return update;
+        ClientMessage request = AtomicReferenceSetAndGetParameters.encode(name, toData(update));
+        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage)invoke(request));
+        return toObject(resultParameters.result);
     }
 
     @Override
     public boolean isNull() {
-        return (Boolean) invoke(new IsNullRequest(name));
-    }
+        ClientMessage request = AtomicReferenceIsNullParameters.encode(name);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage)invoke(request));
+        return resultParameters.result;    }
 
     protected <T> T invoke(ClientRequest req) {
         return super.invoke(req, getKey());
