@@ -70,13 +70,25 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (response != null && !(response instanceof BasicInvocation.InternalResponse)) {
+            if (responseAvailable(response)) {
                 runAsynchronous(callback, executor);
                 return;
             }
 
             this.callbackHead = new ExecutionCallbackNode<E>(callback, executor, callbackHead);
         }
+    }
+
+    private boolean responseAvailable(Object response) {
+        if (response == null) {
+            return false;
+        }
+
+        if (response == BasicInvocation.WAIT_RESPONSE) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -195,7 +207,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private Object waitForResponse(long time, TimeUnit unit) {
-        if (response != null && response != BasicInvocation.WAIT_RESPONSE) {
+        if (responseAvailable(response)) {
             return response;
         }
 
@@ -404,7 +416,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-        return response != null;
+        return responseAvailable(response);
     }
 
     private boolean isOperationExecuting(Address target) {
