@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -41,8 +42,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @see MapManagedService
  */
-public interface MapServiceContext extends MapServiceContextSupport,
-        MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
+public interface MapServiceContext extends MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
+
+    Object toObject(Object data);
+
+    Data toData(Object object, PartitioningStrategy partitionStrategy);
+
+    Data toData(Object object);
+
+    boolean compare(String mapName, Object value1, Object value2);
 
     MapContainer getMapContainer(String mapName);
 
