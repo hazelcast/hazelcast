@@ -59,7 +59,7 @@ public interface Job<KeyIn, ValueIn> {
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
      */
-    Job<KeyIn, ValueIn> onKeys(Iterable<KeyIn> keys);
+    Job<KeyIn, ValueIn> onKeys(Iterable<? extends KeyIn> keys);
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
@@ -99,7 +99,7 @@ public interface Job<KeyIn, ValueIn> {
      * @param predicate predicate implementation to be used to evaluate keys
      * @return instance of this Job with generics changed on usage
      */
-    Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<KeyIn> predicate);
+    Job<KeyIn, ValueIn> keyPredicate(KeyPredicate<? super KeyIn> predicate);
 
     /**
      * Defines the mapper for this task. This method is not idempotent and can be callable only one time. Further

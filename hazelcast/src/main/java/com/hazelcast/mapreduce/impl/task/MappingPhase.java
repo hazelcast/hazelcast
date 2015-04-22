@@ -38,10 +38,10 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
 
-    private final Collection<KeyIn> keys;
-    private final KeyPredicate<KeyIn> predicate;
+    private final Collection<? extends KeyIn> keys;
+    private final KeyPredicate<? super KeyIn> predicate;
 
-    public MappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
+    public MappingPhase(Collection<? extends KeyIn> keys, KeyPredicate<? super KeyIn> predicate) {
         this.keys = keys;
         this.predicate = predicate;
     }
