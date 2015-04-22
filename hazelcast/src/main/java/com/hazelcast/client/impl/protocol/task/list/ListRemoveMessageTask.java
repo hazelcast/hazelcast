@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListRemoveParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
@@ -49,6 +50,11 @@ public class ListRemoveMessageTask
     @Override
     protected ListRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListRemoveParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

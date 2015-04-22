@@ -18,13 +18,20 @@ package com.hazelcast.client.collections;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,15 +40,12 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 5/20/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientSetTest {
 
     static final String name = "test";

@@ -45,6 +45,7 @@ public class TopicEventParameters {
         final int requiredDataSize = calculateDataSize(message, publishTime, uuid);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(message).set(publishTime).set(uuid);
         clientMessage.updateFrameLength();

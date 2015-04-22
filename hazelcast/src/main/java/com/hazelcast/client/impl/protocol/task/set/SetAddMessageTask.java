@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetAddParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
@@ -46,6 +47,11 @@ public class SetAddMessageTask
     @Override
     protected SetAddParameters decodeClientMessage(ClientMessage clientMessage) {
         return SetAddParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

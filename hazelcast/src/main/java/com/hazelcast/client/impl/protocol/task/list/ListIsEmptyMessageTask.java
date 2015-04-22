@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListIsEmptyParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
@@ -49,6 +50,11 @@ public class ListIsEmptyMessageTask
     @Override
     protected ListIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListIsEmptyParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 
-@GenerateParameters(id = 14, name = "MapReduce", ns = "Hazelcast.Client.Protocol.MapReduce")
+@GenerateParameters(id = TemplateConstants.MAP_REDUCE_TEMPLATE_ID, name = "MapReduce", ns = "Hazelcast.Client.Protocol.MapReduce")
 public interface MapReduceTemplate {
 
     @EncodeMethod(id = 1)

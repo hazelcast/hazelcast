@@ -20,7 +20,7 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 12, name = "Topic", ns = "Hazelcast.Client.Protocol.Topic")
+@GenerateParameters(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Topic")
 public interface TopicTemplate {
 
     @EncodeMethod(id = 1)

@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 
-@GenerateParameters(id = 2, name = "Queue", ns = "Hazelcast.Client.Protocol.Queue")
+@GenerateParameters(id = TemplateConstants.QUEUE_TEMPLATE_ID, name = "Queue", ns = "Hazelcast.Client.Protocol.Queue")
 public interface QueueTemplate {
 
     @EncodeMethod(id = 1)

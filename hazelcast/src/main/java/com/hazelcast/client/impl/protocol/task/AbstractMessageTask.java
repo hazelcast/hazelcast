@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -58,7 +57,7 @@ public abstract class AbstractMessageTask<P>
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         this.clientMessage = clientMessage;
-        this.logger = node.getLogger(ClientEngine.class);
+        this.logger = node.getLogger(getClass());
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.serializationService = node.getSerializationService();
