@@ -23,6 +23,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -73,13 +74,11 @@ public abstract class AbstractPartitionMessageTask<P>
     protected abstract Operation prepareOperation();
 
     protected ClientMessage encodeResponse(Object response) {
-        final ClientMessage resultParameters;
         try {
-            final Data responseData = (Data) response;
-            resultParameters = GenericResultParameters.encode(responseData);
-            return resultParameters;
+            Data responseData = response != null ? (Data) response : DefaultData.NULL_DATA;
+            return GenericResultParameters.encode(responseData);
         } catch (ClassCastException e) {
-            logger.severe("Unsupported response type :" + response.getClass().getName());
+            System.err.println(getClass().getName() + ": " + e);
             throw e;
         }
     }

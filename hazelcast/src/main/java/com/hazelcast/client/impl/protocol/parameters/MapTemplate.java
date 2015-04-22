@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.List;
 import java.util.Set;
 
-@GenerateParameters(id = 1, name = "Map", ns = "Hazelcast.Client.Protocol.Map")
+@GenerateParameters(id = TemplateConstants.MAP_TEMPLATE_ID, name = "Map", ns = "Hazelcast.Client.Protocol.Map")
 public interface MapTemplate {
 
     @EncodeMethod(id = 1)

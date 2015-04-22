@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class TopicEventParameters {
 
-    public static final ClientMessageType TYPE = ClientMessageType.ADD_LISTENER_RESULT;
+    public static final ClientMessageType TYPE = ClientMessageType.TOPIC_EVENT;
     public Data message;
     public long publishTime;
     public String uuid;
@@ -45,6 +45,7 @@ public class TopicEventParameters {
         final int requiredDataSize = calculateDataSize(message, publishTime, uuid);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(message).set(publishTime).set(uuid);
         clientMessage.updateFrameLength();

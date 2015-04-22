@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -58,7 +57,7 @@ public abstract class AbstractMessageTask<P>
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         this.clientMessage = clientMessage;
-        this.logger = node.getLogger(ClientEngine.class);
+        this.logger = node.getLogger(getClass());
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.serializationService = node.getSerializationService();
@@ -173,7 +172,7 @@ public abstract class AbstractMessageTask<P>
 
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
-        resultClientMessage.setFlags(ClientMessage.BEGIN_AND_END_FLAGS);
+        resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
         final Connection connection = endpoint.getConnection();
         //TODO framing not implemented yet, should be split into frames before writing to connection
