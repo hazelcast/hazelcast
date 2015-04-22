@@ -54,8 +54,6 @@ public interface MapServiceContext extends MapServiceContextSupport,
 
     void clearPartitionData(int partitionId);
 
-    String serviceName();
-
     MapService getService();
 
     void clearPartitions();

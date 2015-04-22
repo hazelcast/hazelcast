@@ -43,7 +43,7 @@ class MapManagedService implements ManagedService {
         mapServiceContext.initPartitionsContainers();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(mapServiceContext.serviceName(),
+            lockService.registerLockStoreConstructor(MapService.SERVICE_NAME,
                     new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                         public LockStoreInfo createNew(final ObjectNamespace key) {
                             final MapContainer mapContainer = mapServiceContext.getMapContainer(key.getObjectName());

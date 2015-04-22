@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
     private final MapServiceContext mapServiceContext;
@@ -129,7 +131,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                     try {
                         int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
                         ICompletableFuture f = nodeEngine.getOperationService()
-                                .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
+                                .invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
                         f.andThen(mergeCallback);
                     } catch (Throwable t) {
