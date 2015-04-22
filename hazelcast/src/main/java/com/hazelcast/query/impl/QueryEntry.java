@@ -31,14 +31,38 @@ import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
  */
 public class QueryEntry implements QueryableEntry {
 
-    private final SerializationService serializationService;
-    private final Data indexKey;
+    private Data indexKey;
     private Data keyData;
     private Object keyObject;
     private Data valueData;
     private Object valueObject;
+    private SerializationService serializationService;
+
+    public QueryEntry() {
+    }
 
     public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
+        init(serializationService, indexKey, key, value);
+    }
+
+    /**
+     * It may be useful to use this {@code init} method in some cases that same instance of this class can be used
+     * instead of creating a new one for every iteration when scanning large data sets, for example:
+     * <pre>
+     * <code>Predicate predicate = ...
+     * QueryEntry entry = new QueryEntry()
+     * for(i == 0; i < HUGE_NUMBER; i++) {
+     *       entry.init(...)
+     *       boolean valid = predicate.apply(queryEntry);
+     *
+     *       if(valid) {
+     *          ....
+     *       }
+     *  }
+     * </code>
+     * </pre>
+     */
+    public void init(SerializationService serializationService, Data indexKey, Object key, Object value) {
         if (indexKey == null) {
             throw new IllegalArgumentException("index keyData cannot be null");
         }
@@ -154,7 +178,7 @@ public class QueryEntry implements QueryableEntry {
 
     /**
      * Gets the target data if available.
-     *
+     * <p/>
      * If the key/value is a Portable instance, we always serialize to Data. This is inefficient, but the query
      * relies on the fields mentioned in the serialized data, not the deserialized data.
      *
