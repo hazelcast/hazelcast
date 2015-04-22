@@ -1308,7 +1308,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             Address target = member.getAddress();
             InvocationBuilder invocationBuilder = operationService1.createInvocationBuilder(serviceName,
                     clientInfoOperation, target);
-            Future<Object> future = invocationBuilder.setTryCount(1).invoke();
+            Future<Object> future = invocationBuilder.setTryCount(50).invoke();
             HashMap<String, ClientType> endpoints = new HashMap<String, ClientType>();
             try {
                 endpoints = (HashMap<String, ClientType>)future.get();

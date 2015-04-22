@@ -136,7 +136,7 @@ public final class VersionCheck {
         fetchWebService(urlStr);
     }
 
-    private Document fetchWebService(String urlStr) {
+    private void fetchWebService(String urlStr) {
         InputStream in = null;
         try {
             URL url = new URL(urlStr);
@@ -145,15 +145,11 @@ public final class VersionCheck {
             conn.setConnectTimeout(TIMEOUT * 2);
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
-            IOUtil.closeResource(in);
-            return null;
         }  catch (IOException ignored) {
             EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(in);
         }
-
-        return null;
     }
 
     private static class UrlActionParameterCreator {
