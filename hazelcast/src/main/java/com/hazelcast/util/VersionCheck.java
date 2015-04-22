@@ -21,7 +21,6 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.IOUtil;
-import org.w3c.dom.Document;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;

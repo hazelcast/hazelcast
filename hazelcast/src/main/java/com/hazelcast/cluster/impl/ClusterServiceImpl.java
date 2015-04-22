@@ -124,6 +124,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private static final int HEARTBEAT_INTERVAL = 500;
     private static final long HEARTBEAT_LOG_THRESHOLD = 10000L;
     private static final int PING_INTERVAL = 5000;
+    private static final int CONNECTED_CLIENT_TRY_COUNT = 50;
 
     private final Node node;
 
@@ -1308,10 +1309,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             Address target = member.getAddress();
             InvocationBuilder invocationBuilder = operationService1.createInvocationBuilder(serviceName,
                     clientInfoOperation, target);
-            Future<Object> future = invocationBuilder.setTryCount(50).invoke();
+            Future<Object> future = invocationBuilder.setTryCount(CONNECTED_CLIENT_TRY_COUNT).invoke();
             HashMap<String, ClientType> endpoints = new HashMap<String, ClientType>();
             try {
-                endpoints = (HashMap<String, ClientType>)future.get();
+                endpoints = (HashMap<String, ClientType>) future.get();
             } catch (InterruptedException e) {
                 logger.warning("Cannot get client information from : " + target.toString());
             } catch (ExecutionException e) {
