@@ -205,7 +205,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         return list;
     }
 
-    public String waddItemListener(ItemListener<E> listener, boolean includeValue) {
+    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
         final EventService eventService = getNodeEngine().getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
         final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
