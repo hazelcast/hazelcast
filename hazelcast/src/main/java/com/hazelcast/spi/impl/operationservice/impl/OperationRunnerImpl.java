@@ -30,7 +30,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.Operations;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
@@ -50,9 +49,10 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.Operations.isJoinOperation;
-import static com.hazelcast.spi.Operations.isWanReplicationOperation;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
+import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
+import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
+import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -240,7 +240,7 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean retryDuringMigration(Operation op) {
-        return !(op instanceof ReadonlyOperation || Operations.isMigrationOperation(op));
+        return !(op instanceof ReadonlyOperation || isMigrationOperation(op));
     }
 
     private void handleOperationError(Operation operation, Throwable e) {

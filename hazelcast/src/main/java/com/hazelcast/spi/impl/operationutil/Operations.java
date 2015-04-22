@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.impl.operationutil;
 
 import com.hazelcast.cluster.impl.operations.JoinOperation;
 import com.hazelcast.cluster.impl.operations.WanReplicationOperation;
 import com.hazelcast.partition.MigrationCycleOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 
 /**
  * Utility class that contains helper methods related to {@link Operation}
@@ -40,6 +42,9 @@ public final class Operations {
                 && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
     }
 
+    /**
+     *  Checks if the given operation is an instance of {@link WanReplicationOperation}
+     */
     public static boolean isWanReplicationOperation(Operation op) {
         return op instanceof WanReplicationOperation
                 && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
