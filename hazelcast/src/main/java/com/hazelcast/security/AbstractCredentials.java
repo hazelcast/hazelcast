@@ -31,6 +31,7 @@ public abstract class AbstractCredentials implements Credentials, Portable {
 
     private String endpoint;
     private String principal;
+    private String enterpriseSecret;
 
     public AbstractCredentials() {
     }
@@ -56,6 +57,16 @@ public abstract class AbstractCredentials implements Credentials, Portable {
 
     public void setPrincipal(String principal) {
         this.principal = principal;
+    }
+
+    @Override
+    public final String getEnterpriseSecret() {
+        return enterpriseSecret;
+    }
+
+    @Override
+    public final void setEnterpriseSecret(String enterpriseSecret) {
+        this.enterpriseSecret = enterpriseSecret;
     }
 
     @Override

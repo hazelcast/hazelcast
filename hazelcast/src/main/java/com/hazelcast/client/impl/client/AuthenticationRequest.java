@@ -50,6 +50,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
     private Credentials credentials;
     private ClientPrincipal principal;
     private boolean ownerConnection;
+    private String enterpriseSecret;
 
     public AuthenticationRequest() {
     }
@@ -61,6 +62,11 @@ public final class AuthenticationRequest extends CallableClientRequest {
     public AuthenticationRequest(Credentials credentials, ClientPrincipal principal) {
         this.credentials = credentials;
         this.principal = principal;
+        this.enterpriseSecret = credentials.getEnterpriseSecret();
+    }
+
+    public String getEnterpriseSecret() {
+        return enterpriseSecret;
     }
 
     @Override
@@ -196,6 +202,8 @@ public final class AuthenticationRequest extends CallableClientRequest {
             writer.writeNullPortable("principal", ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
         }
         writer.writeBoolean("firstConnection", ownerConnection);
+        writer.writeUTF("enterpriseSecret", enterpriseSecret);
+
     }
 
     @Override
@@ -203,6 +211,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
         ownerConnection = reader.readBoolean("firstConnection");
+        enterpriseSecret = reader.readUTF("enterpriseSecret");
     }
 
     @Override

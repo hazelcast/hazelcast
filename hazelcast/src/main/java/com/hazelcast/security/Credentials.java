@@ -46,4 +46,18 @@ public interface Credentials extends Serializable {
      * @return endpoint principal
      */
     String getPrincipal();
+
+    /**
+     * Returns  secret hash for enterprise connection handshake.
+     *
+     * @return Secret hash for enterprise connection handshake.
+     */
+    String getEnterpriseSecret();
+
+    /**
+     * Sets secret hash for enterprise connection handshake.
+     *
+     * @param enterpriseSecret secret hash for enterprise connection handshake
+     */
+    void setEnterpriseSecret(String enterpriseSecret);
 }

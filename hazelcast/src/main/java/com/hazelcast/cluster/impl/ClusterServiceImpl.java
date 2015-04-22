@@ -16,6 +16,8 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
@@ -34,6 +36,7 @@ import com.hazelcast.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.cluster.impl.operations.BeforeJoinCheckFailureOperation;
 import com.hazelcast.core.Cluster;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.InitialMembershipEvent;
@@ -57,6 +60,7 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -85,6 +89,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -197,6 +202,59 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public ClusterClockImpl getClusterClock() {
         return clusterClock;
+    }
+
+    @Override
+    public Map<ClientType, Integer> getConnectedClientStats() {
+
+        int numberOfCppClients    = 0;
+        int numberOfDotNetClients = 0;
+        int numberOfJavaClients   = 0;
+
+        Operation clientInfoOperation = new GetConnectedClientsOperation();
+        OperationService operationService1 = node.nodeEngine.getOperationService();
+        String serviceName = ClientEngineImpl.SERVICE_NAME;
+        Map<ClientType, Integer> resultMap = new HashMap<ClientType, Integer>();
+        Map<String, ClientType> clientsMap = new HashMap<String, ClientType>();
+
+        for (MemberImpl member : node.getClusterService().getMemberList()) {
+            Address target = member.getAddress();
+            InvocationBuilder invocationBuilder = operationService1.createInvocationBuilder(serviceName,
+                    clientInfoOperation, target);
+            Future<Object> future = invocationBuilder.setTryCount(1).invoke();
+            HashMap<String, ClientType> endpoints = new HashMap<String, ClientType>();
+            try {
+                endpoints = (HashMap<String, ClientType>)future.get();
+            } catch (InterruptedException e) {
+                logger.warning("Cannot get client information from : " + target.toString());
+            } catch (ExecutionException e) {
+                logger.warning("Cannot get client information from : " + target.toString());
+            }
+            for (Map.Entry<String, ClientType> entry : endpoints.entrySet()) {
+                String uuid = entry.getKey();
+                ClientType clientType = entry.getValue();
+                clientsMap.put(uuid,clientType);
+            }
+        }
+
+        for (Map.Entry<String, ClientType> entry : clientsMap.entrySet()) {
+            ClientType clientType = entry.getValue();
+            if (clientType == ClientType.CPP){
+                numberOfCppClients++;
+            }
+            if (clientType == ClientType.CSHARP){
+                numberOfDotNetClients++;
+            }
+            if (clientType == ClientType.JAVA){
+                numberOfJavaClients++;
+            }
+        }
+
+        resultMap.put(ClientType.CPP, numberOfCppClients);
+        resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
+        resultMap.put(ClientType.JAVA, numberOfJavaClients);
+
+        return resultMap;
     }
 
     @Override

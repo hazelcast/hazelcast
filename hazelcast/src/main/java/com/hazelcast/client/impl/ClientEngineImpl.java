@@ -34,6 +34,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -47,6 +49,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.license.LicenseContext;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -238,6 +241,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public SecurityContext getSecurityContext() {
         return node.securityContext;
+    }
+
+    @Override
+    public LicenseContext getLicenseContext() {
+        return node.licenseContext;
     }
 
     public void bind(final ClientEndpoint endpoint) {
@@ -463,10 +471,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         private void interceptBefore(Credentials credentials, ClientRequest request) {
             final SecurityContext securityContext = getSecurityContext();
             final String methodName = request.getMethodName();
+            BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
             if (securityContext != null && methodName != null) {
                 final String objectType = request.getDistributedObjectType();
                 final String objectName = request.getDistributedObjectName();
                 securityContext.interceptBefore(credentials, objectType, objectName, methodName, request.getParameters());
+            }
+            if (buildInfo.isEnterprise() && request instanceof AuthenticationRequest) {
+                LicenseContext licenseContext = getLicenseContext();
+                licenseContext.interceptBefore(((AuthenticationRequest) request).getEnterpriseSecret());
             }
         }
 
