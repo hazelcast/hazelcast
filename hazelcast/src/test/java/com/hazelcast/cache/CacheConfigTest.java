@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +42,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.Configuration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryListenerException;
@@ -53,11 +55,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -241,6 +244,20 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void setBackupCount_whenTooLarge(){
         CacheConfig config = new CacheConfig();
         config.setBackupCount(200); //max allowed is 6..
+    }
+
+    @Test
+    public void createCache_WhenCacheConfigIsNull() {
+        String cacheName = "cacheNull";
+
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+
+        try {
+            cacheManager.createCache(cacheName, (Configuration<Object, Object>) null);
+            fail("NullPointerException expected");
+        } catch (NullPointerException expected) {
+            EmptyStatement.ignore(expected);
+        }
     }
 
     @Test
