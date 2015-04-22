@@ -19,7 +19,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 
-@GenerateParameters(id = 8, name = "Condition", ns = "Hazelcast.Client.Protocol.Condition")
+@GenerateParameters(id = TemplateConstants.CONDITION_TEMPLATE_ID,
+        name = "Condition", ns = "Hazelcast.Client.Protocol.Condition")
 public interface ConditionTemplate {
 
     @EncodeMethod(id = 1)

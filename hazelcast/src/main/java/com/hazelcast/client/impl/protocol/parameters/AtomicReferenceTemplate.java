@@ -20,7 +20,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 7, name = "AtomicReference", ns = "Hazelcast.Client.Protocol.AtomicReference")
+@GenerateParameters(id = TemplateConstants.ATOMIC_REFERENCE_TEMPLATE_ID,
+        name = "AtomicReference", ns = "Hazelcast.Client.Protocol.AtomicReference")
 public interface AtomicReferenceTemplate {
 
     @EncodeMethod(id = 1)

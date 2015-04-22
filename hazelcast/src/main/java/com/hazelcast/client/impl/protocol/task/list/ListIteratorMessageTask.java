@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListIteratorParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 
@@ -49,6 +51,11 @@ public class ListIteratorMessageTask
     @Override
     protected ListIteratorParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListIteratorParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return DataCollectionResultParameters.encode(((SerializableCollection) response).getCollection());
     }
 
     @Override

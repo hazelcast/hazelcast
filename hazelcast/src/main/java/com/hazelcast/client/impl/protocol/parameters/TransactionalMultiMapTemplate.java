@@ -21,7 +21,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 20, name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.TransactionalMultiMap")
+@GenerateParameters(id = TemplateConstants.TX_MULTIMAP_TEMPLATE_ID,
+        name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.TransactionalMultiMap")
 public interface TransactionalMultiMapTemplate {
 
     @EncodeMethod(id = 1)

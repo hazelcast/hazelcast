@@ -53,7 +53,6 @@ public class MapSizeMessageTask extends AbstractAllPartitionsMessageTask<MapSize
         return IntResultParameters.encode(total);
     }
 
-
     @Override
     protected MapSizeParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapSizeParameters.decode(clientMessage);

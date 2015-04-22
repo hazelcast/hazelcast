@@ -20,7 +20,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 13, name = "ExecutorService", ns = "Hazelcast.Client.Protocol.ExecutorService")
+@GenerateParameters(id = TemplateConstants.EXECUTOR_TEMPLATE_ID,
+        name = "ExecutorService", ns = "Hazelcast.Client.Protocol.ExecutorService")
 public interface ExecutorServiceTemplate {
 
     @EncodeMethod(id = 1)

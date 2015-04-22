@@ -209,7 +209,7 @@ public class ClientMessage
      * @param flags The field value to set.
      * @return ClientMessage
      */
-    public ClientMessage setFlags(final short flags) {
+    public ClientMessage addFlag(final short flags) {
         uint8Put(offset() + FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
         return this;
     }
@@ -391,8 +391,7 @@ public class ClientMessage
         if (byteBuffer.remaining() < BitUtil.SIZE_OF_INT) {
             return 0;
         }
-        final int accumulatedBytesSize = accumulate(byteBuffer, BitUtil.SIZE_OF_INT);
-        return accumulatedBytesSize;
+        return accumulate(byteBuffer, BitUtil.SIZE_OF_INT);
     }
 
     private int accumulate(ByteBuffer byteBuffer, int length) {
@@ -419,5 +418,18 @@ public class ClientMessage
     @Override
     public boolean isUrgent() {
         return false;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ClientMessage{");
+        sb.append("correlationId=").append(getCorrelationId());
+        sb.append(", messageType=").append(getMessageType());
+        sb.append(", partitionId=").append(getPartitionId());
+        sb.append(", isComplete=").append(isComplete());
+        sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));
+        sb.append('}');
+        return sb.toString();
     }
 }

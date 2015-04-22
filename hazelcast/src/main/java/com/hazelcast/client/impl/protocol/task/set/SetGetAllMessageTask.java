@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetGetAllParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionGetAllOperation;
@@ -26,6 +27,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SerializableCollection;
+
 import java.security.Permission;
 
 /**
@@ -46,6 +49,11 @@ public class SetGetAllMessageTask
     @Override
     protected SetGetAllParameters decodeClientMessage(ClientMessage clientMessage) {
         return SetGetAllParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return DataCollectionResultParameters.encode(((SerializableCollection) response).getCollection());
     }
 
     @Override

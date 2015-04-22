@@ -20,7 +20,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 19, name = "TransactionalSet", ns = "Hazelcast.Client.Protocol.TransactionalSet")
+@GenerateParameters(id = TemplateConstants.TX_SET_TEMPLATE_ID,
+        name = "TransactionalSet", ns = "Hazelcast.Client.Protocol.TransactionalSet")
 public interface TransactionalSetTemplate {
 
     @EncodeMethod(id = 1)

@@ -43,7 +43,7 @@ public class MapMessageEncodeDecodeTest {
     public void shouldEncodeDecodeCorrectly_PUT() {
         final int calculatedSize = MapPutParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG);
         ClientMessage cmEncode = MapPutParameters.encode(NAME, DATA, DATA, THE_LONG, THE_LONG);
-        cmEncode.setVersion((short) 3).setFlags(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
+        cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
 
         byteBuffer = cmEncode.buffer();
         assertEquals(calculatedSize, cmEncode.getFrameLength());

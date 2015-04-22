@@ -57,7 +57,7 @@ public class EntryEventParameters {
         clientMessage.setMessageType(TYPE.id());
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(key).set(value).set(oldValue).set(mergingValue).set(eventType).set(uuid).set(numberOfAffectedEntries);
-        clientMessage.setFlags(ClientMessage.LISTENER_EVENT_FLAG);
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.updateFrameLength();
         return clientMessage;
     }

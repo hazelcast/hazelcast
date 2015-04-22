@@ -20,7 +20,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 17, name = "TransactionalQueue", ns = "Hazelcast.Client.Protocol.TransactionalQueue")
+@GenerateParameters(id = TemplateConstants.TX_QUEUE_TEMPLATE_ID,
+        name = "TransactionalQueue", ns = "Hazelcast.Client.Protocol.TransactionalQueue")
 public interface TransactionalQueueTemplate {
 
     @EncodeMethod(id = 1)

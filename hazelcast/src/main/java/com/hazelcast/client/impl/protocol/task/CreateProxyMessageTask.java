@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.CreateProxyParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -37,7 +38,7 @@ public class CreateProxyMessageTask extends AbstractCallableMessageTask<CreatePr
     protected ClientMessage call() {
         ProxyService proxyService = clientEngine.getProxyService();
         proxyService.initializeDistributedObject(parameters.serviceName, parameters.name);
-        return null;
+        return VoidResultParameters.encode();
     }
 
     @Override
