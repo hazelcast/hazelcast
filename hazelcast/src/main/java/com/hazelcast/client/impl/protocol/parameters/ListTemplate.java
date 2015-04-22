@@ -69,28 +69,28 @@ public interface ListTemplate {
     @EncodeMethod(id = 14)
     void addAllWithIndex(String name, int index, List<Data> valueList);
 
-    @EncodeMethod(id = 13)
+    @EncodeMethod(id = 15)
     void get(String name, int index);
 
-    @EncodeMethod(id = 14)
+    @EncodeMethod(id = 16)
     void set(String name, int index, Data value);
 
-    @EncodeMethod(id = 15)
+    @EncodeMethod(id = 17)
     void addWithIndex(String name, int index, Data value);
 
-    @EncodeMethod(id = 16)
+    @EncodeMethod(id = 18)
     void removeWithIndex(String name, int index, Data value);
 
-    @EncodeMethod(id = 17)
+    @EncodeMethod(id = 19)
     void lastIndexOf(String name, Data value);
 
-    @EncodeMethod(id = 18)
+    @EncodeMethod(id = 20)
     void indexOf(String name, Data value);
 
-    @EncodeMethod(id = 19)
+    @EncodeMethod(id = 21)
     void sub(String name, int from, int to);
 
-    @EncodeMethod(id = 19)
+    @EncodeMethod(id = 22)
     void iterator(String name);
 
 }

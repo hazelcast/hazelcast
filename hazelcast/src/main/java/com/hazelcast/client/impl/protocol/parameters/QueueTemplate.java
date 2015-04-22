@@ -28,61 +28,61 @@ public interface QueueTemplate {
     @EncodeMethod(id = 1)
     void offer(String name, Data value, long timeoutMillis);
 
-    @EncodeMethod(id = 1)
+    @EncodeMethod(id = 2)
     void put(String name, Data value);
 
-    @EncodeMethod(id = 2)
+    @EncodeMethod(id = 3)
     void size(String name);
 
-    @EncodeMethod(id = 3)
+    @EncodeMethod(id = 4)
     void remove(String name, Data value);
 
-    @EncodeMethod(id = 4)
+    @EncodeMethod(id = 5)
     void poll(String name, long timeoutMillis);
 
-    @EncodeMethod(id = 4)
+    @EncodeMethod(id = 6)
     void take(String name);
 
-    @EncodeMethod(id = 5)
+    @EncodeMethod(id = 7)
     void peek(String name);
 
-    @EncodeMethod(id = 6)
+    @EncodeMethod(id = 8)
     void iterator(String name);
 
-    @EncodeMethod(id = 7)
+    @EncodeMethod(id = 9)
     void drainTo(String name);
 
-    @EncodeMethod(id = 7)
+    @EncodeMethod(id = 10)
     void drainToMaxSize(String name, int maxSize);
 
-    @EncodeMethod(id = 8)
+    @EncodeMethod(id = 11)
     void contains(String name, Data value);
 
-    @EncodeMethod(id = 9)
+    @EncodeMethod(id = 12)
     void containsAll(String name, Collection<Data> dataList);
 
-    @EncodeMethod(id = 10)
+    @EncodeMethod(id = 13)
     void compareAndRemoveAll(String name, Collection<Data> dataList);
 
-    @EncodeMethod(id = 11)
+    @EncodeMethod(id = 14)
     void compareAndRetainAll(String name, Collection<Data> dataList);
 
-    @EncodeMethod(id = 12)
+    @EncodeMethod(id = 15)
     void clear(String name);
 
-    @EncodeMethod(id = 13)
+    @EncodeMethod(id = 16)
     void addAll(String name, Collection<Data> dataList);
 
-    @EncodeMethod(id = 14)
+    @EncodeMethod(id = 17)
     void addListener(String name, boolean includeValue);
 
-    @EncodeMethod(id = 15)
+    @EncodeMethod(id = 18)
     void removeListener(String name, String registrationId);
 
-    @EncodeMethod(id = 16)
+    @EncodeMethod(id = 19)
     void remainingCapacity(String name);
 
-    @EncodeMethod(id = 17)
+    @EncodeMethod(id = 20)
     void isEmpty(String name);
 
 }

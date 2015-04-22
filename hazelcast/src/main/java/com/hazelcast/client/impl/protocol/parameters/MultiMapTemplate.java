@@ -71,21 +71,21 @@ public interface MultiMapTemplate {
     @EncodeMethod(id = 16)
     void lock(String name, Data key, long threadId, long ttl);
 
-    @EncodeMethod(id = 19)
+    @EncodeMethod(id = 17)
     void tryLock(String name, Data key, long threadId, long timeout);
 
-    @EncodeMethod(id = 20)
+    @EncodeMethod(id = 18)
     void isLocked(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 21)
+    @EncodeMethod(id = 19)
     void unlock(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 22)
+    @EncodeMethod(id = 20)
     void forceUnlock(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 23)
+    @EncodeMethod(id = 21)
     void removeEntry(String name, Data key, Data value, long threadId);
 
-    @EncodeMethod(id = 24)
+    @EncodeMethod(id = 22)
     void valueCount(String name, Data key, long threadId);
 }
