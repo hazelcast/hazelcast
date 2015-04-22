@@ -387,7 +387,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 SocketChannelWrapper socketChannelWrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
                 final ClientConnection clientConnection = new ClientConnection(ClientConnectionManagerImpl.this, inSelector,
                         outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper,
-                        executionService, invocationService, client.getSerializationService());
+                        executionService, invocationService, client.getSerializationService(),
+                        client.getLifecycleService());
                 socketChannel.configureBlocking(true);
                 if (socketInterceptor != null) {
                     socketInterceptor.onConnect(socket);

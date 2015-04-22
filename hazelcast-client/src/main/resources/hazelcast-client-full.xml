@@ -35,7 +35,7 @@
         </cluster-members>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
-
+        <connection-attempt-limit>0</connection-attempt-limit>
         <socket-interceptor enabled="true">
             <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
             <properties>

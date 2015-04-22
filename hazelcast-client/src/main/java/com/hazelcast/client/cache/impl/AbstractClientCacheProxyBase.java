@@ -51,6 +51,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 abstract class AbstractClientCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
+
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
@@ -58,7 +59,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     protected final String nameWithPrefix;
 
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private final CacheLoader<K, V> cacheLoader;
+    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -68,8 +69,12 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.clientContext = clientContext;
+        init();
+    }
+
+    private void init() {
         if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         } else {
             cacheLoader = null;
@@ -119,6 +124,20 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         return isClosed.get();
     }
 
+    public boolean isDestroyed() {
+        return isDestroyed.get();
+    }
+
+    public void open() {
+        if (isDestroyed.get()) {
+            throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
+        }
+        if (!isClosed.compareAndSet(true, false)) {
+            return;
+        }
+        init();
+    }
+
     protected abstract void closeListeners();
     //endregion close&destroy
 
@@ -160,7 +179,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
+    protected void submitLoadAllTask(final CacheLoadAllRequest request,
+                                     final CompletionListener completionListener) {
         final LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
         final ClientExecutionService executionService = clientContext.getExecutionService();
 

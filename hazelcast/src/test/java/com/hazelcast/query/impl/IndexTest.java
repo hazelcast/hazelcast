@@ -121,6 +121,31 @@ public class IndexTest {
         assertEquals(1, is.query(new AndPredicate(new EqualPredicate("d", "1"), new EqualPredicate("bool", false))).size());
     }
 
+    @Test
+    public void testIndexWithNull() throws QueryException {
+        IndexService is = new IndexService();
+        Index strIndex = is.addOrGetIndex("str", true);
+
+        Data value = ss.toData(new MainPortable(false, 1, null));
+        Data key1 = ss.toData(0);
+        is.saveEntryIndex(new QueryEntry(ss, key1, key1, value));
+
+        value = ss.toData(new MainPortable(false, 2, null));
+        Data key2 = ss.toData(1);
+        is.saveEntryIndex(new QueryEntry(ss, key2, key2, value));
+
+
+        for (int i = 2; i < 1000; i++) {
+            Data key = ss.toData(i);
+            value = ss.toData(new MainPortable(false, 1 * (i + 1), "joe" + i));
+            is.saveEntryIndex(new QueryEntry(ss, key, key, value));
+        }
+
+        Comparable c = null;
+        assertEquals(2, strIndex.getRecords(c).size());
+        assertEquals(998, strIndex.getSubRecords(ComparisonType.NOT_EQUAL, null).size());
+    }
+
     private class TestPortableFactory implements PortableFactory {
 
         public Portable create(int classId) {

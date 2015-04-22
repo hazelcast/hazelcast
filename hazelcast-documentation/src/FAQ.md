@@ -352,5 +352,7 @@ The default number of process per users is 1024. Adding the following to your `$
 Repartitioning is the process of redistributing the partition ownerships. Hazelcast performs the repartitioning in the cases where a node leaves the cluster or joins to the cluster. If a repartitioning is to be happen while an entry processor is active in a node processing on an entry object, the repartitioning waits for the entry processor to complete its job.
 
 
+## What Does "Replica: 1 has no owner" Mean?
 
+When you start more nodes after the first one is started, you will see `replica: 1 has no owner` entry in the newly started node's log. There is no need to worry about it since it refers to a transitory state. It only means the replica partition is not ready/assigned yet and eventually it will be.
 

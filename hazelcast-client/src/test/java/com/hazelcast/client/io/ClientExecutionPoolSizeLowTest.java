@@ -94,6 +94,6 @@ public class ClientExecutionPoolSizeLowTest {
             }
         }
 
-        assertSizeEventually(COUNT, map);
+        assertSizeEventually(COUNT, map, 180);
     }
 }

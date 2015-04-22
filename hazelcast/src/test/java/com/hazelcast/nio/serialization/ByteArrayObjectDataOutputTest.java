@@ -54,6 +54,34 @@ public class ByteArrayObjectDataOutputTest {
         assertEquals(s, sb.toString());
     }
 
+    @Test
+    public void testUnsignedShort() throws IOException {
+        int unsignedShortV = Short.MAX_VALUE + 1;
+        ByteArrayObjectDataOutput dataOutput = new ByteArrayObjectDataOutput(2, mockSerializationService,
+                ByteOrder.BIG_ENDIAN);
+        dataOutput.writeShort(unsignedShortV);
+
+        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(dataOutput.toByteArray(),
+                mockSerializationService, ByteOrder.BIG_ENDIAN);
+        int readShort = dataInput.readUnsignedShort();
+
+        assertEquals(unsignedShortV, readShort);
+    }
+
+    @Test
+    public void testUnsignedByte() throws IOException {
+        int unsignedCharV = Byte.MAX_VALUE + 1;
+        ByteArrayObjectDataOutput dataOutput = new ByteArrayObjectDataOutput(2, mockSerializationService,
+                ByteOrder.BIG_ENDIAN);
+        dataOutput.writeByte(unsignedCharV);
+
+        ByteArrayObjectDataInput dataInput = new ByteArrayObjectDataInput(dataOutput.toByteArray(),
+                mockSerializationService, ByteOrder.BIG_ENDIAN);
+        int readByte = dataInput.readUnsignedByte();
+
+        assertEquals(unsignedCharV, readByte);
+    }
+
     private short readShort(byte[] buffer) {
         int mostSig = buffer[0] & 0xff;
         int leastSig = buffer[1] & 0xff;

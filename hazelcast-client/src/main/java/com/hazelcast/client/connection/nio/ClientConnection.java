@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientCallFuture;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -85,6 +86,7 @@ public class ClientConnection implements Connection, Closeable {
     private final SerializationService serializationService;
     private final ClientExecutionService executionService;
     private final ClientInvocationServiceImpl invocationService;
+    private final LifecycleService lifecycleService;
     private boolean readFromSocket = true;
     private final AtomicInteger packetCount = new AtomicInteger(0);
     private volatile boolean heartBeating = true;
@@ -93,12 +95,13 @@ public class ClientConnection implements Connection, Closeable {
                             int connectionId, SocketChannelWrapper socketChannelWrapper,
                             ClientExecutionService executionService,
                             ClientInvocationServiceImpl invocationService,
-                            SerializationService serializationService) throws IOException {
+                            SerializationService serializationService, LifecycleService lifecycleService) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = connectionManager;
         this.serializationService = serializationService;
         this.executionService = executionService;
         this.invocationService = invocationService;
+        this.lifecycleService = lifecycleService;
         this.socketChannelWrapper = socketChannelWrapper;
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
@@ -361,11 +364,6 @@ public class ClientConnection implements Connection, Closeable {
         if (!live) {
             return;
         }
-        try {
-            innerClose();
-        } catch (Exception e) {
-            logger.warning(e);
-        }
         String message = "Connection [" + socketChannelWrapper.socket().getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
@@ -373,7 +371,17 @@ public class ClientConnection implements Connection, Closeable {
             message += "Socket explicitly closed";
         }
 
-        logger.warning(message);
+        try {
+            innerClose();
+        } catch (Exception e) {
+            logger.warning(e);
+        }
+
+        if (lifecycleService.isRunning()) {
+            logger.warning(message);
+        } else {
+            logger.finest(message);
+        }
         if (!socketChannelWrapper.isBlocking()) {
             connectionManager.onConnectionClose(this);
         }
@@ -404,7 +412,7 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public boolean isHeartBeating() {
-        return heartBeating;
+        return live && heartBeating;
     }
 
     @Override

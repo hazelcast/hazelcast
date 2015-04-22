@@ -23,6 +23,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -33,10 +34,12 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -65,7 +68,9 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -120,6 +125,9 @@ public class TestFullApplicationContext {
 
     @Resource(name = "multiMap")
     private MultiMap multiMap;
+
+    @Resource(name = "replicatedMap")
+    private ReplicatedMap replicatedMap;
 
     @Resource(name = "queue")
     private IQueue queue;
@@ -449,6 +457,7 @@ public class TestFullApplicationContext {
         assertNotNull(map1);
         assertNotNull(map2);
         assertNotNull(multiMap);
+        assertNotNull(replicatedMap);
         assertNotNull(queue);
         assertNotNull(topic);
         assertNotNull(set);
@@ -463,6 +472,7 @@ public class TestFullApplicationContext {
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("testMultimap", multiMap.getName());
+        assertEquals("replicatedMap", replicatedMap.getName());
         assertEquals("testQ", queue.getName());
         assertEquals("testTopic", topic.getName());
         assertEquals("set", set.getName());
@@ -591,5 +601,46 @@ public class TestFullApplicationContext {
         GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
         assertNotNull(globalSerializerConfig);
         assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
+    }
+
+    @Test
+    public void testNativeMemoryConfig() {
+        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+        assertFalse(nativeMemoryConfig.isEnabled());
+        assertEquals(MemoryUnit.MEGABYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(20, nativeMemoryConfig.getPageSize());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED, nativeMemoryConfig.getAllocatorType());
+        assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
+        assertEquals(10, nativeMemoryConfig.getMinBlockSize());
+    }
+
+    @Test
+    public void testReplicatedMapConfig() {
+        assertNotNull(config);
+        assertEquals(1, config.getReplicatedMapConfigs().size());
+
+        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("replicatedMap");
+        assertNotNull(replicatedMapConfig);
+        assertEquals("replicatedMap", replicatedMapConfig.getName());
+        assertEquals(200, replicatedMapConfig.getReplicationDelayMillis());
+        assertEquals(16, replicatedMapConfig.getConcurrencyLevel());
+        assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
+        assertFalse(replicatedMapConfig.isStatisticsEnabled());
+        assertFalse(replicatedMapConfig.isAsyncFillup());
+
+        replicatedMapConfig.getListenerConfigs();
+        for (ListenerConfig listener : replicatedMapConfig.getListenerConfigs()) {
+            if (listener.getClassName() != null) {
+                assertNull(listener.getImplementation());
+                assertTrue(listener.isIncludeValue());
+                assertFalse(listener.isLocal());
+            } else {
+                assertNotNull(listener.getImplementation());
+                assertEquals(entryListener, listener.getImplementation());
+                assertTrue(listener.isLocal());
+                assertTrue(listener.isIncludeValue());
+            }
+        }
     }
 }

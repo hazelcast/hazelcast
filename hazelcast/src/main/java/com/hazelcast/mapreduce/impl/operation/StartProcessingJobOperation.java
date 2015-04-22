@@ -28,7 +28,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,17 +71,19 @@ public class StartProcessingJobOperation<K>
     public void run()
             throws Exception {
         MapReduceService mapReduceService = getService();
+        if (mapReduceService.unregisterJobSupervisorCancellation(name, jobId)) {
+            // Supervisor was cancelled prior to creation
+            AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(name);
+            TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
+            if (future != null) {
+                Exception exception = new CancellationException("Operation was cancelled by the user");
+                future.setResult(exception);
+            }
+            return;
+        }
+
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(name, jobId);
         if (supervisor == null) {
-            if (mapReduceService.unregisterJobSupervisorCancellation(name, jobId)) {
-                // Supervisor was cancelled prior to creation
-                AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.getJobTracker(name);
-                TrackableJobFuture future = jobTracker.unregisterTrackableJob(jobId);
-                if (future != null) {
-                    Exception exception = new CancellationException("Operation was cancelled by the user");
-                    future.setResult(exception);
-                }
-            }
             return;
         }
 

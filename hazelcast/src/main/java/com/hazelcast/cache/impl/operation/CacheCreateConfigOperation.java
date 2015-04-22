@@ -40,17 +40,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <li>Find partition id using the distributed object name of cache as a key.</li>
  * <li>Send the <code>CacheCreateConfigOperation</code> operation to the calculated partition which will force all
  * clusters to be single threaded.</li>
- * <li>{@link CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
+ * <li>{@link com.hazelcast.cache.impl.CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
  * </ul></p>
  * <p>This operation's purpose is to pass the required parameters into
- * {@link CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
+ * {@link com.hazelcast.cache.impl.CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
 
     private CacheConfig config;
-    private boolean isLocal;
+    private boolean createAlsoOnOthers = true;
 
     private boolean returnsResponse = true;
     private transient Object response;
@@ -59,13 +59,13 @@ public class CacheCreateConfigOperation
     }
 
     public CacheCreateConfigOperation(CacheConfig config) {
-        this(config, false);
+        this(config, true);
     }
 
-    public CacheCreateConfigOperation(CacheConfig config, boolean isLocal) {
+    public CacheCreateConfigOperation(CacheConfig config, boolean createAlsoOnOthers) {
         super(config.getNameWithPrefix());
         this.config = config;
-        this.isLocal = isLocal;
+        this.createAlsoOnOthers = createAlsoOnOthers;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class CacheCreateConfigOperation
         AbstractCacheService service = getService();
         response = service.createCacheConfigIfAbsent(config);
 
-        if (!isLocal && response == null) {
+        if (createAlsoOnOthers) {
             NodeEngine nodeEngine = getNodeEngine();
             Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
             int remoteNodeCount = members.size() - 1;
@@ -85,7 +85,7 @@ public class CacheCreateConfigOperation
                 OperationService operationService = nodeEngine.getOperationService();
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
-                        CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, true);
+                        CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, false);
                         operationService
                                 .createInvocationBuilder(AbstractCacheService.SERVICE_NAME, op, member.getAddress())
                                 .setCallback(callback)
@@ -135,7 +135,7 @@ public class CacheCreateConfigOperation
             throws IOException {
         super.writeInternal(out);
         out.writeObject(config);
-        out.writeBoolean(isLocal);
+        out.writeBoolean(createAlsoOnOthers);
     }
 
     @Override
@@ -143,7 +143,7 @@ public class CacheCreateConfigOperation
             throws IOException {
         super.readInternal(in);
         config = in.readObject();
-        isLocal = in.readBoolean();
+        createAlsoOnOthers = in.readBoolean();
     }
 
     @Override

@@ -486,7 +486,7 @@ public final class BasicOperationScheduler {
         }
     }
 
-    private class ResponseThread extends Thread {
+    private class ResponseThread extends Thread implements NIOThread {
         private final BlockingQueue<Packet> workQueue = new LinkedBlockingQueue<Packet>();
         // field is only written by the response-thread itself, but can be read by other threads.
         private volatile long processedResponses;
