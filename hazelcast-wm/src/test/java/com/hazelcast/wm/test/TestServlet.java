@@ -90,6 +90,11 @@ public class TestServlet extends HttpServlet {
         } else if (req.getRequestURI().endsWith("isNew")) {
             session = req.getSession();
             resp.getWriter().write(session.isNew() == true ? "true" : "false");
+        } else if (req.getRequestURI().endsWith("issue5186_remove_then_set")) {
+            session = req.getSession();
+            session.removeAttribute("key");
+            session.setAttribute("key", "value-changed");
+            resp.getWriter().write("true");
         }
     }
 }
