@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.Clock;
 
 import java.util.List;
 
@@ -35,11 +34,6 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
 
     protected AbstractMapServiceContextSupport(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-    }
-
-    @Override
-    public long getNow() {
-        return Clock.currentTimeMillis();
     }
 
     @Override
