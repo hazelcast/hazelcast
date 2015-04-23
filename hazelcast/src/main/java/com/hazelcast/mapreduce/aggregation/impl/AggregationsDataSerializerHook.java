@@ -88,8 +88,11 @@ public class AggregationsDataSerializerHook
     public static final int KEY_PREDICATE_SUPPLIER = 52;
     public static final int PREDICATE_SUPPLIER = 53;
     public static final int AVG_TUPLE = 54;
+    public static final int COMPARABLE_MINMAX_COMBINER_FACTORY = 55;
+    public static final int COMPARABLE_MINMAX_REDUCER_FACTORY = 56;
+    public static final int MINMAX_TUPLE = 57;
 
-    private static final int LEN = AVG_TUPLE + 1;
+    private static final int LEN = MINMAX_TUPLE + 1;
 
     @Override
     public int getFactoryId() {
@@ -127,6 +130,12 @@ public class AggregationsDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AvgTuple();
+            }
+        };
+        constructors[MINMAX_TUPLE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MinMaxTuple();
             }
         };
         constructors[BIG_DECIMAL_AVG_COMBINER_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -247,6 +256,18 @@ public class AggregationsDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ComparableMinAggregation.ComparableMinReducerFactory();
+            }
+        };
+        constructors[COMPARABLE_MINMAX_COMBINER_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ComparableMinMaxAggregation.ComparableMinMaxCombinerFactory();
+            }
+        };
+        constructors[COMPARABLE_MINMAX_REDUCER_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ComparableMinMaxAggregation.ComparableMinMaxReducerFactory();
             }
         };
         constructors[COUNT_COMBINER_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
