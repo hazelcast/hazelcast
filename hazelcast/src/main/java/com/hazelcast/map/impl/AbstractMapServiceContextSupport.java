@@ -27,6 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.List;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 abstract class AbstractMapServiceContextSupport implements MapServiceContext {
 
@@ -191,7 +192,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
     public String addLocalEventListener(Object listener, String mapName) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(serviceName(), mapName, listenerAdaptor);
+                registerLocalListener(SERVICE_NAME, mapName, listenerAdaptor);
         return registration.getId();
     }
 
@@ -199,7 +200,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
     public String addLocalEventListener(Object listener, EventFilter eventFilter, String mapName) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerLocalListener(serviceName(), mapName, eventFilter, listenerAdaptor);
+                registerLocalListener(SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
@@ -207,7 +208,7 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
     public String addEventListener(Object listener, EventFilter eventFilter, String mapName) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
-                registerListener(serviceName(), mapName, eventFilter, listenerAdaptor);
+                registerListener(SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
         return registration.getId();
     }
 
@@ -215,19 +216,19 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContext {
     public String addPartitionLostListener(MapPartitionLostListener listener, String mapName) {
         final ListenerAdapter listenerAdapter = new InternalMapPartitionLostListenerAdapter(listener);
         final EventFilter filter = new MapPartitionLostEventFilter();
-        final EventRegistration registration = nodeEngine.getEventService().registerListener(serviceName(), mapName, filter,
+        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, filter,
                 listenerAdapter);
         return registration.getId();
     }
 
     @Override
     public boolean removeEventListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(serviceName(), mapName, registrationId);
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     @Override
     public boolean removePartitionLostListener(String mapName, String registrationId) {
-        return nodeEngine.getEventService().deregisterListener(serviceName(), mapName, registrationId);
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
 }

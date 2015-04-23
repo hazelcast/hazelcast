@@ -37,6 +37,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 class MapEventPublisherSupport implements MapEventPublisher {
 
     protected final MapServiceContext mapServiceContext;
@@ -50,7 +52,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         MapReplicationUpdate replicationEvent = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(),
                 entryView);
-        mapContainer.getWanReplicationPublisher().publishReplicationEvent(mapServiceContext.serviceName(), replicationEvent);
+        mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
     @Override
@@ -220,9 +222,8 @@ class MapEventPublisherSupport implements MapEventPublisher {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final EventService eventService = nodeEngine.getEventService();
-        final String serviceName = mapServiceContext.serviceName();
 
-        return eventService.getRegistrations(serviceName, mapName);
+        return eventService.getRegistrations(SERVICE_NAME, mapName);
     }
 
     private int pickOrderKey(Data key) {
@@ -250,9 +251,8 @@ class MapEventPublisherSupport implements MapEventPublisher {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final EventService eventService = nodeEngine.getEventService();
-        final String serviceName = mapServiceContext.serviceName();
 
-        eventService.publishEvent(serviceName, registrations, eventData, orderKey);
+        eventService.publishEvent(SERVICE_NAME, registrations, eventData, orderKey);
     }
 
     private String getThisNodesAddress() {
@@ -296,9 +296,8 @@ class MapEventPublisherSupport implements MapEventPublisher {
     void publishWanReplicationEventInternal(String mapName, ReplicationEventObject event) {
         final MapServiceContext mapServiceContext = this.mapServiceContext;
         final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        final String serviceName = mapServiceContext.serviceName();
         final WanReplicationPublisher wanReplicationPublisher = mapContainer.getWanReplicationPublisher();
-        wanReplicationPublisher.publishReplicationEvent(serviceName, event);
+        wanReplicationPublisher.publishReplicationEvent(SERVICE_NAME, event);
     }
 
     private EntryEventData createEntryEventData(String mapName, Address caller,
@@ -309,7 +308,7 @@ class MapEventPublisherSupport implements MapEventPublisher {
                 dataKey, dataNewValue, dataOldValue, dataMergingValue, eventType);
     }
 
-    private static enum Result {
+    private enum Result {
         VALUE_INCLUDED,
         NO_VALUE_INCLUDED,
         NONE

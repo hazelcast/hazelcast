@@ -44,6 +44,7 @@ import java.util.AbstractMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
@@ -239,9 +240,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     private boolean hasRegisteredListenerForThisMap() {
-        final String serviceName = mapService.getMapServiceContext().serviceName();
         final EventService eventService = getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, name);
+        return eventService.hasEventRegistration(SERVICE_NAME, name);
     }
 
     /**

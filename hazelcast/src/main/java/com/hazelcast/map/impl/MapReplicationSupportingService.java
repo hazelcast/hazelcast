@@ -29,6 +29,8 @@ import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 class MapReplicationSupportingService implements ReplicationSupportingService {
 
     private final MapServiceContext mapServiceContext;
@@ -53,7 +55,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
                 Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
+                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
                 f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -65,7 +67,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
                 Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
+                        .invokeOnPartition(SERVICE_NAME, operation, partitionId);
                 f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

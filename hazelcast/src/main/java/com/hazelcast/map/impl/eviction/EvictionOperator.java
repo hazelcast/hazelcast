@@ -33,6 +33,8 @@ import com.hazelcast.util.MemoryInfoAccessor;
 import java.util.Arrays;
 import java.util.Iterator;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 /**
  * Eviction helper methods.
  */
@@ -163,9 +165,8 @@ public final class EvictionOperator {
     }
 
     private boolean hasListener(String mapName) {
-        final String serviceName = mapServiceContext.serviceName();
         final EventService eventService = mapServiceContext.getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, mapName);
+        return eventService.hasEventRegistration(SERVICE_NAME, mapName);
     }
 
     private boolean evictIfNotLocked(Data key, RecordStore recordStore, boolean backup) {
