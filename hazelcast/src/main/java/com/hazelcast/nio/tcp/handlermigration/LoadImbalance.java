@@ -31,7 +31,7 @@ import java.util.Set;
  *
  *
  */
-class BalancerState {
+class LoadImbalance {
     //number of events recorded by the busiest IOSelector
     long maximumEvents;
     //number of events recorded by the least busy IOSelector
@@ -44,7 +44,7 @@ class BalancerState {
     private final Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
     private final ItemCounter<MigratableHandler> handlerEventsCounter;
 
-    BalancerState(Map<IOSelector, Set<MigratableHandler>> selectorToHandlers,
+    LoadImbalance(Map<IOSelector, Set<MigratableHandler>> selectorToHandlers,
                   ItemCounter<MigratableHandler> handlerEventsCounter) {
         this.selectorToHandlers = selectorToHandlers;
         this.handlerEventsCounter = handlerEventsCounter;
@@ -62,7 +62,7 @@ class BalancerState {
      * @param handler
      * @return number of events recorded by the handler
      */
-    long getNoOfEvents(MigratableHandler handler) {
+    long getEventCount(MigratableHandler handler) {
         return handlerEventsCounter.get(handler);
     }
 }
