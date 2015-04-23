@@ -23,6 +23,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import org.junit.Assert;
@@ -199,6 +200,7 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
+    @Category(NightlyTest.class)
     @Test(timeout = 100000)
     public void testLockEvictionWithMigration() throws Exception {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
