@@ -32,14 +32,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static com.hazelcast.util.StringUtil.getLineSeperator;
 
 /**
- * Calculates a state describing utilization of IOSelector(s) and creates a mapping between IOSelector -> Handler.
+ * Tracks the load of of IOSelector(s) and creates a mapping between IOSelector -> Handler.
  *
  * This class is not thread-safe with the exception of
  * {@link #addHandler(MigratableHandler)}   and
  * {@link #removeHandler(MigratableHandler)}
  *
  */
-class IOSelectorLoadCalculator {
+class LoadTracker {
     private final ILogger log;
 
     //all known IO selectors. we assume no. of selectors is constant during a lifespan of a member
@@ -57,10 +57,10 @@ class IOSelectorLoadCalculator {
     //contains all known handlers
     private final Set<MigratableHandler> handlers = new CopyOnWriteArraySet<MigratableHandler>();
 
-    private final BalancerState state;
+    private final LoadImbalance imbalance;
 
-    IOSelectorLoadCalculator(AbstractIOSelector[] selectors, LoggingService loggingService) {
-        this.log = loggingService.getLogger(IOSelectorLoadCalculator.class);
+    LoadTracker(AbstractIOSelector[] selectors, LoggingService loggingService) {
+        this.log = loggingService.getLogger(LoadTracker.class);
 
         this.selectors = new AbstractIOSelector[selectors.length];
         System.arraycopy(selectors, 0, this.selectors, 0, selectors.length);
@@ -69,48 +69,48 @@ class IOSelectorLoadCalculator {
         for (AbstractIOSelector selector : selectors) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }
-        this.state = new BalancerState(selectorToHandlers, handlerEventsCounter);
+        this.imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
     }
 
     /**
-     * Recalculates a new state. Returned instance of {@link com.hazelcast.nio.tcp.handlermigration.BalancerState} are recycled
+     * Recalculates a new LoadStatus. Returned instance of {@link LoadImbalance} are recycled
      * between invocations therefore they are valid for the last invocation only.
      *
-     * @return recalculated state
+     * @return recalculated imbalance
      */
-    BalancerState getState() {
-        clearWorkingState();
-        calculateNewWorkingState();
-        calculateNewFinalState();
+    LoadImbalance updateImbalance() {
+        clearWorkingImbalance();
+        updateNewWorkingImbalance();
+        updateNewFinalImbalance();
         printDebugTable();
-        return state;
+        return imbalance;
     }
 
-    private void calculateNewFinalState() {
-        state.minimumEvents = Long.MAX_VALUE;
-        state.maximumEvents = Long.MIN_VALUE;
-        state.sourceSelector = null;
-        state.destinationSelector = null;
+    private void updateNewFinalImbalance() {
+        imbalance.minimumEvents = Long.MAX_VALUE;
+        imbalance.maximumEvents = Long.MIN_VALUE;
+        imbalance.sourceSelector = null;
+        imbalance.destinationSelector = null;
         for (AbstractIOSelector selector : selectors) {
             long eventCount = selectorEvents.get(selector);
-            if (eventCount > state.maximumEvents) {
-                state.maximumEvents = eventCount;
-                state.sourceSelector = selector;
+            if (eventCount > imbalance.maximumEvents) {
+                imbalance.maximumEvents = eventCount;
+                imbalance.sourceSelector = selector;
             }
-            if (eventCount < state.minimumEvents) {
-                state.minimumEvents = eventCount;
-                state.destinationSelector = selector;
+            if (eventCount < imbalance.minimumEvents) {
+                imbalance.minimumEvents = eventCount;
+                imbalance.destinationSelector = selector;
             }
         }
     }
 
-    private void calculateNewWorkingState() {
+    private void updateNewWorkingImbalance() {
         for (MigratableHandler handler : handlers) {
-            calculateHandlerState(handler);
+            updateHandlerState(handler);
         }
     }
 
-    private void calculateHandlerState(MigratableHandler handler) {
+    private void updateHandlerState(MigratableHandler handler) {
         long handlerEventCount = getEventCountSinceLastCheck(handler);
         handlerEventsCounter.set(handler, handlerEventCount);
         IOSelector owner = handler.getOwner();
@@ -120,12 +120,12 @@ class IOSelectorLoadCalculator {
     }
 
     private long getEventCountSinceLastCheck(MigratableHandler handler) {
-        long totalNoOfEvents = handler.getEventCount();
-        Long lastNoOfEvents = lastEventCounter.getAndSet(handler, totalNoOfEvents);
-        return totalNoOfEvents - lastNoOfEvents;
+        long eventCount = handler.getEventCount();
+        Long lastEventCount = lastEventCounter.getAndSet(handler, eventCount);
+        return eventCount - lastEventCount;
     }
 
-    private void clearWorkingState() {
+    private void clearWorkingImbalance() {
         handlerEventsCounter.reset();
         selectorEvents.reset();
         for (Set<MigratableHandler> handlerSet : selectorToHandlers.values()) {
@@ -146,30 +146,30 @@ class IOSelectorLoadCalculator {
             return;
         }
 
-        IOSelector minSelector = state.destinationSelector;
-        IOSelector maxSelector = state.sourceSelector;
+        IOSelector minSelector = imbalance.destinationSelector;
+        IOSelector maxSelector = imbalance.sourceSelector;
         if (minSelector == null || maxSelector == null) {
             return;
         }
         StringBuilder sb = new StringBuilder(getLineSeperator())
                 .append("------------")
                 .append(getLineSeperator());
-        Long noOfEventsPerSelector = selectorEvents.get(minSelector);
+        Long eventCountPerSelector = selectorEvents.get(minSelector);
 
         sb.append("Min Selector ")
                 .append(minSelector)
                 .append(" received ")
-                .append(noOfEventsPerSelector)
+                .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ").
                 append(getLineSeperator());
         appendSelectorInfo(minSelector, selectorToHandlers, sb);
 
-        noOfEventsPerSelector = selectorEvents.get(maxSelector);
+        eventCountPerSelector = selectorEvents.get(maxSelector);
         sb.append("Max Selector ")
                 .append(maxSelector)
                 .append(" received ")
-                .append(noOfEventsPerSelector)
+                .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ")
                 .append(getLineSeperator());
@@ -180,11 +180,11 @@ class IOSelectorLoadCalculator {
 
         for (AbstractIOSelector selector : selectors) {
             if (!selector.equals(minSelector) && !selector.equals(maxSelector)) {
-                noOfEventsPerSelector = selectorEvents.get(selector);
+                eventCountPerSelector = selectorEvents.get(selector);
                 sb.append("Selector ")
                         .append(selector)
                         .append(" contains ")
-                        .append(noOfEventsPerSelector)
+                        .append(eventCountPerSelector)
                         .append(" and has these handlers: ")
                         .append(getLineSeperator());
                 appendSelectorInfo(selector, selectorToHandlers, sb);
@@ -199,10 +199,10 @@ class IOSelectorLoadCalculator {
             Set<MigratableHandler>> selectorToHandlers, StringBuilder sb) {
         Set<MigratableHandler> handlerSet = selectorToHandlers.get(minSelector);
         for (MigratableHandler selectionHandler : handlerSet) {
-            Long noOfEventsPerHandler = handlerEventsCounter.get(selectionHandler);
+            Long eventCountPerHandler = handlerEventsCounter.get(selectionHandler);
             sb.append(selectionHandler)
                     .append(":  ")
-                    .append(noOfEventsPerHandler)
+                    .append(eventCountPerHandler)
                     .append(getLineSeperator());
         }
         sb.append(getLineSeperator());

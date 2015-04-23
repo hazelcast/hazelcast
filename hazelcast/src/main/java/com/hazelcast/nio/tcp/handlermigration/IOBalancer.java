@@ -61,8 +61,8 @@ public class IOBalancer {
     private final int migrationIntervalSeconds;
     private final MigrationStrategy strategy;
 
-    private final IOSelectorLoadCalculator inCalculator;
-    private final IOSelectorLoadCalculator outCalculator;
+    private final LoadTracker inLoadTracker;
+    private final LoadTracker outLoadTracker;
 
     private final HazelcastThreadGroup threadGroup;
     private volatile boolean isActive;
@@ -74,8 +74,8 @@ public class IOBalancer {
         this.strategy = new MigrationStrategy();
         this.threadGroup = threadGroup;
 
-        this.inCalculator = new IOSelectorLoadCalculator(inSelectors, loggingService);
-        this.outCalculator = new IOSelectorLoadCalculator(outSelectors, loggingService);
+        this.inLoadTracker = new LoadTracker(inSelectors, loggingService);
+        this.outLoadTracker = new LoadTracker(outSelectors, loggingService);
 
         this.isActive = shouldStart(inSelectors, outSelectors);
     }
@@ -89,13 +89,13 @@ public class IOBalancer {
         if (log.isFinestEnabled()) {
             log.finest("Adding a read handler " + readHandler);
         }
-        inCalculator.addHandler(readHandler);
+        inLoadTracker.addHandler(readHandler);
 
         WriteHandler writeHandler = ((TcpIpConnection) connection).getWriteHandler();
         if (log.isFinestEnabled()) {
             log.info("Adding a write handler " + writeHandler);
         }
-        outCalculator.addHandler(writeHandler);
+        outLoadTracker.addHandler(writeHandler);
     }
 
     public void connectionRemoved(Connection connection) {
@@ -107,13 +107,13 @@ public class IOBalancer {
         if (log.isFinestEnabled()) {
             log.finest("Removing a read handler " + readHandler);
         }
-        inCalculator.removeHandler(readHandler);
+        inLoadTracker.removeHandler(readHandler);
 
         WriteHandler writeHandler = ((TcpIpConnection) connection).getWriteHandler();
         if (log.isFinestEnabled()) {
             log.finest("Removing a write handler " + readHandler);
         }
-        outCalculator.removeHandler(writeHandler);
+        outLoadTracker.removeHandler(writeHandler);
     }
 
     public void stop() {
@@ -121,26 +121,26 @@ public class IOBalancer {
     }
 
     public void start() {
-        Thread migratorThread = new IOBalancerThread();
-        migratorThread.start();
+        Thread ioBalancerThread = new IOBalancerThread();
+        ioBalancerThread.start();
     }
 
     private void checkWriteHandlers() {
-        scheduleMigrationIfNeeded(outCalculator);
+        scheduleMigrationIfNeeded(outLoadTracker);
     }
 
     private void checkReadHandlers() {
-        scheduleMigrationIfNeeded(inCalculator);
+        scheduleMigrationIfNeeded(inLoadTracker);
     }
 
-    public void scheduleMigrationIfNeeded(IOSelectorLoadCalculator stateCalculator) {
-        BalancerState balancerState = stateCalculator.getState();
-        if (strategy.shouldAttemptToScheduleMigration(balancerState)) {
-            tryToMigrate(balancerState);
+    public void scheduleMigrationIfNeeded(LoadTracker loadTracker) {
+        LoadImbalance loadImbalance = loadTracker.updateImbalance();
+        if (strategy.imbalanceDetected(loadImbalance)) {
+            tryMigrate(loadImbalance);
         } else {
             if (log.isFinestEnabled()) {
-                long min = balancerState.minimumEvents;
-                long max = balancerState.maximumEvents;
+                long min = loadImbalance.minimumEvents;
+                long max = loadImbalance.maximumEvents;
                 log.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
             }
         }
@@ -163,16 +163,16 @@ public class IOBalancer {
         return true;
     }
 
-    private void tryToMigrate(BalancerState balancerState) {
-        MigratableHandler handler = strategy.findHandlerToMigrate(balancerState);
+    private void tryMigrate(LoadImbalance loadImbalance) {
+        MigratableHandler handler = strategy.findHandlerToMigrate(loadImbalance);
         if (handler == null) {
             log.finest("There had been I/O imbalance detected, but no suitable migration candidate was found.");
             return;
         }
 
-        IOSelector destinationSelector = balancerState.destinationSelector;
+        IOSelector destinationSelector = loadImbalance.destinationSelector;
         if (log.isFinestEnabled()) {
-            IOSelector sourceSelector = balancerState.sourceSelector;
+            IOSelector sourceSelector = loadImbalance.sourceSelector;
             log.finest("Scheduling a migration of a handler " + handler
                     + " from a selector thread " + sourceSelector + " to " + destinationSelector);
         }
