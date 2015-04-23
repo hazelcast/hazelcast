@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evictable via its accessor (key or id).
+ * Interface for entries, records or whatever that can be evicted via its accessor (key or id).
  *
  * @param <A> Type of the accessor
  * @param <E> Type of the {@link com.hazelcast.cache.impl.eviction.Evictable} value
@@ -29,9 +29,9 @@ public interface EvictionListener<A, E extends Evictable> {
     /**
      * Called when an {@link com.hazelcast.cache.impl.eviction.Evictable} entry is evicted.
      *
-     * @param evictedEntryAccessor  Accessor of {@link com.hazelcast.cache.impl.eviction.Evictable} entry
-     *                              which is evicted
-     * @param evictedEntry          {@link com.hazelcast.cache.impl.eviction.Evictable} entry which is evicted
+     * @param evictedEntryAccessor  Accessor of the {@link com.hazelcast.cache.impl.eviction.Evictable} entry
+     *                              that is evicted.
+     * @param evictedEntry          {@link com.hazelcast.cache.impl.eviction.Evictable} entry that is evicted.
      */
     void onEvict(A evictedEntryAccessor, E evictedEntry);
 

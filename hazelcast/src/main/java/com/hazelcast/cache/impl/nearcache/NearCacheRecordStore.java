@@ -20,7 +20,7 @@ import com.hazelcast.monitor.NearCacheStats;
 
 /**
  * {@link NearCacheRecordStore} is the contract point to store keys and values as
- * {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord} internally and serve them.
+ * {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord} internally and to serve them.
  *
  * @param <K> the type of the key
  * @param <V> the type of the value
@@ -30,24 +30,24 @@ public interface NearCacheRecordStore<K, V> {
     /**
      * Gets the value associated with the given <code>key</code>.
      *
-     * @param key the key of the requested value
-     * @return the value associated with the given <code>key</code>
+     * @param key the key from which to get the associated value.
+     * @return the value associated with the given <code>key</code>.
      */
     V get(K key);
 
     /**
-     * Puts the value as associated with the given <code>key</code>.
+     * Puts (associates) a value with the given <code>key</code>.
      *
-     * @param key   the key of the value will be stored
-     * @param value the value will be stored
+     * @param key   the key to which the given value will be associated.
+     * @param value the value that will be associated with the key.
      */
     void put(K key, V value);
 
     /**
      * Removes the value associated with the given <code>key</code>.
      *
-     * @param key the key of the value will be removed
-     * @return <code>true</code> if value was removed, otherwise <code>false</code>
+     * @param key the key from which the value will be removed.
+     * @return <code>true</code> if the value was removed, otherwise <code>false</code>.
      */
     boolean remove(K key);
 
@@ -57,34 +57,34 @@ public interface NearCacheRecordStore<K, V> {
     void clear();
 
     /**
-     * Clears record store and destroy it.
+     * Clears the record store and destroys it.
      */
     void destroy();
 
     /**
-     * Get the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store.
+     * Get the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
      *
-     * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store
+     * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this record store.
      */
     NearCacheStats getNearCacheStats();
 
     /**
-     * Selects the best candidate object between given <code>candidates</code> to store.
+     * Selects the best candidate object to store from the given <code>candidates</code>.
      *
-     * @param candidates the candidates where the best one will be selected
-     * @return the best candidate object between given <code>candidates</code> to store
+     * @param candidates the candidates from which the best candidate object will be selected.
+     * @return the best candidate object to store, selected from the given <code>candidates</code>.
      */
     Object selectToSave(Object... candidates);
 
     /**
-     * Gets the count of stored records.
+     * Gets the number of stored records.
      *
-     * @return the count of stored records
+     * @return the number of stored records.
      */
     int size();
 
     /**
-     * Does expiration and evicts expired records.
+     * Performs expiration and evicts expired records.
      */
     void doExpiration();
 

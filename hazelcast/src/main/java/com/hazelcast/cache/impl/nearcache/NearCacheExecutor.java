@@ -30,12 +30,12 @@ public interface NearCacheExecutor {
     /**
      * Creates and executes a periodic action that becomes enabled first after the given initial delay.
      *
-     * @param command       the task to execute
-     * @param initialDelay  the time to delay first execution
-     * @param delay         the delay between the termination of one execution and the commencement of the next
-     * @param unit          the time unit of the <code>initialDelay</code> and delay parameters
+     * @param command       the task to execute.
+     * @param initialDelay  the time to delay the first execution of the task.
+     * @param delay         the delay between the termination of one task and the commencement of the next task.
+     * @param unit          the time unit of the <code>initialDelay</code> and <code>delay</code> parameters.
      *
-     * @return the {@link ScheduledFuture} instance representing pending completion of the task
+     * @return the {@link ScheduledFuture} instance representing the pending completion of the task.
      */
     ScheduledFuture<?> scheduleWithFixedDelay(Runnable command,
                                               long initialDelay,
