@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.ValidationUtil;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -32,7 +33,6 @@ import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
@@ -52,7 +52,7 @@ public class CacheConfig<K, V>
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
 
     private NearCacheConfig nearCacheConfig;
 
@@ -77,7 +77,7 @@ public class CacheConfig<K, V>
             this.inMemoryFormat = config.inMemoryFormat;
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
-                this.evictionConfig = config.evictionConfig;
+                this.evictionConfig = new EvictionConfig(config.evictionConfig);
             }
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
@@ -114,7 +114,10 @@ public class CacheConfig<K, V>
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
         // Eviction config cannot be null
         if (simpleConfig.getEvictionConfig() != null) {
-            this.evictionConfig = simpleConfig.getEvictionConfig();
+            this.evictionConfig = new EvictionConfig(simpleConfig.getEvictionConfig());
+        }
+        if (simpleConfig.getNearCacheConfig() != null) {
+            this.nearCacheConfig = new NearCacheConfig(simpleConfig.getNearCacheConfig());
         }
         if (simpleConfig.getWanReplicationRef() != null) {
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
@@ -235,10 +238,10 @@ public class CacheConfig<K, V>
      */
     public CacheConfig<K, V> setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
+            throw new IllegalArgumentException("Cache backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
         }
         if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
+            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
         }
         this.backupCount = backupCount;
         return this;
@@ -264,10 +267,10 @@ public class CacheConfig<K, V>
      */
     public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
+            throw new IllegalArgumentException("Cache async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
         }
         if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
+            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
         }
         this.asyncBackupCount = asyncBackupCount;
         return this;
@@ -283,25 +286,24 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the {@link CacheEvictionConfig} instance for eviction configuration of the cache config.
+     * Gets the {@link EvictionConfig} instance for eviction configuration of the cache config.
      *
-     * @return the {@link CacheEvictionConfig} instance for eviction configuration
+     * @return the {@link EvictionConfig} instance for eviction configuration
      */
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
     /**
-     * Sets the {@link CacheEvictionConfig} instance for eviction configuration of the cache config.
+     * Sets the {@link EvictionConfig} instance for eviction configuration of the cache config.
      *
-     * @param evictionConfig the {@link CacheEvictionConfig} instance for eviction configuration to set
+     * @param evictionConfig the {@link EvictionConfig} instance for eviction configuration to set
      * @return current cache config instance
      */
-    public CacheConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
-        // Eviction config cannot be null
-        if (evictionConfig != null) {
-            this.evictionConfig = evictionConfig;
-        }
+    public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        ValidationUtil.isNotNull(evictionConfig, "Eviction config cannot be null !");
+
+        this.evictionConfig = evictionConfig;
         return this;
     }
 
@@ -354,7 +356,9 @@ public class CacheConfig<K, V>
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
+        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+
+        this.inMemoryFormat = inMemoryFormat;
         return this;
     }
 

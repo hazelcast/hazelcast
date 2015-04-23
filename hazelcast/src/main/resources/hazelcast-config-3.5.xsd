@@ -338,7 +338,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="eviction" type="cache-eviction" minOccurs="0" maxOccurs="1">
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
                         When maximum size is reached, cache is evicted based on the eviction policy
@@ -367,7 +367,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Wan replication configuration for cache
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Near-Cache configuration for cache
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
 
         <xs:attribute name="name" use="required">
@@ -1104,24 +1117,10 @@
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
             <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
         </xs:all>
+        <xs:attribute name="name" use="optional" type="xs:string" default="default"/>
     </xs:complexType>
-    <xs:simpleType name="eviction-policy">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="LRU"/>
-            <xs:enumeration value="LFU"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    <xs:simpleType name="cache-eviction-policy">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="RANDOM"/>
-            <xs:enumeration value="LRU"/>
-            <xs:enumeration value="LFU"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:simpleType name="in-memory-format">
         <xs:restriction base="non-space-string">
@@ -1300,7 +1299,15 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="cache-max-size-policy">
+    <xs:simpleType name="eviction-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="LRU"/>
+            <xs:enumeration value="LFU"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="max-size-policy">
         <xs:restriction base="xs:string">
             <xs:enumeration value="ENTRY_COUNT"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
@@ -1310,9 +1317,9 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="cache-eviction">
+    <xs:complexType name="eviction">
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
-        <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
     </xs:complexType>
 

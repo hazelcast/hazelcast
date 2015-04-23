@@ -71,6 +71,12 @@ public abstract class ClientNearCacheTestSupport {
         return new ClientConfig();
     }
 
+    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
+        return new NearCacheConfig()
+                        .setName(DEFAULT_CACHE_NAME)
+                        .setInMemoryFormat(inMemoryFormat);
+    }
+
     protected class NearCacheTestContext {
 
         protected final HazelcastClientProxy client;
@@ -142,8 +148,7 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected void putAndGetFromCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         final NearCacheTestContext nearCacheTestContext =
                 createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
 
@@ -174,8 +179,7 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected void putToCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
         NearCacheTestContext nearCacheTestContext =
                 createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
@@ -190,9 +194,8 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
         final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
 
@@ -257,9 +260,8 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected void putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
         final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
 
@@ -308,9 +310,8 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected void putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
         final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
 

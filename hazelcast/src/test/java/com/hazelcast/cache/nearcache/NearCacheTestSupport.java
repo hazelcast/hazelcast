@@ -45,6 +45,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         protected final Object selectedCandidateToSave = new Object();
         protected int latestSize;
         protected volatile boolean doExpirationCalled;
+        protected boolean doEvictionIfRequiredCalled;
 
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
@@ -129,6 +130,14 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             doExpirationCalled = true;
         }
 
+        @Override
+        public void doEvictionIfRequired() {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
+            doEvictionIfRequiredCalled = true;
+        }
+
     }
 
     protected Map<Integer, String> generateRandomKeyValueMappings() {
@@ -174,7 +183,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         }
     }
 
-    protected void doPutFromNearCache() {
+    protected void doPutToNearCache() {
         Map<Integer, String> expectedKeyValueMappings = new HashMap<Integer, String>();
         ManagedNearCacheRecordStore managedNearCacheRecordStore =
                 createManagedNearCacheRecordStore(expectedKeyValueMappings);
@@ -368,6 +377,19 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
                 assertTrue(managedNearCacheRecordStore.doExpirationCalled);
             }
         });
+    }
+
+    protected void doPutToNearCacheStatsAndSeeEvictionCheckIsDone() {
+        ManagedNearCacheRecordStore managedNearCacheRecordStore =
+                createManagedNearCacheRecordStore();
+        NearCache<Integer, String> nearCache =
+                createNearCache(DEFAULT_NEAR_CACHE_NAME, managedNearCacheRecordStore);
+
+        nearCache.put(1, "1");
+
+        // Show that NearCache checks eviction from specified NearCacheRecordStore
+
+        assertTrue(managedNearCacheRecordStore.doEvictionIfRequiredCalled);
     }
 
 }

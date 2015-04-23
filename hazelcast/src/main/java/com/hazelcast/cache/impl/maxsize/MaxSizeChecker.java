@@ -17,15 +17,15 @@
 package com.hazelcast.cache.impl.maxsize;
 
 /**
- * Interface for implementations of {@link com.hazelcast.config.CacheEvictionConfig.CacheMaxSizePolicy}.
+ * Interface for implementations of {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}.
  */
-public interface CacheMaxSizeChecker {
+public interface MaxSizeChecker {
 
     /**
-     * Checks the state of cache to see if it has reached its maximum configured size
-     * {@link com.hazelcast.config.CacheEvictionConfig.CacheMaxSizePolicy}
+     * Checks the state to see if it has reached its maximum configured size
+     * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}
      *
-     * @return true if cache has reached maximum size, false otherwise
+     * @return <code>true</code> if maximum size has been reached, <code>false</code> otherwise
      */
     boolean isReachedToMaxSize();
 

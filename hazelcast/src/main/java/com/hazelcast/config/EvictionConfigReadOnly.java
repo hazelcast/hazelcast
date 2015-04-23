@@ -17,25 +17,26 @@
 package com.hazelcast.config;
 
 /**
- * Contains the configuration for a size of cache.
+ * Read only version of {@link com.hazelcast.config.EvictionConfig}.
  */
-public class CacheEvictionConfigReadOnly
-        extends CacheEvictionConfig {
+public class EvictionConfigReadOnly
+        extends EvictionConfig {
 
-    public CacheEvictionConfigReadOnly(CacheEvictionConfig config) {
+    public EvictionConfigReadOnly(EvictionConfig config) {
         super(config);
     }
 
-    public CacheEvictionConfig setSize(int size) {
+    public EvictionConfig setSize(int size) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
-    public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy maxSizePolicy) {
+    public EvictionConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public CacheEvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
+    public EvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
 }

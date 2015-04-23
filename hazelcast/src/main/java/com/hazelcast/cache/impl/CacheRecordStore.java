@@ -16,11 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
-import com.hazelcast.config.CacheEvictionConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
@@ -64,16 +64,16 @@ public class CacheRecordStore
     }
 
     @Override
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(int size,
-                                                            CacheEvictionConfig.CacheMaxSizePolicy maxSizePolicy) {
+    protected MaxSizeChecker createCacheMaxSizeChecker(int size,
+                                                            EvictionConfig.MaxSizePolicy maxSizePolicy) {
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
 
-        if (maxSizePolicy != CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+        if (maxSizePolicy != EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
             throw new IllegalArgumentException("Invalid max-size policy "
                     + "(" + maxSizePolicy + ") for " + getClass().getName() + " ! Only "
-                    + CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT + " is supported.");
+                    + EvictionConfig.MaxSizePolicy.ENTRY_COUNT + " is supported.");
         } else {
             return super.createCacheMaxSizeChecker(size, maxSizePolicy);
         }

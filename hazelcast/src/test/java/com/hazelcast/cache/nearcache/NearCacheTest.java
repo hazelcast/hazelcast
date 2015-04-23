@@ -10,6 +10,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class NearCacheTest extends NearCacheTestSupport {
@@ -35,8 +37,8 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void putFromNearCache() {
-        doPutFromNearCache();
+    public void putToNearCache() {
+        doPutToNearCache();
     }
 
     @Test
@@ -87,6 +89,11 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Test
     public void createNearCacheAndWaitForExpirationCalledWithMaxIdleTime() {
         doCreateNearCacheAndWaitForExpirationCalled(false);
+    }
+
+    @Test
+    public void putToNearCacheStatsAndSeeEvictionCheckIsDone() {
+        doPutToNearCacheStatsAndSeeEvictionCheckIsDone();
     }
 
 }

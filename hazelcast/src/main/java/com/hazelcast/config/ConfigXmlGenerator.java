@@ -97,6 +97,8 @@ public class ConfigXmlGenerator {
 
         mapConfigXmlGenerator(xml, config);
 
+        cacheConfigXmlGenerator(xml, config);
+
         queueXmlGenerator(xml, config);
 
         multiMapXmlGenerator(xml, config);
@@ -112,6 +114,7 @@ public class ConfigXmlGenerator {
         listenerXmlGenerator(xml, config);
 
         xml.append("</hazelcast>");
+
         return format(xml.toString(), INDENT);
     }
 
@@ -146,7 +149,6 @@ public class ConfigXmlGenerator {
             xml.append("</executor-service>");
         }
     }
-
 
     private void semaphoreXmlGenerator(StringBuilder xml, Config config) {
         final Collection<SemaphoreConfig> semaphoreCfgs = config.getSemaphoreConfigs();
@@ -211,7 +213,6 @@ public class ConfigXmlGenerator {
         }
     }
 
-
     private void queueXmlGenerator(StringBuilder xml, Config config) {
         final Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
@@ -230,7 +231,6 @@ public class ConfigXmlGenerator {
             }
             xml.append("</queue>");
         }
-
     }
 
     private void wanReplicationXmlGenerator(StringBuilder xml, Config config) {
@@ -315,7 +315,7 @@ public class ConfigXmlGenerator {
 
             mapStoreConfigXmlGenerator(xml, m);
 
-            mapWanReplicationConfigXmlGenerator(xml, m);
+            wanReplicationConfigXmlGenerator(xml, m.getWanReplicationRef());
 
             mapIndexConfigXmlGenerator(xml, m);
 
@@ -324,7 +324,45 @@ public class ConfigXmlGenerator {
             mapPartitionLostListenerConfigXmlGenerator(xml, m);
 
             mapPartitionStrategyConfigXmlGenerator(xml, m);
+        }
+    }
 
+    private void cacheConfigXmlGenerator(StringBuilder xml, Config config) {
+        for (CacheSimpleConfig c : config.getCacheConfigs().values()) {
+            xml.append("<cache name=\"").append(c.getName()).append("\">");
+            xml.append("<in-memory-format>").append(c.getInMemoryFormat()).append("</in-memory-format>");
+            xml.append("<key-type class-name=\"").append(c.getKeyType()).append("\"/>");
+            xml.append("<value-type class-name=\"").append(c.getValueType()).append("\"/>");
+            xml.append("<statistics-enabled>").append(c.isStatisticsEnabled()).append("</statistics-enabled>");
+            xml.append("<management-enabled>").append(c.isManagementEnabled()).append("</management-enabled>");
+            xml.append("<backup-count>").append(c.getBackupCount()).append("</backup-count>");
+            xml.append("<async-backup-count>").append(c.getAsyncBackupCount()).append("</async-backup-count>");
+            xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
+            xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
+            xml.append("<cache-loader-factory class-name=\"").append(c.getCacheLoaderFactory()).append("\"/>");
+            xml.append("<cache-writer-factory class-name=\"").append(c.getCacheWriterFactory()).append("\"/>");
+            xml.append("<expiry-policy-factory class-name=\"").append(c.getExpiryPolicyFactory()).append("\"/>");
+            xml.append("<cache-entry-listeners>");
+            for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
+                xml.append("<cache-entry-listener")
+                        .append(" old-value-required=\"").append(el.isOldValueRequired()).append("\"")
+                        .append(" synchronous=\"").append(el.isSynchronous()).append("\"")
+                   .append(">");
+                xml.append("<cache-entry-listener-factory class-name=\"")
+                        .append(el.getCacheEntryListenerFactory()).append("\"/>");
+                xml.append("<cache-entry-event-filter-factory class-name=\"")
+                        .append(el.getCacheEntryEventFilterFactory()).append("\"/>");
+                xml.append("</cache-entry-listener>");
+            }
+            xml.append("</cache-entry-listeners>");
+
+            wanReplicationConfigXmlGenerator(xml, c.getWanReplicationRef());
+
+            evictionConfigXmlGenerator(xml, c.getEvictionConfig());
+
+            nearCacheConfigXmlGenerator(xml, c.getNearCacheConfig());
+
+            xml.append("</cache>");
         }
     }
 
@@ -381,12 +419,10 @@ public class ConfigXmlGenerator {
             }
             xml.append("</indexes>");
         }
-
     }
 
-    private void mapWanReplicationConfigXmlGenerator(StringBuilder xml, MapConfig m) {
-        if (m.getWanReplicationRef() != null) {
-            final WanReplicationRef wan = m.getWanReplicationRef();
+    private void wanReplicationConfigXmlGenerator(StringBuilder xml, WanReplicationRef wan) {
+        if (wan != null) {
             xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\">");
             xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
             xml.append("<republishing-enabled>").append(wan.isRepublishingEnabled()).append("</republishing-enabled>");
@@ -415,17 +451,28 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private void nearCacheStoreConfigXmlGenerator(StringBuilder xml, MapConfig m) {
-        if (m.getNearCacheConfig() != null) {
-            final NearCacheConfig n = m.getNearCacheConfig();
+    private void nearCacheConfigXmlGenerator(StringBuilder xml, NearCacheConfig n) {
+        if (n != null) {
             xml.append("<near-cache>");
             xml.append("<max-size>").append(n.getMaxSize()).append("</max-size>");
             xml.append("<time-to-live-seconds>").append(n.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
             xml.append("<max-idle-seconds>").append(n.getMaxIdleSeconds()).append("</max-idle-seconds>");
             xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
             xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
+            xml.append("<local-update-policy>").append(n.getLocalUpdatePolicy()).append("</local-update-policy>");
             xml.append("<in-memory-format>").append(n.getInMemoryFormat()).append("</in-memory-format>");
+            evictionConfigXmlGenerator(xml, n.getEvictionConfig());
             xml.append("</near-cache>");
+        }
+    }
+
+    private void evictionConfigXmlGenerator(StringBuilder xml, EvictionConfig e) {
+        if (e != null) {
+            xml.append("<eviction")
+                    .append(" size=\"").append(e.getSize()).append("\"")
+                    .append(" max-size-policy=\"").append(e.getMaxSizePolicy()).append("\"")
+                    .append(" eviction-policy=\"").append(e.getEvictionPolicy()).append("\"")
+               .append("/>");
         }
     }
 

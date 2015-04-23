@@ -20,6 +20,8 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -32,6 +34,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -120,7 +123,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     @Override
     protected Document parse(InputStream inputStream) throws Exception {
-
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         try {
             return builder.parse(inputStream);
@@ -167,15 +169,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         }
     }
 
-    ClientConfig build(ClientConfig clientConfig) {
-        try {
-            parseAndBuildConfig(clientConfig);
-            return clientConfig;
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
     private void parseAndBuildConfig(ClientConfig clientConfig) throws Exception {
         this.clientConfig = clientConfig;
         Document doc = parse(in);
@@ -204,7 +197,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     }
 
     private void handleXmlNode(Node node, String nodeName) throws Exception {
-
         if (SECURITY.isEqual(nodeName)) {
             handleSecurity(node);
         } else if (PROXY_FACTORIES.isEqual(nodeName)) {
@@ -260,9 +252,34 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             } else if ("local-update-policy".equals(nodeName)) {
                 NearCacheConfig.LocalUpdatePolicy policy = NearCacheConfig.LocalUpdatePolicy.valueOf(value);
                 nearCacheConfig.setLocalUpdatePolicy(policy);
+            } else if ("eviction".equals(nodeName)) {
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
             }
         }
         clientConfig.addNearCacheConfig(name, nearCacheConfig);
+    }
+
+    private EvictionConfig getEvictionConfig(final Node node) {
+        final EvictionConfig evictionConfig = new EvictionConfig();
+        final Node size = node.getAttributes().getNamedItem("size");
+        final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+        final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        if (size != null) {
+            evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+        }
+        if (maxSizePolicy != null) {
+            evictionConfig.setMaxSizePolicy(
+                    EvictionConfig.MaxSizePolicy.valueOf(
+                            upperCaseInternal(getTextContent(maxSizePolicy)))
+            );
+        }
+        if (evictionPolicy != null) {
+            evictionConfig.setEvictionPolicy(
+                    EvictionPolicy.valueOf(
+                            upperCaseInternal(getTextContent(evictionPolicy)))
+            );
+        }
+        return evictionConfig;
     }
 
     private void handleLoadBalancer(Node node) {
@@ -414,7 +431,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         SerializationConfig serializationConfig = parseSerialization(node);
         clientConfig.setSerializationConfig(serializationConfig);
     }
-
 
     private void handleProxyFactories(Node node) throws Exception {
         for (Node child : new IterableNodeList(node.getChildNodes())) {

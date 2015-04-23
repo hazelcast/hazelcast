@@ -33,8 +33,8 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheEvictionConfig getEvictionConfig() {
-        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+    public EvictionConfig getEvictionConfig() {
+        final EvictionConfig evictionConfig = super.getEvictionConfig();
         if (evictionConfig == null) {
             return null;
         }
@@ -85,7 +85,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setEvictionConfig(final CacheEvictionConfig evictionConfig) {
+    public CacheConfig<K, V> setEvictionConfig(final EvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

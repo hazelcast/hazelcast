@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.ValidationUtil;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +49,7 @@ public class CacheSimpleConfig {
     /**
      * Default Eviction Policy.
      */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
 
     private String name;
 
@@ -72,8 +74,9 @@ public class CacheSimpleConfig {
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
+    private NearCacheConfig nearCacheConfig;
 
     private CacheSimpleConfig readOnly;
 
@@ -93,10 +96,11 @@ public class CacheSimpleConfig {
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
         // Eviction config cannot be null
-        if (evictionConfig != null) {
+        if (cacheSimpleConfig.evictionConfig != null) {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
+        this.nearCacheConfig = cacheSimpleConfig.nearCacheConfig;
     }
 
     public CacheSimpleConfig() {
@@ -221,6 +225,13 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
+        if (asyncBackupCount < MIN_BACKUP_COUNT) {
+            throw new IllegalArgumentException("Cache async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
+        }
+        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
+        }
+
         this.asyncBackupCount = asyncBackupCount;
         return this;
     }
@@ -230,6 +241,13 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setBackupCount(int backupCount) {
+        if (backupCount < MIN_BACKUP_COUNT) {
+            throw new IllegalArgumentException("Cache backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
+        }
+        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
+        }
+
         this.backupCount = backupCount;
         return this;
     }
@@ -239,19 +257,20 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+
         this.inMemoryFormat = inMemoryFormat;
         return this;
     }
 
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
-    public CacheSimpleConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
-        // Eviction config cannot be null
-        if (evictionConfig != null) {
-            this.evictionConfig = evictionConfig;
-        }
+    public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        ValidationUtil.isNotNull(evictionConfig, "Eviction config cannot be null !");
+
+        this.evictionConfig = evictionConfig;
         return this;
     }
 
@@ -262,4 +281,13 @@ public class CacheSimpleConfig {
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
     }
+
+    public NearCacheConfig getNearCacheConfig() {
+        return nearCacheConfig;
+    }
+
+    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+        this.nearCacheConfig = nearCacheConfig;
+    }
+
 }

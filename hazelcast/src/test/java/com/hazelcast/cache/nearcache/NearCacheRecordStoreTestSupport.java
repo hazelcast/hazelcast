@@ -1,6 +1,8 @@
 package com.hazelcast.cache.nearcache;
 
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.NearCacheStats;
@@ -235,6 +237,20 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         NearCacheStats nearCacheStats = nearCacheRecordStore.getNearCacheStats();
         assertEquals(0, nearCacheStats.getOwnedEntryCount());
         assertEquals(0, nearCacheStats.getOwnedEntryMemoryCost());
+    }
+
+    protected void createNearCacheWithMaxSizePolicy(InMemoryFormat inMemoryFormat,
+                                                    EvictionConfig.MaxSizePolicy maxSizePolicy,
+                                                    int size) {
+        NearCacheConfig nearCacheConfig =
+                createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, inMemoryFormat);
+
+        EvictionConfig evictionConfig = new EvictionConfig();
+        evictionConfig.setMaxSizePolicy(maxSizePolicy);
+        evictionConfig.setSize(size);
+        nearCacheConfig.setEvictionConfig(evictionConfig);
+
+        createNearCacheRecordStore(nearCacheConfig, createNearCacheContext(), inMemoryFormat);
     }
 
 }
