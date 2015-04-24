@@ -642,8 +642,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         //Now we are regrouping according to the client type
-        for (Map.Entry<String, ClientType> entry : clientsMap.entrySet()) {
-            ClientType clientType = entry.getValue();
+        for (ClientType clientType : clientsMap.values()) {
             switch (clientType) {
                 case JAVA:
                     numberOfJavaClients++;
