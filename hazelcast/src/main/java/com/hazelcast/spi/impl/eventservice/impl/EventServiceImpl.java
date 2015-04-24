@@ -20,6 +20,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -35,9 +36,8 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
 import java.io.Closeable;
@@ -77,9 +77,15 @@ public class EventServiceImpl implements InternalEventService {
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
     private final int eventQueueTimeoutMs;
+
+    @SensorInput(name = "threadCount")
     private final int eventThreadCount;
+    @SensorInput(name = "queueCapacity")
     private final int eventQueueCapacity;
-    private final AtomicLong totalFailures = new AtomicLong();
+    @SensorInput(name = "totalFailureCount")
+    private final MwCounter totalFailures = new MwCounter();
+    @SensorInput(name = "rejectedCount")
+    private final MwCounter rejectedCount = new MwCounter();
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -101,6 +107,8 @@ public class EventServiceImpl implements InternalEventService {
         this.deregistrationExceptionHandler
                 = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+
+        nodeEngine.getBlackbox().scanAndRegister(this, "event");
     }
 
     @Override
@@ -129,6 +137,7 @@ public class EventServiceImpl implements InternalEventService {
         return eventQueueCapacity;
     }
 
+    @SensorInput(name = "eventQueueSize")
     @Override
     public int getEventQueueSize() {
         return eventExecutor.getWorkQueueSize();
@@ -324,6 +333,8 @@ public class EventServiceImpl implements InternalEventService {
                     logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
                 }
             } catch (RejectedExecutionException e) {
+                rejectedCount.inc();
+
                 if (eventExecutor.isLive()) {
                     logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
                             event, reg.getServiceName(), reg.getTopic());
@@ -350,6 +361,7 @@ public class EventServiceImpl implements InternalEventService {
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey);
             packet.setHeader(Packet.HEADER_EVENT);
+
             if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {
                 if (nodeEngine.isActive()) {
                     logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
@@ -361,14 +373,15 @@ public class EventServiceImpl implements InternalEventService {
     public EventServiceSegment getSegment(String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
-            ConstructorFunction<String, EventServiceSegment> func
-                    = new ConstructorFunction<String, EventServiceSegment>() {
-                @Override
-                public EventServiceSegment createNew(String key) {
-                    return new EventServiceSegment(key);
-                }
-            };
-            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, func);
+            // we can't make use of the ConcurrentUtil; we need to register the segment to the blackbox in case of creation
+            EventServiceSegment newSegment = new EventServiceSegment(service);
+            EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
+            if (existingSegment == null) {
+                segment = newSegment;
+                nodeEngine.getBlackbox().scanAndRegister(newSegment, "event." + service);
+            } else {
+                segment = existingSegment;
+            }
         }
         return segment;
     }
@@ -383,6 +396,8 @@ public class EventServiceImpl implements InternalEventService {
             try {
                 eventExecutor.execute(callback);
             } catch (RejectedExecutionException e) {
+                rejectedCount.inc();
+
                 if (eventExecutor.isLive()) {
                     logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
                 }
@@ -395,6 +410,8 @@ public class EventServiceImpl implements InternalEventService {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(this, packet));
         } catch (RejectedExecutionException e) {
+            rejectedCount.inc();
+
             if (eventExecutor.isLive()) {
                 Connection conn = packet.getConn();
                 String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
@@ -433,7 +450,14 @@ public class EventServiceImpl implements InternalEventService {
     }
 
     private void logFailure(String message, Object... args) {
-        Level level = totalFailures.getAndIncrement() % WARNING_LOG_FREQUENCY == 0
+        totalFailures.inc();
+
+        long total = totalFailures.get();
+
+        // it can happen that 2 threads at the same conclude that the level should be warn because of the
+        // non atomic int/get. This is an acceptable trade of since it is unlikely to happen and you only get
+        // additional warning under log as a side effect.
+        Level level = total % WARNING_LOG_FREQUENCY == 0
                 ? Level.WARNING : Level.FINEST;
 
         if (logger.isLoggable(level)) {

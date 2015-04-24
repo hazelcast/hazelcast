@@ -26,6 +26,7 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.blackbox.Blackbox;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -53,6 +54,11 @@ public class NodeIOService implements IOService {
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.packetTransceiver = nodeEngine.getPacketTransceiver();
+    }
+
+    @Override
+    public Blackbox getBlackbox() {
+        return nodeEngine.getBlackbox();
     }
 
     @Override

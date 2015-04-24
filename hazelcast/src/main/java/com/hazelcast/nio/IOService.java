@@ -21,6 +21,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.internal.blackbox.Blackbox;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -35,6 +36,8 @@ import java.util.Collection;
 public interface IOService {
 
     int KILO_BYTE = 1024;
+
+    Blackbox getBlackbox();
 
     boolean isActive();
 

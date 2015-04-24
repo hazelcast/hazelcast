@@ -62,8 +62,11 @@ public final class TcpIpConnection implements Connection {
 
     private TcpIpConnectionMonitor monitor;
 
-    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
-                           int connectionId, SocketChannelWrapper socketChannel) {
+    public TcpIpConnection(TcpIpConnectionManager connectionManager,
+                           IOSelector in,
+                           IOSelector out,
+                           int connectionId,
+                           SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
@@ -217,7 +220,8 @@ public final class TcpIpConnection implements Connection {
         } catch (Exception e) {
             logger.warning(e);
         }
-        Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
+
+        Object connAddress = getConnectionAddress();
         String message = "Connection [" + connAddress + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
@@ -231,6 +235,10 @@ public final class TcpIpConnection implements Connection {
         if (t != null && monitor != null) {
             monitor.onError(t);
         }
+    }
+
+    Object getConnectionAddress() {
+        return (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
     }
 
     public int getConnectionId() {

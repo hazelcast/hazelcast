@@ -16,31 +16,21 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.blackbox.Blackbox;
+import com.hazelcast.internal.blackbox.Sensor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.memory.MemoryStats;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.memory.MemoryStatsSupport.freePhysicalMemory;
-import static com.hazelcast.memory.MemoryStatsSupport.freeSwapSpace;
-import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
-import static com.hazelcast.memory.MemoryStatsSupport.totalSwapSpace;
-import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
+import static com.hazelcast.internal.monitors.HealthMonitorLevel.OFF;
+import static com.hazelcast.internal.monitors.HealthMonitorLevel.valueOf;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * http://blog.scoutapp.com/articles/2009/07/31/understanding-load-averages
@@ -60,8 +50,7 @@ import static java.lang.String.format;
  * "hazelcast.health.monitoring.delay.seconds"
  * Time between printing two logs of health monitor. Default values is 30 seconds
  */
-
-public class HealthMonitor extends Thread {
+public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
@@ -69,227 +58,415 @@ public class HealthMonitor extends Thread {
 
     private final ILogger logger;
     private final Node node;
-    private final Runtime runtime;
-    private final HealthMonitorLevel logLevel;
-    private final int delaySeconds;
-    private final ClusterServiceImpl clusterService;
-    private final ExecutionService executionService;
-    private final EventService eventService;
-    private final InternalOperationService operationService;
-    private final ProxyService proxyService;
-    private final ConnectionManager connectionManager;
-    private final ClientEngineImpl clientEngine;
-    private final ThreadMXBean threadMxBean;
+    private final HealthMonitorLevel monitorLevel;
+    private final Blackbox blackbox;
+    private final HealthMonitorThread monitorThread;
 
-    public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
-        super(hazelcastInstance.node.getHazelcastThreadGroup().getInternalThreadGroup(),
-                hazelcastInstance.node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
-        setDaemon(true);
-
+    public HealthMonitor(HazelcastInstanceImpl hazelcastInstance) {
         this.node = hazelcastInstance.node;
         this.logger = node.getLogger(HealthMonitor.class);
-        this.runtime = Runtime.getRuntime();
-        this.logLevel = logLevel;
-        this.delaySeconds = delaySeconds;
-        this.threadMxBean = ManagementFactory.getThreadMXBean();
-        this.clusterService = node.getClusterService();
-        this.executionService = node.nodeEngine.getExecutionService();
-        this.eventService = node.nodeEngine.getEventService();
-        this.operationService = node.nodeEngine.getOperationService();
-        this.proxyService = node.nodeEngine.getProxyService();
-        this.clientEngine = node.clientEngine;
-        this.connectionManager = node.connectionManager;
+        this.blackbox = node.nodeEngine.getBlackbox();
+        this.monitorLevel = getHealthMonitorLevel();
+        this.monitorThread = initMonitorThread();
     }
 
-    @Override
-    public void run() {
-        if (logLevel == HealthMonitorLevel.OFF) {
-            return;
+    private HealthMonitorThread initMonitorThread() {
+        if (monitorLevel == OFF) {
+            return null;
         }
 
-        try {
-            while (node.isActive()) {
-                HealthMetrics metrics;
-                switch (logLevel) {
-                    case NOISY:
-                        metrics = new HealthMetrics();
-                        logger.log(Level.INFO, metrics.toString());
-                        break;
-                    case SILENT:
-                        metrics = new HealthMetrics();
-                        if (metrics.exceedsThreshold()) {
-                            logger.log(Level.INFO, metrics.toString());
-                        }
-                        break;
-                    default:
-                        throw new IllegalStateException("unrecognized logLevel:" + logLevel);
-                }
+        int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
+        return new HealthMonitorThread(delaySeconds);
+    }
 
-                try {
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
-                } catch (InterruptedException e) {
-                    return;
+    public HealthMonitor start() {
+        if (monitorLevel == OFF) {
+            logger.finest("HealthMonitor is disabled");
+            return this;
+        }
+
+        monitorThread.start();
+        logger.finest("HealthMonitor started");
+        return this;
+    }
+
+    private HealthMonitorLevel getHealthMonitorLevel() {
+        GroupProperties properties = node.getGroupProperties();
+        String healthMonitorLevelString = properties.HEALTH_MONITORING_LEVEL.getString();
+        return valueOf(healthMonitorLevelString);
+    }
+
+    private final class HealthMonitorThread extends Thread {
+        private final int delaySeconds;
+        private boolean performanceLogHint;
+
+        private HealthMonitorThread(int delaySeconds) {
+            super(node.getHazelcastThreadGroup().getInternalThreadGroup(),
+                    node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
+            setDaemon(true);
+            this.delaySeconds = delaySeconds;
+            this.performanceLogHint = node.getGroupProperties().PERFORMANCE_MONITOR_ENABLED.getBoolean();
+        }
+
+        @Override
+        public void run() {
+            HealthMetricsRenderer renderer = new HealthMetricsRenderer();
+
+            try {
+                while (node.isActive()) {
+                    renderer.init();
+                    switch (monitorLevel) {
+                        case NOISY:
+                            logger.log(Level.INFO, renderer.render());
+                            break;
+                        case SILENT:
+                            if (renderer.exceedsThreshold()) {
+                                logPerformanceMonitorHint();
+                                logger.log(Level.INFO, renderer.render());
+                            }
+                            break;
+                        default:
+                            throw new IllegalStateException("unrecognized HealthMonitorLevel:" + monitorLevel);
+                    }
+
+                    try {
+                        Thread.sleep(SECONDS.toMillis(delaySeconds));
+                    } catch (InterruptedException e) {
+                        return;
+                    }
                 }
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable t) {
+                logger.warning("Health Monitor failed", t);
             }
-        } catch (OutOfMemoryError e) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+        }
+
+        private void logPerformanceMonitorHint() {
+            if (!performanceLogHint) {
+                return;
+            }
+
+            // we only log the hint once.
+            performanceLogHint = false;
+
+            logger.info(
+                    "The HealthMonitor has detected a high load on the system. For more detailed information, \n"
+                            + "enable the PerformanceMonitor by adding -D" + GroupProperties.PROP_PERFORMANCE_MONITOR_ENABLED
+                            + "=true");
         }
     }
 
-    /**
-     * Health metrics to be logged under load.
-     */
-    private class HealthMetrics {
-        private final long memoryFree;
-        private final long memoryTotal;
-        private final long memoryUsed;
-        private final long memoryMax;
-        private final double memoryUsedOfTotalPercentage;
-        private final double memoryUsedOfMaxPercentage;
-        //following three load variables are always between 0 and 100.
-        private final double processCpuLoad;
-        private final double systemLoadAverage;
-        private final double systemCpuLoad;
-        private final int threadCount;
-        private final int peakThreadCount;
-        private final long clusterTimeDiff;
-        private final int asyncExecutorQueueSize;
-        private final int clientExecutorQueueSize;
-        private final int queryExecutorQueueSize;
-        private final int scheduledExecutorQueueSize;
-        private final int systemExecutorQueueSize;
-        private final int eventQueueSize;
-        private final int pendingInvocationsCount;
-        private final double pendingInvocationsPercentage;
-        private final int operationServiceOperationExecutorQueueSize;
-        private final int operationServiceOperationPriorityExecutorQueueSize;
-        private final int operationServiceOperationResponseQueueSize;
-        private final int runningOperationsCount;
-        private final int remoteOperationsCount;
-        private final int proxyCount;
-        private final int clientEndpointCount;
-        private final int activeConnectionCount;
-        private final int currentClientConnectionCount;
-        private final int connectionCount;
-        private final int ioExecutorQueueSize;
+    private class HealthMetricsRenderer {
+        private double memoryUsedOfTotalPercentage;
+        private double memoryUsedOfMaxPercentage;
+
+        private final Sensor clientEndpointCount;
+        private final Sensor clusterTimeDiff;
+
+        private final Sensor executorAsyncQueueSize;
+        private final Sensor executorClientQueueSize;
+        private final Sensor executorClusterQueueSize;
+        private final Sensor executorScheduledQueueSize;
+        private final Sensor executorSystemQueueSize;
+        private final Sensor executorIoQueueSize;
+        private final Sensor executorQueryQueueSize;
+        private final Sensor executorMapLoadQueueSize;
+        private final Sensor executorMapLoadAllKeysQueueSize;
+
+        private final Sensor eventQueueSize;
+
+        private final Sensor gcMinorCount;
+        private final Sensor gcMinorTime;
+        private final Sensor gcMajorCount;
+        private final Sensor gcMajorTime;
+        private final Sensor gcUnknownCount;
+        private final Sensor gcUnknownTime;
+
+        private final Sensor runtimeAvailableProcessors;
+        private final Sensor runtimeMaxMemory;
+        private final Sensor runtimeFreeMemory;
+        private final Sensor runtimeAvailableMemory;
+        private final Sensor runtimeTotalMemory;
+        private final Sensor runtimeUsedMemory;
+
+        private final Sensor threadPeakThreadCount;
+        private final Sensor threadThreadCount;
+
+        private final Sensor osProcessCpuLoad;
+        private final Sensor osSystemLoadAverage;
+        private final Sensor osSystemCpuLoad;
+        private final Sensor osTotalPhysicalMemorySize;
+        private final Sensor osFreePhysicalMemorySize;
+        private final Sensor osTotalSwapSpaceSize;
+        private final Sensor osFreeSwapSpaceSize;
+
+        private final Sensor operationServiceExecutorQueueSize;
+        private final Sensor operationServiceExecutorPriorityQueueSize;
+        private final Sensor operationServiceResponseQueueSize;
+        private final Sensor operationServiceRunningOperationsCount;
+        private final Sensor operationServiceCompletedOperationsCount;
+        private final Sensor operationServicePendingInvocationsCount;
+        private final Sensor operationServicePendingInvocationsPercentage;
+
+        private final Sensor proxyCount;
+
+        private final Sensor tcpConnectionActiveCount;
+        private final Sensor tcpConnectionCount;
+        private final Sensor tcpConnectionClientCount;
 
         //CHECKSTYLE:OFF
-        public HealthMetrics() {
-            memoryFree = runtime.freeMemory();
-            memoryTotal = runtime.totalMemory();
-            memoryUsed = memoryTotal - memoryFree;
-            memoryMax = runtime.maxMemory();
-            memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryTotal;
-            memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryMax;
-            processCpuLoad = readLongAttribute("ProcessCpuLoad", -1L);
-            systemLoadAverage = readLongAttribute("SystemLoadAverage", -1L);
-            systemCpuLoad = readLongAttribute("SystemCpuLoad", -1L);
-            threadCount = threadMxBean.getThreadCount();
-            peakThreadCount = threadMxBean.getPeakThreadCount();
-            clusterTimeDiff = clusterService.getClusterClock().getClusterTimeDiff();
-            asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).getQueueSize();
-            clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).getQueueSize();
-            queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).getQueueSize();
-            scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).getQueueSize();
-            systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).getQueueSize();
-            ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).getQueueSize();
-            eventQueueSize = eventService.getEventQueueSize();
-            operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
-            operationServiceOperationPriorityExecutorQueueSize = operationService.getPriorityOperationExecutorQueueSize();
-            operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
-            runningOperationsCount = operationService.getRunningOperationsCount();
-            remoteOperationsCount = operationService.getRemoteOperationsCount();
-            pendingInvocationsCount = operationService.getPendingInvocationCount();
-            pendingInvocationsPercentage = operationService.getInvocationUsagePercentage();
-            proxyCount = proxyService.getProxyCount();
-            clientEndpointCount = clientEngine.getClientEndpointCount();
-            activeConnectionCount = connectionManager.getActiveConnectionCount();
-            currentClientConnectionCount = connectionManager.getCurrentClientConnections();
-            connectionCount = connectionManager.getConnectionCount();
+        public HealthMetricsRenderer() {
+            this.clientEndpointCount = blackbox.getSensor("client.endpoint.count");
+
+            this.eventQueueSize = blackbox.getSensor("event.eventQueueSize");
+
+            this.clusterTimeDiff = blackbox.getSensor("cluster.clock.clusterTimeDiff");
+
+            this.executorAsyncQueueSize = blackbox.getSensor("executor.hz:async.queueSize");
+            this.executorClientQueueSize = blackbox.getSensor("executor.hz:client.queueSize");
+            this.executorClusterQueueSize = blackbox.getSensor("executor.hz:cluster.queueSize");
+            this.executorScheduledQueueSize = blackbox.getSensor("executor.hz:scheduled.queueSize");
+            this.executorSystemQueueSize = blackbox.getSensor("executor.hz:system.queueSize");
+            this.executorIoQueueSize = blackbox.getSensor("executor.hz:io.queueSize");
+            this.executorMapLoadQueueSize = blackbox.getSensor("executor.hz:map-load.queueSize");
+            this.executorMapLoadAllKeysQueueSize = blackbox.getSensor("executor.hz:map-loadAllKeys.queueSize");
+            this.executorQueryQueueSize = blackbox.getSensor("executor.hz:query.queueSize");
+
+            this.gcMinorCount = blackbox.getSensor("gc.minorCount");
+            this.gcMinorTime = blackbox.getSensor("gc.minorTime");
+            this.gcMajorCount = blackbox.getSensor("gc.majorCount");
+            this.gcMajorTime = blackbox.getSensor("gc.majorTime");
+            this.gcUnknownCount = blackbox.getSensor("gc.unknownCount");
+            this.gcUnknownTime = blackbox.getSensor("gc.unknownTime");
+
+            this.operationServiceExecutorQueueSize = blackbox.getSensor("operation.queue.size");
+            this.operationServiceExecutorPriorityQueueSize = blackbox.getSensor("operation.priority-queue.size");
+            this.operationServiceResponseQueueSize = blackbox.getSensor("operation.response-queue.size");
+            this.operationServiceRunningOperationsCount = blackbox.getSensor("operation.running.count");
+            this.operationServiceCompletedOperationsCount = blackbox.getSensor("operation.completed.count");
+            this.operationServicePendingInvocationsCount = blackbox.getSensor("operation.invocations.pending");
+            this.operationServicePendingInvocationsPercentage = blackbox.getSensor("operation.invocations.used");
+
+            this.osProcessCpuLoad = blackbox.getSensor("os.processCpuLoad");
+            this.osSystemLoadAverage = blackbox.getSensor("os.systemLoadAverage");
+            this.osSystemCpuLoad = blackbox.getSensor("os.systemCpuLoad");
+            this.osTotalPhysicalMemorySize = blackbox.getSensor("os.totalPhysicalMemorySize");
+            this.osFreePhysicalMemorySize = blackbox.getSensor("os.freePhysicalMemorySize");
+            this.osTotalSwapSpaceSize = blackbox.getSensor("os.totalSwapSpaceSize");
+            this.osFreeSwapSpaceSize = blackbox.getSensor("os.freeSwapSpaceSize");
+
+            this.proxyCount = blackbox.getSensor("proxy.proxyCount");
+
+            this.runtimeAvailableProcessors = blackbox.getSensor("runtime.availableProcessors");
+            this.runtimeMaxMemory = blackbox.getSensor("runtime.maxMemory");
+            this.runtimeFreeMemory = blackbox.getSensor("runtime.freeMemory");
+            this.runtimeAvailableMemory = blackbox.getSensor("runtime.availableMemory");
+            this.runtimeTotalMemory = blackbox.getSensor("runtime.totalMemory");
+            this.runtimeUsedMemory = blackbox.getSensor("runtime.usedMemory");
+
+            this.threadThreadCount = blackbox.getSensor("thread.threadCount");
+            this.threadPeakThreadCount = blackbox.getSensor("thread.peakThreadCount");
+
+            this.tcpConnectionActiveCount = blackbox.getSensor("tcp.connection.activeCount");
+            this.tcpConnectionCount = blackbox.getSensor("tcp.connection.count");
+            this.tcpConnectionClientCount = blackbox.getSensor("tcp.connection.clientCount");
         }
-        //CHECKSTYLE:ON
+
+        public void init() {
+            memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.readLong() / runtimeTotalMemory.readLong();
+            memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.readLong() / runtimeMaxMemory.readLong();
+        }
 
         public boolean exceedsThreshold() {
             if (memoryUsedOfMaxPercentage > THRESHOLD) {
                 return true;
             }
 
-            if (processCpuLoad > THRESHOLD) {
+            if (osProcessCpuLoad.readDouble() > THRESHOLD) {
                 return true;
             }
 
-            if (systemCpuLoad > THRESHOLD) {
+            if (osSystemCpuLoad.readDouble() > THRESHOLD) {
                 return true;
             }
 
-            if (pendingInvocationsPercentage > THRESHOLD) {
+            if (operationServicePendingInvocationsPercentage.readDouble() > THRESHOLD) {
                 return true;
             }
 
             return false;
         }
 
-        public String toString() {
+        public String render() {
             StringBuilder sb = new StringBuilder();
-            sb.append("processors=").append(runtime.availableProcessors()).append(", ");
-            sb.append("physical.memory.total=").append(numberToUnit(totalPhysicalMemory())).append(", ");
-            sb.append("physical.memory.free=").append(numberToUnit(freePhysicalMemory())).append(", ");
-            sb.append("swap.space.total=").append(numberToUnit(totalSwapSpace())).append(", ");
-            sb.append("swap.space.free=").append(numberToUnit(freeSwapSpace())).append(", ");
-            sb.append("heap.memory.used=").append(numberToUnit(memoryUsed)).append(", ");
-            sb.append("heap.memory.free=").append(numberToUnit(memoryFree)).append(", ");
-            sb.append("heap.memory.total=").append(numberToUnit(memoryTotal)).append(", ");
-            sb.append("heap.memory.max=").append(numberToUnit(memoryMax)).append(", ");
-            sb.append("heap.memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
-            sb.append("heap.memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
-
-            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() > 0L) {
-                sb.append("native.memory.used=").append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
-                sb.append("native.memory.free=").append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
-                sb.append("native.memory.total=").append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
-                sb.append("native.memory.max=").append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
-            }
-
-            GarbageCollectorStats gcStats = memoryStats.getGCStats();
-            sb.append("minor.gc.count=").append(gcStats.getMinorCollectionCount()).append(", ");
-            sb.append("minor.gc.time=").append(gcStats.getMinorCollectionTime()).append("ms, ");
-            sb.append("major.gc.count=").append(gcStats.getMajorCollectionCount()).append(", ");
-            sb.append("major.gc.time=").append(gcStats.getMajorCollectionTime()).append("ms, ");
-            if (gcStats.getUnknownCollectionCount() > 0) {
-                sb.append("unknown.gc.count=").append(gcStats.getUnknownCollectionCount()).append(", ");
-                sb.append("unknown.gc.time=").append(gcStats.getUnknownCollectionTime()).append("ms, ");
-            }
-
-            sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
-            sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
-            sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%, ");
-            sb.append("thread.count=").append(threadCount).append(", ");
-            sb.append("thread.peakCount=").append(peakThreadCount).append(", ");
-            sb.append("cluster.timeDiff=").append(clusterTimeDiff).append(", ");
-            sb.append("event.q.size=").append(eventQueueSize).append(", ");
-            sb.append("executor.q.async.size=").append(asyncExecutorQueueSize).append(", ");
-            sb.append("executor.q.client.size=").append(clientExecutorQueueSize).append(", ");
-            sb.append("executor.q.query.size=").append(queryExecutorQueueSize).append(", ");
-            sb.append("executor.q.scheduled.size=").append(scheduledExecutorQueueSize).append(", ");
-            sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");
-            sb.append("executor.q.system.size=").append(systemExecutorQueueSize).append(", ");
-            sb.append("executor.q.operation.size=").append(operationServiceOperationExecutorQueueSize).append(", ");
-            sb.append("executor.q.priorityOperation.size=").
-                    append(operationServiceOperationPriorityExecutorQueueSize).append(", ");
-            sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");
-            sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
-            sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
-            sb.append("operations.pending.invocations.count=")
-                    .append(pendingInvocationsCount).append(", ");
-            sb.append("operations.pending.invocations.percentage=")
-                    .append(format("%.2f", pendingInvocationsPercentage)).append("%, ");
-            sb.append("proxy.count=").append(proxyCount).append(", ");
-            sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
-            sb.append("connection.active.count=").append(activeConnectionCount).append(", ");
-            sb.append("client.connection.count=").append(currentClientConnectionCount).append(", ");
-            sb.append("connection.count=").append(connectionCount);
+            renderProcessors(sb);
+            renderPhysicalMemory(sb);
+            renderSwap(sb);
+            renderHeap(sb);
+            renderNativeMemory(sb);
+            renderGc(sb);
+            renderLoad(sb);
+            renderThread(sb);
+            renderCluster(sb);
+            renderEvents(sb);
+            renderExecutors(sb);
+            renderOperationService(sb);
+            renderProxy(sb);
+            renderClient(sb);
+            renderConnection(sb);
             return sb.toString();
+        }
+
+        private void renderConnection(StringBuilder sb) {
+            sb.append("connection.active.count=")
+                    .append(tcpConnectionActiveCount.readLong()).append(", ");
+            sb.append("client.connection.count=")
+                    .append(tcpConnectionClientCount.readLong()).append(", ");
+            sb.append("connection.count=")
+                    .append(tcpConnectionCount.readLong());
+        }
+
+        private void renderClient(StringBuilder sb) {
+            sb.append("clientEndpoint.count=")
+                    .append(clientEndpointCount.readLong()).append(", ");
+        }
+
+        private void renderProxy(StringBuilder sb) {
+            sb.append("proxy.count=")
+                    .append(proxyCount.readLong()).append(", ");
+        }
+
+        private void renderLoad(StringBuilder sb) {
+            sb.append(osProcessCpuLoad.getParameter()).append('=')
+                    .append(format("%.2f", osProcessCpuLoad.readDouble())).append("%, ");
+            sb.append(osSystemCpuLoad.getParameter()).append('=')
+                    .append(format("%.2f", osSystemCpuLoad.readDouble())).append("%, ");
+            sb.append(osSystemLoadAverage.getParameter()).append('=')
+                    .append(format("%.2f", osSystemLoadAverage.readDouble())).append("%, ");
+        }
+
+        private void renderProcessors(StringBuilder sb) {
+            sb.append("processors=")
+                    .append(runtimeAvailableProcessors.readLong()).append(", ");
+        }
+
+        private void renderPhysicalMemory(StringBuilder sb) {
+            sb.append("physical.memory.total=")
+                    .append(numberToUnit(osTotalPhysicalMemorySize.readLong())).append(", ");
+            sb.append("physical.memory.free=")
+                    .append(numberToUnit(osFreePhysicalMemorySize.readLong())).append(", ");
+        }
+
+        private void renderSwap(StringBuilder sb) {
+            sb.append("swap.space.total=")
+                    .append(numberToUnit(osTotalSwapSpaceSize.readLong())).append(", ");
+            sb.append("swap.space.free=")
+                    .append(numberToUnit(osFreeSwapSpaceSize.readLong())).append(", ");
+        }
+
+        private void renderHeap(StringBuilder sb) {
+            sb.append("heap.memory.used=")
+                    .append(numberToUnit(runtimeUsedMemory.readLong())).append(", ");
+            sb.append("heap.memory.free=")
+                    .append(numberToUnit(runtimeFreeMemory.readLong())).append(", ");
+            sb.append("heap.memory.total=")
+                    .append(numberToUnit(runtimeTotalMemory.readLong())).append(", ");
+            sb.append("heap.memory.max=")
+                    .append(numberToUnit(runtimeMaxMemory.readLong())).append(", ");
+            sb.append("heap.memory.used/total=")
+                    .append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
+            sb.append("heap.memory.used/max=")
+                    .append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
+        }
+
+        private void renderEvents(StringBuilder sb) {
+            sb.append("event.q.size=")
+                    .append(eventQueueSize.readLong()).append(", ");
+        }
+
+        private void renderCluster(StringBuilder sb) {
+            sb.append("cluster.timeDiff=")
+                    .append(clusterTimeDiff.readLong()).append(", ");
+        }
+
+        private void renderThread(StringBuilder sb) {
+            sb.append("thread.count=")
+                    .append(threadThreadCount.readLong()).append(", ");
+            sb.append("thread.peakCount=")
+                    .append(threadPeakThreadCount.readLong()).append(", ");
+        }
+
+        private void renderGc(StringBuilder sb) {
+            sb.append("minor.gc.count=")
+                    .append(gcMinorCount.readLong()).append(", ");
+            sb.append("minor.gc.time=")
+                    .append(gcMinorTime.readLong()).append("ms, ");
+            sb.append("major.gc.count=")
+                    .append(gcMajorCount.readLong()).append(", ");
+            sb.append("major.gc.time=")
+                    .append(gcMajorTime.readLong()).append("ms, ");
+
+            if (gcUnknownCount.readLong() > 0) {
+                sb.append("unknown.gc.count=")
+                        .append(gcUnknownCount.readLong()).append(", ");
+                sb.append("unknown.gc.time=")
+                        .append(gcUnknownTime.readLong()).append("ms, ");
+            }
+        }
+
+        private void renderNativeMemory(StringBuilder sb) {
+            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
+            if (memoryStats.getMaxNativeMemory() <= 0L) {
+                return;
+            }
+
+            sb.append("native.memory.used=")
+                    .append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
+            sb.append("native.memory.free=")
+                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+            sb.append("native.memory.total=")
+                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+            sb.append("native.memory.max=")
+                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
+        }
+
+        private void renderExecutors(StringBuilder sb) {
+            sb.append("executor.q.async.size=")
+                    .append(executorAsyncQueueSize.readLong()).append(", ");
+            sb.append("executor.q.client.size=")
+                    .append(executorClientQueueSize.readLong()).append(", ");
+            sb.append("executor.q.query.size=")
+                    .append(executorQueryQueueSize.readLong()).append(", ");
+            sb.append("executor.q.scheduled.size=")
+                    .append(executorScheduledQueueSize.readLong()).append(", ");
+            sb.append("executor.q.io.size=")
+                    .append(executorIoQueueSize.readLong()).append(", ");
+            sb.append("executor.q.system.size=")
+                    .append(executorSystemQueueSize.readLong()).append(", ");
+            sb.append("executor.q.mapLoad.size=")
+                    .append(executorMapLoadQueueSize.readLong()).append(", ");
+            sb.append("executor.q.mapLoadAllKeys.size=")
+                    .append(executorMapLoadAllKeysQueueSize.readLong()).append(", ");
+            sb.append("executor.q.cluster.size=")
+                    .append(executorClusterQueueSize.readLong()).append(", ");
+        }
+
+        private void renderOperationService(StringBuilder sb) {
+            sb.append("operations.completed.count=")
+                    .append(operationServiceCompletedOperationsCount.readLong()).append(", ");
+            sb.append("operations.executor.q.size=")
+                    .append(operationServiceExecutorQueueSize.readLong()).append(", ");
+            sb.append("operations.executor.priority.q.size=").
+                    append(operationServiceExecutorPriorityQueueSize.readLong()).append(", ");
+            sb.append("operations.response.q.size=")
+                    .append(operationServiceResponseQueueSize.readLong()).append(", ");
+            sb.append("operations.running.count=")
+                    .append(operationServiceRunningOperationsCount.readLong()).append(", ");
+            sb.append("operations.pending.invocations.percentage=")
+                    .append(format("%.2f", operationServicePendingInvocationsPercentage.readDouble())).append("%, ");
+            sb.append("operations.pending.invocations.count=")
+                    .append(operationServicePendingInvocationsCount.readLong()).append(", ");
         }
     }
 

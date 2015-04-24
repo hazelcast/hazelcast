@@ -9,6 +9,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -51,11 +52,13 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         remote = cluster[1];
         operationService = (OperationServiceImpl) getOperationService(local);
         clusterService = getClusterService(local);
-        operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local));
+        int partitionId = getPartitionId(local);
+        OperationRunner[] partitionOperationRunners = operationService.getOperationExecutor().getPartitionOperationRunners();
+        operationRunner = (OperationRunnerImpl)partitionOperationRunners[partitionId];
         responseHandler = mock(ResponseHandler.class);
     }
 
-    @Test
+     @Test
     public void runTask() {
         final AtomicLong counter = new AtomicLong();
         operationRunner.run(new Runnable() {

@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.Operation;
@@ -37,6 +38,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.counters.MwCounter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,15 +80,22 @@ public class ProxyServiceImpl
     private final ConcurrentMap<String, ProxyRegistry> registries =
             new ConcurrentHashMap<String, ProxyRegistry>();
 
+    @SensorInput(name = "createdCount")
+    private final MwCounter createdCounter = new MwCounter();
+    @SensorInput(name = "destroyedCount")
+    private final MwCounter destroyedCounter = new MwCounter();
+
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
+        nodeEngine.getBlackbox().scanAndRegister(this, "proxy");
     }
 
     public void init() {
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
+    @SensorInput(name = "proxyCount")
     @Override
     public int getProxyCount() {
         int count = 0;
@@ -104,6 +113,7 @@ public class ProxyServiceImpl
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
         registry.createProxy(name, true, true);
+        createdCounter.inc();
     }
 
     public ProxyRegistry getOrCreateRegistry(String serviceName) {
@@ -147,6 +157,7 @@ public class ProxyServiceImpl
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
             registry.destroyProxy(name, fireEvent);
+            destroyedCounter.inc();
         }
         final RemoteService service = nodeEngine.getService(serviceName);
         if (service != null) {

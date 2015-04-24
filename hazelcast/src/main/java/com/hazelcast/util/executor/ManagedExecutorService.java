@@ -16,19 +16,26 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.internal.blackbox.SensorInput;
+
 import java.util.concurrent.ExecutorService;
 
 public interface ManagedExecutorService extends ExecutorService {
 
     String getName();
 
+    @SensorInput(name = "completedTaskCount")
     long getCompletedTaskCount();
 
+    @SensorInput(name = "maximumPoolSize")
     int getMaximumPoolSize();
 
+    @SensorInput(name = "poolSize")
     int getPoolSize();
 
+    @SensorInput(name = "queueSize")
     int getQueueSize();
 
+    @SensorInput(name = "remainingQueueCapacity")
     int getRemainingQueueCapacity();
 }

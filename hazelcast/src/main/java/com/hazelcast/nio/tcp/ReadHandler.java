@@ -16,10 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.blackbox.Blackbox;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.counters.Counter;
+import com.hazelcast.util.counters.SwCounter;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -27,6 +31,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
@@ -35,17 +40,40 @@ public final class ReadHandler extends AbstractSelectionHandler {
 
     private final ByteBuffer inputBuffer;
 
+    @SensorInput
+    private final SwCounter bytesRead = newSwCounter();
+    @SensorInput
+    private final SwCounter normalPacketsRead = newSwCounter();
+    @SensorInput
+    private final SwCounter priorityPacketsRead  = newSwCounter();
+    @SensorInput
+    private final SwCounter readExceptions = newSwCounter();
+    private final Blackbox blackbox;
+
     private SocketReader socketReader;
 
+    @SensorInput(name = "lastReadTime")
     private volatile long lastHandle;
 
     //This field will be incremented by a single thread. It can be read by multiple threads.
+    @SensorInput(name = "readEvents")
     private volatile long eventCount;
 
     public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_READ);
         this.ioSelector = ioSelector;
         this.inputBuffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+
+        this.blackbox = connection.getConnectionManager().getBlackbox();
+        blackbox.scanAndRegister(this, "tcp.connection[" + connection.getConnectionAddress() + "]");
+    }
+
+    public Counter getNormalPacketsRead() {
+        return normalPacketsRead;
+    }
+
+    public Counter getPriorityPacketsRead() {
+        return priorityPacketsRead;
     }
 
     public void start() {
@@ -56,7 +84,6 @@ public final class ReadHandler extends AbstractSelectionHandler {
 
             }
         });
-
         ioSelector.wakeup();
     }
 
@@ -85,8 +112,11 @@ public final class ReadHandler extends AbstractSelectionHandler {
                 }
             }
             int readBytes = socketChannel.read(inputBuffer);
+
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
+            } else {
+                bytesRead.inc(readBytes);
             }
         } catch (Throwable e) {
             handleSocketException(e);
@@ -106,6 +136,12 @@ public final class ReadHandler extends AbstractSelectionHandler {
         } catch (Throwable t) {
             handleSocketException(t);
         }
+    }
+
+    @Override
+    void handleSocketException(Throwable e) {
+        readExceptions.inc();
+        super.handleSocketException(e);
     }
 
     private void initializeSocketReader()
@@ -151,6 +187,8 @@ public final class ReadHandler extends AbstractSelectionHandler {
     }
 
     void shutdown() {
+        blackbox.deregister(this);
+
         ioSelector.addTask(new Runnable() {
             @Override
             public void run() {
@@ -162,5 +200,7 @@ public final class ReadHandler extends AbstractSelectionHandler {
             }
         });
         ioSelector.wakeup();
+
+        logger.severe("DEREGISTER counters");
     }
 }
