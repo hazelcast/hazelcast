@@ -19,6 +19,13 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
+import org.junit.After;
+import org.junit.internal.runners.statements.RunAfters;
+import org.junit.runners.BlockJUnit4ClassRunner;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.MultipleFailureException;
+import org.junit.runners.model.Statement;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -29,14 +36,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-
-import org.junit.After;
-import org.junit.internal.runners.statements.RunAfters;
-import org.junit.runners.BlockJUnit4ClassRunner;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.MultipleFailureException;
-import org.junit.runners.model.Statement;
 
 public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunner {
 

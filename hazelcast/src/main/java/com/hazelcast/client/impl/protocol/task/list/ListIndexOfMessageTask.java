@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListIndexOfParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
@@ -49,6 +50,11 @@ public class ListIndexOfMessageTask
     @Override
     protected ListIndexOfParameters decodeClientMessage(ClientMessage clientMessage) {
         return ListIndexOfParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return IntResultParameters.encode((Integer) response);
     }
 
     @Override

@@ -55,7 +55,7 @@ public class CodeGeneratorMessageTaskFactory
     private Filer filer;
     private Messager messager;
     private Template messageFactoryTemplate;
-    private Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
+    private final Map<String, Map<String, String>> map = new HashMap<String, Map<String, String>>();
 
     private Elements elementUtils;
 
@@ -83,7 +83,7 @@ public class CodeGeneratorMessageTaskFactory
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
         final Set<? extends Element> elementsAnnotatedWith = env.getElementsAnnotatedWith(GenerateMessageTaskFactory.class);
-        if (elementsAnnotatedWith == null || elementsAnnotatedWith.size() == 0) {
+        if (elementsAnnotatedWith == null || elementsAnnotatedWith.isEmpty()) {
             return false;
         }
         for (Element element : elementsAnnotatedWith) {
@@ -104,15 +104,15 @@ public class CodeGeneratorMessageTaskFactory
             TypeElement typeElement = (TypeElement) enclosedElement;
 
             final Set<Modifier> modifiers = typeElement.getModifiers();
-            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED) || typeElement.getKind()
-                                                                                                              .isInterface()) {
+            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED)
+                    || typeElement.getKind().isInterface()) {
                 continue;
             }
 
             final DeclaredType superclass = (DeclaredType) typeElement.getSuperclass();
 
             final List<? extends TypeMirror> typeArguments = superclass.getTypeArguments();
-            if (typeArguments.size() > 0) {
+            if (!typeArguments.isEmpty()) {
                 final TypeMirror typeMirror = typeArguments.get(0);
                 final String key = typeMirror.toString();
                 if (key.endsWith("Parameters")) {
