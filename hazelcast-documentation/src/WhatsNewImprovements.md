@@ -9,7 +9,9 @@ This section lists the enhancements performed for Hazelcast 3.5 release.
  
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers.
-
+ 
+- `SlowOperationDetector` should have an option to not to log the stacktraces to the log file. There is no need to have the stacktraces written to the normal log file if the Hazelcast Management Center or the performance monitor is being used [[5043]](https://github.com/hazelcast/hazelcast/issues/5043).
+- There are no Spring tags available for Native Memory configuration [[4772]](https://github.com/hazelcast/hazelcast/issues/4772).
 - In the class `BasicInvocationFuture`, there is no need to create an additional `AtomicInteger` object. It should be
 replaced with `AtomicIntegerFieldUpdater` [[4408]](https://github.com/hazelcast/hazelcast/issues/4408).
 - There is no need to use the class `IsStillExecutingOperation` to check if an operation is running locally. One
