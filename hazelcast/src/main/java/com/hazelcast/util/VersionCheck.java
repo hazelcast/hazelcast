@@ -115,7 +115,7 @@ public final class VersionCheck {
         String nativeMemoryParameter = (isEnterprise)
                 ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";
         //Calculate connected clients to the cluster.
-        Map<ClientType, Integer> clusterClientStats = hazelcastNode.getClusterService().getConnectedClientStats();
+        Map<ClientType, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
 
         UrlActionParameterCreator parameterCreator = new UrlActionParameterCreator();
         parameterCreator.addParam("version", version);
