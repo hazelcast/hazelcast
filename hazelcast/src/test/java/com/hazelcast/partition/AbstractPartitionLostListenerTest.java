@@ -2,16 +2,28 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
+import com.hazelcast.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
+import static com.hazelcast.test.TestPartitionUtils.getAllReplicaAddresses;
+import static com.hazelcast.test.TestPartitionUtils.getOngoingReplicaSyncRequests;
+import static com.hazelcast.test.TestPartitionUtils.getOwnedReplicaVersions;
+import static com.hazelcast.test.TestPartitionUtils.getScheduledReplicaSyncRequests;
 
 public abstract class AbstractPartitionLostListenerTest
         extends HazelcastTestSupport {
@@ -82,6 +94,69 @@ public abstract class AbstractPartitionLostListenerTest
 
     final protected String getIthMapName(final int i) {
         return "map-" + i;
+    }
+
+    final protected Map<Integer, Integer> getMinReplicaIndicesByPartitionId(final List<HazelcastInstance> instances) {
+        final Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
+        for (HazelcastInstance instance : instances) {
+            final Node survivingNode = getNode(instance);
+            final Address survivingNodeAddress = survivingNode.getThisAddress();
+
+            for (InternalPartition partition : survivingNode.getPartitionService().getPartitions()) {
+                if (partition.isOwnerOrBackup(survivingNodeAddress)) {
+                    for (int replicaIndex = 0; replicaIndex < getNodeCount(); replicaIndex++) {
+                        if (survivingNodeAddress.equals(partition.getReplicaAddress(replicaIndex))) {
+                            final Integer replicaIndexOfOtherInstance = survivingPartitions.get(partition.getPartitionId());
+                            if (replicaIndexOfOtherInstance != null) {
+                                survivingPartitions
+                                        .put(partition.getPartitionId(), Math.min(replicaIndex, replicaIndexOfOtherInstance));
+                            } else {
+                                survivingPartitions.put(partition.getPartitionId(), replicaIndex);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return survivingPartitions;
+    }
+
+    final protected void waitAllForSafeStateAndDumpPartitionServiceOnFailure(final List<HazelcastInstance> instances,
+                                                                             int timeoutInSeconds)
+            throws InterruptedException {
+        try {
+            waitAllForSafeState(instances, timeoutInSeconds);
+        } catch (AssertionError e) {
+            logPartitionState(instances);
+            throw e;
+        }
+    }
+
+    final protected void logPartitionState(List<HazelcastInstance> instances)
+            throws InterruptedException {
+        for (Entry<Integer, List<Address>> entry : getAllReplicaAddresses(instances).entrySet()) {
+            System.out.println("PartitionTable >> partitionId=" + entry.getKey() + " table=" + entry.getValue());
+        }
+
+        for (HazelcastInstance instance : instances) {
+            final Address address = getNode(instance).getThisAddress();
+            for (Entry<Integer, long[]> entry : getOwnedReplicaVersions(instance).entrySet()) {
+                System.out.println(
+                        "ReplicaVersions >> " + address + " - partitionId=" + entry.getKey() + " replicaVersions=" + Arrays
+                                .toString(entry.getValue()));
+            }
+
+            for (ReplicaSyncInfo replicaSyncInfo : getOngoingReplicaSyncRequests(instance)) {
+                System.out.println("OngoingReplicaSync >> " + address + " - " + replicaSyncInfo);
+            }
+
+            for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : getScheduledReplicaSyncRequests(instance)) {
+                System.out.println("ScheduledReplicaSync >> " + address + " - " + entry);
+            }
+        }
     }
 
 }
