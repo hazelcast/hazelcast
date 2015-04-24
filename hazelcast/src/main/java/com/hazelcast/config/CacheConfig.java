@@ -31,7 +31,8 @@ import java.io.IOException;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
-import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -234,16 +235,13 @@ public class CacheConfig<K, V>
      *
      * @param backupCount the number of synchronous backups to set
      * @return current cache config instance
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setAsyncBackupCount(int)
      */
-    public CacheConfig<K, V> setBackupCount(final int backupCount) {
-        if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Cache backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
+    public CacheConfig<K, V> setBackupCount(int backupCount) {
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -258,21 +256,18 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Sets the number of asynchronous backups of cache config.
-     * 0 means no backup.
+     * Sets the number of asynchronous backups.
      *
-     * @param asyncBackupCount the number of asynchronous backups to set
-     * @return current cache config instance
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheConfig
+     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
      */
-    public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
-        if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Cache async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
-        }
-        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
-        }
-        this.asyncBackupCount = asyncBackupCount;
+    public CacheConfig<K, V> setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -301,9 +296,7 @@ public class CacheConfig<K, V>
      * @return current cache config instance
      */
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        isNotNull(evictionConfig, "Eviction config cannot be null !");
-
-        this.evictionConfig = evictionConfig;
+        this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
     }
 
@@ -348,17 +341,15 @@ public class CacheConfig<K, V>
     /**
      * Data type that will be used for storing records.
      * Possible values:
-     *      BINARY (default): keys and values will be stored as binary data
-     *      OBJECT : values will be stored in their object forms
+     * BINARY (default): keys and values will be stored as binary data
+     * OBJECT : values will be stored in their object forms
      *
      * @param inMemoryFormat the record type to set
      * @return current cache config instance
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
-
-        this.inMemoryFormat = inMemoryFormat;
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 

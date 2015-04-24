@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
 
+import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -48,6 +49,68 @@ public class PreconditionsTest {
     // =====================================================
 
     @Test
+    public void checkBackupCount() {
+        checkBackupCount(-1, 0, false);
+        checkBackupCount(-1, -1, false);
+        checkBackupCount(0, -1, false);
+        checkBackupCount(0, 0, true);
+        checkBackupCount(0, 1, true);
+        checkBackupCount(1, 1, true);
+        checkBackupCount(2, 1, true);
+        checkBackupCount(1, 2, true);
+        checkBackupCount(MAX_BACKUP_COUNT, 0, true);
+        checkBackupCount(0, MAX_BACKUP_COUNT, true);
+        checkBackupCount(MAX_BACKUP_COUNT, 1, false);
+        checkBackupCount(MAX_BACKUP_COUNT+1, 0, false);
+        checkBackupCount(0, MAX_BACKUP_COUNT+1, false);
+    }
+
+    public void checkBackupCount(int newBackupCount, int currentAsyncBackupCount, boolean success) {
+        if (success) {
+            int result = Preconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
+            Assert.assertEquals(result, newBackupCount);
+        } else {
+            try {
+                Preconditions.checkBackupCount(newBackupCount, currentAsyncBackupCount);
+                fail();
+            } catch (IllegalArgumentException expected) {
+            }
+        }
+    }
+
+    @Test
+    public void checkAsyncBackupCount() {
+        checkAsyncBackupCount(-1, 0, false);
+        checkAsyncBackupCount(-1, -1, false);
+        checkAsyncBackupCount(0, -1, false);
+        checkAsyncBackupCount(0, 0, true);
+        checkAsyncBackupCount(0, 1, true);
+        checkAsyncBackupCount(1, 1, true);
+        checkAsyncBackupCount(2, 1, true);
+        checkAsyncBackupCount(1, 2, true);
+        checkAsyncBackupCount(MAX_BACKUP_COUNT, 0, true);
+        checkAsyncBackupCount(0, MAX_BACKUP_COUNT, true);
+        checkAsyncBackupCount(MAX_BACKUP_COUNT, 1, false);
+        checkAsyncBackupCount(MAX_BACKUP_COUNT + 1, 0, false);
+        checkAsyncBackupCount(0, MAX_BACKUP_COUNT + 1, false);
+    }
+
+    public void checkAsyncBackupCount(int currentBackupCount, int newAsyncBackupCount, boolean success) {
+        if (success) {
+            int result = Preconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
+            Assert.assertEquals(result, newAsyncBackupCount);
+        } else {
+            try {
+                Preconditions.checkAsyncBackupCount(currentBackupCount, newAsyncBackupCount);
+                fail();
+            } catch (IllegalArgumentException expected) {
+            }
+        }
+    }
+
+    // =====================================================
+
+    @Test
     public void checkNegative_long() {
         checkNegative_long(-1, true);
         checkNegative_long(0, false);
@@ -57,13 +120,13 @@ public class PreconditionsTest {
     public void checkNegative_long(long value, boolean success) {
         String msg = "somemessage";
 
-        if(success){
-            long result = Preconditions.checkNegative(value,msg);
+        if (success) {
+            long result = Preconditions.checkNegative(value, msg);
             Assert.assertEquals(result, value);
-        }else{
+        } else {
             try {
                 Preconditions.checkNegative(value, msg);
-            }catch (IllegalArgumentException expected){
+            } catch (IllegalArgumentException expected) {
                 assertSame(msg, expected.getMessage());
             }
         }
@@ -79,13 +142,13 @@ public class PreconditionsTest {
     public void checkNotNegative_long(long value, boolean success) {
         String msg = "somemessage";
 
-        if(success){
+        if (success) {
             long result = Preconditions.checkNotNegative(value, msg);
             Assert.assertEquals(result, value);
-        }else{
+        } else {
             try {
                 Preconditions.checkNotNegative(value, msg);
-            }catch (IllegalArgumentException expected){
+            } catch (IllegalArgumentException expected) {
                 assertSame(msg, expected.getMessage());
             }
         }
@@ -101,13 +164,13 @@ public class PreconditionsTest {
     public void checkNotNegative_int(int value, boolean success) {
         String msg = "somemessage";
 
-        if(success){
+        if (success) {
             long result = Preconditions.checkNotNegative(value, msg);
             Assert.assertEquals(result, value);
-        }else{
+        } else {
             try {
                 Preconditions.checkNotNegative(value, msg);
-            }catch (IllegalArgumentException expected){
+            } catch (IllegalArgumentException expected) {
                 assertSame(msg, expected.getMessage());
             }
         }
@@ -123,13 +186,14 @@ public class PreconditionsTest {
     public void checkPositive_long(long value, boolean success) {
         String msg = "somemessage";
 
-        if(success){
+        if (success) {
             long result = Preconditions.checkPositive(value, msg);
             Assert.assertEquals(result, value);
-        }else{
+        } else {
             try {
                 Preconditions.checkPositive(value, msg);
-            }catch (IllegalArgumentException expected){
+                fail();
+            } catch (IllegalArgumentException expected) {
                 assertSame(msg, expected.getMessage());
             }
         }
@@ -145,13 +209,14 @@ public class PreconditionsTest {
     public void checkPositive_int(int value, boolean success) {
         String msg = "somemessage";
 
-        if(success){
+        if (success) {
             long result = Preconditions.checkPositive(value, msg);
             Assert.assertEquals(result, value);
-        }else{
+        } else {
             try {
                 Preconditions.checkPositive(value, msg);
-            }catch (IllegalArgumentException expected){
+                fail();
+            } catch (IllegalArgumentException expected) {
                 assertSame(msg, expected.getMessage());
             }
         }
@@ -167,13 +232,14 @@ public class PreconditionsTest {
     public void checkHasText(String value, boolean success) {
         String msg = "somemessage";
 
-        if(success){
+        if (success) {
             String result = Preconditions.checkHasText(value, msg);
             assertSame(result, value);
-        }else{
+        } else {
             try {
                 Preconditions.checkHasText(value, msg);
-            }catch (IllegalArgumentException expected){
+                fail();
+            } catch (IllegalArgumentException expected) {
                 assertSame(msg, expected.getMessage());
             }
         }

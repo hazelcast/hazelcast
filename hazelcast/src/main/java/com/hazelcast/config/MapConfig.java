@@ -17,10 +17,13 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -39,7 +42,7 @@ public class MapConfig {
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = 6;
+    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
 
     /**
      * The number of minimum eviction percentage
@@ -229,15 +232,7 @@ public class MapConfig {
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
-        if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -252,22 +247,18 @@ public class MapConfig {
     }
 
     /**
-     * Sets the number of asynchronous backups.
-     * 0 means no backup.
+     * Sets the number of asynchronous backups. 0 means no backups
      *
-     * @param asyncBackupCount the asyncBackupCount to set
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheConfig
+     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
      */
-    public MapConfig setAsyncBackupCount(final int asyncBackupCount) {
-        if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map async backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.asyncBackupCount = asyncBackupCount;
+    public MapConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 

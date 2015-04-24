@@ -19,6 +19,9 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}
  */
@@ -33,16 +36,6 @@ public class QueueConfig {
      * Default value for the sychronous backup count.
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
-
-    /**
-     * The number of the minimum backup counter.
-     */
-    public static final int MIN_BACKUP_COUNT = 0;
-
-    /**
-     * The number of the maximum backup counter.
-     */
-    public static final int MAX_BACKUP_COUNT = 6;
 
     /**
      * Default value of the asynchronous backup count.
@@ -157,22 +150,17 @@ public class QueueConfig {
     }
 
     /**
-     * Sets the backup count. Throw an IllegalArgumentException if the backup count value
-     * is less than MIN_BACKUP_COUNT or greater than MAX_BACKUP_COUNT.
+     * Sets the number of synchronous backups.
      *
-     * @param backupCount Set the backup count to this value.
-     * @return The Queue configuration.
+     * @param backupCount the number of synchronous backups to set
+     * @return the current QueueConfig
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setAsyncBackupCount(int)
      */
-    public QueueConfig setBackupCount(final int backupCount) {
-        if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
+    public QueueConfig setBackupCount(int backupCount) {
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -186,22 +174,18 @@ public class QueueConfig {
     }
 
     /**
-     * Sets the asynchronous backup count. Throw an IllegalArgumentException if the backup count value
-     * is less than MIN_BACKUP_COUNT or greater than MAX_BACKUP_COUNT.
+     * Sets the number of asynchronous backups. 0 means no backups
      *
-     * @param ayncBackupCount Set the asynchronous backup count to this value.
-     * @return The Queue configuration.
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated QueueConfig
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
      */
-    public QueueConfig setAsyncBackupCount(final int asyncBackupCount) {
-        if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("async backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.asyncBackupCount = asyncBackupCount;
+    public QueueConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 

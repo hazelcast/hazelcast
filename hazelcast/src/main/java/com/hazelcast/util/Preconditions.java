@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
 
 /**
@@ -26,10 +27,11 @@ public final class Preconditions {
     private Preconditions() {
     }
 
+
     /**
      * Tests if an argument is not null.
      *
-     * @param argument the argument tested to see if it is not null.
+     * @param argument     the argument tested to see if it is not null.
      * @param errorMessage the errorMessage
      * @return the argument that was tested.
      * @throws java.lang.NullPointerException if argument is null
@@ -44,7 +46,7 @@ public final class Preconditions {
     /**
      * Tests if a string contains text.
      *
-     * @param argument the string tested to see if it contains text.
+     * @param argument     the string tested to see if it contains text.
      * @param errorMessage the errorMessage
      * @return the string argument that was tested.
      * @throws java.lang.IllegalArgumentException if the string is empty
@@ -148,12 +150,71 @@ public final class Preconditions {
         return value;
     }
 
+    /**
+     * Tests if the newBackupCount count is valid.
+     *
+     * @param newBackupCount          the number of sync backups
+     * @param currentAsyncBackupCount the current number of async backups
+     * @return the newBackupCount
+     * @throws java.lang.IllegalArgumentException if newBackupCount is smaller than 0, or larger than the maximum
+     *                                            number of backups.
+     */
+    public static int checkBackupCount(int newBackupCount, int currentAsyncBackupCount) {
+        if (newBackupCount < 0) {
+            throw new IllegalArgumentException("backup-count can't be smaller than 0");
+        }
+
+        if (currentAsyncBackupCount < 0) {
+            throw new IllegalArgumentException("async-backup-count can't be smaller than 0");
+        }
+
+        if (newBackupCount > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("backup-count can't be larger than than " + MAX_BACKUP_COUNT);
+        }
+
+        if (newBackupCount + currentAsyncBackupCount > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("the sum of backup-count and async-backup-count can't be larger than than "
+                    + MAX_BACKUP_COUNT);
+        }
+
+        return newBackupCount;
+    }
+
+    /**
+     * Tests if the newAsyncBackupCount count is valid.
+     *
+     * @param currentBackupCount  the current number of backups
+     * @param newAsyncBackupCount the new number of async backups
+     * @return the newAsyncBackupCount
+     * @throws java.lang.IllegalArgumentException if asyncBackupCount is smaller than 0, or larger than the maximum
+     *                                            number of backups.
+     */
+    public static int checkAsyncBackupCount(int currentBackupCount, int newAsyncBackupCount) {
+        if (currentBackupCount < 0) {
+            throw new IllegalArgumentException("backup-count can't be smaller than 0");
+        }
+
+        if (newAsyncBackupCount < 0) {
+            throw new IllegalArgumentException("async-backup-count can't be smaller than 0");
+        }
+
+        if (newAsyncBackupCount > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("async-backup-count can't be larger than than " + MAX_BACKUP_COUNT);
+        }
+
+        if (currentBackupCount + newAsyncBackupCount > MAX_BACKUP_COUNT) {
+            throw new IllegalArgumentException("the sum of backup-count and async-backup-count can't be larger than than "
+                    + MAX_BACKUP_COUNT);
+        }
+
+        return newAsyncBackupCount;
+    }
 
     /**
      * Tests whether the supplied object is an instance of the supplied class type.
      *
-     * @param type    the expected type.
-     * @param object  the object tested against the expected type.
+     * @param type         the expected type.
+     * @param object       the object tested against the expected type.
      * @param errorMessage the errorMessage
      * @return the object argument.
      * @throws java.lang.IllegalArgumentException if the object is not an instance of the expected type.
@@ -169,8 +230,8 @@ public final class Preconditions {
     /**
      * Tests the supplied object to see if it is not a type of the supplied class.
      *
-     * @param type    the type that is not of the supplied class.
-     * @param object  the object tested against the type.
+     * @param type         the type that is not of the supplied class.
+     * @param object       the object tested against the type.
      * @param errorMessage the errorMessage
      * @return the object argument.
      * @throws java.lang.IllegalArgumentException if the object is an instance of the type that is not of the expected class.
@@ -186,7 +247,7 @@ public final class Preconditions {
     /**
      * Tests whether the supplied expression is {@code false}.
      *
-     * @param expression the expression tested to see if it is {@code false}.
+     * @param expression   the expression tested to see if it is {@code false}.
      * @param errorMessage the errorMessage
      * @throws java.lang.IllegalArgumentException if the supplied expression is {@code true}.
      */
