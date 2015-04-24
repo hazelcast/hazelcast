@@ -447,6 +447,8 @@
 
     <suppress checks="" files="com.hazelcast.util.DebugUtil"/>
 
+    <suppress checks="IllegalImport" files="com.hazelcast.util.counters.SwCounter"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.util.counters.SwCounter"/>
 
     <suppress checks="" files="com.hazelcast.util.HashUtil"/>
     <suppress checks="MagicNumber" files="com.hazelcast.util.QuickMath"/>
