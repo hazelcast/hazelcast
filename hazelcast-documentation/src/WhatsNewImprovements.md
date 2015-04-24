@@ -3,6 +3,13 @@
 
 This section lists the enhancements performed for Hazelcast 3.5 release.
 
+- **Eventing System Improvements**: ???. For more information, please see [???](#???).
+- **Query and Indexing Improvements**: ???. For more information, please see [???](#???).
+- **XA Transactions Improvements**: ???. For more information, please see [???](#???).
+ 
+
+The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers.
+
 - In the class `BasicInvocationFuture`, there is no need to create an additional `AtomicInteger` object. It should be
 replaced with `AtomicIntegerFieldUpdater` [[4408]](https://github.com/hazelcast/hazelcast/issues/4408).
 - There is no need to use the class `IsStillExecutingOperation` to check if an operation is running locally. One
