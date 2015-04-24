@@ -1,9 +1,11 @@
 package com.hazelcast.map.query;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -114,7 +116,8 @@ public class QueryIndexingTest extends HazelcastTestSupport {
 
     private static Config newConfig(final Map<Integer, Employee> employees) {
         Config conf = new Config();
-        conf.getMapConfig("employees").setBackupCount(0);
+
+        conf.getMapConfig("employees").setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
 
         SerializerConfig serializerConfig = new SerializerConfig();
         serializerConfig.setTypeClass(Employee.class);
@@ -122,6 +125,10 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         serializerConfig.setImplementation(new EmployeeIdSerializer(employees));
 
         conf.getSerializationConfig().addSerializerConfig(serializerConfig);
+
+        // disabling replication since we don't use backups in this test
+        conf.setProperty(GroupProperties.PROP_PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
+
         return conf;
     }
 
