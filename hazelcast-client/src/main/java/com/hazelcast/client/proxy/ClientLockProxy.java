@@ -30,7 +30,7 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.util.ValidationUtil.shouldBePositive;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 public class ClientLockProxy extends ClientProxy implements ILock {
 
@@ -68,7 +68,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public void lock(long leaseTime, TimeUnit timeUnit) {
-        shouldBePositive(leaseTime, "leaseTime");
+        checkPositive(leaseTime, "leaseTime should be positive");
         LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
         invoke(request);
     }

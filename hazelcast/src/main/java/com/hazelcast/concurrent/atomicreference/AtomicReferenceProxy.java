@@ -36,7 +36,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicReferenceService>
         implements AsyncAtomicReference<E> {

@@ -15,8 +15,6 @@
  */
 package com.hazelcast.client.impl.protocol.util;
 
-import com.hazelcast.util.ConcurrencyUtil;
-
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Arrays;
@@ -26,7 +24,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * {@link java.util.Map} implementation specialised for int keys using open addressing and

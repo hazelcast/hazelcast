@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * This is used to separate Server and Client inside the same JVM on new
  * standalone client unittests!<br/>
@@ -82,7 +84,7 @@ public class FilteringClassLoader
     protected Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException {
 
-        ValidationUtil.isNotNull(name, "name");
+        isNotNull(name, "name");
 
         for (String excludePackage : excludePackages) {
             if (name.startsWith(excludePackage)) {

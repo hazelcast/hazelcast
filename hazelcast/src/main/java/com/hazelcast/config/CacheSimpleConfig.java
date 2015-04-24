@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.ValidationUtil;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Simple configuration to hold parsed xml configuration.
@@ -257,7 +257,7 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        ValidationUtil.isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+        isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
 
         this.inMemoryFormat = inMemoryFormat;
         return this;
@@ -268,7 +268,7 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        ValidationUtil.isNotNull(evictionConfig, "Eviction config cannot be null !");
+        isNotNull(evictionConfig, "Eviction config cannot be null !");
 
         this.evictionConfig = evictionConfig;
         return this;

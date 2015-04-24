@@ -23,11 +23,13 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
-import static com.hazelcast.util.ValidationUtil.shouldBePositive;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
@@ -71,7 +73,8 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public void lock(long leaseTime, TimeUnit timeUnit) {
-        shouldBePositive(leaseTime, "leaseTime");
+        checkPositive(leaseTime, "leaseTime should be positive");
+
         lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(leaseTime));
     }
 
@@ -87,9 +90,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        if (unit == null) {
-            throw new NullPointerException("unit can't be null");
-        }
+        checkNotNull(unit, "unit can't be null");
 
         return lockSupport.tryLock(getNodeEngine(), key, time, unit);
     }
@@ -111,9 +112,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public ICondition newCondition(String name) {
-        if (name == null) {
-            throw new NullPointerException("Condition name can't be null");
-        }
+        checkNotNull(name, "Condition name can't be null");
         return new ConditionImpl(this, name);
     }
 

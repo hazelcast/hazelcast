@@ -17,7 +17,8 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
-import com.hazelcast.util.ValidationUtil;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 
@@ -25,7 +26,7 @@ public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 
     public SemaphoreWaitNotifyKey(String name, String type) {
         super(SemaphoreService.SERVICE_NAME, name);
-        this.type = ValidationUtil.isNotNull(type, "type");
+        this.type = isNotNull(type, "type");
     }
 
     @Override

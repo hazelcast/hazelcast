@@ -127,7 +127,7 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.ValidationUtil;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -147,7 +147,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
@@ -1104,7 +1104,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                                                     JobTracker jobTracker) {
 
         try {
-            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            Preconditions.isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);

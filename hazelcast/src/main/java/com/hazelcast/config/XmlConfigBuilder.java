@@ -74,6 +74,7 @@ import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
@@ -126,9 +127,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      * @throws IOException
      */
     public XmlConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         in = url.openStream();
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.client.impl.ClientServiceProxy;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -51,6 +52,9 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.internal.monitors.HealthMonitor;
+import com.hazelcast.internal.monitors.HealthMonitorLevel;
+import com.hazelcast.internal.monitors.PerformanceMonitor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -60,7 +64,6 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -72,15 +75,13 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.internal.monitors.HealthMonitor;
-import com.hazelcast.internal.monitors.HealthMonitorLevel;
-import com.hazelcast.internal.monitors.PerformanceMonitor;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings("unchecked")
 @PrivateApi
@@ -182,75 +183,56 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public <K, V> IMap<K, V> getMap(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a map instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a map instance with a null name is not allowed!");
         return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> IQueue<E> getQueue(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a queue instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a queue instance with a null name is not allowed!");
         return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> ITopic<E> getTopic(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a topic instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
         return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> ISet<E> getSet(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a set instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a set instance with a null name is not allowed!");
         return getDistributedObject(SetService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> IList<E> getList(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a list instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a list instance with a null name is not allowed!");
         return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a multi-map instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a multi-map instance with a null name is not allowed!");
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
     @Override
     public JobTracker getJobTracker(String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a job tracker instance with a null name is not allowed!");
-        }
+        checkNotNull(name, "Retrieving a job tracker instance with a null name is not allowed!");
         return getDistributedObject(MapReduceService.SERVICE_NAME, name);
     }
 
     @Deprecated
     public ILock getLock(Object key) {
-        //this method will be deleted in the near future.
-        if (key == null) {
-            throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
-        }
+        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
         String name = LockProxy.convertToStringKey(key, node.getSerializationService());
         return getLock(name);
     }
 
     @Override
     public ILock getLock(String key) {
-        if (key == null) {
-            throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
-        }
+        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
         return getDistributedObject(LockService.SERVICE_NAME, key);
     }
 
@@ -279,58 +261,44 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
-    public IExecutorService getExecutorService(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving an executor instance with a null name is not allowed!");
-        }
+    public IExecutorService getExecutorService(String name) {
+        checkNotNull(name, "Retrieving an executor instance with a null name is not allowed!");
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
     @Override
-    public IdGenerator getIdGenerator(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving an id-generator instance with a null name is not allowed!");
-        }
+    public IdGenerator getIdGenerator(String name) {
+        checkNotNull(name, "Retrieving an id-generator instance with a null name is not allowed!");
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
     }
 
     @Override
-    public IAtomicLong getAtomicLong(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving an atomic-long instance with a null name is not allowed!");
-        }
+    public IAtomicLong getAtomicLong(String name) {
+        checkNotNull(name, "Retrieving an atomic-long instance with a null name is not allowed!");
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     @Override
-    public <E> IAtomicReference<E> getAtomicReference(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving an atomic-reference instance with a null name is not allowed!");
-        }
+    public <E> IAtomicReference<E> getAtomicReference(String name) {
+        checkNotNull(name, "Retrieving an atomic-reference instance with a null name is not allowed!");
         return getDistributedObject(AtomicReferenceService.SERVICE_NAME, name);
     }
 
     @Override
-    public ICountDownLatch getCountDownLatch(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a countdown-latch instance with a null name is not allowed!");
-        }
+    public ICountDownLatch getCountDownLatch(String name) {
+        checkNotNull(name, "Retrieving a countdown-latch instance with a null name is not allowed!");
         return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override
-    public ISemaphore getSemaphore(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a semaphore instance with a null name is not allowed!");
-        }
+    public ISemaphore getSemaphore(String name) {
+        checkNotNull(name, "Retrieving a semaphore instance with a null name is not allowed!");
         return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
     @Override
-    public <K, V> ReplicatedMap<K, V> getReplicatedMap(final String name) {
-        if (name == null) {
-            throw new NullPointerException("Retrieving a replicated map instance with a null name is not allowed!");
-        }
+    public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
+        checkNotNull(name, "Retrieving a replicated map instance with a null name is not allowed!");
         return getDistributedObject(ReplicatedMapService.SERVICE_NAME, name);
     }
 

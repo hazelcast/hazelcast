@@ -18,6 +18,8 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * A wrapper around the {@link java.lang.ThreadGroup} that provides some additional capabilities. It is a grouping of
  * all thread creational logic throughout the system. To access the actual ThreadGroup, call {@link #getInternalThreadGroup()}.
@@ -44,9 +46,7 @@ public final class HazelcastThreadGroup {
      * @throws java.lang.NullPointerException if name is null.
      */
     public String getThreadNamePrefix(String name) {
-        if (name == null) {
-            throw new NullPointerException("name cant be null");
-        }
+        checkNotNull(name, "name can't be null");
         return "hz." + hzName + "." + name;
     }
 

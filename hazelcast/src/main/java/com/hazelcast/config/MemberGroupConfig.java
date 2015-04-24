@@ -21,8 +21,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a single member group.
@@ -42,8 +42,8 @@ public class MemberGroupConfig {
      * @see #getInterfaces()
      * @see #clear()
      */
-    public MemberGroupConfig addInterface(final String ip) {
-        interfaces.add(hasText(ip, "ip"));
+    public MemberGroupConfig addInterface(String ip) {
+        interfaces.add(checkHasText(ip, "ip must contain text"));
         return this;
     }
 

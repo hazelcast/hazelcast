@@ -48,6 +48,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * <h1>ICache implementation</h1>
@@ -225,9 +226,7 @@ public class CacheProxy<K, V>
             throws EntryProcessorException {
         ensureOpen();
         validateNotNull(key);
-        if (entryProcessor == null) {
-            throw new NullPointerException("Entry Processor is null");
-        }
+        checkNotNull(entryProcessor, "Entry Processor is null");
         final Data keyData = serializationService.toData(key);
         final Integer completionId = registerCompletionLatch(1);
         Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
@@ -253,9 +252,7 @@ public class CacheProxy<K, V>
         //TODO implement a Multiple invoke operation and its factory
         ensureOpen();
         validateNotNull(keys);
-        if (entryProcessor == null) {
-            throw new NullPointerException("Entry Processor is null");
-        }
+        checkNotNull(entryProcessor, "Entry Processor is null");
         Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
@@ -293,9 +290,8 @@ public class CacheProxy<K, V>
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         ensureOpen();
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
-        }
+        checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
+
         final ICacheService service = getService();
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
@@ -310,9 +306,8 @@ public class CacheProxy<K, V>
 
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
-        }
+        checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
+
         final ICacheService service = getService();
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {

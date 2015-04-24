@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
  */
@@ -52,9 +54,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Override
     public Set<ClientEndpoint> getEndpoints(String clientUuid) {
-        if (clientUuid == null) {
-            throw new NullPointerException("clientUuid can't be null");
-        }
+        checkNotNull(clientUuid, "clientUuid can't be null");
 
         Set<ClientEndpoint> endpointSet = new HashSet<ClientEndpoint>();
         for (ClientEndpoint endpoint : endpoints.values()) {
@@ -67,18 +67,14 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Override
     public ClientEndpoint getEndpoint(Connection connection) {
-        if (connection == null) {
-            throw new NullPointerException("connection can't be null");
-        }
+        checkNotNull(connection, "connection can't be null");
 
         return endpoints.get(connection);
     }
 
     @Override
     public void registerEndpoint(ClientEndpoint endpoint) {
-        if (endpoint == null) {
-            throw new NullPointerException("endpoint can't be null");
-        }
+        checkNotNull(endpoint, "endpoint can't be null");
 
         final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
@@ -93,9 +89,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     @Override
     public void removeEndpoint(final ClientEndpoint ce, boolean closeImmediately) {
-        if (ce == null) {
-            throw new NullPointerException("endpoint can't be null");
-        }
+        checkNotNull(ce, "endpoint can't be null");
 
         ClientEndpointImpl endpoint = (ClientEndpointImpl) ce;
 

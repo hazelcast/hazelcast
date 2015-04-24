@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 
 public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatchService> implements ICountDownLatch {
 
@@ -63,6 +64,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     }
 
     private static long getTimeInMillis(long time, TimeUnit timeunit) {
+        // todo: not fail fast
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
@@ -82,9 +84,8 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     @Override
     public boolean trySetCount(int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count can't be negative");
-        }
+        checkNotNegative(count, "count can't be negative");
+
         SetCountOperation op = new SetCountOperation(name, count);
         InternalCompletableFuture<Boolean> f = invoke(op);
         return f.getSafely();

@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
  * The AWSConfig contains the configuration for AWS join mechanism.
@@ -71,7 +71,7 @@ public class AwsConfig {
      * @see #setSecretKey(String)
      */
     public AwsConfig setAccessKey(String accessKey) {
-        this.accessKey = hasText(accessKey, "accessKey");
+        this.accessKey = checkHasText(accessKey, "accessKey must contain text");
         return this;
     }
 
@@ -95,7 +95,7 @@ public class AwsConfig {
      * @see #setAccessKey(String)
      */
     public AwsConfig setSecretKey(String secretKey) {
-        this.secretKey = hasText(secretKey, "secretKey");
+        this.secretKey = checkHasText(secretKey, "secretKey must contain text");
         return this;
     }
 
@@ -117,7 +117,7 @@ public class AwsConfig {
      * @throws IllegalArgumentException if region is null or empty.
      */
     public AwsConfig setRegion(String region) {
-        this.region = hasText(region, "region");
+        this.region = checkHasText(region, "region must contain text");
         return this;
     }
 
@@ -138,7 +138,7 @@ public class AwsConfig {
      * @throws IllegalArgumentException if hostHeader is null or an empty string.
      */
     public AwsConfig setHostHeader(String hostHeader) {
-        this.hostHeader = hasText(hostHeader, "hostHeader");
+        this.hostHeader = checkHasText(hostHeader, "hostHeader must contain text");
         return this;
     }
 

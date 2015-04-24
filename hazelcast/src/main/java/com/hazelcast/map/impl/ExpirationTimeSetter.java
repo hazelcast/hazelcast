@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.record.RecordStatistics;
 
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ValidationUtil.isNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 
 /**
  * Utility methods for setting TTL and max idle seconds.
@@ -132,7 +132,7 @@ final class ExpirationTimeSetter {
      * On backup partitions, this method delays key`s expiration.
      */
     public static long calculateExpirationWithDelay(long timeInMillis, long delayMillis, boolean backup) {
-        isNotNegative(timeInMillis, "timeInMillis");
+        checkNotNegative(timeInMillis, "timeInMillis can't be negative");
 
         if (backup) {
             final long delayedTime = timeInMillis + delayMillis;

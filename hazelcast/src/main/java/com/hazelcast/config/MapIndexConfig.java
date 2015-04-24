@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.Preconditions.checkHasText;
 
 /**
  * Contains the configuration for an index in a map. This class should be used in combination
@@ -78,7 +78,7 @@ public class MapIndexConfig {
      * @throws IllegalArgumentException if attribute is null or an empty string.
      */
     public MapIndexConfig setAttribute(String attribute) {
-        this.attribute = hasText(attribute, "Map index attribute");
+        this.attribute = checkHasText(attribute, "Map index attribute must contain text");
         return this;
     }
 

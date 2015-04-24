@@ -71,7 +71,7 @@ import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.ValidationUtil;
+import com.hazelcast.util.Preconditions;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -83,9 +83,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
-import static com.hazelcast.util.ValidationUtil.shouldBePositive;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * @author ali 5/19/13
@@ -291,8 +291,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkPositive(leaseTime, "leaseTime should be positive");
 
-        shouldBePositive(leaseTime, "leaseTime");
         final Data keyData = toData(key);
         ClientMessage request = MultiMapLockParameters.encode(name, keyData,
                 ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit));
@@ -365,7 +365,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                                                     JobTracker jobTracker) {
 
         try {
-            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            Preconditions.isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);

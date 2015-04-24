@@ -33,7 +33,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomicReference<E> {
 
