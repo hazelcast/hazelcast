@@ -611,6 +611,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Node attName = node.getAttributes().getNamedItem("name");
             final String name = getTextContent(attName);
             wanRepConfigBuilder.addPropertyValue("name", name);
+            final Node attSnapshotEnabled = node.getAttributes().getNamedItem("snapshot-enabled");
+            final boolean snapshotEnabled = checkTrue(getTextContent(attSnapshotEnabled));
+            wanRepConfigBuilder.addPropertyValue("snapshotEnabled", snapshotEnabled);
+
             final ManagedList targetClusters = new ManagedList();
             for (Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final String nName = cleanNodeName(n);

@@ -49,7 +49,7 @@
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
             </hz:properties>
-            <hz:wan-replication name="testWan">
+            <hz:wan-replication name="testWan" snapshot-enabled="false">
                 <hz:target-cluster group-name="tokyo" group-password="tokyo-pass">
                     <hz:replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</hz:replication-impl>
                     <hz:end-points>

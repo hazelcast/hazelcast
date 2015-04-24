@@ -27,6 +27,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
+import com.hazelcast.wan.impl.WanNoDelayReplication;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -354,8 +355,14 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleWanReplication(final Node node) throws Exception {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
+
+        final Node attSnapshotEnabled = node.getAttributes().getNamedItem("snapshot-enabled");
+        final boolean snapshotEnabled = checkTrue(getTextContent(attSnapshotEnabled));
+
         final WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
         wanReplicationConfig.setName(name);
+        wanReplicationConfig.setSnapshotEnabled(snapshotEnabled);
+
         for (org.w3c.dom.Node nodeTarget : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(nodeTarget.getNodeName());
             if ("target-cluster".equals(nodeName)) {
@@ -371,6 +378,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 for (org.w3c.dom.Node targetChild : new IterableNodeList(nodeTarget.getChildNodes())) {
                     final String targetChildName = cleanNodeName(targetChild.getNodeName());
                     if ("replication-impl".equals(targetChildName)) {
+                        String replicationImpl = getTextContent(targetChild);
+                        if (WanNoDelayReplication.class.getName().equals(replicationImpl)
+                                && wanReplicationConfig.isSnapshotEnabled()) {
+                            throw new InvalidConfigurationException("snapshot-enabled property "
+                                    + "only can be set to true when used with Enterprise Wan Batch Replication");
+                        }
                         wanTarget.setReplicationImpl(getTextContent(targetChild));
                     } else if ("end-points".equals(targetChildName)) {
                         for (org.w3c.dom.Node address : new IterableNodeList(targetChild.getChildNodes())) {

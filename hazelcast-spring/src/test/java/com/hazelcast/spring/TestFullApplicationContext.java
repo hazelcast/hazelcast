@@ -509,6 +509,7 @@ public class TestFullApplicationContext {
     public void testWanReplicationConfig() {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         assertNotNull(wcfg);
+        assertFalse(wcfg.isSnapshotEnabled());
         assertEquals(2, wcfg.getTargetClusterConfigs().size());
         WanTargetClusterConfig targetCfg = wcfg.getTargetClusterConfigs().get(0);
         assertNotNull(targetCfg);

@@ -1533,6 +1533,11 @@
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
         </xs:attribute>
+        <xs:attribute name="snapshot-enabled" use="optional" default="false">
+            <xs:simpleType>
+                <xs:restriction base="xs:boolean"/>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="partition-group">

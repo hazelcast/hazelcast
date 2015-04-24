@@ -694,4 +694,32 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(54327, mcastConfig.getMulticastPort());
     }
 
+    @Test
+    public void testWanConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
+                        "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
+                        "       <replication-impl>com.hazelcast.enterprise.wan.replication.WanBatchReplication</replication-impl>\n" +
+                        "       <end-points>\n" +
+                        "          <address>20.30.40.50:5701</address>\n" +
+                        "          <address>20.30.40.50:5702</address>\n" +
+                        "       </end-points>\n" +
+                        "    </target-cluster>\n" +
+                        "</wan-replication>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
+        assertNotNull(wanConfig);
+        assertTrue(wanConfig.isSnapshotEnabled());
+        List<WanTargetClusterConfig> targetClusterConfigs = wanConfig.getTargetClusterConfigs();
+        assertEquals(1, targetClusterConfigs.size());
+        WanTargetClusterConfig targetClusterConfig = targetClusterConfigs.get(0);
+        assertEquals("test-cluster-1", targetClusterConfig.getGroupName());
+        assertEquals("test-pass", targetClusterConfig.getGroupPassword());
+        List<String> targetEndpoints = targetClusterConfig.getEndpoints();
+        assertEquals(2, targetEndpoints.size());
+        assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
+        assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
+    }
 }
