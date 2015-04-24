@@ -26,7 +26,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
  *
  * @see MapContainer
  */
-abstract class MapContainerSupport {
+public abstract class MapContainerSupport {
 
     protected volatile MapConfig mapConfig;
 

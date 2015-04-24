@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.map.impl.MapContextQuerySupport;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -27,20 +26,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.FutureUtil;
-import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,6 +48,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.SortingUtil.newComparator;
+import static java.util.Collections.sort;
 
 public class QueryOperation extends AbstractMapOperation {
 
@@ -63,7 +60,6 @@ public class QueryOperation extends AbstractMapOperation {
 
     private QueryResult result;
 
-    @SuppressWarnings("unused")
     public QueryOperation() {
     }
 
@@ -77,22 +73,21 @@ public class QueryOperation extends AbstractMapOperation {
 
     @Override
     public void run() throws Exception {
-        MapService service = getService();
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
-        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
 
         int partitionStateVersion = partitionService.getPartitionStateVersion();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
 
-        IndexService indexService = mapServiceContext.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         if (!partitionService.hasOnGoingMigrationLocal()) {
-            entries = indexService.query(predicate);
+            entries = mapContainer.getIndexService().query(predicate);
         }
 
-        result = new QueryResult();
+        result = mapQuerySupport.newQueryResult(initialPartitions.size());
         if (entries != null) {
-            addQueryEntriesToResult(entries);
+            result.addAll(entries);
         } else {
             // run in parallel
             if (pagingPredicate != null) {
@@ -106,9 +101,8 @@ public class QueryOperation extends AbstractMapOperation {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            LocalMapStatsImpl localMapStatsImpl = mapServiceContext
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name);
-            localMapStatsImpl.incrementOtherOperations();
+            LocalMapStatsImpl localStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
+            localStats.incrementOtherOperations();
         }
 
         checkPartitionStateChanges(partitionService, partitionStateVersion);
@@ -121,8 +115,8 @@ public class QueryOperation extends AbstractMapOperation {
                 initialPartitions.size());
 
         for (Integer partitionId : initialPartitions) {
-            Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(partitionId));
-            lsFutures.add(f);
+            Future<Collection<QueryableEntry>> future = executor.submit(new PartitionCallable(partitionId));
+            lsFutures.add(future);
         }
 
         Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
@@ -130,9 +124,7 @@ public class QueryOperation extends AbstractMapOperation {
             if (returnedResult == null) {
                 continue;
             }
-            if (!addQueryEntriesToResult(returnedResult)) {
-                break;
-            }
+            result.addAll(returnedResult);
         }
     }
 
@@ -142,10 +134,10 @@ public class QueryOperation extends AbstractMapOperation {
         List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(
                 initialPartitions.size());
 
-        Comparator<Map.Entry> wrapperComparator = SortingUtil.newComparator(pagingPredicate);
+        Comparator<Map.Entry> wrapperComparator = newComparator(pagingPredicate);
         for (Integer partitionId : initialPartitions) {
-            Future<Collection<QueryableEntry>> f = executor.submit(new PartitionCallable(partitionId));
-            lsFutures.add(f);
+            Future<Collection<QueryableEntry>> future = executor.submit(new PartitionCallable(partitionId));
+            lsFutures.add(future);
         }
         List<QueryableEntry> toMerge = new LinkedList<QueryableEntry>();
         Collection<Collection<QueryableEntry>> returnedResults = getResult(lsFutures);
@@ -153,23 +145,16 @@ public class QueryOperation extends AbstractMapOperation {
             toMerge.addAll(returnedResult);
         }
 
-        Collections.sort(toMerge, wrapperComparator);
+        sort(toMerge, wrapperComparator);
 
         if (toMerge.size() > pagingPredicate.getPageSize()) {
             toMerge = toMerge.subList(0, pagingPredicate.getPageSize());
         }
-        addQueryEntriesToResult(toMerge);
+        result.addAll(toMerge);
     }
 
     private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
         return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
-    }
-
-    private boolean addQueryEntriesToResult(Collection<QueryableEntry> queryableEntries) {
-        for (QueryableEntry entry : queryableEntries) {
-            result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getKeyData(), entry.getValueData()));
-        }
-        return true;
     }
 
     private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {

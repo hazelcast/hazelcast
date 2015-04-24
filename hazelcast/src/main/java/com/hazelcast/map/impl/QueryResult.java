@@ -16,11 +16,13 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,29 +32,38 @@ import java.util.LinkedHashSet;
 
 public class QueryResult implements DataSerializable {
 
-    private final Collection<QueryResultEntry> result;
+    private final Collection<QueryResultEntry> result = new LinkedHashSet<QueryResultEntry>();
 
     private Collection<Integer> partitionIds;
 
+    private transient long resultLimit;
+    private transient long resultSize;
+
     public QueryResult() {
-        result = new LinkedHashSet<QueryResultEntry>();
+        this(Long.MAX_VALUE);
     }
 
-    @SuppressWarnings("unused")
-    public QueryResult(Collection<QueryResultEntry> queryableEntries) {
-        result = queryableEntries;
+    public QueryResult(long resultLimit) {
+        this.resultLimit = resultLimit;
     }
 
-    public Collection<Integer> getPartitionIds() {
-        return partitionIds;
+    public void addAll(Collection<QueryableEntry> queryableEntries) {
+        for (QueryableEntry entry : queryableEntries) {
+            if (++resultSize > resultLimit) {
+                throw new QueryResultSizeExceededException();
+            }
+            QueryResultEntryImpl queryEntry = new QueryResultEntryImpl(
+                    entry.getKeyData(), entry.getIndexKey(), entry.getValueData());
+            result.add(queryEntry);
+        }
     }
 
     public void setPartitionIds(Collection<Integer> partitionIds) {
         this.partitionIds = partitionIds;
     }
 
-    public void add(QueryResultEntry resultEntry) {
-        result.add(resultEntry);
+    public Collection<Integer> getPartitionIds() {
+        return partitionIds;
     }
 
     public Collection<QueryResultEntry> getResult() {

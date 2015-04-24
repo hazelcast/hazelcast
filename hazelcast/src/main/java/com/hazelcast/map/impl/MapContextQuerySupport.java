@@ -85,4 +85,12 @@ public interface MapContextQuerySupport {
      */
     Set query(String mapName, Predicate predicate,
               IterationType iterationType, boolean dataResult);
+
+    /**
+     * Creates a {@link QueryResult} with configured result limit (according to the number of partitions) if feature is enabled.
+     *
+     * @param numberOfPartitions number of partitions to calculate result limit
+     * @return {@link QueryResult}
+     */
+    QueryResult newQueryResult(int numberOfPartitions);
 }

@@ -703,9 +703,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<K, V> getAll(Set<K> keys) {
         initNearCache();
-        Set<Data> keySet = new HashSet(keys.size());
+        Set<Data> keySet = new HashSet<Data>(keys.size());
         Map<K, V> result = new HashMap<K, V>();
         for (Object key : keys) {
             keySet.add(toData(key));
@@ -770,6 +771,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
@@ -811,6 +813,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
