@@ -148,6 +148,10 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.internal.storage[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.internal.storage[\\/]"/>
 
+    <!-- we don't care about return count here since there are just many types to deal with -->
+    <suppress checks="ReturnCount" files="com.hazelcast.internal.blackbox.impl.FieldSensor"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.internal.blackbox.impl.MethodSensor"/>
+
 
     <!-- client -->
     <!-- TODO: These javadoc issues need to be addressed -->
@@ -436,6 +440,8 @@
 
     <suppress checks="" files="com.hazelcast.util.DebugUtil"/>
 
+    <suppress checks="IllegalImport" files="com.hazelcast.util.counters.SwCounter"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.util.counters.SwCounter"/>
 
     <suppress checks="" files="com.hazelcast.util.HashUtil"/>
     <suppress checks="MagicNumber" files="com.hazelcast.util.QuickMath"/>
