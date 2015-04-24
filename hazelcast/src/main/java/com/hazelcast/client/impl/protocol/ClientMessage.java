@@ -69,10 +69,12 @@ public class ClientMessage
      * Begin Flag
      */
     public static final short BEGIN_FLAG = 0x80;
+
     /**
      * End Flag
      */
     public static final short END_FLAG = 0x40;
+
     /**
      * Begin and End Flags
      */
@@ -177,8 +179,8 @@ public class ClientMessage
     /**
      * Sets the version field value.
      *
-     * @param version The field value to set.
-     * @return ClientMessage
+     * @param version The value to set in the version field.
+     * @return The ClientMessage with the new version field value.
      */
     public ClientMessage setVersion(final short version) {
         uint8Put(offset() + VERSION_FIELD_OFFSET, version);
@@ -187,7 +189,8 @@ public class ClientMessage
 
 
     /**
-     * @return true if given flag is set, false otherwise
+     * @param flag Check this flag to see if it is set.
+     * @return true if the given flag is set, false otherwise.
      */
     public boolean isFlagSet(short flag) {
         int i = getFlags() & flag;
@@ -206,8 +209,8 @@ public class ClientMessage
     /**
      * Sets the flags field value.
      *
-     * @param flags The field value to set.
-     * @return ClientMessage
+     * @param flags The value to set in the flags field.
+     * @return The ClientMessage with the new flags field value.
      */
     public ClientMessage addFlag(final short flags) {
         uint8Put(offset() + FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
@@ -226,8 +229,8 @@ public class ClientMessage
     /**
      * Sets the message type field.
      *
-     * @param type The message type field value to set.
-     * @return ClientMessage
+     * @param type The value to set in the message type field.
+     * @return The ClientMessage with the new message type field value.
      */
     public ClientMessage setMessageType(final int type) {
         uint16Put(offset() + TYPE_FIELD_OFFSET, (short) type, LITTLE_ENDIAN);
@@ -246,8 +249,8 @@ public class ClientMessage
     /**
      * Sets the frame length field.
      *
-     * @param length The frame length field value to set.
-     * @return ClientMessage
+     * @param length The value to set in the frame length field.
+     * @return The ClientMessage with the new frame length field value.
      */
     public ClientMessage setFrameLength(final int length) {
         uint32Put(offset() + FRAME_LENGTH_FIELD_OFFSET, length, LITTLE_ENDIAN);
@@ -266,8 +269,8 @@ public class ClientMessage
     /**
      * Sets the correlation id field.
      *
-     * @param correlationId The correlation id field value to set.
-     * @return ClientMessage
+     * @param correlationId The value to set in the correlation id field.
+     * @return The ClientMessage with the new correlation id field value.
      */
     public ClientMessage setCorrelationId(final int correlationId) {
         uint32Put(offset() + CORRELATION_ID_FIELD_OFFSET, correlationId, ByteOrder.LITTLE_ENDIAN);
@@ -286,8 +289,8 @@ public class ClientMessage
     /**
      * Sets the partition id field.
      *
-     * @param partitionId The partitions id field value to set.
-     * @return ClientMessage
+     * @param partitionId The value to set in the partitions id field.
+     * @return The ClientMessage with the new partitions id field value.
      */
     public ClientMessage setPartitionId(final int partitionId) {
         uint32Put(offset() + PARTITION_ID_FIELD_OFFSET, partitionId, ByteOrder.LITTLE_ENDIAN);
@@ -306,8 +309,8 @@ public class ClientMessage
     /**
      * Sets the dataOffset field.
      *
-     * @param dataOffset The dataOffset field value to set.
-     * @return ClientMessage
+     * @param dataOffset The value to set in the dataOffset field.
+     * @return The ClientMessage with the new dataOffset field value.
      */
     public ClientMessage setDataOffset(final int dataOffset) {
         uint16Put(offset() + DATA_OFFSET_FIELD_OFFSET, (short) dataOffset, LITTLE_ENDIAN);
@@ -315,10 +318,10 @@ public class ClientMessage
     }
 
     /**
-     * Copy into the payload data region located at data Offset.
+     * Copy data into the payload data region located at data Offset.
      *
-     * @param payload The data being copied into the payload data region.
-     * @return ClientMessage
+     * @param payload The data being copied into the ClientMessage payload data region.
+     * @return The ClientMessage with the new data in its payload data region.
      */
     public ClientMessage putPayloadData(byte[] payload) {
         final int index = offset() + getDataOffset();
@@ -328,10 +331,10 @@ public class ClientMessage
     }
 
     /**
-     * Reads from the payload data region into the provided array.
+     * Reads from the ClientMessage payload data region and writes into the payload array.
      *
-     * @param payload destination array that the payload will be copied into.
-     * @return ClientMessage
+     * @param payload The payload array into which the payload data region in the ClientMessage will be copied.
+     * @return The ClientMessage from which its payload data region is copied into the payload array.
      */
     public ClientMessage getPayloadData(byte[] payload) {
         final int index = offset() + getDataOffset();
@@ -366,7 +369,7 @@ public class ClientMessage
             bytesWrite = bytesNeeded;
             done = true;
         } else {
-            // Not all bytes for the value are available. So lets write as much as is available.
+            // Not all bytes for the value are available. Write as much as is available.
             bytesWrite = bytesWritable;
             done = false;
         }

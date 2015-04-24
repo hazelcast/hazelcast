@@ -25,27 +25,32 @@ import java.util.List;
 public class QueueConfig {
 
     /**
-     * Default value of maximum size of Queue
+     * Default value for the maximum size of the Queue.
      */
     public static final int DEFAULT_MAX_SIZE = 0;
+
     /**
-     * Default value of sycronous backup count
+     * Default value for the sychronous backup count.
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
+
     /**
-     * The number of minimum backup counter
+     * The number of the minimum backup counter.
      */
     public static final int MIN_BACKUP_COUNT = 0;
+
     /**
-     * The number of maximum backup counter
+     * The number of the maximum backup counter.
      */
     public static final int MAX_BACKUP_COUNT = 6;
+
     /**
-     * Default value of asynchronous backup count
+     * Default value of the asynchronous backup count.
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+
     /**
-     * Default value of time to live for empty Queue
+     * Default value for the TTL (time to live) for empty Queue.
      */
     public static final int DEFAULT_EMPTY_QUEUE_TTL = -1;
 
@@ -78,6 +83,11 @@ public class QueueConfig {
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
 
+    /**
+     * Returns a read only copy of the queue configuration.
+     *
+     * @return A read only copy of the queue configuration.
+     */
     public QueueConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new QueueConfigReadOnly(this);
@@ -85,19 +95,41 @@ public class QueueConfig {
         return readOnly;
     }
 
+    /**
+     * Returns the TTL (time to live) for empty Queue.
+     *
+     * @return The TTL (time to live) for empty Queue.
+     */
     public int getEmptyQueueTtl() {
         return emptyQueueTtl;
     }
 
+    /**
+     * Sets the TTL (time to live) for empty Queue.
+     *
+     * @param emptyQueueTtl Set the TTL (time to live) for empty Queue to this value.
+     * @return The Queue configuration.
+     */
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
         this.emptyQueueTtl = emptyQueueTtl;
         return this;
     }
 
+    /**
+     * Returns the maximum size of the Queue.
+     *
+     * @return The maximum size of the Queue.
+     */
     public int getMaxSize() {
         return maxSize == 0 ? Integer.MAX_VALUE : maxSize;
     }
 
+    /**
+     * Sets the maximum size of the Queue.
+     *
+     * @param maxSize Set the maximum size of the Queue to this value.
+     * @return The Queue configuration.
+     */
     public QueueConfig setMaxSize(int maxSize) {
         if (maxSize < 0) {
             throw new IllegalArgumentException("Size of the queue can not be a negative value!");
@@ -106,14 +138,31 @@ public class QueueConfig {
         return this;
     }
 
+    /**
+     * Get the total of the backup count and the asynchronous backup count.
+     *
+     * @return The total of the backup count and the asynchronous backup count.
+     */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
+    /**
+     * Get the backup count.
+     *
+     * @return The backup count.
+     */
     public int getBackupCount() {
         return backupCount;
     }
 
+    /**
+     * Sets the backup count. Throw an IllegalArgumentException if the backup count value
+     * is less than MIN_BACKUP_COUNT or greater than MAX_BACKUP_COUNT.
+     *
+     * @param backupCount Set the backup count to this value.
+     * @return The Queue configuration.
+     */
     public QueueConfig setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
             throw new IllegalArgumentException("backup count must be equal to or bigger than "
@@ -127,10 +176,22 @@ public class QueueConfig {
         return this;
     }
 
+    /**
+     * Get the asynchronous backup count.
+     *
+     * @return The asynchronous backup count.
+     */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
     }
 
+    /**
+     * Sets the asynchronous backup count. Throw an IllegalArgumentException if the backup count value
+     * is less than MIN_BACKUP_COUNT or greater than MAX_BACKUP_COUNT.
+     *
+     * @param ayncBackupCount Set the asynchronous backup count to this value.
+     * @return The Queue configuration.
+     */
     public QueueConfig setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
             throw new IllegalArgumentException("async backup count must be equal to or bigger than "
@@ -144,45 +205,80 @@ public class QueueConfig {
         return this;
     }
 
+    /**
+     * Get the queue store configuration.
+     *
+     * @return The queue store configuration.
+     */
     public QueueStoreConfig getQueueStoreConfig() {
         return queueStoreConfig;
     }
 
+    /**
+     * Set the queue store configuration.
+     *
+     * @param queueStoreConfig Set the queue store configuration to this configuration.
+     * @return The queue store configuration.
+     */
     public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
         return this;
     }
 
+    /**
+     * Check if statistics are enabled.
+     *
+     * @return true is statistics are enabled, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     * Set the statistics enabled value for this queue configuration.
+     *
+     * @param statisticsEnabled Set to true or false to enable or disable statistics.
+     * @return The queue configuration.
+     */
     public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
 
     /**
-     * @return the name
+     * @return The name of this queue configuration.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * @param name the name to set
-     * @return this queue config
+     * Set the name for this queue configuration.
+     *
+     * @param name The name to set for this queue configuration.
+     * @return This queue configuration.
      */
     public QueueConfig setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * Add an item listener configuration to this queue configuration.
+     *
+     * @param listenerConfig The item listener configuration to add to this queue configuration.
+     * @return This queue configuration.
+     */
     public QueueConfig addItemListenerConfig(ItemListenerConfig listenerConfig) {
         getItemListenerConfigs().add(listenerConfig);
         return this;
     }
 
+    /**
+     * Get the list of item listener configurations for this queue configuration.
+     *
+     * @return The list of item listener configurations for this queue configuration.
+     */
     public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
             listenerConfigs = new ArrayList<ItemListenerConfig>();
@@ -190,6 +286,12 @@ public class QueueConfig {
         return listenerConfigs;
     }
 
+    /**
+     * Set the list of item listener configurations for this queue configuration to this list.
+     *
+     * @param listenerConfigs The list of item listener configurations to set for this queue configuration.
+     * @return This queue configuration.
+     */
     public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
         return this;
