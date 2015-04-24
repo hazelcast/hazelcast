@@ -20,7 +20,7 @@ if NOT "%MIN_HEAP_SIZE%" == "" (
 )
 
 if NOT "%MAX_HEAP_SIZE%" == "" (
-	set JAVA_OPTS=%JAVA_OPTS% -Xms%MAX_HEAP_SIZE%
+	set JAVA_OPTS=%JAVA_OPTS% -Xmx%MAX_HEAP_SIZE%
 )
 
 set CLASSPATH=..\lib\hazelcast-${project.version}.jar

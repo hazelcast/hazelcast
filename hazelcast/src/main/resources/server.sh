@@ -36,7 +36,7 @@ if [ "x$MIN_HEAP_SIZE" != "x" ]; then
 fi
 
 if [ "x$MAX_HEAP_SIZE" != "x" ]; then
-	JAVA_OPTS="$JAVA_OPTS -Xms${MAX_HEAP_SIZE}"
+	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
 fi
 
 export CLASSPATH=$HAZELCAST_HOME/lib/hazelcast-${project.version}.jar
