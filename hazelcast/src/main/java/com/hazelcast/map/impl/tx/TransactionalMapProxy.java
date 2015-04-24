@@ -320,9 +320,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     public Set keySet(Predicate predicate) {
         checkTransactionState();
         checkNotNull(predicate, "Predicate should not be null!");
-        if (predicate instanceof PagingPredicate) {
-            throw new NullPointerException("Paging is not supported for Transactional queries!");
-        }
+        checkNotInstanceOf(PagingPredicate.class, predicate, "Paging is not supported for Transactional queries!");
 
         MapService service = getService();
         MapServiceContext mapServiceContext = service.getMapServiceContext();
