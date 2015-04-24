@@ -73,8 +73,8 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
      * @param imbalance describing a snapshot of IOSelector load
      * @return the handler to migrate to a new IOSelector or null if no handler needs to be migrated.
      */
-     @Override
-     public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
+    @Override
+    public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
         Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
         long migrationThreshold = (long) ((imbalance.maximumEvents - imbalance.minimumEvents)
                 * MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT);

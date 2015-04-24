@@ -1,8 +1,7 @@
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -103,10 +102,10 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         multiFieldAndMethod.field2 = 2;
         metricsRegistry.scanAndRegister(multiFieldAndMethod, "foo");
 
-        Gauge field1 = metricsRegistry.getGauge("foo.field1");
-        Gauge field2 = metricsRegistry.getGauge("foo.field2");
-        Gauge method1 = metricsRegistry.getGauge("foo.method1");
-        Gauge method2 = metricsRegistry.getGauge("foo.method2");
+        LongGauge field1 = metricsRegistry.newLongGauge("foo.field1");
+        LongGauge field2 = metricsRegistry.newLongGauge("foo.field2");
+        LongGauge method1 = metricsRegistry.newLongGauge("foo.method1");
+        LongGauge method2 = metricsRegistry.newLongGauge("foo.method2");
 
         metricsRegistry.deregister(multiFieldAndMethod);
 
@@ -118,10 +117,10 @@ public class RegisterMetricTest extends HazelcastTestSupport {
         assertFalse(names.contains("foo.method2"));
 
         // make sure that the metric input has been disconnected
-        assertEquals(0, field1.readLong());
-        assertEquals(0, field2.readLong());
-        assertEquals(0, method1.readLong());
-        assertEquals(0, method2.readLong());
+        assertEquals(0, field1.read());
+        assertEquals(0, field2.read());
+        assertEquals(0, method1.read());
+        assertEquals(0, method2.read());
     }
 
     @Test

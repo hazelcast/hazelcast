@@ -48,6 +48,8 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -163,6 +165,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private volatile boolean joinInProgress = false;
 
+    @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat = 0L;
 
     private long timeToStartJoin = 0;
@@ -198,6 +201,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.connectionManager.addConnectionListener(this);
+
+        registerMetrics();
+    }
+
+    void registerMetrics() {
+        MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
+        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
+        metricsRegistry.scanAndRegister(this, "cluster");
     }
 
     @Override
@@ -1379,6 +1390,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return node.getLocalMember();
     }
 
+    @Probe(name = "size")
     @Override
     public int getSize() {
         final Collection<MemberImpl> members = getMemberList();

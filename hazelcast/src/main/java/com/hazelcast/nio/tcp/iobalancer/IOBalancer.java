@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Connection;
@@ -27,6 +28,10 @@ import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.util.counters.SwCounter;
+import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 import static com.hazelcast.instance.GroupProperties.PROP_IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
@@ -65,6 +70,14 @@ public class IOBalancer {
     private final HazelcastThreadGroup threadGroup;
     private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
+
+    // only IOBalancerThread will write to this field.
+    @Probe
+    private final SwCounter imbalanceDetectedCount = newSwCounter();
+
+    // multiple threads can update this field.
+    @Probe
+    private final MwCounter migrationCompletedCount = newMwCounter();
 
     public IOBalancer(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors, HazelcastThreadGroup threadGroup,
                       int balancerIntervalSeconds, LoggingService loggingService) {
@@ -141,6 +154,7 @@ public class IOBalancer {
     private void scheduleMigrationIfNeeded(LoadTracker loadTracker) {
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
         if (strategy.imbalanceDetected(loadImbalance)) {
+            imbalanceDetectedCount.inc();
             tryMigrate(loadImbalance);
         } else {
             if (logger.isFinestEnabled()) {
@@ -197,5 +211,9 @@ public class IOBalancer {
                     + " from selector thread " + sourceSelector + " to " + destinationSelector);
         }
         handler.requestMigration(destinationSelector);
+    }
+
+    public void signalMigrationComplete() {
+        migrationCompletedCount.inc();
     }
 }

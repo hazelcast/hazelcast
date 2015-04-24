@@ -26,6 +26,7 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
@@ -158,7 +159,7 @@ public abstract class HazelcastTestSupport {
         return node.clusterService.getThisAddress();
     }
 
-    public static Packet toPacket(HazelcastInstance hz, Operation operation){
+    public static Packet toPacket(HazelcastInstance hz, Operation operation) {
         SerializationService serializationService = getSerializationService(hz);
         ConnectionManager connectionManager = getConnectionManager(hz);
 
@@ -169,12 +170,12 @@ public abstract class HazelcastTestSupport {
         return packet;
     }
 
-    public static ConnectionManager getConnectionManager(HazelcastInstance hz){
+    public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.connectionManager;
     }
 
-    public static ClusterService getClusterService(HazelcastInstance hz){
+    public static ClusterService getClusterService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService;
     }
@@ -197,6 +198,11 @@ public abstract class HazelcastTestSupport {
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.nodeEngine;
+    }
+
+    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz){
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        return nodeEngine.getMetricsRegistry();
     }
 
     @After

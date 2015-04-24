@@ -17,33 +17,30 @@
 package com.hazelcast.internal.metrics;
 
 /**
+ * A Metric is a 'quantitative measure' of something for example the number of operations pending, number of operations
+ * per second being executed etc.
+ *
  * Each metric is uniquely identified using a name. See {@link #getName()}.
  *
- * A metric gets its content from Probes. An input can be one of the following:
+ * A metric gets its content from a probe. An probe can be one of the following:
  * <ol>
  *     <li>a method with the {@link Probe} annotation</li>
  *     <li>a field with the {@link Probe} annotation</li>
- *     <li>a {@link LongProbe} function</li>
- *     <li>a {@link DoubleProbe} function</li>
+ *     <li>a {@link LongProbeFunction}</li>
+ *     <li>a {@link DoubleProbeFunction}</li>
  * </ol>
  *
- * If the Metric is obtained before it is registered, the Metric is without input. As soon as the registration happens, the
- * input is set on the metric and the current information will be retrieved.
+ * If the Metric is obtained before a probe is registered, the Metric is without probe. As long as no probe is available,
+ * every time the metrics needs a value, it will look up the probe in the {@link MetricsRegistry}.
  */
 public interface Metric {
 
     /**
-     * Gets the name that identifies this metric. The returned value will never change and never be null.
+     * Gets the name that identifies this metric.
+     *
+     * The returned value will never change and never be null.
      *
      * @return the name of the metric.
      */
     String getName();
-
-    /**
-     * Renders the metric.
-     *
-     * @param sb the StringBuilder to write to.
-     * @throws NullPointerException if sb is null
-     */
-    void render(StringBuilder sb);
 }

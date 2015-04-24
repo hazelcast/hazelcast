@@ -16,39 +16,26 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.DoubleGauge;
+import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.memory.MemoryStats;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.memory.MemoryStatsSupport.freePhysicalMemory;
-import static com.hazelcast.memory.MemoryStatsSupport.freeSwapSpace;
-import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
-import static com.hazelcast.memory.MemoryStatsSupport.totalSwapSpace;
-import static com.hazelcast.util.OperatingSystemMXBeanSupport.getSystemLoadAverage;
-import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
+import static com.hazelcast.internal.monitors.HealthMonitorLevel.OFF;
+import static com.hazelcast.internal.monitors.HealthMonitorLevel.valueOf;
+import static com.hazelcast.util.StringUtil.getLineSeperator;
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * http://blog.scoutapp.com/articles/2009/07/31/understanding-load-averages
- * http://docs.oracle.com/javase/7/docs/jre/api/management/extension/com/sun/management/OperatingSystemMXBean.html
- * <p/>
- * Health monitor periodically prints logs about related internal metrics under when hazelcast is under load.
- * Under load means that memory usage is above threshold percentage or process/cpu load is above threshold.
+ * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
+ * about the internal Hazelcast state.
  * <p/>
  * Health monitor can be configured with system properties
  * <p/>
@@ -59,238 +46,430 @@ import static java.lang.String.format;
  * OFF             => Does not print anything.
  * <p/>
  * "hazelcast.health.monitoring.delay.seconds"
- * Time between printing two logs of health monitor. Default values is 30 seconds
+ * Time between printing two logs of health monitor. Default values is 30 seconds.
  */
-
-public class HealthMonitor extends Thread {
+public class HealthMonitor {
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
     private static final double PERCENTAGE_MULTIPLIER = 100d;
-    private static final double THRESHOLD = 70;
+    private static final double THRESHOLD_PERCENTAGE = 70;
+
+    final HealthMetrics healthMetrics;
 
     private final ILogger logger;
     private final Node node;
-    private final Runtime runtime;
-    private final HealthMonitorLevel logLevel;
-    private final int delaySeconds;
-    private final ClusterServiceImpl clusterService;
-    private final ExecutionService executionService;
-    private final EventService eventService;
-    private final InternalOperationService operationService;
-    private final ProxyService proxyService;
-    private final ConnectionManager connectionManager;
-    private final ClientEngineImpl clientEngine;
-    private final ThreadMXBean threadMxBean;
+    private final HealthMonitorLevel monitorLevel;
+    private final MetricsRegistry metricRegistry;
+    private final HealthMonitorThread monitorThread;
 
-    public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
-        super(hazelcastInstance.node.getHazelcastThreadGroup().getInternalThreadGroup(),
-                hazelcastInstance.node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
-        setDaemon(true);
-
-        this.node = hazelcastInstance.node;
+    public HealthMonitor(Node node) {
+        this.node = node;
         this.logger = node.getLogger(HealthMonitor.class);
-        this.runtime = Runtime.getRuntime();
-        this.logLevel = logLevel;
-        this.delaySeconds = delaySeconds;
-        this.threadMxBean = ManagementFactory.getThreadMXBean();
-        this.clusterService = node.getClusterService();
-        this.executionService = node.nodeEngine.getExecutionService();
-        this.eventService = node.nodeEngine.getEventService();
-        this.operationService = node.nodeEngine.getOperationService();
-        this.proxyService = node.nodeEngine.getProxyService();
-        this.clientEngine = node.clientEngine;
-        this.connectionManager = node.connectionManager;
+        this.metricRegistry = node.nodeEngine.getMetricsRegistry();
+        this.monitorLevel = getHealthMonitorLevel();
+        this.monitorThread = initMonitorThread();
+        this.healthMetrics = new HealthMetrics();
     }
 
-    @Override
-    public void run() {
-        if (logLevel == HealthMonitorLevel.OFF) {
-            return;
+    private HealthMonitorThread initMonitorThread() {
+        if (monitorLevel == OFF) {
+            return null;
         }
 
-        try {
-            while (node.isActive()) {
-                HealthMetrics metrics;
-                switch (logLevel) {
-                    case NOISY:
-                        metrics = new HealthMetrics();
-                        logger.log(Level.INFO, metrics.toString());
-                        break;
-                    case SILENT:
-                        metrics = new HealthMetrics();
-                        if (metrics.exceedsThreshold()) {
-                            logger.log(Level.INFO, metrics.toString());
-                        }
-                        break;
-                    default:
-                        throw new IllegalStateException("unrecognized logLevel:" + logLevel);
-                }
+        int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
+        return new HealthMonitorThread(delaySeconds);
+    }
 
-                try {
-                    Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
-                } catch (InterruptedException e) {
-                    return;
+    public HealthMonitor start() {
+        if (monitorLevel == OFF) {
+            logger.finest("HealthMonitor is disabled");
+            return this;
+        }
+
+        monitorThread.start();
+        logger.finest("HealthMonitor started");
+        return this;
+    }
+
+    private HealthMonitorLevel getHealthMonitorLevel() {
+        GroupProperties properties = node.getGroupProperties();
+        String healthMonitorLevelString = properties.HEALTH_MONITORING_LEVEL.getString();
+        return valueOf(healthMonitorLevelString);
+    }
+
+    private final class HealthMonitorThread extends Thread {
+        private final int delaySeconds;
+        private boolean performanceLogHint;
+
+        private HealthMonitorThread(int delaySeconds) {
+            super(node.getHazelcastThreadGroup().getInternalThreadGroup(),
+                    node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
+            setDaemon(true);
+            this.delaySeconds = delaySeconds;
+            this.performanceLogHint = node.getGroupProperties().PERFORMANCE_MONITOR_ENABLED.getBoolean();
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (node.isActive()) {
+                    switch (monitorLevel) {
+                        case NOISY:
+                            if (healthMetrics.exceedsThreshold()) {
+                                logPerformanceMonitorHint();
+                            }
+                            logger.log(Level.INFO, healthMetrics.render());
+                            break;
+                        case SILENT:
+                            if (healthMetrics.exceedsThreshold()) {
+                                logPerformanceMonitorHint();
+                                logger.log(Level.INFO, healthMetrics.render());
+                            }
+                            break;
+                        default:
+                            throw new IllegalStateException("unrecognized HealthMonitorLevel:" + monitorLevel);
+                    }
+
+                    try {
+                        SECONDS.sleep(delaySeconds);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
                 }
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } catch (Throwable t) {
+                logger.warning("Health Monitor failed", t);
             }
-        } catch (OutOfMemoryError e) {
-            OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+        }
+
+        private void logPerformanceMonitorHint() {
+            if (!performanceLogHint) {
+                return;
+            }
+
+            // we only log the hint once.
+            performanceLogHint = false;
+
+            logger.info(
+                    "The HealthMonitor has detected a high load on the system. For more detailed information, "
+                            + getLineSeperator()
+                            + "enable the PerformanceMonitor by adding -D" + GroupProperties.PROP_PERFORMANCE_MONITOR_ENABLED
+                            + "=true");
         }
     }
 
-    /**
-     * Health metrics to be logged under load.
-     */
-    private class HealthMetrics {
-        private final long memoryFree;
-        private final long memoryTotal;
-        private final long memoryUsed;
-        private final long memoryMax;
-        private final double memoryUsedOfTotalPercentage;
-        private final double memoryUsedOfMaxPercentage;
-        //following three load variables are always between 0 and 100.
-        private final double processCpuLoad;
-        private final double systemLoadAverage;
-        private final double systemCpuLoad;
-        private final int threadCount;
-        private final int peakThreadCount;
-        private final long clusterTimeDiff;
-        private final int asyncExecutorQueueSize;
-        private final int clientExecutorQueueSize;
-        private final int queryExecutorQueueSize;
-        private final int scheduledExecutorQueueSize;
-        private final int systemExecutorQueueSize;
-        private final int eventQueueSize;
-        private final int pendingInvocationsCount;
-        private final double pendingInvocationsPercentage;
-        private final int operationServiceOperationExecutorQueueSize;
-        private final int operationServiceOperationPriorityExecutorQueueSize;
-        private final int operationServiceOperationResponseQueueSize;
-        private final int runningOperationsCount;
-        private final int remoteOperationsCount;
-        private final int proxyCount;
-        private final int clientEndpointCount;
-        private final int activeConnectionCount;
-        private final int currentClientConnectionCount;
-        private final int connectionCount;
-        private final int ioExecutorQueueSize;
+    class HealthMetrics {
+        final LongGauge clientEndpointCount
+                = metricRegistry.newLongGauge("client.endpoint.count");
+        final LongGauge clusterTimeDiff
+                = metricRegistry.newLongGauge("cluster.clock.clusterTimeDiff");
 
-        //CHECKSTYLE:OFF
-        public HealthMetrics() {
-            memoryFree = runtime.freeMemory();
-            memoryTotal = runtime.totalMemory();
-            memoryUsed = memoryTotal - memoryFree;
-            memoryMax = runtime.maxMemory();
-            memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryTotal;
-            memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryMax;
-            processCpuLoad = readLongAttribute("ProcessCpuLoad", -1L);
-            systemLoadAverage = getSystemLoadAverage();
-            systemCpuLoad = readLongAttribute("SystemCpuLoad", -1L);
-            threadCount = threadMxBean.getThreadCount();
-            peakThreadCount = threadMxBean.getPeakThreadCount();
-            clusterTimeDiff = clusterService.getClusterClock().getClusterTimeDiff();
-            asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).getQueueSize();
-            clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).getQueueSize();
-            queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).getQueueSize();
-            scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).getQueueSize();
-            systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).getQueueSize();
-            ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).getQueueSize();
-            eventQueueSize = eventService.getEventQueueSize();
-            operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
-            operationServiceOperationPriorityExecutorQueueSize = operationService.getPriorityOperationExecutorQueueSize();
-            operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
-            runningOperationsCount = operationService.getRunningOperationsCount();
-            remoteOperationsCount = operationService.getRemoteOperationsCount();
-            pendingInvocationsCount = operationService.getPendingInvocationCount();
-            pendingInvocationsPercentage = operationService.getInvocationUsagePercentage();
-            proxyCount = proxyService.getProxyCount();
-            clientEndpointCount = clientEngine.getClientEndpointCount();
-            activeConnectionCount = connectionManager.getActiveConnectionCount();
-            currentClientConnectionCount = connectionManager.getCurrentClientConnections();
-            connectionCount = connectionManager.getConnectionCount();
+        final LongGauge executorAsyncQueueSize
+                = metricRegistry.newLongGauge("executor.hz:async.queueSize");
+        final LongGauge executorClientQueueSize
+                = metricRegistry.newLongGauge("executor.hz:client.queueSize");
+        final LongGauge executorClusterQueueSize
+                = metricRegistry.newLongGauge("executor.hz:cluster.queueSize");
+        final LongGauge executorScheduledQueueSize
+                = metricRegistry.newLongGauge("executor.hz:scheduled.queueSize");
+        final LongGauge executorSystemQueueSize
+                = metricRegistry.newLongGauge("executor.hz:system.queueSize");
+        final LongGauge executorIoQueueSize
+                = metricRegistry.newLongGauge("executor.hz:io.queueSize");
+        final LongGauge executorQueryQueueSize
+                = metricRegistry.newLongGauge("executor.hz:query.queueSize");
+        final LongGauge executorMapLoadQueueSize
+                = metricRegistry.newLongGauge("executor.hz:map-load.queueSize");
+        final LongGauge executorMapLoadAllKeysQueueSize
+                = metricRegistry.newLongGauge("executor.hz:map-loadAllKeys.queueSize");
+
+        final LongGauge eventQueueSize
+                = metricRegistry.newLongGauge("event.eventQueueSize");
+
+        final LongGauge gcMinorCount
+                = metricRegistry.newLongGauge("gc.minorCount");
+        final LongGauge gcMinorTime
+                = metricRegistry.newLongGauge("gc.minorTime");
+        final LongGauge gcMajorCount
+                = metricRegistry.newLongGauge("gc.majorCount");
+        final LongGauge gcMajorTime
+                = metricRegistry.newLongGauge("gc.majorTime");
+        final LongGauge gcUnknownCount
+                = metricRegistry.newLongGauge("gc.unknownCount");
+        final LongGauge gcUnknownTime
+                = metricRegistry.newLongGauge("gc.unknownTime");
+
+        final LongGauge runtimeAvailableProcessors
+                = metricRegistry.newLongGauge("runtime.availableProcessors");
+        final LongGauge runtimeMaxMemory
+                = metricRegistry.newLongGauge("runtime.maxMemory");
+        final LongGauge runtimeFreeMemory
+                = metricRegistry.newLongGauge("runtime.freeMemory");
+        final LongGauge runtimeAvailableMemory
+                = metricRegistry.newLongGauge("runtime.availableMemory");
+        final LongGauge runtimeTotalMemory
+                = metricRegistry.newLongGauge("runtime.totalMemory");
+        final LongGauge runtimeUsedMemory
+                = metricRegistry.newLongGauge("runtime.usedMemory");
+
+        final LongGauge threadPeakThreadCount
+                = metricRegistry.newLongGauge("thread.peakThreadCount");
+        final LongGauge threadThreadCount
+                = metricRegistry.newLongGauge("thread.threadCount");
+
+        final DoubleGauge osProcessCpuLoad
+                = metricRegistry.newDoubleGauge("os.processCpuLoad");
+        final DoubleGauge osSystemLoadAverage
+                = metricRegistry.newDoubleGauge("os.systemLoadAverage");
+        final DoubleGauge osSystemCpuLoad
+                = metricRegistry.newDoubleGauge("os.systemCpuLoad");
+        final LongGauge osTotalPhysicalMemorySize
+                = metricRegistry.newLongGauge("os.totalPhysicalMemorySize");
+        final LongGauge osFreePhysicalMemorySize
+                = metricRegistry.newLongGauge("os.freePhysicalMemorySize");
+        final LongGauge osTotalSwapSpaceSize
+                = metricRegistry.newLongGauge("os.totalSwapSpaceSize");
+        final LongGauge osFreeSwapSpaceSize
+                = metricRegistry.newLongGauge("os.freeSwapSpaceSize");
+
+        final LongGauge operationServiceExecutorQueueSize
+                = metricRegistry.newLongGauge("operation.queue.size");
+        final LongGauge operationServiceExecutorPriorityQueueSize
+                = metricRegistry.newLongGauge("operation.priority-queue.size");
+        final LongGauge operationServiceResponseQueueSize
+                = metricRegistry.newLongGauge("operation.response-queue.size");
+        final LongGauge operationServiceRunningOperationsCount
+                = metricRegistry.newLongGauge("operation.running.count");
+        final LongGauge operationServiceCompletedOperationsCount
+                = metricRegistry.newLongGauge("operation.completed.count");
+        final LongGauge operationServicePendingInvocationsCount
+                = metricRegistry.newLongGauge("operation.invocations.pending");
+        final DoubleGauge operationServicePendingInvocationsPercentage
+                = metricRegistry.newDoubleGauge("operation.invocations.used");
+
+        final LongGauge proxyCount
+                = metricRegistry.newLongGauge("proxy.proxyCount");
+
+        final LongGauge tcpConnectionActiveCount
+                = metricRegistry.newLongGauge("tcp.connection.activeCount");
+        final LongGauge tcpConnectionCount
+                = metricRegistry.newLongGauge("tcp.connection.count");
+        final LongGauge tcpConnectionClientCount
+                = metricRegistry.newLongGauge("tcp.connection.clientCount");
+
+        private final StringBuilder sb = new StringBuilder();
+        private double memoryUsedOfTotalPercentage;
+        private double memoryUsedOfMaxPercentage;
+
+        public void update() {
+            memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read() / runtimeTotalMemory.read();
+            memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * runtimeUsedMemory.read() / runtimeMaxMemory.read();
         }
-        //CHECKSTYLE:ON
 
         public boolean exceedsThreshold() {
-            if (memoryUsedOfMaxPercentage > THRESHOLD) {
+            if (memoryUsedOfMaxPercentage > THRESHOLD_PERCENTAGE) {
                 return true;
             }
 
-            if (processCpuLoad > THRESHOLD) {
+            if (osProcessCpuLoad.read() > THRESHOLD_PERCENTAGE) {
                 return true;
             }
 
-            if (systemCpuLoad > THRESHOLD) {
+            if (osSystemCpuLoad.read() > THRESHOLD_PERCENTAGE) {
                 return true;
             }
 
-            if (pendingInvocationsPercentage > THRESHOLD) {
+            if (operationServicePendingInvocationsPercentage.read() > THRESHOLD_PERCENTAGE) {
                 return true;
             }
 
             return false;
         }
 
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("processors=").append(runtime.availableProcessors()).append(", ");
-            sb.append("physical.memory.total=").append(numberToUnit(totalPhysicalMemory())).append(", ");
-            sb.append("physical.memory.free=").append(numberToUnit(freePhysicalMemory())).append(", ");
-            sb.append("swap.space.total=").append(numberToUnit(totalSwapSpace())).append(", ");
-            sb.append("swap.space.free=").append(numberToUnit(freeSwapSpace())).append(", ");
-            sb.append("heap.memory.used=").append(numberToUnit(memoryUsed)).append(", ");
-            sb.append("heap.memory.free=").append(numberToUnit(memoryFree)).append(", ");
-            sb.append("heap.memory.total=").append(numberToUnit(memoryTotal)).append(", ");
-            sb.append("heap.memory.max=").append(numberToUnit(memoryMax)).append(", ");
-            sb.append("heap.memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
-            sb.append("heap.memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
-
-            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
-            if (memoryStats.getMaxNativeMemory() > 0L) {
-                sb.append("native.memory.used=").append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
-                sb.append("native.memory.free=").append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
-                sb.append("native.memory.total=").append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
-                sb.append("native.memory.max=").append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
-            }
-
-            GarbageCollectorStats gcStats = memoryStats.getGCStats();
-            sb.append("minor.gc.count=").append(gcStats.getMinorCollectionCount()).append(", ");
-            sb.append("minor.gc.time=").append(gcStats.getMinorCollectionTime()).append("ms, ");
-            sb.append("major.gc.count=").append(gcStats.getMajorCollectionCount()).append(", ");
-            sb.append("major.gc.time=").append(gcStats.getMajorCollectionTime()).append("ms, ");
-            if (gcStats.getUnknownCollectionCount() > 0) {
-                sb.append("unknown.gc.count=").append(gcStats.getUnknownCollectionCount()).append(", ");
-                sb.append("unknown.gc.time=").append(gcStats.getUnknownCollectionTime()).append("ms, ");
-            }
-
-            sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
-            sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
-            sb.append("load.systemAverage=").append(systemLoadAverage >= 0 ? format("%.2f, ", systemLoadAverage) : "n/a, ");
-            sb.append("thread.count=").append(threadCount).append(", ");
-            sb.append("thread.peakCount=").append(peakThreadCount).append(", ");
-            sb.append("cluster.timeDiff=").append(clusterTimeDiff).append(", ");
-            sb.append("event.q.size=").append(eventQueueSize).append(", ");
-            sb.append("executor.q.async.size=").append(asyncExecutorQueueSize).append(", ");
-            sb.append("executor.q.client.size=").append(clientExecutorQueueSize).append(", ");
-            sb.append("executor.q.query.size=").append(queryExecutorQueueSize).append(", ");
-            sb.append("executor.q.scheduled.size=").append(scheduledExecutorQueueSize).append(", ");
-            sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");
-            sb.append("executor.q.system.size=").append(systemExecutorQueueSize).append(", ");
-            sb.append("executor.q.operation.size=").append(operationServiceOperationExecutorQueueSize).append(", ");
-            sb.append("executor.q.priorityOperation.size=").
-                    append(operationServiceOperationPriorityExecutorQueueSize).append(", ");
-            sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");
-            sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
-            sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
-            sb.append("operations.pending.invocations.count=")
-                    .append(pendingInvocationsCount).append(", ");
-            sb.append("operations.pending.invocations.percentage=")
-                    .append(format("%.2f", pendingInvocationsPercentage)).append("%, ");
-            sb.append("proxy.count=").append(proxyCount).append(", ");
-            sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
-            sb.append("connection.active.count=").append(activeConnectionCount).append(", ");
-            sb.append("client.connection.count=").append(currentClientConnectionCount).append(", ");
-            sb.append("connection.count=").append(connectionCount);
+        public String render() {
+            sb.setLength(0);
+            renderProcessors();
+            renderPhysicalMemory();
+            renderSwap();
+            renderHeap();
+            renderNativeMemory();
+            renderGc();
+            renderLoad();
+            renderThread();
+            renderCluster();
+            renderEvents();
+            renderExecutors();
+            renderOperationService();
+            renderProxy();
+            renderClient();
+            renderConnection();
             return sb.toString();
+        }
+
+        private void renderConnection() {
+            sb.append("connection.active.count=")
+                    .append(tcpConnectionActiveCount.read()).append(", ");
+            sb.append("client.connection.count=")
+                    .append(tcpConnectionClientCount.read()).append(", ");
+            sb.append("connection.count=")
+                    .append(tcpConnectionCount.read());
+        }
+
+        private void renderClient() {
+            sb.append("clientEndpoint.count=")
+                    .append(clientEndpointCount.read()).append(", ");
+        }
+
+        private void renderProxy() {
+            sb.append("proxy.count=")
+                    .append(proxyCount.read()).append(", ");
+        }
+
+        private void renderLoad() {
+            sb.append("load.process").append('=')
+                    .append(format("%.2f", osProcessCpuLoad.read())).append("%, ");
+            sb.append("load.system").append('=')
+                    .append(format("%.2f", osSystemCpuLoad.read())).append("%, ");
+
+            double value = osSystemLoadAverage.read();
+            if (value < 0) {
+                sb.append("load.systemAverage").append("=n/a ");
+            } else {
+                sb.append("load.systemAverage").append('=')
+                        .append(format("%.2f", osSystemLoadAverage.read())).append("%, ");
+            }
+        }
+
+        private void renderProcessors() {
+            sb.append("processors=")
+                    .append(runtimeAvailableProcessors.read()).append(", ");
+        }
+
+        private void renderPhysicalMemory() {
+            sb.append("physical.memory.total=")
+                    .append(numberToUnit(osTotalPhysicalMemorySize.read())).append(", ");
+            sb.append("physical.memory.free=")
+                    .append(numberToUnit(osFreePhysicalMemorySize.read())).append(", ");
+        }
+
+        private void renderSwap() {
+            sb.append("swap.space.total=")
+                    .append(numberToUnit(osTotalSwapSpaceSize.read())).append(", ");
+            sb.append("swap.space.free=")
+                    .append(numberToUnit(osFreeSwapSpaceSize.read())).append(", ");
+        }
+
+        private void renderHeap() {
+            sb.append("heap.memory.used=")
+                    .append(numberToUnit(runtimeUsedMemory.read())).append(", ");
+            sb.append("heap.memory.free=")
+                    .append(numberToUnit(runtimeFreeMemory.read())).append(", ");
+            sb.append("heap.memory.total=")
+                    .append(numberToUnit(runtimeTotalMemory.read())).append(", ");
+            sb.append("heap.memory.max=")
+                    .append(numberToUnit(runtimeMaxMemory.read())).append(", ");
+            sb.append("heap.memory.used/total=")
+                    .append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
+            sb.append("heap.memory.used/max=")
+                    .append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
+        }
+
+        private void renderEvents() {
+            sb.append("event.q.size=")
+                    .append(eventQueueSize.read()).append(", ");
+        }
+
+        private void renderCluster() {
+            sb.append("cluster.timeDiff=")
+                    .append(clusterTimeDiff.read()).append(", ");
+        }
+
+        private void renderThread() {
+            sb.append("thread.count=")
+                    .append(threadThreadCount.read()).append(", ");
+            sb.append("thread.peakCount=")
+                    .append(threadPeakThreadCount.read()).append(", ");
+        }
+
+        private void renderGc() {
+            sb.append("minor.gc.count=")
+                    .append(gcMinorCount.read()).append(", ");
+            sb.append("minor.gc.time=")
+                    .append(gcMinorTime.read()).append("ms, ");
+            sb.append("major.gc.count=")
+                    .append(gcMajorCount.read()).append(", ");
+            sb.append("major.gc.time=")
+                    .append(gcMajorTime.read()).append("ms, ");
+
+            if (gcUnknownCount.read() > 0) {
+                sb.append("unknown.gc.count=")
+                        .append(gcUnknownCount.read()).append(", ");
+                sb.append("unknown.gc.time=")
+                        .append(gcUnknownTime.read()).append("ms, ");
+            }
+        }
+
+        private void renderNativeMemory() {
+            MemoryStats memoryStats = node.getNodeExtension().getMemoryStats();
+            if (memoryStats.getMaxNativeMemory() <= 0L) {
+                return;
+            }
+
+            sb.append("native.memory.used=")
+                    .append(numberToUnit(memoryStats.getUsedNativeMemory())).append(", ");
+            sb.append("native.memory.free=")
+                    .append(numberToUnit(memoryStats.getFreeNativeMemory())).append(", ");
+            sb.append("native.memory.total=")
+                    .append(numberToUnit(memoryStats.getCommittedNativeMemory())).append(", ");
+            sb.append("native.memory.max=")
+                    .append(numberToUnit(memoryStats.getMaxNativeMemory())).append(", ");
+        }
+
+        private void renderExecutors() {
+            sb.append("executor.q.async.size=")
+                    .append(executorAsyncQueueSize.read()).append(", ");
+            sb.append("executor.q.client.size=")
+                    .append(executorClientQueueSize.read()).append(", ");
+            sb.append("executor.q.query.size=")
+                    .append(executorQueryQueueSize.read()).append(", ");
+            sb.append("executor.q.scheduled.size=")
+                    .append(executorScheduledQueueSize.read()).append(", ");
+            sb.append("executor.q.io.size=")
+                    .append(executorIoQueueSize.read()).append(", ");
+            sb.append("executor.q.system.size=")
+                    .append(executorSystemQueueSize.read()).append(", ");
+            sb.append("executor.q.operations.size=")
+                    .append(operationServiceExecutorQueueSize.read()).append(", ");
+            sb.append("executor.q.priorityOperation.size=").
+                    append(operationServiceExecutorPriorityQueueSize.read()).append(", ");
+            sb.append("operations.completed.count=")
+                    .append(operationServiceCompletedOperationsCount.read()).append(", ");
+            sb.append("executor.q.mapLoad.size=")
+                    .append(executorMapLoadQueueSize.read()).append(", ");
+            sb.append("executor.q.mapLoadAllKeys.size=")
+                    .append(executorMapLoadAllKeysQueueSize.read()).append(", ");
+            sb.append("executor.q.cluster.size=")
+                    .append(executorClusterQueueSize.read()).append(", ");
+        }
+
+
+        /*
+
+            sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
+ sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
+
+         */
+
+        private void renderOperationService() {
+            sb.append("executor.q.response.size=")
+                    .append(operationServiceResponseQueueSize.read()).append(", ");
+            sb.append("operations.running.count=")
+                    .append(operationServiceRunningOperationsCount.read()).append(", ");
+            sb.append("operations.pending.invocations.percentage=")
+                    .append(format("%.2f", operationServicePendingInvocationsPercentage.read())).append("%, ");
+            sb.append("operations.pending.invocations.count=")
+                    .append(operationServicePendingInvocationsCount.read()).append(", ");
         }
     }
 
@@ -315,5 +494,4 @@ public class HealthMonitor extends Thread {
         //CHECKSTYLE:ON
         return Long.toString(number);
     }
-
 }

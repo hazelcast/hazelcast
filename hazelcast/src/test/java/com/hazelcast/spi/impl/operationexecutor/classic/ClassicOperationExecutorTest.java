@@ -83,16 +83,4 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
             }
         });
     }
-
-    @Test
-    public void test_dumpPerformanceMetrics() {
-        initExecutor();
-
-        StringBuffer sb = new StringBuffer();
-        executor.dumpPerformanceMetrics(sb);
-        String content = sb.toString();
-
-
-        assertTrue(content.contains("processedCount="));
-    }
 }

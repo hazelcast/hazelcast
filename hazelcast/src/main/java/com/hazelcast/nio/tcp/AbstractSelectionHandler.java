@@ -34,7 +34,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     protected Selector selector;
     protected IOSelector ioSelector;
 
-    private SelectionKey selectionKey;
+    protected SelectionKey selectionKey;
     private final int initialOps;
 
     public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int initialOps) {
@@ -58,7 +58,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         return selectionKey;
     }
 
-    final void handleSocketException(Throwable e) {
+    void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
         }
@@ -102,10 +102,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     */
+    @Override
     public IOSelector getOwner() {
         return ioSelector;
     }
@@ -136,6 +133,8 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
 
     private void completeMigration(IOSelector newOwner) {
         assert ioSelector == newOwner;
+
+        connectionManager.getIOBalancer().signalMigrationComplete();
 
         if (!socketChannel.isOpen()) {
             return;

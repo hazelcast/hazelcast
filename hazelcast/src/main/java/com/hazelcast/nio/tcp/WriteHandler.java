@@ -16,11 +16,15 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.counters.SwCounter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -34,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
@@ -42,14 +47,27 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private static final long TIMEOUT = 3;
 
+    @Probe(name = "out.writeQueueSize")
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+    @Probe(name = "out.priorityWriteQueueSize")
     private final Queue<SocketWritable> urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private final ByteBuffer outputBuffer;
-    private SocketWritable currentPacket;
+    @Probe(name = "out.bytesWritten")
+    private final SwCounter bytesWritten = newSwCounter();
+    @Probe(name = "out.normalPacketsWritten")
+    private final SwCounter normalPacketsWritten = newSwCounter();
+    @Probe(name = "out.priorityPacketsWritten")
+    private final SwCounter priorityPacketsWritten = newSwCounter();
+    @Probe(name = "out.exceptionCount")
+    private final SwCounter exceptionCount = newSwCounter();
+    private final MetricsRegistry metricsRegistry;
+
+    private volatile SocketWritable currentPacket;
     private SocketWriter socketWriter;
-    private volatile long lastHandle;
+    private volatile long lastWriteTime;
     //This field will be incremented by a single thread. It can be read by multiple threads.
+    @Probe(name = "out.eventCount")
     private volatile long eventCount;
     private boolean shutdown;
     // this field will be accessed by the IOSelector-thread or
@@ -60,14 +78,65 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_WRITE);
         this.outputBuffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
+
+        // sensors
+        this.metricsRegistry = connection.getConnectionManager().getMetricRegistry();
+        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
     }
 
-    long getLastHandle() {
-        return lastHandle;
+    @Probe(name = "out.interestedOps")
+    private long interestOps() {
+        SelectionKey selectionKey = this.selectionKey;
+        return selectionKey == null ? -1 : selectionKey.interestOps();
+    }
+
+    @Probe(name = "out.readyOps")
+    private long readyOps() {
+        SelectionKey selectionKey = this.selectionKey;
+        return selectionKey == null ? -1 : selectionKey.readyOps();
+    }
+
+    long getLastWriteTime() {
+        return lastWriteTime;
     }
 
     public SocketWriter getSocketWriter() {
         return socketWriter;
+    }
+
+    @Probe(name = "out.writeQueuePendingBytes")
+    private long bytesPending() {
+        return bytesPending(writeQueue);
+    }
+
+    @Probe(name = "out.priorityWriteQueuePendingBytes")
+    private long priorityBytesPending() {
+        return bytesPending(urgentWriteQueue);
+    }
+
+    private long bytesPending(Queue<SocketWritable> writeQueue) {
+        long bytesPending = 0;
+        for (SocketWritable writable : writeQueue) {
+            if (writable instanceof Packet) {
+                bytesPending += ((Packet) writable).size();
+            }
+        }
+        return bytesPending;
+    }
+
+    @Probe(name = "out.currentPacketSet")
+    private long currentPacketSet() {
+        return currentPacket == null ? 0 : 1;
+    }
+
+    @Probe(name = "out.idleTimeMs")
+    private long idleTimeMs() {
+        return Math.max(System.currentTimeMillis() - lastWriteTime, 0);
+    }
+
+    @Probe(name = "out.isScheduled")
+    private long isScheduled() {
+        return scheduled.get() ? 1 : 0;
     }
 
     // accessed from ReadHandler and SocketConnector
@@ -115,15 +184,27 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private SocketWritable poll() {
         for (; ; ) {
+            boolean urgent = true;
             SocketWritable packet = urgentWriteQueue.poll();
 
             if (packet == null) {
+                urgent = false;
                 packet = writeQueue.poll();
+            }
+
+            if (packet == null) {
+                return null;
             }
 
             if (packet instanceof TaskPacket) {
                 ((TaskPacket) packet).run();
                 continue;
+            }
+
+            if (urgent) {
+                priorityPacketsWritten.inc();
+            } else {
+                normalPacketsWritten.inc();
             }
 
             return packet;
@@ -215,7 +296,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             justification = "eventCount is accessed by a single thread only.")
     public void handle() {
         eventCount++;
-        lastHandle = Clock.currentTimeMillis();
+        lastWriteTime = Clock.currentTimeMillis();
         if (shutdown) {
             return;
         }
@@ -232,6 +313,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 writeOutputBufferToSocket();
             }
         } catch (Throwable t) {
+            exceptionCount.inc();
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         }
 
@@ -262,7 +344,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
         outputBuffer.flip();
         try {
-            socketChannel.write(outputBuffer);
+            int result = socketChannel.write(outputBuffer);
+            this.bytesWritten.inc(result);
         } catch (Exception e) {
             currentPacket = null;
             handleSocketException(e);
@@ -322,6 +405,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void shutdown() {
+        metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 

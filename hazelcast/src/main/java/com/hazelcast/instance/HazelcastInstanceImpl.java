@@ -53,7 +53,6 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.internal.monitors.HealthMonitor;
-import com.hazelcast.internal.monitors.HealthMonitorLevel;
 import com.hazelcast.internal.monitors.PerformanceMonitor;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
@@ -107,9 +106,15 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
+    final PerformanceMonitor performanceMonitor;
+
+    final HealthMonitor healthMonitor;
+
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
             throws Exception {
         this.name = name;
+
+
         lifecycleService = new LifecycleServiceImpl(this);
         ManagedContext configuredManagedContext = config.getManagedContext();
         managedContext = new HazelcastManagedContext(this, configuredManagedContext);
@@ -131,7 +136,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
             managementService = new ManagementService(this);
             initManagedContext(configuredManagedContext);
-            initMonitors();
+
+            this.performanceMonitor = new PerformanceMonitor(this).start();
+            this.healthMonitor = new HealthMonitor(node).start();
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,
@@ -144,38 +151,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         }
     }
 
-    private void initMonitors() {
-        initHealthMonitor();
-        initPerformanceMonitor();
-    }
-
     private void initManagedContext(ManagedContext configuredManagedContext) {
         if (configuredManagedContext != null) {
             if (configuredManagedContext instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) configuredManagedContext).setHazelcastInstance(this);
             }
         }
-    }
-
-    private void initHealthMonitor() {
-        String healthMonitorLevelString = node.getGroupProperties().HEALTH_MONITORING_LEVEL.getString();
-        HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(healthMonitorLevelString);
-        if (healthLevel != HealthMonitorLevel.OFF) {
-            logger.finest("Starting health monitor");
-            int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
-            new HealthMonitor(this, healthLevel, delaySeconds).start();
-        }
-    }
-
-    private void initPerformanceMonitor() {
-        boolean enabled = node.getGroupProperties().PERFORMANCE_MONITORING_ENABLED.getBoolean();
-        if (!enabled) {
-            return;
-        }
-
-        logger.finest("Starting performance monitor");
-        int delaySeconds = node.getGroupProperties().PERFORMANCE_MONITORING_DELAY_SECONDS.getInteger();
-        new PerformanceMonitor(this, delaySeconds).start();
     }
 
     public ManagementService getManagementService() {

@@ -16,19 +16,25 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.util.counters.SwCounter;
 
 import java.nio.channels.SelectionKey;
+
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 public final class InSelectorImpl extends AbstractIOSelector {
 
     // This field will be incremented by a single thread --> the InSelectorImpl. It can be read by multiple threads.
-    private volatile long readEvents;
+    @Probe
+    private final SwCounter readEvents = newSwCounter();
 
-    public InSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
+    public InSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger,
+                          IOSelectorOutOfMemoryHandler oomeHandler) {
         super(threadGroup, tname, logger, oomeHandler);
     }
+
 
     /**
      * Returns the current number of read events that have been processed by this InSelectorImpl.
@@ -38,14 +44,13 @@ public final class InSelectorImpl extends AbstractIOSelector {
      * @return the number of read events.
      */
     public long getReadEvents() {
-        return readEvents;
+        return readEvents.get();
     }
 
     @Override
-    @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isReadable()) {
-            readEvents++;
+            readEvents.inc();
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }

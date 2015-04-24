@@ -23,18 +23,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * An 'input' that provides an abstraction for {@link FieldProbe} and {@link MethodProbe}. This is comparable to the
- * {@link java.lang.reflect.AccessibleObject} that is an abstraction for the {@link java.lang.reflect.Method} and
- * {@link java.lang.reflect.Field}.
- *
- * One of the reasons this class exists is that the {@link GaugeImpl} only needs to check the 'input' field if it implements
- * {@link AccessibleObjectProbe}. Otherwise it would need to deal with FieldProbe and MethodProbe.
+ * Utility functions for probes.
  */
-abstract class AccessibleObjectProbe {
+final class ProbeUtils {
 
     static final int TYPE_PRIMITIVE_LONG = 1;
     static final int TYPE_LONG_NUMBER = 2;
@@ -45,6 +41,7 @@ abstract class AccessibleObjectProbe {
     static final int TYPE_COLLECTION = 5;
     static final int TYPE_MAP = 6;
     static final int TYPE_COUNTER = 7;
+    static final int TYPE_SEMAPHORE = 8;
 
     private static final Map<Class<?>, Integer> TYPES = new HashMap<Class<?>, Integer>();
 
@@ -70,6 +67,11 @@ abstract class AccessibleObjectProbe {
         TYPES.put(Collection.class, TYPE_COLLECTION);
         TYPES.put(Map.class, TYPE_MAP);
         TYPES.put(Counter.class, TYPE_COUNTER);
+
+        TYPES.put(Semaphore.class, TYPE_SEMAPHORE);
+    }
+
+    private ProbeUtils() {
     }
 
     static boolean isDouble(int type) {

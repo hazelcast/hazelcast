@@ -46,9 +46,4 @@ public interface ConnectionManager {
     void restart();
 
     void addConnectionListener(ConnectionListener connectionListener);
-
-    /**
-     * Dumps all kinds of performance metrics. It is up to the implementation to add anything.
-     */
-    void dumpPerformanceMetrics(StringBuffer sb);
 }

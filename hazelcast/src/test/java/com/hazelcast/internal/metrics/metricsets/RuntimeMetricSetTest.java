@@ -1,7 +1,6 @@
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.Gauge;
-import com.hazelcast.internal.metrics.Metric;
+import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -40,66 +39,66 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void freeMemory() {
-        final Gauge gauge = blackbox.getGauge("runtime.freeMemory");
+        final LongGauge gauge = blackbox.newLongGauge("runtime.freeMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(runtime.freeMemory(), gauge.readLong(), TEN_MB);
+                assertEquals(runtime.freeMemory(), gauge.read(), TEN_MB);
             }
         });
     }
 
     @Test
     public void totalMemory() {
-        final Gauge gauge = blackbox.getGauge("runtime.totalMemory");
+        final LongGauge gauge = blackbox.newLongGauge("runtime.totalMemory");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(runtime.totalMemory(), gauge.readLong(), TEN_MB);
+                assertEquals(runtime.totalMemory(), gauge.read(), TEN_MB);
             }
         });
     }
 
     @Test
     public void maxMemory() {
-        final Gauge gauge = blackbox.getGauge("runtime.maxMemory");
+        final LongGauge gauge = blackbox.newLongGauge("runtime.maxMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(runtime.maxMemory(), gauge.readLong(), TEN_MB);
+                assertEquals(runtime.maxMemory(), gauge.read(), TEN_MB);
             }
         });
     }
 
     @Test
     public void usedMemory() {
-        final Gauge gauge = blackbox.getGauge("runtime.usedMemory");
+        final LongGauge gauge = blackbox.newLongGauge("runtime.usedMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 double expected = runtime.totalMemory() - runtime.freeMemory();
-                assertEquals(expected, gauge.readLong(), TEN_MB);
+                assertEquals(expected, gauge.read(), TEN_MB);
             }
         });
     }
 
     @Test
     public void availableProcessors() {
-        Gauge gauge = blackbox.getGauge("runtime.availableProcessors");
-        assertEquals(runtime.availableProcessors(), gauge.readLong());
+        LongGauge gauge = blackbox.newLongGauge("runtime.availableProcessors");
+        assertEquals(runtime.availableProcessors(), gauge.read());
     }
 
     @Test
     public void uptime() {
-        final Gauge gauge = blackbox.getGauge("runtime.uptime");
+        final LongGauge gauge = blackbox.newLongGauge("runtime.uptime");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 double expected = ManagementFactory.getRuntimeMXBean().getUptime();
-                assertEquals(expected, gauge.readLong(), TimeUnit.MINUTES.toMillis(1));
+                assertEquals(expected, gauge.read(), TimeUnit.MINUTES.toMillis(1));
             }
         });
     }

@@ -16,29 +16,33 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.DoubleProbe;
-import com.hazelcast.internal.metrics.LongProbe;
+import com.hazelcast.internal.metrics.DoubleProbeFunction;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.util.counters.Counter;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_COLLECTION;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_COUNTER;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_DOUBLE_NUMBER;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_DOUBLE_PRIMITIVE;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_LONG_NUMBER;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_MAP;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_PRIMITIVE_LONG;
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.getType;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
 import static java.lang.String.format;
 
 /**
- * A gauge input that reads out a field that is annotated with {@link Probe}.
+ * A FieldProbe is a {@link ProbeFunction} that reads out a field that is annotated with {@link Probe}.
  */
-abstract class FieldProbe {
+abstract class FieldProbe implements ProbeFunction {
 
     final Probe probe;
     final Field field;
@@ -51,7 +55,7 @@ abstract class FieldProbe {
         field.setAccessible(true);
     }
 
-     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
         String name = getName(namePrefix);
         metricsRegistry.registerInternal(source, name, this);
     }
@@ -71,14 +75,14 @@ abstract class FieldProbe {
             throw new IllegalArgumentException(format("@Probe field '%s' is of an unhandled type", field));
         }
 
-        if (AccessibleObjectProbe.isDouble(type)) {
+        if (isDouble(type)) {
             return new DoubleFieldProbe<S>(field, probe, type);
         } else {
             return new LongFieldProbe<S>(field, probe, type);
         }
     }
 
-    static class LongFieldProbe<S> extends FieldProbe implements LongProbe<S> {
+    static class LongFieldProbe<S> extends FieldProbe implements LongProbeFunction<S> {
 
         public LongFieldProbe(Field field, Probe probe, int type) {
             super(field, probe, type);
@@ -101,13 +105,16 @@ abstract class FieldProbe {
                 case TYPE_COUNTER:
                     Counter counter = (Counter) field.get(source);
                     return counter == null ? 0 : counter.get();
+                case TYPE_SEMAPHORE:
+                    Semaphore semaphore = (Semaphore) field.get(source);
+                    return semaphore == null ? 0 : semaphore.availablePermits();
                 default:
                     throw new IllegalStateException("Unhandled type:" + type);
             }
         }
     }
 
-   static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbe<S> {
+    static class DoubleFieldProbe<S> extends FieldProbe implements DoubleProbeFunction<S> {
 
         public DoubleFieldProbe(Field field, Probe probe, int type) {
             super(field, probe, type);
