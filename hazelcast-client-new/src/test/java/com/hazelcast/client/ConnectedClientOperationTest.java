@@ -11,8 +11,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,20 +24,15 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ConnectedClientOperationTest extends HazelcastTestSupport {
 
-    @BeforeClass
-    @AfterClass
-    public static void cleanupClass() {
-        Hazelcast.shutdownAll();
-    }
-
     @Before
     @After
     public void cleanup() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     @Test
-    public void testNumberOfConnectedClients() throws Exception{
+    public void testNumberOfConnectedClients() throws Exception {
 
         Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
@@ -56,7 +49,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         HazelcastClient.newHazelcastClient(clientConfig);
 
         Node node1 = TestUtil.getNode(h1);
-        Map<ClientType, Integer> clientStats = node1.getClusterService().getConnectedClientStats();
+        Map<ClientType, Integer> clientStats = node1.clientEngine.getConnectedClientStats();
 
         assertEquals(6, clientStats.get(ClientType.JAVA).intValue());
         assertEquals(0, clientStats.get(ClientType.CPP).intValue());

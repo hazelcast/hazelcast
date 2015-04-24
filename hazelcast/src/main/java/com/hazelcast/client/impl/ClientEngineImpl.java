@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
+import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
@@ -33,6 +34,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -71,6 +73,7 @@ import com.hazelcast.util.executor.ExecutorType;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -78,6 +81,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -604,5 +608,52 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public Operation getPostJoinOperation() {
         return ownershipMappings.isEmpty() ? null : new PostJoinClientOperation(ownershipMappings);
+    }
+
+    @Override
+    public Map<ClientType, Integer> getConnectedClientStats() {
+        int numberOfCppClients    = 0;
+        int numberOfDotNetClients = 0;
+        int numberOfJavaClients   = 0;
+        int numberOfOtherClients  = 0;
+
+        Operation clientInfoOperation = new GetConnectedClientsOperation();
+        OperationService operationService = nodeEngine.getOperationService();
+        Map<ClientType, Integer> resultMap = new HashMap<ClientType, Integer>();
+
+        for (MemberImpl member : node.getClusterService().getMemberList()) {
+            Address target = member.getAddress();
+            Future<Map<String, ClientType>> future
+                    = operationService.invokeOnTarget(SERVICE_NAME, clientInfoOperation, target);
+            try {
+                Map<String, ClientType> endpoints = future.get();
+                if (endpoints == null) {
+                    continue;
+                }
+                for (ClientType clientType : endpoints.values()) {
+                    switch (clientType) {
+                        case JAVA:
+                            numberOfJavaClients++;
+                            break;
+                        case CSHARP:
+                            numberOfDotNetClients++;
+                            break;
+                        case CPP:
+                            numberOfCppClients++;
+                            break;
+                        default:
+                            numberOfOtherClients++;
+                    }
+                }
+            } catch (Exception e) {
+                logger.warning("Cannot get client information from: " + target.toString(), e);
+            }
+        }
+
+        resultMap.put(ClientType.CPP, numberOfCppClients);
+        resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
+        resultMap.put(ClientType.JAVA, numberOfJavaClients);
+        resultMap.put(ClientType.OTHER, numberOfOtherClients);
+        return resultMap;
     }
 }
