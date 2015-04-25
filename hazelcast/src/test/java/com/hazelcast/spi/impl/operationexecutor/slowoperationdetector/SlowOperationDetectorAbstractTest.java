@@ -25,15 +25,19 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.EmptyStatement;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
@@ -45,6 +49,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     private static final String DEFAULT_KEY = "key";
     private static final String DEFAULT_VALUE = "value";
+
+    private List<SlowEntryProcessor> entryProcessors = new ArrayList<SlowEntryProcessor>();
 
     HazelcastInstance getSingleNodeCluster(int slowOperationThresholdMillis) {
         Config config = new Config();
@@ -67,17 +73,6 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static void executeEntryProcessor(IMap<String, String> map, EntryProcessor<String, String> entryProcessor) {
         map.executeOnKey(DEFAULT_KEY, entryProcessor);
-    }
-
-    static void waitForAllOperationsToComplete(final HazelcastInstance instance) {
-        sleepSeconds(1);
-        final InternalOperationService operationService = getOperationService(instance);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(operationService.getRunningOperationsCount() == 0);
-            }
-        });
     }
 
     static void shutdownOperationService(HazelcastInstance instance) {
@@ -176,7 +171,19 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         }
     }
 
-    static class SlowEntryProcessor implements EntryProcessor<String, String> {
+    SlowEntryProcessor getSlowEntryProcessor(int sleepSeconds) {
+        SlowEntryProcessor entryProcessor = new SlowEntryProcessor(sleepSeconds);
+        entryProcessors.add(entryProcessor);
+        return entryProcessor;
+    }
+
+    void awaitSlowEntryProcessors() {
+        for (SlowEntryProcessor slowEntryProcessor : entryProcessors) {
+            slowEntryProcessor.await();
+        }
+    }
+
+    static class SlowEntryProcessor extends CountDownLatchHolder implements EntryProcessor<String, String> {
 
         final int sleepSeconds;
 
@@ -187,6 +194,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         @Override
         public Object process(Map.Entry<String, String> entry) {
             sleepSeconds(sleepSeconds);
+            done();
             return null;
         }
 
@@ -208,7 +216,42 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
                 TimeUnit.SECONDS.sleep(sleepSeconds);
             } catch (InterruptedException ignored) {
             }
+            done();
             return null;
+        }
+    }
+
+    static abstract class CountDownLatchOperation extends AbstractOperation {
+
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        void done() {
+            latch.countDown();
+        }
+
+        void await() {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+            }
+        }
+    }
+
+    static abstract class CountDownLatchHolder {
+
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        void done() {
+            latch.countDown();
+        }
+
+        void await() {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+            }
         }
     }
 }

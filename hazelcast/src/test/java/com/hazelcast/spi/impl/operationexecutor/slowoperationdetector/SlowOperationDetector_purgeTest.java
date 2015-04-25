@@ -58,13 +58,14 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         setup("3");
 
         // all of these entry processors are executed after each other, not in parallel
-        // so only the last one will survive the purging
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(new SlowEntryProcessor(2));
+            map.executeOnEntries(getSlowEntryProcessor(2));
         }
-        map.executeOnEntries(new SlowEntryProcessor(3));
-        map.executeOnEntries(new SlowEntryProcessor(2));
+        map.executeOnEntries(getSlowEntryProcessor(3));
+        map.executeOnEntries(getSlowEntryProcessor(2));
+        awaitSlowEntryProcessors();
 
+        // shutdown to stop purging, so the last entry processor will survive
         shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
@@ -87,12 +88,13 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         setup("2");
 
         // all of these entry processors are executed after each other, not in parallel
-        // so none of them will survive the purging
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(new SlowEntryProcessor(2));
+            map.executeOnEntries(getSlowEntryProcessor(2));
         }
-        sleepSeconds(3);
+        awaitSlowEntryProcessors();
 
+        // sleep a bit to get the last entry processor purged
+        sleepSeconds(3);
         shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
