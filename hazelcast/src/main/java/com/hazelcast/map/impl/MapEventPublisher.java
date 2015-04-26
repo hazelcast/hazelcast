@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 /**
  * Helper methods for publishing events.
  *
- * @see MapEventPublisherSupport
+ * @see MapEventPublisherImpl
  */
 public interface MapEventPublisher {
 

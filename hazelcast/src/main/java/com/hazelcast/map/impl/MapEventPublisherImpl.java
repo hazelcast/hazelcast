@@ -39,11 +39,11 @@ import java.util.List;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-class MapEventPublisherSupport implements MapEventPublisher {
+class MapEventPublisherImpl implements MapEventPublisher {
 
     protected final MapServiceContext mapServiceContext;
 
-    protected MapEventPublisherSupport(MapServiceContext mapServiceContext) {
+    protected MapEventPublisherImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 

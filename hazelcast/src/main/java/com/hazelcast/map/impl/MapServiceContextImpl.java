@@ -96,8 +96,8 @@ class MapServiceContextImpl implements MapServiceContext {
         this.mapContextQuerySupport = new BasicMapContextQuerySupport(this);
     }
 
-    MapEventPublisherSupport createMapEventPublisherSupport() {
-        return new MapEventPublisherSupport(this);
+    MapEventPublisherImpl createMapEventPublisherSupport() {
+        return new MapEventPublisherImpl(this);
     }
 
     @Override
