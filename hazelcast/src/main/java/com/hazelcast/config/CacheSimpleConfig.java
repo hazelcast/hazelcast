@@ -16,9 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.partition.InternalPartition;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -34,7 +38,7 @@ public class CacheSimpleConfig {
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = 6;
+    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
 
     /**
      * The number of default backup counter
@@ -224,15 +228,19 @@ public class CacheSimpleConfig {
         return asyncBackupCount;
     }
 
+    /**
+     * Sets the number of asynchronous backups.
+     *
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheSimpleConfig
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
+     */
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
-        if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Cache async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
-        }
-        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
-        }
-
-        this.asyncBackupCount = asyncBackupCount;
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -240,15 +248,17 @@ public class CacheSimpleConfig {
         return backupCount;
     }
 
+    /**
+     * Sets the number of backups
+     *
+     * @param backupCount the new backupCount
+     * @return the updated CacheSimpleConfig
+     * @throws new IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     */
     public CacheSimpleConfig setBackupCount(int backupCount) {
-        if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Cache backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Total (sync + async) cache backup count must be less than " + MAX_BACKUP_COUNT);
-        }
-
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 

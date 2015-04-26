@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -123,15 +125,14 @@ public class SemaphoreConfig {
      *
      * @param backupCount the number of synchronous backups to set
      * @return the updated SemaphoreConfig
-     * @throws new IllegalArgumentException if backupCount smaller than 0.
+     * @throws new IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setAsyncBackupCount(int)
      * @see #getBackupCount()
      */
     public SemaphoreConfig setBackupCount(int backupCount) {
-        if (backupCount < 0) {
-            throw new IllegalArgumentException("backupCount can't be smaller than 0");
-        }
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -146,19 +147,18 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Sets the number of asynchronous backups.
+     * Sets the number of asynchronous backups. 0 means no backups
      *
-     * @param asyncBackupCount the number of asynchronous backups to set
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated SemaphoreConfig
-     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0.
-     * @see #setBackupCount(int) (int)
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
     public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
-        if (backupCount < 0) {
-            throw new IllegalArgumentException("asyncBackupCount can't be smaller than 0");
-        }
-        this.asyncBackupCount = asyncBackupCount;
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
