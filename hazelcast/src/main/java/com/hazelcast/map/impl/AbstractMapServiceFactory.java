@@ -30,12 +30,12 @@ import com.hazelcast.spi.TransactionalService;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * An abstract implementation of {@link MapServiceContextAwareFactory} interface; this abstract class knows
+ * An abstract implementation of {@link MapServiceFactory} interface; this abstract class knows
  * all required auxiliary services which should be created before the construction of a new {@link MapService}.
  *
- * @see MapServiceContextAwareFactory
+ * @see MapServiceFactory
  */
-abstract class AbstractMapServiceContextAwareFactory implements MapServiceContextAwareFactory {
+abstract class AbstractMapServiceFactory implements MapServiceFactory {
 
     /**
      * Creates a new {@link ManagedService} for {@link MapService}.

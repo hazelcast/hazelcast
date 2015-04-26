@@ -23,7 +23,7 @@ package com.hazelcast.map.impl;
  * @see MapServiceContext
  * @see MapService
  */
-public interface MapServiceContextAwareFactory {
+public interface MapServiceFactory {
 
     /**
      * Returns a {@link MapServiceContext} implementation.
