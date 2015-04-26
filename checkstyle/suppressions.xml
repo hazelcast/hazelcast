@@ -542,6 +542,8 @@
     <suppress checks="ClassFanOutComplexityCheck" files="com.hazelcast.map.impl.proxy.MapProxySupport"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.proxy.MapProxySupport"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.map.impl.client.AbstractTxnMapRequest"/>
+    <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com.hazelcast.map.impl.MapServiceContextImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.map.impl.MapServiceContext"/>
 
     <!-- map.proxy-->
     <!--<suppress checks="" files="com.hazelcast.map.impl.proxy[\\/]"/>-->
