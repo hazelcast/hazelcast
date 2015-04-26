@@ -12,6 +12,7 @@ import java.math.BigInteger;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.fail;
 import static junit.framework.TestCase.assertEquals;
@@ -223,16 +224,34 @@ public class PreconditionsTest {
     }
 
     @Test
-    public void test_checkFalse() throws Exception {
+    public void test_checkFalse_whenFalse() throws Exception {
+        checkFalse(false, "comparison cannot be true");
+    }
+
+    @Test
+    public void test_checkFalse_whenTrue() throws Exception {
+        String errorMessage = "foobar";
         try {
-            checkFalse(Boolean.FALSE, "comparison cannot be true");
-        } catch (Exception e) {
-            fail("checkFalse method should not throw this exception " + e);
+            checkFalse(true, errorMessage);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertSame(errorMessage, e.getMessage());
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void test_checkFalse_whenComparisonTrue() throws Exception {
-        checkFalse(Boolean.TRUE, "comparison cannot be true");
+    @Test
+    public void test_checkTrue_whenTrue() throws Exception {
+        checkTrue(true, "must be true");
+    }
+
+    @Test
+    public void test_checkTrue_whenFalse() throws Exception {
+        String errorMessage = "foobar";
+        try {
+            checkTrue(false, errorMessage);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertSame(errorMessage, e.getMessage());
+        }
     }
 }
