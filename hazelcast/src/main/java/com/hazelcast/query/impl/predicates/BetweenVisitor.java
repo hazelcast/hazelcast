@@ -16,13 +16,13 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import com.hazelcast.query.impl.Index;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.TypeConverters;
-import com.hazelcast.util.collection.ArrayUtils;
-import com.hazelcast.util.collection.InternalMultiMap;
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.FalsePredicate;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.util.collection.ArrayUtils;
+import com.hazelcast.util.collection.InternalMultiMap;
 
 import java.util.List;
 import java.util.Map;
@@ -102,7 +102,7 @@ public class BetweenVisitor extends AbstractVisitor {
         GreaterLessPredicate mostRightGreaterOrEquals = null;
         GreaterLessPredicate mostLeftLessThanOrEquals = null;
         Index index = indexes.getIndex(attributeName);
-        TypeConverters.TypeConverter converter = index.getConverter();
+        TypeConverter converter = index.getConverter();
         for (GreaterLessPredicate predicate : predicates) {
             if (predicate.less) {
                 if (mostLeftLessThanOrEquals == null || isLessThan(mostLeftLessThanOrEquals, predicate, converter)) {
@@ -198,10 +198,10 @@ public class BetweenVisitor extends AbstractVisitor {
     private class Boundaries {
         private final GreaterLessPredicate leftBoundary;
         private final GreaterLessPredicate rightBoundary;
-        private final TypeConverters.TypeConverter typeConverter;
+        private final TypeConverter typeConverter;
 
         Boundaries(GreaterLessPredicate leftBoundary, GreaterLessPredicate rightBoundary,
-                   TypeConverters.TypeConverter converter) {
+                   TypeConverter converter) {
             this.leftBoundary = leftBoundary;
             this.rightBoundary = rightBoundary;
             this.typeConverter = converter;
@@ -248,14 +248,14 @@ public class BetweenVisitor extends AbstractVisitor {
     }
 
     private boolean isGreaterThan(GreaterLessPredicate leftPredicate,
-                                  GreaterLessPredicate rightPredicate, TypeConverters.TypeConverter converter) {
+                                  GreaterLessPredicate rightPredicate, TypeConverter converter) {
         Comparable rightValue = converter.convert(rightPredicate.value);
         Comparable leftValue = converter.convert(leftPredicate.value);
         return rightValue.compareTo(leftValue) > 0;
     }
 
     private boolean isLessThan(GreaterLessPredicate leftPredicate, GreaterLessPredicate rightPredicate,
-                               TypeConverters.TypeConverter converter) {
+                               TypeConverter converter) {
         Comparable rightValue = converter.convert(rightPredicate.value);
         Comparable leftValue = converter.convert(leftPredicate.value);
         return rightValue.compareTo(leftValue) < 0;

@@ -82,9 +82,26 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
 
+    <xs:complexType name="discovery-strategies">
+        <xs:sequence>
+            <xs:element name="node-filter" type="discovery-node-filter" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="discovery-strategy" type="discovery-strategy" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="discovery-node-filter">
+        <xs:attribute name="class" type="xs:string" use="required"/>
+    </xs:complexType>
+    <xs:complexType name="discovery-strategy">
+        <xs:sequence>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="class" type="xs:string" use="required"/>
+    </xs:complexType>
     <xs:element name="cluster-members">
         <xs:complexType>
             <xs:sequence>

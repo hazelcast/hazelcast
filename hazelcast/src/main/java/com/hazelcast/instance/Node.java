@@ -21,11 +21,13 @@ import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.ConfigCheck;
 import com.hazelcast.cluster.impl.JoinMessage;
+import com.hazelcast.cluster.impl.DiscoveryJoiner;
 import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiscoveryStrategiesConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -50,6 +52,10 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -94,6 +100,8 @@ public class Node {
     public final ClusterServiceImpl clusterService;
 
     public final MulticastService multicastService;
+
+    public final DiscoveryService discoveryService;
 
     public final ConnectionManager connectionManager;
 
@@ -167,7 +175,8 @@ public class Node {
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo(this);
-            this.multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
+            multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
+            discoveryService = createDiscoveryService(config);
             initializeListeners(config);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
@@ -181,6 +190,17 @@ public class Node {
 
     public HazelcastThreadGroup getHazelcastThreadGroup() {
         return hazelcastThreadGroup;
+    }
+
+    private DiscoveryService createDiscoveryService(Config config) {
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        DiscoveryStrategiesConfig providersConfig = joinConfig.getDiscoveryStrategiesConfig().getAsReadOnly();
+
+        DiscoveryServiceProvider factory = providersConfig.getDiscoveryServiceProvider();
+        if (factory == null) {
+            factory = new DefaultDiscoveryServiceProvider();
+        }
+        return factory.newDiscoveryService(DiscoveryMode.Member, providersConfig, config.getClassLoader());
     }
 
     private void initializeListeners(Config config) {
@@ -285,6 +305,10 @@ public class Node {
                     hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
+        if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
+            discoveryService.start();
+        }
+
         if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
             logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
@@ -341,6 +365,9 @@ public class Node {
             if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
+            discoveryService.destroy();
+            logger.info("Shutting down connection manager...");
+            connectionManager.shutdown();
         } catch (Throwable ignored) {
         }
         versionCheck.shutdown();
@@ -508,21 +535,27 @@ public class Node {
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.verify();
 
-        if (join.getMulticastConfig().isEnabled() && multicastService != null) {
-            logger.info("Creating MulticastJoiner");
-            return new MulticastJoiner(this);
-        } else if (join.getTcpIpConfig().isEnabled()) {
-            logger.info("Creating TcpIpJoiner");
-            return new TcpIpJoiner(this);
-        } else if (join.getAwsConfig().isEnabled()) {
-            Class clazz;
-            try {
-                logger.info("Creating AWSJoiner");
-                clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
-                Constructor constructor = clazz.getConstructor(Node.class);
-                return (Joiner) constructor.newInstance(this);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+        if (groupProperties.getBoolean(GroupProperty.DISCOVERY_SPI_ENABLED)) {
+            //TODO: Auto-Upgrade Multicast+AWS configuration!
+            logger.info("Activating Discovery SPI Joiner");
+            return new DiscoveryJoiner(this, discoveryService);
+        } else {
+            if (join.getMulticastConfig().isEnabled() && multicastService != null) {
+                logger.info("Creating MulticastJoiner");
+                return new MulticastJoiner(this);
+            } else if (join.getTcpIpConfig().isEnabled()) {
+                logger.info("Creating TcpIpJoiner");
+                return new TcpIpJoiner(this);
+            } else if (join.getAwsConfig().isEnabled()) {
+                Class clazz;
+                try {
+                    logger.info("Creating AWSJoiner");
+                    clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
+                    Constructor constructor = clazz.getConstructor(Node.class);
+                    return (Joiner) constructor.newInstance(this);
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
             }
         }
         return null;

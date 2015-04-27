@@ -60,11 +60,20 @@ public class TestHazelcastInstanceFactory {
         this.registry = new TestNodeRegistry(addresses);
     }
 
+    public TestHazelcastInstanceFactory(int initialPort, String... addresses) {
+        this.count = addresses.length;
+        if (mockNetwork) {
+            this.addresses = new CopyOnWriteArrayList<Address>();
+            this.addresses.addAll(createAddresses(initialPort, PORTS, addresses));
+            this.registry = new TestNodeRegistry(this.addresses);
+        }
+    }
+
     public TestHazelcastInstanceFactory(String... addresses) {
         this.count = addresses.length;
         if (mockNetwork) {
             this.addresses = new CopyOnWriteArrayList<Address>();
-            this.addresses.addAll(createAddresses(PORTS, addresses));
+            this.addresses.addAll(createAddresses(-1, PORTS, addresses));
             this.registry = new TestNodeRegistry(this.addresses);
         }
     }
@@ -148,13 +157,14 @@ public class TestHazelcastInstanceFactory {
         return addresses;
     }
 
-    private static List<Address> createAddresses(AtomicInteger ports, String... addressArray) {
+    private static List<Address> createAddresses(int initialPort, AtomicInteger ports, String... addressArray) {
         checkElementsNotNull(addressArray);
 
         int count = addressArray.length;
         List<Address> addresses = new ArrayList<Address>(count);
         for (String address : addressArray) {
-            addresses.add(createAddress(address, ports.incrementAndGet()));
+            int port = initialPort == -1 ? ports.incrementAndGet() : initialPort++;
+            addresses.add(createAddress(address, port));
         }
         return addresses;
     }

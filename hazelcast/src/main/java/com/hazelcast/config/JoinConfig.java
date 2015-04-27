@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.Collection;
+
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -28,6 +30,8 @@ public class JoinConfig {
     private TcpIpConfig tcpIpConfig = new TcpIpConfig();
 
     private AwsConfig awsConfig = new AwsConfig();
+
+    private DiscoveryStrategiesConfig discoveryStrategiesConfig = new DiscoveryStrategiesConfig();
 
     /**
      * @return the multicastConfig join configuration
@@ -78,6 +82,26 @@ public class JoinConfig {
     }
 
     /**
+     * Returns the currently defined {@link DiscoveryStrategiesConfig}
+     *
+     * @return current DiscoveryProvidersConfig instance
+     */
+    public DiscoveryStrategiesConfig getDiscoveryStrategiesConfig() {
+        return discoveryStrategiesConfig;
+    }
+
+    /**
+     * Sets a custom defined {@link DiscoveryStrategiesConfig}
+     *
+     * @param discoveryStrategiesConfig configuration to set
+     * @throws java.lang.IllegalArgumentException if discoveryProvidersConfig is null
+     */
+    public JoinConfig setDiscoveryStrategiesConfig(DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+        this.discoveryStrategiesConfig = isNotNull(discoveryStrategiesConfig, "discoveryProvidersConfig");
+        return this;
+    }
+
+    /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
      * @throws IllegalStateException when the join config is not valid.
@@ -94,6 +118,17 @@ public class JoinConfig {
         if (getMulticastConfig().isEnabled() && getAwsConfig().isEnabled()) {
             throw new InvalidConfigurationException("Multicast and AWS join can't be enabled at the same time");
         }
+
+        Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = discoveryStrategiesConfig.getDiscoveryStrategyConfigs();
+        if (getMulticastConfig().isEnabled() && discoveryStrategyConfigs.size() > 0) {
+            throw new InvalidConfigurationException(
+                    "Multicast and DiscoveryProviders join can't be enabled at the same time");
+        }
+
+        if (getAwsConfig().isEnabled() && discoveryStrategyConfigs.size() > 0) {
+            throw new InvalidConfigurationException(
+                    "Multicast and DiscoveryProviders join can't be enabled at the same time");
+        }
     }
 
     @Override
@@ -102,6 +137,7 @@ public class JoinConfig {
         sb.append("multicastConfig=").append(multicastConfig);
         sb.append(", tcpIpConfig=").append(tcpIpConfig);
         sb.append(", awsConfig=").append(awsConfig);
+        sb.append(", discoveryProvidersConfig=").append(discoveryStrategiesConfig);
         sb.append('}');
         return sb.toString();
     }

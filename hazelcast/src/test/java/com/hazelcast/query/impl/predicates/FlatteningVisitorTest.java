@@ -16,10 +16,10 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,11 +32,11 @@ import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.not;
 import static com.hazelcast.query.Predicates.or;
+import static com.hazelcast.query.impl.TypeConverters.INTEGER_CONVERTER;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static com.hazelcast.query.impl.TypeConverters.INTEGER_CONVERTER;
 import static org.mockito.Mockito.withSettings;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -103,7 +103,7 @@ public class FlatteningVisitorTest {
         assertEquals(negated, result);
     }
 
-    private void useConverter(TypeConverters.TypeConverter converter) {
+    private void useConverter(TypeConverter converter) {
         when(mockIndex.getConverter()).thenReturn(converter);
     }
 

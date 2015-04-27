@@ -50,11 +50,12 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -609,11 +610,66 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleTcpIp(child);
             } else if ("aws".equals(name)) {
                 handleAWS(child);
+            } else if ("discovery-strategies".equals(name)) {
+                handleDiscoveryStrategies(child);
             }
         }
 
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.verify();
+    }
+
+    private void handleDiscoveryStrategies(Node node) {
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        final DiscoveryStrategiesConfig discoveryStrategiesConfig = join.getDiscoveryStrategiesConfig();
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child.getNodeName());
+            if ("discovery-strategy".equals(name)) {
+                handleDiscoveryStrategy(child, discoveryStrategiesConfig);
+            } else if ("node-filter".equals(name)) {
+                handleDiscoveryNodeFilter(child, discoveryStrategiesConfig);
+            }
+        }
+    }
+
+    private void handleDiscoveryNodeFilter(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+        final NamedNodeMap atts = node.getAttributes();
+
+        final Node att = atts.getNamedItem("class");
+        if (att != null) {
+            discoveryStrategiesConfig.setNodeFilterClass(getTextContent(att).trim());
+        }
+    }
+
+    private void handleDiscoveryStrategy(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+        final NamedNodeMap atts = node.getAttributes();
+
+        boolean enabled = false;
+        String clazz = null;
+
+        for (int a = 0; a < atts.getLength(); a++) {
+            final Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                enabled = checkTrue(value);
+            } else if ("class".equals(att.getNodeName())) {
+                clazz = value;
+            }
+        }
+
+        if (!enabled || clazz == null) {
+            return;
+        }
+
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child.getNodeName());
+            if ("properties".equals(name)) {
+                fillProperties(child, properties);
+            }
+        }
+
+        discoveryStrategiesConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
     private void handleAWS(Node node) {

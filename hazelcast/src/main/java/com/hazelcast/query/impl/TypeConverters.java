@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
@@ -43,7 +45,7 @@ public final class TypeConverters {
     private TypeConverters() {
     }
 
-    public abstract static class TypeConverter {
+    public abstract static class BaseTypeConverter implements TypeConverter {
         abstract Comparable convertInternal(Comparable value);
 
         public final Comparable convert(Comparable value) {
@@ -54,7 +56,7 @@ public final class TypeConverters {
         }
     }
 
-    static class EnumConverter extends TypeConverter {
+    static class EnumConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             String enumString = value.toString();
@@ -66,7 +68,7 @@ public final class TypeConverters {
         }
     }
 
-    static class SqlDateConverter extends TypeConverter {
+    static class SqlDateConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof java.sql.Date) {
@@ -83,7 +85,7 @@ public final class TypeConverters {
         }
     }
 
-    static class SqlTimestampConverter extends TypeConverter {
+    static class SqlTimestampConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Timestamp) {
@@ -100,7 +102,7 @@ public final class TypeConverters {
         }
     }
 
-    static class DateConverter extends TypeConverter {
+    static class DateConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Date) {
@@ -117,7 +119,7 @@ public final class TypeConverters {
         }
     }
 
-    static class DoubleConverter extends TypeConverter {
+    static class DoubleConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Double) {
@@ -134,7 +136,7 @@ public final class TypeConverters {
         }
     }
 
-    static class LongConverter extends TypeConverter {
+    static class LongConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Long) {
@@ -151,7 +153,7 @@ public final class TypeConverters {
         }
     }
 
-    static class BigIntegerConverter extends TypeConverter {
+    static class BigIntegerConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof BigInteger) {
@@ -161,7 +163,7 @@ public final class TypeConverters {
         }
     }
 
-    static class BigDecimalConverter extends TypeConverter {
+    static class BigDecimalConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof BigDecimal) {
@@ -174,7 +176,7 @@ public final class TypeConverters {
         }
     }
 
-    static class IntegerConverter extends TypeConverter {
+    static class IntegerConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Integer) {
@@ -191,7 +193,7 @@ public final class TypeConverters {
         }
     }
 
-    static class StringConverter extends TypeConverter {
+    static class StringConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof String) {
@@ -201,7 +203,7 @@ public final class TypeConverters {
         }
     }
 
-    static class FloatConverter extends TypeConverter {
+    static class FloatConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Float) {
@@ -218,7 +220,7 @@ public final class TypeConverters {
         }
     }
 
-    static class ShortConverter extends TypeConverter {
+    static class ShortConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Short) {
@@ -235,7 +237,7 @@ public final class TypeConverters {
         }
     }
 
-    static class BooleanConverter extends TypeConverter {
+    static class BooleanConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Boolean) {
@@ -252,7 +254,7 @@ public final class TypeConverters {
         }
     }
 
-    static class ByteConverter extends TypeConverter {
+    static class ByteConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value instanceof Byte) {
@@ -269,7 +271,7 @@ public final class TypeConverters {
         }
     }
 
-    static class CharConverter extends TypeConverter {
+    static class CharConverter extends BaseTypeConverter {
         @Override
         Comparable convertInternal(Comparable value) {
             if (value.getClass() == char.class) {
