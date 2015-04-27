@@ -30,15 +30,13 @@ public class CacheSimpleConfigReadOnly
         super(cacheSimpleConfig);
     }
 
-    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
-    // since "CacheEvictionConfig" is deprecated
     @Override
-    public CacheEvictionConfig getEvictionConfig() {
-        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+    public EvictionConfig getEvictionConfig() {
+        final EvictionConfig evictionConfig = super.getEvictionConfig();
         if (evictionConfig == null) {
             return null;
         }
-        return (CacheEvictionConfig) evictionConfig.getAsReadOnly();
+        return evictionConfig.getAsReadOnly();
     }
 
     @Override

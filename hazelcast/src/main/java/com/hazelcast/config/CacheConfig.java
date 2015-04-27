@@ -287,6 +287,8 @@ public class CacheConfig<K, V>
      *
      * @return the {@link EvictionConfig} instance for eviction configuration
      */
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
     public CacheEvictionConfig getEvictionConfig() {
         return evictionConfig;
     }

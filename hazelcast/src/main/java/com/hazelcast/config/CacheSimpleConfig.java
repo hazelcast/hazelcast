@@ -277,7 +277,7 @@ public class CacheSimpleConfig {
 
     // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
     // since "CacheEvictionConfig" is deprecated
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
