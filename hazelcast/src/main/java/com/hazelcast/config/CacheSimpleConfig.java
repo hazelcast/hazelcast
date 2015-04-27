@@ -78,7 +78,9 @@ public class CacheSimpleConfig {
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private EvictionConfig evictionConfig = new EvictionConfig();
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
     private WanReplicationRef wanReplicationRef;
     private NearCacheConfig nearCacheConfig;
 
@@ -273,14 +275,22 @@ public class CacheSimpleConfig {
         return this;
     }
 
-    public EvictionConfig getEvictionConfig() {
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    public CacheEvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         isNotNull(evictionConfig, "Eviction config cannot be null !");
 
-        this.evictionConfig = evictionConfig;
+        // TODO Remove this check in the future since "CacheEvictionConfig" is deprecated
+        if (evictionConfig instanceof CacheEvictionConfig) {
+            this.evictionConfig = (CacheEvictionConfig) evictionConfig;
+        } else {
+            this.evictionConfig = new CacheEvictionConfig(evictionConfig);
+        }
+
         return this;
     }
 

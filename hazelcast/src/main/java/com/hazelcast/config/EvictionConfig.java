@@ -47,11 +47,11 @@ public class EvictionConfig
      */
     public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
 
-    private int size = DEFAULT_MAX_ENTRY_COUNT;
-    private MaxSizePolicy maxSizePolicy = MaxSizePolicy.ENTRY_COUNT;
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
+    protected int size = DEFAULT_MAX_ENTRY_COUNT;
+    protected MaxSizePolicy maxSizePolicy = MaxSizePolicy.ENTRY_COUNT;
+    protected EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
 
-    private EvictionConfigReadOnly readOnly;
+    protected EvictionConfig readOnly;
 
     public EvictionConfig() {
     }
@@ -126,7 +126,7 @@ public class EvictionConfig
         FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
-    public EvictionConfigReadOnly getAsReadOnly() {
+    public EvictionConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new EvictionConfigReadOnly(this);
         }

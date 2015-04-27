@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Readonly version of CacheSimpleConfig
+ * Readonly version of {@link com.hazelcast.config.CacheSimpleConfig}
  */
 public class CacheSimpleConfigReadOnly
         extends CacheSimpleConfig {
@@ -30,23 +30,15 @@ public class CacheSimpleConfigReadOnly
         super(cacheSimpleConfig);
     }
 
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
     @Override
-    public EvictionConfig getEvictionConfig() {
-        final EvictionConfig evictionConfig = super.getEvictionConfig();
+    public CacheEvictionConfig getEvictionConfig() {
+        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
         if (evictionConfig == null) {
             return null;
         }
-        return evictionConfig.getAsReadOnly();
-    }
-
-    @Override
-    public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheSimpleConfig setBackupCount(int backupCount) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        return (CacheEvictionConfig) evictionConfig.getAsReadOnly();
     }
 
     @Override
@@ -58,6 +50,16 @@ public class CacheSimpleConfigReadOnly
             readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
+    }
+
+    @Override
+    public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig setBackupCount(int backupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
     @Override
