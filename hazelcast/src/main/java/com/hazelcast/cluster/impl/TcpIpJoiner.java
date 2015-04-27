@@ -22,6 +22,7 @@ import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
@@ -45,13 +46,19 @@ import static com.hazelcast.util.AddressUtil.AddressHolder;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
-    private static final int MAX_PORT_TRIES = 3;
     private static final long JOIN_RETRY_WAIT_TIME = 1000L;
 
-    private volatile boolean claimingMaster = false;
+    private final int maxPortTryCount;
+    private volatile boolean claimingMaster;
 
     public TcpIpJoiner(Node node) {
         super(node);
+        int tryCount = node.groupProperties.TCP_JOIN_PORT_TRY_COUNT.getInteger();
+        if (tryCount <= 0) {
+            throw new IllegalArgumentException(GroupProperties.PROP_TCP_JOIN_PORT_TRY_COUNT
+                    + " should be greater than zero! Current value: " + tryCount);
+        }
+        maxPortTryCount = tryCount;
     }
 
     public boolean isClaimingMaster() {
@@ -66,7 +73,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     public void doJoin() {
         final Address targetAddress = getTargetAddress();
         if (targetAddress != null) {
-            long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000;
+            long maxJoinMergeTargetMillis = node.getGroupProperties().MAX_JOIN_MERGE_TARGET_SECONDS.getInteger() * 1000L;
             joinViaTargetMember(targetAddress, maxJoinMergeTargetMillis);
             if (!node.joined()) {
                 joinViaPossibleMembers();
@@ -393,7 +400,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
             try {
                 boolean portIsDefined = addressHolder.getPort() != -1 || !networkConfig.isPortAutoIncrement();
-                int count = portIsDefined ? 1 : MAX_PORT_TRIES;
+                int count = portIsDefined ? 1 : maxPortTryCount;
                 int port = addressHolder.getPort() != -1 ? addressHolder.getPort() : networkConfig.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
