@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.spi;
+package com.hazelcast.config.spi;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.SpiJoinerConfig;
 import com.hazelcast.instance.Node;
 
 /**
  * interface of the factory for creating joiner via spi.
  */
-public interface SpiJoinerFactory {
+public interface CustomJoinerFactory {
+    
     String getType();
-    Joiner createJoiner(Node node, SpiJoinerConfig joinConfig);
+    
+    Joiner createJoiner(Node node, CustomJoinerConfig joinConfig);
 }

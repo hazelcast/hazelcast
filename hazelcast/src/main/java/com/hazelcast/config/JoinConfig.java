@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.spi.CustomJoinerConfig;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class JoinConfig {
 
     private AwsConfig awsConfig = new AwsConfig();
 
-    private Map<String, SpiJoinerConfig> spiJoinerConfigs = new HashMap<String, SpiJoinerConfig>();
+    private Map<String, CustomJoinerConfig> customJoinerConfigs = new HashMap<String, CustomJoinerConfig>();
 
     /**
      * @return the multicastConfig join configuration
@@ -82,18 +83,30 @@ public class JoinConfig {
         return this;
     }
 
-    public Map<String,SpiJoinerConfig> getSpiJoinerConfigs(){
-        return this.spiJoinerConfigs;
+    /**
+     * The list with custom-joiner configurations.
+     * 
+     * @return 
+     */
+    public Map<String,CustomJoinerConfig> getCustomJoinerConfigs(){
+        return this.customJoinerConfigs;
     }
 
-    public void addSpiJoinerConfig(SpiJoinerConfig config) {
+    /**
+     * Add a custom joiner configuration
+     * 
+     * @param config 
+     */
+    public void addCustomJoinerConfig(final CustomJoinerConfig config) {
         isNotNull(config, config.getType());
-        this.spiJoinerConfigs.put(config.getType(), config);
+        this.customJoinerConfigs.put(config.getType(), config);
     }
 
     /**
      * Verifies this JoinConfig is valid. At most a single joiner should be active.
      *
+     * TODO: check the custom config here too, or drop this?
+     * 
      * @throws IllegalStateException when the join config is not valid.
      */
     public void verify() {

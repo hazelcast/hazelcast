@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.config;
+package com.hazelcast.config.spi;
 
 import org.w3c.dom.Node;
 
 /**
  * class to save information of the spi joiner configuration.
  */
-public class SpiJoinerConfig {
-    private boolean enabled;
-    private String type;
-    private Node xmlNode;
+public class CustomJoinerConfig {
 
-    public SpiJoinerConfig(boolean enabled, String type, Node xmlNode) {
+    final private boolean enabled;
+    final private String type;
+    final private Node xmlNode;
+
+    public CustomJoinerConfig(boolean enabled, String type, Node xmlNode) {
         this.enabled = enabled;
         this.type = type;
         this.xmlNode = xmlNode;

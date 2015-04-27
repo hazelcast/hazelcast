@@ -15,6 +15,7 @@
  */
 package com.hazelcast.config;
 
+import com.hazelcast.config.spi.CustomJoinerConfig;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
@@ -551,8 +552,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("aws".equals(name)) {
                 handleAWS(child);
             } else {
-                boolean enabled = isJoinerConfigEnabled(node);
-                config.getNetworkConfig().getJoin().addSpiJoinerConfig(new SpiJoinerConfig(enabled, name, node));
+                handleCustomJoiner(child);
             }
         }
 
@@ -560,9 +560,30 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         joinConfig.verify();
     }
 
-    private boolean isJoinerConfigEnabled(final org.w3c.dom.Node node){
-        final NamedNodeMap atts = node.getAttributes();
+    /**
+     * Handle a custom tag in the join-configuration.
+     *
+     * @param node
+     */
+    private void handleCustomJoiner(final org.w3c.dom.Node node) {
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            String nodeName = node.getNodeName();
+            boolean enabled = isJoinerConfigEnabled(node);
+            config.getNetworkConfig().getJoin().addCustomJoinerConfig(
+                    new CustomJoinerConfig(enabled, nodeName, node));
+        }
+    }
+
+    /**
+     * Check if there is a custom configuration-tag.
+     *
+     * @param node
+     * @return
+     */
+    private boolean isJoinerConfigEnabled(final org.w3c.dom.Node node) {
         boolean isEnabled = false;
+
+        final NamedNodeMap atts = node.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
@@ -570,7 +591,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 break;
             }
         }
-
         return isEnabled;
     }
 

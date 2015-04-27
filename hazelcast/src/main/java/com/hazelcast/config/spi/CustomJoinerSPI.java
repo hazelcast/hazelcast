@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.config;
+package com.hazelcast.config.spi;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.SpiJoinerFactory;
+import com.hazelcast.config.spi.CustomJoinerFactory;
 
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
@@ -26,20 +26,20 @@ import java.util.ServiceLoader;
 /**
  * service class to load the joiner via spi.
  */
-public class SpiJoinerLoadService {
+public class CustomJoinerSPI {
 
-    private static final ILogger LOGGER = Logger.getLogger(SpiJoinerLoadService.class);
+    private static final ILogger LOGGER = Logger.getLogger(CustomJoinerSPI.class);
 
-    private static SpiJoinerLoadService service;
-    private ServiceLoader<SpiJoinerFactory> loader;
+    private static CustomJoinerSPI service;
+    private ServiceLoader<CustomJoinerFactory> loader;
 
-    private SpiJoinerLoadService() {
-        loader = ServiceLoader.load(SpiJoinerFactory.class);
+    private CustomJoinerSPI() {
+        loader = ServiceLoader.load(CustomJoinerFactory.class);
     }
 
-    public static synchronized SpiJoinerLoadService getInstance() {
+    public static synchronized CustomJoinerSPI getInstance() {
         if (service == null) {
-            service = new SpiJoinerLoadService();
+            service = new CustomJoinerSPI();
         }
         return service;
     }
@@ -47,14 +47,15 @@ public class SpiJoinerLoadService {
     /**
      * get the joiner service with the given type.
      * @param type
+     * @return 
      */
-    public SpiJoinerFactory getJoiner(String type) {
-        SpiJoinerFactory result = null;
+    public CustomJoinerFactory getJoiner(String type) {
+        CustomJoinerFactory result = null;
 
         try {
-            Iterator<SpiJoinerFactory> joiners = loader.iterator();
+            Iterator<CustomJoinerFactory> joiners = loader.iterator();
             while (result == null && joiners.hasNext()) {
-                SpiJoinerFactory joiner = joiners.next();
+                CustomJoinerFactory joiner = joiners.next();
                 if(type.equals(joiner.getType())) {
                     result = joiner;
                 }

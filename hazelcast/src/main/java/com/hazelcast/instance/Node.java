@@ -31,8 +31,8 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.SpiJoinerConfig;
-import com.hazelcast.config.SpiJoinerLoadService;
+import com.hazelcast.config.spi.CustomJoinerConfig;
+import com.hazelcast.config.spi.CustomJoinerSPI;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -51,7 +51,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.SpiJoinerFactory;
+import com.hazelcast.config.spi.CustomJoinerFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -547,7 +547,7 @@ public class Node {
 
     Joiner createJoiner() {
         JoinConfig join = config.getNetworkConfig().getJoin();
-        join.verify();
+        join.verify(); // TODO: should check the custom-config too, or take just the first one!
 
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
             logger.info("Creating MulticastJoiner");
@@ -566,11 +566,11 @@ public class Node {
                 throw ExceptionUtil.rethrow(e);
             }
         } else {
-            for(SpiJoinerConfig joinerConfig : join.getSpiJoinerConfigs().values()) {
+            for(CustomJoinerConfig joinerConfig : join.getCustomJoinerConfigs().values()) {
                 if (joinerConfig.isEnabled()) {
                     String type = joinerConfig.getType();
                     logger.info("Creating Joiner via spi for type:" + type);
-                    SpiJoinerFactory joinerFactory = SpiJoinerLoadService.getInstance().getJoiner(type);
+                    CustomJoinerFactory joinerFactory = CustomJoinerSPI.getInstance().getJoiner(type);
                     if (joinerFactory != null) {
                         return joinerFactory.createJoiner(this, joinerConfig);
                     }
