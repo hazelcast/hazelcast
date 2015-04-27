@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.List;
 import java.util.Set;
 
-@GenerateParameters(id = 3, name = "Set", ns = "Hazelcast.Client.Protocol.Set")
+@GenerateParameters(id = TemplateConstants.SET_TEMPLATE_ID, name = "Set", ns = "Hazelcast.Client.Protocol.Set")
 public interface SetTemplate {
 
     @EncodeMethod(id = 1)

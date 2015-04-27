@@ -77,8 +77,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
-    private class MapListener
-            extends EntryAdapter<Object, Object> {
+    private class MapListener extends EntryAdapter<Object, Object> {
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {

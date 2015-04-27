@@ -208,6 +208,10 @@ public final class TransactionOptions implements DataSerializable {
             this.value = value;
         }
 
+        public int id() {
+            return value;
+        }
+
         public static TransactionType getByValue(int value) {
             for (TransactionType type : values()) {
                 if (type.value == value) {

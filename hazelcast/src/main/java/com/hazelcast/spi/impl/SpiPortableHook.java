@@ -30,12 +30,15 @@ public final class SpiPortableHook implements PortableHook {
     public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_PORTABLE_FACTORY, -1);
 
     public static final int USERNAME_PWD_CRED = 1;
+
+    //TODO REMOVE AFTER REQUESTS REMOVED
     public static final int COLLECTION = 2;
     public static final int ITEM_EVENT = 3;
     public static final int ENTRY_EVENT = 4;
     public static final int DISTRIBUTED_OBJECT_EVENT = 5;
     public static final int MAP_PARTITION_LOST_EVENT = 6;
     public static final int PARTITION_LOST_EVENT = 7;
+    //REMOVE END
 
     @Override
     public int getFactoryId() {
@@ -49,18 +52,6 @@ public final class SpiPortableHook implements PortableHook {
                 switch (classId) {
                     case USERNAME_PWD_CRED:
                         return new UsernamePasswordCredentials();
-                    case COLLECTION:
-                        return new PortableCollection();
-                    case ITEM_EVENT:
-                        return new PortableItemEvent();
-                    case ENTRY_EVENT:
-                        return new PortableEntryEvent();
-                    case DISTRIBUTED_OBJECT_EVENT:
-                        return new PortableDistributedObjectEvent();
-                    case MAP_PARTITION_LOST_EVENT:
-                        return new PortableMapPartitionLostEvent();
-                    case PARTITION_LOST_EVENT:
-                        return new PortablePartitionLostEvent();
                     default:
                         return null;
                 }

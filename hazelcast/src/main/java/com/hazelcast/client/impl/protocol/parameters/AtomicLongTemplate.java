@@ -20,7 +20,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateParameters(id = 6, name = "AtomicLong", ns = "Hazelcast.Client.Protocol.AtomicLong")
+@GenerateParameters(id = TemplateConstants.ATOMIC_LONG_TEMPLATE_ID,
+        name = "AtomicLong", ns = "Hazelcast.Client.Protocol.AtomicLong")
 public interface AtomicLongTemplate {
 
     @EncodeMethod(id = 1)

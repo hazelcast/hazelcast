@@ -16,17 +16,18 @@
 
 package com.hazelcast.client.txn.proxy;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalSetAddParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalSetRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalSetSizeParameters;
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.impl.txnset.client.TxnSetAddRequest;
-import com.hazelcast.collection.impl.txnset.client.TxnSetRemoveRequest;
-import com.hazelcast.collection.impl.txnset.client.TxnSetSizeRequest;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.ThreadUtil;
 
-/**
-* @author ali 6/11/13
-*/
 public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
 
     public ClientTxnSetProxy(String name, TransactionContextProxy proxy) {
@@ -35,24 +36,27 @@ public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> im
 
     public boolean add(E e) {
         throwExceptionIfNull(e);
-        final Data value = toData(e);
-        final TxnSetAddRequest request = new TxnSetAddRequest(getName(), value);
-        final Boolean result = invoke(request);
-        return result;
+        Data value = toData(e);
+        ClientMessage request = TransactionalSetAddParameters.encode(getName(), getTransactionId()
+                , ThreadUtil.getThreadId(), value);
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     public boolean remove(E e) {
         throwExceptionIfNull(e);
-        final Data value = toData(e);
-        final TxnSetRemoveRequest request = new TxnSetRemoveRequest(getName(), value);
-        final Boolean result = invoke(request);
-        return result;
+        Data value = toData(e);
+        ClientMessage request = TransactionalSetRemoveParameters.encode(getName(), getTransactionId()
+                , ThreadUtil.getThreadId(), value);
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     public int size() {
-        final TxnSetSizeRequest request = new TxnSetSizeRequest(getName());
-        final Integer result = invoke(request);
-        return result;
+        ClientMessage request = TransactionalSetSizeParameters.encode(getName(), getTransactionId()
+                , ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        return IntResultParameters.decode(response).result;
     }
 
     public String getServiceName() {

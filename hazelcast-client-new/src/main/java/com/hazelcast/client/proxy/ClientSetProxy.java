@@ -16,12 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.SetAddListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetAddParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetClearParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetCompareAndRemoveAllParameters;
@@ -33,17 +34,16 @@ import com.hazelcast.client.impl.protocol.parameters.SetIsEmptyParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetRemoveListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.SetSizeParameters;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.collection.impl.collection.client.CollectionAddListenerRequest;
-import com.hazelcast.collection.impl.collection.client.CollectionRequest;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.PortableItemEvent;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -176,16 +176,19 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         invoke(request);
     }
 
-    //Todo MessageTask!!
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        final CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
-        request.setServiceName(getServiceName());
-        EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
-            public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
-                Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
-                ItemEvent<E> itemEvent = new ItemEvent<E>(getName(), portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
+        ClientMessage request = SetAddListenerParameters.encode(name, includeValue);
+
+        EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
+            final SerializationService serializationService = getContext().getSerializationService();
+            final ClientClusterService clusterService = getContext().getClusterService();
+
+            public void handle(ClientMessage message) {
+                ItemEventParameters event = ItemEventParameters.decode(message);
+                E item = includeValue ? (E) serializationService.toObject(event.item) : null;
+                Member member = clusterService.getMember(event.uuid);
+                ItemEvent<E> itemEvent = new ItemEvent<E>(name, event.eventType, item, member);
+                if (event.eventType == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);
@@ -209,15 +212,6 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         return stopListening(request, registrationId);
     }
 
-    protected <T> T invoke(ClientRequest req) {
-        if (req instanceof CollectionRequest) {
-            CollectionRequest request = (CollectionRequest) req;
-            request.setServiceName(getServiceName());
-        }
-
-        return super.invoke(req, getPartitionKey());
-    }
-
     private Collection<E> getAll() {
         ClientMessage request = SetGetAllParameters.encode(name);
         ClientMessage response = invoke(request);
@@ -228,6 +222,10 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             list.add((E) toObject(value));
         }
         return list;
+    }
+
+    protected <T> T invoke(ClientMessage req) {
+        return super.invoke(req, getPartitionKey());
     }
 
     @Override

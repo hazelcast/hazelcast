@@ -16,17 +16,24 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockForceUnlockParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockGetLockCountParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockGetRemainingLeaseTimeParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockIsLockedByCurrentThreadParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockIsLockedParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockTryLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.LockUnlockParameters;
+import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.lock.client.GetLockCountRequest;
-import com.hazelcast.concurrent.lock.client.GetRemainingLeaseRequest;
-import com.hazelcast.concurrent.lock.client.IsLockedRequest;
-import com.hazelcast.concurrent.lock.client.LockRequest;
-import com.hazelcast.concurrent.lock.client.UnlockRequest;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -46,35 +53,41 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public boolean isLocked() {
-        IsLockedRequest request = new IsLockedRequest(getKeyData());
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = LockIsLockedParameters.encode(getName(), ThreadUtil.getThreadId());
+        BooleanResultParameters resultParameters =
+                BooleanResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public boolean isLockedByCurrentThread() {
-        IsLockedRequest request = new IsLockedRequest(getKeyData(), ThreadUtil.getThreadId());
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = LockIsLockedByCurrentThreadParameters.encode(getName(), ThreadUtil.getThreadId());
+        BooleanResultParameters resultParameters =
+                BooleanResultParameters.decode((ClientMessage) invoke(request));
+
+        return resultParameters.result;
     }
 
     public int getLockCount() {
-        GetLockCountRequest request = new GetLockCountRequest(getKeyData());
-        return (Integer) invoke(request);
+        ClientMessage request = LockGetLockCountParameters.encode(getName());
+        IntResultParameters resultParameters = IntResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public long getRemainingLeaseTime() {
-        GetRemainingLeaseRequest request = new GetRemainingLeaseRequest(getKeyData());
-        return (Long) invoke(request);
+        ClientMessage request = LockGetRemainingLeaseTimeParameters.encode(getName());
+        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public void lock(long leaseTime, TimeUnit timeUnit) {
         checkPositive(leaseTime, "leaseTime should be positive");
-        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
+        ClientMessage request = LockLockParameters.encode(getName(),
+                getTimeInMillis(leaseTime, timeUnit), ThreadUtil.getThreadId());
         invoke(request);
     }
 
     public void forceUnlock() {
-        UnlockRequest request = new UnlockRequest(getKeyData(), ThreadUtil.getThreadId(), true);
+        ClientMessage request = LockForceUnlockParameters.encode(getName());
         invoke(request);
     }
 
@@ -87,7 +100,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), Long.MAX_VALUE, -1);
+        ClientMessage request = LockLockParameters.encode(getName(), Long.MAX_VALUE, ThreadUtil.getThreadId());
         invokeInterruptibly(request, getKeyData());
     }
 
@@ -100,14 +113,14 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        LockRequest request = new LockRequest(getKeyData(),
-                ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, unit));
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request =
+                LockTryLockParameters.encode(getName(), ThreadUtil.getThreadId(), getTimeInMillis(time, unit));
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public void unlock() {
-        UnlockRequest request = new UnlockRequest(getKeyData(), ThreadUtil.getThreadId());
+        ClientMessage request = LockUnlockParameters.encode(getName(), ThreadUtil.getThreadId());
         invoke(request);
     }
 
@@ -126,7 +139,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    protected <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientMessage req) {
         return super.invoke(req, getKeyData());
     }
 

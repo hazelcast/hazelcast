@@ -37,12 +37,12 @@ public class DistributedObjectInfo implements Portable {
 
     @Override
     public int getFactoryId() {
-        return ClientPortableHook.ID;
+        return 1;
     }
 
     @Override
     public int getClassId() {
-        return ClientPortableHook.DISTRIBUTED_OBJECT_INFO;
+        return 3;
     }
 
     public String getServiceName() {

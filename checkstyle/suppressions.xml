@@ -211,7 +211,15 @@
     <suppress checks="" files="com.hazelcast.client.impl.protocol.map.*Parameters"/>
     <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.parameters.MapTemplate"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.parameters.CacheTemplate"/>
     <suppress checks="ParameterNumber" files="com.hazelcast.client.impl.protocol.parameters.MapReduceTemplate"/>
+    <suppress checks="ParameterNumber" files="com.hazelcast.client.proxy.ClientMapReduceProxy"/>
+
+    <!--TEMPORARY SUPPRESIONS-->
+    <suppress checks="" files="com.hazelcast.client.cache.impl.AbstractClientCacheProxyBase"/>
+    <suppress checks="" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
+    <suppress checks="" files="com.hazelcast.client.cache.impl.ClientCacheProxy"/>
+    <suppress checks="" files="com.hazelcast.client.cache.impl.HazelcastClientCacheManager"/>
 
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.ClientMessage"/>
     <suppress checks="JavadocType" files="com.hazelcast.client.impl.protocol.ClientMessageType"/>

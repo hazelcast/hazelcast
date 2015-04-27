@@ -18,18 +18,16 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.TransactionCommitParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionCreateParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionCreateResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionPrepareParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionRollbackParameters;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.client.BaseTransactionRequest;
-import com.hazelcast.transaction.client.CommitTransactionRequest;
-import com.hazelcast.transaction.client.CreateTransactionRequest;
-import com.hazelcast.transaction.client.PrepareTransactionRequest;
-import com.hazelcast.transaction.client.RollbackTransactionRequest;
 import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -97,7 +95,11 @@ final class TransactionProxy {
             }
             THREAD_FLAG.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
-            txnId = invoke(new CreateTransactionRequest(options, sXid));
+            ClientMessage request = TransactionCreateParameters.encode(sXid, options.getTimeoutMillis(),
+                    options.getDurability(), options.getTransactionType().id(), threadId);
+            ClientMessage response = invoke(request);
+            TransactionCreateResultParameters result = TransactionCreateResultParameters.decode(response);
+            txnId = result.transactionId;
             state = ACTIVE;
         } catch (Exception e) {
             closeConnection();
@@ -112,7 +114,8 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            invoke(new PrepareTransactionRequest());
+            ClientMessage request = TransactionPrepareParameters.encode(threadId, txnId);
+            invoke(request);
             state = PREPARED;
         } catch (Exception e) {
             state = ROLLING_BACK;
@@ -131,7 +134,8 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            invoke(new CommitTransactionRequest(prepareAndCommit));
+            ClientMessage request = TransactionCommitParameters.encode(threadId, txnId, prepareAndCommit);
+            invoke(request);
             state = COMMITTED;
         } catch (Exception e) {
             state = ROLLING_BACK;
@@ -152,7 +156,8 @@ final class TransactionProxy {
             }
             checkThread();
             try {
-                invoke(new RollbackTransactionRequest());
+                ClientMessage request = TransactionRollbackParameters.encode(threadId, txnId);
+                invoke(request);
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
             }
@@ -191,16 +196,11 @@ final class TransactionProxy {
         }
     }
 
-    private <T> T invoke(ClientRequest request) {
-        if (request instanceof BaseTransactionRequest) {
-            ((BaseTransactionRequest) request).setTxnId(txnId);
-            ((BaseTransactionRequest) request).setClientThreadId(threadId);
-        }
-        final SerializationService ss = client.getSerializationService();
+    private ClientMessage invoke(ClientMessage request) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
-            return ss.toObject(future.get());
+            final Future<ClientMessage> future = clientInvocation.invoke();
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

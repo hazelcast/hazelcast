@@ -52,7 +52,7 @@ public class ExecutorServiceCancelOnAddressMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return null;
     }
 
 }

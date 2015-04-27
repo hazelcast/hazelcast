@@ -17,6 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.TopicAddMessageListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.TopicEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.TopicPublishParameters;
+import com.hazelcast.client.impl.protocol.parameters.TopicRemoveMessageListenerParameters;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -27,10 +31,6 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
-import com.hazelcast.topic.impl.client.PortableMessage;
-import com.hazelcast.topic.impl.client.PublishRequest;
-import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
@@ -45,24 +45,25 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     @Override
     public void publish(E message) {
         SerializationService serializationService = getContext().getSerializationService();
-        final Data data = serializationService.toData(message);
-        PublishRequest request = new PublishRequest(name, data);
+        Data data = serializationService.toData(message);
+        ClientMessage request = TopicPublishParameters.encode(name, data);
         invoke(request);
     }
 
     @Override
     public String addMessageListener(final MessageListener<E> listener) {
-        AddMessageListenerRequest request = new AddMessageListenerRequest(name);
+        ClientMessage request = TopicAddMessageListenerParameters.encode(name);
 
-        EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {
+        EventHandler<ClientMessage> handler = new EventHandler<ClientMessage>() {
+            final SerializationService serializationService = getContext().getSerializationService();
+            final ClientClusterService clusterService = getContext().getClusterService();
+
             @Override
-            public void handle(PortableMessage event) {
-                SerializationService serializationService = getContext().getSerializationService();
-                ClientClusterService clusterService = getContext().getClusterService();
-
-                E messageObject = serializationService.toObject(event.getMessage());
-                Member member = clusterService.getMember(event.getUuid());
-                Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
+            public void handle(ClientMessage msg) {
+                TopicEventParameters event = TopicEventParameters.decode(msg);
+                E messageObject = serializationService.toObject(event.message);
+                Member member = clusterService.getMember(event.uuid);
+                Message<E> message = new Message<E>(name, messageObject, event.publishTime, member);
                 listener.onMessage(message);
             }
 
@@ -80,7 +81,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     @Override
     public boolean removeMessageListener(String registrationId) {
-        final RemoveMessageListenerRequest request = new RemoveMessageListenerRequest(name, registrationId);
+        ClientMessage request = TopicRemoveMessageListenerParameters.encode(name, registrationId);
         return stopListening(request, registrationId);
     }
 
@@ -97,7 +98,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     }
 
     @Override
-    protected  <T> T invoke(ClientMessage clientMessage) {
+    protected <T> T invoke(ClientMessage clientMessage) {
         return super.invoke(clientMessage, getKey());
     }
 

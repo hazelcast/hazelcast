@@ -69,9 +69,8 @@ import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.PortableCollection;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -82,10 +81,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * @author ali 5/19/13
@@ -313,7 +311,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         try {
-            return tryLock(key, 0, TimeUnit.MILLISECONDS);
+            return tryLock(key, 0, null);
         } catch (InterruptedException e) {
             return false;
         }
@@ -389,16 +387,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     protected void onDestroy() {
-    }
-
-    private Collection toObjectCollection(PortableCollection result) {
-        final Collection<Data> resultCollection = result.getCollection();
-        // create a fresh instance of same collection type.
-        final Collection newCollection = createCollection(resultCollection);
-        for (Data data : resultCollection) {
-            newCollection.add(toObject(data));
-        }
-        return newCollection;
     }
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {

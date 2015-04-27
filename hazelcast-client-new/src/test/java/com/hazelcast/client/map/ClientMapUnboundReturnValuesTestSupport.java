@@ -87,6 +87,8 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
         internalSetUpClient(PARTITION_COUNT, 1, 1, PRE_CHECK_TRIGGER_LIMIT_INACTIVE);
 
         internalRunCheckUnsupported(clientMap);
+
+        shutdown(serverMap);
     }
 
     /**

@@ -16,10 +16,8 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.client.CacheDestroyRequest;
-import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -116,12 +114,12 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         isClosed.set(true);
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
-            CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final ClientInvocation clientInvocation =
-                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                            request, partitionId);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
-            future.get();
+//            CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
+//            final ClientInvocation clientInvocation =
+//                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+//                            request, partitionId);
+//            final Future<SerializableCollection> future = clientInvocation.invoke();
+//            future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -161,7 +159,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         return clientContext.getSerializationService().toData(o);
     }
 
-    protected <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientMessage req) {
         try {
             final ClientInvocation clientInvocation =
                     new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
@@ -188,7 +186,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request,
+    protected void submitLoadAllTask(final ClientMessage request,
                                      final CompletionListener completionListener) {
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
         ClientExecutionServiceImpl executionService =
@@ -212,10 +210,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     private final class LoadAllTask
             implements Runnable {
 
-        private final CacheLoadAllRequest request;
+        private final ClientMessage request;
         private final CompletionListener completionListener;
 
-        private LoadAllTask(CacheLoadAllRequest request, CompletionListener completionListener) {
+        private LoadAllTask(ClientMessage request, CompletionListener completionListener) {
             this.request = request;
             this.completionListener = completionListener;
         }

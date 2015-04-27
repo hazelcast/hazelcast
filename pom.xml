@@ -30,7 +30,7 @@
 
     <modules>
         <module>hazelcast</module>
-        <module>hazelcast-client</module>
+        <!--<module>hazelcast-client</module>-->
         <module>hazelcast-client-new</module>
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>

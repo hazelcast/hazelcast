@@ -64,6 +64,10 @@ public class ListKeyValueSource<V>
         this.listName = listName;
     }
 
+    public String getListName() {
+        return listName;
+    }
+
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;

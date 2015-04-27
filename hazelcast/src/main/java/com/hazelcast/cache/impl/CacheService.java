@@ -114,8 +114,10 @@ public class CacheService extends AbstractCacheService implements ICacheService 
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
+            //TODO : fix below for client protocol
             eventService.publishEvent(SERVICE_NAME, registrations,
                     new CacheInvalidationMessage(name, key, sourceUuid), name.hashCode());
+
         }
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 
 /**
  * Sample Put parameter
@@ -34,7 +35,8 @@ public class GenericResultParameters {
     public Data result;
 
     private GenericResultParameters(ClientMessage flyweight) {
-        result = flyweight.getData();
+        Data data = flyweight.getData();
+        result = data.equals(DefaultData.NULL_DATA) ? null : data;
     }
 
     public static GenericResultParameters decode(ClientMessage flyweight) {
@@ -42,6 +44,8 @@ public class GenericResultParameters {
     }
 
     public static ClientMessage encode(Data result) {
+        result = result == null ? DefaultData.NULL_DATA : result;
+
         final int requiredDataSize = calculateDataSize(result);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);

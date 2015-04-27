@@ -45,6 +45,7 @@ public class ItemEventParameters {
         final int requiredDataSize = calculateDataSize(item, uuid, eventType.getType());
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(item).set(uuid).set(eventType.getType());
         clientMessage.updateFrameLength();

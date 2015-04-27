@@ -21,7 +21,9 @@ import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueAddListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueClearParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueCompareAndRemoveAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueCompareAndRetainAllParameters;
@@ -39,10 +41,10 @@ import com.hazelcast.client.impl.protocol.parameters.QueueRemoveListenerParamete
 import com.hazelcast.client.impl.protocol.parameters.QueueRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueSizeParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueTakeParameters;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.impl.queue.QueueIterator;
-import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
@@ -51,7 +53,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.PortableItemEvent;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,15 +74,20 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         this.name = name;
     }
 
-    //Todo needs QueueAddListenerMessageTask call()
+    @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        final AddListenerRequest request = new AddListenerRequest(name, includeValue);
-        EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
-            public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
-                Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
-                ItemEvent<E> itemEvent = new ItemEvent<E>(name, portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
+        ClientMessage request = QueueAddListenerParameters.encode(name, includeValue);
+
+        EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
+            final SerializationService serializationService = getContext().getSerializationService();
+            final ClientClusterService clusterService = getContext().getClusterService();
+
+            public void handle(ClientMessage message) {
+                ItemEventParameters event = ItemEventParameters.decode(message);
+                E item = includeValue ? (E) serializationService.toObject(event.item) : null;
+                Member member = clusterService.getMember(event.uuid);
+                ItemEvent<E> itemEvent = new ItemEvent<E>(name, event.eventType, item, member);
+                if (event.eventType == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);

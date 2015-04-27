@@ -45,12 +45,12 @@ public final class ClientPrincipal implements Portable {
 
     @Override
     public int getFactoryId() {
-        return ClientPortableHook.ID;
+        return 1;
     }
 
     @Override
     public int getClassId() {
-        return ClientPortableHook.PRINCIPAL;
+        return 2;
     }
 
     @Override

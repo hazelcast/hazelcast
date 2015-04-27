@@ -22,10 +22,11 @@ import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
-import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AddDistributedObjectListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.CreateProxyParameters;
+import com.hazelcast.client.impl.protocol.parameters.DistributedObjectEventParameters;
+import com.hazelcast.client.impl.protocol.parameters.RemoveDistributedObjectListenerParameters;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -65,7 +66,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -226,20 +226,21 @@ public final class ProxyManager {
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
-        final DistributedObjectListenerRequest request = new DistributedObjectListenerRequest();
-        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>() {
-            public void handle(PortableDistributedObjectEvent e) {
-                final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
+        ClientMessage request = AddDistributedObjectListenerParameters.encode();
+        final EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
+            public void handle(ClientMessage clientMessage) {
+                DistributedObjectEventParameters e = DistributedObjectEventParameters.decode(clientMessage);
+                final ObjectNamespace ns = new DefaultObjectNamespace(e.serviceName, e.name);
                 ClientProxyFuture future = proxies.get(ns);
                 ClientProxy proxy = future == null ? null : future.get();
                 if (proxy == null) {
-                    proxy = getOrCreateProxy(e.getServiceName(), e.getName());
+                    proxy = getOrCreateProxy(e.serviceName, e.name);
                 }
 
-                DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
-                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())) {
+                DistributedObjectEvent event = new DistributedObjectEvent(e.eventType, e.serviceName, proxy);
+                if (DistributedObjectEvent.EventType.CREATED.equals(e.eventType)) {
                     listener.distributedObjectCreated(event);
-                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())) {
+                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.eventType)) {
                     listener.distributedObjectDestroyed(event);
                 }
             }
@@ -257,7 +258,7 @@ public final class ProxyManager {
     }
 
     public boolean removeDistributedObjectListener(String id) {
-        final RemoveDistributedObjectListenerRequest request = new RemoveDistributedObjectListenerRequest(id);
+        ClientMessage request = RemoveDistributedObjectListenerParameters.encode(id);
         return client.getListenerService().stopListening(request, id);
     }
 

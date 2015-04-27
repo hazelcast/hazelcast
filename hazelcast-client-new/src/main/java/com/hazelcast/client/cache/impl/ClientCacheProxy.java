@@ -19,23 +19,14 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
-import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
-import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
-import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
-import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
-import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.client.impl.MemberImpl;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -96,14 +87,15 @@ public class ClientCacheProxy<K, V>
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
-        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
-        ICompletableFuture future;
-        try {
-            future = invoke(request, keyData, false);
-            return (Boolean) toObject(future.get());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+//        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
+//        ICompletableFuture future;
+//        try {
+//            future = invoke(request, keyData, false);
+//            return (Boolean) toObject(future.get());
+//        } catch (Exception e) {
+//            throw ExceptionUtil.rethrow(e);
+//        }
+        return false;
     }
 
     @Override
@@ -118,15 +110,15 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             keysData.add(toData(key));
         }
-        CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
-        try {
-            submitLoadAllTask(request, completionListener);
-        } catch (Exception e) {
-            if (completionListener != null) {
-                completionListener.onException(e);
-            }
-            throw new CacheException(e);
-        }
+//        CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
+//        try {
+//            submitLoadAllTask(request, completionListener);
+//        } catch (Exception e) {
+//            if (completionListener != null) {
+//                completionListener.onException(e);
+//            }
+//            throw new CacheException(e);
+//        }
     }
 
     @Override
@@ -229,18 +221,19 @@ public class ClientCacheProxy<K, V>
         if (entryProcessor == null) {
             throw new NullPointerException("Entry Processor is null");
         }
-        final Data keyData = toData(key);
-        final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
-                cacheConfig.getInMemoryFormat(), arguments);
-        try {
-            final ICompletableFuture<Data> f = invoke(request, keyData, true);
-            final Data data = getSafely(f);
-            return toObject(data);
-        } catch (CacheException ce) {
-            throw ce;
-        } catch (Exception e) {
-            throw new EntryProcessorException(e);
-        }
+//        final Data keyData = toData(key);
+//        final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
+//                cacheConfig.getInMemoryFormat(), arguments);
+//        try {
+//            final ICompletableFuture<Data> f = invoke(request, keyData, true);
+//            final Data data = getSafely(f);
+//            return toObject(data);
+//        } catch (CacheException ce) {
+//            throw ce;
+//        } catch (Exception e) {
+//            throw new EntryProcessorException(e);
+//        }
+        return null;
     }
 
     @Override
@@ -295,14 +288,14 @@ public class ClientCacheProxy<K, V>
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
         final EventHandler<Object> handler = createHandler(adaptor);
-        final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
-        if (regId != null) {
-            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-            addListenerLocally(regId, cacheEntryListenerConfiguration);
-            //CREATE ON OTHERS TOO
-            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
-        }
+//        final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
+//        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
+//        if (regId != null) {
+//            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+//            addListenerLocally(regId, cacheEntryListenerConfiguration);
+//            //CREATE ON OTHERS TOO
+//            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
+//        }
     }
 
     @Override
@@ -311,18 +304,18 @@ public class ClientCacheProxy<K, V>
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
-        if (regId != null) {
-            CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
-            boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
-
-            if (isDeregistered) {
-                cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                //REMOVE ON OTHERS TOO
-                updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
-            } else {
-                addListenerLocally(regId, cacheEntryListenerConfiguration);
-            }
-        }
+//        if (regId != null) {
+//            CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
+//            boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
+//
+//            if (isDeregistered) {
+//                cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+//                //REMOVE ON OTHERS TOO
+//                updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
+//            } else {
+//                addListenerLocally(regId, cacheEntryListenerConfiguration);
+//            }
+//        }
     }
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
@@ -330,18 +323,18 @@ public class ClientCacheProxy<K, V>
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         final Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
-            try {
-                final Address address = member.getAddress();
-                final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
-                        cacheEntryListenerConfiguration, isRegister, address);
-                final ClientInvocation invocation = new ClientInvocation(client, request, address);
-                final Future<SerializableCollection> future = invocation.invoke();
-                futures.add(future);
-            } catch (Exception e) {
-                ExceptionUtil.sneakyThrow(e);
-            }
-        }
+//        for (MemberImpl member : members) {
+//            try {
+//                final Address address = member.getAddress();
+//                final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
+//                        cacheEntryListenerConfiguration, isRegister, address);
+//                final ClientInvocation invocation = new ClientInvocation(client, request, address);
+//                final Future<SerializableCollection> future = invocation.invoke();
+//                futures.add(future);
+//            } catch (Exception e) {
+//                ExceptionUtil.sneakyThrow(e);
+//            }
+//        }
         //make sure all configs are created
         //TODO do we need this ???s
         //        try {

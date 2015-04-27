@@ -16,13 +16,9 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
@@ -35,7 +31,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -43,12 +38,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
@@ -65,13 +56,11 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
-import java.security.Permission;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,7 +73,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
@@ -106,7 +94,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
 
-    private final SerializationService serializationService;
     // client uuid -> member uuid
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
 
@@ -119,7 +106,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
         this.node = node;
-        this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
         this.executor = newExecutor();
@@ -155,13 +141,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public void handlePacket(Packet packet) {
-        int partitionId = packet.getPartitionId();
-        if (partitionId < 0) {
-            executor.execute(new ClientPacketProcessor(packet));
-        } else {
-            InternalOperationService operationService = nodeEngine.getOperationService();
-            operationService.execute(new ClientPacketProcessor(packet));
-        }
+
     }
 
     public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
@@ -197,20 +177,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return nodeEngine.getProxyService();
     }
 
-    public void sendResponse(ClientEndpoint endpoint, Object key, Object response, int callId, boolean isError, boolean isEvent) {
-        Data data = serializationService.toData(response);
-        ClientResponse clientResponse = new ClientResponse(data, callId, isError);
-        Data responseData = serializationService.toData(clientResponse);
-        int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
-        final Packet packet = new Packet(responseData, partitionId);
-        if (isEvent) {
-            packet.setHeader(Packet.HEADER_EVENT);
-        }
-        Connection conn = endpoint.getConnection();
-        conn.write(packet);
-    }
-
-    @Override
     public Address getMasterAddress() {
         return node.getMasterAddress();
     }
@@ -343,185 +309,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public TransactionManagerService getTransactionManagerService() {
         return node.nodeEngine.getTransactionManagerService();
-    }
-
-    private final class ClientPacketProcessor implements PartitionSpecificRunnable {
-        final Packet packet;
-
-        private ClientPacketProcessor(Packet packet) {
-            this.packet = packet;
-        }
-
-        @Override
-        public int getPartitionId() {
-            return packet.getPartitionId();
-        }
-
-        @Override
-        public void run() {
-            Connection conn = packet.getConn();
-            ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(conn);
-            ClientRequest request = null;
-            try {
-                request = loadRequest();
-                if (request == null) {
-                    handlePacketWithNullRequest();
-                } else if (request instanceof AuthenticationRequest) {
-                    if (conn.isAlive()) {
-                        endpoint = new ClientEndpointImpl(ClientEngineImpl.this, conn);
-                        processRequest(endpoint, request);
-                    } else {
-                        handleEndpointNotCreatedConnectionNotAlive();
-                    }
-                } else if (endpoint == null) {
-                    handleMissingEndpoint(conn);
-                } else if (endpoint.isAuthenticated()) {
-                    processRequest(endpoint, request);
-                } else {
-                    handleAuthenticationFailure(endpoint, request);
-                }
-            } catch (Throwable e) {
-                logProcessingFailure(request, e);
-                handleProcessingFailure(endpoint, request, packet.getData(), e);
-            }
-        }
-
-        private ClientRequest loadRequest() {
-            Data data = packet.getData();
-            return serializationService.toObject(data);
-        }
-
-        private void handleEndpointNotCreatedConnectionNotAlive() {
-            logger.warning("Dropped: " + packet + " -> endpoint not created for AuthenticationRequest, "
-                    + "connection not alive");
-        }
-
-        private void handlePacketWithNullRequest() {
-            logger.warning("Dropped: " + packet + " -> null request");
-        }
-
-        private void handleMissingEndpoint(Connection conn) {
-            if (conn.isAlive()) {
-                logger.severe("Dropping: " + packet + " -> no endpoint found for live connection.");
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Dropping: " + packet + " -> no endpoint found for dead connection.");
-                }
-            }
-        }
-
-        private void logProcessingFailure(ClientRequest request, Throwable e) {
-            Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-            if (logger.isLoggable(level)) {
-                if (request == null) {
-                    logger.log(level, e.getMessage(), e);
-                } else {
-                    logger.log(level, "While executing request: " + request + " -> " + e.getMessage(), e);
-                }
-            }
-        }
-
-        private void handleProcessingFailure(ClientEndpointImpl endpoint, ClientRequest request, Data data, Throwable e) {
-            if (request != null && endpoint != null) {
-                endpoint.sendResponse(e, request.getCallId());
-            } else if (data != null && endpoint != null) {
-                int callId = extractCallId(data);
-                if (callId != -1) {
-                    endpoint.sendResponse(e, callId);
-                }
-                // Worst case, seems like we cannot even read the callId, wrong/broken packet?
-            }
-        }
-
-        private int extractCallId(Data data) {
-            try {
-                PortableReader portableReader = serializationService.createPortableReader(data);
-                return portableReader.readInt("cId");
-
-            } catch (Throwable e) {
-                Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-                if (logger.isLoggable(level)) {
-                    logger.log(level, e.getMessage(), e);
-                }
-            }
-            return -1;
-        }
-
-        private void processRequest(ClientEndpointImpl endpoint, ClientRequest request) throws Exception {
-            if (!node.joined()) {
-                throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
-            }
-
-            request.setEndpoint(endpoint);
-            initService(request);
-            request.setClientEngine(ClientEngineImpl.this);
-            final Credentials credentials = endpoint.getCredentials();
-            request.setSerializationService(serializationService);
-            request.setOperationService(nodeEngine.getOperationService());
-            interceptBefore(credentials, request);
-            checkPermissions(endpoint, request);
-            request.process();
-            interceptAfter(credentials, request);
-        }
-
-        private void interceptBefore(Credentials credentials, ClientRequest request) {
-            final SecurityContext securityContext = getSecurityContext();
-            final String methodName = request.getMethodName();
-            if (securityContext != null && methodName != null) {
-                final String objectType = request.getDistributedObjectType();
-                final String objectName = request.getDistributedObjectName();
-                securityContext.interceptBefore(credentials, objectType, objectName, methodName, request.getParameters());
-            }
-        }
-
-        private void interceptAfter(Credentials credentials, ClientRequest request) {
-            final SecurityContext securityContext = getSecurityContext();
-            final String methodName = request.getMethodName();
-            if (securityContext != null && methodName != null) {
-                final String objectType = request.getDistributedObjectType();
-                final String objectName = request.getDistributedObjectName();
-                securityContext.interceptAfter(credentials, objectType, objectName, methodName);
-            }
-        }
-
-        private void checkPermissions(ClientEndpointImpl endpoint, ClientRequest request) {
-            SecurityContext securityContext = getSecurityContext();
-            if (securityContext != null) {
-                Permission permission = request.getRequiredPermission();
-                if (permission != null) {
-                    securityContext.checkPermission(endpoint.getSubject(), permission);
-                }
-            }
-        }
-
-        private void initService(ClientRequest request) {
-            String serviceName = request.getServiceName();
-            if (serviceName == null) {
-                return;
-            }
-
-            Object service = nodeEngine.getService(serviceName);
-            if (service == null) {
-                if (nodeEngine.isActive()) {
-                    throw new IllegalArgumentException("No service registered with name: " + serviceName);
-                }
-                throw new HazelcastInstanceNotActiveException();
-            }
-            request.setService(service);
-        }
-
-        private void handleAuthenticationFailure(ClientEndpointImpl endpoint, ClientRequest request) {
-            Exception exception;
-            if (nodeEngine.isActive()) {
-                String message = "Client " + endpoint + " must authenticate before any operation.";
-                logger.severe(message);
-                exception = new AuthenticationException(message);
-            } else {
-                exception = new HazelcastInstanceNotActiveException();
-            }
-            endpoint.sendResponse(exception, request.getCallId());
-            endpointManager.removeEndpoint(endpoint);
-        }
     }
 
     private final class ConnectionListenerImpl implements ConnectionListener {

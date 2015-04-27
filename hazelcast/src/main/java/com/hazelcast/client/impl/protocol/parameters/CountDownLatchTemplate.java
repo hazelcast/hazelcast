@@ -20,7 +20,8 @@ import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 
 
-@GenerateParameters(id = 9, name = "CountDownLatch", ns = "Hazelcast.Client.Protocol.CountDownLatch")
+@GenerateParameters(id = TemplateConstants.COUNTDOWN_LATCH_TEMPLATE_ID,
+        name = "CountDownLatch", ns = "Hazelcast.Client.Protocol.CountDownLatch")
 public interface CountDownLatchTemplate {
 
     @EncodeMethod(id = 1)
