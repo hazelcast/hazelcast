@@ -26,7 +26,6 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
@@ -136,10 +135,6 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public SerializationService getSerializationService() {
         return node.getSerializationService();
-    }
-
-    public PortableContext getPortableContext() {
-        return node.getSerializationService().getPortableContext();
     }
 
     @Override
