@@ -414,7 +414,7 @@ public class InvalidConfigurationTest {
         properties.setProperty("set-backup-count", "1");
 
         properties.setProperty("semaphore-initial-permits", "0");
-        properties.setProperty("semaphore-backup-count", "1");
+        properties.setProperty("semaphore-backup-count", "0");
         properties.setProperty("semaphore-async-backup-count", "0");
 
         properties.setProperty("multicast-enabled", "false");
