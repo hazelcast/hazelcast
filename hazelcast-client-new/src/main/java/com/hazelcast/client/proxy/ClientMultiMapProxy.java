@@ -311,7 +311,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         try {
-            return tryLock(key, 0, null);
+            return tryLock(key, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             return false;
         }

@@ -22,13 +22,12 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.CacheClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapIntBooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -56,7 +55,6 @@ public class CacheClearMessageTask
 
     @Override
     protected ClientMessage reduce(Map<Integer, Object> map) {
-        Map<Integer, Boolean> resultMap = new HashMap<Integer, Boolean>();
         CacheService service = getService(getServiceName());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             CacheClearResponse cacheClearResponse = (CacheClearResponse) service.toObject(entry.getValue());
@@ -64,9 +62,8 @@ public class CacheClearMessageTask
             if (response instanceof CacheException) {
                 throw (CacheException) response;
             }
-            resultMap.put(entry.getKey(), (Boolean) response);
         }
-        return MapIntBooleanResultParameters.encode(resultMap);
+        return VoidResultParameters.encode();
     }
 
     @Override

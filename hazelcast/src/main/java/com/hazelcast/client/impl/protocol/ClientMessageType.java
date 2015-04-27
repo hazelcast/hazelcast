@@ -116,7 +116,9 @@ public enum ClientMessageType {
 
     PING(42),
 
-    MAP_INT_DATA_RESULT(90);
+    MAP_INT_DATA_RESULT(43),
+
+    MAP_DATA_DATA_RESULT(44);
 
     private final int id;
 

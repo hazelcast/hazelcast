@@ -16,22 +16,20 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
+import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.CacheLoadAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
+import javax.cache.CacheException;
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheLoadAllOperationFactory} on the server side.
@@ -59,15 +57,15 @@ public class CacheLoadAllMessageTask
     @Override
     protected ClientMessage reduce(Map<Integer, Object> map) {
         CacheService service = getService(getServiceName());
-        Map<Data, Data> reducedMap = new HashMap<Data, Data>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) service.toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
-                reducedMap.put(dataEntry.getKey(), dataEntry.getValue());
+            CacheClearResponse cacheClearResponse = (CacheClearResponse) service.toObject(entry.getValue());
+            final Object response = cacheClearResponse.getResponse();
+            if (response instanceof CacheException) {
+                throw (CacheException) response;
             }
         }
-        return DataEntryListResultParameters.encode(reducedMap);
+        return VoidResultParameters.encode();
+
     }
 
     @Override

@@ -151,7 +151,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public void delete(Object key) {
         ClientMessage request = TransactionalMapDeleteParameters.encode(getName(), getTransactionId(),
                 ThreadUtil.getThreadId(), toData(key));
-        ClientMessage response = invoke(request);
+        invoke(request);
         invoke(request);
     }
 

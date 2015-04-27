@@ -35,36 +35,32 @@ import com.hazelcast.util.ThreadUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
 
-public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements TransactionalMultiMap<K, V> {
+public class ClientTxnMultiMapProxy<K, V>
+        extends ClientTxnProxy
+        implements TransactionalMultiMap<K, V> {
 
     public ClientTxnMultiMapProxy(String name, TransactionContextProxy proxy) {
         super(name, proxy);
     }
 
-    public boolean put(K key, V value) throws TransactionException {
+    public boolean put(K key, V value)
+            throws TransactionException {
 
-        ClientMessage request = TransactionalMultiMapPutParameters.encode(getName(), getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage request = TransactionalMultiMapPutParameters
+                .encode(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return BooleanResultParameters.decode(response).result;
     }
 
     public Collection<V> get(K key) {
-        ClientMessage request = TransactionalMultiMapGetParameters.encode(getName(), getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMultiMapGetParameters
+                .encode(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key));
 
         ClientMessage response = invoke(request);
         DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
         Collection<Data> collection = resultParameters.result;
-        Collection<V> coll;
-        if (collection instanceof List) {
-            coll = new ArrayList<V>(collection.size());
-        } else {
-            coll = new HashSet<V>(collection.size());
-        }
+        Collection<V> coll = new ArrayList<V>(collection.size());
         for (Data data : collection) {
             coll.add((V) toObject(data));
         }
@@ -72,24 +68,19 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public boolean remove(Object key, Object value) {
-        ClientMessage request = TransactionalMultiMapRemoveEntryParameters.encode(getName(), getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage request = TransactionalMultiMapRemoveEntryParameters
+                .encode(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return BooleanResultParameters.decode(response).result;
     }
 
     public Collection<V> remove(Object key) {
-        ClientMessage request = TransactionalMultiMapRemoveParameters.encode(getName(), getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMultiMapRemoveParameters
+                .encode(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
         Collection<Data> collection = resultParameters.result;
-        Collection<V> coll;
-        if (collection instanceof List) {
-            coll = new ArrayList<V>(collection.size());
-        } else {
-            coll = new HashSet<V>(collection.size());
-        }
+        Collection<V> coll = new ArrayList<V>(collection.size());
         for (Data data : collection) {
             coll.add((V) toObject(data));
         }
@@ -97,15 +88,15 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public int valueCount(K key) {
-        ClientMessage request = TransactionalMultiMapValueCountParameters.encode(getName(), getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMultiMapValueCountParameters
+                .encode(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return IntResultParameters.decode(response).result;
     }
 
     public int size() {
-        ClientMessage request = TransactionalMultiMapSizeParameters.encode(getName(), getTransactionId(),
-                ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalMultiMapSizeParameters
+                .encode(getName(), getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         return IntResultParameters.decode(response).result;
     }

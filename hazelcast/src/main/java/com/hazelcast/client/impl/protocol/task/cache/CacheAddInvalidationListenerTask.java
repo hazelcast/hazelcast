@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.client.CacheInvalidationListener;
 import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -49,7 +48,8 @@ public class CacheAddInvalidationListenerTask
                     CacheInvalidationMessage message = (CacheInvalidationMessage) eventObject;
 
                     if (endpoint.isAlive()) {
-                        ClientMessage eventMessage = CacheInvalidationMessageParameters.encode(message.getName(), message.getKey(), message.getSourceUuid());
+                        ClientMessage eventMessage = CacheInvalidationMessageParameters
+                                .encode(message.getName(), message.getKey(), message.getSourceUuid());
                         sendClientMessage(eventMessage);
 
                     }

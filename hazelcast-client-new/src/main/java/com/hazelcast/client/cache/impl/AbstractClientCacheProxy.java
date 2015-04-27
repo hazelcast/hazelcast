@@ -18,12 +18,23 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
+import com.hazelcast.cache.impl.client.CacheGetAllRequest;
+import com.hazelcast.cache.impl.client.CacheGetRequest;
+import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -36,10 +47,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-
-//import com.hazelcast.cache.impl.client.CacheGetAllRequest;
-//import com.hazelcast.cache.impl.client.CacheGetRequest;
-//import com.hazelcast.cache.impl.client.CacheSizeRequest;
 
 /**
  * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
@@ -74,28 +81,27 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-//        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
-//        ClientInvocationFuture future;
-//        try {
-//            final int partitionId = clientContext.getPartitionService().getPartitionId(key);
-//            final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-//            final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
-//            future = clientInvocation.invoke();
-//        } catch (Exception e) {
-//            throw ExceptionUtil.rethrow(e);
-//        }
-//        if (nearCache != null) {
-//            future.andThenInternal(new ExecutionCallback<Data>() {
-//                public void onResponse(Data valueData) {
-//                    storeInNearCache(keyData, valueData, null);
-//                }
-//
-//                public void onFailure(Throwable t) {
-//                }
-//            });
-//        }
-//        return new DelegatingFuture<V>(future, clientContext.getSerializationService());
-        return null;
+        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
+        ClientInvocationFuture future;
+        try {
+            final int partitionId = clientContext.getPartitionService().getPartitionId(key);
+            final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
+            future = clientInvocation.invoke();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        if (nearCache != null) {
+            future.andThenInternal(new ExecutionCallback<Data>() {
+                public void onResponse(Data valueData) {
+                    storeInNearCache(keyData, valueData, null);
+                }
+
+                public void onFailure(Throwable t) {
+                }
+            });
+        }
+        return new DelegatingFuture<V>(future, clientContext.getSerializationService());
     }
 
     @Override
@@ -199,17 +205,17 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keySet.isEmpty()) {
             return result;
         }
-//        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
-//        final MapEntrySet mapEntrySet = toObject(invoke(request));
-//        final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-//        for (Map.Entry<Data, Data> dataEntry : entrySet) {
-//            final Data keyData = dataEntry.getKey();
-//            final Data valueData = dataEntry.getValue();
-//            final K key = toObject(keyData);
-//            final V value = toObject(valueData);
-//            result.put(key, value);
-//            storeInNearCache(keyData, valueData, value);
-//        }
+        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
+        final MapEntrySet mapEntrySet = toObject(invoke(request));
+        final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+        for (Map.Entry<Data, Data> dataEntry : entrySet) {
+            final Data keyData = dataEntry.getKey();
+            final Data valueData = dataEntry.getValue();
+            final K key = toObject(keyData);
+            final V value = toObject(valueData);
+            result.put(key, value);
+            storeInNearCache(keyData, valueData, value);
+        }
         return result;
     }
 
@@ -302,17 +308,17 @@ abstract class AbstractClientCacheProxy<K, V>
     @Override
     public int size() {
         ensureOpen();
-//        try {
-//            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
-//            Integer result = invoke(request);
-//            if (result == null) {
-//                return 0;
-//            }
-//            return result;
-//        } catch (Throwable t) {
-//            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
-//        }
-        return 1;
+        try {
+            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
+            ClientMessage resultMessage = invoke(request);
+            Integer result = IntResultParameters.decode(resultMessage).result;
+            if (result == null) {
+                return 0;
+            }
+            return result;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+        }
     }
 
     @Override
