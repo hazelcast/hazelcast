@@ -114,7 +114,9 @@ public enum ClientMessageType {
 
     TRANSACTION_ROLLBACK(41),
 
-    PING(42);
+    PING(42),
+
+    MAP_INT_DATA_RESULT(90);
 
     private final int id;
 

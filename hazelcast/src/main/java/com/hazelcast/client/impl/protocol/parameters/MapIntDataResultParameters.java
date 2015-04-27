@@ -22,44 +22,40 @@ import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-public class DataEntryListResultParameters {
+public class MapIntDataResultParameters {
 
     /**
      * ClientMessageType of this message
      */
-    public static final ClientMessageType TYPE = ClientMessageType.DATA_ENTRY_LIST_RESULT;
-    public List<Data> keys;
-    public List<Data> values;
+    public static final ClientMessageType TYPE = ClientMessageType.MAP_INT_DATA_RESULT;
+    public Map<Integer,Data> map;
 
-    private DataEntryListResultParameters(ClientMessage flyweight) {
-        keys = flyweight.getDataList();
-        values = flyweight.getDataList();
+    private MapIntDataResultParameters(ClientMessage clientMessage) {
+        map = new HashMap<Integer, Data>();
+        for(Map.Entry<Integer,Data> entry:map.entrySet()){
+            clientMessage.set(entry.getKey());
+            clientMessage.set(entry.getValue());
+        }
     }
 
-    public static DataEntryListResultParameters decode(ClientMessage flyweight) {
-        return new DataEntryListResultParameters(flyweight);
+    public static MapIntDataResultParameters decode(ClientMessage clientMessage) {
+        return new MapIntDataResultParameters(clientMessage);
     }
 
-    public static ClientMessage encode(List<Data> keys, List<Data> values) {
-        final int requiredDataSize = calculateDataSize(keys, values);
-        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
-        clientMessage.setMessageType(TYPE.id());
-        clientMessage.set(keys).set(values);
-        clientMessage.updateFrameLength();
-        return clientMessage;
-    }
-
-    public static ClientMessage encode(Map<Data,Data> map) {
+    public static ClientMessage encode(Map<Integer,Data> map) {
         final int requiredDataSize = calculateDataSize(map);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.set(map.keySet()).set(map.values());
+        for(Map.Entry<Integer,Data> entry:map.entrySet()){
+            clientMessage.set(entry.getKey());
+            clientMessage.set(entry.getValue());
+        }
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -71,10 +67,12 @@ public class DataEntryListResultParameters {
         return dataSize;
     }
 
-    public static int calculateDataSize(Map<Data,Data> map) {
+    public static int calculateDataSize(Map<Integer,Data> map) {
         int dataSize = ClientMessage.HEADER_SIZE ;
-        dataSize += ParameterUtil.calculateCollectionDataSize(map.keySet());
-        dataSize += ParameterUtil.calculateCollectionDataSize(map.values());
+        for(Map.Entry<Integer,Data> entry:map.entrySet()){
+            dataSize += BitUtil.SIZE_OF_INT;
+            dataSize += ParameterUtil.calculateDataSize(entry.getValue());
+        }
         return dataSize;
     }
 }
