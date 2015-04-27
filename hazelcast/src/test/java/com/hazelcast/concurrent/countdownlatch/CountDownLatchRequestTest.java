@@ -8,6 +8,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class CountDownLatchRequestTest extends ClientTestSupport {
 
     static final String name = randomString();
