@@ -207,7 +207,43 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
-    public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
+
+    /**
+     * Defines event queue capacity for WAN replication. Replication Events are dropped when queue capacity is reached.
+     * Having too big queue capacity may lead to OOME problems,only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY = "hazelcast.enterprise.wanrep.queue.capacity";
+
+    /**
+     * Defines maximum number of WAN replication events to be drained and send to the target cluster in a batch.
+     * Batches are sent in sequence to make sure the order of events,
+     * only one batch of events is sent to a target wan member at a time. After batch is sent, acknowledge is waited
+     * from target cluster.
+     * If no-ack is received, same set of events is sent again to the target cluster until the ack is received.
+     * Until this process is complete, wan replication events are stored in the wan replication event queue.
+     * This queue's size is limited by {@link #PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY} and if queued event count
+     * exceeds queue capacity, no back-pressure is applied and older events in the queue will start dropping.
+     * only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_SIZE = "hazelcast.enterprise.wanrep.batch.size";
+
+    /**
+     * Defines batch sending frequency in seconds,
+     * When event size does not reach to {@link #PROP_ENTERPRISE_WAN_REP_BATCH_SIZE} in the given time period
+     * (which is defined by {@link #PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS}),
+     * those events are gathered into a batch and sent to target.
+     * Only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS
+            = "hazelcast.enterprise.wanrep.batchfrequency.seconds";
+
+    /**
+     * Defines timeout duration (in milliseconds) for a WAN replication event before retry.
+     * If confirmation is not received in the period of timeout duration, event is resent to target cluster.
+     * Only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = "hazelcast.enterprise.wanrep.optimeout.millis";
+
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
@@ -479,7 +515,10 @@ public class GroupProperties {
      */
     public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
-    public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
+    public final GroupProperty ENTERPRISE_WAN_REP_QUEUE_CAPACITY;
+    public final GroupProperty ENTERPRISE_WAN_REP_BATCH_SIZE;
+    public final GroupProperty ENTERPRISE_WAN_REP_BATCH_FREQUENCY;
+    public final GroupProperty ENTERPRISE_WAN_REP_OP_TIMEOUT;
 
     public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
@@ -592,7 +631,12 @@ public class GroupProperties {
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
         MAP_WRITE_BEHIND_QUEUE_CAPACITY
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
-        ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
+
+        ENTERPRISE_WAN_REP_QUEUE_CAPACITY = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY, "100000");
+        ENTERPRISE_WAN_REP_BATCH_SIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_SIZE, "50");
+        ENTERPRISE_WAN_REP_BATCH_FREQUENCY = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS, "5");
+        ENTERPRISE_WAN_REP_OP_TIMEOUT = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS, "-1");
+
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
