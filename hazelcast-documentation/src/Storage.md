@@ -57,7 +57,21 @@ The following is the declarative configuration example.
 </native-memory>
 ```
 
+### Usable Memory
 
+There are two fragmentation types in memory allocations; internal and external. We are using binary buddy memory allocation algorithm.
+
+Buddy memory allocation is known by its low external fragmentation, because merging adjacent buddies is very easy and low overhead.
+
+But internal fragmentation can theoretically consume up to %49.99 of total memory. This occurs when a value size of 2^k + 1 is used, which consumes a memory block of size 2^(k+1).
+
+This internal fragmentation can be reduced by implementing an improved version of buddy algorithm, like weighted-buddy.
+
+What I read in papers and what I found from my tests is, when very random value sizes are used (for example random sizes between 100 bytes and 100kb), internal fragmentation was nearly 25%. I even demonstrated this test to Enes, Fuad and Talip when they asked about fragmentation percentage.
+
+ Emphasise that fragmentation is normal.
+ 
+ We can effectively use 75% of the available memory in the worst case. However we also advise to leave some space as a nose can die and the remaining members will have to share the additional responsibility. With this in mind One should only plan to use 60% of the available memory. 
 
 
 
