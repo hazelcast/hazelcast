@@ -16,8 +16,13 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
-import com.hazelcast.client.impl.client.TargetClientRequest;
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceIsShutdownParameters;
+import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceShutdownParameters;
+import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToAddressParameters;
+import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToPartitionParameters;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -31,11 +36,6 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
-import com.hazelcast.executor.impl.client.IsShutdownRequest;
-import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
-import com.hazelcast.executor.impl.client.ShutdownRequest;
-import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
@@ -320,7 +320,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public void shutdown() {
-        final ShutdownRequest request = new ShutdownRequest(name);
+        ClientMessage request = ExecutorServiceShutdownParameters.encode(name);
         invoke(request);
     }
 
@@ -330,9 +330,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public boolean isShutdown() {
-        final IsShutdownRequest request = new IsShutdownRequest(name);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = ExecutorServiceIsShutdownParameters.encode(name);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
     public boolean isTerminated() {
@@ -391,8 +391,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionTargetCallableRequest request
-                = new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+        ClientMessage request =
+                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
+        // TODO
         final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
@@ -402,8 +403,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         final int partitionId = getPartitionId(key);
-        final PartitionTargetCallableRequest request
-                = new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+        ClientMessage request =
+                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
         final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         f.andThen(callback);
     }
@@ -413,9 +414,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         int partitionId = randomPartitionId();
-
-        final PartitionTargetCallableRequest request =
-                new PartitionTargetCallableRequest(name, uuid, task, partitionId);
+        ClientMessage request =
+                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
         final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
@@ -425,27 +425,30 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
         final String uuid = getUUID();
         int partitionId = randomPartitionId();
-        final PartitionTargetCallableRequest request =
-                new PartitionTargetCallableRequest(name, uuid, task, partitionId);
-
+        ClientMessage request =
+                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
         final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
         f.andThen(callback);
     }
 
 
-    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address, T defaultValue, boolean preventSync) {
+    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address
+            , T defaultValue, boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
         final String uuid = getUUID();
-        final SpecificTargetCallableRequest request = new SpecificTargetCallableRequest(name, uuid, task, address);
+        ClientMessage request = ExecutorServiceSubmitToAddressParameters.encode(name, uuid, toData(task),
+                address.getHost(), address.getPort());
         ICompletableFuture<T> f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, -1, preventSync, defaultValue);
     }
 
-    private <T> void submitToTargetInternal(Callable<T> task, final Address address, final ExecutionCallback<T> callback) {
+    private <T> void submitToTargetInternal(Callable<T> task, final Address address, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
-        final SpecificTargetCallableRequest request = new SpecificTargetCallableRequest(name, null, task, address);
+        final String uuid = getUUID();
+        ClientMessage request = ExecutorServiceSubmitToAddressParameters.encode(name, uuid, toData(task),
+                address.getHost(), address.getPort());
         ICompletableFuture<T> f = invokeOnTarget(request, address);
         f.andThen(callback);
     }
@@ -557,7 +560,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientRequest request, int partitionId) {
+    private <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientMessage request, int partitionId) {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
             return clientInvocation.invoke();
@@ -566,7 +569,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> ICompletableFuture<T> invokeOnTarget(TargetClientRequest request, Address target) {
+    private <T> ICompletableFuture<T> invokeOnTarget(ClientMessage request, Address target) {
         try {
             final ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
             return invocation.invoke();

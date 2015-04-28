@@ -35,6 +35,7 @@ public final class CacheInvalidationListener implements CacheEventListener {
             CacheInvalidationMessage message = (CacheInvalidationMessage) eventObject;
             if (endpoint.isAlive()) {
                 endpoint.sendEvent(message.getKey(), message, callId);
+
             }
         }
     }

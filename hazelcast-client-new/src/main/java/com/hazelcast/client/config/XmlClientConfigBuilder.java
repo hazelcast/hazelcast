@@ -123,7 +123,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     @Override
     protected Document parse(InputStream inputStream) throws Exception {
-
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         try {
             return builder.parse(inputStream);
@@ -436,7 +435,6 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         SerializationConfig serializationConfig = parseSerialization(node);
         clientConfig.setSerializationConfig(serializationConfig);
     }
-
 
     private void handleProxyFactories(Node node) throws Exception {
         for (Node child : new IterableNodeList(node.getChildNodes())) {

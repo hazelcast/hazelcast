@@ -23,7 +23,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -72,8 +71,7 @@ public abstract class AbstractPartitionMessageTask<P>
     protected abstract Operation prepareOperation();
 
     protected ClientMessage encodeResponse(Object response) {
-        final Data responseData = response == null ? DefaultData.NULL_DATA : (Data) response;
-        return GenericResultParameters.encode(responseData);
+        return GenericResultParameters.encode((Data) response);
     }
 
     @Override

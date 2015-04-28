@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 
-@GenerateParameters(id = 10, name = "Lock", ns = "Hazelcast.Client.Protocol.Lock")
+@GenerateParameters(id = TemplateConstants.LOCK_TEMPLATE_ID, name = "Lock", ns = "Hazelcast.Client.Protocol.Lock")
 public interface LockTemplate {
 
     @EncodeMethod(id = 1)

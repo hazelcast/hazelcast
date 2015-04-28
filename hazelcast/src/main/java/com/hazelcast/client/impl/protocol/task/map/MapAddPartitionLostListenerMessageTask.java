@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapAddPartitionLostListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapPartitionLostEventParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -28,7 +29,6 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 
 import java.security.Permission;
 
@@ -49,9 +49,9 @@ public class MapAddPartitionLostListenerMessageTask
             @Override
             public void partitionLost(MapPartitionLostEvent event) {
                 if (endpoint.isAlive()) {
-                    final PortableMapPartitionLostEvent portableEvent =
-                            new PortableMapPartitionLostEvent(event.getPartitionId(), event.getMember().getUuid());
-                    endpoint.sendEvent(null, portableEvent, clientMessage.getCorrelationId());
+                    ClientMessage eventMessage =
+                            MapPartitionLostEventParameters.encode(event.getPartitionId(), event.getMember().getUuid());
+                    sendClientMessage(null, eventMessage);
                 }
             }
         };

@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.List;
 import java.util.Set;
 
-@GenerateParameters(id = 4, name = "List", ns = "Hazelcast.Client.Protocol.List")
+@GenerateParameters(id = TemplateConstants.LIST_TEMPLATE_ID, name = "List", ns = "Hazelcast.Client.Protocol.List")
 public interface ListTemplate {
 
     //COLLECTION PARAMS
@@ -79,7 +79,7 @@ public interface ListTemplate {
     @EncodeMethod(id = 17)
     void addWithIndex(String name, int index, Data value);
 
-    @EncodeMethod(id = 16)
+    @EncodeMethod(id = 18)
     void removeWithIndex(String name, int index);
 
     @EncodeMethod(id = 19)

@@ -17,12 +17,13 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnAddressParameters;
+import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnPartitionParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -87,10 +88,12 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (target != null) {
-            CancellationRequest request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
+            ClientMessage request = ExecutorServiceCancelOnAddressParameters.encode(uuid, target.getHost(),
+                    target.getPort(), mayInterruptIfRunning);
             clientInvocation = new ClientInvocation(client, request, target);
         } else {
-            ClientRequest request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
+            ClientMessage request =
+                    ExecutorServiceCancelOnPartitionParameters.encode(uuid, partitionId, mayInterruptIfRunning);
             clientInvocation = new ClientInvocation(client, request, partitionId);
         }
 

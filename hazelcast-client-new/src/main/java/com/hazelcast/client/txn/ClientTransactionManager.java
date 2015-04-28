@@ -20,22 +20,21 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.TransactionRecoverAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionRecoverAllResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionRecoverParameters;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.client.RecoverAllTransactionsRequest;
-import com.hazelcast.transaction.client.RecoverTransactionRequest;
 import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
@@ -150,7 +149,6 @@ public class ClientTransactionManager {
     }
 
     public Xid[] recover() {
-        final SerializationService serializationService = client.getSerializationService();
         final Xid[] empty = new Xid[0];
         try {
             final ClientConnection connection;
@@ -160,13 +158,13 @@ public class ClientTransactionManager {
                 EmptyStatement.ignore(ignored);
                 return empty;
             }
-            final RecoverAllTransactionsRequest request = new RecoverAllTransactionsRequest();
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
-            final SerializableCollection collectionWrapper = serializationService.toObject(future.get());
+            ClientMessage request = TransactionRecoverAllParameters.encode();
+            final ClientInvocation
+                    clientInvocation = new ClientInvocation(client, request, connection);
+            final Future<ClientMessage> future = clientInvocation.invoke();
+            TransactionRecoverAllResultParameters response = TransactionRecoverAllResultParameters.decode(future.get());
 
-            for (Data data : collectionWrapper) {
-                final SerializableXID xid = serializationService.toObject(data);
+            for (SerializableXID xid : response.collection) {
                 recoveredTransactions.put(xid, connection);
             }
 
@@ -185,10 +183,10 @@ public class ClientTransactionManager {
         if (connection == null) {
             return false;
         }
-        final RecoverTransactionRequest request = new RecoverTransactionRequest(sXid, commit);
+        ClientMessage request = TransactionRecoverParameters.encode(sXid, commit);
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
+            final Future<ClientMessage> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);

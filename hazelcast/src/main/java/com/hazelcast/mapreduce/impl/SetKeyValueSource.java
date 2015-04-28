@@ -64,6 +64,10 @@ public class SetKeyValueSource<V>
         this.setName = setName;
     }
 
+    public String getSetName() {
+        return setName;
+    }
+
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;

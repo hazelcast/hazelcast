@@ -245,6 +245,7 @@
             <xs:extension base="non-space-string"/>
         </xs:simpleContent>
     </xs:complexType>
+
     <xs:complexType name="near-cache">
         <xs:all>
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>

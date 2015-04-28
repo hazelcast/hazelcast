@@ -49,7 +49,7 @@ public class ExecutorServiceCancelOnPartitionMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return null;
     }
 
 }

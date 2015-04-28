@@ -91,11 +91,11 @@ public class CacheService extends AbstractCacheService implements ICacheService 
     /**
      * Registers and {@link CacheInvalidationListener} for specified <code>cacheName</code>.
      *
-     * @param name      the name of the cache that {@link CacheInvalidationListener} will be registered for
-     * @param listener  the {@link CacheInvalidationListener} to be registered for specified <code>cache</code>
+     * @param name      the name of the cache that {@link CacheEventListener} will be registered for
+     * @param listener  the {@link CacheEventListener} to be registered for specified <code>cache</code>
      * @return the id which is unique for current registration
      */
-    public String addInvalidationListener(String name, CacheInvalidationListener listener) {
+    public String addInvalidationListener(String name, CacheEventListener listener) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
         return registration.getId();
@@ -114,8 +114,10 @@ public class CacheService extends AbstractCacheService implements ICacheService 
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
+            //TODO : fix below for client protocol
             eventService.publishEvent(SERVICE_NAME, registrations,
                     new CacheInvalidationMessage(name, key, sourceUuid), name.hashCode());
+
         }
     }
 

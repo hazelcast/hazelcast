@@ -23,6 +23,8 @@ import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -308,7 +310,8 @@ abstract class AbstractClientCacheProxy<K, V>
         ensureOpen();
         try {
             CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
-            Integer result = invoke(request);
+            ClientMessage resultMessage = invoke(request);
+            Integer result = IntResultParameters.decode(resultMessage).result;
             if (result == null) {
                 return 0;
             }

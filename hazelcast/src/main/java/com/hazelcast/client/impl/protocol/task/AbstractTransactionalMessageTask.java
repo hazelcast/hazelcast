@@ -28,7 +28,7 @@ public abstract class AbstractTransactionalMessageTask<P> extends AbstractCallab
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected final ClientMessage call() throws Exception {
         ThreadUtil.setThreadId(getClientThreadId());
         try {
             return innerCall();

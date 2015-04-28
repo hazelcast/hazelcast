@@ -16,14 +16,33 @@
 
 package com.hazelcast.client.txn.proxy;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapContainsKeyParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapDeleteParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapGetForUpdateParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapKeySetParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapKeySetWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapPutIfAbsentParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapPutParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapRemoveIfSameParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapReplaceIfSameParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapReplaceParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapSetParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapValuesParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalMapValuesWithPredicateParameters;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapValueCollection;
-import com.hazelcast.map.impl.client.TxnMapRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -41,26 +60,34 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
 
     @Override
     public boolean containsKey(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.CONTAINS_KEY, toData(key));
-        return this.<Boolean>invoke(request);
+        ClientMessage request = TransactionalMapContainsKeyParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     @Override
     public V get(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.GET, toData(key));
-        return invoke(request);
+        ClientMessage request = TransactionalMapGetParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage response = invoke(request);
+        return (V) toObject(GenericResultParameters.decode(response).result);
     }
 
     @Override
     public V getForUpdate(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.GET_FOR_UPDATE, toData(key));
-        return invoke(request);
+        ClientMessage request = TransactionalMapGetForUpdateParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage response = invoke(request);
+        return (V) toObject(GenericResultParameters.decode(response).result);
     }
 
     @Override
     public int size() {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.SIZE);
-        return this.<Integer>invoke(request);
+        ClientMessage request = TransactionalMapSizeParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        return IntResultParameters.decode(response).result;
     }
 
     @Override
@@ -70,68 +97,79 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
 
     @Override
     public V put(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT, toData(key), toData(value));
-        return invoke(request);
+        return put(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_WITH_TTL, toData(key),
-                toData(value), ttl, timeunit);
-        return invoke(request);
+        ClientMessage request = TransactionalMapPutParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key), toData(value), timeunit.toMillis(ttl));
+        ClientMessage response = invoke(request);
+        return (V) toObject(GenericResultParameters.decode(response).result);
     }
 
     @Override
     public void set(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.SET, toData(key), toData(value));
+        ClientMessage request = TransactionalMapSetParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key), toData(value));
         invoke(request);
     }
 
     @Override
     public V putIfAbsent(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT_IF_ABSENT, toData(key),
-                toData(value));
-        return invoke(request);
+        ClientMessage request = TransactionalMapPutIfAbsentParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage response = invoke(request);
+        return (V) toObject(GenericResultParameters.decode(response).result);
     }
 
     @Override
     public V replace(K key, V value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE, toData(key), toData(value));
-        return invoke(request);
+        ClientMessage request = TransactionalMapReplaceParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage response = invoke(request);
+        return (V) toObject(GenericResultParameters.decode(response).result);
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE_IF_SAME, toData(key),
-                toData(oldValue), toData(newValue));
-        return this.<Boolean>invoke(request);
+        ClientMessage request = TransactionalMapReplaceIfSameParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key), toData(oldValue), toData(newValue));
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     @Override
     public V remove(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE, toData(key));
-        return invoke(request);
+        ClientMessage request = TransactionalMapRemoveParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage response = invoke(request);
+        return (V) toObject(GenericResultParameters.decode(response).result);
     }
 
     @Override
     public void delete(Object key) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.DELETE, toData(key));
+        ClientMessage request = TransactionalMapDeleteParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key));
+        invoke(request);
         invoke(request);
     }
 
     @Override
     public boolean remove(Object key, Object value) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE_IF_SAME, toData(key),
-                toData(value));
-        return this.<Boolean>invoke(request);
+        ClientMessage request = TransactionalMapRemoveIfSameParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet() {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET);
-        MapKeySet result = invoke(request);
-        Set<Data> dataKeySet = result.getKeySet();
+        ClientMessage request = TransactionalMapKeySetParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        Collection<Data> dataKeySet = DataCollectionResultParameters.decode(response).result;
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
             keySet.add((K) toObject(data));
@@ -145,9 +183,11 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate);
-        MapKeySet result = invoke(request);
-        Set<Data> dataKeySet = result.getKeySet();
+        ClientMessage request = TransactionalMapKeySetWithPredicateParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(predicate));
+        ClientMessage response = invoke(request);
+        Collection<Data> dataKeySet = DataCollectionResultParameters.decode(response).result;
+
         HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
         for (Data data : dataKeySet) {
             keySet.add((K) toObject(data));
@@ -158,9 +198,10 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values() {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES);
-        MapValueCollection result = invoke(request);
-        Collection<Data> dataValues = result.getValues();
+        ClientMessage request = TransactionalMapValuesParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        Collection<Data> dataValues = DataCollectionResultParameters.decode(response).result;
         HashSet<V> values = new HashSet<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));
@@ -174,9 +215,11 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
-        MapValueCollection result = invoke(request);
-        Collection<Data> dataValues = result.getValues();
+        ClientMessage request = TransactionalMapValuesWithPredicateParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), toData(predicate));
+        ClientMessage response = invoke(request);
+        Collection<Data> dataValues = DataCollectionResultParameters.decode(response).result;
+
         HashSet<V> values = new HashSet<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));

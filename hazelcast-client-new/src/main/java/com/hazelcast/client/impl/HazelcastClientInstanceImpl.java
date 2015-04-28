@@ -13,7 +13,9 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
-import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectParameters;
+import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectResultParameters;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -76,12 +78,10 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -380,13 +380,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
-            GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
+            ClientMessage request = GetDistributedObjectParameters.encode();
+            final Future<ClientMessage> future = new ClientInvocation(this, request).invoke();
+            ClientMessage response = future.get();
+            GetDistributedObjectResultParameters resultParameters =
+                    GetDistributedObjectResultParameters.decode(response);
 
-            final Future<SerializableCollection> future = new ClientInvocation(this, request).invoke();
-            final SerializableCollection serializableCollection = serializationService.toObject(future.get());
-            for (Data data : serializableCollection) {
-                final DistributedObjectInfo o = serializationService.toObject(data);
-                getDistributedObject(o.getServiceName(), o.getName());
+            Collection<DistributedObjectInfo> infoCollection = resultParameters.infoCollection;
+            for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
+                getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {

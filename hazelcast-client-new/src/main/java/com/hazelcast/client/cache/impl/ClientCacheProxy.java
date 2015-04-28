@@ -19,20 +19,23 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
-import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
-import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
-import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
-import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
-import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheAddEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheContainsKeyParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheEntryProcessorParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheListenerRegistrationParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheLoadAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheRemoveEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -52,6 +55,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -96,14 +100,10 @@ public class ClientCacheProxy<K, V>
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
-        CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
-        ICompletableFuture future;
-        try {
-            future = invoke(request, keyData, false);
-            return (Boolean) toObject(future.get());
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        ClientMessage request = CacheContainsKeyParameters.encode(nameWithPrefix, keyData);
+        ClientMessage result = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(result);
+        return resultParameters.result;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             keysData.add(toData(key));
         }
-        CacheLoadAllRequest request = new CacheLoadAllRequest(nameWithPrefix, keysData, replaceExistingValues);
+        ClientMessage request = CacheLoadAllParameters.encode(nameWithPrefix, keysData, replaceExistingValues);
         try {
             submitLoadAllTask(request, completionListener);
         } catch (Exception e) {
@@ -198,13 +198,13 @@ public class ClientCacheProxy<K, V>
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
-        removeAllInternal(keys, true);
+        removeAllInternal(keys);
     }
 
     @Override
     public void removeAll() {
         ensureOpen();
-        removeAllInternal(null, true);
+        removeAllInternal(null);
     }
 
     @Override
@@ -230,11 +230,19 @@ public class ClientCacheProxy<K, V>
             throw new NullPointerException("Entry Processor is null");
         }
         final Data keyData = toData(key);
-        final CacheEntryProcessorRequest request = new CacheEntryProcessorRequest(nameWithPrefix, keyData, entryProcessor,
-                cacheConfig.getInMemoryFormat(), arguments);
+        Data epData = toData(entryProcessor);
+        List<Data> argumentsData = null;
+        if (arguments != null) {
+            argumentsData = new ArrayList<Data>(arguments.length);
+            for (int i = 0; i < arguments.length; i++) {
+                argumentsData.add(toData(arguments[i]));
+            }
+        }
+        final ClientMessage request = CacheEntryProcessorParameters.encode(nameWithPrefix, keyData, epData, argumentsData);
         try {
-            final ICompletableFuture<Data> f = invoke(request, keyData, true);
-            final Data data = getSafely(f);
+            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, true);
+            final ClientMessage response = getSafely(f);
+            final Data data = GenericResultParameters.decode(response).result;
             return toObject(data);
         } catch (CacheException ce) {
             throw ce;
@@ -295,7 +303,7 @@ public class ClientCacheProxy<K, V>
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
         final EventHandler<Object> handler = createHandler(adaptor);
-        final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
+        final ClientMessage registrationRequest = CacheAddEntryListenerParameters.encode(nameWithPrefix);
         final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -312,7 +320,7 @@ public class ClientCacheProxy<K, V>
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
-            CacheRemoveEntryListenerRequest removeReq = new CacheRemoveEntryListenerRequest(nameWithPrefix, regId);
+            ClientMessage removeReq = CacheRemoveEntryListenerParameters.encode(nameWithPrefix, regId);
             boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
 
             if (isDeregistered) {
@@ -333,8 +341,9 @@ public class ClientCacheProxy<K, V>
         for (MemberImpl member : members) {
             try {
                 final Address address = member.getAddress();
-                final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
-                        cacheEntryListenerConfiguration, isRegister, address);
+                Data configData = toData(cacheEntryListenerConfiguration);
+                final ClientMessage request = CacheListenerRegistrationParameters
+                        .encode(nameWithPrefix, configData, isRegister, address.getHost(), address.getPort());
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
                 final Future<SerializableCollection> future = invocation.invoke();
                 futures.add(future);

@@ -1,6 +1,5 @@
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -214,24 +213,5 @@ public class PortableClassVersionTest {
         return builder.build();
     }
 
-    @Test
-    public void testPacket_writeAndRead() {
-        SerializationService ss = createSerializationService(10);
 
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("test", "pass");
-        ClientPrincipal principal = new ClientPrincipal("uuid", "uuid2");
-        Data data = ss.toData(new AuthenticationRequest(credentials, principal));
-
-        Packet packet = new Packet(data);
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        assertTrue(packet.writeTo(buffer));
-
-        SerializationService ss2 = createSerializationService(1);
-
-        buffer.flip();
-        packet = new Packet();
-        assertTrue(packet.readFrom(buffer));
-
-        AuthenticationRequest request = ss2.toObject(packet.getData());
-    }
 }

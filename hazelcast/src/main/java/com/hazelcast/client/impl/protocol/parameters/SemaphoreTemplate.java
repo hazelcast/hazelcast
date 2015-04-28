@@ -19,7 +19,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.annotation.EncodeMethod;
 import com.hazelcast.annotation.GenerateParameters;
 
-@GenerateParameters(id = 11, name = "Semaphore", ns = "Hazelcast.Client.Protocol.Semaphore")
+@GenerateParameters(id = TemplateConstants.SEMAPHORE_TEMPLATE_ID,
+        name = "Semaphore", ns = "Hazelcast.Client.Protocol.Semaphore")
 public interface SemaphoreTemplate {
 
     @EncodeMethod(id = 1)

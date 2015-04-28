@@ -25,13 +25,13 @@ import com.hazelcast.cache.impl.client.CacheCreateConfigRequest;
 import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
@@ -88,7 +88,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
                 Address address = member.getAddress();
                 CacheManagementConfigRequest request =
                         new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName),
-                                statOrMan, enabled, address);
+                                                         statOrMan, enabled, address);
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
                 Future<SerializableCollection> future = clientInvocation.invoke();
                 futures.add(future);

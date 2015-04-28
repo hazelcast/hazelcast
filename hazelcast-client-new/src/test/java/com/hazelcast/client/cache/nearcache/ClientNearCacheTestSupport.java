@@ -33,9 +33,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
-
 import com.hazelcast.test.HazelcastTestSupport;
-
 import org.junit.After;
 import org.junit.Before;
 
@@ -154,7 +152,7 @@ public abstract class ClientNearCacheTestSupport {
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertNull(nearCacheTestContext.nearCache.get(
-                    nearCacheTestContext.serializationService.toData(i)));
+                            nearCacheTestContext.serializationService.toData(i)));
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -186,8 +184,8 @@ public abstract class ClientNearCacheTestSupport {
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertEquals(generateValueFromKey(i),
-                    nearCacheTestContext.nearCache.get(
-                            nearCacheTestContext.serializationService.toData(i)));
+                         nearCacheTestContext.nearCache.get(
+                                nearCacheTestContext.serializationService.toData(i)));
         }
 
         nearCacheTestContext.close();

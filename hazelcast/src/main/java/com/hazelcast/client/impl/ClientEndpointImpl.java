@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverter;
 import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverters;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -267,6 +268,12 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
             clientResponseObject = response != null ? response : new DefaultData();
         }
         clientEngine.sendResponse(this, null, clientResponseObject, callId, isError, false);
+    }
+
+    public void sendClientMessage(ClientMessage clientMessage) {
+        Connection conn = this.getConnection();
+        //TODO framing not implemented yet, should be split into frames before writing to connection
+        conn.write(clientMessage);
     }
 
     @Override

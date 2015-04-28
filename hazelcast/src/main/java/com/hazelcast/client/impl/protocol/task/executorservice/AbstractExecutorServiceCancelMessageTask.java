@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
@@ -60,7 +59,7 @@ public abstract class AbstractExecutorServiceCancelMessageTask<P> extends Abstra
     protected abstract InvocationBuilder createInvocationBuilder() throws UnknownHostException;
 
     private void logException(Exception e) {
-        ILogger logger = nodeEngine.getLogger(CancellationRequest.class);
+        ILogger logger = nodeEngine.getLogger(AbstractExecutorServiceCancelMessageTask.class);
         logger.warning(e);
     }
 

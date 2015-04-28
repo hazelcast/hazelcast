@@ -38,10 +38,11 @@ public class TopicAddMessageListenerMessageTask
         extends AbstractCallableMessageTask<TopicAddMessageListenerParameters>
         implements MessageListener {
 
-    private Data partitionKey = serializationService.toData(parameters.name);
+    private final Data partitionKey;
 
     public TopicAddMessageListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+        partitionKey = serializationService.toData(parameters.name);
     }
 
     @Override

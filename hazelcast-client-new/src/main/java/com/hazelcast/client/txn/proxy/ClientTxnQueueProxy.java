@@ -16,21 +16,23 @@
 
 package com.hazelcast.client.txn.proxy;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueOfferParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalQueuePeekParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalQueuePollParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueTakeParameters;
 import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.collection.impl.txnqueue.client.TxnOfferRequest;
-import com.hazelcast.collection.impl.txnqueue.client.TxnPeekRequest;
-import com.hazelcast.collection.impl.txnqueue.client.TxnPollRequest;
-import com.hazelcast.collection.impl.txnqueue.client.TxnSizeRequest;
-
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 6/7/13
- */
 public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E> {
 
     public ClientTxnQueueProxy(String name, TransactionContextProxy proxy) {
@@ -47,14 +49,20 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         final Data data = toData(e);
-        TxnOfferRequest request = new TxnOfferRequest(getName(), unit.toMillis(timeout), data);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = TransactionalQueueOfferParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), data, unit.toMillis(timeout));
+        ClientMessage response = invoke(request);
+        BooleanResultParameters result = BooleanResultParameters.decode(response);
+        return result.result;
     }
 
     @Override
     public E take() throws InterruptedException {
-        return poll(-1, TimeUnit.MILLISECONDS);
+        ClientMessage request = TransactionalQueueTakeParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        GenericResultParameters result = GenericResultParameters.decode(response);
+        return (E) toObject(result.result);
     }
 
     public E poll() {
@@ -66,8 +74,11 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        TxnPollRequest request = new TxnPollRequest(getName(), unit.toMillis(timeout));
-        return invoke(request);
+        ClientMessage request = TransactionalQueuePollParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), unit.toMillis(timeout));
+        ClientMessage response = invoke(request);
+        GenericResultParameters result = GenericResultParameters.decode(response);
+        return (E) toObject(result.result);
     }
 
     @Override
@@ -81,14 +92,19 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     @Override
     public E peek(long timeout, TimeUnit unit) throws InterruptedException {
-        TxnPeekRequest request = new TxnPeekRequest(getName(), unit.toMillis(timeout));
-        return invoke(request);
+        ClientMessage request = TransactionalQueuePeekParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId(), unit.toMillis(timeout));
+        ClientMessage response = invoke(request);
+        GenericResultParameters result = GenericResultParameters.decode(response);
+        return (E) toObject(result.result);
     }
 
     public int size() {
-        TxnSizeRequest request = new TxnSizeRequest(getName());
-        Integer result = invoke(request);
-        return result;
+        ClientMessage request = TransactionalQueueSizeParameters.encode(getName(), getTransactionId(),
+                ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        IntResultParameters result = IntResultParameters.decode(response);
+        return result.result;
     }
 
     public String getName() {

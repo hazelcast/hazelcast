@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
-
+import java.util.Map;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class DataEntryListResultParameters {
@@ -54,15 +54,27 @@ public class DataEntryListResultParameters {
         return clientMessage;
     }
 
-    /**
-     * sample data size estimation
-     *
-     * @return size
-     */
+    public static ClientMessage encode(Map<Data,Data> map) {
+        final int requiredDataSize = calculateDataSize(map);
+        ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
+        clientMessage.ensureCapacity(requiredDataSize);
+        clientMessage.setMessageType(TYPE.id());
+        clientMessage.set(map.keySet()).set(map.values());
+        clientMessage.updateFrameLength();
+        return clientMessage;
+    }
+
     public static int calculateDataSize(List<Data> keys, List<Data> values) {
         int dataSize = ClientMessage.HEADER_SIZE ;
         dataSize += ParameterUtil.calculateCollectionDataSize(keys);
         dataSize += ParameterUtil.calculateCollectionDataSize(values);
+        return dataSize;
+    }
+
+    public static int calculateDataSize(Map<Data,Data> map) {
+        int dataSize = ClientMessage.HEADER_SIZE ;
+        dataSize += ParameterUtil.calculateCollectionDataSize(map.keySet());
+        dataSize += ParameterUtil.calculateCollectionDataSize(map.values());
         return dataSize;
     }
 }

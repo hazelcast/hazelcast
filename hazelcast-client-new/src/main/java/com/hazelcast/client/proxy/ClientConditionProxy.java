@@ -16,14 +16,16 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ConditionAwaitParameters;
+import com.hazelcast.client.impl.protocol.parameters.ConditionBeforeAwaitParameters;
+import com.hazelcast.client.impl.protocol.parameters.ConditionSignalAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ConditionSignalParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.client.AwaitRequest;
-import com.hazelcast.concurrent.lock.client.BeforeAwaitRequest;
-import com.hazelcast.concurrent.lock.client.SignalRequest;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
@@ -81,16 +83,15 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
     }
 
     private void beforeAwait(long threadId) {
-        BeforeAwaitRequest request = new BeforeAwaitRequest(namespace, threadId, conditionId, key);
+        ClientMessage request = ConditionBeforeAwaitParameters.encode(conditionId, threadId, lockProxy.getName());
         invoke(request);
-
     }
 
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         final long timeoutInMillis = unit.toMillis(time);
-        AwaitRequest awaitRequest = new AwaitRequest(namespace, lockProxy.getName(), timeoutInMillis, threadId, conditionId);
-        final Boolean result = invoke(awaitRequest);
-        return result;
+        ClientMessage request = ConditionAwaitParameters.encode(conditionId, timeoutInMillis, threadId, lockProxy.getName());
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
+        return resultParameters.result;
     }
 
 
@@ -103,20 +104,17 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
 
     @Override
     public void signal() {
-        signal(false);
+        ClientMessage request = ConditionSignalParameters.encode(conditionId, ThreadUtil.getThreadId(), lockProxy.getName());
+        invoke(request);
     }
 
     @Override
     public void signalAll() {
-        signal(true);
-    }
-
-    private void signal(boolean all) {
-        SignalRequest request = new SignalRequest(namespace, lockProxy.getName(), ThreadUtil.getThreadId(), conditionId, all);
+        ClientMessage request = ConditionSignalAllParameters.encode(conditionId, ThreadUtil.getThreadId(), lockProxy.getName());
         invoke(request);
     }
 
-    protected <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientMessage req) {
         return super.invoke(req, key);
     }
 

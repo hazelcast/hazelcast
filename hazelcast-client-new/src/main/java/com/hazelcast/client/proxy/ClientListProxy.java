@@ -16,14 +16,17 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListAddAllWithIndexParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListAddListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListAddParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListAddWithIndexParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListClearParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListCompareAndRemoveAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListCompareAndRetainAllParameters;
@@ -40,17 +43,16 @@ import com.hazelcast.client.impl.protocol.parameters.ListRemoveWithIndexParamete
 import com.hazelcast.client.impl.protocol.parameters.ListSetParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListSizeParameters;
 import com.hazelcast.client.impl.protocol.parameters.ListSubParameters;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.collection.impl.collection.client.CollectionAddListenerRequest;
-import com.hazelcast.collection.impl.collection.client.CollectionRequest;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.PortableItemEvent;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,7 +82,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
             throwExceptionIfNull(e);
             valueList.add(toData(e));
         }
-        ClientMessage request = ListAddAllParameters.encode(name, valueList);
+        ClientMessage request = ListAddAllWithIndexParameters.encode(name, index, valueList);
         ClientMessage response = invoke(request);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;
@@ -105,7 +107,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
     public void add(int index, E element) {
         throwExceptionIfNull(element);
         final Data value = toData(element);
-        ClientMessage request = ListAddParameters.encode(name, value);
+        ClientMessage request = ListAddWithIndexParameters.encode(name, index, value);
         invoke(request);
     }
 
@@ -226,16 +228,20 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         invoke(request);
     }
 
-    //Todo MessageTask!!
+    @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        final CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
-        request.setServiceName(getServiceName());
-        EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
-            public void handle(PortableItemEvent portableItemEvent) {
-                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
-                Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
-                ItemEvent<E> itemEvent = new ItemEvent<E>(getName(), portableItemEvent.getEventType(), item, member);
-                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
+        ClientMessage request = ListAddListenerParameters.encode(name, includeValue);
+
+        EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
+            final SerializationService serializationService = getContext().getSerializationService();
+            final ClientClusterService clusterService = getContext().getClusterService();
+
+            public void handle(ClientMessage message) {
+                ItemEventParameters event = ItemEventParameters.decode(message);
+                E item = includeValue ? (E) serializationService.toObject(event.item) : null;
+                Member member = clusterService.getMember(event.uuid);
+                ItemEvent<E> itemEvent = new ItemEvent<E>(name, event.eventType, item, member);
+                if (event.eventType == ItemEventType.ADDED) {
                     listener.itemAdded(itemEvent);
                 } else {
                     listener.itemRemoved(itemEvent);
@@ -253,18 +259,12 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         };
         return listen(request, getPartitionKey(), eventHandler);
     }
-
     public boolean removeItemListener(String registrationId) {
         ClientMessage request = ListRemoveListenerParameters.encode(name, registrationId);
         return stopListening(request, registrationId);
     }
 
-    protected <T> T invoke(ClientRequest req) {
-        if (req instanceof CollectionRequest) {
-            CollectionRequest request = (CollectionRequest) req;
-            request.setServiceName(getServiceName());
-        }
-
+    protected <T> T invoke(ClientMessage req) {
         return super.invoke(req, getPartitionKey());
     }
 

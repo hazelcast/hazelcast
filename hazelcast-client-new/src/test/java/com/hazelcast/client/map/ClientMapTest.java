@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -38,7 +37,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -598,10 +596,10 @@ public class ClientMapTest {
                 countDownLatch.countDown();
             }
         };
-        AuthenticationRequest key = new AuthenticationRequest(new UsernamePasswordCredentials("a", "b"));
-        tradeMap.addEntryListener(listener, key, true);
-        AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
-        tradeMap.put(key2, 1);
+//        AuthenticationRequest key = new AuthenticationRequest(new UsernamePasswordCredentials("a", "b"));
+//        tradeMap.addEntryListener(listener, key, true);
+//        AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
+//        tradeMap.put(key2, 1);
 
 
         assertFalse(countDownLatch.await(5, TimeUnit.SECONDS));

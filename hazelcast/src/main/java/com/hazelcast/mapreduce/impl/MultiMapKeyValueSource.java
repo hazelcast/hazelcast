@@ -70,6 +70,10 @@ public class MultiMapKeyValueSource<K, V>
         this.multiMapName = multiMapName;
     }
 
+    public String getMultiMapName() {
+        return multiMapName;
+    }
+
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;

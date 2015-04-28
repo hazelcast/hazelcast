@@ -16,16 +16,13 @@
 
 package com.hazelcast.client.txn.proxy;
 
-import com.hazelcast.client.impl.client.ClientDestroyRequest;
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.DestroyProxyParameters;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
@@ -40,19 +37,18 @@ abstract class ClientTxnProxy implements TransactionalObject {
         this.proxy = proxy;
     }
 
-    final <T> T invoke(ClientRequest request) {
-        if (request instanceof BaseTransactionRequest) {
-            ((BaseTransactionRequest) request).setTxnId(proxy.getTxnId());
-            ((BaseTransactionRequest) request).setClientThreadId(Thread.currentThread().getId());
-        }
-        final SerializationService ss = proxy.getClient().getSerializationService();
+    final ClientMessage invoke(ClientMessage request) {
         try {
             ClientInvocation invocation = new ClientInvocation(proxy.getClient(), request, proxy.getConnection());
-            Future<SerializableCollection> future = invocation.invoke();
-            return ss.toObject(future.get());
+            Future<ClientMessage> future = invocation.invoke();
+            return future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    protected String getTransactionId() {
+        return proxy.getTxnId();
     }
 
     abstract void onDestroy();
@@ -60,7 +56,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     @Override
     public final void destroy() {
         onDestroy();
-        ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        ClientMessage request = DestroyProxyParameters.encode(objectName, getServiceName());
         invoke(request);
     }
 

@@ -58,6 +58,7 @@ import com.hazelcast.client.impl.protocol.parameters.MapKeySetWithPredicateParam
 import com.hazelcast.client.impl.protocol.parameters.MapLoadAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapLoadGivenKeysParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapPartitionLostEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutAllParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutAsyncParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapPutIfAbsentParameters;
@@ -121,7 +122,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortedQueryResultSet;
@@ -181,7 +181,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         ClientMessage message = MapContainsKeyParameters.encode(name, keyData, ThreadUtil.getThreadId());
         ClientMessage result = invoke(message, keyData);
         BooleanResultParameters resultParameters =
-                BooleanResultParameters.decode((ClientMessage) result);
+                BooleanResultParameters.decode(result);
         return resultParameters.result;
     }
 
@@ -602,7 +602,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public String addPartitionLostListener(MapPartitionLostListener listener) {
         ClientMessage request = MapAddPartitionLostListenerParameters.encode(name);
-        final EventHandler<PortableMapPartitionLostEvent> handler = new ClientMapPartitionLostEventHandler(listener);
+        final EventHandler<ClientMessage> handler = new ClientMapPartitionLostEventHandler(listener);
         return listen(request, handler);
     }
 
@@ -767,9 +767,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<K, V> getAll(Set<K> keys) {
         initNearCache();
-        Set<Data> keySet = new HashSet(keys.size());
+        Set<Data> keySet = new HashSet<Data>(keys.size());
         Map<K, V> result = new HashMap<K, V>();
         for (Object key : keys) {
             keySet.add(toData(key));
@@ -839,6 +840,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
@@ -891,6 +893,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
@@ -1300,7 +1303,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
     }
 
-    private class ClientMapPartitionLostEventHandler implements EventHandler<PortableMapPartitionLostEvent> {
+    private class ClientMapPartitionLostEventHandler implements EventHandler<ClientMessage> {
 
         private MapPartitionLostListener listener;
 
@@ -1309,9 +1312,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
 
         @Override
-        public void handle(PortableMapPartitionLostEvent event) {
-            final Member member = getContext().getClusterService().getMember(event.getUuid());
-            listener.partitionLost(new MapPartitionLostEvent(name, member, -1, event.getPartitionId()));
+        public void handle(ClientMessage eventMessage) {
+            MapPartitionLostEventParameters event = MapPartitionLostEventParameters.decode(eventMessage);
+            final Member member = getContext().getClusterService().getMember(event.uuid);
+            listener.partitionLost(new MapPartitionLostEvent(name, member, -1, event.partitionId));
         }
 
         @Override

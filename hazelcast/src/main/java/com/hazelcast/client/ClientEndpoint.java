@@ -36,8 +36,10 @@ public interface ClientEndpoint {
      */
     boolean isAlive();
 
+    //TODO remove after requests removed
     void sendResponse(Object response, int callId);
 
+    //TODO remove after requests removed
     void sendEvent(Object key, Object event, int callId);
 
     void setListenerRegistration(String service, String topic, String id);
@@ -69,4 +71,5 @@ public interface ClientEndpoint {
     void setDistributedObjectListener(String registrationId);
 
     ClientPrincipal getPrincipal();
+
 }

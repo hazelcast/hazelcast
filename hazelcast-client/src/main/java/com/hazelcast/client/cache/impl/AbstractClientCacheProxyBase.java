@@ -117,9 +117,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final ClientInvocation clientInvocation =
-                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                                         request, partitionId);
+            final ClientInvocation clientInvocation = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
@@ -163,8 +162,8 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     protected <T> T invoke(ClientRequest req) {
         try {
-            final ClientInvocation clientInvocation =
-                    new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
+            final ClientInvocation clientInvocation = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
             final Future<SerializableCollection> future = clientInvocation.invoke();
             Object result = future.get();
             return toObject(result);
@@ -188,11 +187,9 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final CacheLoadAllRequest request,
-                                     final CompletionListener completionListener) {
+    protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
         LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        ClientExecutionServiceImpl executionService =
-                (ClientExecutionServiceImpl) clientContext.getExecutionService();
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
         final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
         loadAllTasks.add(future);

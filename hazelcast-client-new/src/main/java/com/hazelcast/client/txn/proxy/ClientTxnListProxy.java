@@ -16,17 +16,18 @@
 
 package com.hazelcast.client.txn.proxy;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListAddParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListSizeParameters;
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.impl.txnlist.client.TxnListAddRequest;
-import com.hazelcast.collection.impl.txnlist.client.TxnListRemoveRequest;
-import com.hazelcast.collection.impl.txnlist.client.TxnListSizeRequest;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.ThreadUtil;
 
-/**
-* @author ali 6/11/13
-*/
 public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalList<E> {
 
     public ClientTxnListProxy(String name, TransactionContextProxy proxy) {
@@ -40,23 +41,26 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
     public boolean add(E e) {
         throwExceptionIfNull(e);
         final Data value = toData(e);
-        final TxnListAddRequest request = new TxnListAddRequest(getName(), value);
-        final Boolean result = invoke(request);
-        return result;
+        ClientMessage request = TransactionalListAddParameters.encode(getName(), getTransactionId()
+                , ThreadUtil.getThreadId(), value);
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     public boolean remove(E e) {
         throwExceptionIfNull(e);
         final Data value = toData(e);
-        final TxnListRemoveRequest request = new TxnListRemoveRequest(getName(), value);
-        final Boolean result = invoke(request);
-        return result;
+        ClientMessage request = TransactionalListRemoveParameters.encode(getName(), getTransactionId()
+                , ThreadUtil.getThreadId(), value);
+        ClientMessage response = invoke(request);
+        return BooleanResultParameters.decode(response).result;
     }
 
     public int size() {
-        final TxnListSizeRequest request = new TxnListSizeRequest(getName());
-        final Integer result = invoke(request);
-        return result;
+        ClientMessage request = TransactionalListSizeParameters.encode(getName(), getTransactionId()
+                , ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request);
+        return IntResultParameters.decode(response).result;
     }
 
 }

@@ -63,6 +63,10 @@ public class MapKeyValueSource<K, V>
         this.mapName = mapName;
     }
 
+    public String getMapName() {
+        return mapName;
+    }
+
     @Override
     public boolean open(NodeEngine nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
