@@ -89,18 +89,18 @@ public class QueueConfig {
     }
 
     /**
-     * Returns the TTL (time to live) for empty Queue.
+     * Returns the TTL (time to live) for emptying the Queue.
      *
-     * @return The TTL (time to live) for empty Queue.
+     * @return The TTL (time to live) for emptying the Queue.
      */
     public int getEmptyQueueTtl() {
         return emptyQueueTtl;
     }
 
     /**
-     * Sets the TTL (time to live) for empty Queue.
+     * Sets the TTL (time to live) for emptying the Queue.
      *
-     * @param emptyQueueTtl Set the TTL (time to live) for empty Queue to this value.
+     * @param emptyQueueTtl Set the TTL (time to live) for emptying the Queue to this value.
      * @return The Queue configuration.
      */
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
@@ -132,18 +132,18 @@ public class QueueConfig {
     }
 
     /**
-     * Get the total of the backup count and the asynchronous backup count.
+     * Get the total number of backups: the backup count and the asynchronous backup count.
      *
-     * @return The total of the backup count and the asynchronous backup count.
+     * @return The total number of backups.
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
     /**
-     * Get the backup count.
+     * Get the number of synchronous backups.
      *
-     * @return The backup count.
+     * @return The synchronous backup count.
      */
     public int getBackupCount() {
         return backupCount;
@@ -154,8 +154,8 @@ public class QueueConfig {
      *
      * @param backupCount the number of synchronous backups to set
      * @return the current QueueConfig
-     * @throws IllegalArgumentException if backupCount smaller than 0,
-     *             or larger than the maximum number of backup
+     * @throws IllegalArgumentException if backupCount is smaller than 0,
+     *             or larger than the maximum number of backups,
      *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setAsyncBackupCount(int)
      */
@@ -174,7 +174,7 @@ public class QueueConfig {
     }
 
     /**
-     * Sets the number of asynchronous backups. 0 means no backups
+     * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated QueueConfig
@@ -190,19 +190,19 @@ public class QueueConfig {
     }
 
     /**
-     * Get the queue store configuration.
+     * Get the QueueStore (load and store queue items from/to a database) configuration.
      *
-     * @return The queue store configuration.
+     * @return The QueueStore configuration.
      */
     public QueueStoreConfig getQueueStoreConfig() {
         return queueStoreConfig;
     }
 
     /**
-     * Set the queue store configuration.
+     * Set the QueueStore (load and store queue items from/to a database) configuration.
      *
-     * @param queueStoreConfig Set the queue store configuration to this configuration.
-     * @return The queue store configuration.
+     * @param queueStoreConfig Set the QueueStore configuration to this configuration.
+     * @return The QueueStore configuration.
      */
     public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
