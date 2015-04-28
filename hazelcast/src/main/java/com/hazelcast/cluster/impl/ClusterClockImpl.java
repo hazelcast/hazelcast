@@ -17,18 +17,22 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterClock;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
 public class ClusterClockImpl implements ClusterClock {
 
     private final ILogger logger;
+
+    @SensorInput(name = "clusterTimeDiff")
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
 
     public ClusterClockImpl(ILogger logger) {
         this.logger = logger;
     }
 
+    @SensorInput(name = "clusterTime")
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);

@@ -51,12 +51,13 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
      * Migrates this handler to a new IOSelector thread.
      * The migration logic is rather simple:
      * <p><ul>
-     *     <li>Submit a de-registration task to a current IOSelector thread</li>
-     *     <li>The de-registration task submits a registration task to the new IOSelector thread</li>
+     * <li>Submit a de-registration task to a current IOSelector thread</li>
+     * <li>The de-registration task submits a registration task to the new IOSelector thread</li>
      * </ul></p>
      *
      * @param newOwner target IOSelector this handler migrates to
      */
+    @Override
     public void migrate(final IOSelector newOwner) {
         if (ioSelector == newOwner || !socketChannel.isOpen()) {
             return;
@@ -77,7 +78,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         return selectionKey;
     }
 
-    final void handleSocketException(Throwable e) {
+    void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
         }
@@ -121,10 +122,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     */
+    @Override
     public IOSelector getOwner() {
         return ioSelector;
     }
@@ -154,6 +152,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
                     selector = newOwner.getSelector();
                     selectionKey = getSelectionKey();
                     registerOp(initialOps);
+                    connectionManager.getIoBalancer().signalMigrationComplete();
                 }
             });
             newOwner.wakeup();

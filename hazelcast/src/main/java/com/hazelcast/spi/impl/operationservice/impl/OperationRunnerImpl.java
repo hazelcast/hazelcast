@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -43,6 +44,8 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.counters.Counter;
+import com.hazelcast.util.counters.SwCounter;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -53,6 +56,7 @@ import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHan
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -61,6 +65,7 @@ import static java.util.logging.Level.WARNING;
  * Responsible for processing an Operation.
  */
 class OperationRunnerImpl extends OperationRunner {
+
     static final int AD_HOC_PARTITION_ID = -2;
 
     private final ILogger logger;
@@ -68,6 +73,9 @@ class OperationRunnerImpl extends OperationRunner {
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final AtomicLong executedOperationsCount;
+
+    @SensorInput
+    private final Counter count;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner
     // will never be called concurrently.
@@ -84,7 +92,14 @@ class OperationRunnerImpl extends OperationRunner {
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
-        this.executedOperationsCount = operationService.executedOperationsCount;
+        this.executedOperationsCount = operationService.completedOperationsCount;
+
+        if (partitionId >= 0) {
+            this.count = newSwCounter();
+            nodeEngine.getBlackbox().scanAndRegister(this, "operation.partition[" + partitionId + "]");
+        } else {
+            this.count = null;
+        }
     }
 
     @Override
@@ -110,6 +125,10 @@ class OperationRunnerImpl extends OperationRunner {
 
     @Override
     public void run(Operation op) {
+        if (count != null) {
+            count.inc();
+        }
+
         executedOperationsCount.incrementAndGet();
 
         boolean publishCurrentTask = publishCurrentTask();

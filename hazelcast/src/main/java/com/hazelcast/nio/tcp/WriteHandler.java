@@ -16,11 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.blackbox.Blackbox;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
@@ -41,19 +45,37 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private static final long TIMEOUT = 3;
 
+    @SensorInput(name = "normalQueue.size")
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+    @SensorInput(name = "priorityQueue.size")
     private final Queue<SocketWritable> urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private final ByteBuffer outputBuffer;
+    @SensorInput
+    private final SwCounter bytesWritten = newSwCounter();
+    @SensorInput
+    private final SwCounter normalPacketsWritten = newSwCounter();
+    @SensorInput
+    private final SwCounter priorityPacketsWritten = newSwCounter();
+    @SensorInput
+    private final SwCounter writeExceptions = newSwCounter();
+    private final Blackbox blackbox;
+
     private SocketWritable currentPacket;
     private SocketWriter socketWriter;
+    @SensorInput(name = "lastWriteTime")
     private volatile long lastHandle;
     //This field will be incremented by a single thread. It can be read by multiple threads.
+    @SensorInput(name = "writeEvents")
     private volatile long eventCount;
 
     WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_WRITE);
         this.outputBuffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
+
+        // sensors
+        this.blackbox = connection.getConnectionManager().getBlackbox();
+        blackbox.scanAndRegister(this, "tcp.connection[" + connection.getConnectionAddress() + "]");
     }
 
     long getLastHandle() {
@@ -105,15 +127,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
 
         schedule();
-    }
-
-    private SocketWritable poll() {
-        SocketWritable writable = urgentWriteQueue.poll();
-        if (writable == null) {
-            writable = writeQueue.poll();
-        }
-
-        return writable;
     }
 
     /**
@@ -219,6 +232,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 writeOutputBufferToSocket();
             }
         } catch (Throwable t) {
+            writeExceptions.inc();
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         }
         unschedule();
@@ -242,7 +256,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         // So there is data for writing, so lets prepare the buffer for writing and then write it to the socketChannel.
         outputBuffer.flip();
         try {
-            socketChannel.write(outputBuffer);
+            int result = socketChannel.write(outputBuffer);
+            this.bytesWritten.inc(result);
         } catch (Exception e) {
             currentPacket = null;
             handleSocketException(e);
@@ -266,30 +281,43 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
      * @throws Exception
      */
     private void fillOutputBuffer() throws Exception {
-        for (;;) {
+        int normaPacketCount = 0;
+        int priorityPacketCount = 0;
+        for (; ; ) {
             if (!outputBuffer.hasRemaining()) {
                 // The buffer is completely filled, we are done.
-                return;
+                break;
             }
 
             // If there currently is not packet sending, lets try to get one.
             if (currentPacket == null) {
-                currentPacket = poll();
-                if (currentPacket == null) {
-                    // There is no packet to write, we are done.
-                    return;
+                currentPacket = urgentWriteQueue.poll();
+
+                if (currentPacket != null) {
+                    priorityPacketCount++;
+                } else {
+                    currentPacket = writeQueue.poll();
+                    if (currentPacket != null) {
+                        normaPacketCount++;
+                    } else {
+                        // There is no packet to write, we are done.
+                        break;
+                    }
                 }
             }
 
             // Lets write the currentPacket to the outputBuffer.
             if (!socketWriter.write(currentPacket, outputBuffer)) {
                 // We are done for this round because not all data of the current packet fits in the outputBuffer
-                return;
+                break;
             }
 
             // The current packet has been written completely. So lets null it and lets try to write another packet.
             currentPacket = null;
         }
+
+        normalPacketsWritten.inc(normaPacketCount);
+        priorityPacketsWritten.inc(priorityPacketCount);
     }
 
     @Override
@@ -302,6 +330,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void shutdown() {
+        blackbox.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 

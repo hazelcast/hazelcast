@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -33,13 +34,15 @@ public class EventServiceSegment {
     private final ConcurrentMap<String, Collection<Registration>> registrations
             = new ConcurrentHashMap<String, Collection<Registration>>();
 
+    @SensorInput(name = "listenerCount")
     private final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
 
+    @SensorInput(name = "publicationCount")
     private final AtomicLong totalPublishes = new AtomicLong();
 
     public EventServiceSegment(String serviceName) {
         this.serviceName = serviceName;
-    }
+     }
 
     public Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
         Collection<Registration> listenerList = registrations.get(topic);

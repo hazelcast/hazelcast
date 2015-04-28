@@ -57,11 +57,32 @@ public class GroupProperties {
      * <p/>
      * The performance monitor logs all metrics into the log file.
      */
-    public static final String PROP_PERFORMANCE_MONITORING_ENABLED = "hazelcast.performance.monitoring.enabled";
+    public static final String PROP_PERFORMANCE_MONITOR_ENABLED = "hazelcast.performance.monitoring.enabled";
+
     /**
-     * The delay in seconds between monitoring of the performance.
+     * The delay in seconds between monitor of the performance.
      */
-    public static final String PROP_PERFORMANCE_MONITORING_DELAY_SECONDS = "hazelcast.performance.monitoring.delay.seconds";
+    public static final String PROP_PERFORMANCE_MONITOR_DELAY_SECONDS
+            = "hazelcast.performance.monitor.delay.seconds";
+
+    /**
+     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
+     *
+     * This property sets the maximum size in MB for a single file.
+     *
+     * Every HazelcastInstance will get its own history of log files.
+     */
+    public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE
+            = "hazelcast.performance.monitor.max.rolled.file.size";
+
+    /**
+     * The PerformanceMonitor uses a rolling file approach to prevent eating too much disk space.
+     *
+     * This property sets the maximum number of rolling files to keep on disk.
+     */
+    public static final String PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT
+            = "hazelcast.performance.monitor.max.rolled.file.count";
+
 
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
@@ -370,9 +391,13 @@ public class GroupProperties {
 
     public final GroupProperty HEALTH_MONITORING_DELAY_SECONDS;
 
-    public final GroupProperty PERFORMANCE_MONITORING_ENABLED;
+    public final GroupProperty PERFORMANCE_MONITOR_ENABLED;
 
-    public final GroupProperty PERFORMANCE_MONITORING_DELAY_SECONDS;
+    public final GroupProperty PERFORMANCE_MONITOR_DELAY_SECONDS;
+
+    public final GroupProperty PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE;
+
+    public final GroupProperty PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
 
     public final GroupProperty IO_THREAD_COUNT;
 
@@ -544,11 +569,17 @@ public class GroupProperties {
     public GroupProperties(Config config) {
         HEALTH_MONITORING_LEVEL
                 = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
-        HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
+        HEALTH_MONITORING_DELAY_SECONDS
+                = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
 
-        PERFORMANCE_MONITORING_ENABLED
-                = new GroupProperty(config, PROP_PERFORMANCE_MONITORING_ENABLED, "false");
-        PERFORMANCE_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_PERFORMANCE_MONITORING_DELAY_SECONDS, "30");
+        PERFORMANCE_MONITOR_ENABLED
+                = new GroupProperty(config, PROP_PERFORMANCE_MONITOR_ENABLED, "false");
+        PERFORMANCE_MONITOR_DELAY_SECONDS
+                = new GroupProperty(config, PROP_PERFORMANCE_MONITOR_DELAY_SECONDS, "30");
+        PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE
+                = new GroupProperty(config, PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE, "10");
+        PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT
+                = new GroupProperty(config, PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "10");
 
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
@@ -708,6 +739,10 @@ public class GroupProperties {
 
         public boolean getBoolean() {
             return Boolean.valueOf(this.value);
+        }
+
+        public float getFloat() {
+            return Float.valueOf(this.value);
         }
 
         public String getString() {

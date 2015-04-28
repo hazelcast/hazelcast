@@ -18,9 +18,13 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.internal.blackbox.Blackbox;
+import com.hazelcast.internal.blackbox.SensorInput;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.counters.MwCounter;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -43,13 +47,21 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     private final ILogger logger;
     private final ClientEngineImpl clientEngine;
     private final NodeEngine nodeEngine;
+
+    @SensorInput(name = "count")
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
+
+    @SensorInput(name = "totalRegistrations")
+    private MwCounter totalRegistrations = new MwCounter();
 
     public ClientEndpointManagerImpl(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
         this.clientEngine = clientEngine;
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
+
+        Blackbox blackbox = ((NodeEngineImpl) nodeEngine).getBlackbox();
+        blackbox.scanAndRegister(this, "client.endpoint");
     }
 
     @Override
@@ -79,6 +91,8 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
+        } else {
+            totalRegistrations.inc();
         }
     }
 

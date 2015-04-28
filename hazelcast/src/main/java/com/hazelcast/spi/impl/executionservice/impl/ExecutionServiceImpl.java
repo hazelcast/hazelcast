@@ -20,6 +20,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.blackbox.Blackbox;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -83,8 +84,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                 }
             };
 
+    private final Blackbox blackbox;
+
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.blackbox = nodeEngine.getBlackbox();
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
@@ -144,10 +148,13 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             }
         }
 
-        ManagedExecutorService executor = createExecutor(name, poolSize, queueCapacity, type);
+        final ManagedExecutorService executor = createExecutor(name, poolSize, queueCapacity, type);
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
+
+        blackbox.scanAndRegister(executor, "executor." + name);
+
         return executor;
     }
 

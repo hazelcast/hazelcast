@@ -242,10 +242,6 @@ final class TestNodeRegistry {
             }
         }
 
-        @Override
-        public void dumpPerformanceMetrics(StringBuffer sb) {
-        }
-
         public Connection getConnection(Address address) {
             MockConnection conn = mapConnections.get(address);
             if (conn == null) {
