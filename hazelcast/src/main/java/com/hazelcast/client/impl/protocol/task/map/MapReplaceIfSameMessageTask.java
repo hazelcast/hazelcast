@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapReplaceIfSameParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
@@ -40,6 +41,11 @@ public class MapReplaceIfSameMessageTask extends AbstractMapPutMessageTask<MapRe
     @Override
     protected MapReplaceIfSameParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapReplaceIfSameParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
 

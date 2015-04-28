@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.MapPutAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -58,7 +59,7 @@ public class MapPutAllMessageTask extends AbstractAllPartitionsMessageTask<MapPu
                 throw ExceptionUtil.rethrow((Throwable) result);
             }
         }
-        return null;
+        return VoidResultParameters.encode();
     }
 
     @Override

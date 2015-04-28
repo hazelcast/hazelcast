@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.EntryViewParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapGetEntryViewParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -29,7 +30,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
 import java.security.Permission;
 
 public class MapGetEntryViewMessageTask extends AbstractPartitionMessageTask<MapGetEntryViewParameters> {
@@ -52,6 +52,9 @@ public class MapGetEntryViewMessageTask extends AbstractPartitionMessageTask<Map
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
+        if (response == null) {
+            return VoidResultParameters.encode();
+        }
         SimpleEntryView<Data, Data> dataEntryView = (SimpleEntryView<Data, Data>) response;
         Data key = dataEntryView.getKey();
         Data value = dataEntryView.getValue();
