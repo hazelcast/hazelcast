@@ -18,11 +18,15 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientPrincipal;
+import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverter;
+import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverters;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
@@ -124,16 +128,6 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     public ClientPrincipal getPrincipal() {
         return principal;
-    }
-
-    @Override
-    public void sendResponse(Object result, int callId) {
-        //TODO remove after requests removed
-    }
-
-    @Override
-    public void sendEvent(Object key, Object event, int callId) {
-        //TODO remove after requests removed
     }
 
     @Override
@@ -260,6 +254,31 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     private ILogger getLogger() {
         return clientEngine.getLogger(getClass());
+    }
+
+    @Override
+    public void sendResponse(Object response, int callId) {
+        boolean isError = false;
+        Object clientResponseObject;
+        if (response instanceof Throwable) {
+            isError = true;
+            ClientExceptionConverter converter = ClientExceptionConverters.get(getClientType());
+            clientResponseObject = converter.convert((Throwable) response);
+        } else {
+            clientResponseObject = response != null ? response : new DefaultData();
+        }
+        clientEngine.sendResponse(this, null, clientResponseObject, callId, isError, false);
+    }
+
+    public void sendClientMessage(ClientMessage clientMessage) {
+        Connection conn = this.getConnection();
+        //TODO framing not implemented yet, should be split into frames before writing to connection
+        conn.write(clientMessage);
+    }
+
+    @Override
+    public void sendEvent(Object key, Object event, int callId) {
+        clientEngine.sendResponse(this, key, event, callId, false, true);
     }
 
     @Override

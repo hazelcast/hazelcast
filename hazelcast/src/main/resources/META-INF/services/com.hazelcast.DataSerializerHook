@@ -1,6 +1,7 @@
 com.hazelcast.cluster.impl.ClusterDataSerializerHook
 com.hazelcast.spi.impl.SpiDataSerializerHook
 com.hazelcast.partition.PartitionDataSerializerHook
+com.hazelcast.client.impl.ClientDataSerializerHook
 com.hazelcast.map.impl.MapDataSerializerHook
 com.hazelcast.collection.impl.queue.QueueDataSerializerHook
 com.hazelcast.multimap.impl.MultiMapDataSerializerHook
