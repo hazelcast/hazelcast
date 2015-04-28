@@ -73,7 +73,6 @@ Property Name | Default Value | Type | Description
 `hazelcast.io.thread.count` | 3 | int | Number of input and output threads.
 `hazelcast.jcache.provider.type`||string|Type of the JCache provider. Values can be `client` or `server`.
 `hazelcast.jmx` | false | bool  |   Enable [JMX](#monitoring-with-jmx) agent.
-`hazelcast.jmx.detailed` | false | bool  |   Enable detailed views on [JMX](#monitoring-with-jmx).
 `hazelcast.logging.type` | jdk | enum |   Name of [logging](#logging-configuration) framework type to send logging events.
 `hazelcast.map.expiry.delay.seconds`|10|int|Useful to deal with some possible edge cases. For example, when using EntryProcessor, without this delay, you may see an EntryProcessor running on owner partition found a key but EntryBackupProcessor did not find it on backup. As a result of this, when backup promotes to owner, you will end up an unprocessed key.
 `hazelcast.map.load.chunk.size` | 1000 | int |   Chunk size for [MapLoader](#persistence) 's map initialization process (MapLoder.loadAllKeys()).
@@ -102,7 +101,6 @@ Property Name | Default Value | Type | Description
 `hazelcast.partition.max.parallel.replications`|5|int|Maximum number of parallel partition backup replication operations per node. When a partition backup ownership changes or a backup inconsistency is detected, the nodes start to sync their backup partitions. This parameter limits the maximum running replication operations in parallel.
 `hazelcast.partition.migration.interval` | 0 | int |   Interval to run partition migration tasks in seconds.
 `hazelcast.partition.migration.timeout` | 300 | int  |   Timeout for partition migration tasks in seconds.
-`hazelcast.partition.migration.zip.enabled`|true|bool|Enable compression during partition migration.
 `hazelcast.partition.table.send.interval`|15|int|Interval for publishing partition table periodically to all cluster members.
 `hazelcast.partitioning.strategy.class`|null|string|Class name implementing `com.hazelcast.core.PartitioningStrategy`, which defines key to partition mapping.
 `hazelcast.performance.monitoring.enabled`||bool|Enable the performance monitor which is a tool enabling you to see internal performance metrics. These metrics are written to the log file.
@@ -127,7 +125,6 @@ Property Name | Default Value | Type | Description
 `hazelcast.socket.receive.buffer.size` | 32 | int | Socket receive buffer (`SO_RCVBUF`) size in KB. If you have a very fast network (e.g. 10gbit) and/or you have large entries, then you may benefit from increasing sender/receiver buffer sizes. Use this property and the next one below tune the size. For example, a send/receive buffer size of 1024 kB is a safe starting point for a 10gbit network.
 `hazelcast.socket.send.buffer.size` | 32 | int  | Socket send buffer (`SO_SNDBUF`) size in KB.
 `hazelcast.socket.server.bind.any` | true | bool | Bind server-socket to any local interface. If not set, `hazelcast.socket.bind.any` will be used as default.
-`hazelcast.system.log.enabled` | true | bool  |   Enable system logs.
 `hazelcast.version.check.enabled` | true | bool  |   Enable Hazelcast new version check on startup.
 `hazelcast.wait.seconds.before.join` | 5 | int  | Wait time before join operation.
 
