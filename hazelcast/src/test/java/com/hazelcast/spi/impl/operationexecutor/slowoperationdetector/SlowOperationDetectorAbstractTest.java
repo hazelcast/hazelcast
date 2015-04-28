@@ -29,6 +29,7 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.EmptyStatement;
 
@@ -46,6 +47,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
+
+    static final long ASSERT_TRUE_TIMEOUT = 10;
 
     private static final String DEFAULT_KEY = "key";
     private static final String DEFAULT_VALUE = "value";
@@ -109,12 +112,23 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         return timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats().toJson();
     }
 
-    static void assertNumberOfSlowOperationLogs(Collection<SlowOperationLog> logs, int expected) {
-        assertEqualsStringFormat("Expected %d slow operation logs, but was %d", expected, logs.size());
+    static void assertNumberOfSlowOperationLogs(final Collection<SlowOperationLog> logs, final int expected) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEqualsStringFormat("Expected %d slow operation logs, but was %d.", expected, logs.size());
+            }
+        }, ASSERT_TRUE_TIMEOUT);
     }
 
-    static void assertTotalInvocations(SlowOperationLog log, int totalInvocations) {
-        assertEqualsStringFormat("Expected %d total invocations, but was %d", totalInvocations, log.totalInvocations.get());
+    static void assertTotalInvocations(final SlowOperationLog log, final int totalInvocations) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEqualsStringFormat("Expected %d total invocations, but was %d. Log: " + log.createDTO().toJson(),
+                        totalInvocations, log.totalInvocations.get());
+            }
+        }, ASSERT_TRUE_TIMEOUT);
     }
 
     static void assertEntryProcessorOperation(SlowOperationLog log) {
@@ -185,6 +199,9 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static class SlowEntryProcessor extends CountDownLatchHolder implements EntryProcessor<String, String> {
 
+        static int GLOBAL_INSTANCE_COUNTER;
+
+        final int instance = ++GLOBAL_INSTANCE_COUNTER;
         final int sleepSeconds;
 
         SlowEntryProcessor(int sleepSeconds) {
@@ -202,6 +219,14 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
         public EntryBackupProcessor<String, String> getBackupProcessor() {
             return null;
         }
+
+        @Override
+        public String toString() {
+            return "SlowEntryProcessor{"
+                    + "instance=" + instance
+                    + ", sleepSeconds=" + sleepSeconds
+                    + '}';
+        }
     }
 
     static class SlowEntryProcessorChild extends SlowEntryProcessor {
@@ -212,12 +237,21 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
         @Override
         public Object process(Map.Entry<String, String> entry) {
+            // not using sleepSeconds() here to have some variants in the stack traces
             try {
                 TimeUnit.SECONDS.sleep(sleepSeconds);
             } catch (InterruptedException ignored) {
             }
             done();
             return null;
+        }
+
+        @Override
+        public String toString() {
+            return "SlowEntryProcessorChild{"
+                    + "instance=" + instance
+                    + ", sleepSeconds=" + sleepSeconds
+                    + '}';
         }
     }
 
