@@ -30,6 +30,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.EventRegistration;
@@ -55,8 +56,7 @@ public class ListAddListenerMessageTask
         ItemListener listener = createItemListener(endpoint, partitionKey);
         final EventService eventService = clientEngine.getEventService();
         final CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
-        final EventRegistration registration = eventService.registerListener(getServiceName(), parameters.name,
-                filter, listener);
+        final EventRegistration registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
         final String registrationId = registration.getId();
         endpoint.setListenerRegistration(getServiceName(), parameters.name, registrationId);
         return AddListenerResultParameters.encode(registrationId);
@@ -84,8 +84,11 @@ public class ListAddListenerMessageTask
 
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    ClientMessage clientMessage =
-                            ItemEventParameters.encode(item, event.getMember().getUuid(), event.getEventType());
+                    if (item == null) {
+                        item = DefaultData.NULL_DATA;
+                    }
+                    ClientMessage clientMessage = ItemEventParameters
+                            .encode(item, event.getMember().getUuid(), event.getEventType());
                     sendClientMessage(partitionKey, clientMessage);
                 }
             }

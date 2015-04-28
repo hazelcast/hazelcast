@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-@Ignore
 public class ClientQueueDisruptionTest extends HazelcastTestSupport {
 
     HazelcastInstance client1;
@@ -49,7 +48,6 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void clientsConsume_withNodeShutdown() throws InterruptedException {
 
         final int initial = 2000, max = 8000;
