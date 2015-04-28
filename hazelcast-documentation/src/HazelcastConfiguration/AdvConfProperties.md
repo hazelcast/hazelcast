@@ -1,6 +1,6 @@
-## Advanced Configuration Properties
+## System Properties
 
-Hazelcast has advanced configuration properties to tune some aspects of Hazelcast. You can set them as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
+Hazelcast has system properties to tune some aspects of Hazelcast. You can set them as property name and value pairs through declarative configuration, programmatic configuration or JVM system property.
 
 **Declarative Configuration**
 
@@ -30,7 +30,7 @@ config.setProperty( "hazelcast.property.foo", "value" );
 
 2. Using System class: `System.setProperty( "hazelcast.property.foo", "value" );`
 
-The table below lists the advanced configuration properties with their descriptions in alphabetical order.
+The table below lists the system properties with their descriptions in alphabetical order.
 
 
 
