@@ -236,7 +236,8 @@ public class ConfigXmlGenerator {
     private void wanReplicationXmlGenerator(StringBuilder xml, Config config) {
         final Collection<WanReplicationConfig> wanRepConfigs = config.getWanReplicationConfigs().values();
         for (WanReplicationConfig wan : wanRepConfigs) {
-            xml.append("<wan-replication name=\"").append(wan.getName()).append("\">");
+            xml.append("<wan-replication name=\"").append(wan.getName()).append("\" ")
+                    .append("snapshot-enabled=\"").append(wan.isSnapshotEnabled()).append("\">");
             final List<WanTargetClusterConfig> targets = wan.getTargetClusterConfigs();
             for (WanTargetClusterConfig t : targets) {
                 xml.append("<target-cluster group-name=\"").append(t.getGroupName())

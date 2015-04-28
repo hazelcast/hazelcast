@@ -27,6 +27,8 @@ import java.io.ByteArrayInputStream;
 import java.util.Properties;
 import java.util.Random;
 
+import static org.junit.Assert.assertNotNull;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class InvalidConfigurationTest {
@@ -212,6 +214,24 @@ public class InvalidConfigurationTest {
     }
 
     @Test(expected = InvalidConfigurationException.class)
+    public void testWanConfigSnapshotEnabledForWrongPublisher() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
+                        "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
+                        "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
+                        "       <end-points>\n" +
+                        "          <address>20.30.40.50:5701</address>\n" +
+                        "          <address>20.30.40.50:5702</address>\n" +
+                        "       </end-points>\n" +
+                        "    </target-cluster>\n" +
+                        "</wan-replication>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
+        assertNotNull(wanConfig);
+    }
+
     public void testWhenInvalid_CacheBackupCount() {
         buildConfig("cache-backup-count", getInvalidBackupCount());
     }

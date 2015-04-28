@@ -837,6 +837,7 @@
             <xs:element name="target-cluster" type="target-cluster" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="snapshot-enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
     <xs:complexType name="target-cluster">
         <xs:all>
