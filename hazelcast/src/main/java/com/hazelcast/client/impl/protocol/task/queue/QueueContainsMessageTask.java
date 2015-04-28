@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueContainsParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -54,6 +55,12 @@ public class QueueContainsMessageTask
     @Override
     protected QueueContainsParameters decodeClientMessage(ClientMessage clientMessage) {
         return QueueContainsParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        final boolean result = response != null && ((Boolean) response);
+        return BooleanResultParameters.encode(result);
     }
 
     @Override

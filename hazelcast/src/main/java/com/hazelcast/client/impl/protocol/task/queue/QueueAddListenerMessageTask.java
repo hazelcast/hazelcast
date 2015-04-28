@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueAddListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -65,14 +65,14 @@ public class QueueAddListenerMessageTask
                 if (endpoint.isAlive()) {
 
                     if (!(event instanceof DataAwareItemEvent)) {
-                        throw new IllegalArgumentException("Expecting: DataAwareItemEvent, Found: "
-                                + event.getClass().getSimpleName());
+                        throw new IllegalArgumentException(
+                                "Expecting: DataAwareItemEvent, Found: " + event.getClass().getSimpleName());
                     }
 
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    ClientMessage clientMessage =
-                            ItemEventParameters.encode(item, event.getMember().getUuid(), event.getEventType());
+                    ClientMessage clientMessage = ItemEventParameters
+                            .encode(item, event.getMember().getUuid(), event.getEventType());
                     sendClientMessage(partitionKey, clientMessage);
                 }
             }
