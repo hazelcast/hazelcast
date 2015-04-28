@@ -135,6 +135,13 @@ public class GroupProperties {
     public static final String PROP_ICMP_TTL = "hazelcast.icmp.ttl";
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
+
+    /**
+     * The number of incremental ports, starting with port number defined in network configuration,
+     * that will be used to connect to a host which is defined without a port in TCP-IP member list
+     * while a node is searching for a cluster.
+     */
+    public static final String PROP_TCP_JOIN_PORT_TRY_COUNT = "hazelcast.tcp.join.port.try.count";
     public static final String PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
             = "hazelcast.map.replica.scheduled.task.delay.seconds";
     /**
@@ -445,6 +452,8 @@ public class GroupProperties {
 
     public final GroupProperty INITIAL_MIN_CLUSTER_SIZE;
 
+    public final GroupProperty TCP_JOIN_PORT_TRY_COUNT;
+
     public final GroupProperty MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS;
 
     public final GroupProperty MAP_EXPIRY_DELAY_SECONDS;
@@ -590,6 +599,7 @@ public class GroupProperties {
         ICMP_TTL = new GroupProperty(config, PROP_ICMP_TTL, "0");
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
+        TCP_JOIN_PORT_TRY_COUNT = new GroupProperty(config, PROP_TCP_JOIN_PORT_TRY_COUNT, "3");
         MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
                 = new GroupProperty(config, PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, "10");
         MAP_EXPIRY_DELAY_SECONDS = new GroupProperty(config, PROP_MAP_EXPIRY_DELAY_SECONDS, "10");
