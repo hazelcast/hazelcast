@@ -33,6 +33,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.impl.InternalPartitionServiceState;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -41,6 +42,7 @@ import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +55,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -265,7 +268,7 @@ public abstract class HazelcastTestSupport {
         if (partitions.isEmpty()) {
             throw new IllegalStateException("No partitions found for HazelcastInstance:" + hz.getName());
         }
-        return partitions.get((int)(Math.random()*partitions.size()));
+        return partitions.get((int) (Math.random() * partitions.size()));
     }
 
     public static void printAllStackTraces() {
@@ -418,25 +421,25 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitAllForSafeState() {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(isAllInSafeState());
-            }
-        });
+       waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
     }
 
-    public static void waitAllForSafeState(final Collection<HazelcastInstance> nodes) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(isAllInSafeState(nodes));
-            }
-        });
+    public static void waitAllForSafeState(final Collection<HazelcastInstance> instances) {
+        waitAllForSafeState(instances, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void waitAllForSafeState(final Collection<HazelcastInstance> nodes, int timeoutInSeconds) {
+    public static void waitAllForSafeState(final Collection<HazelcastInstance> instances, int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             public void run() {
-                assertTrue(isAllInSafeState(nodes));
+                final Map<Address, InternalPartitionServiceState> states = new HashMap<Address, InternalPartitionServiceState>();
+                for (HazelcastInstance instance : instances) {
+                    final InternalPartitionServiceState state = getInternalPartitionServiceState(instance);
+                    if (state != InternalPartitionServiceState.SAFE) {
+                        states.put(getNode(instance).getThisAddress(), state);
+                    }
+                }
+
+                assertTrue("Instances not in safe state! " + states, states.isEmpty());
             }
         }, timeoutInSeconds);
     }

@@ -94,6 +94,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_LOCAL;
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_ON_MASTER;
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -1023,15 +1027,21 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean isMemberStateSafe() {
+        return getMemberState() == SAFE;
+    }
+
+    public InternalPartitionServiceState getMemberState() {
         if (hasOnGoingMigrationLocal()) {
-            return false;
+            return MIGRATION_LOCAL;
         }
+
         if (!node.isMaster()) {
             if (hasOnGoingMigrationMaster(Level.OFF)) {
-                return false;
+                return MIGRATION_ON_MASTER;
             }
         }
-        return isReplicaInSyncState();
+
+        return isReplicaInSyncState() ? SAFE : REPLICA_NOT_SYNC;
     }
 
     @Override
@@ -1528,6 +1538,37 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final Collection<EventRegistration> registrations = eventService
                 .getRegistrations(SERVICE_NAME, PARTITION_LOST_EVENT_TOPIC);
         eventService.publishEvent(SERVICE_NAME, registrations, partitionLostEvent, event.getPartitionId());
+    }
+
+    /**
+     * @return copy of ongoing replica-sync operations
+     */
+    public List<ReplicaSyncInfo> getOngoingReplicaSyncRequests() {
+        final int length = replicaSyncRequests.length();
+        final List<ReplicaSyncInfo> replicaSyncRequestsList = new ArrayList<ReplicaSyncInfo>(length);
+        for (int i = 0; i < length; i++) {
+            final ReplicaSyncInfo replicaSyncInfo = replicaSyncRequests.get(i);
+            if (replicaSyncInfo != null) {
+                replicaSyncRequestsList.add(replicaSyncInfo);
+            }
+        }
+
+        return replicaSyncRequestsList;
+    }
+
+    /**
+     * @return copy of scheduled replica-sync requests
+     */
+    public List<ScheduledEntry<Integer, ReplicaSyncInfo>> getScheduledReplicaSyncRequests() {
+        final List<ScheduledEntry<Integer, ReplicaSyncInfo>> entries = new ArrayList<ScheduledEntry<Integer, ReplicaSyncInfo>>();
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            final ScheduledEntry<Integer, ReplicaSyncInfo> entry = replicaSyncScheduler.get(partitionId);
+            if (entry != null) {
+               entries.add(entry);
+            }
+        }
+
+        return entries;
     }
 
     private class SendClusterStateTask implements Runnable {

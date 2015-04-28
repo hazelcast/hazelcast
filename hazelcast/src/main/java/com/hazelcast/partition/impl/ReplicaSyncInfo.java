@@ -18,7 +18,7 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
 
-final class ReplicaSyncInfo {
+public final class ReplicaSyncInfo {
     final int partitionId;
     final int replicaIndex;
     final Address target;
