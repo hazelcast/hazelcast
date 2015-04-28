@@ -18,10 +18,13 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheEvictionConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -31,6 +34,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +45,7 @@ import org.junit.runner.RunWith;
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
+import javax.cache.configuration.Configuration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryListenerException;
@@ -53,11 +58,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -91,7 +97,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         assertNotNull(cacheConfig1.getEvictionConfig());
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
-        assertEquals(CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT,
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
                 cacheConfig1.getEvictionConfig().getMaxSizePolicy());
 
         List<CacheSimpleEntryListenerConfig> cacheEntryListeners = cacheConfig1.getCacheEntryListeners();
@@ -142,9 +148,31 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         assertNotNull(cacheConfig1.getEvictionConfig());
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
-        assertEquals(CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT,
-                cacheConfig1.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(EvictionPolicy.LFU, cacheConfig1.getEvictionConfig().getEvictionPolicy());
+    }
 
+    @Test
+    public void cacheConfigXmlTest_nearCacheConfig() throws Exception {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        assertEquals("test-group1", config1.getGroupConfig().getName());
+        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
+
+        CacheSimpleConfig cacheSimpleConfig = config1.getCacheConfig("testCacheWithNearCache");
+        CacheConfig cacheConfig = new CacheConfig(cacheSimpleConfig);
+        NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
+
+        assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
+        assertFalse(nearCacheConfig.isInvalidateOnChange());
+        assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+        assertTrue(nearCacheConfig.isCacheLocalEntries());
+
+        assertNotNull(nearCacheConfig.getEvictionConfig());
+        assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
     }
 
     @Test
@@ -241,6 +269,20 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void setBackupCount_whenTooLarge(){
         CacheConfig config = new CacheConfig();
         config.setBackupCount(200); //max allowed is 6..
+    }
+
+    @Test
+    public void createCache_WhenCacheConfigIsNull() {
+        String cacheName = "cacheNull";
+
+        CacheManager cacheManager = Caching.getCachingProvider().getCacheManager();
+
+        try {
+            cacheManager.createCache(cacheName, (Configuration<Object, Object>) null);
+            fail("NullPointerException expected");
+        } catch (NullPointerException expected) {
+            EmptyStatement.ignore(expected);
+        }
     }
 
     @Test

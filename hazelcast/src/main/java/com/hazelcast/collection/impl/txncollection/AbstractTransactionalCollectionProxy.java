@@ -32,11 +32,14 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
 
@@ -60,8 +63,9 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
     }
 
     public boolean add(E e) {
-        checkTransactionState();
-        throwExceptionIfNull(e);
+        checkTransactionActive();
+        checkObjectNotNull(e);
+
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId(), null);
@@ -86,8 +90,9 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
     }
 
     public boolean remove(E e) {
-        checkTransactionState();
-        throwExceptionIfNull(e);
+        checkTransactionActive();
+        checkObjectNotNull(e);
+
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
         final Iterator<CollectionItem> iterator = getCollection().iterator();
@@ -135,7 +140,8 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
     }
 
     public int size() {
-        checkTransactionState();
+        checkTransactionActive();
+
         CollectionSizeOperation operation = new CollectionSizeOperation(name);
         try {
             Future<Integer> f = getNodeEngine().getOperationService().invokeOnPartition(getServiceName(), operation, partitionId);
@@ -146,15 +152,13 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         }
     }
 
-    protected void checkTransactionState() {
+    protected void checkTransactionActive() {
         if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
 
-    protected void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
+    protected void checkObjectNotNull(Object o) {
+        checkNotNull(o, "Object is null");
     }
 }

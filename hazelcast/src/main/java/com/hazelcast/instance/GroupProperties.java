@@ -17,7 +17,11 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.IMap;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
+import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.QueryResultSizeLimiter;
+import com.hazelcast.query.TruePredicate;
 
 /**
  * The GroupProperties contain the Hazelcast properties. They can be set as an environmental variable, or
@@ -203,7 +207,43 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
     public static final String PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY = "hazelcast.map.write.behind.queue.capacity";
-    public static final String PROP_ENTERPRISE_WAN_REP_QUEUESIZE = "hazelcast.enterprise.wanrep.queuesize";
+
+    /**
+     * Defines event queue capacity for WAN replication. Replication Events are dropped when queue capacity is reached.
+     * Having too big queue capacity may lead to OOME problems,only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY = "hazelcast.enterprise.wanrep.queue.capacity";
+
+    /**
+     * Defines maximum number of WAN replication events to be drained and send to the target cluster in a batch.
+     * Batches are sent in sequence to make sure the order of events,
+     * only one batch of events is sent to a target wan member at a time. After batch is sent, acknowledge is waited
+     * from target cluster.
+     * If no-ack is received, same set of events is sent again to the target cluster until the ack is received.
+     * Until this process is complete, wan replication events are stored in the wan replication event queue.
+     * This queue's size is limited by {@link #PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY} and if queued event count
+     * exceeds queue capacity, no back-pressure is applied and older events in the queue will start dropping.
+     * only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_SIZE = "hazelcast.enterprise.wanrep.batch.size";
+
+    /**
+     * Defines batch sending frequency in seconds,
+     * When event size does not reach to {@link #PROP_ENTERPRISE_WAN_REP_BATCH_SIZE} in the given time period
+     * (which is defined by {@link #PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS}),
+     * those events are gathered into a batch and sent to target.
+     * Only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS
+            = "hazelcast.enterprise.wanrep.batchfrequency.seconds";
+
+    /**
+     * Defines timeout duration (in milliseconds) for a WAN replication event before retry.
+     * If confirmation is not received in the period of timeout duration, event is resent to target cluster.
+     * Only valid for Hazelcast Enterprise
+     */
+    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = "hazelcast.enterprise.wanrep.optimeout.millis";
+
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
@@ -275,6 +315,41 @@ public class GroupProperties {
      * if not provided provider will be client or server whichever found on classPath first respectively
      */
     public static final String PROP_JCACHE_PROVIDER_TYPE = "hazelcast.jcache.provider.type";
+
+    /**
+     * Result size limit for query operations on maps.
+     * <p/>
+     * This value defines the maximum number of returned elements for a single query result. If a query exceeds this number of
+     * elements a {@link QueryResultSizeExceededException} will be thrown.
+     * <p/>
+     * This feature is in place to prevent an OOME if a single node is requesting the whole data set of the cluster, e.g. by
+     * executing a query with {@link TruePredicate}. This applies internally for the {@link IMap#values()}, {@link IMap#keySet()}
+     * and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
+     * <p/>
+     * This feature depends on an equal distribution of the data on the cluster nodes to calculate the result size limit per node.
+     * Therefore there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
+     * {@link QueryResultSizeLimiter}. Configured values below the minimum will be increased to the minimum.
+     * <p/>
+     * The feature can be disabled by setting a value of <tt>-1</tt> (which is the default value).
+     */
+    public static final String PROP_QUERY_RESULT_SIZE_LIMIT = "hazelcast.query.result.size.limit";
+
+    /**
+     * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
+     * <p/>
+     * To limit the result size of a query ({@see PROP_QUERY_RESULT_SIZE_LIMIT}) a local pre-check on the requesting node can be
+     * done, before the query is sent to the cluster. Since this may increase the latency the pre-check is limited to a maximum
+     * number of local partitions.
+     * <p/>
+     * By increasing this parameter you can prevent the execution of the query on the cluster by increasing the latency due to the
+     * prolonged local pre-check.
+     * <p/>
+     * The pre-check can be disabled by setting a value of <tt>-1</tt>.
+     *
+     * @see #PROP_QUERY_RESULT_SIZE_LIMIT
+     */
+    public static final String PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
+            = "hazelcast.query.max.local.partition.limit.for.precheck";
 
     public final GroupProperty CLIENT_ENGINE_THREAD_COUNT;
 
@@ -440,7 +515,10 @@ public class GroupProperties {
      */
     public final GroupProperty MAP_WRITE_BEHIND_QUEUE_CAPACITY;
 
-    public final GroupProperty ENTERPRISE_WAN_REP_QUEUESIZE;
+    public final GroupProperty ENTERPRISE_WAN_REP_QUEUE_CAPACITY;
+    public final GroupProperty ENTERPRISE_WAN_REP_BATCH_SIZE;
+    public final GroupProperty ENTERPRISE_WAN_REP_BATCH_FREQUENCY;
+    public final GroupProperty ENTERPRISE_WAN_REP_OP_TIMEOUT;
 
     public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
@@ -450,9 +528,10 @@ public class GroupProperties {
     public final GroupProperty BACKPRESSURE_SYNCWINDOW;
     public final GroupProperty BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
     public final GroupProperty BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
-    /**
-     * @param config
-     */
+
+    public final GroupProperty QUERY_RESULT_SIZE_LIMIT;
+    public final GroupProperty QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+
     public GroupProperties(Config config) {
         HEALTH_MONITORING_LEVEL
                 = new GroupProperty(config, PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
@@ -552,7 +631,12 @@ public class GroupProperties {
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
         MAP_WRITE_BEHIND_QUEUE_CAPACITY
                 = new GroupProperty(config, PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY, "50000");
-        ENTERPRISE_WAN_REP_QUEUESIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUESIZE, "100000");
+
+        ENTERPRISE_WAN_REP_QUEUE_CAPACITY = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY, "100000");
+        ENTERPRISE_WAN_REP_BATCH_SIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_SIZE, "50");
+        ENTERPRISE_WAN_REP_BATCH_FREQUENCY = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS, "5");
+        ENTERPRISE_WAN_REP_OP_TIMEOUT = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS, "-1");
+
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
@@ -565,6 +649,10 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION, "100");
         BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS
                 = new GroupProperty(config, PROP_BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS, "60000");
+
+        QUERY_RESULT_SIZE_LIMIT = new GroupProperty(config, PROP_QUERY_RESULT_SIZE_LIMIT, "-1");
+        QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
+                = new GroupProperty(config, PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, "3");
     }
 
     public static class GroupProperty {

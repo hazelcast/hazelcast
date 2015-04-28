@@ -39,7 +39,7 @@ public class MapUnlockMessageTask extends AbstractPartitionMessageTask<MapUnlock
 
     @Override
     protected Operation prepareOperation() {
-        return new UnlockOperation(getNamespace(), parameters.key, parameters.threadId, parameters.force);
+        return new UnlockOperation(getNamespace(), parameters.key, parameters.threadId, false);
     }
 
     @Override
@@ -67,9 +67,6 @@ public class MapUnlockMessageTask extends AbstractPartitionMessageTask<MapUnlock
 
     @Override
     public String getMethodName() {
-        if (parameters.force) {
-            return "forceUnlock";
-        }
         return "unlock";
     }
 

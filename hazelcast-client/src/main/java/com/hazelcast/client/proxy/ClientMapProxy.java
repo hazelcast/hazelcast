@@ -115,7 +115,7 @@ import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.ValidationUtil;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -135,7 +135,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
@@ -703,9 +703,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Map<K, V> getAll(Set<K> keys) {
         initNearCache();
-        Set<Data> keySet = new HashSet(keys.size());
+        Set<Data> keySet = new HashSet<Data>(keys.size());
         Map<K, V> result = new HashMap<K, V>();
         for (Object key : keys) {
             keySet.add(toData(key));
@@ -756,6 +757,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Set<Entry<K, V>> entrySet() {
         MapEntrySetRequest request = new MapEntrySetRequest(name);
         MapEntrySet result = invoke(request);
+
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>();
         Set<Entry<Data, Data>> entries = result.getEntrySet();
         for (Entry<Data, Data> dataEntry : entries) {
@@ -769,6 +771,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
@@ -792,11 +795,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             return keySet;
         }
 
-
         final Comparator<Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.KEY);
         final SortedQueryResultSet sortedResult = new SortedQueryResultSet(comparator, IterationType.KEY,
                 pagingPredicate.getPageSize());
-
 
         final Iterator<Entry> iterator = result.rawIterator();
         while (iterator.hasNext()) {
@@ -812,6 +813,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
@@ -1006,7 +1008,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                                                     JobTracker jobTracker) {
 
         try {
-            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            Preconditions.isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);

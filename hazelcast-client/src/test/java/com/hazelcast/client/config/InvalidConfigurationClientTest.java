@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,9 +31,8 @@ import java.util.Properties;
 @Category(QuickTest.class)
 public class InvalidConfigurationClientTest {
 
-
     @Test
-    public void testWhenXmlvalid() {
+    public void testWhenXmlValid() {
         String xml = getDraftXml();
         buildConfig(xml);
     }
@@ -75,7 +75,6 @@ public class InvalidConfigurationClientTest {
     @Test(expected = InvalidConfigurationException.class)
     public void testWhenInvalid_AwsEnabled() {
         buildConfig("aws-enabled", "falsee");
-
     }
 
     @Test
@@ -149,30 +148,60 @@ public class InvalidConfigurationClientTest {
     }
 
     @Test
-    public void WhenValid_InMemoryFormat() {
-        buildConfig("in-memory-format", "OBJECT");
+    public void WhenValid_NearCacheInMemoryFormat() {
+        buildConfig("near-cache-in-memory-format", "OBJECT");
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void WhenInvalid_InMemoryFormat() {
-        buildConfig("in-memory-format", "binary");
+    public void WhenInvalid_NearCacheInMemoryFormat() {
+        buildConfig("near-cache-in-memory-format", "binaryyy");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_NearCacheTTLSeconds() {
+        buildConfig("near-cache-time-to-live-seconds", "-1");
+    }
+
+    @Test
+    public void testWhenValid_NearCacheTTLSeconds() {
+        buildConfig("near-cache-time-to-live-seconds", "100");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_NearCacheMaxIdleSeconds() {
+        buildConfig("near-cache-max-idle-seconds", "-1");
+    }
+
+    @Test
+    public void testWhenValid_NearCacheMaxIdleSeconds() {
+        buildConfig("near-cache-max-idle-seconds", "100");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_NearCacheEvictionSize() {
+        buildConfig("near-cache-eviction-size", "-100");
+    }
+
+    @Test
+    public void testWhenValid_NearCacheEvictionSize() {
+        buildConfig("near-cache-eviction-size", "100");
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void WhenDuplicateTagsAdded() {
         String xml =
                 "<hazelcast-client>\n" +
-                        "<network>\n" +
+                    "<network>\n" +
                         "<cluster-members>\n" +
-                        "<address>127.0.0.1</address>\n" +
+                            "<address>127.0.0.1</address>\n" +
                         "</cluster-members>\n" +
                         "</network>\n" +
                         "<network>\n" +
-                        "<cluster-members>\n" +
-                        "<address>127.0.0.1</address>\n" +
+                            "<cluster-members>\n" +
+                            "<address>127.0.0.1</address>\n" +
                         "</cluster-members>\n" +
-                        "</network>\n" +
-                        "</hazelcast-client>\n";
+                    "</network>\n" +
+                "</hazelcast-client>\n";
         buildConfig(xml);
     }
 
@@ -180,45 +209,48 @@ public class InvalidConfigurationClientTest {
         return
                 "<hazelcast-client>\n" +
                         "<network>\n" +
-                        "<cluster-members>\n" +
-                        "<address>127.0.0.1</address>\n" +
-                        "</cluster-members>\n" +
-                        "<smart-routing>${smart-routing-enabled}</smart-routing>\n" +
-                        "<redo-operation>${redo-operation-enabled}</redo-operation>\n" +
-                        "<socket-interceptor enabled=\"${socket-interceptor-enabled}\">\n" +
-                        "<class-name>com.hazelcast.examples.MySocketInterceptor</class-name>\n" +
-                        "</socket-interceptor>\n" +
-                        "<aws enabled=\"${aws-enabled}\" connection-timeout-seconds=\"${aws-timeout}\">\n" +
-                        "<inside-aws>${inside-aws-enabled}</inside-aws>\n" +
-                        "<access-key>TEST_ACCESS_KEY</access-key>\n" +
-                        "<secret-key>TEST_SECRET_KEY</secret-key>\n" +
-                        "</aws>\n" +
+                            "<cluster-members>\n" +
+                                "<address>127.0.0.1</address>\n" +
+                            "</cluster-members>\n" +
+                            "<smart-routing>${smart-routing-enabled}</smart-routing>\n" +
+                            "<redo-operation>${redo-operation-enabled}</redo-operation>\n" +
+                            "<socket-interceptor enabled=\"${socket-interceptor-enabled}\">\n" +
+                                "<class-name>com.hazelcast.examples.MySocketInterceptor</class-name>\n" +
+                            "</socket-interceptor>\n" +
+                            "<aws enabled=\"${aws-enabled}\" connection-timeout-seconds=\"${aws-timeout}\">\n" +
+                                "<inside-aws>${inside-aws-enabled}</inside-aws>\n" +
+                                "<access-key>TEST_ACCESS_KEY</access-key>\n" +
+                                "<secret-key>TEST_SECRET_KEY</secret-key>\n" +
+                            "</aws>\n" +
                         "</network>\n" +
                         "<executor-pool-size>${executor-pool-size}</executor-pool-size>\n" +
                         "<security>\n" +
-                        "<credentials>${credentials-class-name}</credentials>\n" +
+                            "<credentials>${credentials-class-name}</credentials>\n" +
                         "</security>\n" +
                         "<listeners>\n" +
-                        "<listener>${listener-class-name}</listener>\n" +
+                            "<listener>${listener-class-name}</listener>\n" +
                         "</listeners>\n" +
                         "<serialization>\n" +
-                        "<portable-version>3</portable-version>\n" +
-                        "<use-native-byte-order>${use-native-byte-order}</use-native-byte-order>\n" +
-                        "<byte-order>${byte-order}</byte-order>\n" +
-                        "<enable-compression>${enable-compression}</enable-compression>\n" +
-                        "<enable-shared-object>${enable-shared-object}</enable-shared-object>\n" +
-                        "<allow-unsafe>${allow-unsafe}</allow-unsafe>\n" +
+                            "<portable-version>3</portable-version>\n" +
+                            "<use-native-byte-order>${use-native-byte-order}</use-native-byte-order>\n" +
+                            "<byte-order>${byte-order}</byte-order>\n" +
+                            "<enable-compression>${enable-compression}</enable-compression>\n" +
+                            "<enable-shared-object>${enable-shared-object}</enable-shared-object>\n" +
+                            "<allow-unsafe>${allow-unsafe}</allow-unsafe>\n" +
                         "</serialization>\n" +
                         "<load-balancer type=\"${load-balancer-type}\"/>\n" +
-                        "<near-cache name=\"asd\">\n" +
-                        "<max-size>2000</max-size>\n" +
-                        "<time-to-live-seconds>90</time-to-live-seconds>\n" +
-                        "<max-idle-seconds>100</max-idle-seconds>\n" +
-                        "<eviction-policy>${eviction-policy}</eviction-policy>\n" +
-                        "<invalidate-on-change>true</invalidate-on-change>\n" +
-                        "<in-memory-format>${in-memory-format}</in-memory-format>\n" +
-                        "</near-cache>\n" +
-                        "</hazelcast-client>\n";
+                        "<near-cache name=\"testNearCache\">\n" +
+                            "<time-to-live-seconds>${near-cache-time-to-live-seconds}</time-to-live-seconds>\n" +
+                            "<max-idle-seconds>${near-cache-max-idle-seconds}</max-idle-seconds>\n" +
+                            "<invalidate-on-change>${near-cache-invalidate-on-change}</invalidate-on-change>\n" +
+                            "<in-memory-format>${near-cache-in-memory-format}</in-memory-format>\n" +
+                            "<cache-local-entries>${near-cache-cache-local-entries}</cache-local-entries>\n" +
+                            "<eviction-policy>${eviction-policy}</eviction-policy>\n" +
+                            "<eviction size=\"${near-cache-eviction-size}\"" +
+                                " max-size-policy=\"${near-cache-eviction-max-size-policy}\"" +
+                                " eviction-policy=\"${near-cache-eviction-policy}\"/>\n" +
+                        "</near-cache>" +
+                "</hazelcast-client>\n";
     }
 
     Properties getDraftProperties() {
@@ -240,6 +272,16 @@ public class InvalidConfigurationClientTest {
         properties.setProperty("load-balancer-type", "random");
         properties.setProperty("eviction-policy", "LFU");
         properties.setProperty("in-memory-format", "OBJECT");
+
+        properties.setProperty("near-cache-time-to-live-seconds", "10000");
+        properties.setProperty("near-cache-max-idle-seconds", "5000");
+        properties.setProperty("near-cache-invalidate-on-change", "true");
+        properties.setProperty("near-cache-in-memory-format", "BINARY");
+        properties.setProperty("near-cache-cache-local-entries", "true");
+        properties.setProperty("near-cache-eviction-size", "100");
+        properties.setProperty("near-cache-eviction-max-size-policy", "ENTRY_COUNT");
+        properties.setProperty("near-cache-eviction-policy", "LRU");
+
         return properties;
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapKeySetOperationFactory;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -53,13 +54,12 @@ public class MapKeySetRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Set res = new HashSet();
+        Set<Data> keySet = new HashSet<Data>();
         MapService service = getService();
-        for (Object o : map.values()) {
-            Set keys = ((MapKeySet) service.getMapServiceContext().toObject(o)).getKeySet();
-            res.addAll(keys);
+        for (Object result : map.values()) {
+            keySet.addAll(((MapKeySet) service.getMapServiceContext().toObject(result)).getKeySet());
         }
-        return new MapKeySet(res);
+        return new MapKeySet(keySet);
     }
 
     public String getServiceName() {

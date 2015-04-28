@@ -81,117 +81,114 @@ public interface MapTemplate {
     void set(String name, Data key, Data value, long threadId, long ttl);
 
     @EncodeMethod(id = 19)
-    void lock(String name, Data key, long threadId);
+    void lock(String name, Data key, long threadId, long ttl);
 
     @EncodeMethod(id = 20)
-    void lockWithLeaseTime(String name, Data key, long threadId, long ttl);
+    void tryLock(String name, Data key, long threadId, long timeout);
 
     @EncodeMethod(id = 21)
-    void tryLock(String name, Data key, long threadId);
-
-    @EncodeMethod(id = 22)
-    void tryLockWithTimeout(String name, Data key, long threadId, long timeout);
-
-    @EncodeMethod(id = 23)
     void isLocked(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 24)
-    void unlock(String name, Data key, long threadId, boolean force);
+    @EncodeMethod(id = 22)
+    void unlock(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 25)
+    @EncodeMethod(id = 23)
     void addInterceptor(String name, Data interceptor);
 
-    @EncodeMethod(id = 26)
+    @EncodeMethod(id = 24)
     void removeInterceptor(String name, String id);
 
-    @EncodeMethod(id = 27)
+    @EncodeMethod(id = 25)
     void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
 
-    @EncodeMethod(id = 28)
+    @EncodeMethod(id = 26)
     void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
 
-    @EncodeMethod(id = 29)
+    @EncodeMethod(id = 27)
     void addEntryListenerToKey(String name, Data key, boolean includeValue);
 
-    @EncodeMethod(id = 30)
+    @EncodeMethod(id = 28)
     void addEntryListener(String name, boolean includeValue);
 
-    @EncodeMethod(id = 31)
+    @EncodeMethod(id = 29)
     void addNearCacheEntryListener(String name, boolean includeValue);
 
-    @EncodeMethod(id = 32)
+    @EncodeMethod(id = 30)
     void removeEntryListener(String name, String registrationId);
 
-    @EncodeMethod(id = 33)
+    @EncodeMethod(id = 31)
     void addPartitionLostListener(String name);
 
-    @EncodeMethod(id = 34)
+    @EncodeMethod(id = 32)
     void removePartitionLostListener(String name, String registrationId);
 
-    @EncodeMethod(id = 35)
+    @EncodeMethod(id = 33)
     void getEntryView(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 36)
+    @EncodeMethod(id = 34)
     void evict(String name, Data key, long threadId);
 
-    @EncodeMethod(id = 37)
+    @EncodeMethod(id = 35)
     void evictAll(String name);
 
-    @EncodeMethod(id = 38)
+    @EncodeMethod(id = 36)
     void loadAll(String name, boolean replaceExistingValues);
 
-    @EncodeMethod(id = 39)
+    @EncodeMethod(id = 37)
     void loadGivenKeys(String name, List<Data> keys, boolean replaceExistingValues);
 
-    @EncodeMethod(id = 40)
+    @EncodeMethod(id = 38)
     void keySet(String name);
 
-    @EncodeMethod(id = 41)
+    @EncodeMethod(id = 39)
     void getAll(String name, Set<Data> keys);
 
-    @EncodeMethod(id = 42)
+    @EncodeMethod(id = 40)
     void values(String name);
 
-    @EncodeMethod(id = 43)
+    @EncodeMethod(id = 41)
     void entrySet(String name);
 
-    @EncodeMethod(id = 44)
+    @EncodeMethod(id = 42)
     void keySetWithPredicate(String name, Data predicate);
 
-    @EncodeMethod(id = 45)
+    @EncodeMethod(id = 43)
     void valuesWithPredicate(String name, Data predicate);
 
-    @EncodeMethod(id = 46)
+    @EncodeMethod(id = 44)
     void entriesWithPredicate(String name, Data predicate);
 
-    @EncodeMethod(id = 47)
+    @EncodeMethod(id = 45)
     void addIndex(String name, String attribute, boolean ordered);
 
-    @EncodeMethod(id = 48)
+    @EncodeMethod(id = 46)
     void size(String name);
 
-    @EncodeMethod(id = 49)
+    @EncodeMethod(id = 47)
     void isEmpty(String name);
 
-    @EncodeMethod(id = 50)
+    @EncodeMethod(id = 48)
     void putAll(String name, List<Data> keys, List<Data> values);
 
-    @EncodeMethod(id = 51)
+    @EncodeMethod(id = 49)
     void clear(String name);
 
-    @EncodeMethod(id = 52)
+    @EncodeMethod(id = 50)
     void executeOnKey(String name, Data entryProcessor, Data key);
 
-    @EncodeMethod(id = 53)
+    @EncodeMethod(id = 51)
     void submitToKey(String name, Data entryProcessor, Data key);
 
-    @EncodeMethod(id = 54)
+    @EncodeMethod(id = 52)
     void executeOnAllKeys(String name, Data entryProcessor);
 
-    @EncodeMethod(id = 55)
+    @EncodeMethod(id = 53)
     void executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
-    @EncodeMethod(id = 56)
+    @EncodeMethod(id = 54)
     void executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
+
+    @EncodeMethod(id = 55)
+    void forceUnlock(String name, Data key);
 
 }

@@ -18,9 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.Properties;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * @author ali 12/14/12
@@ -86,8 +87,7 @@ public class QueueStoreConfig {
     }
 
     public QueueStoreConfig setProperties(Properties properties) {
-        ValidationUtil.isNotNull(properties, "properties");
-        this.properties = properties;
+        this.properties = isNotNull(properties, "properties");
         return this;
     }
 

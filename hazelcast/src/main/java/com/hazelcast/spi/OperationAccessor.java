@@ -16,10 +16,8 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.cluster.impl.operations.JoinOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
@@ -28,19 +26,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 @PrivateApi
 public final class OperationAccessor {
 
-    private static final ClassLoader THIS_CLASS_LOADER = OperationAccessor.class.getClassLoader();
-
     private OperationAccessor() {
-    }
-
-    public static boolean isJoinOperation(Operation op) {
-        return op instanceof JoinOperation
-                && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
-    }
-
-    public static boolean isMigrationOperation(Operation op) {
-        return op instanceof MigrationCycleOperation
-                && op.getClass().getClassLoader() == THIS_CLASS_LOADER;
     }
 
     public static void setCallerAddress(Operation op, Address caller) {

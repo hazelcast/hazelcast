@@ -22,6 +22,8 @@ import com.hazelcast.spi.RemoteService;
 
 import java.util.Map;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 /**
  * Defines remote service behavior of map service.
  *
@@ -53,14 +55,10 @@ class MapRemoteService implements RemoteService {
             mapContainer.getMapStoreContext().stop();
         }
         mapServiceContext.destroyMap(name);
-        nodeEngine.getEventService().deregisterAllListeners(mapServiceContext.serviceName(), name);
+        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
     MapServiceContext getMapServiceContext() {
         return mapServiceContext;
-    }
-
-    NodeEngine getNodeEngine() {
-        return nodeEngine;
     }
 }

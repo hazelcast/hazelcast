@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -28,12 +30,13 @@ import com.hazelcast.config.XMLConfigBuilderTest;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -55,6 +58,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -72,7 +76,6 @@ public class XmlClientConfigBuilderTest {
     public void init() throws IOException {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-full.xml");
         clientConfig = new XmlClientConfigBuilder(schemaResource).build();
-
     }
 
     @After
@@ -147,10 +150,8 @@ public class XmlClientConfigBuilderTest {
         assertEquals("6", clientConfig.getProperty("hazelcast.client.retry.count"));
     }
 
-
     @Test
     public void testNetworkConfig() {
-
         final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
         assertEquals(0,networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
@@ -230,6 +231,24 @@ public class XmlClientConfigBuilderTest {
         assertEquals("LFU", nearCacheConfig.getEvictionPolicy());
         assertTrue(nearCacheConfig.isInvalidateOnChange());
         assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+    }
+
+    @Test
+    public void testNearCacheConfigWithEvictionConfig() throws IOException {
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-test.xml");
+        ClientConfig clientConfig = new XmlClientConfigBuilder(schemaResource).build();
+        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("nearCacheWithEviction");
+
+        assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
+        assertFalse(nearCacheConfig.isInvalidateOnChange());
+        assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
+        assertTrue(nearCacheConfig.isCacheLocalEntries());
+
+        assertNotNull(nearCacheConfig.getEvictionConfig());
+        assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
     }
 
     @Test

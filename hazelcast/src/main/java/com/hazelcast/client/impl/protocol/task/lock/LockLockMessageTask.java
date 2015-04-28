@@ -30,6 +30,7 @@ import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class LockLockMessageTask extends AbstractPartitionMessageTask<LockLockParameters> {
 
@@ -41,7 +42,7 @@ public class LockLockMessageTask extends AbstractPartitionMessageTask<LockLockPa
     protected Operation prepareOperation() {
         final Data key = serializationService.toData(parameters.name);
         return new LockOperation(new InternalLockNamespace(parameters.name)
-                , key, parameters.threadId, -1, -1);
+                , key, parameters.threadId, parameters.leaseTime, -1);
     }
 
     @Override
@@ -71,7 +72,10 @@ public class LockLockMessageTask extends AbstractPartitionMessageTask<LockLockPa
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        if (parameters.leaseTime == -1) {
+            return null;
+        }
+        return new Object[]{parameters.leaseTime, TimeUnit.MILLISECONDS};
     }
 }
 

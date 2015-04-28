@@ -16,8 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.partition.InternalPartition;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Simple configuration to hold parsed xml configuration.
@@ -32,7 +38,7 @@ public class CacheSimpleConfig {
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = 6;
+    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
 
     /**
      * The number of default backup counter
@@ -47,7 +53,7 @@ public class CacheSimpleConfig {
     /**
      * Default Eviction Policy.
      */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.LRU;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
 
     private String name;
 
@@ -72,8 +78,9 @@ public class CacheSimpleConfig {
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
+    private NearCacheConfig nearCacheConfig;
 
     private CacheSimpleConfig readOnly;
 
@@ -93,10 +100,11 @@ public class CacheSimpleConfig {
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
         // Eviction config cannot be null
-        if (evictionConfig != null) {
+        if (cacheSimpleConfig.evictionConfig != null) {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
+        this.nearCacheConfig = cacheSimpleConfig.nearCacheConfig;
     }
 
     public CacheSimpleConfig() {
@@ -220,8 +228,19 @@ public class CacheSimpleConfig {
         return asyncBackupCount;
     }
 
+    /**
+     * Sets the number of asynchronous backups.
+     *
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheSimpleConfig
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
+     */
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
-        this.asyncBackupCount = asyncBackupCount;
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -229,8 +248,17 @@ public class CacheSimpleConfig {
         return backupCount;
     }
 
+    /**
+     * Sets the number of backups
+     *
+     * @param backupCount the new backupCount
+     * @return the updated CacheSimpleConfig
+     * @throws new IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     */
     public CacheSimpleConfig setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -239,19 +267,20 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+        isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+
         this.inMemoryFormat = inMemoryFormat;
         return this;
     }
 
-    public CacheEvictionConfig getEvictionConfig() {
+    public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
-    public CacheSimpleConfig setEvictionConfig(CacheEvictionConfig evictionConfig) {
-        // Eviction config cannot be null
-        if (evictionConfig != null) {
-            this.evictionConfig = evictionConfig;
-        }
+    public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        isNotNull(evictionConfig, "Eviction config cannot be null !");
+
+        this.evictionConfig = evictionConfig;
         return this;
     }
 
@@ -262,4 +291,13 @@ public class CacheSimpleConfig {
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
     }
+
+    public NearCacheConfig getNearCacheConfig() {
+        return nearCacheConfig;
+    }
+
+    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
+        this.nearCacheConfig = nearCacheConfig;
+    }
+
 }

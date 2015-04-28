@@ -232,7 +232,6 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-
                                 <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
                                               default="true">
                                     <xs:annotation>
@@ -384,7 +383,7 @@
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="eviction" type="cache-eviction" minOccurs="0" maxOccurs="1">
+                                    <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>
                                                 When maximum size is reached, cache is evicted based on the eviction
@@ -415,6 +414,13 @@
                                                 LFU (Least Frequently Used).
 
                                                 Default value is "LRU".
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Near-Cache configuration for cache
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
@@ -1921,7 +1927,9 @@
     </xs:complexType>
 
     <xs:complexType name="near-cache">
-        <xs:sequence/>
+        <xs:sequence>
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
         <xs:attribute name="max-size" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
@@ -1967,7 +1975,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="cache-max-size-policy">
+    <xs:simpleType name="max-size-policy">
         <xs:restriction base="xs:string">
             <xs:enumeration value="ENTRY_COUNT"/>
             <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
@@ -1977,9 +1985,9 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:complexType name="cache-eviction">
+    <xs:complexType name="eviction">
         <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
-        <xs:attribute name="max-size-policy" type="cache-max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
         <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
     </xs:complexType>
 

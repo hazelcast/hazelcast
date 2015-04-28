@@ -51,6 +51,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
@@ -98,12 +99,9 @@ public class ProxyServiceImpl
 
     @Override
     public void initializeDistributedObject(String serviceName, String name) {
-        if (serviceName == null) {
-            throw new NullPointerException("Service name is required!");
-        }
-        if (name == null) {
-            throw new NullPointerException("Object name is required!");
-        }
+        checkServiceNameNotNull(serviceName);
+        checkObjectNameNotNull(name);
+
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
         registry.createProxy(name, true, true);
     }
@@ -114,24 +112,18 @@ public class ProxyServiceImpl
 
     @Override
     public DistributedObject getDistributedObject(String serviceName, String name) {
-        if (serviceName == null) {
-            throw new NullPointerException("Service name is required!");
-        }
-        if (name == null) {
-            throw new NullPointerException("Object name is required!");
-        }
+        checkServiceNameNotNull(serviceName);
+        checkObjectNameNotNull(name);
+
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
         return registry.getOrCreateProxy(name, true, true);
     }
 
     @Override
     public void destroyDistributedObject(String serviceName, String name) {
-        if (serviceName == null) {
-            throw new NullPointerException("Service name is required!");
-        }
-        if (name == null) {
-            throw new NullPointerException("Object name is required!");
-        }
+        checkServiceNameNotNull(serviceName);
+        checkObjectNameNotNull(name);
+
         OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
@@ -166,9 +158,7 @@ public class ProxyServiceImpl
 
     @Override
     public Collection<DistributedObject> getDistributedObjects(String serviceName) {
-        if (serviceName == null) {
-            throw new NullPointerException("Service name is required!");
-        }
+        checkServiceNameNotNull(serviceName);
 
         Collection<DistributedObject> result = new LinkedList<DistributedObject>();
         ProxyRegistry registry = registries.get(serviceName);
@@ -181,9 +171,8 @@ public class ProxyServiceImpl
 
     @Override
     public Collection<String> getDistributedObjectNames(String serviceName) {
-        if (serviceName == null) {
-            throw new NullPointerException("Service name is required!");
-        }
+        checkServiceNameNotNull(serviceName);
+
         ProxyRegistry registry = registries.get(serviceName);
         if (registry == null) {
             return Collections.EMPTY_SET;
@@ -252,4 +241,11 @@ public class ProxyServiceImpl
         listeners.clear();
     }
 
+    private static String checkServiceNameNotNull(String serviceName) {
+        return checkNotNull(serviceName, "Service name is required!");
+    }
+
+    private static String checkObjectNameNotNull(String name) {
+        return checkNotNull(name, "Object name is required!");
+    }
 }

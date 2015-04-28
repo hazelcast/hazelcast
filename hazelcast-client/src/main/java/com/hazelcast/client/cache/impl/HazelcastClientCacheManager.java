@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * CacheManager implementation for client side

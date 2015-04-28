@@ -50,6 +50,16 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     }
 
     @Override
+    public final String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_READ);
+    }
+
+    @Override
     protected final ClientMessage call() throws Exception {
         Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
 
@@ -71,6 +81,8 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         }
         return reduce(result);
     }
+
+    protected abstract Predicate getPredicate();
 
     protected abstract ClientMessage reduce(Collection<QueryResultEntry> result);
 
@@ -136,18 +148,4 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
             result.addAll(queryResult.getResult());
         }
     }
-
-
-    @Override
-    public final String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_READ);
-    }
-
-
-    protected abstract Predicate getPredicate();
 }

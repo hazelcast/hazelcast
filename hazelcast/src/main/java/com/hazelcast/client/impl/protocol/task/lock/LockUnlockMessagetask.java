@@ -33,7 +33,7 @@ import java.security.Permission;
 
 public class LockUnlockMessagetask extends AbstractPartitionMessageTask<LockUnlockParameters> {
 
-    protected LockUnlockMessagetask(ClientMessage clientMessage, Node node, Connection connection) {
+    public LockUnlockMessagetask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

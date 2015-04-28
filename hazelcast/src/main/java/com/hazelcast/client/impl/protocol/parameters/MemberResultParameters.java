@@ -48,7 +48,7 @@ public class MemberResultParameters {
         MemberCodec.encode(member, clientMessage);
         clientMessage.set(eventType);
 
-        clientMessage.setFlags(ClientMessage.LISTENER_EVENT_FLAG);
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.updateFrameLength();
         return clientMessage;
 

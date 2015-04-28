@@ -24,10 +24,10 @@ package com.hazelcast.cache.impl.eviction;
 public interface ExpirationChecker<E extends Expirable> {
 
     /**
-     * Checks about if given {@link Expirable} entry is expired or not.
+     * Checks if the given {@link Expirable} entry is expired or not.
      *
-     * @param expirableEntry {@link Expirable} entry which is check if it is expired or not
-     * @return <code>true</code> if {@link Expirable} entry is expired, otherwise <code>false</code>
+     * @param expirableEntry {@link Expirable} entry which is checked to see if it is expired or not.
+     * @return <code>true</code> if the {@link Expirable} entry is expired, otherwise <code>false</code>.
      */
     boolean isExpired(E expirableEntry);
 

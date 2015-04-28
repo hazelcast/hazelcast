@@ -16,29 +16,61 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.collection.impl.list.client.ListAddAllRequest;
-import com.hazelcast.collection.impl.list.client.ListGetRequest;
-import com.hazelcast.collection.impl.list.client.ListAddRequest;
-import com.hazelcast.collection.impl.list.client.ListSetRequest;
-import com.hazelcast.collection.impl.list.client.ListRemoveRequest;
-import com.hazelcast.collection.impl.list.client.ListIndexOfRequest;
-import com.hazelcast.collection.impl.list.client.ListSubRequest;
+import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListAddParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListClearParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListCompareAndRemoveAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListCompareAndRetainAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListContainsAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListContainsParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListGetAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListIndexOfParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListLastIndexOfParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListRemoveListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListRemoveWithIndexParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListSetParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.ListSubParameters;
+import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.collection.impl.collection.client.CollectionAddListenerRequest;
+import com.hazelcast.collection.impl.collection.client.CollectionRequest;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 /**
  * @author ali 5/20/13
  */
-public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> implements IList<E> {
+public class ClientListProxy<E> extends ClientProxy implements IList<E> {
+
+    private final String name;
 
     public ClientListProxy(String serviceName, String name) {
         super(serviceName, name);
+        this.name = name;
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
@@ -48,49 +80,222 @@ public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> impleme
             throwExceptionIfNull(e);
             valueList.add(toData(e));
         }
-        final ListAddAllRequest request = new ListAddAllRequest(getName(), valueList, index);
-        final Boolean result = invoke(request);
-        return result;
+        ClientMessage request = ListAddAllParameters.encode(name, valueList);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public E get(int index) {
-        final ListGetRequest request = new ListGetRequest(getName(), index);
-        return invoke(request);
+        ClientMessage request = ListGetParameters.encode(name, index);
+        ClientMessage response = invoke(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     public E set(int index, E element) {
         throwExceptionIfNull(element);
         final Data value = toData(element);
-        final ListSetRequest request = new ListSetRequest(getName(), index, value);
-        return invoke(request);
+        ClientMessage request = ListSetParameters.encode(name, index, value);
+        ClientMessage response = invoke(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     public void add(int index, E element) {
         throwExceptionIfNull(element);
         final Data value = toData(element);
-        final ListAddRequest request = new ListAddRequest(getName(), value, index);
+        ClientMessage request = ListAddParameters.encode(name, value);
         invoke(request);
     }
 
     public E remove(int index) {
-        final ListRemoveRequest request = new ListRemoveRequest(getName(), index);
-        return invoke(request);
+        ClientMessage request = ListRemoveWithIndexParameters.encode(name, index);
+        ClientMessage response = invoke(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
-    public int indexOf(Object o) {
-        return indexOfInternal(o, false);
+    public int size() {
+        ClientMessage request = ListSizeParameters.encode(name);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean isEmpty() {
+        ClientMessage request = ListIsEmptyParameters.encode(name);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean contains(Object o) {
+        throwExceptionIfNull(o);
+        final Data value = toData(o);
+        ClientMessage request = ListContainsParameters.encode(name, value);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public Iterator<E> iterator() {
+        return Collections.unmodifiableCollection(getAll()).iterator();
+    }
+
+    public Object[] toArray() {
+        return getAll().toArray();
+    }
+
+    public <T> T[] toArray(T[] a) {
+        return getAll().toArray(a);
+    }
+
+    public boolean add(E e) {
+        throwExceptionIfNull(e);
+        final Data element = toData(e);
+        ClientMessage request = ListAddParameters.encode(name, element);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean remove(Object o) {
+        throwExceptionIfNull(o);
+        final Data value = toData(o);
+        ClientMessage request = ListRemoveParameters.encode(name, value);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean containsAll(Collection<?> c) {
+        throwExceptionIfNull(c);
+        Set<Data> valueSet = new HashSet<Data>(c.size());
+        for (Object o : c) {
+            throwExceptionIfNull(o);
+            valueSet.add(toData(o));
+        }
+        ClientMessage request = ListContainsAllParameters.encode(name, valueSet);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean addAll(Collection<? extends E> c) {
+        throwExceptionIfNull(c);
+        final List<Data> valueList = new ArrayList<Data>(c.size());
+        for (E e : c) {
+            throwExceptionIfNull(e);
+            valueList.add(toData(e));
+        }
+        ClientMessage request = ListAddAllParameters.encode(name, valueList);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean removeAll(Collection<?> c) {
+        throwExceptionIfNull(c);
+        final Set<Data> valueSet = new HashSet<Data>();
+        for (Object o : c) {
+            throwExceptionIfNull(o);
+            valueSet.add(toData(o));
+        }
+        ClientMessage request = ListCompareAndRemoveAllParameters.encode(name, valueSet);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public boolean retainAll(Collection<?> c) {
+        throwExceptionIfNull(c);
+        final Set<Data> valueSet = new HashSet<Data>();
+        for (Object o : c) {
+            throwExceptionIfNull(o);
+            valueSet.add(toData(o));
+        }
+        ClientMessage request = ListCompareAndRetainAllParameters.encode(name, valueSet);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public void clear() {
+        ClientMessage request = ListClearParameters.encode(name);
+        invoke(request);
+    }
+
+    //Todo MessageTask!!
+    public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
+        final CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
+        request.setServiceName(getServiceName());
+        EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
+            public void handle(PortableItemEvent portableItemEvent) {
+                E item = includeValue ? (E) getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
+                ItemEvent<E> itemEvent = new ItemEvent<E>(getName(), portableItemEvent.getEventType(), item, member);
+                if (portableItemEvent.getEventType() == ItemEventType.ADDED) {
+                    listener.itemAdded(itemEvent);
+                } else {
+                    listener.itemRemoved(itemEvent);
+                }
+            }
+
+            @Override
+            public void beforeListenerRegister() {
+            }
+
+            @Override
+            public void onListenerRegister() {
+
+            }
+        };
+        return listen(request, getPartitionKey(), eventHandler);
+    }
+
+    public boolean removeItemListener(String registrationId) {
+        ClientMessage request = ListRemoveListenerParameters.encode(name, registrationId);
+        return stopListening(request, registrationId);
+    }
+
+    protected <T> T invoke(ClientRequest req) {
+        if (req instanceof CollectionRequest) {
+            CollectionRequest request = (CollectionRequest) req;
+            request.setServiceName(getServiceName());
+        }
+
+        return super.invoke(req, getPartitionKey());
+    }
+
+    private Collection<E> getAll() {
+        ClientMessage request = ListGetAllParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> resultCollection = resultParameters.result;
+        final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return list;
     }
 
     public int lastIndexOf(Object o) {
-        return indexOfInternal(o, true);
-    }
-
-    private int indexOfInternal(Object o, boolean last) {
         throwExceptionIfNull(o);
         final Data value = toData(o);
-        final ListIndexOfRequest request = new ListIndexOfRequest(getName(), value, last);
-        final Integer result = invoke(request);
-        return result;
+        ClientMessage request = ListLastIndexOfParameters.encode(name, value);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
+    }
+
+    public int indexOf(Object o) {
+        throwExceptionIfNull(o);
+        final Data value = toData(o);
+        ClientMessage request = ListIndexOfParameters.encode(name, value);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public ListIterator<E> listIterator() {
@@ -102,11 +307,12 @@ public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> impleme
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        final ListSubRequest request = new ListSubRequest(getName(), fromIndex, toIndex);
-        final SerializableCollection result = invoke(request);
-        final Collection<Data> collection = result.getCollection();
-        final List<E> list = new ArrayList<E>(collection.size());
-        for (Data value : collection) {
+        ClientMessage request = ListSubParameters.encode(name, fromIndex, toIndex);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> resultCollection = resultParameters.result;
+        final List<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
             list.add((E) toObject(value));
         }
         return list;

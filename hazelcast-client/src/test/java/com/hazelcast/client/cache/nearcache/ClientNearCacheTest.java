@@ -49,13 +49,11 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         putToCacheAndThenGetFromClientNearCache(InMemoryFormat.OBJECT);
     }
 
-    @Category(NightlyTest.class)
     @Test
     public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithBinaryInMemoryFormat() {
         putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
     }
 
-    @Category(NightlyTest.class)
     @Test
     public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCacheWithObjectInMemoryFormat() {
         putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(InMemoryFormat.OBJECT);
@@ -66,7 +64,6 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
     }
 
-    @Category(NightlyTest.class)
     @Test
     public void putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCacheWithObjectInMemoryFormat() {
         putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(InMemoryFormat.OBJECT);
@@ -77,7 +74,6 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat.BINARY);
     }
 
-    @Category(NightlyTest.class)
     @Test
     public void putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCacheWithObjectInMemoryFormat() {
         putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat.OBJECT);

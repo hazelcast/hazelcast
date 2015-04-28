@@ -18,10 +18,12 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+
 /**
  * Provides configuration service for Collection.
- */
-/**
  *
  * @param <T> Type of Collection such as List, Set
  */
@@ -90,8 +92,18 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         return backupCount;
     }
 
+    /**
+     * Sets the number of synchronous backups.
+     *
+     * @param backupCount the number of synchronous backups to set
+     * @return the current CollectionConfig
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setAsyncBackupCount(int)
+     */
     public T setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return (T) this;
     }
 
@@ -99,8 +111,19 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         return asyncBackupCount;
     }
 
+    /**
+     * Sets the number of asynchronous backups.
+     *
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CollectionConfig
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
+     */
     public T setAsyncBackupCount(int asyncBackupCount) {
-        this.asyncBackupCount = asyncBackupCount;
+        this.asyncBackupCount = checkAsyncBackupCount(asyncBackupCount, asyncBackupCount);
         return (T) this;
     }
 

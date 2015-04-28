@@ -39,25 +39,12 @@ class MapManagedService implements ManagedService {
     }
 
     @Override
-    public void init(final NodeEngine nodeEngine, Properties properties) {
+    public void init(NodeEngine nodeEngine, Properties properties) {
         mapServiceContext.initPartitionsContainers();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.registerLockStoreConstructor(mapServiceContext.serviceName(),
-                    new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
-                        public LockStoreInfo createNew(final ObjectNamespace key) {
-                            final MapContainer mapContainer = mapServiceContext.getMapContainer(key.getObjectName());
-                            return new LockStoreInfo() {
-                                public int getBackupCount() {
-                                    return mapContainer.getBackupCount();
-                                }
-
-                                public int getAsyncBackupCount() {
-                                    return mapContainer.getAsyncBackupCount();
-                                }
-                            };
-                        }
-                    });
+            lockService.registerLockStoreConstructor(MapService.SERVICE_NAME,
+                    new ObjectNamespaceLockStoreInfoConstructorFunction());
         }
         mapServiceContext.getExpirationManager().start();
     }
@@ -70,7 +57,6 @@ class MapManagedService implements ManagedService {
     @Override
     public void shutdown(boolean terminate) {
         if (!terminate) {
-            final MapServiceContext mapServiceContext = this.mapServiceContext;
             mapServiceContext.flushMaps();
             mapServiceContext.destroyMapStores();
             mapServiceContext.clearPartitions();
@@ -79,5 +65,21 @@ class MapManagedService implements ManagedService {
         }
     }
 
+    private class ObjectNamespaceLockStoreInfoConstructorFunction implements ConstructorFunction<ObjectNamespace, LockStoreInfo> {
+        @Override
+        public LockStoreInfo createNew(final ObjectNamespace key) {
+            final MapContainer mapContainer = mapServiceContext.getMapContainer(key.getObjectName());
+            return new LockStoreInfo() {
+                @Override
+                public int getBackupCount() {
+                    return mapContainer.getBackupCount();
+                }
 
+                @Override
+                public int getAsyncBackupCount() {
+                    return mapContainer.getAsyncBackupCount();
+                }
+            };
+        }
+    }
 }

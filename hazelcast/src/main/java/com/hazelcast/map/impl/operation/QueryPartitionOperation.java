@@ -16,44 +16,42 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
     private Predicate predicate;
     private QueryResult result;
 
+    public QueryPartitionOperation() {
+    }
+
     public QueryPartitionOperation(String mapName, Predicate predicate) {
         super(mapName);
         this.predicate = predicate;
     }
 
-    public QueryPartitionOperation() {
-    }
-
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        Collection<QueryableEntry> queryableEntries = mapServiceContext.getMapContextQuerySupport()
-                .queryOnPartition(name, predicate, getPartitionId());
-        result = new QueryResult();
-        for (QueryableEntry entry : queryableEntries) {
-            result.add(new QueryResultEntryImpl(entry.getKeyData(), entry.getIndexKey(), entry.getValueData()));
-        }
-        final List<Integer> partitions = Collections.singletonList(getPartitionId());
-        result.setPartitionIds(partitions);
+        MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
+
+        Collection<QueryableEntry> queryableEntries = mapQuerySupport.queryOnPartition(name, predicate, getPartitionId());
+        result = mapQuerySupport.newQueryResult(1);
+        result.addAll(queryableEntries);
+        result.setPartitionIds(singletonList(getPartitionId()));
     }
 
     @Override

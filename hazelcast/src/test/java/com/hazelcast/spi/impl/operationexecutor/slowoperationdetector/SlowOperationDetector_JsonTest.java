@@ -98,11 +98,11 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
     @Test
     public void testJSON_SlowEntryProcessor() {
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(new SlowEntryProcessor(2));
+            map.executeOnEntries(getSlowEntryProcessor(2));
         }
-        map.executeOnEntries(new SlowEntryProcessor(3));
-        map.executeOnEntries(new SlowEntryProcessor(2));
-        waitForAllOperationsToComplete(instance);
+        map.executeOnEntries(getSlowEntryProcessor(3));
+        map.executeOnEntries(getSlowEntryProcessor(2));
+        awaitSlowEntryProcessors();
 
         logger.finest(getOperationStats(instance).toString());
 
@@ -114,11 +114,14 @@ public class SlowOperationDetector_JsonTest extends SlowOperationDetectorAbstrac
     @Test
     public void testJSON_multipleEntryProcessorClasses() throws InterruptedException {
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(new SlowEntryProcessor(2));
+            map.executeOnEntries(getSlowEntryProcessor(2));
         }
-        map.executeOnEntries(new SlowEntryProcessorChild(2));
-        map.executeOnEntries(new SlowEntryProcessor(4));
-        waitForAllOperationsToComplete(instance);
+        SlowEntryProcessorChild entryProcessorChild = new SlowEntryProcessorChild(2);
+        map.executeOnEntries(entryProcessorChild);
+        map.executeOnEntries(getSlowEntryProcessor(4));
+
+        awaitSlowEntryProcessors();
+        entryProcessorChild.await();
 
         logger.finest(getOperationStats(instance).toString());
 

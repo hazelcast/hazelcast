@@ -63,9 +63,16 @@
                       expiry-policy-factory="com.hazelcast.cache.MyExpiryPolicyFactory"
                       in-memory-format="OBJECT">
                     <hz:eviction size="50" max-size-policy="ENTRY_COUNT" eviction-policy="LRU"/>
+                    <hz:near-cache time-to-live-seconds="10000"
+                                   max-idle-seconds="5000"
+                                   invalidate-on-change="false"
+                                   in-memory-format="OBJECT"
+                                   cache-local-entries="true">
+                        <hz:eviction size="100" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+                    </hz:near-cache>
                     <hz:cache-entry-listeners>
-                        <hz:cache-entry-listener cache-entry-event-filter-factory="om.hazelcast.cache.MyCacheFilterFactory"
-                                                 cache-entry-listener-factory="om.hazelcast.cache.MyCacheListenerFactory"
+                        <hz:cache-entry-listener cache-entry-event-filter-factory="com.hazelcast.cache.MyCacheFilterFactory"
+                                                 cache-entry-listener-factory="com.hazelcast.cache.MyCacheListenerFactory"
                                                  old-value-required="false" synchronous="false"/>
                     </hz:cache-entry-listeners>
             </hz:cache>

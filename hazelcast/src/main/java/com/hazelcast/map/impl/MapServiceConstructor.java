@@ -28,9 +28,9 @@ public final class MapServiceConstructor {
             = new ConstructorFunction<NodeEngine, MapService>() {
         @Override
         public MapService createNew(NodeEngine nodeEngine) {
-            MapServiceContext defaultMapServiceContext = new DefaultMapServiceContext(nodeEngine);
-            MapServiceContextAwareFactory factory
-                    = new DefaultMapServiceContextAwareFactory(defaultMapServiceContext);
+            MapServiceContext defaultMapServiceContext = new MapServiceContextImpl(nodeEngine);
+            MapServiceFactory factory
+                    = new DefaultMapServiceFactory(defaultMapServiceContext);
             return factory.createMapService();
         }
     };

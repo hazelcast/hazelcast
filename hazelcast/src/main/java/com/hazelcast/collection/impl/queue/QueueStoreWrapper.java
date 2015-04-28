@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for the Queue Store.

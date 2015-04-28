@@ -64,10 +64,10 @@ public interface ReplicatedMapTemplate {
     @EncodeMethod(id = 13)
     void addEntryListener(String name);
 
-    @EncodeMethod(id = 15)
+    @EncodeMethod(id = 14)
     void removeEntryListener(String name, String registrationId);
 
-    @EncodeMethod(id = 16)
+    @EncodeMethod(id = 15)
     void keySet(String name);
 
     @EncodeMethod(id = 16)

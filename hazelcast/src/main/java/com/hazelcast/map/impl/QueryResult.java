@@ -16,11 +16,13 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
+import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,27 +32,38 @@ import java.util.LinkedHashSet;
 
 public class QueryResult implements DataSerializable {
 
+    private final Collection<QueryResultEntry> result = new LinkedHashSet<QueryResultEntry>();
+
     private Collection<Integer> partitionIds;
-    private final Collection result;
+
+    private transient long resultLimit;
+    private transient long resultSize;
 
     public QueryResult() {
-        result = new LinkedHashSet<QueryResultEntry>();
+        this(Long.MAX_VALUE);
     }
 
-    public QueryResult(Collection<? extends QueryResultEntry> queryableEntries) {
-        result = queryableEntries;
+    public QueryResult(long resultLimit) {
+        this.resultLimit = resultLimit;
     }
 
-    public Collection<Integer> getPartitionIds() {
-        return partitionIds;
+    public void addAll(Collection<QueryableEntry> queryableEntries) {
+        for (QueryableEntry entry : queryableEntries) {
+            if (++resultSize > resultLimit) {
+                throw new QueryResultSizeExceededException();
+            }
+            QueryResultEntryImpl queryEntry = new QueryResultEntryImpl(
+                    entry.getKeyData(), entry.getIndexKey(), entry.getValueData());
+            result.add(queryEntry);
+        }
     }
 
     public void setPartitionIds(Collection<Integer> partitionIds) {
         this.partitionIds = partitionIds;
     }
 
-    public void add(QueryResultEntry resultEntry) {
-        result.add(resultEntry);
+    public Collection<Integer> getPartitionIds() {
+        return partitionIds;
     }
 
     public Collection<QueryResultEntry> getResult() {
@@ -58,36 +71,36 @@ public class QueryResult implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        int psize = (partitionIds == null) ? 0 : partitionIds.size();
-        out.writeInt(psize);
-        if (psize > 0) {
+        int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
+        out.writeInt(partitionSize);
+        if (partitionSize > 0) {
             for (Integer partitionId : partitionIds) {
                 out.writeInt(partitionId);
             }
         }
-        int rsize = result.size();
-        out.writeInt(rsize);
-        if (rsize > 0) {
+        int resultSize = result.size();
+        out.writeInt(resultSize);
+        if (resultSize > 0) {
             Iterator<QueryResultEntry> iterator = result.iterator();
-            for (int i = 0; i < rsize; i++) {
-                final QueryResultEntryImpl queryableEntry = (QueryResultEntryImpl) iterator.next();
+            for (int i = 0; i < resultSize; i++) {
+                QueryResultEntryImpl queryableEntry = (QueryResultEntryImpl) iterator.next();
                 queryableEntry.writeData(out);
             }
         }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        int psize = in.readInt();
-        if (psize > 0) {
-            partitionIds = new ArrayList<Integer>(psize);
-            for (int i = 0; i < psize; i++) {
+        int partitionSize = in.readInt();
+        if (partitionSize > 0) {
+            partitionIds = new ArrayList<Integer>(partitionSize);
+            for (int i = 0; i < partitionSize; i++) {
                 partitionIds.add(in.readInt());
             }
         }
-        int rsize = in.readInt();
-        if (rsize > 0) {
-            for (int i = 0; i < rsize; i++) {
-                final QueryResultEntryImpl resultEntry = new QueryResultEntryImpl();
+        int resultSize = in.readInt();
+        if (resultSize > 0) {
+            for (int i = 0; i < resultSize; i++) {
+                QueryResultEntryImpl resultEntry = new QueryResultEntryImpl();
                 resultEntry.readData(in);
                 result.add(resultEntry);
             }

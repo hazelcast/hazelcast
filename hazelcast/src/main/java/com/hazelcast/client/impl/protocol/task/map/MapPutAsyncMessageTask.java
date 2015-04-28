@@ -17,13 +17,43 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.MapPutAsyncParameters;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.Operation;
 
-public class MapPutAsyncMessageTask extends MapPutMessageTask {
+import java.util.concurrent.TimeUnit;
+
+public class MapPutAsyncMessageTask extends AbstractMapPutMessageTask<MapPutAsyncParameters> {
 
     public MapPutAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        PutOperation op = new PutOperation(parameters.name, parameters.key, parameters.value, parameters.ttl);
+        op.setThreadId(parameters.threadId);
+        return op;
+    }
+
+    @Override
+    protected MapPutAsyncParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapPutAsyncParameters.decode(clientMessage);
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (parameters.ttl == -1) {
+            return new Object[]{parameters.key, parameters.value};
+        }
+        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
     }
 
     @Override

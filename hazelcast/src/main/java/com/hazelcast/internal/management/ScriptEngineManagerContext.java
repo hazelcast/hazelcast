@@ -18,6 +18,8 @@ package com.hazelcast.internal.management;
 
 import javax.script.ScriptEngineManager;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Accessor for {@link javax.script.ScriptEngineManager}
  */
@@ -34,9 +36,7 @@ public final class ScriptEngineManagerContext {
     }
 
     public static void setScriptEngineManager(ScriptEngineManager scriptEngineManager) {
-        if (scriptEngineManager == null) {
-            throw new NullPointerException("ScriptEngineManager is required!");
-        }
+        checkNotNull(scriptEngineManager, "ScriptEngineManager is required!");
         ScriptEngineManagerContext.scriptEngineManager = scriptEngineManager;
     }
 }

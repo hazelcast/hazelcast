@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * Support class for loading Hazelcast services and hooks based on the Java ServiceLoader specification
  * but changed in the fact of classloaders to test for given services to work in multi classloader
@@ -250,10 +252,8 @@ public final class ServiceLoader {
         private final ClassLoader classLoader;
 
         private ServiceDefinition(String className, ClassLoader classLoader) {
-            ValidationUtil.isNotNull(className, "className");
-            ValidationUtil.isNotNull(classLoader, "classLoader");
-            this.className = className;
-            this.classLoader = classLoader;
+            this.className = isNotNull(className, "className");
+            this.classLoader = isNotNull(classLoader, "classLoader");
         }
 
         @Override

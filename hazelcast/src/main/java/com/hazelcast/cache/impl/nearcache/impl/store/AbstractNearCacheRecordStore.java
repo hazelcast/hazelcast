@@ -16,9 +16,19 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
+import com.hazelcast.cache.impl.eviction.EvictionChecker;
+import com.hazelcast.cache.impl.eviction.EvictionListener;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
+import com.hazelcast.cache.impl.eviction.EvictionStrategy;
+import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
+import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecordStore;
+import com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
@@ -28,8 +38,9 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheRecord>
-        implements NearCacheRecordStore<K, V> {
+public abstract class AbstractNearCacheRecordStore<
+        K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
+        implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
 
     /*
      * If Unsafe is available, Object array index scale (every index represents a reference)
@@ -52,6 +63,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     protected final NearCacheConfig nearCacheConfig;
     protected final SerializationService serializationService;
     protected final NearCacheStatsImpl nearCacheStats;
+    protected NCRM records;
+
+    protected final MaxSizeChecker maxSizeChecker;
+    protected final EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
+    protected final EvictionChecker evictionChecker;
+    protected final EvictionStrategy<KS, R, NCRM> evictionStrategy;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheContext nearCacheContext) {
         this(nearCacheConfig, nearCacheContext, new NearCacheStatsImpl());
@@ -64,9 +81,28 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.serializationService = nearCacheContext.getSerializationService();
         this.nearCacheStats = nearCacheStats;
+        this.records = createNearCacheRecordMap(nearCacheConfig, nearCacheContext);
+
+        final EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
+        if (evictionConfig != null) {
+            this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig, nearCacheContext);
+            this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
+            this.evictionChecker = createEvictionChecker(nearCacheConfig);
+            this.evictionStrategy = createEvictionStrategy(evictionConfig);
+        } else {
+            this.maxSizeChecker = null;
+            this.evictionPolicyEvaluator = null;
+            this.evictionChecker = null;
+            this.evictionStrategy = null;
+        }
     }
 
-    protected abstract boolean isAvailable();
+    protected abstract MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
+                                                                    NearCacheConfig nearCacheConfig,
+                                                                    NearCacheContext nearCacheContext);
+
+    protected abstract NCRM createNearCacheRecordMap(NearCacheConfig nearCacheConfig,
+                                                     NearCacheContext nearCacheContext);
 
     protected abstract long getKeyStorageMemoryCost(K key);
     protected abstract long getRecordStorageMemoryCost(R record);
@@ -78,14 +114,32 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     protected abstract R putRecord(K key, R record);
     protected abstract void putToRecord(R record, V value);
     protected abstract R removeRecord(K key);
-    protected abstract void clearRecords();
-    protected abstract void destroyStore();
 
     protected void checkAvailable() {
         if (!isAvailable()) {
             throw new IllegalStateException(nearCacheConfig.getName()
                     + " named near cache record store is not available");
         }
+    }
+
+    protected EvictionPolicyEvaluator<KS, R> createEvictionPolicyEvaluator(EvictionConfig evictionConfig) {
+        final EvictionPolicyType evictionPolicyType = evictionConfig.getEvictionPolicyType();
+        if (evictionPolicyType == null) {
+            throw new IllegalArgumentException("Eviction policy cannot be null");
+        }
+        return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig);
+    }
+
+    protected EvictionChecker createEvictionChecker(NearCacheConfig nearCacheConfig) {
+        return new MaxSizeEvictionChecker();
+    }
+
+    protected EvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
+        return EvictionStrategyProvider.getEvictionStrategy(evictionConfig);
+    }
+
+    protected boolean isAvailable() {
+        return records != null;
     }
 
     protected Data valueToData(V value) {
@@ -172,6 +226,15 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
 
     }
 
+    protected boolean isEvictionEnabled() {
+        return evictionStrategy != null && evictionPolicyEvaluator != null;
+    }
+
+    @Override
+    public void onEvict(KS key, R record) {
+        nearCacheStats.decrementOwnedEntryCount();
+    }
+
     @Override
     public V get(K key) {
         checkAvailable();
@@ -247,6 +310,10 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
         }
     }
 
+    protected void clearRecords() {
+        records.clear();
+    }
+
     @Override
     public void clear() {
         checkAvailable();
@@ -254,6 +321,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
         clearRecords();
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
+    }
+
+    protected void destroyStore() {
+        clearRecords();
+        // Clear reference so GC can collect it
+        records = null;
     }
 
     @Override
@@ -266,10 +339,39 @@ public abstract class AbstractNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
+    public int size() {
+        checkAvailable();
+
+        return records.size();
+    }
+
+    @Override
     public NearCacheStats getNearCacheStats() {
         checkAvailable();
 
         return nearCacheStats;
+    }
+
+    protected class MaxSizeEvictionChecker implements EvictionChecker {
+
+        @Override
+        public boolean isEvictionRequired() {
+            if (maxSizeChecker != null) {
+                return maxSizeChecker.isReachedToMaxSize();
+            } else {
+                return false;
+            }
+        }
+
+    }
+
+    @Override
+    public void doEvictionIfRequired() {
+        checkAvailable();
+
+        if (isEvictionEnabled()) {
+            evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
+        }
     }
 
 }

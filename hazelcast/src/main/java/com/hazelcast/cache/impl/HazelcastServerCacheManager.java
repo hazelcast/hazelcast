@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Hazelcast {@link javax.cache.CacheManager} for server implementation. This subclass of

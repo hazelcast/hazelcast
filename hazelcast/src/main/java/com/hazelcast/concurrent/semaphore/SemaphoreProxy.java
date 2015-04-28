@@ -33,7 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
-import static com.hazelcast.util.ValidationUtil.isNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 
 public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements ISemaphore {
 
@@ -53,7 +53,8 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public boolean init(int permits) {
-        isNotNegative(permits, "permits");
+        checkNotNegative(permits, "permits can't be negative");
+
         InitOperation operation = new InitOperation(name, permits);
         InternalCompletableFuture<Boolean> future = invoke(operation);
         return future.getSafely();
@@ -66,7 +67,8 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public void acquire(int permits) throws InterruptedException {
-        isNotNegative(permits, "permits");
+        checkNotNegative(permits, "permits can't be negative");
+
         try {
             AcquireOperation operation = new AcquireOperation(name, permits, -1);
             InternalCompletableFuture<Object> future = invoke(operation);
@@ -92,7 +94,8 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public void reducePermits(int reduction) {
-        isNotNegative(reduction, "reduction");
+        checkNotNegative(reduction, "reduction can't be negative");
+
         ReduceOperation operation = new ReduceOperation(name, reduction);
         InternalCompletableFuture<Object> future = invoke(operation);
         future.getSafely();
@@ -105,7 +108,8 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public void release(int permits) {
-        isNotNegative(permits, "permits");
+        checkNotNegative(permits, "permits can't be negative");
+
         ReleaseOperation operation = new ReleaseOperation(name, permits);
         InternalCompletableFuture future = invoke(operation);
         future.getSafely();
@@ -136,7 +140,8 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
 
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
-        isNotNegative(permits, "permits");
+        checkNotNegative(permits, "permits can't be negative");
+
         try {
             AcquireOperation operation = new AcquireOperation(name, permits, unit.toMillis(timeout));
             Future<Boolean> future = invoke(operation);

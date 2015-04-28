@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A provider for {@link com.hazelcast.map.merge.MergePolicyProvider} instances.
@@ -62,9 +63,7 @@ public final class MergePolicyProvider {
     }
 
     public MapMergePolicy getMergePolicy(String className) {
-        if (className == null) {
-            throw new NullPointerException("Class name is mandatory!");
-        }
+        checkNotNull(className, "Class name is mandatory!");
         return ConcurrencyUtil.getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
     }
 }

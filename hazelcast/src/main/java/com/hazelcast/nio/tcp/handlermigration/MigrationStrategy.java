@@ -26,8 +26,8 @@ import java.util.Set;
  * exceeds {@link #MIN_MAX_RATIO_MIGRATION_THRESHOLD}.
  *
  * Once a migration is triggered it tries to find the busiest handler registered in
- * {@link com.hazelcast.nio.tcp.handlermigration.BalancerState#sourceSelector} which wouldn't cause
- * overload of the {@link com.hazelcast.nio.tcp.handlermigration.BalancerState#destinationSelector} after a migration.
+ * {@link LoadImbalance#sourceSelector} which wouldn't cause
+ * overload of the {@link LoadImbalance#destinationSelector} after a migration.
  *
  */
 class MigrationStrategy {
@@ -50,12 +50,14 @@ class MigrationStrategy {
     private static final double MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT = 0.9;
 
     /**
-     * @param state
+     * Checks if an imbalance was detected in the
+     *
+     * @param imbalance
      * @return <code>true</code> if imbalance threshold has been reached and migration should be attempted
      */
-    boolean shouldAttemptToScheduleMigration(BalancerState state) {
-        long min = state.minimumEvents;
-        long max = state.maximumEvents;
+    boolean imbalanceDetected(LoadImbalance imbalance) {
+        long min = imbalance.minimumEvents;
+        long max = imbalance.maximumEvents;
 
         if (min == Long.MIN_VALUE || max == Long.MAX_VALUE) {
             return false;
@@ -67,20 +69,20 @@ class MigrationStrategy {
     /**
      * Attempt to find a handler to migrate to a new IOSelector.
      *
-     * @param state describing a snapshot of IOSelector load
-     * @return a handler to migrate to a new IOSelector or null if no suitable handler is found.
+     * @param imbalance describing a snapshot of IOSelector load
+     * @return the handler to migrate to a new IOSelector or null if no handler needs to be migrated.
      */
-     MigratableHandler findHandlerToMigrate(BalancerState state) {
-        Set<? extends MigratableHandler> candidates = state.getHandlersOwnerBy(state.sourceSelector);
-        long migrationThreshold = (long) ((state.maximumEvents - state.minimumEvents)
+     MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
+        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
+        long migrationThreshold = (long) ((imbalance.maximumEvents - imbalance.minimumEvents)
                 * MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT);
         MigratableHandler candidate = null;
-        long noOfEventsInSelectedHandler = 0;
+        long eventCountInSelectedHandler = 0;
         for (MigratableHandler handler : candidates) {
-            long noOfEvents = state.getNoOfEvents(handler);
-            if (noOfEvents > noOfEventsInSelectedHandler) {
-                if (noOfEvents < migrationThreshold) {
-                    noOfEventsInSelectedHandler = noOfEvents;
+            long eventCount = imbalance.getEventCount(handler);
+            if (eventCount > eventCountInSelectedHandler) {
+                if (eventCount < migrationThreshold) {
+                    eventCountInSelectedHandler = eventCount;
                     candidate = handler;
                 }
             }

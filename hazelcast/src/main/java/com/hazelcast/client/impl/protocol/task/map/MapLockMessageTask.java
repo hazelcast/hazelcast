@@ -30,6 +30,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -44,7 +45,7 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
     @Override
     protected Operation prepareOperation() {
         return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, -1, -1);
+                parameters.threadId, parameters.ttl, -1);
     }
 
     @Override
@@ -78,6 +79,9 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
 
     @Override
     public Object[] getParameters() {
+        if (parameters.ttl == -1) {
+            return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
+        }
         return new Object[]{parameters.key};
     }
 }

@@ -3,7 +3,7 @@ package com.hazelcast.cache.eviction;
 import com.hazelcast.cache.impl.eviction.Evictable;
 import com.hazelcast.cache.impl.eviction.EvictionCandidate;
 import com.hazelcast.cache.impl.eviction.EvictionChecker;
-import com.hazelcast.cache.impl.eviction.EvictionConfig;
+import com.hazelcast.cache.impl.eviction.EvictionConfiguration;
 import com.hazelcast.cache.impl.eviction.EvictionListener;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
@@ -76,7 +76,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
 
         SerializationService serializationService = node.getSerializationService();
 
-        EvictionConfig evictionConfig = new EvictionConfig() {
+        EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override
             public EvictionStrategyType getEvictionStrategyType() {
                 return EvictionStrategyType.SAMPLING_BASED_EVICTION;

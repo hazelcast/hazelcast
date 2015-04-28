@@ -254,8 +254,11 @@
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
             <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
+
     <xs:simpleType name="eviction-policy">
         <xs:restriction base="xs:string">
             <xs:enumeration value="NONE"/>
@@ -263,6 +266,22 @@
             <xs:enumeration value="LFU"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:simpleType name="max-size-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ENTRY_COUNT"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="USED_NATIVE_MEMORY_PERCENTAGE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_SIZE"/>
+            <xs:enumeration value="FREE_NATIVE_MEMORY_PERCENTAGE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="eviction">
+        <xs:attribute name="size" type="xs:nonNegativeInteger" default="10000" use="optional"/>
+        <xs:attribute name="max-size-policy" type="max-size-policy" default="ENTRY_COUNT" use="optional"/>
+        <xs:attribute name="eviction-policy" type="eviction-policy" default="LRU" use="optional"/>
+    </xs:complexType>
 
     <xs:simpleType name="in-memory-format">
         <xs:restriction base="non-space-string">
@@ -330,15 +349,6 @@
         <xs:attribute name="class-name" type="xs:string" use="required"/>
         <xs:attribute name="type-class" type="xs:string" use="required"/>
     </xs:complexType>
-
-    <xs:simpleType name="cache-eviction-policy">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="RANDOM"/>
-            <xs:enumeration value="LRU"/>
-            <xs:enumeration value="LFU"/>
-        </xs:restriction>
-    </xs:simpleType>
 
     <xs:complexType name="socket-interceptor">
         <xs:all>

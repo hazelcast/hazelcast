@@ -59,7 +59,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * @author ali 5/24/13

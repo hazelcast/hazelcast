@@ -23,12 +23,12 @@ import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
 import com.hazelcast.cache.impl.eviction.EvictionStrategy;
 import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
-import com.hazelcast.cache.impl.maxsize.CacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheEvictionConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
@@ -84,10 +84,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean isEventsEnabled = true;
     protected boolean isEventBatchingEnabled;
     protected ExpiryPolicy defaultExpiryPolicy;
-    protected final CacheEvictionConfig evictionConfig;
+    protected final EvictionConfig evictionConfig;
     protected volatile boolean hasExpiringEntry;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
-    protected final CacheMaxSizeChecker maxSizeChecker;
+    protected final MaxSizeChecker maxSizeChecker;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
     protected final EvictionChecker evictionChecker;
     protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
@@ -126,7 +126,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.maxSizeChecker = createCacheMaxSizeChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         this.evictionChecker = createEvictionChecker(evictionConfig);
-        this.evictionStrategy = creatEvictionStrategy(evictionConfig);
+        this.evictionStrategy = createEvictionStrategy(evictionConfig);
 
         // Register "cacheWriter" if it is "Closable" to be closed while cache is being destroyed
         if (cacheWriter instanceof Closeable) {
@@ -165,18 +165,18 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected abstract Data recordToData(R record);
     protected abstract Data toHeapData(Object obj);
 
-    protected CacheMaxSizeChecker createCacheMaxSizeChecker(int size,
-                                                            CacheEvictionConfig.CacheMaxSizePolicy maxSizePolicy) {
+    protected MaxSizeChecker createCacheMaxSizeChecker(int size,
+                                                            EvictionConfig.MaxSizePolicy maxSizePolicy) {
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
-        if (maxSizePolicy == CacheEvictionConfig.CacheMaxSizePolicy.ENTRY_COUNT) {
+        if (maxSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
             return new EntryCountCacheMaxSizeChecker(size, records, partitionCount);
         }
         return null;
     }
 
-    protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(CacheEvictionConfig cacheEvictionConfig) {
+    protected EvictionPolicyEvaluator<Data, R> createEvictionPolicyEvaluator(EvictionConfig cacheEvictionConfig) {
         final EvictionPolicy evictionPolicy = cacheEvictionConfig.getEvictionPolicy();
         if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
             throw new IllegalArgumentException("Eviction policy cannot be null or NONE");
@@ -184,11 +184,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(cacheEvictionConfig);
     }
 
-    protected EvictionChecker createEvictionChecker(CacheEvictionConfig cacheEvictionConfig) {
+    protected EvictionChecker createEvictionChecker(EvictionConfig cacheEvictionConfig) {
         return new MaxSizeEvictionChecker();
     }
 
-    protected EvictionStrategy<Data, R, CRM> creatEvictionStrategy(CacheEvictionConfig cacheEvictionConfig) {
+    protected EvictionStrategy<Data, R, CRM> createEvictionStrategy(EvictionConfig cacheEvictionConfig) {
         return EvictionStrategyProvider.getEvictionStrategy(cacheEvictionConfig);
     }
 

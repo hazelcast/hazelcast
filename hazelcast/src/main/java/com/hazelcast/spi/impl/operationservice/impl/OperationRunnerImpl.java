@@ -30,7 +30,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
@@ -48,10 +47,12 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.OperationAccessor.isJoinOperation;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
+import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
+import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
+import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
@@ -239,7 +240,7 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean retryDuringMigration(Operation op) {
-        return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
+        return !(op instanceof ReadonlyOperation || isMigrationOperation(op));
     }
 
     private void handleOperationError(Operation operation, Throwable e) {
@@ -311,7 +312,9 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private boolean ensureValidMember(Operation op) {
-        if (isJoinOperation(op) || node.clusterService.getMember(op.getCallerAddress()) != null) {
+        if (node.clusterService.getMember(op.getCallerAddress()) != null
+                || isJoinOperation(op)
+                || isWanReplicationOperation(op)) {
             return true;
         }
 

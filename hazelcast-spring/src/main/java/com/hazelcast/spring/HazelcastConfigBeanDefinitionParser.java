@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.CacheEvictionConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
@@ -564,28 +564,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, cacheConfigBuilder);
             for (Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("eviction".equals(cleanNodeName(childNode))) {
-                    final CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
-                    final Node size = childNode.getAttributes().getNamedItem("size");
-                    final Node maxSizePolicy = childNode.getAttributes().getNamedItem("max-size-policy");
-                    final Node evictionPolicy = childNode.getAttributes().getNamedItem("eviction-policy");
-                    if (size != null) {
-                        evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
-                    }
-                    if (maxSizePolicy != null) {
-                        evictionConfig.setMaxSizePolicy(
-                                CacheEvictionConfig.CacheMaxSizePolicy.valueOf(
-                                        upperCaseInternal(getTextContent(maxSizePolicy)))
-                        );
-                    }
-                    if (evictionPolicy != null) {
-                        evictionConfig.setEvictionPolicy(
-                                EvictionPolicy.valueOf(
-                                        upperCaseInternal(getTextContent(evictionPolicy)))
-                        );
-                    }
-                    cacheConfigBuilder.addPropertyValue("evictionConfig", evictionConfig);
-                }
-                if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
+                    cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode));
+                } else if ("near-cache".equals(cleanNodeName(childNode))) {
+                    handleNearCacheConfig(childNode, cacheConfigBuilder);
+                } else if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = new ManagedList();
                     for (Node listenerNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
                         final BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(CacheSimpleEntryListenerConfig.class);
@@ -593,8 +575,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         listeners.add(listenerConfBuilder.getBeanDefinition());
                     }
                     cacheConfigBuilder.addPropertyValue("cacheEntryListeners", listeners);
-                }
-                if ("wan-replication-ref".equals(cleanNodeName(childNode))) {
+                } else if ("wan-replication-ref".equals(cleanNodeName(childNode))) {
                     final BeanDefinitionBuilder wanReplicationRefBuilder = createBeanBuilder(WanReplicationRef.class);
                     final AbstractBeanDefinition wanReplicationRefBeanDefinition = wanReplicationRefBuilder
                             .getBeanDefinition();
@@ -677,8 +658,43 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             createAndFillBeanBuilder(node, ManagementCenterConfig.class, "managementCenterConfig", configBuilder);
         }
 
-        public void handleNearCacheConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
-            createAndFillBeanBuilder(node, NearCacheConfig.class, "nearCacheConfig", mapConfigBuilder);
+        public void handleNearCacheConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            BeanDefinitionBuilder nearCacheConfigBuilder = createBeanBuilder(NearCacheConfig.class);
+            fillAttributeValues(node, nearCacheConfigBuilder);
+            for (Node childNode : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(childNode.getNodeName());
+                if ("eviction".equals(nodeName)) {
+                    handleEvictionConfig(childNode, nearCacheConfigBuilder);
+                }
+            }
+            configBuilder.addPropertyValue("nearCacheConfig", nearCacheConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
+            configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        }
+
+        private EvictionConfig getEvictionConfig(final Node node) {
+            final EvictionConfig evictionConfig = new EvictionConfig();
+            final Node size = node.getAttributes().getNamedItem("size");
+            final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+            final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+            if (size != null) {
+                evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+            }
+            if (maxSizePolicy != null) {
+                evictionConfig.setMaxSizePolicy(
+                        EvictionConfig.MaxSizePolicy.valueOf(
+                                upperCaseInternal(getTextContent(maxSizePolicy)))
+                );
+            }
+            if (evictionPolicy != null) {
+                evictionConfig.setEvictionPolicy(
+                        EvictionPolicy.valueOf(
+                                upperCaseInternal(getTextContent(evictionPolicy)))
+                );
+            }
+            return evictionConfig;
         }
 
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
@@ -711,7 +727,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 mapStoreConfigBuilder.addPropertyValue("initialLoadMode", mode);
             }
             mapConfigBuilder.addPropertyValue("mapStoreConfig", beanDefinition);
-            mapStoreConfigBuilder = null;
         }
 
         public void handleMultiMap(Node node) {

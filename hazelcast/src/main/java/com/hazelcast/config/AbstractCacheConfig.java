@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Base class for {@link CacheConfig}
  */
@@ -141,9 +143,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     public CacheConfiguration<K, V> addCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
-        }
+        checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
         if (!listenerConfigurations.add(cacheEntryListenerConfiguration)) {
             throw new IllegalArgumentException("A CacheEntryListenerConfiguration can "
                     + "be registered only once");
@@ -159,9 +159,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      */
     public CacheConfiguration<K, V> removeCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
-        }
+        checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
         listenerConfigurations.remove(cacheEntryListenerConfiguration);
         return this;
     }

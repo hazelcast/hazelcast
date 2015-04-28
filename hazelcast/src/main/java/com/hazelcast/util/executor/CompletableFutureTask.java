@@ -27,7 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class CompletableFutureTask<V> extends FutureTask<V> implements ICompletableFuture<V> {
 

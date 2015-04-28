@@ -33,6 +33,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
@@ -41,6 +42,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<MultiMapService>
         implements TransactionalObject {
@@ -62,15 +65,16 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         this.config = nodeEngine.getConfig().findMultiMapConfig(name);
     }
 
-    protected void checkTransactionState() {
+    protected void checkTransactionActive() {
         if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
 
     protected boolean putInternal(Data key, Data value) {
-        throwExceptionIfNull(key);
-        throwExceptionIfNull(value);
+        checkObjectNotNull(key);
+        checkObjectNotNull(value);
+
         Collection<MultiMapRecord> coll = txMap.get(key);
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
@@ -103,8 +107,9 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     protected boolean removeInternal(Data key, Data value) {
-        throwExceptionIfNull(key);
-        throwExceptionIfNull(value);
+        checkObjectNotNull(key);
+        checkObjectNotNull(value);
+
         Collection<MultiMapRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
@@ -141,7 +146,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     protected Collection<MultiMapRecord> removeAllInternal(Data key) {
-        throwExceptionIfNull(key);
+        checkObjectNotNull(key);
+
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
         Collection<MultiMapRecord> coll = txMap.get(key);
@@ -164,7 +170,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     protected Collection<MultiMapRecord> getInternal(Data key) {
-        throwExceptionIfNull(key);
+        checkObjectNotNull(key);
+
         Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null) {
             GetAllOperation operation = new GetAllOperation(name, key);
@@ -188,7 +195,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     protected int valueCountInternal(Data key) {
-        throwExceptionIfNull(key);
+        checkObjectNotNull(key);
+
         Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null) {
             CountOperation operation = new CountOperation(name, key);
@@ -207,7 +215,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     public int size() {
-        checkTransactionState();
+        checkTransactionActive();
+
         try {
             final OperationService operationService = getNodeEngine().getOperationService();
             final Map<Integer, Object> results = operationService.invokeOnAllPartitions(MultiMapService.SERVICE_NAME,
@@ -241,10 +250,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return MultiMapService.SERVICE_NAME;
     }
 
-    private void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
+    private void checkObjectNotNull(Object o) {
+        checkNotNull(o, "Object is null");
     }
 
     private long getThreadId() {

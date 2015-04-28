@@ -43,10 +43,10 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         IMap<String, String> map = getMapWithSingleElement(instance);
 
         for (int i = 0; i < 3; i++) {
-            map.executeOnEntries(new SlowEntryProcessor(3));
+            map.executeOnEntries(getSlowEntryProcessor(3));
         }
-        map.executeOnEntries(new SlowEntryProcessor(6));
-        waitForAllOperationsToComplete(instance);
+        map.executeOnEntries(getSlowEntryProcessor(6));
+        awaitSlowEntryProcessors();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 1);
@@ -69,11 +69,14 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         IMap<String, String> map = getMapWithSingleElement(instance);
 
         for (int i = 0; i < 3; i++) {
-            map.executeOnEntries(new SlowEntryProcessor(3));
+            map.executeOnEntries(getSlowEntryProcessor(3));
         }
-        map.executeOnEntries(new SlowEntryProcessorChild(3));
-        map.executeOnEntries(new SlowEntryProcessor(5));
-        waitForAllOperationsToComplete(instance);
+        SlowEntryProcessorChild entryProcessorChild = new SlowEntryProcessorChild(3);
+        map.executeOnEntries(entryProcessorChild);
+        map.executeOnEntries(getSlowEntryProcessor(5));
+
+        awaitSlowEntryProcessors();
+        entryProcessorChild.await();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 2);
@@ -90,8 +93,9 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
-        map.executeOnEntries(new NestedSlowEntryProcessor(map, 2));
-        waitForAllOperationsToComplete(instance);
+        NestedSlowEntryProcessor entryProcessor = new NestedSlowEntryProcessor(map, 2);
+        map.executeOnEntries(entryProcessor);
+        entryProcessor.await();
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 1);
@@ -105,23 +109,27 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
 
     private static class NestedSlowEntryProcessor implements EntryProcessor<String, String> {
 
-        final IMap<String, String> map;
-        final int sleepSeconds;
+        private final IMap<String, String> map;
+        private final SlowEntryProcessor entryProcessor;
 
         private NestedSlowEntryProcessor(IMap<String, String> map, int sleepSeconds) {
             this.map = map;
-            this.sleepSeconds = sleepSeconds;
+            this.entryProcessor = new SlowEntryProcessor(sleepSeconds);
         }
 
         @Override
         public Object process(Map.Entry<String, String> entry) {
-            executeEntryProcessor(map, new SlowEntryProcessor(sleepSeconds));
+            executeEntryProcessor(map, entryProcessor);
             return null;
         }
 
         @Override
         public EntryBackupProcessor<String, String> getBackupProcessor() {
             return null;
+        }
+
+        private void await() {
+            entryProcessor.await();
         }
     }
 }

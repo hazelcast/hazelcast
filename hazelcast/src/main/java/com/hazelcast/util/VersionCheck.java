@@ -16,22 +16,17 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.Node;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.IOUtil;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -51,14 +46,9 @@ public final class VersionCheck {
     private static final int H_INTERVAL = 300;
     private static final int J_INTERVAL = 600;
 
-    private MessageDigest md;
+    private static final String BASE_VERSION_CHECK_URL = "http://versioncheck.hazelcast.com/version.jsp";
 
     public VersionCheck() {
-        try {
-            md = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException ignored) {
-            EmptyStatement.ignore(ignored);
-        }
     }
 
     public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
@@ -118,34 +108,34 @@ public final class VersionCheck {
             IOUtil.closeResource(is);
         }
 
-        String urlStr = "http://versioncheck.hazelcast.com/version.jsp?version=" + version
-                + "&m=" + hazelcastNode.getLocalMember().getUuid()
-                + "&e=" + isEnterprise
-                + "&l=" + toMD5String(hazelcastNode.getConfig().getLicenseKey())
-                + "&p=" + downloadId
-                + "&c=" + toMD5String(hazelcastNode.getConfig().getGroupConfig().getName())
-                + "&crsz=" + convertToLetter(hazelcastNode.getClusterService().getMembers().size())
-                + "&cssz=" + convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount());
+        //Calculate native memory usage from native memory config
+        NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
+        long totalNativeMemorySize = hazelcastNode.getClusterService().getSize()
+                * memoryConfig.getSize().bytes();
+        String nativeMemoryParameter = (isEnterprise)
+                ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";
+        //Calculate connected clients to the cluster.
+        Map<ClientType, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
 
+        UrlActionParameterCreator parameterCreator = new UrlActionParameterCreator();
+        parameterCreator.addParam("version", version);
+        parameterCreator.addParam("m", hazelcastNode.getLocalMember().getUuid());
+        parameterCreator.addParam("e", Boolean.toString(isEnterprise));
+        parameterCreator.addParam("l", MD5Util.toMD5String(hazelcastNode.getConfig().getLicenseKey()));
+        parameterCreator.addParam("p", downloadId);
+        parameterCreator.addParam("c", MD5Util.toMD5String(hazelcastNode.getConfig().getGroupConfig().getName()));
+        parameterCreator.addParam("crsz", convertToLetter(hazelcastNode.getClusterService().getMembers().size()));
+        parameterCreator.addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
+        parameterCreator.addParam("hdgb", nativeMemoryParameter);
+        parameterCreator.addParam("ccpp", Integer.toString(clusterClientStats.get(ClientType.CPP)));
+        parameterCreator.addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)));
+        parameterCreator.addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)));
+
+        String urlStr = BASE_VERSION_CHECK_URL + parameterCreator.build();
         fetchWebService(urlStr);
     }
 
-    private String toMD5String(String str) {
-        if (md == null || str == null) {
-            return "NULL";
-        }
-        byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
-
-        //CHECKSTYLE:OFF suppressed because of magic numbers.
-        StringBuilder sb = new StringBuilder();
-        for (byte aByteData : byteData) {
-            sb.append(Integer.toString((aByteData & 0xff) + 0x100, 16).substring(1));
-        }
-        //CHECKSTYLE:ON
-        return sb.toString();
-    }
-
-    private Document fetchWebService(String urlStr) {
+    private void fetchWebService(String urlStr) {
         InputStream in = null;
         try {
             URL url = new URL(urlStr);
@@ -154,18 +144,35 @@ public final class VersionCheck {
             conn.setConnectTimeout(TIMEOUT * 2);
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
-            final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            return builder.parse(in);
-        } catch (SAXException ignored) {
-            EmptyStatement.ignore(ignored);
-        } catch (IOException ignored) {
-            EmptyStatement.ignore(ignored);
-        } catch (ParserConfigurationException ignored) {
+        }  catch (IOException ignored) {
             EmptyStatement.ignore(ignored);
         } finally {
             IOUtil.closeResource(in);
         }
+    }
 
-        return null;
+    private static class UrlActionParameterCreator {
+
+        private final StringBuilder builder;
+        private boolean hasParameterBefore;
+
+        public UrlActionParameterCreator() {
+            builder = new StringBuilder();
+            builder.append("?");
+        }
+
+        public UrlActionParameterCreator addParam(String key, String value) {
+            if (hasParameterBefore) {
+                builder.append("&");
+            } else {
+                hasParameterBefore = true;
+            }
+            builder.append(key).append("=").append(value);
+            return this;
+        }
+
+        public String build() {
+            return builder.toString();
+        }
     }
 }

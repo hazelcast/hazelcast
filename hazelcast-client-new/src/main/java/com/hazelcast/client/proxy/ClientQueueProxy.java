@@ -16,9 +16,33 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueAddAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueClearParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueCompareAndRemoveAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueCompareAndRetainAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueContainsAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueContainsParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueDrainToMaxSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueIteratorParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueOfferParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueuePeekParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueuePollParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueuePutParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueRemainingCapacityParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueRemoveListenerParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.QueueTakeParameters;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.collection.impl.queue.QueueIterator;
+import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
@@ -27,24 +51,8 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.collection.impl.queue.client.AddAllRequest;
-import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
-import com.hazelcast.collection.impl.queue.client.ClearRequest;
-import com.hazelcast.collection.impl.queue.client.CompareAndRemoveRequest;
-import com.hazelcast.collection.impl.queue.client.ContainsRequest;
-import com.hazelcast.collection.impl.queue.client.DrainRequest;
-import com.hazelcast.collection.impl.queue.client.IsEmptyRequest;
-import com.hazelcast.collection.impl.queue.client.IteratorRequest;
-import com.hazelcast.collection.impl.queue.client.OfferRequest;
-import com.hazelcast.collection.impl.queue.client.PeekRequest;
-import com.hazelcast.collection.impl.queue.client.PollRequest;
-import com.hazelcast.collection.impl.queue.client.RemainingCapacityRequest;
-import com.hazelcast.collection.impl.queue.client.RemoveListenerRequest;
-import com.hazelcast.collection.impl.queue.client.RemoveRequest;
-import com.hazelcast.collection.impl.queue.client.SizeRequest;
-import com.hazelcast.collection.impl.queue.QueueIterator;
-import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -64,6 +72,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         this.name = name;
     }
 
+    //Todo needs QueueAddListenerMessageTask call()
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
         final AddListenerRequest request = new AddListenerRequest(name, includeValue);
         EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
@@ -91,7 +100,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public boolean removeItemListener(String registrationId) {
-        final RemoveListenerRequest request = new RemoveListenerRequest(name, registrationId);
+        ClientMessage request = QueueRemoveListenerParameters.encode(name, registrationId);
         return stopListening(request, registrationId);
     }
 
@@ -125,44 +134,54 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public void put(E e) throws InterruptedException {
-        offer(e, -1, TimeUnit.MILLISECONDS);
+        Data data = toData(e);
+        ClientMessage request = QueuePutParameters.encode(name, data);
+        invokeInterruptibly(request);
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        Data data = getContext().getSerializationService().toData(e);
-        OfferRequest request = new OfferRequest(name, unit.toMillis(timeout), data);
-        final Boolean result = invokeInterruptibly(request);
-        return result;
+        Data data = toData(e);
+        ClientMessage request = QueueOfferParameters.encode(name, data, unit.toMillis(timeout));
+        ClientMessage response = invokeInterruptibly(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public E take() throws InterruptedException {
-        return poll(-1, TimeUnit.MILLISECONDS);
+        ClientMessage request = QueueTakeParameters.encode(name);
+        ClientMessage response = invokeInterruptibly(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        PollRequest request = new PollRequest(name, unit.toMillis(timeout));
-        return invokeInterruptibly(request);
+        ClientMessage request = QueuePollParameters.encode(name, unit.toMillis(timeout));
+        ClientMessage response = invokeInterruptibly(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     public int remainingCapacity() {
-        RemainingCapacityRequest request = new RemainingCapacityRequest(name);
-        Integer result = invoke(request);
-        return result;
+        ClientMessage request = QueueRemainingCapacityParameters.encode(name);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean remove(Object o) {
-        Data data = getContext().getSerializationService().toData(o);
-        RemoveRequest request = new RemoveRequest(name, data);
-        Boolean result = invoke(request);
-        return result;
+        Data data = toData(o);
+        ClientMessage request = QueueRemoveParameters.encode(name, data);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean contains(Object o) {
-        final Collection<Data> list = new ArrayList<Data>(1);
-        list.add(getContext().getSerializationService().toData(o));
-        ContainsRequest request = new ContainsRequest(name, list);
-        Boolean result = invoke(request);
-        return result;
+        Data data = toData(o);
+        ClientMessage request = QueueContainsParameters.encode(name, data);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -170,14 +189,15 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public int drainTo(Collection<? super E> c, int maxElements) {
-        DrainRequest request = new DrainRequest(name, maxElements);
-        PortableCollection result = invoke(request);
-        Collection<Data> coll = result.getCollection();
-        for (Data data : coll) {
-            E e = getContext().getSerializationService().toObject(data);
+        ClientMessage request = QueueDrainToMaxSizeParameters.encode(name, maxElements);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> resultCollection = resultParameters.result;
+        for (Data data : resultCollection) {
+            E e = toObject(data);
             c.add(e);
         }
-        return coll.size();
+        return resultCollection.size();
     }
 
     public E remove() {
@@ -205,98 +225,108 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public E peek() {
-        PeekRequest request = new PeekRequest(name);
-        return invoke(request);
+        ClientMessage request = QueuePeekParameters.encode(name);
+        ClientMessage response = invoke(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     public int size() {
-        SizeRequest request = new SizeRequest(name);
-        Integer result = invoke(request);
-        return result;
+        ClientMessage request = QueueSizeParameters.encode(name);
+        ClientMessage response = invoke(request);
+        IntResultParameters resultParameters = IntResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean isEmpty() {
-        IsEmptyRequest request = new IsEmptyRequest(name);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = QueueIsEmptyParameters.encode(name);
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public Iterator<E> iterator() {
-        IteratorRequest request = new IteratorRequest(name);
-        PortableCollection result = invoke(request);
-        Collection<Data> coll = result.getCollection();
-        return new QueueIterator<E>(coll.iterator(), getContext().getSerializationService(), false);
+        ClientMessage request = QueueIteratorParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> resultCollection = resultParameters.result;
+        return new QueueIterator<E>(resultCollection.iterator(), getContext().getSerializationService(), false);
     }
 
     public Object[] toArray() {
-        IteratorRequest request = new IteratorRequest(name);
-        PortableCollection result = invoke(request);
-        Collection<Data> coll = result.getCollection();
+        ClientMessage request = QueueIteratorParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> resultCollection = resultParameters.result;
         int i = 0;
-        Object[] array = new Object[coll.size()];
-        for (Data data : coll) {
-            array[i++] = getContext().getSerializationService().toObject(data);
+        Object[] array = new Object[resultCollection.size()];
+        for (Data data : resultCollection) {
+            array[i++] = toObject(data);
         }
         return array;
     }
 
     public <T> T[] toArray(T[] ts) {
-        IteratorRequest request = new IteratorRequest(name);
-        PortableCollection result = invoke(request);
-        Collection<Data> coll = result.getCollection();
-        int size = coll.size();
+        ClientMessage request = QueueIteratorParameters.encode(name);
+        ClientMessage response = invoke(request);
+        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
+        Collection<Data> resultCollection = resultParameters.result;
+        int size = resultCollection.size();
         if (ts.length < size) {
             ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
         }
         int i = 0;
-        for (Data data : coll) {
-            ts[i++] = (T) getContext().getSerializationService().toObject(data);
+        for (Data data : resultCollection) {
+            ts[i++] = (T) toObject(data);
         }
         return ts;
     }
 
     public boolean containsAll(Collection<?> c) {
-        List<Data> list = getDataList(c);
-        ContainsRequest request = new ContainsRequest(name, list);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = QueueContainsAllParameters.encode(name, getDataList(c));
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        AddAllRequest request = new AddAllRequest(name, getDataList(c));
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = QueueAddAllParameters.encode(name, getDataList(c));
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean removeAll(Collection<?> c) {
-        CompareAndRemoveRequest request = new CompareAndRemoveRequest(name, getDataList(c), false);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = QueueCompareAndRemoveAllParameters.encode(name, getDataList(c));
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public boolean retainAll(Collection<?> c) {
-        CompareAndRemoveRequest request = new CompareAndRemoveRequest(name, getDataList(c), true);
-        Boolean result = invoke(request);
-        return result;
+        ClientMessage request = QueueCompareAndRetainAllParameters.encode(name, getDataList(c));
+        ClientMessage response = invoke(request);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
+        return resultParameters.result;
     }
 
     public void clear() {
-        ClearRequest request = new ClearRequest(name);
+        ClientMessage request = QueueClearParameters.encode(name);
         invoke(request);
     }
 
-    protected <T> T invoke(ClientRequest req) {
+    protected <T> T invoke(ClientMessage req) {
         return super.invoke(req, getPartitionKey());
     }
 
-    protected <T> T invokeInterruptibly(ClientRequest req) throws InterruptedException {
+    protected <T> T invokeInterruptibly(ClientMessage req) throws InterruptedException {
         return super.invokeInterruptibly(req, getPartitionKey());
     }
 
     private List<Data> getDataList(Collection<?> objects) {
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
-            dataList.add(getContext().getSerializationService().toData(o));
+            dataList.add(toData(o));
         }
         return dataList;
     }

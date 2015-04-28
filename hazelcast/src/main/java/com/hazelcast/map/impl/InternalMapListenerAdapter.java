@@ -21,7 +21,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.map.listener.MapListener;
 
 import static com.hazelcast.map.impl.MapListenerAdaptors.createListenerAdapters;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Internal-usage-only adapter which wraps all {@link MapListener} sub-interfaces into a {@link ListenerAdapter}.

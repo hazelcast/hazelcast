@@ -102,7 +102,7 @@ public class CodeGenerator
     private void generateMessageTypeEnum(TypeElement classElement) {
         MessageTypeEnumModel clazz = new MessageTypeEnumModel(classElement);
         final String content = generateFromTemplate(messageTypeTemplate, clazz);
-        saveClass(classElement, clazz.getPackageName(), clazz.getClassName(), content);
+        saveClass(clazz.getPackageName(), clazz.getClassName(), content);
     }
 
     private void generateParameterClassCSharp(TypeElement classElement, ExecutableElement methodElement) {
@@ -114,14 +114,14 @@ public class CodeGenerator
     private void generateParameterClass(TypeElement classElement, ExecutableElement methodElement) {
         ParameterClassModel clazz = new ParameterClassModel(classElement, methodElement, Lang.JAVA);
         final String content = generateFromTemplate(parameterTemplate, clazz);
-        saveClass(classElement, clazz.getPackageName(), clazz.getClassName(), content);
+        saveClass(clazz.getPackageName(), clazz.getClassName(), content);
     }
 
-    private void saveClass(TypeElement classElement, String packageName, String className, String content) {
+    private void saveClass(String packageName, String className, String content) {
         JavaFileObject file;
         try {
             final String fullClassName = packageName + "." + className;
-            file = filer.createSourceFile(fullClassName, classElement);
+            file = filer.createSourceFile(fullClassName);
             file.openWriter().append(content).close();
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());

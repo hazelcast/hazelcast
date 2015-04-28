@@ -33,6 +33,8 @@ If a comparator is not specified for `PagingPredicate`, but you want to get a co
 Paging Predicate is not supported in Transactional Context.
 <br></br>
 
+![image](images/NoteSmall.jpg) ***NOTE:*** *Currently, random page accessing is not supported.*
+
 ***RELATED INFORMATION***
 
 *Please refer to the [Javadoc](http://hazelcast.org/docs/latest/javadoc/com/hazelcast/query/Predicates.html) for all

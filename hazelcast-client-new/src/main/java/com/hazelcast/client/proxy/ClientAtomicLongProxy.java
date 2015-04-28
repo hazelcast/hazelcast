@@ -32,7 +32,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.serialization.Data;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 

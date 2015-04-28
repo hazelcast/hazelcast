@@ -33,7 +33,7 @@ import java.security.Permission;
 
 public class LockForceUnlockMessageTask extends AbstractPartitionMessageTask<LockForceUnlockParameters> {
 
-    protected LockForceUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public LockForceUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 

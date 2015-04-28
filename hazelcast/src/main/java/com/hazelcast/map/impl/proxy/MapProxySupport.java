@@ -131,11 +131,14 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
+    protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
+    protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
     protected final String name;
     protected final LocalMapStatsImpl localMapStats;
@@ -800,12 +803,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 Map<Integer, MapEntrySet> entryMap
                         = new HashMap<Integer, MapEntrySet>(nodeEngine.getPartitionService().getPartitionCount());
                 for (Entry entry : entries.entrySet()) {
-                    if (entry.getKey() == null) {
-                        throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-                    }
-                    if (entry.getValue() == null) {
-                        throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-                    }
+                    checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                    checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
                     int partitionId = partitionService.getPartitionId(entry.getKey());
                     if (!entryMap.containsKey(partitionId)) {
                         entryMap.put(partitionId, new MapEntrySet());
@@ -832,12 +832,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             } else {
                 for (Entry entry : entries.entrySet()) {
-                    if (entry.getKey() == null) {
-                        throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-                    }
-                    if (entry.getValue() == null) {
-                        throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-                    }
+                    checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                    checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
                     putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
                             mapService.getMapServiceContext().toData(entry.getValue()),
                             -1,

@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import java.util.EventListener;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link EventListener}. The configuration contains either the classname
@@ -93,7 +93,7 @@ public class ListenerConfig {
      * @see #getClassName()
      */
     public ListenerConfig setClassName(String className) {
-        this.className = hasText(className, "className");
+        this.className = checkHasText(className, "className must contain text");
         this.implementation = null;
         return this;
     }

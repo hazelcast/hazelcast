@@ -28,61 +28,61 @@ public interface QueueTemplate {
     @EncodeMethod(id = 1)
     void offer(String name, Data value, long timeoutMillis);
 
-    @EncodeMethod(id = 1)
+    @EncodeMethod(id = 2)
     void put(String name, Data value);
 
-    @EncodeMethod(id = 2)
+    @EncodeMethod(id = 3)
     void size(String name);
 
-    @EncodeMethod(id = 3)
+    @EncodeMethod(id = 4)
     void remove(String name, Data value);
 
-    @EncodeMethod(id = 4)
-    void poll(String name);
-
-    @EncodeMethod(id = 4)
-    void take(String name, long timeoutMillis);
-
     @EncodeMethod(id = 5)
-    void peek(String name);
+    void poll(String name, long timeoutMillis);
 
     @EncodeMethod(id = 6)
-    void iterator(String name);
+    void take(String name);
 
     @EncodeMethod(id = 7)
-    void drainTo(String name);
-
-    @EncodeMethod(id = 7)
-    void drainToMaxSize(String name, int maxSize);
+    void peek(String name);
 
     @EncodeMethod(id = 8)
-    void contains(String name, Data value);
+    void iterator(String name);
 
     @EncodeMethod(id = 9)
-    void containsAll(String name, Collection<Data> dataList);
+    void drainTo(String name);
 
     @EncodeMethod(id = 10)
-    void compareAndRemoveAll(String name, Collection<Data> dataList);
+    void drainToMaxSize(String name, int maxSize);
 
     @EncodeMethod(id = 11)
-    void compareAndRetainAll(String name, Collection<Data> dataList);
+    void contains(String name, Data value);
 
     @EncodeMethod(id = 12)
-    void clear(String name);
+    void containsAll(String name, Collection<Data> dataList);
 
     @EncodeMethod(id = 13)
-    void addAll(String name, Collection<Data> dataList);
+    void compareAndRemoveAll(String name, Collection<Data> dataList);
 
     @EncodeMethod(id = 14)
-    void addListener(String name, boolean includeValue);
+    void compareAndRetainAll(String name, Collection<Data> dataList);
 
     @EncodeMethod(id = 15)
-    void removeListener(String name, String registrationId);
+    void clear(String name);
 
     @EncodeMethod(id = 16)
-    void remainingCapacity(String name);
+    void addAll(String name, Collection<Data> dataList);
 
     @EncodeMethod(id = 17)
+    void addListener(String name, boolean includeValue);
+
+    @EncodeMethod(id = 18)
+    void removeListener(String name, String registrationId);
+
+    @EncodeMethod(id = 19)
+    void remainingCapacity(String name);
+
+    @EncodeMethod(id = 20)
     void isEmpty(String name);
 
 }

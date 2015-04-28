@@ -100,4 +100,5 @@ public interface ClusterService extends CoreService {
      * @return the ClusterClock.
      */
     ClusterClock getClusterClock();
+
 }

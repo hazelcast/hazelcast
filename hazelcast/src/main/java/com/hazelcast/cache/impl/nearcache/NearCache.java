@@ -44,9 +44,9 @@ public interface NearCache<K, V> {
     Object NULL_OBJECT = new Object();
 
     /**
-     * Gets the name of the this {@link com.hazelcast.cache.impl.nearcache.NearCache} instance.
+     * Gets the name of the <code>this</code> {@link com.hazelcast.cache.impl.nearcache.NearCache} instance.
      *
-     * @return the name of the this {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
+     * @return the name of the <code>this</code> {@link com.hazelcast.cache.impl.nearcache.NearCache} instance
      */
     String getName();
 
@@ -59,7 +59,7 @@ public interface NearCache<K, V> {
     V get(K key);
 
     /**
-     * Puts the value as associated with the given <code>key</code>.
+     * Puts (associates) a value with the given <code>key</code>.
      *
      * @param key   the key of the value will be stored
      * @param value the value will be stored
@@ -92,7 +92,7 @@ public interface NearCache<K, V> {
     void clear();
 
     /**
-     * Clears record store and destroy it.
+     * Clears the record store and destroys it.
      */
     void destroy();
 
@@ -111,10 +111,10 @@ public interface NearCache<K, V> {
     NearCacheStats getNearCacheStats();
 
     /**
-     * Selects the best candidate object between given <code>candidates</code> to store.
+     * Selects the best candidate object to store from the given <code>candidates</code>.
      *
-     * @param candidates the candidates where the best one will be selected
-     * @return the best candidate object between given <code>candidates</code> to store
+     * @param candidates the candidates from which the best candidate object will be selected.
+     * @return the best candidate object to store, selected from the given <code>candidates</code>.
      */
     Object selectToSave(Object ... candidates);
 

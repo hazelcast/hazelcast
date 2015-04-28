@@ -16,12 +16,6 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.config.ItemListenerConfig;
-import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.collection.impl.queue.operations.AddAllOperation;
 import com.hazelcast.collection.impl.queue.operations.ClearOperation;
 import com.hazelcast.collection.impl.queue.operations.CompareAndRemoveOperation;
@@ -36,6 +30,12 @@ import com.hazelcast.collection.impl.queue.operations.QueueOperation;
 import com.hazelcast.collection.impl.queue.operations.RemainingCapacityOperation;
 import com.hazelcast.collection.impl.queue.operations.RemoveOperation;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -44,9 +44,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> implements InitializingObject {
 
@@ -85,7 +88,8 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     }
 
     boolean offerInternal(Data data, long timeout) throws InterruptedException {
-        throwExceptionIfNull(data);
+        checkObjectNotNull(data);
+
         OfferOperation operation = new OfferOperation(name, timeout, data);
         try {
             return (Boolean) invokeAndGet(operation);
@@ -129,7 +133,8 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     }
 
     boolean removeInternal(Data data) {
-        throwExceptionIfNull(data);
+        checkObjectNotNull(data);
+
         RemoveOperation operation = new RemoveOperation(name, data);
         return (Boolean) invokeAndGet(operation);
     }
@@ -165,10 +170,8 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return partitionId;
     }
 
-    protected void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
+    protected void checkObjectNotNull(Object o) {
+        checkNotNull(o, "Object is null");
     }
 
     private <T> T invokeAndGet(QueueOperation operation) {
