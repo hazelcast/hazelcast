@@ -119,7 +119,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    private IOBalancer ioBalancer;
+    private volatile IOBalancer ioBalancer;
+
     private final LoggingService loggingService;
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel,
@@ -465,9 +466,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void shutdown() {
-        if (!live) {
-            return;
-        }
         live = false;
         shutdownSocketAcceptor();
         closeServerSocket();
@@ -488,6 +486,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void stop() {
+        if (!live) {
+            return;
+        }
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
         ioBalancer.stop();

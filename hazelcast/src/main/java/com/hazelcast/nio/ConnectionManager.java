@@ -39,11 +39,32 @@ public interface ConnectionManager {
 
     void destroyConnection(Connection conn);
 
-    void shutdown();
-
+    /**
+     * Starts ConnectionManager, initializes its resources, starts threads etc.
+     * After start ConnectionManager becomes fully operational.
+     *
+     * If it's already started, then this method has no effect.
+     *
+     * @throws IllegalStateException if ConnectionManager is shutdown
+     */
     void start();
 
+    /**
+     * Stops ConnectionManager, releases its resources, stops threads etc.
+     * When stopped ConnectionManager can be started again using {@link #start()}.
+     *
+     * This method has no effect if it's already stopped or shutdown.
+     *
+     */
     void stop();
+
+    /**
+     * Shutdowns ConnectionManager completely. ConnectionManager won't be operational anymore and
+     * cannot be started back.
+     *
+     * This method has no effect if it's already shutdown.
+     */
+    void shutdown();
 
     void addConnectionListener(ConnectionListener connectionListener);
 
