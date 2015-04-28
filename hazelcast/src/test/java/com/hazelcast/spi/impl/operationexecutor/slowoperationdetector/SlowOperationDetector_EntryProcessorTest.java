@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -78,14 +79,25 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         awaitSlowEntryProcessors();
         entryProcessorChild.await();
 
-        Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
+        final Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 2);
 
-        Iterator<SlowOperationLog> iterator = logs.iterator();
-        int firstSize = getInvocations(iterator.next()).size();
-        int secondSize = getInvocations(iterator.next()).size();
-        assertTrue(format("Expected to find 1 and 4 invocations in logs, but was %d and %d", firstSize, secondSize),
-                (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Iterator<SlowOperationLog> iterator = logs.iterator();
+                SlowOperationLog firstLog = iterator.next();
+                SlowOperationLog secondLog = iterator.next();
+
+                int firstSize = getInvocations(firstLog).size();
+                int secondSize = getInvocations(secondLog).size();
+
+                assertTrue(format(
+                                "Expected to find 1 and 4 invocations in logs, but was %d and %d. First log: %s%nSecond log: %s",
+                                firstSize, secondSize, firstLog.createDTO().toJson(), secondLog.createDTO().toJson()),
+                        (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
+            }
+        }, ASSERT_TRUE_TIMEOUT);
     }
 
     @Test

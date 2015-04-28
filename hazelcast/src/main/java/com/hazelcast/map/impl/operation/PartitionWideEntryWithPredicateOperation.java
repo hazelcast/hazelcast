@@ -53,7 +53,11 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
 
     @Override
     public String toString() {
-        return "PartitionWideEntryWithPredicateOperation{}";
+        return "PartitionWideEntryWithPredicateOperation{"
+                + "name='" + name
+                + "', entryProcessor='" + entryProcessor.toString()
+                + "', predicate='" + predicate.toString()
+                + "'}";
     }
 
     @Override

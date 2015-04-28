@@ -45,4 +45,9 @@ public class TruePredicate implements DataSerializable, Predicate {
     public boolean apply(Map.Entry mapEntry) {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "TruePredicate{}";
+    }
 }
