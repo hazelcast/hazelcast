@@ -78,9 +78,7 @@ public class CacheSimpleConfig {
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
-    // since "CacheEvictionConfig" is deprecated
-    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
+    private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
     private NearCacheConfig nearCacheConfig;
 
@@ -269,28 +267,16 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
-
-        this.inMemoryFormat = inMemoryFormat;
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 
-    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
-    // since "CacheEvictionConfig" is deprecated
     public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        isNotNull(evictionConfig, "Eviction config cannot be null !");
-
-        // TODO Remove this check in the future since "CacheEvictionConfig" is deprecated
-        if (evictionConfig instanceof CacheEvictionConfig) {
-            this.evictionConfig = (CacheEvictionConfig) evictionConfig;
-        } else {
-            this.evictionConfig = new CacheEvictionConfig(evictionConfig);
-        }
-
+        this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
     }
 
