@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapTryPutParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.TryPutOperation;
@@ -36,6 +37,11 @@ public class MapTryPutMessageTask extends AbstractMapPutMessageTask<MapTryPutPar
         TryPutOperation op = new TryPutOperation(parameters.name, parameters.key, parameters.value, parameters.timeout);
         op.setThreadId(parameters.threadId);
         return op;
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

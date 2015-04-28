@@ -39,8 +39,7 @@ import java.util.Set;
 
 public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunner {
 
-    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE =
-            Boolean.getBoolean("hazelcast.test.disableThreadDumpOnFailure");
+    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = true;
 
     static {
         final String logging = "hazelcast.logging.type";
