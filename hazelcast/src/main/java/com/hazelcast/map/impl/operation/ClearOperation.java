@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -54,6 +56,19 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
         }
 
         numberOfClearedEntries = recordStore.clear();
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        hintMapEvent();
+    }
+
+    private void hintMapEvent() {
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.hintMapEvent(getCallerAddress(), name, EntryEventType.CLEAR_ALL,
+                numberOfClearedEntries, getPartitionId());
     }
 
     @Override
