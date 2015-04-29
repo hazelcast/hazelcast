@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.SemaphoreTryAcquireParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -39,12 +40,17 @@ public class SemaphoreTryAcquireMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new AcquireOperation(parameters.name, parameters.permits, -1);
+        return new AcquireOperation(parameters.name, parameters.permits, parameters.timeout);
     }
 
     @Override
     protected SemaphoreTryAcquireParameters decodeClientMessage(ClientMessage clientMessage) {
         return SemaphoreTryAcquireParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

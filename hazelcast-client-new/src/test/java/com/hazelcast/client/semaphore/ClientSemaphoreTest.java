@@ -27,12 +27,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +42,6 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientSemaphoreTest {
     static HazelcastInstance client;
     static HazelcastInstance server;
@@ -203,7 +202,7 @@ public class ClientSemaphoreTest {
         semaphore.init(0);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     semaphore.acquire();
@@ -213,10 +212,11 @@ public class ClientSemaphoreTest {
                 }
             }
         }.start();
-        Thread.sleep(1000);
+
+        sleepSeconds(1);
         semaphore.release(2);
 
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertEquals(1, semaphore.availablePermits());
     }
 
@@ -226,10 +226,10 @@ public class ClientSemaphoreTest {
         semaphore.init(0);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(semaphore.tryAcquire(1, 5, TimeUnit.SECONDS)){
+                    if (semaphore.tryAcquire(1, 10, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -238,8 +238,10 @@ public class ClientSemaphoreTest {
             }
         }.start();
 
+        sleepSeconds(1);
         semaphore.release(2);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertEquals(1, semaphore.availablePermits());
     }
 }
