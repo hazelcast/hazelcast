@@ -1,6 +1,13 @@
 
 ### Enhancements
 
+**3.4.3 Enhancements**
+
+This section lists the enhancements performed for Hazelcast 3.4.3 release.
+
+- Expose `TcpIpJoiner.MAX_PORT_TRIES` as a configurable property [[#5062]](https://github.com/hazelcast/hazelcast/issues/5062).
+
+
 **3.4.2 Enhancements**
 
 This section lists the enhancements performed for Hazelcast 3.4.2 release.

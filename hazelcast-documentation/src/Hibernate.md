@@ -1,4 +1,3 @@
-# Integrated Clustering
 
 ## Hibernate Second Level Cache
 

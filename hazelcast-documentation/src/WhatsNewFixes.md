@@ -1,6 +1,23 @@
 
 ### Fixes
 
+**3.4.3 Fixes**
+
+This section lists issues solved for Hazelcast 3.4.3 release.
+
+- `ICompletableFuture` callback from the method `getAsync` is not always invoked [[#5133]](https://github.com/hazelcast/hazelcast/issues/5133).
+- Warnings and exceptions are logged when closing the client connection [[#4966]](https://github.com/hazelcast/hazelcast/issues/4966).
+- `CacheConfig` is not created on the cluster if the executer of `CacheCreateConfigOperation` has already a `CacheConfig` [[#4960]](https://github.com/hazelcast/hazelcast/issues/4960).
+- The schema does not allow for an explict `hz:replicatedMap` element to be created. One can be created inside `hz:config` but not as a definition for a concrete Replicated Map. Therefore, at present it is impossible to define a Replicated Map using Spring. [[#4958]](https://github.com/hazelcast/hazelcast/issues/4958).
+- `ResponseThread` and `InvocationRegistry.InspectionThread` reset and retry operations. Since these threads did not implement `NIOTHread`, the `OperationExecutor` is free to execute tasks on these threads and that is not  desirable [[#4929]](https://github.com/hazelcast/hazelcast/issues/4929).
+- The method `CacheManager.getCache()` does not re-open the closed cache. It should let access to the closed cache and re-open it. Cache can be accessed by `getCache` but it is still closed [[#4631]](https://github.com/hazelcast/hazelcast/issues/4631).
+- The method `close()` of a Closeable `CacheLoader` is called without explicitly calling the method `Cache.close()` [[#4617]](https://github.com/hazelcast/hazelcast/issues/4617).
+- The method `Cache.close()` does not call the method `close()` of registered Closeable `CacheEntryListener` [[#4616]](https://github.com/hazelcast/hazelcast/issues/4616).
+- The method `NotEqualPredicate` should return false if entry is null (without index) and also if index is present, it should not throw an exception with null values [[#4525]](https://github.com/hazelcast/hazelcast/issues/4525).
+- When running Hazelcast with Spring and Hibernate 4 and when an application is started, the error related to `org/hibernate/cache/QueryResultsRegion` is produced [[#4519]](https://github.com/hazelcast/hazelcast/issues/4519).
+- Predicates with null values throws exception for unordered indexes [[#4373]](https://github.com/hazelcast/hazelcast/issues/4373).
+
+
 
 **3.4.2 Fixes**
 

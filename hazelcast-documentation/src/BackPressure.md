@@ -21,7 +21,7 @@ sync-delay and decrements this delay for every asynchronous backups. Once the sy
 
 ### Future improvements
 
-In Hazelcast 3.4.1, the same technique is going to be applied for regular asynchronous calls.
+In Hazelcast 3.5, the same technique is going to be applied for regular asynchronous calls.
 
 In the future, a back pressure based on a TCP/IP based congestion control will be added. This requires changes since we need
 to use multiple channels. The TCP/IP buffer cannot be consumed because a single channel is used for regular operations,

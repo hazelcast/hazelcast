@@ -15,6 +15,10 @@ src/Overview.md
 	src/UseCases.md
 	src/Resources.md
 src/HazelcastClusters.md
+	src/HazelcastClustersMulticast.md
+	src/HazelcastClustersTCP.md
+	src/HazelcastClustersEC2.md
+	src/CreateClusterGroups.md
 src/Distributed_Data_Structures.md
 	src/Map.md
 		src/Map-Backups.md
@@ -57,6 +61,7 @@ src/DistributedComputing.md
 		src/Execution.md
 		src/ExecutionCancellation.md
 		src/ExecutionCallback.md
+		src/ExecutionMemberSelector.md
 	src/EntryProcessor.md
 		src/EntryProcessorSampleCode.md
 		src/EntryProcessorAbstract.md
@@ -118,6 +123,7 @@ src/JCache.md
 	src/JCache-BackupAwareEP.md
 	src/JCache-SpecCompliance.md
 src/IntegratedClustering.md
+	src/Hibernate.md
 	src/WebSessionReplication.md
 		src/TomcatSessionReplication.md
 		src/JettySessionReplication.md
