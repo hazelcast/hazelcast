@@ -77,7 +77,7 @@ public class PersonMapStore implements MapStore<Long, Person> {
         return result;
     }
 
-    public Set<Long> loadAllKeys() {
+    public Iterable<Long> loadAllKeys() {
         return null;
     }
 }
@@ -223,12 +223,16 @@ The `InitialLoadMode` configuration parameter in the class [`MapStoreConfig`](ht
 Here is the `MapLoader` initialization flow:
 
 1. When `getMap()` is first called from any node, initialization will start depending on the value of `InitialLoadMode`. If it is set to `EAGER`, initialization starts.  If it is set to `LAZY`, initialization does not start but data is loaded each time a partition loading completes.
-2. Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on each node.
-3. Each node will figure out the list of keys it owns.
-4. Each node will load all its owned keys by calling `MapLoader.loadAll(keys)`.
+2. Hazelcast will call `MapLoader.loadAllKeys()` to get all your keys on one of the nodes.
+3. That node will distribute keys to all other nodes in batches.
+4. Each node will load values of all its owned keys by calling `MapLoader.loadAll(keys)`.
 5. Each node puts its owned entries into the map by calling `IMap.putTransient(key,value)`.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *If the load mode is `LAZY` and when the `clear()` method is called (which triggers `MapStore.deleteAll()`), Hazelcast will remove **ONLY** the loaded entries from your map and datastore. Since the whole data is not loaded for this case (`LAZY` mode), please note that there may be still entries in your datastore.*
+
+#### Incremental Key Loading
+
+If the number of keys to load is large it is more efficient to load them incrementally than loading them all at once. To support incremental loading `MapLoader.loadAllKeys()` returns an `Iterable` which can be lazily populated with results of a database query. Hazelcast will iterate over the iterable and while doing so will send out the keys to their respective owner nodes. The `Iterator` obtained from `MapLoader.loadAllKeys()` may also implement the `Closeable` interface in which case it will be closed once iteration is over. This is intended for releasing resources such as closing a JDBC result set. 
 
 #### Forcing All Keys To Be Loaded
 
