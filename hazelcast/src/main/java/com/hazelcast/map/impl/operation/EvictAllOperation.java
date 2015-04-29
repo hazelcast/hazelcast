@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,6 +26,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.io.IOException;
 
 /**
@@ -56,6 +59,19 @@ public class EvictAllOperation extends AbstractMapOperation implements BackupAwa
         }
         numberOfEvictedEntries = recordStore.evictAll(false);
         shouldRunOnBackup = true;
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        hintMapEvent();
+    }
+
+    private void hintMapEvent() {
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
+        mapEventPublisher.hintMapEvent(getCallerAddress(), name,
+                EntryEventType.EVICT_ALL, numberOfEvictedEntries, getPartitionId());
     }
 
     @Override
