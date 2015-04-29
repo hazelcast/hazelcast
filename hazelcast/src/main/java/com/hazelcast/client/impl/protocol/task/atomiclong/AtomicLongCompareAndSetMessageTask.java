@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.atomiclong;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AtomicLongCompareAndSetParameters;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.CompareAndSetOperation;
@@ -43,6 +44,11 @@ public class AtomicLongCompareAndSetMessageTask extends AbstractPartitionMessage
     @Override
     protected AtomicLongCompareAndSetParameters decodeClientMessage(ClientMessage clientMessage) {
         return AtomicLongCompareAndSetParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

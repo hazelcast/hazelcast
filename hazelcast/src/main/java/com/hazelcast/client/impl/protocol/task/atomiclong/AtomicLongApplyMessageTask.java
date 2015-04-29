@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.atomiclong;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AtomicLongApplyParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.ApplyOperation;
@@ -46,6 +47,11 @@ public class AtomicLongApplyMessageTask extends AbstractPartitionMessageTask<Ato
     @Override
     protected AtomicLongApplyParameters decodeClientMessage(ClientMessage clientMessage) {
         return AtomicLongApplyParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return GenericResultParameters.encode(nodeEngine.toData(response));
     }
 
     @Override
