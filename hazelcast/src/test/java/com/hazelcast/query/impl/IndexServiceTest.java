@@ -33,6 +33,7 @@ import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.Value;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -95,5 +96,53 @@ public class IndexServiceTest {
         indexService.saveEntryIndex(new QueryEntry(null, toData(8), 8, new Value("def")));
         indexService.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
         assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
+    }
+
+
+    /**
+     * Imagine we have only keys and nullable values. And we add index for a field of that nullable object.
+     * When we execute a query on keys, there should be no returned value from indexing service and it does not
+     * throw exception.
+     */
+    @Test
+    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() throws Exception {
+        IndexService indexService = new IndexService();
+        indexService.addOrGetIndex("name", false);
+
+        shouldReturnNull_whenQueryingOnKeys(indexService);
+    }
+
+
+    @Test
+    public void shouldNotThrowException_withNullValues_whenNoIndexAdded() throws Exception {
+        IndexService indexService = new IndexService();
+
+        shouldReturnNull_whenQueryingOnKeys(indexService);
+    }
+
+    private void shouldReturnNull_whenQueryingOnKeys(IndexService indexService) {
+        for (int i = 0; i < 50; i++) {
+            // passing null value to QueryEntry.
+            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, null));
+        }
+
+        Set<QueryableEntry> query = indexService.query(new SqlPredicate("__key > 10 "));
+
+        assertNull("There should be no result", query);
+    }
+
+    @Test
+    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() throws Exception {
+        IndexService indexService = new IndexService();
+        indexService.addOrGetIndex("__key", false);
+
+        for (int i = 0; i < 100; i++) {
+            // passing null value to QueryEntry.
+            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, null));
+        }
+
+        Set<QueryableEntry> query = indexService.query(new SqlPredicate("__key > 10 "));
+
+        assertEquals(89, query.size());
     }
 }
