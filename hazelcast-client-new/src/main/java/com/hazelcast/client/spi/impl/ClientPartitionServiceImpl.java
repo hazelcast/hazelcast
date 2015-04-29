@@ -89,8 +89,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         Address master = clusterService.getMasterAddress();
         GetPartitionsResultParameters response = getPartitionsFrom(master);
         if (response != null) {
-            processPartitionResponse(response);
-            return true;
+            return processPartitionResponse(response);
         }
         return false;
     }
@@ -111,9 +110,12 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return null;
     }
 
-    private void processPartitionResponse(GetPartitionsResultParameters response) {
-        Address[] members = response.members;
+    private boolean processPartitionResponse(GetPartitionsResultParameters response) {
         int[] ownerIndexes = response.ownerIndexes;
+        if (ownerIndexes.length == 0) {
+            return false;
+        }
+        Address[] members = response.members;
         if (partitionCount == 0) {
             partitionCount = ownerIndexes.length;
         }
@@ -123,6 +125,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                 partitions.put(partitionId, members[ownerIndex]);
             }
         }
+        return true;
     }
 
     public void stop() {
