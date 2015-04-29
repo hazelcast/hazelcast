@@ -40,5 +40,3 @@ Paging Predicate is not supported in Transactional Context.
 *Please refer to the [Javadoc](http://hazelcast.org/docs/latest/javadoc/com/hazelcast/query/Predicates.html) for all
 predicates.*
 
-
-

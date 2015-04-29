@@ -27,6 +27,3 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 - **Scalable Map Loader**: ???. For more information, please see [???](#???).
 - 
 
-
-
-
