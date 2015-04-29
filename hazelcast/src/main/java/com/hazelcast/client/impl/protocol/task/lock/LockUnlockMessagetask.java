@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.LockUnlockParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -47,6 +48,12 @@ public class LockUnlockMessagetask extends AbstractPartitionMessageTask<LockUnlo
     protected LockUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
         return LockUnlockParameters.decode(clientMessage);
     }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
+    }
+
 
     @Override
     public String getServiceName() {

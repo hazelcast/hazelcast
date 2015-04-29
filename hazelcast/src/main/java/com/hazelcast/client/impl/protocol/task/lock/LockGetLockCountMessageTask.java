@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.LockGetLockCountParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -28,7 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
-
 import java.security.Permission;
 
 public class LockGetLockCountMessageTask extends AbstractPartitionMessageTask<LockGetLockCountParameters> {
@@ -47,6 +47,12 @@ public class LockGetLockCountMessageTask extends AbstractPartitionMessageTask<Lo
     protected LockGetLockCountParameters decodeClientMessage(ClientMessage clientMessage) {
         return LockGetLockCountParameters.decode(clientMessage);
     }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return IntResultParameters.encode((Integer) response);
+    }
+
 
     @Override
     public String getServiceName() {

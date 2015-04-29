@@ -17,7 +17,8 @@
 package com.hazelcast.client.impl.protocol.task.condition;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ConditionSignalParameters;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.ConditionSignalAllParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
@@ -28,10 +29,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
-
 import java.security.Permission;
 
-public class ConditionSignalAllMessageTask extends AbstractPartitionMessageTask<ConditionSignalParameters> {
+public class ConditionSignalAllMessageTask extends AbstractPartitionMessageTask<ConditionSignalAllParameters> {
 
     public ConditionSignalAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,9 +45,15 @@ public class ConditionSignalAllMessageTask extends AbstractPartitionMessageTask<
     }
 
     @Override
-    protected ConditionSignalParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ConditionSignalParameters.decode(clientMessage);
+    protected ConditionSignalAllParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ConditionSignalAllParameters.decode(clientMessage);
     }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
+    }
+
 
     @Override
     public String getServiceName() {

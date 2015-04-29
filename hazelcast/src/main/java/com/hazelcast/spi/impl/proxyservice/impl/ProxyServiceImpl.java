@@ -152,7 +152,8 @@ public class ProxyServiceImpl
         if (service != null) {
             service.destroyDistributedObject(name);
         }
-        Throwable cause = new DistributedObjectDestroyedException(serviceName, name);
+        String message = "DistributedObject[" + service + " -> " + name + "] has been destroyed!";
+        Throwable cause = new DistributedObjectDestroyedException(message);
         nodeEngine.getWaitNotifyService().cancelWaitingOps(serviceName, name, cause);
     }
 

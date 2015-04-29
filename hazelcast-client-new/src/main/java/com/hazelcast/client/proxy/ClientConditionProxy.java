@@ -89,7 +89,7 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
 
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         final long timeoutInMillis = unit.toMillis(time);
-        ClientMessage request = ConditionAwaitParameters.encode(conditionId, timeoutInMillis, threadId, lockProxy.getName());
+        ClientMessage request = ConditionAwaitParameters.encode(conditionId, threadId, timeoutInMillis, lockProxy.getName());
         BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
         return resultParameters.result;
     }
