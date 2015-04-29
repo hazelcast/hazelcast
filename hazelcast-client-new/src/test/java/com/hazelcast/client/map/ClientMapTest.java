@@ -28,7 +28,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MapStoreAdapter;
-import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
@@ -44,7 +43,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -68,7 +66,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMapTest {
 
     static HazelcastInstance client;
@@ -690,13 +687,13 @@ public class ClientMapTest {
     @Test
     public void testListeners_clearAllFromNode() {
         final String name = randomString();
-        final MultiMap mm = client.getMultiMap(name);
+        final IMap mm = client.getMap(name);
         final CountDownLatch gateClearAll = new CountDownLatch(1);
         final CountDownLatch gateAdd = new CountDownLatch(1);
         final EntryListener listener = new EntListener(gateAdd, null, null, null, gateClearAll, null);
         mm.addEntryListener(listener, false);
         mm.put("key", "value");
-        server.getMultiMap(name).clear();
+        server.getMap(name).clear();
         assertOpenEventually(gateAdd);
         assertOpenEventually(gateClearAll);
     }
