@@ -17,6 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.CacheEventSetParameters;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -69,8 +71,8 @@ public class CacheEventListenerAdaptor<K, V>
         this.source = source;
         this.serializationService = serializationService;
 
-        final CacheEntryListener<? super K, ? super V> cacheEntryListener =
-                cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
+        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration
+                .getCacheEntryListenerFactory().create();
 
         this.cacheEntryListener = (CacheEntryListener<K, V>) cacheEntryListener;
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
@@ -93,8 +95,8 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.cacheEntryExpiredListener = null;
         }
-        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
-                cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
+        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory = cacheEntryListenerConfiguration
+                .getCacheEntryEventFilterFactory();
         if (filterFactory != null) {
             this.filter = filterFactory.create();
         } else {
@@ -110,8 +112,8 @@ public class CacheEventListenerAdaptor<K, V>
 
     @Override
     public void handleEvent(Object eventObject) {
-        if (eventObject instanceof CacheEventSet) {
-            CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
+        CacheEventSet cacheEventSet = convertEventObject(eventObject);
+        if (cacheEventSet != null) {
             try {
                 if (cacheEventSet.getEventType() != CacheEventType.COMPLETED) {
                     handleEvent(cacheEventSet);
@@ -119,12 +121,23 @@ public class CacheEventListenerAdaptor<K, V>
             } finally {
                 ((CacheSyncListenerCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
             }
+
         }
     }
 
+    protected CacheEventSet convertEventObject(Object eventObject) {
+        if (eventObject instanceof CacheEventSet) {
+            return (CacheEventSet) eventObject;
+        }
+        if (eventObject instanceof ClientMessage) {
+            final CacheEventSetParameters parameters = CacheEventSetParameters.decode((ClientMessage) eventObject);
+            return new CacheEventSet(parameters.eventType, parameters.events, parameters.completionId);
+        }
+        throw new UnsupportedOperationException("Event object not supported : " + eventObject.getClass().getName());
+    }
+
     private void handleEvent(CacheEventSet cacheEventSet) {
-        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent =
-                createCacheEntryEvent(cacheEventSet);
+        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(cacheEventSet);
 
         switch (cacheEventSet.getEventType()) {
             case CREATED:
@@ -164,8 +177,7 @@ public class CacheEventListenerAdaptor<K, V>
             } else {
                 oldValue = null;
             }
-            final CacheEntryEventImpl<K, V> event =
-                    new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+            final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
             if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }

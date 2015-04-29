@@ -125,9 +125,9 @@ public final class ReadHandler extends AbstractSelectionHandler {
                     connection.setType(ConnectionType.MEMBER);
                     writeHandler.setProtocol(Protocols.CLUSTER);
                     socketReader = new SocketPacketReader(connection);
-                } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
-                    writeHandler.setProtocol(Protocols.CLIENT_BINARY);
-                    socketReader = new SocketClientDataReader(connection);
+//                } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
+//                    writeHandler.setProtocol(Protocols.CLIENT_BINARY);
+//                    socketReader = new SocketClientDataReader(connection);
                 } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY_NEW);
                     socketReader = new SocketClientMessageReader(connection, socketChannel);

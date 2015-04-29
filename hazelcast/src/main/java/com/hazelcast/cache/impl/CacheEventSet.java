@@ -49,6 +49,12 @@ public class CacheEventSet
         this.events = events;
     }
 
+    public CacheEventSet(CacheEventType eventType, Set<CacheEventData> events, int completionId) {
+        this.eventType = eventType;
+        this.events = events;
+        this.completionId = completionId;
+    }
+
     public CacheEventSet(CacheEventType eventType, int completionId) {
         this.eventType = eventType;
         this.completionId = completionId;

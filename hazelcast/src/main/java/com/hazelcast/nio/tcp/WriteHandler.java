@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
@@ -98,6 +99,9 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     public void offer(SocketWritable packet) {
+        if(connection.isClient() && packet instanceof Packet) {
+            throw new RuntimeException("YANLISSSSS PACKET GELDI");
+        }
         if (packet.isUrgent()) {
             urgentWriteQueue.offer(packet);
         } else {

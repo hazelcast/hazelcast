@@ -52,6 +52,7 @@ public class CacheAddInvalidationListenerTask
                             = CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent(message.getName(),
                             message.getKey(), message.getSourceUuid());
                     sendClientMessage(message.getKey(), eventMessage);
+
                 }
             }
         });

@@ -45,15 +45,13 @@ public class CacheEntryProcessorMessageTask
     protected Operation prepareOperation() {
         CacheService service = getService(getServiceName());
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        //completionId now uses CorrelationId where both are non-correlated and unique
-        int completionId = clientMessage.getCorrelationId();
         EntryProcessor entryProcessor = (EntryProcessor) service.toObject(parameters.entryProcessor);
         ArrayList argumentsList = new ArrayList(parameters.arguments.size());
         for (Data data : parameters.arguments) {
             argumentsList.add(service.toObject(data));
         }
         return operationProvider
-                .createEntryProcessorOperation(parameters.key, completionId, entryProcessor, argumentsList.toArray());
+                .createEntryProcessorOperation(parameters.key, parameters.completionId, entryProcessor, argumentsList.toArray());
     }
 
     @Override

@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
@@ -43,10 +42,9 @@ public class CacheGetAndReplaceMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        CacheService service = getService(getServiceName());
-        ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        int completionId = clientMessage.getCorrelationId();
-        return operationProvider.createGetAndReplaceOperation(parameters.key, parameters.value, expiryPolicy, completionId);
+        ExpiryPolicy expiryPolicy = (ExpiryPolicy) nodeEngine.toObject(parameters.expiryPolicy);
+        return operationProvider
+                .createGetAndReplaceOperation(parameters.key, parameters.value, expiryPolicy, parameters.completionId);
     }
 
     @Override

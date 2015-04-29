@@ -17,13 +17,11 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CachePutIfAbsentCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -43,10 +41,9 @@ public class CachePutIfAbsentMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        CacheService service = getService(getServiceName());
-        ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        int completionId = clientMessage.getCorrelationId();
-        return operationProvider.createGetAndReplaceOperation(parameters.key, parameters.value, expiryPolicy, completionId);
+        ExpiryPolicy expiryPolicy = (ExpiryPolicy) nodeEngine.toObject(parameters.expiryPolicy);
+        return operationProvider
+                .createPutIfAbsentOperation(parameters.key, parameters.value, expiryPolicy, parameters.completionId);
     }
 
     @Override
@@ -56,7 +53,7 @@ public class CachePutIfAbsentMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CachePutIfAbsentCodec.encodeResponse((Data) response);
+        return CachePutIfAbsentCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -235,8 +235,9 @@ public class ClientCacheProxy<K, V>
             }
         }
         final ClientMessage request = CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData);
+        final int completionId = nextCompletionId();
         try {
-            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, true);
+            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, completionId);
             final ClientMessage response = getSafely(f);
             final Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
             return toObject(data);

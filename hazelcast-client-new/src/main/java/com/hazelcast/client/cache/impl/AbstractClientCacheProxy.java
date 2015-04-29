@@ -18,12 +18,24 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
+<<<<<<< HEAD
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
+=======
+import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.CacheGetAllParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.CacheSizeParameters;
+import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapDataDataResultParameters;
+>>>>>>> jcache task bug fixes
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -33,7 +45,11 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
+<<<<<<< HEAD
 import com.hazelcast.nio.serialization.SerializationService;
+=======
+import com.hazelcast.nio.serialization.DefaultData;
+>>>>>>> jcache task bug fixes
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -81,8 +97,13 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
+<<<<<<< HEAD
         CacheGetRequest request =
                 new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
+=======
+        final Data expiryPolicyData = expiryPolicy != null ? toData(expiryPolicy) : DefaultData.NULL_DATA;
+        ClientMessage request = CacheGetParameters.encode(nameWithPrefix, keyData, expiryPolicyData);
+>>>>>>> jcache task bug fixes
         ClientInvocationFuture future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
@@ -208,9 +229,11 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keySet.isEmpty()) {
             return result;
         }
-        final CacheGetAllRequest request = new CacheGetAllRequest(nameWithPrefix, keySet, expiryPolicy);
-        final MapEntrySet mapEntrySet = toObject(invoke(request));
-        final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+        final Data expiryPolicyData = expiryPolicy != null ? toData(expiryPolicy) : DefaultData.NULL_DATA;
+        final ClientMessage request = CacheGetAllParameters.encode(nameWithPrefix, keySet, expiryPolicyData);
+        final ClientMessage responseMessage = invoke(request);
+        final Map<Data, Data> mapEntrySet = MapDataDataResultParameters.decode(responseMessage).map;
+        final Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.entrySet();
         for (Map.Entry<Data, Data> dataEntry : entrySet) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
@@ -252,7 +275,7 @@ abstract class AbstractClientCacheProxy<K, V>
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
         final ICompletableFuture<V> f = putAsyncInternal(key, value, expiryPolicy, true, true);
         try {
-            return toObject(f.get());
+            return f.get();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
@@ -312,7 +335,11 @@ abstract class AbstractClientCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
+<<<<<<< HEAD
             ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
+=======
+            ClientMessage request = CacheSizeParameters.encode(nameWithPrefix);
+>>>>>>> jcache task bug fixes
             ClientMessage resultMessage = invoke(request);
             return CacheSizeCodec.decodeResponse(resultMessage).response;
         } catch (Throwable t) {

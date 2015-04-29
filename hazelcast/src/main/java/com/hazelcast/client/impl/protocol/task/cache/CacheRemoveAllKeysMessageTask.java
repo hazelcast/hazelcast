@@ -20,48 +20,44 @@ import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.parameters.CacheRemoveAllKeysParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapIntBooleanResultParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheRemoveAllOperationFactory} on the server side.
  *
  * @see CacheRemoveAllOperationFactory
  */
-public class CacheRemoveAllMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheRemoveAllCodec.RequestParameters> {
+public class CacheRemoveAllKeysMessageTask
+        extends AbstractCacheAllPartitionsTask<CacheRemoveAllKeysParameters> {
 
-    public CacheRemoveAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public CacheRemoveAllKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CacheRemoveAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheRemoveAllCodec.decodeRequest(clientMessage);
-    }
-
-    @Override
-    protected ClientMessage encodeResponse(Object response) {
-        return CacheRemoveAllCodec.encodeResponse();
+    protected CacheRemoveAllKeysParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheRemoveAllKeysParameters.decode(clientMessage);
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createRemoveAllOperationFactory((Set<Data>) parameters.keys, parameters.completionId);
+        return operationProvider.createRemoveAllOperationFactory(parameters.keys, parameters.completionId);
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
+    protected ClientMessage reduce(Map<Integer, Object> map) {
+        final Map<Integer, Boolean> resultMap = new HashMap<Integer, Boolean>();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            if(entry.getValue() == null) {
+            if (entry.getValue() == null) {
                 continue;
             }
             final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
@@ -69,8 +65,9 @@ public class CacheRemoveAllMessageTask
             if (response instanceof CacheException) {
                 throw (CacheException) response;
             }
+            resultMap.put(entry.getKey(), (Boolean) response);
         }
-        return null;
+        return MapIntBooleanResultParameters.encode(resultMap);
     }
 
     @Override

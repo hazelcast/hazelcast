@@ -64,16 +64,20 @@ public class CacheGetAllMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        CacheService service = getService(getServiceName());
         Map<Data, Data> reducedMap = new HashMap<Data, Data>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) service.toObject(entry.getValue());
+            MapEntrySet mapEntrySet = (MapEntrySet) nodeEngine.toObject(entry.getValue());
             Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
             for (Map.Entry<Data, Data> dataEntry : entrySet) {
                 reducedMap.put(dataEntry.getKey(), dataEntry.getValue());
             }
         }
         return reducedMap;
+    }
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
     }
 
     @Override

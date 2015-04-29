@@ -26,7 +26,6 @@ import org.junit.Ignore;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class MutableConfigurationTest
         extends javax.cache.configuration.MutableConfigurationTest {
 

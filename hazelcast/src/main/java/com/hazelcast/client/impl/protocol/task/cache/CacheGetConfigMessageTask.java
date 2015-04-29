@@ -48,7 +48,8 @@ public class CacheGetConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheGetConfigCodec.encodeResponse((Data) response);
+        final Data responseData = nodeEngine.toData(response);
+        return CacheGetConfigCodec.encodeResponse(responseData);
     }
 
     @Override

@@ -25,7 +25,6 @@ import org.junit.Ignore;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class CacheWriterClientServerTest
         extends org.jsr107.tck.integration.CacheWriterClientServerTest {
 

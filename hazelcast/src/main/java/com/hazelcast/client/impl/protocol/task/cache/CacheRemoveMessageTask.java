@@ -40,8 +40,7 @@ public class CacheRemoveMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        int completionId = clientMessage.getCorrelationId();
-        return operationProvider.createRemoveOperation(parameters.key, parameters.currentValue, completionId);
+        return operationProvider.createRemoveOperation(parameters.key, parameters.currentValue, parameters.completionId);
     }
 
     @Override

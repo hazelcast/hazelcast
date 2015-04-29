@@ -57,11 +57,15 @@ public class CacheClearMessageTask
         return operationProvider.createClearOperationFactory();
     }
 
+
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         CacheService service = getService(getServiceName());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            CacheClearResponse cacheClearResponse = (CacheClearResponse) service.toObject(entry.getValue());
+            if(entry.getValue() == null) {
+                continue;
+            }
+            final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
             final Object response = cacheClearResponse.getResponse();
             if (response instanceof CacheException) {
                 throw (CacheException) response;
@@ -70,6 +74,11 @@ public class CacheClearMessageTask
         return null;
     }
 
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
 
     @Override
     public String getDistributedObjectName() {

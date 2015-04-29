@@ -17,9 +17,9 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.ICacheInternal;
-import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.CacheDestroyParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -39,6 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract class providing cache open/close operations and {@link ClientContext} accessor which will be used
@@ -63,6 +64,8 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
+    private final AtomicInteger completionIdCounter = new AtomicInteger();
+
     protected AbstractClientCacheProxyBase(CacheConfig cacheConfig, ClientContext clientContext) {
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
@@ -78,6 +81,10 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         } else {
             cacheLoader = null;
         }
+    }
+
+    protected int nextCompletionId() {
+        return completionIdCounter.incrementAndGet();
     }
 
     //region close&destroy
@@ -112,10 +119,11 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         isClosed.set(true);
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
-            CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
+            ClientMessage request = CacheDestroyParameters.encode(nameWithPrefix);
             final ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
-            clientInvocation.invoke().get();
+            final Future<ClientMessage> future = clientInvocation.invoke();
+            future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -156,10 +164,21 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
     }
 
     protected ClientMessage invoke(ClientMessage clientMessage) {
+        return invoke(clientMessage, null);
+    }
+
+    protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
+            if (keyData != null) {
+                final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+                final Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+                        clientMessage, partitionId).invoke();
+                return (ClientMessage) future.get();
+            }
             final Future<ClientMessage> future = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
             return future.get();
+
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

@@ -47,8 +47,7 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        CacheService service = getService(getServiceName());
-        CacheEntryListenerConfiguration conf = (CacheEntryListenerConfiguration) service.toObject(parameters.listenerConfig);
+        CacheEntryListenerConfiguration conf = (CacheEntryListenerConfiguration) nodeEngine.toObject(parameters.listenerConfig);
         return new CacheListenerRegistrationOperation(parameters.name, conf, parameters.register);
     }
 
@@ -76,7 +75,7 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     public String getServiceName() {
-        return DistributedExecutorService.SERVICE_NAME;
+        return CacheService.SERVICE_NAME;
     }
 
     @Override

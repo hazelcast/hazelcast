@@ -29,7 +29,6 @@ public class ParameterUtil {
         return Bits.INT_SIZE_IN_BYTES + bytes.length;
     }
 
-
     public static int calculateDataSize(Data key) {
         return calculateByteArrayDataSize(key.toByteArray());
     }

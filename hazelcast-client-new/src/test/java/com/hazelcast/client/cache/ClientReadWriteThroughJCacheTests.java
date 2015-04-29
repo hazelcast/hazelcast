@@ -57,7 +57,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientReadWriteThroughJCacheTests extends HazelcastTestSupport {
 
     private static HazelcastInstance hz1;

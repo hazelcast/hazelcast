@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -42,8 +43,7 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        CacheService service = getService(getServiceName());
-        CacheConfig cacheConfig = (CacheConfig) service.toObject(parameters.cacheConfig);
+        CacheConfig cacheConfig = (CacheConfig) nodeEngine.toObject(parameters.cacheConfig);
         return new CacheCreateConfigOperation(cacheConfig, parameters.createAlsoOnOthers);
     }
 
@@ -54,7 +54,9 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheCreateConfigCodec.encodeResponse((Boolean) response);
+        CacheService service = getService(getServiceName());
+        final Data responseData = service.toData(response);
+        return CacheCreateConfigCodec.encodeResponse((Data) responseData);
     }
 
     @Override
