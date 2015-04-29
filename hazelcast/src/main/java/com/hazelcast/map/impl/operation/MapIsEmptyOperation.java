@@ -20,8 +20,9 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapIsEmptyOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class MapIsEmptyOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean empty;
 

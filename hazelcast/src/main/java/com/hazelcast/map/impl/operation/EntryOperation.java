@@ -36,9 +36,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -49,7 +49,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
-public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
+public class EntryOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     protected Object oldValue;
     private EntryProcessor entryProcessor;

@@ -24,10 +24,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.Set;
 
-public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
+public class NearCacheKeySetInvalidationOperation extends AbstractOperation implements MutatingOperation {
     private MapService mapService;
     private MapKeySet mapKeySet;
     private String mapName;

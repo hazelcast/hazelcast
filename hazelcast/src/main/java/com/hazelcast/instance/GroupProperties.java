@@ -255,6 +255,7 @@ public class GroupProperties {
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
 
+
     /**
      * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
      * single asynchronous backup, producing asynchronous backups could happen at a higher rate than
@@ -650,7 +651,6 @@ public class GroupProperties {
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
-
         BACKPRESSURE_ENABLED
                 = new GroupProperty(config, PROP_BACKPRESSURE_ENABLED, "false");
         BACKPRESSURE_SYNCWINDOW

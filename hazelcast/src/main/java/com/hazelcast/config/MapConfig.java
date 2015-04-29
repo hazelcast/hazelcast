@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.partition.InternalPartition;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +127,8 @@ public class MapConfig {
 
     private PartitioningStrategyConfig partitioningStrategyConfig;
 
+    private String quorumName;
+
     private MapConfigReadOnly readOnly;
 
     public MapConfig(String name) {
@@ -137,6 +138,7 @@ public class MapConfig {
     public MapConfig() {
     }
 
+    //CHECKSTYLE:OFF
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
@@ -161,7 +163,9 @@ public class MapConfig {
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
+        this.quorumName = config.quorumName;
     }
+    //CHECKSTYLE:ON
 
     public MapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -559,6 +563,14 @@ public class MapConfig {
                 && this.readBackupData == other.readBackupData;
     }
 
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    public void setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -642,6 +654,7 @@ public class MapConfig {
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
+        sb.append(", quorumName=").append(quorumName);
         sb.append('}');
         return sb.toString();
     }

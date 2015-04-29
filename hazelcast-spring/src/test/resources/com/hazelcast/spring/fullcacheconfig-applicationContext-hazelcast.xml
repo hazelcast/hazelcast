@@ -148,6 +148,7 @@
                     <hz:index attribute="name"/>
                     <hz:index attribute="age" ordered="true"/>
                 </hz:indexes>
+                <hz:quorum-ref>my-quorum</hz:quorum-ref>
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"
@@ -267,7 +268,8 @@
                 </hz:serializers>
             </hz:serialization>
 
-            <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2" min-block-size="10"
+            <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"
+                              min-block-size="10"
                               page-size="20">
                 <hz:size unit="MEGABYTES" value="256"/>
             </hz:native-memory>
@@ -300,6 +302,15 @@
                 </hz:service>
             </hz:services>
 
+            <hz:quorum enabled="true" name="my-quorum">
+                <hz:quorum-size>2</hz:quorum-size>
+                <hz:quorum-type>READ</hz:quorum-type>
+                <hz:quorum-function-class-name>com.hazelcast.spring.DummyQuorumFunction</hz:quorum-function-class-name>
+                <hz:quorum-listeners>
+                    <hz:quorum-listener class-name="com.hazelcast.spring.DummyQuorumListener"/>
+                    <hz:quorum-listener implementation="dummyQuorumListener"/>
+                </hz:quorum-listeners>
+            </hz:quorum>
         </hz:config>
     </hz:hazelcast>
 
@@ -328,6 +339,7 @@
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
+    <bean id="dummyQuorumListener" class="com.hazelcast.spring.DummyQuorumListener"/>
     <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>
     <bean id="dummySocketInterceptor" class="com.hazelcast.spring.DummySocketInterceptor"/>
 

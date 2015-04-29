@@ -25,10 +25,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-
+import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
-public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
+public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation,
+        IdentifiedDataSerializable, MutatingOperation {
 
     // todo unlockKey is a logic just used in transactional put operations.
     // todo It complicates here there should be another Operation for that logic. e.g. TxnSetBackup

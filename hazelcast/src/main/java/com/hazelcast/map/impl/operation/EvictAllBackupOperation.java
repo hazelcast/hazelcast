@@ -20,11 +20,13 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllBackupOperation extends AbstractMapOperation implements BackupOperation, DataSerializable {
+public class EvictAllBackupOperation extends AbstractMapOperation implements BackupOperation, MutatingOperation,
+        DataSerializable {
 
     public EvictAllBackupOperation() {
     }

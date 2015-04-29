@@ -42,7 +42,8 @@ enum XmlElements {
     SERVICES("services", false),
     SECURITY("security", false),
     MEMBER_ATTRIBUTES("member-attributes", false),
-    NATIVE_MEMORY("native-memory", false);
+    NATIVE_MEMORY("native-memory", false),
+    QUORUM("quorum", true);
 
     final String name;
     final boolean multipleOccurrence;

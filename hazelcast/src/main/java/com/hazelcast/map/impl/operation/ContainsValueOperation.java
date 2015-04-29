@@ -24,10 +24,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-
+import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
-public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean contains;
     private Data testValue;

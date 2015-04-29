@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation {

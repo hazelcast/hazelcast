@@ -85,4 +85,5 @@ public interface Cluster {
      * @return cluster-wide time
      */
     long getClusterTime();
+
 }

@@ -30,9 +30,9 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.FutureUtil;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +51,7 @@ import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.SortingUtil.newComparator;
 import static java.util.Collections.sort;
 
-public class QueryOperation extends AbstractMapOperation {
+public class QueryOperation extends AbstractMapOperation implements ReadonlyOperation {
 
     private static final long QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 

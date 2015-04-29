@@ -675,7 +675,14 @@ public abstract class HazelcastTestSupport {
         assertEquals(String.format(message, expected, actual), expected, actual);
     }
 
-    public static final class DummyUncheckedHazelcastTestException extends RuntimeException {
+    public static void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
+        if (h1 == null || h2 == null) return;
+        final Node n1 = TestUtil.getNode(h1);
+        final Node n2 = TestUtil.getNode(h2);
+        n1.clusterService.removeAddress(n2.address);
+        n2.clusterService.removeAddress(n1.address);
+    }
+    public final class DummyUncheckedHazelcastTestException extends RuntimeException {
     }
 
     public static void assertExactlyOneSuccessfulRun(AssertTask task) {

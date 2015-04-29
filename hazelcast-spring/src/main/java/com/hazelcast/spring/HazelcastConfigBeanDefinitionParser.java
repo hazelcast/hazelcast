@@ -67,8 +67,14 @@ import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.QuorumListenerConfig;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -79,10 +85,6 @@ import org.springframework.util.Assert;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
@@ -132,6 +134,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap wanReplicationManagedMap;
         private ManagedMap jobTrackerManagedMap;
         private ManagedMap replicatedMapManagedMap;
+        private ManagedMap quorumManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -147,6 +150,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
+            this.quorumManagedMap = createManagedMap("quorumConfigs");
         }
 
         private ManagedMap createManagedMap(String configName) {
@@ -217,9 +221,36 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleServices(node);
                     } else if ("spring-aware".equals(nodeName)) {
                         handleSpringAware();
+                    } else if ("quorum".equals(nodeName)) {
+                        handleQuorum(node);
                     }
                 }
             }
+        }
+
+        private void handleQuorum(final org.w3c.dom.Node node) {
+            BeanDefinitionBuilder quorumConfigBuilder = createBeanBuilder(QuorumConfig.class);
+            final AbstractBeanDefinition beanDefinition = quorumConfigBuilder.getBeanDefinition();
+            final String name = getAttribute(node, "name");
+            quorumConfigBuilder.addPropertyValue("name", name);
+            Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+            final boolean enabled = attrEnabled != null ? checkTrue(getTextContent(attrEnabled)) : false;
+            quorumConfigBuilder.addPropertyValue("enabled", enabled);
+            for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+                final String value = getTextContent(n).trim();
+                final String nodeName = cleanNodeName(n.getNodeName());
+                if ("quorum-size".equals(nodeName)) {
+                    quorumConfigBuilder.addPropertyValue("size", getIntegerValue("quorum-size", value, 0));
+                } else if ("quorum-listeners".equals(nodeName)) {
+                    ManagedList listeners = parseListeners(n, QuorumListenerConfig.class);
+                    quorumConfigBuilder.addPropertyValue("listenerConfigs", listeners);
+                } else if ("quorum-type".equals(nodeName)) {
+                    quorumConfigBuilder.addPropertyValue("type", QuorumType.valueOf(value));
+                } else if ("quorum-function-class-name".equals(nodeName)) {
+                    quorumConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), value);
+                }
+            }
+            quorumManagedMap.put(name, beanDefinition);
         }
 
         public void handleServices(Node node) {
@@ -552,6 +583,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("entry-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, EntryListenerConfig.class);
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
+                } else if ("quorum-ref".equals(nodeName)) {
+                    mapConfigBuilder.addPropertyValue("quorumName", getTextContent(node));
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);

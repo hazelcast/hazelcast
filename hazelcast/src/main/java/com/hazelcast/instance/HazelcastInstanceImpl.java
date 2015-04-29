@@ -64,6 +64,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -75,7 +76,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
-
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -331,6 +331,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     @Override
     public PartitionService getPartitionService() {
         return node.partitionService.getPartitionServiceProxy();
+    }
+
+    @Override
+    public QuorumService getQuorumService() {
+        return node.nodeEngine.getQuorumService();
     }
 
     @Override

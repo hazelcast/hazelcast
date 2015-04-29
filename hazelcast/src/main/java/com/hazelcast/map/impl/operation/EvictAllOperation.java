@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
@@ -28,7 +29,8 @@ import java.io.IOException;
 /**
  * Operation which evicts all keys except locked ones.
  */
-public class EvictAllOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class EvictAllOperation extends AbstractMapOperation implements BackupAwareOperation,
+        MutatingOperation, PartitionAwareOperation {
 
     private boolean shouldRunOnBackup;
 

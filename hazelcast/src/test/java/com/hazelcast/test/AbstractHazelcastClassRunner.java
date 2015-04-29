@@ -19,14 +19,6 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
-import org.junit.After;
-import org.junit.internal.runners.statements.RunAfters;
-import org.junit.runners.BlockJUnit4ClassRunner;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.MultipleFailureException;
-import org.junit.runners.model.Statement;
-
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -36,8 +28,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import org.junit.After;
+import org.junit.internal.runners.statements.RunAfters;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.MultipleFailureException;
+import org.junit.runners.model.Statement;
 
-public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunner {
+/**
+ * Base test runner which has base system properties and test repetition logic. The tests are run in random order.
+ */
+public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
     protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = true;
 
@@ -65,7 +66,7 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
 
     protected static final ThreadLocal<FrameworkMethod> FRAMEWORK_METHOD_THREAD_LOCAL = new ThreadLocal<FrameworkMethod>();
 
-    public static FrameworkMethod getThreadLocalFrameworkMethod(){
+    public static FrameworkMethod getThreadLocalFrameworkMethod() {
         return FRAMEWORK_METHOD_THREAD_LOCAL.get();
     }
 
@@ -78,6 +79,11 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
         super(klass);
     }
 
+    public AbstractHazelcastClassRunner(Class<?> klass, Object[] parameters,
+                                        String name) throws InitializationError {
+        super(klass, parameters, name);
+    }
+
     @Override
     protected List<FrameworkMethod> getChildren() {
         List<FrameworkMethod> children = super.getChildren();
@@ -85,6 +91,7 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
         Collections.shuffle(modifiableList);
         return modifiableList;
     }
+
 
     @Override
     protected Statement withAfters(FrameworkMethod method, Object target,
@@ -122,8 +129,8 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
                 next.evaluate();
             } catch (Throwable e) {
                 System.err.println("THREAD DUMP FOR TEST FAILURE: " +
-                                   "\"" + e.getMessage() + "\" at " +
-                                   "\"" + method.getName() + "\"" + "\n");
+                        "\"" + e.getMessage() + "\" at " +
+                        "\"" + method.getName() + "\"" + "\n");
                 System.err.println(generateThreadDump());
                 errors.add(e);
             } finally {
@@ -171,7 +178,7 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
                 originalStatement.evaluate();
 
                 Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-                if(!instances.isEmpty()) {
+                if (!instances.isEmpty()) {
                     String message = "Instances haven't been shut down: " + instances;
                     Hazelcast.shutdownAll();
                     throw new IllegalStateException(message);
@@ -180,7 +187,7 @@ public abstract class AbstractHazelcastClassRunner extends BlockJUnit4ClassRunne
         };
     }
 
-    protected class TestRepeater extends Statement {
+    private class TestRepeater extends Statement {
 
         private final Statement statement;
         private final Method testMethod;

@@ -24,15 +24,16 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation {
+public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation,
+        MutatingOperation {
 
     private List<Map.Entry<Data, Data>> entries;
     private List<RecordInfo> recordInfos;

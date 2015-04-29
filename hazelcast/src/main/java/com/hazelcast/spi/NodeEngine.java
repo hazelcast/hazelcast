@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -101,6 +102,8 @@ public interface NodeEngine {
      * @return the WanReplicationService.
      */
     WanReplicationService getWanReplicationService();
+
+    QuorumServiceImpl getQuorumService();
 
     /**
      * Gets the TransactionManagerService.

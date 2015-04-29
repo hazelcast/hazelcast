@@ -46,6 +46,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -207,6 +208,11 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     @Override
     public PartitionService getPartitionService() {
         return getHazelcastInstance().getPartitionService();
+    }
+
+    @Override
+    public QuorumService getQuorumService() {
+        return getHazelcastInstance().getQuorumService();
     }
 
     @Override

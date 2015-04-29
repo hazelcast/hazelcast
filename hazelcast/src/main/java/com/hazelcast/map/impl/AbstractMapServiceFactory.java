@@ -21,6 +21,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -118,6 +119,15 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
     abstract PartitionAwareService createPartitionAwareService();
 
     /**
+     * Creates a new {@link QuorumAwareService} for {@link MapService}.
+     *
+     * @return Creates a new {@link PartitionAwareService} implementation.
+     * @see com.hazelcast.spi.PartitionAwareService
+     */
+    abstract QuorumAwareService createQuorumAwareService();
+
+
+    /**
      * Returns a {@link MapService} object by populating it with required
      * auxiliary services.
      *
@@ -136,6 +146,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         ReplicationSupportingService replicationSupportingService = createReplicationSupportingService();
         StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
         PartitionAwareService partitionAwareService = createPartitionAwareService();
+        QuorumAwareService quorumAwareService = createQuorumAwareService();
 
         checkNotNull(mapServiceContext, "mapServiceContext should not be null");
         checkNotNull(managedService, "managedService should not be null");
@@ -148,6 +159,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         checkNotNull(replicationSupportingService, "replicationSupportingService should not be null");
         checkNotNull(statisticsAwareService, "statisticsAwareService should not be null");
         checkNotNull(partitionAwareService, "partitionAwareService should not be null");
+        checkNotNull(quorumAwareService, "quorumAwareService should not be null");
 
         MapService mapService = new MapService();
         mapService.setManagedService(managedService);
@@ -161,6 +173,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         mapService.setStatisticsAwareService(statisticsAwareService);
         mapService.setMapServiceContext(mapServiceContext);
         mapService.setMapPartitionAwareService(partitionAwareService);
+        mapService.setMapQuorumAwareService(quorumAwareService);
         mapServiceContext.setService(mapService);
         return mapService;
     }

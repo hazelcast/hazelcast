@@ -25,13 +25,13 @@ import com.hazelcast.logging.Logger;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.util.Properties;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -88,6 +88,8 @@ public class Config {
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private final Map<String, JobTrackerConfig> jobTrackerConfigs = new ConcurrentHashMap<String, JobTrackerConfig>();
+
+    private final Map<String, QuorumConfig> quorumConfigs = new ConcurrentHashMap<String, QuorumConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
@@ -769,6 +771,54 @@ public class Config {
         return this;
     }
 
+    public Map<String, QuorumConfig> getQuorumConfigs() {
+        return quorumConfigs;
+    }
+
+    public QuorumConfig getQuorumConfig(String name) {
+        String baseName = getBaseName(name);
+        QuorumConfig config = lookupByPattern(quorumConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        QuorumConfig defConfig = quorumConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new QuorumConfig();
+            defConfig.setName("default");
+            addQuorumConfig(defConfig);
+        }
+        config = new QuorumConfig(defConfig);
+        config.setName(name);
+        addQuorumConfig(config);
+        return config;
+    }
+
+    public QuorumConfig findQuorumConfig(String name) {
+        String baseName = getBaseName(name);
+        QuorumConfig config = lookupByPattern(quorumConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        return getQuorumConfig("default");
+    }
+
+
+
+    public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
+        this.quorumConfigs.clear();
+        this.quorumConfigs.putAll(quorumConfigs);
+        for (final Entry<String, QuorumConfig> entry : this.quorumConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Config addQuorumConfig(QuorumConfig quorumConfig) {
+        quorumConfigs.put(quorumConfig.getName(), quorumConfig);
+        return this;
+    }
+
+
     public ManagementCenterConfig getManagementCenterConfig() {
         return managementCenterConfig;
     }
@@ -915,6 +965,7 @@ public class Config {
 
     // TODO: This mechanism isn't used anymore to determine if 2 HZ configurations are compatible.
     // See {@link ConfigCheck} for more information.
+
     /**
      * @param config
      * @return true if config is compatible with this one,

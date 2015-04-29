@@ -86,7 +86,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
     }
 
-    static class SimpleInterceptor implements MapInterceptor, Serializable {
+    public static class SimpleInterceptor implements MapInterceptor, Serializable {
 
         @Override
         public Object interceptGet(Object value) {

@@ -36,15 +36,15 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
-
 import java.util.AbstractMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
+abstract class AbstractMultipleEntryOperation extends AbstractMapOperation implements MutatingOperation {
 
     protected MapEntrySet responses;
     protected EntryProcessor entryProcessor;

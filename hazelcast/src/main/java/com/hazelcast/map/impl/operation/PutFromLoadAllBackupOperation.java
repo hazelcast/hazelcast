@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
-
+import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +35,8 @@ import java.util.List;
  *
  * @see PutFromLoadAllOperation
  */
-public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, DataSerializable {
+public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, MutatingOperation,
+        DataSerializable {
 
     private List<Data> keyValueSequence;
 
