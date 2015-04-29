@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
@@ -40,7 +39,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
 
     @Test
     public void testSlowEntryProcessor() throws InterruptedException {
-        HazelcastInstance instance = getSingleNodeCluster(2000);
+        HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
         for (int i = 0; i < 3; i++) {
@@ -60,13 +59,13 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
         assertEqualsStringFormat("Expected %d invocations, but was %d", 4, invocations.size());
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertInvocationDurationBetween(invocation, 2000, 6500);
+            assertInvocationDurationBetween(invocation, 1000, 6500);
         }
     }
 
     @Test
     public void testMultipleSlowEntryProcessorClasses() throws InterruptedException {
-        HazelcastInstance instance = getSingleNodeCluster(2000);
+        HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
         for (int i = 0; i < 3; i++) {
@@ -82,22 +81,25 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         final Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
         assertNumberOfSlowOperationLogs(logs, 2);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Iterator<SlowOperationLog> iterator = logs.iterator();
-                SlowOperationLog firstLog = iterator.next();
-                SlowOperationLog secondLog = iterator.next();
+        Iterator<SlowOperationLog> iterator = logs.iterator();
+        SlowOperationLog firstLog = iterator.next();
+        SlowOperationLog secondLog = iterator.next();
+        Collection<SlowOperationLog.Invocation> firstInvocations = getInvocations(firstLog);
+        Collection<SlowOperationLog.Invocation> secondInvocations = getInvocations(secondLog);
 
-                int firstSize = getInvocations(firstLog).size();
-                int secondSize = getInvocations(secondLog).size();
+        int firstSize = firstInvocations.size();
+        int secondSize = secondInvocations.size();
+        assertTrue(format(
+                        "Expected to find 1 and 4 invocations in logs, but was %d and %d. First log: %s%nSecond log: %s",
+                        firstSize, secondSize, firstLog.createDTO().toJson(), secondLog.createDTO().toJson()),
+                (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
 
-                assertTrue(format(
-                                "Expected to find 1 and 4 invocations in logs, but was %d and %d. First log: %s%nSecond log: %s",
-                                firstSize, secondSize, firstLog.createDTO().toJson(), secondLog.createDTO().toJson()),
-                        (firstSize == 1 ^ secondSize == 1) && (firstSize == 4 ^ secondSize == 4));
-            }
-        }, ASSERT_TRUE_TIMEOUT);
+        for (SlowOperationLog.Invocation invocation : firstInvocations) {
+            assertInvocationDurationBetween(invocation, 1000, 5500);
+        }
+        for (SlowOperationLog.Invocation invocation : secondInvocations) {
+            assertInvocationDurationBetween(invocation, 1000, 5500);
+        }
     }
 
     @Test
@@ -105,7 +107,7 @@ public class SlowOperationDetector_EntryProcessorTest extends SlowOperationDetec
         HazelcastInstance instance = getSingleNodeCluster(1000);
         IMap<String, String> map = getMapWithSingleElement(instance);
 
-        NestedSlowEntryProcessor entryProcessor = new NestedSlowEntryProcessor(map, 2);
+        NestedSlowEntryProcessor entryProcessor = new NestedSlowEntryProcessor(map, 3);
         map.executeOnEntries(entryProcessor);
         entryProcessor.await();
 
