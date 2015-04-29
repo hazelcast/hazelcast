@@ -35,8 +35,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -365,7 +365,13 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             if (ClientMessageType.EXCEPTION.id() == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
                 Class<?> clazz = Class.forName(exceptionResultParameters.className);
-                Throwable exception = (Throwable) clazz.newInstance();
+                Throwable exception;
+                try {
+                    Constructor<?> constructor = clazz.getConstructor(new Class[]{String.class});
+                    exception = (Throwable) constructor.newInstance(exceptionResultParameters.message);
+                } catch (Exception e) {
+                    exception = (Throwable) clazz.newInstance();
+                }
                 future.notifyException(exception);
             } else {
                 future.notify(clientMessage);

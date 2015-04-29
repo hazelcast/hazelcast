@@ -109,8 +109,12 @@ public class Flyweight {
         if (requiredCapacity > capacity) {
             final int newCapacity = findSuitableCapacity(capacity, requiredCapacity);
             ByteBuffer newBuffer =  ByteBuffer.allocate(newCapacity);
-            //TODO if not using byte buffer ????
-            newBuffer.put(buffer.byteBuffer());
+            if(buffer.byteBuffer() != null) {
+                newBuffer.put(buffer.byteBuffer());
+            } else if(buffer.byteArray() != null) {
+                newBuffer.put(buffer.byteArray());
+            }
+
             buffer.wrap(newBuffer);
         }
     }

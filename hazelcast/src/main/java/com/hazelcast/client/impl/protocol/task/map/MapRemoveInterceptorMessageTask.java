@@ -68,7 +68,7 @@ public class MapRemoveInterceptorMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     protected MapRemoveInterceptorParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+        return MapRemoveInterceptorParameters.decode(clientMessage);
     }
 
     @Override

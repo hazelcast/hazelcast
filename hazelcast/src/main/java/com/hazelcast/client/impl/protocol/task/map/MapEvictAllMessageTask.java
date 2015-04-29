@@ -30,7 +30,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
 import java.security.Permission;
 import java.util.Map;
 
@@ -64,7 +63,7 @@ public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<Map
 
     @Override
     protected MapEvictAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+        return MapEvictAllParameters.decode(clientMessage);
     }
 
     public String getServiceName() {

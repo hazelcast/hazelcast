@@ -15,19 +15,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-
-/**
- * User: danny Date: 11/26/13
- */
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class SimpleClientMapInterceptorTest {
 
     static HazelcastInstance server1;

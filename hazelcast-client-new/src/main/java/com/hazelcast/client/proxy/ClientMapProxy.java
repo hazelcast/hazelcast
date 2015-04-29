@@ -67,6 +67,7 @@ import com.hazelcast.client.impl.protocol.parameters.MapPutTransientParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveAsyncParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveEntryListenerParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveIfSameParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapRemoveInterceptorParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapReplaceIfSameParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapReplaceParameters;
@@ -489,7 +490,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean isLocked(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapIsLockedParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MapIsLockedParameters.encode(name, keyData, 0);
         ClientMessage response = invoke(request, keyData);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;
@@ -575,7 +576,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void removeInterceptor(String id) {
-        ClientMessage request = MapRemoveEntryListenerParameters.encode(name, id);
+        ClientMessage request = MapRemoveInterceptorParameters.encode(name, id);
         invoke(request);
     }
 

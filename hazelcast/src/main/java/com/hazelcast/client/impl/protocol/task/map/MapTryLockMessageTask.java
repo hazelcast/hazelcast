@@ -17,8 +17,10 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapTryLockParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -54,8 +56,14 @@ public class MapTryLockMessageTask extends AbstractPartitionMessageTask<MapTryLo
     }
 
     @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
+    }
+
+
+    @Override
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override
