@@ -21,12 +21,18 @@ import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.transaction.impl.SerializableXID;
 
+import javax.transaction.xa.Xid;
+
 public final class XIDCodec {
 
     private XIDCodec() {
     }
 
-    public static SerializableXID decode(ClientMessage clientMessage) {
+    public static Xid decode(ClientMessage clientMessage) {
+        boolean isNull = clientMessage.getBoolean();
+        if (isNull) {
+            return null;
+        }
         int formatId = clientMessage.getInt();
         byte[] globalTransactionId = clientMessage.getByteArray();
         byte[] branchQualifier = clientMessage.getByteArray();
@@ -34,14 +40,28 @@ public final class XIDCodec {
 
     }
 
-    public static void encode(SerializableXID xid, ClientMessage clientMessage) {
+    public static void encode(Xid xid, ClientMessage clientMessage) {
+        boolean isNull;
+        if (xid == null) {
+            isNull = true;
+            clientMessage.set(isNull);
+            return;
+        }
+        isNull = false;
+
+        clientMessage.set(isNull);
         clientMessage.set(xid.getFormatId());
         clientMessage.set(xid.getGlobalTransactionId());
         clientMessage.set(xid.getBranchQualifier());
     }
 
-    public static int calculateDataSize(SerializableXID xid) {
-        int dataSize = BitUtil.SIZE_OF_INT;
+    public static int calculateDataSize(Xid xid) {
+        int dataSize = 0;
+        dataSize += BitUtil.SIZE_OF_BOOLEAN;
+        if (xid == null) {
+            return dataSize;
+        }
+        dataSize += BitUtil.SIZE_OF_INT;
         dataSize += ParameterUtil.calculateByteArrayDataSize(xid.getGlobalTransactionId());
         dataSize += ParameterUtil.calculateByteArrayDataSize(xid.getBranchQualifier());
         return dataSize;

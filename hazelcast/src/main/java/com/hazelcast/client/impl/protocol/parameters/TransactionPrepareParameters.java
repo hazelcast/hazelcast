@@ -38,7 +38,7 @@ public final class TransactionPrepareParameters {
         return new TransactionPrepareParameters(clientMessage);
     }
 
-    public static ClientMessage encode(long transactionId, String threadId) {
+    public static ClientMessage encode(String transactionId, long threadId) {
         final int requiredDataSize = calculateDataSize(transactionId, threadId);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
@@ -48,10 +48,10 @@ public final class TransactionPrepareParameters {
         return clientMessage;
     }
 
-    public static int calculateDataSize(long transactionId, String threadId) {
+    public static int calculateDataSize(String transactionId, long threadId) {
         return ClientMessage.HEADER_SIZE
                 + BitUtil.SIZE_OF_LONG
-                + ParameterUtil.calculateStringDataSize(threadId);
+                + ParameterUtil.calculateStringDataSize(transactionId);
     }
 
 

@@ -35,7 +35,7 @@ public class EntryEventParameters {
     public Data mergingValue;
     public int eventType;
     public String uuid;
-    public int numberOfAffectedEntries = 1;
+    public int numberOfAffectedEntries;
 
     private EntryEventParameters(ClientMessage flyweight) {
         key = flyweight.getData();

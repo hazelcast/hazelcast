@@ -41,7 +41,7 @@ public final class TransactionCommitParameters {
         return new TransactionCommitParameters(clientMessage);
     }
 
-    public static ClientMessage encode(long transactionId, String threadId, boolean prepareAndCommit) {
+    public static ClientMessage encode(String transactionId, long threadId, boolean prepareAndCommit) {
         final int requiredDataSize = calculateDataSize(transactionId, threadId, prepareAndCommit);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
@@ -51,11 +51,11 @@ public final class TransactionCommitParameters {
         return clientMessage;
     }
 
-    public static int calculateDataSize(long transactionId, String threadId, boolean prepareAndCommit) {
+    public static int calculateDataSize(String transactionId, long threadId, boolean prepareAndCommit) {
         return ClientMessage.HEADER_SIZE
                 + BitUtil.SIZE_OF_LONG
-                + ParameterUtil.calculateStringDataSize(threadId)
-                + BitUtil.SIZE_OF_BOOLEAN ;
+                + ParameterUtil.calculateStringDataSize(transactionId)
+                + BitUtil.SIZE_OF_BOOLEAN;
     }
 
 

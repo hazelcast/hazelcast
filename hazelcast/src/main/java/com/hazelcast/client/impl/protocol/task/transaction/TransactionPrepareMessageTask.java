@@ -52,7 +52,7 @@ public class TransactionPrepareMessageTask extends AbstractTransactionalMessageT
 
     @Override
     protected TransactionPrepareParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+        return TransactionPrepareParameters.decode(clientMessage);
     }
 
     @Override

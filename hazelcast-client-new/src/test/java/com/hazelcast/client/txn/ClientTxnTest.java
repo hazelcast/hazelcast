@@ -46,7 +46,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientTxnTest extends HazelcastTestSupport {
 
     static HazelcastInstance hz;

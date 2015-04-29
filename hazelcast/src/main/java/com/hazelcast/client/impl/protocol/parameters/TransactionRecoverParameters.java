@@ -21,12 +21,14 @@ import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.transaction.impl.SerializableXID;
 
+import javax.transaction.xa.Xid;
+
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public final class TransactionRecoverParameters {
 
 
     public static final ClientMessageType TYPE = ClientMessageType.TRANSACTION_RECOVER;
-    public SerializableXID xid;
+    public Xid xid;
     public boolean commit;
 
     private TransactionRecoverParameters(ClientMessage clientMessage) {

@@ -29,6 +29,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class TransactionalMapPutMessageTask extends AbstractTransactionalMessageTask<TransactionalMapPutParameters> {
 
@@ -40,7 +41,7 @@ public class TransactionalMapPutMessageTask extends AbstractTransactionalMessage
     protected ClientMessage innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
-        Object response = map.put(parameters.key, parameters.value);
+        Object response = map.put(parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS);
         return GenericResultParameters.encode(serializationService.toData(response));
     }
 
