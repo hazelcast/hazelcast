@@ -95,6 +95,16 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         return s;
     }
 
+    /**
+     * Gets the OperationService.
+     *
+     * @return the OperationService.
+     * @throws HazelcastInstanceNotActiveException if object is destroyed or HazelcastInstance shutdown.
+     */
+    public final OperationService getOperationService() {
+        return getNodeEngine().getOperationService();
+    }
+
     @Override
     public abstract String getServiceName();
 

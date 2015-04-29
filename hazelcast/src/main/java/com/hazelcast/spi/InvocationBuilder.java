@@ -265,6 +265,5 @@ public abstract class InvocationBuilder {
         return this;
     }
 
-    public abstract InternalCompletableFuture invoke();
-
+    public abstract <E> InternalCompletableFuture<E> invoke();
 }
