@@ -100,7 +100,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     public void testSlowOperationOnGenericOperationThread() {
         instance = getSingleNodeCluster(1000);
 
-        SlowOperation operation = new SlowOperation(2);
+        SlowOperation operation = new SlowOperation(3);
         executeOperation(instance, operation);
         operation.await();
 
@@ -117,7 +117,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     public void testSlowOperationOnPartitionOperationThread() {
         instance = getSingleNodeCluster(1000);
 
-        SlowOperation operation = new SlowOperation(4, 1);
+        SlowOperation operation = new SlowOperation(4, 2);
         executeOperation(instance, operation);
         operation.await();
 
@@ -171,13 +171,13 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
     @Test
     public void testSlowRecursiveOperation() {
         int partitionThreads = 32;
-        int numberOfOperations = 50;
-        int recursionDepth = 20;
+        int numberOfOperations = 40;
+        int recursionDepth = 15;
 
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "1000");
+        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS, String.valueOf(Integer.MAX_VALUE));
         config.setProperty(GroupProperties.PROP_PARTITION_OPERATION_THREAD_COUNT, String.valueOf(partitionThreads));
-
         instance = createHazelcastInstance(config);
 
         List<SlowRecursiveOperation> operations = new ArrayList<SlowRecursiveOperation>(numberOfOperations);
@@ -186,7 +186,7 @@ public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstrac
         int partitionIndex = 1;
         for (int i = 0; i < numberOfOperations; i++) {
             int partitionId = partitionIndex % partitionCount;
-            SlowRecursiveOperation operation = new SlowRecursiveOperation(partitionId, recursionDepth, 3);
+            SlowRecursiveOperation operation = new SlowRecursiveOperation(partitionId, recursionDepth, 4);
             operations.add(operation);
             executeOperation(instance, operation);
             partitionIndex += partitionCount / partitionThreads + 1;

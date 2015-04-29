@@ -29,7 +29,6 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.EmptyStatement;
 
@@ -47,8 +46,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
-
-    static final long ASSERT_TRUE_TIMEOUT = 10;
 
     private static final String DEFAULT_KEY = "key";
     private static final String DEFAULT_VALUE = "value";
@@ -113,22 +110,12 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
     }
 
     static void assertNumberOfSlowOperationLogs(final Collection<SlowOperationLog> logs, final int expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEqualsStringFormat("Expected %d slow operation logs, but was %d.", expected, logs.size());
-            }
-        }, ASSERT_TRUE_TIMEOUT);
+        assertEqualsStringFormat("Expected %d slow operation logs, but was %d.", expected, logs.size());
     }
 
     static void assertTotalInvocations(final SlowOperationLog log, final int totalInvocations) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEqualsStringFormat("Expected %d total invocations, but was %d. Log: " + log.createDTO().toJson(),
-                        totalInvocations, log.totalInvocations.get());
-            }
-        }, ASSERT_TRUE_TIMEOUT);
+        assertEqualsStringFormat("Expected %d total invocations, but was %d. Log: " + log.createDTO().toJson(),
+                totalInvocations, log.totalInvocations.get());
     }
 
     static void assertEntryProcessorOperation(SlowOperationLog log) {
