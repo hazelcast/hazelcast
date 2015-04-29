@@ -92,18 +92,18 @@ You see that we have `my-shared-map` configured to replicate itself to the clust
 You will also have to define a `merge policy` for merging replica entries and resolving conflicts during the merge
 as mentioned before.
 
-### WAN Replication Queue Size
+### WAN Replication Queue Capacity
 For huge clusters or high data mutation rates, you might need to increase the replication queue size. The default queue
 size for replication queues is `100000`. This means, if you have heavy put/update/remove rates, you might exceed the queue size
 so that the oldest, not yet replicated, updates might get lost.
  
-To increase the replication queue size, a Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queuesize`
+To increase the replication queue capacity, a Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queue.capacity`
 configuration property.
 
 You can do this by setting the property on the command line (where xxx is the queue size):
 
 ```plain
--Dhazelcast.enterprise.wanrep.queuesize=xxx
+-Dhazelcast.enterprise.wanrep.queue.capacity=xxx
 ```
 
 or by setting the properties inside the `hazelcast.xml` (where xxx is the requested queue size):
@@ -111,7 +111,7 @@ or by setting the properties inside the `hazelcast.xml` (where xxx is the reques
 ```xml
 <hazelcast>
   <properties>
-    <property name="hazelcast.enterprise.wanrep.queuesize">xxx</property>
+    <property name="hazelcast.enterprise.wanrep.queue.capacity">xxx</property>
   </properties>
 </hazelcast>
 ```
