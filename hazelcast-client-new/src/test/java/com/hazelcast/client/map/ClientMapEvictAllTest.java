@@ -9,20 +9,17 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMapEvictAllTest extends HazelcastTestSupport {
 
     @Test

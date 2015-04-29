@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapIsLockedParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
@@ -47,6 +48,12 @@ public class MapIsLockedMessageTask extends AbstractPartitionMessageTask<MapIsLo
     protected MapIsLockedParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapIsLockedParameters.decode(clientMessage);
     }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
+    }
+
 
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);

@@ -39,7 +39,7 @@ public class MapValuesWithPredicateMessageTask extends AbstractMapQueryMessageTa
     protected ClientMessage reduce(Collection<QueryResultEntry> result) {
         List<Data> values = new ArrayList<Data>(result.size());
         for (QueryResultEntry resultEntry : result) {
-            values.add(resultEntry.getKeyData());
+            values.add(resultEntry.getValueData());
         }
         return DataCollectionResultParameters.encode(values);
     }

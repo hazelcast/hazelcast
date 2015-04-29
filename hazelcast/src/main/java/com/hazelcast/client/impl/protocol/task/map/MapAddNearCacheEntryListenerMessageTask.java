@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.MapAddNearCacheEntryListenerParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.EventFilter;
 
@@ -32,7 +33,8 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected EventFilter getEventFilter() {
-        return new EntryEventFilter(parameters.includeValue, null);
+        EntryEventFilter eventFilter = new EntryEventFilter(parameters.includeValue, null);
+        return new SyntheticEventFilter(eventFilter);
     }
 
 

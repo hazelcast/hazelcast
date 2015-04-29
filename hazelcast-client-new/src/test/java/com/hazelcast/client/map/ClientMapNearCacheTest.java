@@ -31,17 +31,15 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
-
-import java.util.HashSet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -55,7 +53,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMapNearCacheTest {
 
     private static final int MAX_CACHE_SIZE = 100;
