@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -118,6 +119,15 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
      */
     abstract PartitionAwareService createPartitionAwareService();
 
+
+    /**
+     * Creates a new {@link ClientAwareService} for {@link MapService}.
+     *
+     * @return Creates a new {@link ClientAwareService} implementation.
+     * @see com.hazelcast.spi.ClientAwareService
+     */
+    abstract ClientAwareService createClientAwareService();
+
     /**
      * Creates a new {@link QuorumAwareService} for {@link MapService}.
      *
@@ -147,6 +157,7 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         StatisticsAwareService statisticsAwareService = createStatisticsAwareService();
         PartitionAwareService partitionAwareService = createPartitionAwareService();
         QuorumAwareService quorumAwareService = createQuorumAwareService();
+        ClientAwareService clientAwareService = createClientAwareService();
 
         checkNotNull(mapServiceContext, "mapServiceContext should not be null");
         checkNotNull(managedService, "managedService should not be null");
@@ -160,20 +171,22 @@ abstract class AbstractMapServiceFactory implements MapServiceFactory {
         checkNotNull(statisticsAwareService, "statisticsAwareService should not be null");
         checkNotNull(partitionAwareService, "partitionAwareService should not be null");
         checkNotNull(quorumAwareService, "quorumAwareService should not be null");
+        checkNotNull(clientAwareService, "clientAwareService should not be null");
 
         MapService mapService = new MapService();
-        mapService.setManagedService(managedService);
-        mapService.setMigrationAwareService(migrationAwareService);
-        mapService.setTransactionalService(transactionalService);
-        mapService.setRemoteService(remoteService);
-        mapService.setEventPublishingService(eventPublishingService);
-        mapService.setPostJoinAwareService(postJoinAwareService);
-        mapService.setSplitBrainHandlerService(splitBrainHandlerService);
-        mapService.setReplicationSupportingService(replicationSupportingService);
-        mapService.setStatisticsAwareService(statisticsAwareService);
-        mapService.setMapServiceContext(mapServiceContext);
-        mapService.setMapPartitionAwareService(partitionAwareService);
-        mapService.setMapQuorumAwareService(quorumAwareService);
+        mapService.managedService = managedService;
+        mapService.migrationAwareService = migrationAwareService;
+        mapService.transactionalService = transactionalService;
+        mapService.remoteService = remoteService;
+        mapService.eventPublishingService = eventPublishingService;
+        mapService.postJoinAwareService = postJoinAwareService;
+        mapService.splitBrainHandlerService = splitBrainHandlerService;
+        mapService.replicationSupportingService = replicationSupportingService;
+        mapService.statisticsAwareService = statisticsAwareService;
+        mapService.mapServiceContext = mapServiceContext;
+        mapService.partitionAwareService = partitionAwareService;
+        mapService.quorumAwareService = quorumAwareService;
+        mapService.clientAwareService = clientAwareService;
         mapServiceContext.setService(mapService);
         return mapService;
     }
