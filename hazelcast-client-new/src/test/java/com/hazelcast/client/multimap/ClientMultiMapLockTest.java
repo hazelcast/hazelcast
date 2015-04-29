@@ -42,7 +42,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMultiMapLockTest {
 
     static HazelcastInstance server;

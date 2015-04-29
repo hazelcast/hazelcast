@@ -72,14 +72,9 @@ public class QueueDrainMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        //TODO do we need this instanceof check???
-        if (response instanceof SerializableCollection) {
             SerializableCollection serializableCollection = (SerializableCollection) response;
             Collection<Data> coll = serializableCollection.getCollection();
-            final ClientMessage encode = DataCollectionResultParameters.encode(coll);
-            return encode;
-        }
-        return super.encodeResponse(response);
+            return DataCollectionResultParameters.encode(coll);
     }
 
     @Override

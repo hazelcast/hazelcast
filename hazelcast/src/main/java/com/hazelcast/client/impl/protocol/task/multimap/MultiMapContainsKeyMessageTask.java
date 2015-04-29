@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsKeyParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
@@ -49,6 +50,11 @@ public class MultiMapContainsKeyMessageTask extends AbstractPartitionMessageTask
     @Override
     protected MultiMapContainsKeyParameters decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapContainsKeyParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

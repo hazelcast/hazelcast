@@ -80,7 +80,6 @@ import com.hazelcast.client.impl.protocol.parameters.MapTryRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapUnlockParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapValuesParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapValuesWithPredicateParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
@@ -126,10 +125,10 @@ import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -490,7 +489,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public boolean isLocked(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapIsLockedParameters.encode(name, keyData, 0);
+        ClientMessage request = MapIsLockedParameters.encode(name, keyData);
         ClientMessage response = invoke(request, keyData);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;
@@ -676,24 +675,26 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         ClientMessage request = MapGetEntryViewParameters.encode(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        // TODO : Should entryview parameters handle null cases ?
-        if (response.getMessageType() == VoidResultParameters.TYPE.id()) {
-            return null;
-        }
+
         EntryViewParameters parameters = EntryViewParameters.decode(response);
         SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
-        entryView.setKey(key);
-        entryView.setValue((V) toObject(parameters.value));
-        entryView.setCost(parameters.cost);
-        entryView.setCreationTime(parameters.creationTime);
-        entryView.setExpirationTime(parameters.expirationTime);
-        entryView.setHits(parameters.hits);
-        entryView.setLastAccessTime(parameters.lastAccessTime);
-        entryView.setLastStoredTime(parameters.lastStoredTime);
-        entryView.setLastUpdateTime(parameters.lastUpdateTime);
-        entryView.setVersion(parameters.version);
-        entryView.setEvictionCriteriaNumber(parameters.evictionCriteriaNumber);
-        entryView.setTtl(parameters.ttl);
+        SimpleEntryView<Data, Data> dataEntryView = parameters.dataEntryView;
+
+        if (dataEntryView == null) {
+            return null;
+        }
+        entryView.setKey((K) toObject(dataEntryView.getKey()));
+        entryView.setValue((V) toObject(dataEntryView.getValue()));
+        entryView.setCost(dataEntryView.getCost());
+        entryView.setCreationTime(dataEntryView.getCreationTime());
+        entryView.setExpirationTime(dataEntryView.getExpirationTime());
+        entryView.setHits(dataEntryView.getHits());
+        entryView.setLastAccessTime(dataEntryView.getLastAccessTime());
+        entryView.setLastStoredTime(dataEntryView.getLastStoredTime());
+        entryView.setLastUpdateTime(dataEntryView.getLastUpdateTime());
+        entryView.setVersion(dataEntryView.getVersion());
+        entryView.setEvictionCriteriaNumber(dataEntryView.getEvictionCriteriaNumber());
+        entryView.setTtl(dataEntryView.getTtl());
         //TODO putCache
         return entryView;
     }

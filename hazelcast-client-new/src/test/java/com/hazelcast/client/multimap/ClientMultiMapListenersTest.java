@@ -41,7 +41,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMultiMapListenersTest {
 
     static HazelcastInstance server;

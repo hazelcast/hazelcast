@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -33,6 +33,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
+
 import java.security.Permission;
 
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P> {
@@ -87,8 +88,12 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                             + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data key = dataAwareEntryEvent.getKeyData();
-                Data value = dataAwareEntryEvent.getNewValueData();
+                Data keyData = dataAwareEntryEvent.getKeyData();
+                Data key = keyData == null ? DefaultData.NULL_DATA : keyData;
+
+                Data newValueData = dataAwareEntryEvent.getNewValueData();
+                Data value = newValueData == null ? DefaultData.NULL_DATA : newValueData;
+
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
 

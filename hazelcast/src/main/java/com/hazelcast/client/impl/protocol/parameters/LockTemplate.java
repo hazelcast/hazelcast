@@ -23,7 +23,7 @@ import com.hazelcast.annotation.GenerateParameters;
 public interface LockTemplate {
 
     @EncodeMethod(id = 1)
-    void isLocked(String name, long threadId);
+    void isLocked(String name);
 
     @EncodeMethod(id = 2)
     void isLockedByCurrentThread(String name, long threadId);

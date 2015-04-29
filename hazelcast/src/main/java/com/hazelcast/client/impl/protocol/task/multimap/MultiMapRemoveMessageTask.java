@@ -17,17 +17,23 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -47,6 +53,17 @@ public class MultiMapRemoveMessageTask extends AbstractPartitionMessageTask<Mult
     @Override
     protected MultiMapRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapRemoveParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        MultiMapResponse multiMapResponse = (MultiMapResponse) response;
+        Collection<MultiMapRecord> collection = multiMapResponse.getCollection();
+        Collection<Data> resultCollection = new ArrayList<Data>(collection.size());
+        for (MultiMapRecord multiMapRecord : collection) {
+            resultCollection.add(serializationService.toData(multiMapRecord.getObject()));
+        }
+        return DataCollectionResultParameters.encode(resultCollection);
     }
 
     @Override

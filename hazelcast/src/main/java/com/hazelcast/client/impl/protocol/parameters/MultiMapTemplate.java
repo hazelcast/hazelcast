@@ -75,7 +75,7 @@ public interface MultiMapTemplate {
     void tryLock(String name, Data key, long threadId, long timeout);
 
     @EncodeMethod(id = 18)
-    void isLocked(String name, Data key, long threadId);
+    void isLocked(String name, Data key);
 
     @EncodeMethod(id = 19)
     void unlock(String name, Data key, long threadId);

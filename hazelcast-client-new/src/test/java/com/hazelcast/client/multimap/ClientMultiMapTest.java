@@ -27,7 +27,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -41,7 +40,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMultiMapTest {
 
     static HazelcastInstance server;
@@ -113,7 +111,6 @@ public class ClientMultiMapTest {
 
     @Test
     public void testValueCount_whenKeyNotThere() {
-        final Object key = "key1";
         final MultiMap mm = client.getMultiMap(randomString());
 
         assertEquals(0, mm.valueCount("NOT_THERE"));
@@ -147,7 +144,7 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
         Collection coll = mm.get("NOT_THERE");
 
-        assertEquals(Collections.EMPTY_SET, coll);
+        assertTrue(coll.isEmpty());
     }
 
     @Test
@@ -172,7 +169,7 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
         Collection coll = mm.remove("NOT_THERE");
 
-        assertEquals(Collections.EMPTY_SET, coll);
+        assertTrue(coll.isEmpty());
     }
 
     @Test
