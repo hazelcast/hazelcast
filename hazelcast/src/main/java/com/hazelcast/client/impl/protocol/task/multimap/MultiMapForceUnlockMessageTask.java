@@ -18,7 +18,9 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapForceUnlockParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -47,13 +49,18 @@ public class MultiMapForceUnlockMessageTask extends AbstractPartitionMessageTask
     }
 
     @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return VoidResultParameters.encode();
+    }
+
+    @Override
     protected MultiMapForceUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapForceUnlockParameters.decode(clientMessage);
     }
 
     @Override
     public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override

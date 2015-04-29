@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapPutParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
@@ -47,6 +48,11 @@ public class MultiMapPutMessageTask extends AbstractPartitionMessageTask<MultiMa
     @Override
     protected MultiMapPutParameters decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapPutParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

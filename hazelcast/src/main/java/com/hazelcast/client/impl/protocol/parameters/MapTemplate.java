@@ -87,7 +87,7 @@ public interface MapTemplate {
     void tryLock(String name, Data key, long threadId, long timeout);
 
     @EncodeMethod(id = 21)
-    void isLocked(String name, Data key, long threadId);
+    void isLocked(String name, Data key);
 
     @EncodeMethod(id = 22)
     void unlock(String name, Data key, long threadId);

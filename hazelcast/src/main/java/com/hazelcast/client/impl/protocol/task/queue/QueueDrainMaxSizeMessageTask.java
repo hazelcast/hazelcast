@@ -36,7 +36,6 @@ import java.util.Collection;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_DRAINTOMAXSIZE}
- *
  */
 public class QueueDrainMaxSizeMessageTask
         extends AbstractPartitionMessageTask<QueueDrainToMaxSizeParameters> {
@@ -72,14 +71,9 @@ public class QueueDrainMaxSizeMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        //TODO do we need this instanceof check???
-        if (response instanceof SerializableCollection) {
-            SerializableCollection serializableCollection = (SerializableCollection) response;
-            Collection<Data> coll = serializableCollection.getCollection();
-            final ClientMessage encode = DataCollectionResultParameters.encode(coll);
-            return encode;
-        }
-        return super.encodeResponse(response);
+        SerializableCollection serializableCollection = (SerializableCollection) response;
+        Collection<Data> coll = serializableCollection.getCollection();
+        return DataCollectionResultParameters.encode(coll);
     }
 
     @Override

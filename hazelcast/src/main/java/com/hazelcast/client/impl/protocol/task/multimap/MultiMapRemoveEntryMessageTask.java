@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
@@ -47,6 +48,11 @@ public class MultiMapRemoveEntryMessageTask extends AbstractPartitionMessageTask
     @Override
     protected MultiMapRemoveEntryParameters decodeClientMessage(ClientMessage clientMessage) {
         return MultiMapRemoveEntryParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

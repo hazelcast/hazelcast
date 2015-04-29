@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsEntryParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
@@ -44,6 +45,11 @@ public class MultiMapContainsEntryMessageTask extends AbstractPartitionMessageTa
         ContainsEntryOperation operation = new ContainsEntryOperation(parameters.name, parameters.key, parameters.value);
         operation.setThreadId(parameters.threadId);
         return operation;
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

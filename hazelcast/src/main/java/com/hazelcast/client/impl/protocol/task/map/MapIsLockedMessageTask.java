@@ -41,7 +41,7 @@ public class MapIsLockedMessageTask extends AbstractPartitionMessageTask<MapIsLo
 
     @Override
     protected Operation prepareOperation() {
-        return new IsLockedOperation(getNamespace(), parameters.key, parameters.threadId);
+        return new IsLockedOperation(getNamespace(), parameters.key);
     }
 
     @Override

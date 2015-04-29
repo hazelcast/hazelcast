@@ -26,7 +26,6 @@ import static junit.framework.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class ClientMultiMapListenerStressTest {
 
     private static final int MAX_SECONDS = 60 * 10;

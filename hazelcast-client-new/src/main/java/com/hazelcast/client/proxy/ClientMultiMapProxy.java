@@ -284,7 +284,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public void lock(K key) {
-        lock(key, -1, TimeUnit.MILLISECONDS);
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        final Data keyData = toData(key);
+        ClientMessage request = MultiMapLockParameters.encode(name, keyData,
+                ThreadUtil.getThreadId(), getTimeInMillis(-1, TimeUnit.MILLISECONDS));
+        invoke(request, keyData);
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
@@ -301,7 +306,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final Data keyData = toData(key);
-        ClientMessage request = MultiMapIsLockedParameters.encode(name, keyData, ThreadUtil.getThreadId());
+        ClientMessage request = MultiMapIsLockedParameters.encode(name, keyData);
         ClientMessage response = invoke(request, keyData);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;

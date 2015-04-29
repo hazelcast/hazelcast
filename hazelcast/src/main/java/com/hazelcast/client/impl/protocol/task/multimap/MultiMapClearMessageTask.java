@@ -60,7 +60,7 @@ public class MultiMapClearMessageTask extends AbstractAllPartitionsMessageTask<M
 
     @Override
     protected MultiMapClearParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+        return MultiMapClearParameters.decode(clientMessage);
     }
 
     @Override

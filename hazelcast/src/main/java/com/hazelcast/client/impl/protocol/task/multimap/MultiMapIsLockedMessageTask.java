@@ -17,8 +17,10 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MultiMapIsLockedParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -43,7 +45,7 @@ public class MultiMapIsLockedMessageTask extends AbstractPartitionMessageTask<Mu
     @Override
     protected Operation prepareOperation() {
         DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
-        return new IsLockedOperation(namespace, parameters.key, parameters.threadId);
+        return new IsLockedOperation(namespace, parameters.key);
     }
 
     @Override
@@ -52,8 +54,13 @@ public class MultiMapIsLockedMessageTask extends AbstractPartitionMessageTask<Mu
     }
 
     @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
+    }
+
+    @Override
     public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override

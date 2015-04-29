@@ -40,7 +40,7 @@ public class LockIsLockedMessageTask extends AbstractPartitionMessageTask<LockIs
     @Override
     protected Operation prepareOperation() {
         final Data key = serializationService.toData(parameters.name);
-        return new IsLockedOperation(new InternalLockNamespace(parameters.name), key, parameters.threadId);
+        return new IsLockedOperation(new InternalLockNamespace(parameters.name), key);
     }
 
     @Override

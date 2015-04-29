@@ -61,19 +61,15 @@ public class MultiMapGetMessageTask extends AbstractPartitionMessageTask<MultiMa
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        if (response instanceof MultiMapResponse) {
-            Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
-            if (responseCollection == null) {
-                return DataCollectionResultParameters.encode(Collections.EMPTY_LIST);
-            }
-            Collection<Data> collection = createCollection(responseCollection);
-            for (MultiMapRecord record : responseCollection) {
-                collection.add(serializationService.toData(record.getObject()));
-            }
-            return DataCollectionResultParameters.encode(collection);
-
+        Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
+        if (responseCollection == null) {
+            return DataCollectionResultParameters.encode(Collections.EMPTY_LIST);
         }
-        return super.encodeResponse(response);
+        Collection<Data> collection = createCollection(responseCollection);
+        for (MultiMapRecord record : responseCollection) {
+            collection.add(serializationService.toData(record.getObject()));
+        }
+        return DataCollectionResultParameters.encode(collection);
     }
 
 

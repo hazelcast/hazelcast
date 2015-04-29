@@ -53,7 +53,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public boolean isLocked() {
-        ClientMessage request = LockIsLockedParameters.encode(getName(), ThreadUtil.getThreadId());
+        ClientMessage request = LockIsLockedParameters.encode(getName());
         BooleanResultParameters resultParameters =
                 BooleanResultParameters.decode((ClientMessage) invoke(request));
         return resultParameters.result;
