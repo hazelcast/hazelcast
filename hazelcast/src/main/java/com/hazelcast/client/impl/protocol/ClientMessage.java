@@ -105,11 +105,11 @@ public class ClientMessage
 
     private transient int valueOffset;
 
-    protected ClientMessage() {
+    public ClientMessage() {
         super();
     }
 
-    protected ClientMessage(boolean encode, byte[] buffer, int offset, int length) {
+    public ClientMessage(boolean encode, byte[] buffer, int offset, int length) {
         super(buffer, offset, length);
         if (encode) {
             wrapForEncode(buffer, offset, length);
@@ -120,6 +120,7 @@ public class ClientMessage
 
     public ClientMessage(boolean encode, MutableDirectBuffer buffer, int offset) {
         super(buffer, offset);
+        ensureHeaderSize(offset, buffer.capacity());
         if (encode) {
             setDataOffset(HEADER_SIZE);
             setFrameLength(HEADER_SIZE);
@@ -155,6 +156,7 @@ public class ClientMessage
     }
 
     public void wrapForEncode(byte[] buffer, int offset, int length) {
+        ensureHeaderSize(offset, length);
         super.wrap(buffer, offset, length);
         setDataOffset(HEADER_SIZE);
         setFrameLength(HEADER_SIZE);
@@ -162,7 +164,15 @@ public class ClientMessage
         setPartitionId(-1);
     }
 
+    private void ensureHeaderSize(int offset, int length) {
+        if (length - offset < HEADER_SIZE) {
+            throw new IndexOutOfBoundsException("ClientMessage buffer must contain at least "
+                + HEADER_SIZE + " bytes! length: " + length + ", offset: " + offset);
+        }
+    }
+
     public void wrapForDecode(byte[] buffer, int offset, int length) {
+        ensureHeaderSize(offset, length);
         super.wrap(buffer, offset, length);
         index(getDataOffset() + offset);
     }
@@ -426,12 +436,16 @@ public class ClientMessage
 
     @Override
     public String toString() {
+        int len = index();
         final StringBuilder sb = new StringBuilder("ClientMessage{");
-        sb.append("correlationId=").append(getCorrelationId());
-        sb.append(", messageType=").append(getMessageType());
-        sb.append(", partitionId=").append(getPartitionId());
-        sb.append(", isComplete=").append(isComplete());
-        sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));
+        sb.append("length=").append(len);
+        if (len >= HEADER_SIZE) {
+            sb.append(", correlationId=").append(getCorrelationId());
+            sb.append(", messageType=").append(getMessageType());
+            sb.append(", partitionId=").append(getPartitionId());
+            sb.append(", isComplete=").append(isComplete());
+            sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));
+        }
         sb.append('}');
         return sb.toString();
     }

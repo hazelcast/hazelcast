@@ -2,6 +2,7 @@ package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -268,6 +269,68 @@ public class ClientMessageTest {
         }
     }
 
+    @Test
+    public void test_empty_toString() {
+        new ClientMessage().toString();
+    }
 
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void test_byteArray_constructor_withSmallBuffer() {
+        new ClientMessage(true, new byte[10], 1, 9);
+    }
 
+    @Test
+    public void test_byteArray_constructor_withHeaderSizeBuffer() {
+        new ClientMessage(true, new byte[ClientMessage.HEADER_SIZE], 0, ClientMessage.HEADER_SIZE);
+    }
+
+    @Test
+    public void test_byteArray_constructor_withLargeBuffer() {
+        new ClientMessage(true, new byte[100], 10, 90);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void test_MutableDirectBuffer_constructor_withSmallBuffer() {
+        new ClientMessage(true, new UnsafeBuffer(new byte[10]), 1);
+    }
+
+    @Test
+    public void test_MutableDirectBuffer_constructor_withHeaderSizeBuffer() {
+        new ClientMessage(true, new UnsafeBuffer(new byte[ClientMessage.HEADER_SIZE]), 0);
+    }
+
+    @Test
+    public void test_MutableDirectBuffer_constructor_withLargeBuffer() {
+        new ClientMessage(true, new UnsafeBuffer(new byte[100]), 10);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void test_wrapForEncode_withSmallBuffer() {
+        new ClientMessage().wrapForEncode(new byte[10], 1, 9);
+    }
+
+    @Test
+    public void test_wrapForEncode_withHeaderSizeBuffer() {
+        new ClientMessage().wrapForEncode(new byte[ClientMessage.HEADER_SIZE], 0, ClientMessage.HEADER_SIZE);
+    }
+
+    @Test
+    public void test_wrapForEncode_withLargeBuffer() {
+        new ClientMessage().wrapForEncode(new byte[100], 10, 90);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void test_wrapForDecode_withSmallBuffer() {
+        new ClientMessage().wrapForDecode(new byte[10], 1, 9);
+    }
+
+    @Test
+    public void test_wrapForDecode_withHeaderSizeBuffer() {
+        new ClientMessage().wrapForDecode(new byte[ClientMessage.HEADER_SIZE], 0, ClientMessage.HEADER_SIZE);
+    }
+
+    @Test
+    public void test_wrapForDecode_withLargeBuffer() {
+        new ClientMessage().wrapForDecode(new byte[100], 10, 90);
+    }
 }
