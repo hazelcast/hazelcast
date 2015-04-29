@@ -166,7 +166,6 @@ public class Node {
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo(this);
-            versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
             this.multicastService = createMulticastService(addressPicker);
             initializeListeners(config);
             joiner = nodeContext.createJoiner(this);
@@ -358,6 +357,7 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         nodeExtension.afterStart(this);
+        versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
     }
 
     public void shutdown(final boolean terminate) {
