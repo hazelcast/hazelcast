@@ -18,9 +18,10 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
-public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation, MutatingOperation {
 
     public MapFlushOperation() {
     }

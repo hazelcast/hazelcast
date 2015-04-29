@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;

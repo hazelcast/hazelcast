@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.QueueRemoveListenerParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -41,9 +42,9 @@ public class QueueRemoveListenerMessageTask
 
     @Override
     protected ClientMessage call() {
-
-        //FIXME
-        throw new UnsupportedOperationException();
+        final QueueService service = getService(getServiceName());
+        final boolean removeItemListener = service.removeItemListener(parameters.name, parameters.registrationId);
+        return BooleanResultParameters.encode(removeItemListener);
     }
 
     @Override

@@ -26,8 +26,9 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.util.Map;
 import java.util.Set;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
     private Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySetOperation(String name) {

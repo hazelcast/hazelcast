@@ -19,24 +19,10 @@ package com.hazelcast.config;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import org.xml.sax.SAXException;
-
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +30,18 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.List;
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -634,7 +632,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         return "<hazelcast>\n" +
                 "<map name=\"" + mapName + "\">\n" +
                 "<partition-lost-listeners>\n" +
-                "<partition-lost-listener>"+ listenerName +"</partition-lost-listener>\n" +
+                "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n" +
                 "</partition-lost-listeners>\n" +
                 "</map>\n" +
                 "</hazelcast>\n";
@@ -723,5 +721,44 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, targetEndpoints.size());
         assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
         assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
+    }
+
+    @Test
+    public void testQuorumConfig() throws Exception {
+        String xml =
+                "<hazelcast>\n" +
+                        "      <quorum enabled=\"true\" name=\"myQuorum\">\n" +
+                        "        <quorum-size>3</quorum-size>\n" +
+                        "        <quorum-function-class-name>com.my.quorum.function</quorum-function-class-name>\n" +
+                        "        <quorum-type>READ</quorum-type>\n" +
+                        "      </quorum>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertTrue("quorum should be enabled", quorumConfig.isEnabled());
+        assertEquals(3, quorumConfig.getSize());
+        assertEquals(QuorumType.READ, quorumConfig.getType());
+        assertEquals("com.my.quorum.function", quorumConfig.getQuorumFunctionClassName());
+        assertTrue(quorumConfig.getListenerConfigs().isEmpty());
+    }
+
+    @Test
+    public void testQuorumListenerConfig() throws Exception {
+        String xml =
+                "<hazelcast>\n" +
+                        "      <quorum enabled=\"true\" name=\"myQuorum\">\n" +
+                        "        <quorum-size>3</quorum-size>\n" +
+                        "        <quorum-listeners>" +
+                        "           <quorum-listener>com.abc.my.quorum.listener</quorum-listener>" +
+                        "           <quorum-listener>com.abc.my.second.listener</quorum-listener>" +
+                        "       </quorum-listeners> " +
+                        "    </quorum>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertFalse(quorumConfig.getListenerConfigs().isEmpty());
+        assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
+
     }
 }

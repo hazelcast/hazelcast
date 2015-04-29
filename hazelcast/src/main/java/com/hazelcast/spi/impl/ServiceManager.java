@@ -41,6 +41,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
@@ -49,7 +50,6 @@ import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -102,6 +102,7 @@ final class ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
+        registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
     }
 
     private void registerDefaultServices(ServicesConfig servicesConfig) {

@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapEvictParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
@@ -44,7 +45,12 @@ public class MapEvictMessageTask extends AbstractPartitionMessageTask<MapEvictPa
 
     @Override
     protected MapEvictParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+        return MapEvictParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

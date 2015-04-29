@@ -27,6 +27,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
@@ -125,6 +126,8 @@ class OperationRunnerImpl extends OperationRunner {
 
             ensureNoPartitionProblems(op);
 
+            ensureQuorumPresent(op);
+
             op.beforeRun();
 
             if (waitingNeeded(op)) {
@@ -142,6 +145,12 @@ class OperationRunnerImpl extends OperationRunner {
             }
         }
     }
+
+    private void ensureQuorumPresent(Operation op) {
+        QuorumServiceImpl quorumService = operationService.nodeEngine.getQuorumService();
+        quorumService.ensureQuorumPresent(op);
+    }
+
 
     private boolean waitingNeeded(Operation op) {
         if (!(op instanceof WaitSupport)) {

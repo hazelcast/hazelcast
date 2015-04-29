@@ -23,11 +23,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
+public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation {
 
     private boolean evicted;
     private boolean asyncBackup;

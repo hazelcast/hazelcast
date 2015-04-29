@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.QueueClearParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ClearOperation;
@@ -49,6 +50,11 @@ public class QueueClearMessageTask
     @Override
     protected QueueClearParameters decodeClientMessage(ClientMessage clientMessage) {
         return QueueClearParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return VoidResultParameters.encode();
     }
 
     @Override

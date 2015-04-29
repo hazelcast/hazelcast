@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapSetParameters;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.SetOperation;
@@ -41,6 +42,11 @@ public class MapSetMessageTask extends AbstractMapPutMessageTask<MapSetParameter
     @Override
     protected MapSetParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapSetParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

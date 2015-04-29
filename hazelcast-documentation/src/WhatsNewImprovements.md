@@ -40,5 +40,3 @@ attributes [[#3565]](https://github.com/hazelcast/hazelcast/issues/3565).
 - Map wildcard matching is confusing. There should be a pluggable wildcard configuration
 resolver [[#2431]](https://github.com/hazelcast/hazelcast/issues/2431).
 
-
-

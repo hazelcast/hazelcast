@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.QueuePutParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.OfferOperation;
@@ -49,6 +50,11 @@ public class QueuePutMessageTask
     @Override
     protected QueuePutParameters decodeClientMessage(ClientMessage clientMessage) {
         return QueuePutParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return VoidResultParameters.encode();
     }
 
     @Override

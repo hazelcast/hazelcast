@@ -23,10 +23,10 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-
+import com.hazelcast.spi.ReadonlyOperation;
 import java.util.Collection;
 
-public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class MapValuesOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
     private Collection<Data> values;
 
     public MapValuesOperation(String name) {

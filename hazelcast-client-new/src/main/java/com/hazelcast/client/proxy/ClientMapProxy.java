@@ -79,6 +79,7 @@ import com.hazelcast.client.impl.protocol.parameters.MapTryRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapUnlockParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapValuesParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapValuesWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
@@ -180,8 +181,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         ClientMessage message = MapContainsKeyParameters.encode(name, keyData, ThreadUtil.getThreadId());
         ClientMessage result = invoke(message, keyData);
-        BooleanResultParameters resultParameters =
-                BooleanResultParameters.decode(result);
+        BooleanResultParameters resultParameters = BooleanResultParameters.decode(result);
         return resultParameters.result;
     }
 
@@ -675,11 +675,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         ClientMessage request = MapGetEntryViewParameters.encode(name, keyData, ThreadUtil.getThreadId());
         ClientMessage response = invoke(request, keyData);
-        EntryViewParameters parameters = EntryViewParameters.decode(response);
-
-        if (parameters == null) {
+        // TODO : Should entryview parameters handle null cases ?
+        if (response.getMessageType() == VoidResultParameters.TYPE.id()) {
             return null;
         }
+        EntryViewParameters parameters = EntryViewParameters.decode(response);
         SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
         entryView.setKey(key);
         entryView.setValue((V) toObject(parameters.value));
@@ -702,7 +702,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         ClientMessage request = MapEvictParameters.encode(name, keyData, ThreadUtil.getThreadId());
-        ClientMessage response = invoke(request);
+        ClientMessage response = invoke(request, keyData);
         BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
         return resultParameters.result;
     }

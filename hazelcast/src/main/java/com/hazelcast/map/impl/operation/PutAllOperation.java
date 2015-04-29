@@ -32,10 +32,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -43,7 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
+public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation,
+        BackupAwareOperation, MutatingOperation {
 
     private MapEntrySet entrySet;
     private boolean initialLoad;

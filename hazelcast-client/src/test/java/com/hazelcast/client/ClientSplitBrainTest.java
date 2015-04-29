@@ -139,11 +139,4 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         };
     }
 
-    private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
-        final Node n1 = TestUtil.getNode(h1);
-        final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
-    }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
@@ -49,33 +50,10 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
-import static com.hazelcast.config.XmlElements.CACHE;
-import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
-import static com.hazelcast.config.XmlElements.GROUP;
-import static com.hazelcast.config.XmlElements.IMPORT;
-import static com.hazelcast.config.XmlElements.JOB_TRACKER;
-import static com.hazelcast.config.XmlElements.LICENSE_KEY;
-import static com.hazelcast.config.XmlElements.LIST;
-import static com.hazelcast.config.XmlElements.LISTENERS;
-import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
-import static com.hazelcast.config.XmlElements.MAP;
-import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
-import static com.hazelcast.config.XmlElements.MULTIMAP;
-import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
-import static com.hazelcast.config.XmlElements.NETWORK;
-import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
-import static com.hazelcast.config.XmlElements.PROPERTIES;
-import static com.hazelcast.config.XmlElements.QUEUE;
-import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
-import static com.hazelcast.config.XmlElements.SECURITY;
-import static com.hazelcast.config.XmlElements.SEMAPHORE;
-import static com.hazelcast.config.XmlElements.SERIALIZATION;
-import static com.hazelcast.config.XmlElements.SERVICES;
-import static com.hazelcast.config.XmlElements.SET;
-import static com.hazelcast.config.XmlElements.TOPIC;
-import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
-import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+//CHECKSTYLE:OFF
+import static com.hazelcast.config.XmlElements.*;
+//CHECKSTYLE:ON
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
@@ -96,7 +74,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private Properties properties = System.getProperties();
     private Set<String> occurrenceSet = new HashSet<String>();
     private Element root;
-
 
     /**
      * Constructs a XmlConfigBuilder that reads from the provided XML file.
@@ -226,7 +203,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                         + lineSeparator + "Exception: " + e.getMessage()
                         + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
-
             }
             throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
@@ -301,11 +277,42 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             config.setLicenseKey(getTextContent(node));
         } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
             handleManagementCenterConfig(node);
+        } else if (QUORUM.isEqual(nodeName)) {
+            handleQuorum(node);
         } else {
             return true;
         }
         return false;
     }
+
+    private void handleQuorum(final org.w3c.dom.Node node) {
+        QuorumConfig quorumConfig = new QuorumConfig();
+        final String name = getAttribute(node, "name");
+        quorumConfig.setName(name);
+        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        final boolean enabled = attrEnabled != null ? checkTrue(getTextContent(attrEnabled)) : false;
+        quorumConfig.setEnabled(enabled);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("quorum-size".equals(nodeName)) {
+                quorumConfig.setSize(getIntegerValue("quorum-size", value, 0));
+            } else if ("quorum-listeners".equals(nodeName)) {
+                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+                    if ("quorum-listener".equals(cleanNodeName(listenerNode))) {
+                        String listenerClass = getTextContent(listenerNode);
+                        quorumConfig.addListenerConfig(new QuorumListenerConfig(listenerClass));
+                    }
+                }
+            } else if ("quorum-type".equals(nodeName)) {
+                quorumConfig.setType(QuorumType.valueOf(upperCaseInternal(value)));
+            } else if ("quorum-function-class-name".equals(nodeName)) {
+                quorumConfig.setQuorumFunctionClassName(value);
+            }
+        }
+        this.config.addQuorumConfig(quorumConfig);
+    }
+
 
     private void handleServices(final Node node) {
         final Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
@@ -937,6 +944,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapPartitionLostListenerHandle(n, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
+            } else if ("quorum-ref".equals(nodeName)) {
+                mapConfig.setQuorumName(value);
             }
         }
         this.config.addMapConfig(mapConfig);
@@ -1005,9 +1014,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 nearCacheConfig.setMaxIdleSeconds(
                         getIntegerValue("max-idle-seconds", value, NearCacheConfig.DEFAULT_MAX_IDLE_SECONDS));
             } else if ("eviction-policy".equals(nodeName)) {
-                   nearCacheConfig.setEvictionPolicy(value);
+                nearCacheConfig.setEvictionPolicy(value);
             } else if ("invalidate-on-change".equals(nodeName)) {
-                    nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
             } else if ("in-memory-format".equals(nodeName)) {
                 nearCacheConfig.setInMemoryFormat(
                         InMemoryFormat.valueOf(upperCaseInternal(value)));

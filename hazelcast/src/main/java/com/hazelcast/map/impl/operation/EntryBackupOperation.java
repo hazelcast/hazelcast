@@ -25,12 +25,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.Map;
 
-public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation {
 
     protected transient Object oldValue;
     private EntryBackupProcessor entryProcessor;

@@ -30,17 +30,17 @@ import com.hazelcast.query.TruePredicate;
 public class GroupProperties {
 
     /**
-     * This property can be used to verify that Hazelcast nodes only join when their 'application' level configuration is the
+     * Use this property to verify that Hazelcast nodes only join the cluster when their 'application' level configuration is the
      * same.
      * <p/>
-     * So imagine that you have multiple machines, but you want to make sure that each machine that is going to join the cluster
-     * has exactly the same 'application level' settings, so settings that are not part of the Hazelcast configuration, but
-     * maybe some filepath. To prevent these machines, with potential different application level configuration, to form
-     * a cluster, this property can be set.
+     * If you have multiple machines, and you want to make sure that each machine that joins the cluster
+     * has exactly the same 'application level' settings (such as settings that are not part of the Hazelcast configuration,
+     * maybe some filepath). To prevent these machines with potential different application level configuration from forming
+     * a cluster, you can set this property.
      * <p/>
-     * You could use actual values, e.g. string paths, but you can also use e.g. an md5 hash. We'll give the give the guarantee
-     * that only nodes are going to form a cluster where the token is an exact match. If this token is different, the member
-     * can't be started and therefor you will get the guarantee that all members in the cluster, will have exactly the same
+     * You could use actual values, such as string paths, but you can also use an md5 hash. We'll give the guarantee
+     * that nodes will form a cluster (become a member) only where the token is an exact match. If this token is different, the
+     * member can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
      * application validation token.
      * <p/>
      * This validation-token will be checked before member join the cluster.
@@ -51,9 +51,9 @@ public class GroupProperties {
     public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
 
     /**
-     * The performance monitor is a tool useful to see all kinds of internal performance metrics. Currently it is quite
+     * Use the performance monitor to see internal performance metrics. Currently this is quite
      * limited since it will only show read/write events per selector and operations executed per operation-thread. But in
-     * the future all kinds of new metrics will be added.
+     * the future, all kinds of new metrics will be added.
      * <p/>
      * The performance monitor logs all metrics into the log file.
      */
@@ -71,7 +71,7 @@ public class GroupProperties {
      * The interval in seconds between {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
      *
-     * Please see documentation of {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer} for
+     * Please see the documentation of {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer} for a
      * detailed explanation of the problem.
      *
      * Default value is 20 seconds. A negative value disables the balancer.
@@ -96,8 +96,8 @@ public class GroupProperties {
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
 
     /**
-     * If an operation has backups and the backups don't complete in time; then some cleanup logic can be executed. This
-     * property specifies that timeout.
+     * If an operation has backups and the backups don't complete in time, then some cleanup logic can be executed. This
+     * property specifies that timeout for backups to complete.
      */
     public static final String PROP_OPERATION_BACKUP_TIMEOUT_MILLIS = "hazelcast.operation.backup.timeout.millis";
 
@@ -106,10 +106,10 @@ public class GroupProperties {
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND = "hazelcast.socket.client.bind";
     /**
-     * The number of threads the client engine has available for processing requests that are not partition specific.
-     * Most of the request e.g. map.put/map.get are partition specific and will use a partition-operation-thread, but
-     * there are also request that can't be executed on a partition-specific operation-thread, e.g. multimap.contain(value)
-     * because it needs to access all partitions on a given member.
+     * The number of threads that the client engine has available for processing requests that are not partition specific.
+     * Most of the requests, such as map.put and map.get, are partition specific and will use a partition-operation-thread, but
+     * there are also requests that can't be executed on a partition-specific operation-thread, such as multimap.contain(value),
+     * because they need to access all partitions on a given member.
      */
     public static final String PROP_CLIENT_ENGINE_THREAD_COUNT = "hazelcast.clientengine.thread.count";
     public static final String PROP_SOCKET_RECEIVE_BUFFER_SIZE = "hazelcast.socket.receive.buffer.size";
@@ -138,17 +138,17 @@ public class GroupProperties {
 
     /**
      * The number of incremental ports, starting with port number defined in network configuration,
-     * that will be used to connect to a host which is defined without a port in TCP-IP member list
+     * that will be used to connect to a host which is defined without a port in the TCP-IP member list
      * while a node is searching for a cluster.
      */
     public static final String PROP_TCP_JOIN_PORT_TRY_COUNT = "hazelcast.tcp.join.port.try.count";
     public static final String PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS
             = "hazelcast.map.replica.scheduled.task.delay.seconds";
     /**
-     * PROP_MAP_EXPIRY_DELAY_SECONDS is useful to deal with some possible edge cases e.g. when using EntryProcessor,
-     * without this delay, you may see an EntryProcessor running on owner partition found a key but
-     * EntryBackupProcessor did not find it on backup, as a result of this when backup promotes to owner
-     * you will end up an unprocessed key.
+     * YOu can use PROP_MAP_EXPIRY_DELAY_SECONDS to deal with some possible edge cases, such as using EntryProcessor.
+     * Without this delay, you may see that an EntryProcessor running on the owner partition found a key, but
+     * EntryBackupProcessor did not find it on backup, and as a result when backup promotes to owner
+     * you will end up with an unprocessed key.
      */
     public static final String PROP_MAP_EXPIRY_DELAY_SECONDS = "hazelcast.map.expiry.delay.seconds";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
@@ -177,7 +177,7 @@ public class GroupProperties {
     public static final String PROP_SLOW_OPERATION_DETECTOR_ENABLED = "hazelcast.slow.operation.detector.enabled";
 
     /**
-     * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered as slow.
+     * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered to be slow.
      * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stack trace.
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
@@ -201,7 +201,7 @@ public class GroupProperties {
 
     /**
      * Defines if the stack traces of slow operations are logged in the log file. Stack traces will always be reported to the
-     * Management Center, but as default they are not printed to keep the log size small.
+     * Management Center, but by default they are not printed to keep the log size small.
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
             = "hazelcast.slow.operation.detector.stacktrace.logging.enabled";
@@ -222,15 +222,15 @@ public class GroupProperties {
     public static final String PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY = "hazelcast.enterprise.wanrep.queue.capacity";
 
     /**
-     * Defines maximum number of WAN replication events to be drained and send to the target cluster in a batch.
-     * Batches are sent in sequence to make sure the order of events,
-     * only one batch of events is sent to a target wan member at a time. After batch is sent, acknowledge is waited
-     * from target cluster.
-     * If no-ack is received, same set of events is sent again to the target cluster until the ack is received.
+     * Defines the maximum number of WAN replication events to be drained and sent to the target cluster in a batch.
+     * Batches are sent in sequence to make sure of the order of events,
+     * only one batch of events is sent to a target wan member at a time. After the batch is sent, an acknowledgement is awaited
+     * from the target cluster.
+     * If no-ack is received, the same set of events is sent again to the target cluster until the ack is received.
      * Until this process is complete, wan replication events are stored in the wan replication event queue.
-     * This queue's size is limited by {@link #PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY} and if queued event count
+     * This queue's size is limited by {@link #PROP_ENTERPRISE_WAN_REP_QUEUE_CAPACITY}. If the queued event count
      * exceeds queue capacity, no back-pressure is applied and older events in the queue will start dropping.
-     * only valid for Hazelcast Enterprise
+     * Only valid for Hazelcast Enterprise.
      */
     public static final String PROP_ENTERPRISE_WAN_REP_BATCH_SIZE = "hazelcast.enterprise.wanrep.batch.size";
 
@@ -255,31 +255,32 @@ public class GroupProperties {
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
 
+
     /**
-     * Using back pressure one can prevent an overload of pending asynchronous backups. Imagine there is a map with a
-     * single asynchronous backup, it could happen that producing asynchronous backups happens at a higher rate than
-     * the consumption of the backup and this can eventually lead to an OOME (especially of the backups are slow).
+     * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
+     * single asynchronous backup, producing asynchronous backups could happen at a higher rate than
+     * the consumption of the backup. This can eventually lead to an OOME (especially if the backups are slow).
      * <p/>
-     * With back-pressure enabled this can't happen.
+     * With back-pressure enabled, this can't happen.
      * <p/>
-     * It is implemented by making asynchronous backups operations synchronous. This prevent the internal queues to overflow
-     * because the invoker will wait for the primary and the backups to complete. The frequency of this is determined by the
-     * sync-window.
+     * Back pressure is implemented by making asynchronous backups operations synchronous. This prevents the internal queues from
+     * overflowing because the invoker will wait for the primary and for the backups to complete. The frequency of this is
+     * determined by the sync-window.
      * <p/>
      */
     public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
 
     /**
-     * Control the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
+     * Controls the frequency of a BackupAwareOperation getting its async backups converted to a sync backups. This is needed
      * to prevent an accumulation of asynchronous backups and eventually running into stability issues.
      *
      * A sync window of 10 means that 1 in 10 BackupAwareOperations get their async backups convert to sync backups.
      *
-     * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. This
+     * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. 1
      * is also the smallest legal value for the sync window.
      *
-     * There is some randomization going on to prevent resonance. So with a sync window of n, not every n'th BackupAwareOperation
-     * operation is getting its async backups converted to sync.
+     * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth
+     * BackupAwareOperation operation gets its async backups converted to sync.
      *
      * This property only has meaning when backpressure is enabled.
      */
@@ -289,7 +290,7 @@ public class GroupProperties {
      * Control the maximum timeout in millis to wait for an invocation space to be available.
      *
      * If an invocation can't be made because there are too many pending invocations, then an exponential backoff is done
-     * to give the system time to deal with the backlog of invocations. This property control how long an invocation is
+     * to give the system time to deal with the backlog of invocations. This property controls how long an invocation is
      * allowed to wait before getting a {@link com.hazelcast.core.HazelcastOverloadException}.
      *
      * The value need to be equal or larger than 0.
@@ -300,16 +301,16 @@ public class GroupProperties {
     /**
      * The maximum number of concurrent invocations per partition.
      *
-     * To prevent the system overloading, HZ can apply a constrain on the number of concurrent invocations. If the maximum
-     * number of concurrent invocations has exceeded and a new invocation comes in, then an exponential back-off is applied
+     * To prevent the system from overloading, HZ can apply a constraint on the number of concurrent invocations. If the maximum
+     * number of concurrent invocations has been exceeded and a new invocation comes in, then an exponential back-off is applied
      * till eventually a timeout happens or there is room for the invocation.
      *
-     * By default it is configured as 100, so with 271 partitions that would give (271+1)*100=27200 concurrent invocations from a
-     * single member. The +1 is for generic operations. The reason why 100 is chosen is:
-     * - there can be concurrent operations that touch a lot of partitions which consume more than 1 invocation
+     * By default it is configured as 100. With 271 partitions, that would give (271+1)*100=27200 concurrent invocations from a
+     * single member. The +1 is for generic operations. The reasons why 100 is chosen are:
+     * - there can be concurrent operations that touch a lot of partitions which consume more than 1 invocation, and
      * - certain methods like those from the IExecutor or ILock are also invocations and they can be very long running.
      *
-     * No promise is made of the invocations are tracked per partition, or if there is a general pool of invocations.
+     * No promise is made for the invocations being tracked per partition, or if there is a general pool of invocations.
      */
     public static final String PROP_BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION
             = "hazelcast.backpressure.max.concurrent.invocations.per.partition";
@@ -318,8 +319,8 @@ public class GroupProperties {
 
 
     /**
-     * forces the jcache provider which can have values client or server to force provider type,
-     * if not provided provider will be client or server whichever found on classPath first respectively
+     * Forces the jcache provider, which can have values client or server, to force the provider type.
+     * Tf not provided, the provider will be client or server, whichever is found on the classPath first respectively.
      */
     public static final String PROP_JCACHE_PROVIDER_TYPE = "hazelcast.jcache.provider.type";
 
@@ -327,31 +328,31 @@ public class GroupProperties {
      * Result size limit for query operations on maps.
      * <p/>
      * This value defines the maximum number of returned elements for a single query result. If a query exceeds this number of
-     * elements a {@link QueryResultSizeExceededException} will be thrown.
+     * elements, a {@link QueryResultSizeExceededException} will be thrown.
      * <p/>
-     * This feature is in place to prevent an OOME if a single node is requesting the whole data set of the cluster, e.g. by
+     * This feature prevents an OOME if a single node is requesting the whole data set of the cluster, such as by
      * executing a query with {@link TruePredicate}. This applies internally for the {@link IMap#values()}, {@link IMap#keySet()}
      * and {@link IMap#entrySet()} methods, which are good candidates for OOME in large clusters.
      * <p/>
      * This feature depends on an equal distribution of the data on the cluster nodes to calculate the result size limit per node.
-     * Therefore there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
+     * Therefore, there is a minimum value of {@value QueryResultSizeLimiter#MINIMUM_MAX_RESULT_LIMIT} defined in
      * {@link QueryResultSizeLimiter}. Configured values below the minimum will be increased to the minimum.
      * <p/>
-     * The feature can be disabled by setting a value of <tt>-1</tt> (which is the default value).
+     * The feature can be disabled by setting its value to <tt>-1</tt> (which is the default value).
      */
     public static final String PROP_QUERY_RESULT_SIZE_LIMIT = "hazelcast.query.result.size.limit";
 
     /**
      * Maximum value of local partitions to trigger local pre-check for {@link TruePredicate} query operations on maps.
      * <p/>
-     * To limit the result size of a query ({@see PROP_QUERY_RESULT_SIZE_LIMIT}) a local pre-check on the requesting node can be
-     * done, before the query is sent to the cluster. Since this may increase the latency the pre-check is limited to a maximum
+     * To limit the result size of a query ({@see PROP_QUERY_RESULT_SIZE_LIMIT}), a local pre-check on the requesting node can be
+     * done before the query is sent to the cluster. Since this may increase the latency, the pre-check is limited to a maximum
      * number of local partitions.
      * <p/>
-     * By increasing this parameter you can prevent the execution of the query on the cluster by increasing the latency due to the
-     * prolonged local pre-check.
+     * By increasing this parameter, you can prevent the execution of the query on the cluster. Increasing this parameter
+     * increases the latency due to the prolonged local pre-check.
      * <p/>
-     * The pre-check can be disabled by setting a value of <tt>-1</tt>.
+     * The pre-check can be disabled by setting the value to <tt>-1</tt>.
      *
      * @see #PROP_QUERY_RESULT_SIZE_LIMIT
      */
@@ -517,7 +518,7 @@ public class GroupProperties {
      * {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} to {@code false}. Otherwise
      * its value will not be taken into account.
      * <p/>
-     * Per node max write-behind queue capacity is the total of all write-behind queue sizes in a node
+     * The per node maximum write-behind queue capacity is the total of all write-behind queue sizes in a node,
      * including backups.
      * <p/>
      * The maximum value which can be set is {@link Integer#MAX_VALUE}
@@ -651,7 +652,6 @@ public class GroupProperties {
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
                 = new GroupProperty(config, PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS, "5");
-
         BACKPRESSURE_ENABLED
                 = new GroupProperty(config, PROP_BACKPRESSURE_ENABLED, "false");
         BACKPRESSURE_SYNCWINDOW

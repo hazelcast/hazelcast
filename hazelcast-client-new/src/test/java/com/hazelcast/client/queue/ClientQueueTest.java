@@ -38,7 +38,6 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientQueueTest {
 
     final static int maxSizeForQueue = 8;

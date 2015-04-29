@@ -22,9 +22,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.NamedOperation;
 import java.io.IOException;
 
-public class AddInterceptorOperation extends AbstractOperation {
+public class AddInterceptorOperation extends AbstractOperation implements MutatingOperation, NamedOperation {
 
     private MapService mapService;
     private String id;
@@ -78,4 +80,8 @@ public class AddInterceptorOperation extends AbstractOperation {
         return "AddInterceptorOperation{}";
     }
 
+    @Override
+    public String getName() {
+        return mapName;
+    }
 }

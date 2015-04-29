@@ -79,6 +79,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -409,6 +410,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     @Override
     public PartitionService getPartitionService() {
         return new PartitionServiceProxy(partitionService, listenerService);
+    }
+
+    @Override
+    public QuorumService getQuorumService() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -46,11 +45,11 @@ import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
@@ -206,6 +205,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     @Override
     public PartitionService getPartitionService() {
         return getClient().getPartitionService();
+    }
+
+    @Override
+    public QuorumService getQuorumService() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

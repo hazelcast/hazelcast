@@ -78,6 +78,8 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -238,6 +240,7 @@ public class TestFullApplicationContext {
                 fail("unknown index!");
             }
         }
+        assertEquals("my-quorum" , testMapConfig.getQuorumName());
 
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
@@ -664,5 +667,21 @@ public class TestFullApplicationContext {
                 assertTrue(listener.isIncludeValue());
             }
         }
+    }
+
+    @Test
+    public void testQuorumConfig() throws Exception {
+        assertNotNull(config);
+        assertEquals(1, config.getQuorumConfigs().size());
+        QuorumConfig quorumConfig = config.getQuorumConfig("my-quorum");
+        assertNotNull(quorumConfig);
+        assertEquals("my-quorum", quorumConfig.getName());
+        assertEquals("com.hazelcast.spring.DummyQuorumFunction", quorumConfig.getQuorumFunctionClassName());
+        assertEquals(true, quorumConfig.isEnabled());
+        assertEquals(2, quorumConfig.getSize());
+        assertEquals(2, quorumConfig.getListenerConfigs().size());
+        assertEquals(QuorumType.READ, quorumConfig.getType());
+        assertEquals("com.hazelcast.spring.DummyQuorumListener", quorumConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(quorumConfig.getListenerConfigs().get(1).getImplementation());
     }
 }

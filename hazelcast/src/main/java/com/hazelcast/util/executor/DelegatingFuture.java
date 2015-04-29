@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
@@ -99,6 +101,12 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         }
         if (object instanceof Data) {
             Data data = (Data) object;
+            object = serializationService.toObject(data);
+            serializationService.disposeData(data);
+        }
+        if (object instanceof ClientMessage) {
+            GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) object);
+            Data data = resultParameters.result;
             object = serializationService.toObject(data);
             serializationService.disposeData(data);
         }

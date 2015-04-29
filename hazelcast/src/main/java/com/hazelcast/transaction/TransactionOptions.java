@@ -177,7 +177,7 @@ public final class TransactionOptions implements DataSerializable {
         sb.append("TransactionOptions");
         sb.append("{timeoutMillis=").append(timeoutMillis);
         sb.append(", durability=").append(durability);
-        sb.append(", txType=").append(transactionType.value);
+        sb.append(", txType=").append(transactionType);
         sb.append('}');
         return sb.toString();
     }

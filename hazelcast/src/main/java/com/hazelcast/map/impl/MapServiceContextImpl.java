@@ -33,7 +33,6 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;

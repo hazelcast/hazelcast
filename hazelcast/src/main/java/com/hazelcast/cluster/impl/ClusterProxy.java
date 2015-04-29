@@ -19,7 +19,6 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
-
 import java.util.Set;
 
 public class ClusterProxy implements Cluster {

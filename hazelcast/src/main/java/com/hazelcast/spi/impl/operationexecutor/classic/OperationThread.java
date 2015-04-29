@@ -130,7 +130,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
             currentOperationRunner.run(runnable);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
-            logger.severe("Failed to process task: " + runnable + " on " + getName());
+            logger.severe("Failed to process task: " + runnable + " on " + getName(), e);
         } finally {
             currentOperationRunner = null;
         }

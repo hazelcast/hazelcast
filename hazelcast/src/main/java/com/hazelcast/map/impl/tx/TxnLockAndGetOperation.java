@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.operation.LockAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,7 +29,7 @@ import java.io.IOException;
 /**
  * Transactional lock and get operation.
  */
-public class TxnLockAndGetOperation extends LockAwareOperation {
+public class TxnLockAndGetOperation extends LockAwareOperation implements MutatingOperation {
 
     private VersionedValue response;
     private String ownerUuid;
