@@ -41,6 +41,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -74,6 +76,21 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+    public static void assertUtilityConstructor(Class clazz) {
+        Constructor[] constructors = clazz.getDeclaredConstructors();
+        assertEquals("there are more than 1 constructors", 1, constructors.length);
+
+        Constructor constructor = constructors[0];
+        int modifiers = constructor.getModifiers();
+        assertTrue("access modifier is not private", Modifier.isPrivate(modifiers));
+
+        constructor.setAccessible(true);
+        try {
+            constructor.newInstance();
+        } catch (Exception e) {
+        }
+    }
 
     public HazelcastInstance createHazelcastInstance() {
         return createHazelcastInstance(new Config());
@@ -114,7 +131,7 @@ public abstract class HazelcastTestSupport {
         return node.clusterService.getThisAddress();
     }
 
-    public static Packet toPacket(HazelcastInstance hz, Operation operation){
+    public static Packet toPacket(HazelcastInstance hz, Operation operation) {
         SerializationService serializationService = getSerializationService(hz);
         ConnectionManager connectionManager = getConnectionManager(hz);
 
@@ -125,12 +142,12 @@ public abstract class HazelcastTestSupport {
         return packet;
     }
 
-    public static ConnectionManager getConnectionManager(HazelcastInstance hz){
+    public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.connectionManager;
     }
 
-    public static ClusterService getClusterService(HazelcastInstance hz){
+    public static ClusterService getClusterService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService;
     }
@@ -150,7 +167,7 @@ public abstract class HazelcastTestSupport {
         return node.partitionService;
     }
 
-    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz){
+    public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.nodeEngine;
     }
@@ -293,7 +310,8 @@ public abstract class HazelcastTestSupport {
         }).start();
     }
 
-    public static void consume(Object o) {}
+    public static void consume(Object o) {
+    }
 
     public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
@@ -480,9 +498,9 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
-    public static void assertInstanceOf(Class clazz, Object o){
+    public static void assertInstanceOf(Class clazz, Object o) {
         Assert.assertNotNull(o);
-        assertTrue(o+" is not an instanceof "+clazz.getName(), clazz.isAssignableFrom(o.getClass()));
+        assertTrue(o + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(o.getClass()));
     }
 
     public static void assertJoinable(Thread... threads) {
