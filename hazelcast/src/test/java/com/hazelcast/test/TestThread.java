@@ -12,6 +12,10 @@ public abstract class TestThread extends Thread {
     public TestThread() {
     }
 
+    public TestThread(String name) {
+        super(name);
+    }
+
     @Override
     public final void run() {
         try {
