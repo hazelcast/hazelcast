@@ -754,6 +754,7 @@ public class WebFilter implements Filter {
                     localCache.put(name, entry);
                 }
                 entry.value = value;
+                entry.removed = false;
                 entry.dirty = true;
             } else {
                 getClusterMap().set(buildAttributeName(name), value);
