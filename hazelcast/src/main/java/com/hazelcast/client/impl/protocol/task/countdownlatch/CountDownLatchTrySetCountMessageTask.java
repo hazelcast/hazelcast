@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.countdownlatch;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.CountDownLatchTrySetCountParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -43,6 +44,11 @@ public class CountDownLatchTrySetCountMessageTask extends AbstractPartitionMessa
     @Override
     protected CountDownLatchTrySetCountParameters decodeClientMessage(ClientMessage clientMessage) {
         return CountDownLatchTrySetCountParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

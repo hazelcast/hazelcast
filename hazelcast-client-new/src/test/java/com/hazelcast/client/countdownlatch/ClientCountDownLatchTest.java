@@ -23,21 +23,23 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/28/13
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientCountDownLatchTest extends HazelcastTestSupport {
 
     static final String name = "test";
