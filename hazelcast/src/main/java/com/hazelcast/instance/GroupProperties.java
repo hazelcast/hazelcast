@@ -39,8 +39,8 @@ public class GroupProperties {
      * a cluster, you can set this property.
      * <p/>
      * You could use actual values, such as string paths, but you can also use an md5 hash. We'll give the guarantee
-     * that nodes will form a cluster (become a memeber) only where the token is an exact match. If this token is different, the member
-     * can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
+     * that nodes will form a cluster (become a member) only where the token is an exact match. If this token is different, the
+     * member can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
      * application validation token.
      * <p/>
      * This validation-token will be checked before member join the cluster.
@@ -262,9 +262,9 @@ public class GroupProperties {
      * <p/>
      * With back-pressure enabled, this can't happen.
      * <p/>
-     * Back pressure is implemented by making asynchronous backups operations synchronous. This prevents the internal queues from overflowing
-     * because the invoker will wait for the primary and for the backups to complete. The frequency of this is determined by the
-     * sync-window.
+     * Back pressure is implemented by making asynchronous backups operations synchronous. This prevents the internal queues from
+     * overflowing because the invoker will wait for the primary and for the backups to complete. The frequency of this is
+     * determined by the sync-window.
      * <p/>
      */
     public static final String PROP_BACKPRESSURE_ENABLED = "hazelcast.backpressure.enabled";
@@ -278,8 +278,8 @@ public class GroupProperties {
      * A sync window of 1 means that every BackupAwareOperation get their async backups converted to sync backups. 1
      * is also the smallest legal value for the sync window.
      *
-     * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth BackupAwareOperation
-     * operation gets its async backups converted to sync.
+     * There is some randomization going on to prevent resonance. Therefore, with a sync window of n, not every Nth
+     * BackupAwareOperation operation gets its async backups converted to sync.
      *
      * This property only has meaning when backpressure is enabled.
      */
@@ -348,8 +348,8 @@ public class GroupProperties {
      * done before the query is sent to the cluster. Since this may increase the latency, the pre-check is limited to a maximum
      * number of local partitions.
      * <p/>
-     * By increasing this parameter, you can prevent the execution of the query on the cluster. Increasing this parameter increases the latency due to the
-     * prolonged local pre-check.
+     * By increasing this parameter, you can prevent the execution of the query on the cluster. Increasing this parameter
+     * increases the latency due to the prolonged local pre-check.
      * <p/>
      * The pre-check can be disabled by setting the value to <tt>-1</tt>.
      *
