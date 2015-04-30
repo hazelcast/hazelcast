@@ -111,11 +111,11 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.SortedQueryResultSet;
 import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -137,7 +137,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
+public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";

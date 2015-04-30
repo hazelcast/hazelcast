@@ -1218,7 +1218,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 executionCallback.onResponse(getService().getMapServiceContext().toObject(response));
             }
         }
+    }
 
+    public PartitioningStrategy getPartitionStrategy() {
+        return partitionStrategy;
     }
 }
 

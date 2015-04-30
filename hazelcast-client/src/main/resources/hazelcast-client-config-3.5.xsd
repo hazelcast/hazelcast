@@ -38,6 +38,7 @@
                 <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -211,6 +212,86 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+
+    <!--query-caches start-->
+    <xs:complexType name="query-caches">
+        <xs:sequence>
+            <xs:element name="query-cache" type="query-cache" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="query-cache">
+        <xs:all>
+            <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="16"/>
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="indexes" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="index" type="index" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="mapName" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="predicate">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="type">
+                    <xs:simpleType>
+                        <xs:restriction base="non-space-string">
+                            <xs:enumeration value="class-name"/>
+                            <xs:enumeration value="sql"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="index">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="item-listener">
+        <xs:simpleContent>
+            <xs:extension base="listener-base">
+                <xs:attribute name="include-value" type="xs:boolean" use="optional" default="true"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="entry-listeners">
+        <xs:sequence>
+            <xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="entry-listener">
+        <xs:simpleContent>
+            <xs:extension base="item-listener">
+                <xs:attribute name="local" type="xs:boolean" use="optional" default="false"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <!--query-caches end-->
+
     <xs:complexType name="cluster-group">
         <xs:all>
             <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>

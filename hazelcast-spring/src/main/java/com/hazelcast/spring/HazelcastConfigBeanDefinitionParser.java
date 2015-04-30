@@ -17,15 +17,14 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JobTrackerConfig;
@@ -49,8 +48,12 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
@@ -67,14 +70,9 @@ import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -85,6 +83,10 @@ import org.springframework.util.Assert;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
@@ -585,9 +587,92 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     mapConfigBuilder.addPropertyValue("quorumName", getTextContent(node));
+                } else if ("query-caches".equals(nodeName)) {
+                    ManagedList queryCaches = getQueryCaches(childNode);
+                    mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 }
             }
             mapConfigManagedMap.put(name, beanDefinition);
+        }
+
+        private ManagedList getQueryCaches(Node childNode) {
+            ManagedList queryCaches = new ManagedList();
+            for (Node queryCacheNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                BeanDefinitionBuilder beanDefinitionBuilder = parseQueryCaches(queryCacheNode);
+                queryCaches.add(beanDefinitionBuilder.getBeanDefinition());
+            }
+            return queryCaches;
+        }
+
+        private BeanDefinitionBuilder parseQueryCaches(Node queryCacheNode) {
+            final BeanDefinitionBuilder builder = createBeanBuilder(QueryCacheConfig.class);
+
+            for (Node node : new IterableNodeList(queryCacheNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                String nodeName = cleanNodeName(node.getNodeName());
+                String textContent = getTextContent(node);
+                NamedNodeMap attrs = queryCacheNode.getAttributes();
+                String cacheName = getTextContent(attrs.getNamedItem("name"));
+                builder.addPropertyValue("name", cacheName);
+
+                if ("predicate".equals(nodeName)) {
+                    BeanDefinitionBuilder predicateBuilder = createBeanBuilder(PredicateConfig.class);
+                    String predicateType = getTextContent(node.getAttributes().getNamedItem("type"));
+                    if ("sql".equals(predicateType)) {
+                        predicateBuilder.addPropertyValue("sql", textContent);
+                    } else if ("class-name".equals(predicateType)) {
+                        predicateBuilder.addPropertyValue("className", textContent);
+                    }
+                    builder.addPropertyValue("predicateConfig", predicateBuilder.getBeanDefinition());
+                } else if ("entry-listeners".equals(nodeName)) {
+                    ManagedList listeners = new ManagedList();
+                    final String implementationAttr = "implementation";
+                    for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                        BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(EntryListenerConfig.class);
+                        fillAttributeValues(listenerNode, listenerConfBuilder, implementationAttr);
+                        Node implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr);
+                        if (implementationNode != null) {
+                            listenerConfBuilder.addPropertyReference(implementationAttr, getTextContent(implementationNode));
+                        }
+                        listeners.add(listenerConfBuilder.getBeanDefinition());
+                    }
+                    builder.addPropertyValue("entryListenerConfigs", listeners);
+                } else if ("include-value".equals(nodeName)) {
+                    boolean includeValue = checkTrue(textContent);
+                    builder.addPropertyValue("includeValue", includeValue);
+                } else if ("batch-size".equals(nodeName)) {
+                    int batchSize = getIntegerValue("batch-size", textContent.trim(),
+                            QueryCacheConfig.DEFAULT_BATCH_SIZE);
+                    builder.addPropertyValue("batchSize", batchSize);
+                } else if ("buffer-size".equals(nodeName)) {
+                    int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
+                            QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+                    builder.addPropertyValue("bufferSize", bufferSize);
+                } else if ("delay-seconds".equals(nodeName)) {
+                    int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
+                            QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+                    builder.addPropertyValue("delaySeconds", delaySeconds);
+                } else if ("in-memory-format".equals(nodeName)) {
+                    String value = textContent.trim();
+                    builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
+                } else if ("coalesce".equals(nodeName)) {
+                    boolean coalesce = checkTrue(textContent);
+                    builder.addPropertyValue("coalesce", coalesce);
+                } else if ("populate".equals(nodeName)) {
+                    boolean populate = checkTrue(textContent);
+                    builder.addPropertyValue("populate", populate);
+                } else if ("indexes".equals(nodeName)) {
+                    ManagedList indexes = new ManagedList();
+                    for (Node indexNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                        final BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
+                        fillAttributeValues(indexNode, indexConfBuilder);
+                        indexes.add(indexConfBuilder.getBeanDefinition());
+                    }
+                    builder.addPropertyValue("indexConfigs", indexes);
+                } else if ("eviction".equals(nodeName)) {
+                    builder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+                }
+            }
+            return builder;
         }
 
         public void handleCache(Node node) {
@@ -705,29 +790,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
             configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
-        }
-
-        private EvictionConfig getEvictionConfig(final Node node) {
-            final EvictionConfig evictionConfig = new EvictionConfig();
-            final Node size = node.getAttributes().getNamedItem("size");
-            final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
-            final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
-            if (size != null) {
-                evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
-            }
-            if (maxSizePolicy != null) {
-                evictionConfig.setMaximumSizePolicy(
-                        EvictionConfig.MaxSizePolicy.valueOf(
-                                upperCaseInternal(getTextContent(maxSizePolicy)))
-                );
-            }
-            if (evictionPolicy != null) {
-                evictionConfig.setEvictionPolicy(
-                        EvictionPolicy.valueOf(
-                                upperCaseInternal(getTextContent(evictionPolicy)))
-                );
-            }
-            return evictionConfig;
         }
 
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {

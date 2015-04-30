@@ -20,6 +20,7 @@ import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -39,7 +40,9 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -78,7 +81,6 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
-import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
@@ -217,7 +219,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(9, config.getMapConfigs().size());
+        assertEquals(10, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -240,7 +242,7 @@ public class TestFullApplicationContext {
                 fail("unknown index!");
             }
         }
-        assertEquals("my-quorum" , testMapConfig.getQuorumName());
+        assertEquals("my-quorum", testMapConfig.getQuorumName());
 
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
@@ -632,12 +634,12 @@ public class TestFullApplicationContext {
     public void testNativeMemoryConfig() {
         NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.MEGABYTES,nativeMemoryConfig.getSize().getUnit());
-        assertEquals(256,nativeMemoryConfig.getSize().getValue());
-        assertEquals(20,nativeMemoryConfig.getPageSize());
-        assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED,nativeMemoryConfig.getAllocatorType());
-        assertEquals(10.2,nativeMemoryConfig.getMetadataSpacePercentage(),0.1);
-        assertEquals(10,nativeMemoryConfig.getMinBlockSize());
+        assertEquals(MemoryUnit.MEGABYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(20, nativeMemoryConfig.getPageSize());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED, nativeMemoryConfig.getAllocatorType());
+        assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
+        assertEquals(10, nativeMemoryConfig.getMinBlockSize());
     }
 
     @Test
@@ -683,5 +685,40 @@ public class TestFullApplicationContext {
         assertEquals(QuorumType.READ, quorumConfig.getType());
         assertEquals("com.hazelcast.spring.DummyQuorumListener", quorumConfig.getListenerConfigs().get(0).getClassName());
         assertNotNull(quorumConfig.getListenerConfigs().get(1).getImplementation());
+    }
+
+    @Test
+    public void testFullQueryCacheConfig() throws Exception {
+        MapConfig mapConfig = config.getMapConfig("map-with-query-cache");
+        QueryCacheConfig queryCacheConfig = mapConfig.getQueryCacheConfigs().get(0);
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+
+        assertEquals("com.hazelcast.spring.DummyEntryListener", entryListenerConfig.getClassName());
+        assertFalse(queryCacheConfig.isIncludeValue());
+
+        assertEquals("my-query-cache-1", queryCacheConfig.getName());
+        assertEquals(12, queryCacheConfig.getBatchSize());
+        assertEquals(33, queryCacheConfig.getBufferSize());
+        assertEquals(12, queryCacheConfig.getDelaySeconds());
+        assertEquals(InMemoryFormat.OBJECT, queryCacheConfig.getInMemoryFormat());
+        assertTrue(queryCacheConfig.isCoalesce());
+        assertFalse(queryCacheConfig.isPopulate());
+        assertIndexesEqual(queryCacheConfig);
+        assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
+        Iterator<MapIndexConfig> iterator = queryCacheConfig.getIndexConfigs().iterator();
+        while (iterator.hasNext()) {
+            MapIndexConfig mapIndexConfig = iterator.next();
+            assertEquals("name", mapIndexConfig.getAttribute());
+            assertFalse(mapIndexConfig.isOrdered());
+        }
     }
 }

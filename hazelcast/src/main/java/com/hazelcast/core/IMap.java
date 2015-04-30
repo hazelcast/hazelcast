@@ -915,8 +915,6 @@ public interface IMap<K, V>
      * @param listener the added MapPartitionLostListener.
      * @return returns the registration id for the MapPartitionLostListener.
      * @throws java.lang.NullPointerException if listener is null.
-     *
-     *
      * @see #removePartitionLostListener(String)
      */
     String addPartitionLostListener(MapPartitionLostListener listener);

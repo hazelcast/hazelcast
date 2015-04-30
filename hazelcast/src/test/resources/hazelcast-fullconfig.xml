@@ -288,6 +288,27 @@
             <partition-lost-listener>com.hazelcast.examples.MapPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
 
+        <query-caches>
+            <query-cache name="query-cache-name">
+                <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+                <entry-listeners>
+                    <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+                </entry-listeners>
+                <include-value>true</include-value>
+                <batch-size>1</batch-size>
+                <buffer-size>16</buffer-size>
+                <delay-seconds>0</delay-seconds>
+                <in-memory-format>BINARY</in-memory-format>
+                <coalesce>false</coalesce>
+                <populate>true</populate>
+                <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
+                <indexes>
+                    <index ordered="false">name</index>
+                    <index ordered="true">age</index>
+                </indexes>
+            </query-cache>
+        </query-caches>
+
     </map>
 
     <multimap name="default">
@@ -332,26 +353,26 @@
     </semaphore>
 
     <cache name="default">
-        <key-type class-name="java.lang.Object" />
-        <value-type class-name="java.lang.Object" />
+        <key-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.Object"/>
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
 
         <read-through>true</read-through>
         <write-through>true</write-through>
         <cache-loader-factory
-                class-name="com.example.cache.MyCacheLoaderFactory" />
+                class-name="com.example.cache.MyCacheLoaderFactory"/>
         <cache-writer-factory
-                class-name="com.example.cache.MyCacheWriterFactory" />
+                class-name="com.example.cache.MyCacheWriterFactory"/>
         <expiry-policy-factory
-                class-name="com.example.cache.MyExpirePolicyFactory" />
+                class-name="com.example.cache.MyExpirePolicyFactory"/>
 
         <cache-entry-listeners>
             <cache-entry-listener old-value-required="false" synchronous="false">
                 <cache-entry-listener-factory
-                        class-name="com.example.cache.MyEntryListenerFactory" />
+                        class-name="com.example.cache.MyEntryListenerFactory"/>
                 <cache-entry-event-filter-factory
-                        class-name="com.example.cache.MyEntryEventFilterFactory" />
+                        class-name="com.example.cache.MyEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
     </cache>
@@ -381,7 +402,7 @@
     </serialization>
 
     <native-memory allocator-type="POOLED" enabled="true">
-        <size unit="MEGABYTES" value="256" />
+        <size unit="MEGABYTES" value="256"/>
         <metadata-space-percentage>12.5</metadata-space-percentage>
     </native-memory>
 

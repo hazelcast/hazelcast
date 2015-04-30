@@ -34,7 +34,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -53,14 +52,15 @@ import java.util.Set;
 
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
+import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
 import static com.hazelcast.client.config.ClientXmlElements.LISTENERS;
 import static com.hazelcast.client.config.ClientXmlElements.LOAD_BALANCER;
-import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
 import static com.hazelcast.client.config.ClientXmlElements.NATIVE_MEMORY;
 import static com.hazelcast.client.config.ClientXmlElements.NEAR_CACHE;
 import static com.hazelcast.client.config.ClientXmlElements.NETWORK;
 import static com.hazelcast.client.config.ClientXmlElements.PROPERTIES;
 import static com.hazelcast.client.config.ClientXmlElements.PROXY_FACTORIES;
+import static com.hazelcast.client.config.ClientXmlElements.QUERY_CACHES;
 import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
 import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
 import static com.hazelcast.client.config.ClientXmlElements.canOccurMultipleTimes;
@@ -79,6 +79,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private ClientConfig clientConfig;
     private Set<String> occurrenceSet = new HashSet<String>();
     private InputStream in;
+    private final QueryCacheConfigBuilderHelper queryCacheConfigBuilderHelper = new QueryCacheConfigBuilderHelper();
 
     public XmlClientConfigBuilder(String resource) throws IOException {
         URL url = ConfigLoader.locateConfig(resource);
@@ -206,7 +207,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         } else if (SERIALIZATION.isEqual(nodeName)) {
             handleSerialization(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
-            handleNativeMemoryConfig(node);
+            fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
         } else if (GROUP.isEqual(nodeName)) {
             handleGroup(node);
         } else if (LISTENERS.isEqual(nodeName)) {
@@ -217,15 +218,13 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleLoadBalancer(node);
         } else if (NEAR_CACHE.isEqual(nodeName)) {
             handleNearCache(node);
+        } else if (QUERY_CACHES.isEqual(nodeName)) {
+            queryCacheConfigBuilderHelper.handleQueryCache(clientConfig, node);
         } else if (EXECUTOR_POOL_SIZE.isEqual(nodeName)) {
             handleExecutorPoolSize(node);
         } else if (LICENSE_KEY.isEqual(nodeName)) {
             clientConfig.setLicenseKey(getTextContent(node));
         }
-    }
-
-    private void handleNativeMemoryConfig(Node node) {
-        fillNativeMemoryConfig(node, clientConfig.getNativeMemoryConfig());
     }
 
     private void handleExecutorPoolSize(Node node) {
@@ -262,6 +261,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         }
         clientConfig.addNearCacheConfig(name, nearCacheConfig);
     }
+
 
     private EvictionConfig getEvictionConfig(final Node node) {
         final EvictionConfig evictionConfig = new EvictionConfig();

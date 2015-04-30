@@ -18,11 +18,13 @@ package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.partition.InternalPartition;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -123,6 +125,8 @@ public class MapConfig {
 
     private List<MapIndexConfig> mapIndexConfigs;
 
+    private List<QueryCacheConfig> queryCacheConfigs;
+
     private boolean statisticsEnabled = true;
 
     private PartitioningStrategyConfig partitioningStrategyConfig;
@@ -161,6 +165,7 @@ public class MapConfig {
         this.partitionLostListenerConfigs =
                 new ArrayList<MapPartitionLostListenerConfig>(config.getPartitionLostListenerConfigs());
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.queryCacheConfigs = new ArrayList<QueryCacheConfig>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.quorumName = config.quorumName;
@@ -523,6 +528,47 @@ public class MapConfig {
         return this;
     }
 
+    /**
+     * Adds a new {@code queryCacheConfig} to this {@code MapConfig}.
+     *
+     * @param queryCacheConfig config to be added.
+     * @return this {@code MapConfig} instance.
+     * @throws java.lang.IllegalArgumentException if there is already a {@code QueryCache}
+     *                                            with the same {@code QueryCacheConfig#name}.
+     */
+    public MapConfig addQueryCacheConfig(QueryCacheConfig queryCacheConfig) {
+        String queryCacheName = queryCacheConfig.getName();
+        List<QueryCacheConfig> queryCacheConfigs = getQueryCacheConfigs();
+        for (QueryCacheConfig cacheConfig : queryCacheConfigs) {
+            checkFalse(cacheConfig.getName().equals(queryCacheName),
+                    "A query cache already exists with name = [" + queryCacheName + ']');
+        }
+        queryCacheConfigs.add(queryCacheConfig);
+        return this;
+
+    }
+
+    /**
+     * Returns all {@code QueryCacheConfig} instances defined on this {@code MapConfig}
+     *
+     * @return all {@code QueryCacheConfig} instances defined on this {@code MapConfig}
+     */
+    public List<QueryCacheConfig> getQueryCacheConfigs() {
+        if (queryCacheConfigs == null) {
+            queryCacheConfigs = new ArrayList<QueryCacheConfig>();
+        }
+        return queryCacheConfigs;
+    }
+
+    /**
+     * Sets {@code QueryCacheConfig} instances to this {@code MapConfig}
+     *
+     * @return this {@code MapConfig} instance.
+     */
+    public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
+        this.queryCacheConfigs = queryCacheConfigs;
+    }
+
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
         return partitioningStrategyConfig;
     }
@@ -655,6 +701,7 @@ public class MapConfig {
         sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
         sb.append(", quorumName=").append(quorumName);
+        sb.append(", queryCacheConfigs=").append(queryCacheConfigs);
         sb.append('}');
         return sb.toString();
     }

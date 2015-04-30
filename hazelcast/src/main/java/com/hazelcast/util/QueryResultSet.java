@@ -64,6 +64,14 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         return entries.add(entry);
     }
 
+    public boolean remove(QueryResultEntry entry) {
+        return entries.remove(entry);
+    }
+
+    public boolean contains(QueryResultEntry entry) {
+        return entries.contains(entry);
+    }
+
     @Override
     public boolean add(Object entry) {
         return entries.add((QueryResultEntry) entry);

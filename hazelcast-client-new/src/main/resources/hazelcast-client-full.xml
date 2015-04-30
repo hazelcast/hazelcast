@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.4.xsd"
+<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.5.xsd"
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -86,7 +86,8 @@
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType" class-name="com.hazelcast.examples.SerializerFactory"/>
+            <serializer type-class="com.hazelcast.examples.DummyType"
+                        class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
@@ -108,6 +109,26 @@
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
+
+    <query-caches>
+        <query-cache name="query-cache-name" mapName="map-name">
+            <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+            <entry-listeners>
+                <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+            </entry-listeners>
+            <include-value>true</include-value>
+            <batch-size>1</batch-size>
+            <buffer-size>16</buffer-size>
+            <delay-seconds>0</delay-seconds>
+            <in-memory-format>BINARY</in-memory-format>
+            <coalesce>false</coalesce>
+            <populate>true</populate>
+            <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
+            <indexes>
+                <index ordered="false">name</index>
+            </indexes>
+        </query-cache>
+    </query-caches>
 
 
 </hazelcast-client>

@@ -885,13 +885,13 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     //CHECKSTYLE:OFF
-    private void handleMap(final org.w3c.dom.Node node) throws Exception {
-        final String name = getAttribute(node, "name");
+    private void handleMap(final org.w3c.dom.Node parentNode) throws Exception {
+        final String name = getAttribute(parentNode, "name");
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
-            final String value = getTextContent(n).trim();
+        for (org.w3c.dom.Node node : new IterableNodeList(parentNode.getChildNodes())) {
+            final String nodeName = cleanNodeName(node.getNodeName());
+            final String value = getTextContent(node).trim();
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("in-memory-format".equals(nodeName)) {
@@ -902,7 +902,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-                final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
+                final Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
                 if (maxSizePolicy != null) {
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
                             upperCaseInternal(getTextContent(maxSizePolicy))));
@@ -922,10 +922,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value,
                         MapConfig.DEFAULT_MAX_IDLE_SECONDS));
             } else if ("map-store".equals(nodeName)) {
-                MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
+                MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
             } else if ("near-cache".equals(nodeName)) {
-                handleViaReflection(n, mapConfig, new NearCacheConfig());
+                handleViaReflection(node, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
             } else if ("read-backup-data".equals(nodeName)) {
@@ -935,17 +935,19 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("optimize-queries".equals(nodeName)) {
                 mapConfig.setOptimizeQueries(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
-                mapWanReplicationRefHandle(n, mapConfig);
+                mapWanReplicationRefHandle(node, mapConfig);
             } else if ("indexes".equals(nodeName)) {
-                mapIndexesHandle(n, mapConfig);
+                mapIndexesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                mapEntryListenerHandle(n, mapConfig);
+                mapEntryListenerHandle(node, mapConfig);
             } else if ("partition-lost-listeners".equals(nodeName)) {
-                mapPartitionLostListenerHandle(n, mapConfig);
+                mapPartitionLostListenerHandle(node, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             } else if ("quorum-ref".equals(nodeName)) {
                 mapConfig.setQuorumName(value);
+            } else if ("query-caches".equals(nodeName)) {
+                mapQueryCacheHandler(node, mapConfig);
             }
         }
         this.config.addMapConfig(mapConfig);
@@ -1115,6 +1117,17 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
     }
 
+    private void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
+        for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
+            if ("index".equals(cleanNodeName(indexNode))) {
+                final NamedNodeMap attrs = indexNode.getAttributes();
+                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                String attribute = getTextContent(indexNode);
+                queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+            }
+        }
+    }
+
     private void mapEntryListenerHandle(Node n, MapConfig mapConfig) {
         for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
             if ("entry-listener".equals(cleanNodeName(listenerNode))) {
@@ -1135,6 +1148,80 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
     }
+
+    private void mapQueryCacheHandler(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node queryCacheNode : new IterableNodeList(n.getChildNodes())) {
+            if ("query-cache".equals(cleanNodeName(queryCacheNode))) {
+                NamedNodeMap attrs = queryCacheNode.getAttributes();
+                String cacheName = getTextContent(attrs.getNamedItem("name"));
+                QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
+                for (org.w3c.dom.Node childNode : new IterableNodeList(queryCacheNode.getChildNodes())) {
+                    String nodeName = cleanNodeName(childNode);
+                    if ("entry-listeners".equals(nodeName)) {
+                        for (org.w3c.dom.Node listenerNode : new IterableNodeList(childNode.getChildNodes())) {
+                            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
+                                NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
+                                boolean incValue = checkTrue(
+                                        getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
+                                boolean local = checkTrue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
+                                String listenerClass = getTextContent(listenerNode);
+                                queryCacheConfig.addEntryListenerConfig(
+                                        new EntryListenerConfig(listenerClass, local, incValue));
+                            }
+                        }
+                    } else {
+                        String textContent = getTextContent(childNode);
+                        if ("include-value".equals(nodeName)) {
+                            boolean includeValue = checkTrue(textContent);
+                            queryCacheConfig.setIncludeValue(includeValue);
+                        } else if ("batch-size".equals(nodeName)) {
+                            int batchSize = getIntegerValue("batch-size", textContent.trim(),
+                                    QueryCacheConfig.DEFAULT_BATCH_SIZE);
+                            queryCacheConfig.setBatchSize(batchSize);
+                        } else if ("buffer-size".equals(nodeName)) {
+                            int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
+                                    QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+                            queryCacheConfig.setBufferSize(bufferSize);
+                        } else if ("delay-seconds".equals(nodeName)) {
+                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
+                                    QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+                            queryCacheConfig.setDelaySeconds(delaySeconds);
+                        } else if ("in-memory-format".equals(nodeName)) {
+                            String value = textContent.trim();
+                            queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                        } else if ("coalesce".equals(nodeName)) {
+                            boolean coalesce = checkTrue(textContent);
+                            queryCacheConfig.setCoalesce(coalesce);
+                        } else if ("populate".equals(nodeName)) {
+                            boolean populate = checkTrue(textContent);
+                            queryCacheConfig.setPopulate(populate);
+                        } else if ("indexes".equals(nodeName)) {
+                            queryCacheIndexesHandle(childNode, queryCacheConfig);
+                        } else if ("predicate".equals(nodeName)) {
+                            queryCachePredicateHandler(childNode, queryCacheConfig);
+                        } else if ("eviction".equals(nodeName)) {
+                            queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode));
+                        }
+                    }
+                }
+                mapConfig.addQueryCacheConfig(queryCacheConfig);
+            }
+        }
+    }
+
+    private void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
+        NamedNodeMap predicateAttributes = childNode.getAttributes();
+        String predicateType = getTextContent(predicateAttributes.getNamedItem("type"));
+        String textContent = getTextContent(childNode);
+        PredicateConfig predicateConfig = new PredicateConfig();
+        if ("class-name".equals(predicateType)) {
+            predicateConfig.setClassName(textContent);
+        } else if ("sql".equals(predicateType)) {
+            predicateConfig.setSql(textContent);
+        }
+        queryCacheConfig.setPredicateConfig(predicateConfig);
+    }
+
 
     private int sizeParser(String value) {
         int size;

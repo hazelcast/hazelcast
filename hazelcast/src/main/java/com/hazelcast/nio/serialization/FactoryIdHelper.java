@@ -48,6 +48,7 @@ public final class FactoryIdHelper {
     public static final String CLIENT_PORTABLE_FACTORY = "hazelcast.serialization.portable.client";
     public static final String CLIENT_TXN_PORTABLE_FACTORY = "hazelcast.serialization.portable.client.txn";
     public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
+    public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
     public static final String QUEUE_PORTABLE_FACTORY = "hazelcast.serialization.portable.queue";
     public static final String MULTIMAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.multimap";
     public static final String COLLECTION_PORTABLE_FACTORY = "hazelcast.serialization.portable.collection";

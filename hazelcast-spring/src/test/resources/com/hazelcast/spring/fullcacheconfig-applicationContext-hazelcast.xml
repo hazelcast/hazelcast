@@ -193,6 +193,28 @@
                     merge-policy="PUT_IF_ABSENT">
                 <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
             </hz:map>
+            <hz:map name="map-with-query-cache">
+                <hz:query-caches>
+                    <hz:query-cache name="my-query-cache-1">
+                        <hz:predicate type="sql">__key > 12</hz:predicate>
+                        <hz:batch-size>12</hz:batch-size>
+                        <hz:buffer-size>33</hz:buffer-size>
+                        <hz:coalesce>true</hz:coalesce>
+                        <hz:populate>false</hz:populate>
+                        <hz:delay-seconds>12</hz:delay-seconds>
+                        <hz:entry-listeners>
+                            <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
+                        </hz:entry-listeners>
+                        <hz:eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="111"/>
+                        <hz:in-memory-format>OBJECT</hz:in-memory-format>
+                        <hz:include-value>false</hz:include-value>
+                        <hz:indexes>
+                            <hz:index attribute="name" ordered="false"></hz:index>
+                        </hz:indexes>
+                    </hz:query-cache>
+                </hz:query-caches>
+            </hz:map>
+
             <hz:map name="simpleMap"
                     backup-count="3"
                     async-backup-count="1"
