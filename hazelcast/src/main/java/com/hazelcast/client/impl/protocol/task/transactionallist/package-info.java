@@ -17,4 +17,8 @@
 /**
  * <p>Client protocol tasks implementations for Transactional List</p>
  */
+
+@GenerateMessageTaskFactory
 package com.hazelcast.client.impl.protocol.task.transactionallist;
+
+import com.hazelcast.annotation.GenerateMessageTaskFactory;

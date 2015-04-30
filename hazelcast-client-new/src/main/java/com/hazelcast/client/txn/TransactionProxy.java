@@ -32,7 +32,9 @@ import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
+import javax.transaction.xa.Xid;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -50,10 +52,10 @@ final class TransactionProxy {
 
     private final TransactionOptions options;
     private final HazelcastClientInstanceImpl client;
-    private final long threadId = Thread.currentThread().getId();
+    private final long threadId = ThreadUtil.getThreadId();
     private final ClientConnection connection;
 
-    private SerializableXID sXid;
+    private Xid xid;
     private String txnId;
     private State state = NO_TXN;
     private long startTime;
@@ -95,7 +97,7 @@ final class TransactionProxy {
             }
             THREAD_FLAG.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
-            ClientMessage request = TransactionCreateParameters.encode(sXid, options.getTimeoutMillis(),
+            ClientMessage request = TransactionCreateParameters.encode(xid, options.getTimeoutMillis(),
                     options.getDurability(), options.getTransactionType().id(), threadId);
             ClientMessage response = invoke(request);
             TransactionCreateResultParameters result = TransactionCreateResultParameters.decode(response);
@@ -114,7 +116,7 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            ClientMessage request = TransactionPrepareParameters.encode(threadId, txnId);
+            ClientMessage request = TransactionPrepareParameters.encode(txnId, threadId);
             invoke(request);
             state = PREPARED;
         } catch (Exception e) {
@@ -134,7 +136,7 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            ClientMessage request = TransactionCommitParameters.encode(threadId, txnId, prepareAndCommit);
+            ClientMessage request = TransactionCommitParameters.encode(txnId, threadId, prepareAndCommit);
             invoke(request);
             state = COMMITTED;
         } catch (Exception e) {
@@ -156,7 +158,7 @@ final class TransactionProxy {
             }
             checkThread();
             try {
-                ClientMessage request = TransactionRollbackParameters.encode(threadId, txnId);
+                ClientMessage request = TransactionRollbackParameters.encode(txnId, threadId);
                 invoke(request);
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
@@ -168,11 +170,11 @@ final class TransactionProxy {
     }
 
     SerializableXID getXid() {
-        return sXid;
+        return (SerializableXID) xid;
     }
 
     void setXid(SerializableXID xid) {
-        this.sXid = xid;
+        this.xid = xid;
     }
 
     private void closeConnection() {

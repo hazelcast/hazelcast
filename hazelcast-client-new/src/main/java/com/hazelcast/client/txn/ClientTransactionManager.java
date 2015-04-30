@@ -53,16 +53,15 @@ public class ClientTransactionManager {
 
     final ConcurrentMap<SerializableXID, TransactionProxy> managedTransactions =
             new ConcurrentHashMap<SerializableXID, TransactionProxy>();
-    final ConcurrentMap<SerializableXID, ClientConnection> recoveredTransactions =
-            new ConcurrentHashMap<SerializableXID, ClientConnection>();
+    final ConcurrentMap<Xid, ClientConnection> recoveredTransactions =
+            new ConcurrentHashMap<Xid, ClientConnection>();
     private final LoadBalancer loadBalancer;
-    private final Credentials credentials;
     private final ClusterAuthenticator authenticator;
 
     public ClientTransactionManager(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         this.client = client;
         this.loadBalancer = loadBalancer;
-        credentials = client.getCredentials();
+        Credentials credentials = client.getCredentials();
         authenticator = new ClusterAuthenticator(client, credentials);
     }
 
@@ -164,11 +163,11 @@ public class ClientTransactionManager {
             final Future<ClientMessage> future = clientInvocation.invoke();
             TransactionRecoverAllResultParameters response = TransactionRecoverAllResultParameters.decode(future.get());
 
-            for (SerializableXID xid : response.collection) {
+            for (Xid xid : response.collection) {
                 recoveredTransactions.put(xid, connection);
             }
 
-            final Set<SerializableXID> xidSet = recoveredTransactions.keySet();
+            final Set<Xid> xidSet = recoveredTransactions.keySet();
             return xidSet.toArray(new Xid[xidSet.size()]);
         } catch (Exception e) {
             ExceptionUtil.rethrow(e);

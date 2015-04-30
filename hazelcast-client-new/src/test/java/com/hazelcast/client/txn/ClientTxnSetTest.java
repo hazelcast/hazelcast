@@ -36,11 +36,9 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientTxnSetTest {
     static HazelcastInstance client;
     static HazelcastInstance server1;
-    static HazelcastInstance server2;
 
     @BeforeClass
     public static void init(){

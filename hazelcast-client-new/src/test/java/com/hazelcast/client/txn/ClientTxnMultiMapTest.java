@@ -28,13 +28,12 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,6 +44,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -89,7 +89,7 @@ public class ClientTxnMultiMapTest {
 
         tx.commitTransaction();
 
-        assertEquals(Collections.EMPTY_SET, client.getMultiMap(mapName).get(key));
+        assertTrue(client.getMultiMap(mapName).get(key).isEmpty());
     }
 
     @Test
@@ -109,7 +109,7 @@ public class ClientTxnMultiMapTest {
         txnMultiMap.remove(key);
         tx.commitTransaction();
 
-        assertEquals(Collections.EMPTY_SET, multiMap.get(key));
+        assertTrue(multiMap.get(key).isEmpty());
     }
 
     @Test
@@ -169,7 +169,7 @@ public class ClientTxnMultiMapTest {
         mulitMapTxn.put(key, value);
         tx.rollbackTransaction();
 
-        assertEquals(Collections.EMPTY_SET, multiMap.get(key));
+        assertEquals(0, multiMap.get(key).size());
     }
 
     @Test
@@ -212,7 +212,7 @@ public class ClientTxnMultiMapTest {
 
     @Test
     public void testGet_whenBackedWithList() throws Exception {
-        final String mapName = multiMapBackedByList+randomString();
+        final String mapName = multiMapBackedByList + randomString();
 
         final String key = "key";
         final String value = "value";
@@ -231,7 +231,7 @@ public class ClientTxnMultiMapTest {
 
     @Test
     public void testRemove_whenBackedWithList() throws Exception {
-        final String mapName = multiMapBackedByList+randomString();
+        final String mapName = multiMapBackedByList + randomString();
 
         final String key = "key";
         final String value = "value";

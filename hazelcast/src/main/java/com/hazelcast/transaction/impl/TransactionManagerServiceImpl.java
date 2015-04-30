@@ -149,8 +149,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         clientRecoveredTransactions.put(rt.getXid(), rt);
     }
 
-    public void recoverClientTransaction(SerializableXID sXid, boolean commit) {
-        final RecoveredTransaction rt = clientRecoveredTransactions.remove(sXid);
+    public void recoverClientTransaction(Xid xid, boolean commit) {
+        final RecoveredTransaction rt = clientRecoveredTransactions.remove(xid);
         if (rt == null) {
             return;
         }

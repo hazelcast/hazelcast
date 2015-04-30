@@ -54,7 +54,6 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientTxnMapTest {
 
     static HazelcastInstance client;

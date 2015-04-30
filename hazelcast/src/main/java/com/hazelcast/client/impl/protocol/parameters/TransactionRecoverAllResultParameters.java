@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.transaction.impl.SerializableXID;
 
+import javax.transaction.xa.Xid;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -28,11 +29,11 @@ import java.util.Collection;
 public final class TransactionRecoverAllResultParameters {
 
     public static final ClientMessageType TYPE = ClientMessageType.TRANSACTION_RECOVER_ALL;
-    public Collection<SerializableXID> collection;
+    public Collection<Xid> collection;
 
     private TransactionRecoverAllResultParameters(ClientMessage clientMessage) {
         int size = clientMessage.getInt();
-        collection = new ArrayList<SerializableXID>(size);
+        collection = new ArrayList<Xid>(size);
         for (int i = 0; i < size; i++) {
             collection.add(XIDCodec.decode(clientMessage));
         }
