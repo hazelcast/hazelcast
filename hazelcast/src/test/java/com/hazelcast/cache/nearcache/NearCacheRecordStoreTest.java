@@ -189,7 +189,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
             evictionPolicy = EvictionConfig.DEFAULT_EVICTION_POLICY;
         }
         EvictionConfig evictionConfig = new EvictionConfig();
-        evictionConfig.setMaxSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        evictionConfig.setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
         evictionConfig.setSize(MAX_SIZE);
         evictionConfig.setEvictionPolicy(evictionPolicy);
         nearCacheConfig.setEvictionConfig(evictionConfig);

@@ -17,25 +17,33 @@
 package com.hazelcast.config;
 
 /**
- * Read only version of {@link com.hazelcast.config.EvictionConfig}.
+ * Read only version of {@link CacheEvictionConfig}.
+ *
+ * @deprecated Use {@link com.hazelcast.config.EvictionConfigReadOnly} instead of this
  */
-public class EvictionConfigReadOnly
-        extends EvictionConfig {
+@Deprecated
+public class CacheEvictionConfigReadOnly
+        extends CacheEvictionConfig {
 
-    public EvictionConfigReadOnly(EvictionConfig config) {
+    public CacheEvictionConfigReadOnly(EvictionConfig config) {
         super(config);
     }
 
-    public EvictionConfigReadOnly setSize(int size) {
+    public CacheEvictionConfigReadOnly setSize(int size) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
-    public EvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public CacheEvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public EvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+    public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy cacheMaxSizePolicy) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public CacheEvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

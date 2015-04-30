@@ -267,9 +267,7 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
-
-        this.inMemoryFormat = inMemoryFormat;
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 
@@ -278,9 +276,7 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        isNotNull(evictionConfig, "Eviction config cannot be null !");
-
-        this.evictionConfig = evictionConfig;
+        this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
     }
 

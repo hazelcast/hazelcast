@@ -123,7 +123,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
-        this.maxSizeChecker = createCacheMaxSizeChecker(evictionConfig.getSize(), evictionConfig.getMaxSizePolicy());
+        this.maxSizeChecker = createCacheMaxSizeChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         this.evictionChecker = createEvictionChecker(evictionConfig);
         this.evictionStrategy = createEvictionStrategy(evictionConfig);

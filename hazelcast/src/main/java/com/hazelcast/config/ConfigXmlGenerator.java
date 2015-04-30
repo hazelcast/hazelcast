@@ -471,7 +471,7 @@ public class ConfigXmlGenerator {
         if (e != null) {
             xml.append("<eviction")
                     .append(" size=\"").append(e.getSize()).append("\"")
-                    .append(" max-size-policy=\"").append(e.getMaxSizePolicy()).append("\"")
+                    .append(" max-size-policy=\"").append(e.getMaximumSizePolicy()).append("\"")
                     .append(" eviction-policy=\"").append(e.getEvictionPolicy()).append("\"")
                .append("/>");
         }

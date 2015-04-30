@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Readonly version of CacheSimpleConfig
+ * Readonly version of {@link com.hazelcast.config.CacheSimpleConfig}
  */
 public class CacheSimpleConfigReadOnly
         extends CacheSimpleConfig {
@@ -40,16 +40,6 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheSimpleConfig setBackupCount(int backupCount) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
     public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
         final List<CacheSimpleEntryListenerConfig> listenerConfigs = super.getCacheEntryListeners();
         final List<CacheSimpleEntryListenerConfig> readOnlyListenerConfigs = new ArrayList<CacheSimpleEntryListenerConfig>(
@@ -58,6 +48,16 @@ public class CacheSimpleConfigReadOnly
             readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
+    }
+
+    @Override
+    public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig setBackupCount(int backupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
     @Override

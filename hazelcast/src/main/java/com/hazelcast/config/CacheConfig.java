@@ -53,7 +53,9 @@ public class CacheConfig<K, V>
     // Default value of eviction config is
     //      * ENTRY_COUNT with 10.000 max entry count
     //      * LRU as eviction policy
-    private EvictionConfig evictionConfig = new EvictionConfig();
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
     private NearCacheConfig nearCacheConfig;
 
@@ -78,7 +80,7 @@ public class CacheConfig<K, V>
             this.inMemoryFormat = config.inMemoryFormat;
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
-                this.evictionConfig = new EvictionConfig(config.evictionConfig);
+                this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
             }
             if (config.nearCacheConfig != null) {
                 this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
@@ -115,7 +117,7 @@ public class CacheConfig<K, V>
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
         // Eviction config cannot be null
         if (simpleConfig.getEvictionConfig() != null) {
-            this.evictionConfig = new EvictionConfig(simpleConfig.getEvictionConfig());
+            this.evictionConfig = new CacheEvictionConfig(simpleConfig.getEvictionConfig());
         }
         if (simpleConfig.getNearCacheConfig() != null) {
             this.nearCacheConfig = new NearCacheConfig(simpleConfig.getNearCacheConfig());
@@ -285,7 +287,9 @@ public class CacheConfig<K, V>
      *
      * @return the {@link EvictionConfig} instance for eviction configuration
      */
-    public EvictionConfig getEvictionConfig() {
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    public CacheEvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
@@ -296,7 +300,15 @@ public class CacheConfig<K, V>
      * @return current cache config instance
      */
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
-        this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
+        isNotNull(evictionConfig, "Eviction config cannot be null !");
+
+        // TODO Remove this check in the future since "CacheEvictionConfig" is deprecated
+        if (evictionConfig instanceof CacheEvictionConfig) {
+            this.evictionConfig = (CacheEvictionConfig) evictionConfig;
+        } else {
+            this.evictionConfig = new CacheEvictionConfig(evictionConfig);
+        }
+
         return this;
     }
 
