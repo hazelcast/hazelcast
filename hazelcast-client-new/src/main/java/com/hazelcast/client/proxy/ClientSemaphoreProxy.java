@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.SemaphoreAcquireParameters;
 import com.hazelcast.client.impl.protocol.parameters.SemaphoreAvailablePermitsParameters;
 import com.hazelcast.client.impl.protocol.parameters.SemaphoreDrainPermitsParameters;
 import com.hazelcast.client.impl.protocol.parameters.SemaphoreInitParameters;
@@ -50,13 +51,13 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     public void acquire() throws InterruptedException {
-        ClientMessage request = SemaphoreInitParameters.encode(name, 1);
+        ClientMessage request = SemaphoreAcquireParameters.encode(name, 1);
         invoke(request);
     }
 
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
-        ClientMessage request = SemaphoreInitParameters.encode(name, 1);
+        ClientMessage request = SemaphoreAcquireParameters.encode(name, 1);
         invoke(request);
     }
 

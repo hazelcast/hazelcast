@@ -7,10 +7,11 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +23,6 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientSemaphoreThreadedTest {
 
     protected static HazelcastInstance client;

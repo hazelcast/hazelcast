@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.SemaphoreReducePermitsParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -43,6 +44,11 @@ public class SemaphoreReducePermitsMessageTask extends AbstractPartitionMessageT
     @Override
     protected SemaphoreReducePermitsParameters decodeClientMessage(ClientMessage clientMessage) {
         return SemaphoreReducePermitsParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.SemaphoreAvailablePermitsParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -44,6 +45,11 @@ public class SemaphoreAvailablePermitsMessageTasks
     @Override
     protected SemaphoreAvailablePermitsParameters decodeClientMessage(ClientMessage clientMessage) {
         return SemaphoreAvailablePermitsParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return IntResultParameters.encode((Integer) response);
     }
 
     @Override
