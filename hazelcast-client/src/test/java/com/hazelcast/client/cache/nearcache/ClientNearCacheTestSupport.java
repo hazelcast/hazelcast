@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -64,7 +65,12 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected Config createConfig() {
-        return new Config();
+        Config config = new Config();
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.getAwsConfig().setEnabled(false);
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getTcpIpConfig().setEnabled(false);
+        return config;
     }
 
     protected ClientConfig createClientConfig() {
