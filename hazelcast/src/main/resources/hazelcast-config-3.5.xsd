@@ -376,13 +376,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Near-Cache configuration for cache
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
 
         <xs:attribute name="name" use="required">

@@ -20,7 +20,6 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
@@ -41,7 +40,6 @@ import javax.annotation.Resource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 /**
  * Tests for jcache parser
@@ -93,21 +91,6 @@ public class TestJCache {
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
                 simpleConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionConfig().getEvictionPolicy());
-
-        NearCacheConfig nearCacheConfig = simpleConfig.getNearCacheConfig();
-
-        assertNotNull(nearCacheConfig);
-
-        assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
-        assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
-        assertFalse(nearCacheConfig.isInvalidateOnChange());
-        assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertTrue(nearCacheConfig.isCacheLocalEntries());
-
-        assertNotNull(nearCacheConfig.getEvictionConfig());
-        assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
-        assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
     }
 
 }

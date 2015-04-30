@@ -598,8 +598,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("eviction".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode));
-                } else if ("near-cache".equals(cleanNodeName(childNode))) {
-                    handleNearCacheConfig(childNode, cacheConfigBuilder);
                 } else if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = new ManagedList();
                     for (Node listenerNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {

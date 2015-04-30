@@ -33,7 +33,6 @@
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
         <atomikos-version>3.9.2</atomikos-version>
-        <maven.test.skip>true</maven.test.skip>
     </properties>
 
      <build>
