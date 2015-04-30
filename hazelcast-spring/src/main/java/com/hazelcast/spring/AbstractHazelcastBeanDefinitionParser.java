@@ -17,6 +17,8 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -36,16 +38,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
+
 /**
  * Base class of all Hazelcast BeanDefinitionParser implementations.
  * <p/>
  * <ul>
- *     <li>{@link HazelcastClientBeanDefinitionParser}</li>
- *     <li>{@link HazelcastConfigBeanDefinitionParser}</li>
- *     <li>{@link HazelcastInstanceDefinitionParser}</li>
- *     <li>{@link HazelcastTypeBeanDefinitionParser}</li>
+ * <li>{@link HazelcastClientBeanDefinitionParser}</li>
+ * <li>{@link HazelcastConfigBeanDefinitionParser}</li>
+ * <li>{@link HazelcastInstanceDefinitionParser}</li>
+ * <li>{@link HazelcastTypeBeanDefinitionParser}</li>
  * </ul>
- *
  */
 public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBeanDefinitionParser {
 
@@ -339,6 +342,29 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         protected void handleSpringAware() {
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
+        }
+
+        protected EvictionConfig getEvictionConfig(final Node node) {
+            final EvictionConfig evictionConfig = new EvictionConfig();
+            final Node size = node.getAttributes().getNamedItem("size");
+            final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+            final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+            if (size != null) {
+                evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+            }
+            if (maxSizePolicy != null) {
+                evictionConfig.setMaximumSizePolicy(
+                        EvictionConfig.MaxSizePolicy.valueOf(
+                                upperCaseInternal(getTextContent(maxSizePolicy)))
+                );
+            }
+            if (evictionPolicy != null) {
+                evictionConfig.setEvictionPolicy(
+                        EvictionPolicy.valueOf(
+                                upperCaseInternal(getTextContent(evictionPolicy)))
+                );
+            }
+            return evictionConfig;
         }
     }
 }

@@ -16,13 +16,16 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -30,13 +33,11 @@ import com.hazelcast.config.XMLConfigBuilderTest;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
@@ -52,13 +53,14 @@ import java.io.PrintWriter;
 import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -153,7 +155,7 @@ public class XmlClientConfigBuilderTest {
     @Test
     public void testNetworkConfig() {
         final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        assertEquals(0,networkConfig.getConnectionAttemptLimit());
+        assertEquals(0, networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
         assertTrue(networkConfig.getAddresses().contains("127.0.0.1"));
         assertTrue(networkConfig.getAddresses().contains("127.0.0.2"));
@@ -249,6 +251,36 @@ public class XmlClientConfigBuilderTest {
         assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+    }
+
+    @Test
+    public void testQueryCacheFullConfig() throws Exception {
+        QueryCacheConfig queryCacheConfig = clientConfig.getQueryCacheConfigs().get("map-name").get("query-cache-name");
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertEquals("query-cache-name", queryCacheConfig.getName());
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+        assertEquals("com.hazelcast.examples.EntryListener", entryListenerConfig.getClassName());
+        assertTrue(queryCacheConfig.isIncludeValue());
+        assertEquals(1, queryCacheConfig.getBatchSize());
+        assertEquals(16, queryCacheConfig.getBufferSize());
+        assertEquals(0, queryCacheConfig.getDelaySeconds());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(10000, queryCacheConfig.getEvictionConfig().getSize());
+        assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
+        assertFalse(queryCacheConfig.isCoalesce());
+        assertTrue(queryCacheConfig.isPopulate());
+        Iterator<MapIndexConfig> iterator = queryCacheConfig.getIndexConfigs().iterator();
+        while (iterator.hasNext()) {
+            MapIndexConfig mapIndexConfig = iterator.next();
+            assertEquals("name", mapIndexConfig.getAttribute());
+            assertFalse(mapIndexConfig.isOrdered());
+        }
+
+        assertEquals("com.hazelcast.examples.ExamplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
+
     }
 
     @Test

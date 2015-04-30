@@ -23,25 +23,27 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.List;
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.xml.sax.SAXException;
+
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -760,5 +762,65 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
 
+    }
+
+    @Test
+    public void testQueryCacheFullConfig() throws Exception {
+        String xml =
+                "<hazelcast>"
+                        + "<map name=\"test\">"
+                        + "<query-caches>"
+                        + "<query-cache name=\"cache-name\">"
+                        + "<entry-listeners>"
+                        + "<entry-listener include-value=\"true\" " +
+                        "local=\"false\">com.hazelcast.examples.EntryListener</entry-listener>"
+                        + "</entry-listeners>"
+                        + "<include-value>true</include-value>"
+                        + "<batch-size>1</batch-size>"
+                        + "<buffer-size>16</buffer-size>"
+                        + "<delay-seconds>0</delay-seconds>"
+                        + "<in-memory-format>BINARY</in-memory-format>"
+                        + "<coalesce>false</coalesce>"
+                        + "<populate>true</populate>"
+                        + "<indexes>"
+                        + "<index ordered=\"false\">name</index>"
+                        + "</indexes>"
+                        + "<predicate type=\"class-name\"> "
+                        + "com.hazelcast.examples.SimplePredicate"
+                        + "</predicate>"
+                        + "<eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"133\"/>"
+                        + "</query-cache>"
+                        + "</query-caches>"
+                        + "</map>"
+                        + "</hazelcast>";
+        Config config = buildConfig(xml);
+        QueryCacheConfig queryCacheConfig = config.getMapConfig("test").getQueryCacheConfigs().get(0);
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertEquals("cache-name", queryCacheConfig.getName());
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+        assertEquals("com.hazelcast.examples.EntryListener", entryListenerConfig.getClassName());
+        assertTrue(queryCacheConfig.isIncludeValue());
+        assertEquals(1, queryCacheConfig.getBatchSize());
+        assertEquals(16, queryCacheConfig.getBufferSize());
+        assertEquals(0, queryCacheConfig.getDelaySeconds());
+        assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
+        assertFalse(queryCacheConfig.isCoalesce());
+        assertTrue(queryCacheConfig.isPopulate());
+        assertIndexesEqual(queryCacheConfig);
+        assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
+        Iterator<MapIndexConfig> iterator = queryCacheConfig.getIndexConfigs().iterator();
+        while (iterator.hasNext()) {
+            MapIndexConfig mapIndexConfig = iterator.next();
+            assertEquals("name", mapIndexConfig.getAttribute());
+            assertFalse(mapIndexConfig.isOrdered());
+        }
     }
 }

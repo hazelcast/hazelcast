@@ -17,14 +17,19 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.Hazelcast;
@@ -55,6 +60,7 @@ import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.assertEquals;
@@ -81,6 +87,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client5")
     private HazelcastClientProxy client5;
+
+    @Resource(name = "client6")
+    private HazelcastClientProxy client6;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -232,7 +241,7 @@ public class TestClientApplicationContext {
         ClientConfig config = client5.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        assertEquals(0,networkConfig.getConnectionAttemptLimit());
+        assertEquals(0, networkConfig.getConnectionAttemptLimit());
     }
 
     @Test
@@ -262,5 +271,43 @@ public class TestClientApplicationContext {
         assertEquals("atomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+    }
+
+    @Test
+    public void testFullQueryCacheConfig() throws Exception {
+        ClientConfig config = client6.getClientConfig();
+
+        QueryCacheConfig queryCacheConfig = getQueryCacheConfig(config);
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+
+        assertEquals("com.hazelcast.spring.DummyEntryListener", entryListenerConfig.getClassName());
+        assertFalse(queryCacheConfig.isIncludeValue());
+
+        assertEquals("my-query-cache-1", queryCacheConfig.getName());
+        assertEquals(12, queryCacheConfig.getBatchSize());
+        assertEquals(33, queryCacheConfig.getBufferSize());
+        assertEquals(12, queryCacheConfig.getDelaySeconds());
+        assertEquals(InMemoryFormat.OBJECT, queryCacheConfig.getInMemoryFormat());
+        assertTrue(queryCacheConfig.isCoalesce());
+        assertFalse(queryCacheConfig.isPopulate());
+        assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    private QueryCacheConfig getQueryCacheConfig(ClientConfig config) {
+        Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs = config.getQueryCacheConfigs();
+        Collection<Map<String, QueryCacheConfig>> values = queryCacheConfigs.values();
+        for (Map<String, QueryCacheConfig> value : values) {
+            Set<Map.Entry<String, QueryCacheConfig>> entries = value.entrySet();
+            for (Map.Entry<String, QueryCacheConfig> entry : entries) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 }
