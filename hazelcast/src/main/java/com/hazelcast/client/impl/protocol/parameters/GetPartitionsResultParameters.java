@@ -95,10 +95,13 @@ public class GetPartitionsResultParameters {
      */
     public static int calculateDataSize(Address[] addresses, int[] ownerIndexes) {
         int dataSize = ClientMessage.HEADER_SIZE;
+        dataSize += BitUtil.SIZE_OF_INT;
         for (Address address : addresses) {
             dataSize += ParameterUtil.calculateAddressDataSize(address);
         }
+        dataSize += BitUtil.SIZE_OF_INT;
         dataSize += ownerIndexes.length * BitUtil.SIZE_OF_INT;
         return dataSize;
     }
+
 }
