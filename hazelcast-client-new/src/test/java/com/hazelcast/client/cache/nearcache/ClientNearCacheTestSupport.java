@@ -72,7 +72,9 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected ClientConfig createClientConfig() {
-        return new ClientConfig();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress("127.0.0.1");
+        return clientConfig;
     }
 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
