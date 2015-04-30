@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.condition;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ConditionSignalParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -47,6 +48,11 @@ public class ConditionSignalMessageTask extends AbstractPartitionMessageTask<Con
     @Override
     protected ConditionSignalParameters decodeClientMessage(ClientMessage clientMessage) {
         return ConditionSignalParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return BooleanResultParameters.encode((Boolean) response);
     }
 
     @Override

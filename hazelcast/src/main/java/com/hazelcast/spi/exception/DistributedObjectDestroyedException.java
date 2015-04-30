@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastException;
  */
 public class DistributedObjectDestroyedException extends HazelcastException {
 
-    public DistributedObjectDestroyedException(String service, String name) {
-        super("DistributedObject[" + service + " -> " + name + "] has been destroyed!");
+    public DistributedObjectDestroyedException(String message) {
+        super(message);
     }
 }

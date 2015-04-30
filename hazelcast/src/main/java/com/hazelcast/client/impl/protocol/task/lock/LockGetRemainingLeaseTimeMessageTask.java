@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.LockGetRemainingLeaseTimeParameters;
+import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
@@ -28,7 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
-
 import java.security.Permission;
 
 public class LockGetRemainingLeaseTimeMessageTask extends AbstractPartitionMessageTask<LockGetRemainingLeaseTimeParameters> {
@@ -47,6 +47,12 @@ public class LockGetRemainingLeaseTimeMessageTask extends AbstractPartitionMessa
     protected LockGetRemainingLeaseTimeParameters decodeClientMessage(ClientMessage clientMessage) {
         return LockGetRemainingLeaseTimeParameters.decode(clientMessage);
     }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return LongResultParameters.encode((Long) response);
+    }
+
 
     @Override
     public String getServiceName() {
