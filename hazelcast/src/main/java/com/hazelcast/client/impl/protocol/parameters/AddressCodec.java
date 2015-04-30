@@ -53,10 +53,11 @@ public final class AddressCodec {
 
     public static int calculateDataSize(Address address) {
         boolean isNull = address == null;
+        int dataSize = BitUtil.SIZE_OF_BOOLEAN;
         if (isNull) {
-            return BitUtil.SIZE_OF_BOOLEAN;
+            return dataSize;
         }
-        int dataSize = ParameterUtil.calculateStringDataSize(address.getHost());
+        dataSize += ParameterUtil.calculateStringDataSize(address.getHost());
         dataSize += BitUtil.SIZE_OF_INT;
         return dataSize;
     }

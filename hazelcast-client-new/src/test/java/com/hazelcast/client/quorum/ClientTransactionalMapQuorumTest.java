@@ -38,7 +38,6 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,7 +51,6 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientTransactionalMapQuorumTest {
 
     static PartitionedCluster cluster;

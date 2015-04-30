@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.MapAddIndexParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -43,7 +44,7 @@ public class MapAddIndexMessageTask extends AbstractAllPartitionsMessageTask<Map
 
     @Override
     protected ClientMessage reduce(Map<Integer, Object> map) {
-        return null;
+        return VoidResultParameters.encode();
     }
 
     @Override

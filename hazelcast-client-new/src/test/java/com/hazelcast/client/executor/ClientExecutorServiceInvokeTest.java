@@ -42,7 +42,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientExecutorServiceInvokeTest {
 
     private static HazelcastInstance client;

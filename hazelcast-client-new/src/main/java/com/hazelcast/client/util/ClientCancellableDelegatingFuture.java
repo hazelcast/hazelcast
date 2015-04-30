@@ -18,6 +18,7 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnAddressParameters;
 import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnPartitionParameters;
 import com.hazelcast.client.spi.ClientContext;
@@ -68,9 +69,9 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
         }
 
         waitForRequestToBeSend();
-        final Future f = invokeCancelRequest(mayInterruptIfRunning);
+        final Future<ClientMessage> f = invokeCancelRequest(mayInterruptIfRunning);
         try {
-            final Boolean b = context.getSerializationService().toObject(f.get());
+            final Boolean b = BooleanResultParameters.decode(f.get()).result;
             if (b != null && b) {
                 setError(new CancellationException());
                 cancelled = true;
@@ -84,7 +85,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
         }
     }
 
-    private Future invokeCancelRequest(boolean mayInterruptIfRunning) {
+    private Future<ClientMessage> invokeCancelRequest(boolean mayInterruptIfRunning) {
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (target != null) {
