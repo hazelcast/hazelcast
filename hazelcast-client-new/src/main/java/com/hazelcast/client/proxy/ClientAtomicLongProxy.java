@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.parameters.AtomicLongGetAndAlterParame
 import com.hazelcast.client.impl.protocol.parameters.AtomicLongGetAndSetParameters;
 import com.hazelcast.client.impl.protocol.parameters.AtomicLongSetParameters;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.IAtomicLong;
@@ -49,7 +50,9 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public <R> R apply(IFunction<Long, R> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongApplyParameters.encode(name, toData(function));
-        return invoke(request);
+        ClientMessage response = invoke(request);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
+        return toObject(resultParameters.result);
     }
 
     @Override

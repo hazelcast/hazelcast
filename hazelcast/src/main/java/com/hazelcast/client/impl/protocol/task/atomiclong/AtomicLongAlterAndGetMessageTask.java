@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.atomiclong;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AtomicLongAlterAndGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.AlterAndGetOperation;
@@ -45,6 +46,11 @@ public class AtomicLongAlterAndGetMessageTask extends AbstractPartitionMessageTa
     @Override
     protected AtomicLongAlterAndGetParameters decodeClientMessage(ClientMessage clientMessage) {
         return AtomicLongAlterAndGetParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return LongResultParameters.encode((Long) response);
     }
 
     @Override
