@@ -33,8 +33,8 @@ import java.net.SocketAddress;
  *
  * A Connection has 2 sides:
  * <ol>
- *     <li>the side where it receives data from the remote  machine</li>
- *     <li>the side where it sends data to the remote machine</li>
+ * <li>the side where it receives data from the remote  machine</li>
+ * <li>the side where it sends data to the remote machine</li>
  * </ol>
  *
  * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
@@ -217,6 +217,17 @@ public final class TcpIpConnection implements Connection {
         } catch (Exception e) {
             logger.warning(e);
         }
+
+        log(t);
+
+        connectionManager.destroyConnection(this);
+        connectionManager.ioService.onDisconnect(endPoint);
+        if (t != null && monitor != null) {
+            monitor.onError(t);
+        }
+    }
+
+    private void log(Throwable t) {
         Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
         String message = "Connection [" + connAddress + "] lost. Reason: ";
         if (t != null) {
@@ -225,11 +236,10 @@ public final class TcpIpConnection implements Connection {
             message += "Socket explicitly closed";
         }
 
-        logger.info(message);
-        connectionManager.destroyConnection(this);
-        connectionManager.ioService.onDisconnect(endPoint);
-        if (t != null && monitor != null) {
-            monitor.onError(t);
+        if (logger.isFinestEnabled()) {
+            logger.finest(message, t);
+        } else {
+            logger.info(message);
         }
     }
 
