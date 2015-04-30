@@ -142,11 +142,11 @@ public class EvictionConfig
         return this;
     }
 
-    public MaxSizePolicy getMaxSizePolicy() {
+    public MaxSizePolicy getMaximumSizePolicy() {
         return maxSizePolicy;
     }
 
-    public EvictionConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public EvictionConfig setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = checkNotNull(maxSizePolicy, "Max-Size policy cannot be null !");
         return this;
     }

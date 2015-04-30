@@ -91,7 +91,7 @@ public class TestJCache {
         assertNotNull(simpleConfig.getEvictionConfig());
         assertEquals(50, simpleConfig.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT,
-                simpleConfig.getEvictionConfig().getMaxSizePolicy());
+                simpleConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LRU, simpleConfig.getEvictionConfig().getEvictionPolicy());
 
         NearCacheConfig nearCacheConfig = simpleConfig.getNearCacheConfig();
@@ -106,7 +106,7 @@ public class TestJCache {
 
         assertNotNull(nearCacheConfig.getEvictionConfig());
         assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaxSizePolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
     }
 

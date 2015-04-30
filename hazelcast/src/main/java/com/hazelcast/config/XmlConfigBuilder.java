@@ -1016,7 +1016,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
         }
         if (maxSizePolicy != null) {
-            evictionConfig.setMaxSizePolicy(
+            evictionConfig.setMaximumSizePolicy(
                     EvictionConfig.MaxSizePolicy.valueOf(
                             upperCaseInternal(getTextContent(maxSizePolicy)))
             );

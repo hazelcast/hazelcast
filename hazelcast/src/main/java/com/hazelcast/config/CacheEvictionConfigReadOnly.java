@@ -33,7 +33,12 @@ public class CacheEvictionConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only");
     }
 
-    public CacheEvictionConfigReadOnly setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public CacheEvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy cacheMaxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 

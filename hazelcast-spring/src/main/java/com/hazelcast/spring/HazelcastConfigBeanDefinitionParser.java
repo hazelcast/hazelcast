@@ -679,7 +679,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
             }
             if (maxSizePolicy != null) {
-                evictionConfig.setMaxSizePolicy(
+                evictionConfig.setMaximumSizePolicy(
                         EvictionConfig.MaxSizePolicy.valueOf(
                                 upperCaseInternal(getTextContent(maxSizePolicy)))
                 );

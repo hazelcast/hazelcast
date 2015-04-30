@@ -37,7 +37,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     protected MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
                                                            NearCacheConfig nearCacheConfig,
                                                            NearCacheContext nearCacheContext) {
-        EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaxSizePolicy();
+        EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }

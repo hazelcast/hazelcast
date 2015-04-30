@@ -30,7 +30,7 @@ public class EvictionConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only");
     }
 
-    public EvictionConfigReadOnly setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+    public EvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
