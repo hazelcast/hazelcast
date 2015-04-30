@@ -56,6 +56,7 @@ import java.util.Properties;
  * @see MapStatisticsAwareService
  * @see MapPartitionAwareService
  * @see MapQuorumAwareService
+ * @see MapClientAwareService
  * @see MapServiceContext
  */
 public class MapService implements ManagedService, MigrationAwareService,
