@@ -34,7 +34,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
-
 import com.hazelcast.test.HazelcastTestSupport;
 
 import org.junit.After;
@@ -116,28 +115,15 @@ public abstract class ClientNearCacheTestSupport {
         return "Value-" + key;
     }
 
-    protected NearCacheTestContext getNearCacheTest(String cacheName) {
-        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.newHazelcastClient(createClientConfig());
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
-        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
-
-        ICache<Integer, String> cache = cacheManager.getCache(cacheName);
-
-        NearCache<Data, String> nearCache =
-                nearCacheManager.getNearCache(cacheManager.getCacheNameWithPrefix(cacheName));
-
-        return new NearCacheTestContext(client, cacheManager, nearCacheManager, cache, nearCache);
-    }
-
     protected NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig) {
-        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.newHazelcastClient(createClientConfig());
+        ClientConfig clientConfig = createClientConfig();
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.newHazelcastClient(clientConfig);
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
 
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
-        cacheConfig.setNearCacheConfig(nearCacheConfig);
         ICache<Integer, String> cache = cacheManager.createCache(cacheName, cacheConfig);
 
         NearCache<Data, String> nearCache =
@@ -205,7 +191,7 @@ public abstract class ClientNearCacheTestSupport {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-        final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
+        final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // Put cache record from client-1
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -271,7 +257,7 @@ public abstract class ClientNearCacheTestSupport {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-        final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
+        final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // Put cache record from client-1
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -321,7 +307,7 @@ public abstract class ClientNearCacheTestSupport {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
         NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-        final NearCacheTestContext nearCacheTestContext2 = getNearCacheTest(DEFAULT_CACHE_NAME);
+        final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         // Put cache record from client-1
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {

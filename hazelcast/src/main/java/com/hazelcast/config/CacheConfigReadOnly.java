@@ -44,15 +44,6 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public NearCacheConfig getNearCacheConfig() {
-        final NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
-        if (nearCacheConfig == null) {
-            return null;
-        }
-        return nearCacheConfig.getAsReadOnly();
-    }
-
-    @Override
     public WanReplicationRef getWanReplicationRef() {
         final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
         if (wanReplicationRef == null) {
@@ -106,11 +97,6 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfig<K, V> setEvictionConfig(final EvictionConfig evictionConfig) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheConfig setNearCacheConfig(final NearCacheConfig nearCacheConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

@@ -77,15 +77,4 @@
         </wan-replication-ref>
     </cache>
 
-    <cache name="testCacheWithNearCache">
-        <near-cache name="testNearCache">
-            <time-to-live-seconds>10000</time-to-live-seconds>
-            <max-idle-seconds>5000</max-idle-seconds>
-            <invalidate-on-change>false</invalidate-on-change>
-            <in-memory-format>OBJECT</in-memory-format>
-            <cache-local-entries>true</cache-local-entries>
-            <eviction size="100" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
-        </near-cache>
-    </cache>
-
 </hazelcast>

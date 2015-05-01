@@ -361,8 +361,6 @@ public class ConfigXmlGenerator {
 
             evictionConfigXmlGenerator(xml, c.getEvictionConfig());
 
-            nearCacheConfigXmlGenerator(xml, c.getNearCacheConfig());
-
             xml.append("</cache>");
         }
     }

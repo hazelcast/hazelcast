@@ -271,46 +271,6 @@ public class InvalidConfigurationTest {
         buildConfig("cache-eviction-size", "100");
     }
 
-    @Test
-    public void WhenValid_NearCacheInMemoryFormat() {
-        buildConfig("near-cache-in-memory-format", "OBJECT");
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void WhenInvalid_NearCacheInMemoryFormat() {
-        buildConfig("near-cache-in-memory-format", "binaryyy");
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_NearCacheTTLSeconds() {
-        buildConfig("near-cache-time-to-live-seconds", "-1");
-    }
-
-    @Test
-    public void testWhenValid_NearCacheTTLSeconds() {
-        buildConfig("near-cache-time-to-live-seconds", "100");
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_NearCacheMaxIdleSeconds() {
-        buildConfig("near-cache-max-idle-seconds", "-1");
-    }
-
-    @Test
-    public void testWhenValid_NearCacheMaxIdleSeconds() {
-        buildConfig("near-cache-max-idle-seconds", "100");
-    }
-
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_NearCacheEvictionSize() {
-        buildConfig("near-cache-eviction-size", "-100");
-    }
-
-    @Test
-    public void testWhenValid_NearCacheEvictionSize() {
-        buildConfig("near-cache-eviction-size", "100");
-    }
-
     String getDraftXml() {
         return
                 "<hazelcast>\n" +
@@ -357,16 +317,6 @@ public class InvalidConfigurationTest {
                         "<eviction size=\"${cache-eviction-size}\"" +
                             " max-size-policy=\"${cache-eviction-max-size-policy}\"" +
                             " eviction-policy=\"${cache-eviction-policy}\"/>\n" +
-                        "<near-cache>\n" +
-                            "<time-to-live-seconds>${near-cache-time-to-live-seconds}</time-to-live-seconds>\n" +
-                            "<max-idle-seconds>${near-cache-max-idle-seconds}</max-idle-seconds>\n" +
-                            "<invalidate-on-change>${near-cache-invalidate-on-change}</invalidate-on-change>\n" +
-                            "<in-memory-format>${near-cache-in-memory-format}</in-memory-format>\n" +
-                            "<cache-local-entries>${near-cache-cache-local-entries}</cache-local-entries>\n" +
-                            "<eviction size=\"${near-cache-eviction-size}\"" +
-                                " max-size-policy=\"${near-cache-eviction-max-size-policy}\"" +
-                                " eviction-policy=\"${near-cache-eviction-policy}\"/>\n" +
-                        "</near-cache>" +
                     "</cache>\n" +
 
                     "<multimap name=\"default\">\n" +
@@ -417,14 +367,6 @@ public class InvalidConfigurationTest {
         properties.setProperty("cache-eviction-size", "100");
         properties.setProperty("cache-eviction-max-size-policy", "ENTRY_COUNT");
         properties.setProperty("cache-eviction-policy", "LRU");
-        properties.setProperty("near-cache-time-to-live-seconds", "10000");
-        properties.setProperty("near-cache-max-idle-seconds", "5000");
-        properties.setProperty("near-cache-invalidate-on-change", "true");
-        properties.setProperty("near-cache-in-memory-format", "BINARY");
-        properties.setProperty("near-cache-cache-local-entries", "true");
-        properties.setProperty("near-cache-eviction-size", "100");
-        properties.setProperty("near-cache-eviction-max-size-policy", "ENTRY_COUNT");
-        properties.setProperty("near-cache-eviction-policy", "LRU");
 
         properties.setProperty("multimap-backup-count", "0");
         properties.setProperty("multimap-value-collection-type", "SET");

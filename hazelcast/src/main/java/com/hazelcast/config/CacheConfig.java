@@ -57,8 +57,6 @@ public class CacheConfig<K, V>
     // since "CacheEvictionConfig" is deprecated
     private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
-    private NearCacheConfig nearCacheConfig;
-
     private WanReplicationRef wanReplicationRef;
 
     public CacheConfig() {
@@ -81,9 +79,6 @@ public class CacheConfig<K, V>
             // Eviction config cannot be null
             if (config.evictionConfig != null) {
                 this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
-            }
-            if (config.nearCacheConfig != null) {
-                this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
             }
             if (config.wanReplicationRef != null) {
                 this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
@@ -118,9 +113,6 @@ public class CacheConfig<K, V>
         // Eviction config cannot be null
         if (simpleConfig.getEvictionConfig() != null) {
             this.evictionConfig = new CacheEvictionConfig(simpleConfig.getEvictionConfig());
-        }
-        if (simpleConfig.getNearCacheConfig() != null) {
-            this.nearCacheConfig = new NearCacheConfig(simpleConfig.getNearCacheConfig());
         }
         if (simpleConfig.getWanReplicationRef() != null) {
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
@@ -312,26 +304,6 @@ public class CacheConfig<K, V>
         return this;
     }
 
-    /**
-     * Gets the {@link NearCacheConfig} of the cache config instance.
-     *
-     * @return the {@link NearCacheConfig} of the cache config instance
-     */
-    public NearCacheConfig getNearCacheConfig() {
-        return nearCacheConfig;
-    }
-
-    /**
-     * Sets the {@link NearCacheConfig} of the cache config instance.
-     *
-     * @param nearCacheConfig the {@link NearCacheConfig} of the cache to set
-     * @return current cache config instance
-     */
-    public CacheConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
-        this.nearCacheConfig = nearCacheConfig;
-        return this;
-    }
-
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
     }
@@ -377,8 +349,6 @@ public class CacheConfig<K, V>
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(evictionConfig);
 
-        out.writeObject(nearCacheConfig);
-
         out.writeObject(wanReplicationRef);
         //SUPER
         out.writeObject(keyType);
@@ -415,8 +385,6 @@ public class CacheConfig<K, V>
         String resultInMemoryFormat = in.readUTF();
         inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
         evictionConfig = in.readObject();
-
-        nearCacheConfig = in.readObject();
 
         wanReplicationRef = in.readObject();
 

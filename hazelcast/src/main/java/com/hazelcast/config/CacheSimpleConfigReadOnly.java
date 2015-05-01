@@ -135,9 +135,4 @@ public class CacheSimpleConfigReadOnly
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
-    @Override
-    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
 }

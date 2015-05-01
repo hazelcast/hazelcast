@@ -80,7 +80,6 @@ public class CacheSimpleConfig {
     //      * LRU as eviction policy
     private EvictionConfig evictionConfig = new EvictionConfig();
     private WanReplicationRef wanReplicationRef;
-    private NearCacheConfig nearCacheConfig;
 
     private CacheSimpleConfig readOnly;
 
@@ -104,7 +103,6 @@ public class CacheSimpleConfig {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
-        this.nearCacheConfig = cacheSimpleConfig.nearCacheConfig;
     }
 
     public CacheSimpleConfig() {
@@ -286,14 +284,6 @@ public class CacheSimpleConfig {
 
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
-    }
-
-    public NearCacheConfig getNearCacheConfig() {
-        return nearCacheConfig;
-    }
-
-    public void setNearCacheConfig(NearCacheConfig nearCacheConfig) {
-        this.nearCacheConfig = nearCacheConfig;
     }
 
 }

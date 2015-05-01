@@ -23,8 +23,6 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -35,8 +33,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
+
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -150,29 +148,6 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertEquals(50, cacheConfig1.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig1.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, cacheConfig1.getEvictionConfig().getEvictionPolicy());
-    }
-
-    @Test
-    public void cacheConfigXmlTest_nearCacheConfig() throws Exception {
-        Config config1 = new XmlConfigBuilder(configUrl1).build();
-
-        assertEquals("test-group1", config1.getGroupConfig().getName());
-        assertEquals("test-pass1", config1.getGroupConfig().getPassword());
-
-        CacheSimpleConfig cacheSimpleConfig = config1.getCacheConfig("testCacheWithNearCache");
-        CacheConfig cacheConfig = new CacheConfig(cacheSimpleConfig);
-        NearCacheConfig nearCacheConfig = cacheConfig.getNearCacheConfig();
-
-        assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
-        assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
-        assertFalse(nearCacheConfig.isInvalidateOnChange());
-        assertEquals(InMemoryFormat.OBJECT, nearCacheConfig.getInMemoryFormat());
-        assertTrue(nearCacheConfig.isCacheLocalEntries());
-
-        assertNotNull(nearCacheConfig.getEvictionConfig());
-        assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
-        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
-        assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
     }
 
     @Test
@@ -298,7 +273,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
             CacheManager cacheManager = provider.getCacheManager();
 
             Cache<Object, Object> cache = cacheManager.getCache("test");
-            Assert.assertNotNull("Pre-configured cache cannot be retrieved on instance: " + i, cache);
+            assertNotNull("Pre-configured cache cannot be retrieved on instance: " + i, cache);
         }
     }
 
