@@ -36,7 +36,6 @@ import java.util.concurrent.Future;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +45,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMapReadQuorumTest {
 
     static PartitionedCluster cluster;

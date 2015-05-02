@@ -47,7 +47,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ExecutionDelayTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;

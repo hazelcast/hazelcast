@@ -55,7 +55,7 @@ public abstract class InvocationMessageTask<P> extends AbstractMessageTask<P> im
     protected ClientMessage encodeResponse(Object response) {
         final ClientMessage resultParameters;
         try {
-            final Data responseData = (Data) response;
+            final Data responseData = serializationService.toData(response);
             resultParameters = GenericResultParameters.encode(responseData);
             return resultParameters;
         } catch (ClassCastException e) {

@@ -31,11 +31,13 @@ public class ExceptionResultParameters {
      */
     public static final ClientMessageType TYPE = ClientMessageType.EXCEPTION;
     public String className;
+    public String causeClassName;
     public String message;
     public String stacktrace;
 
     private ExceptionResultParameters(ClientMessage flyweight) {
         className = flyweight.getStringUtf8();
+        causeClassName = flyweight.getStringUtf8();
         message = flyweight.getStringUtf8();
         stacktrace = flyweight.getStringUtf8();
     }
@@ -44,12 +46,12 @@ public class ExceptionResultParameters {
         return new ExceptionResultParameters(flyweight);
     }
 
-    public static ClientMessage encode(String className, String message, String stacktrace) {
-        final int requiredDataSize = calculateDataSize(className, message, stacktrace);
+    public static ClientMessage encode(String className, String causeClassName, String message, String stacktrace) {
+        final int requiredDataSize = calculateDataSize(className, causeClassName, message, stacktrace);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.set(className).set(message).set(stacktrace);
+        clientMessage.set(className).set(causeClassName).set(message).set(stacktrace);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -59,9 +61,10 @@ public class ExceptionResultParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(String className, String message, String stacktrace) {
+    public static int calculateDataSize(String className, String causeClassName,  String message, String stacktrace) {
         return ClientMessage.HEADER_SIZE//
                 + ParameterUtil.calculateStringDataSize(className)
+                + ParameterUtil.calculateStringDataSize(causeClassName)
                 + ParameterUtil.calculateStringDataSize(message)
                 + ParameterUtil.calculateStringDataSize(stacktrace);
     }

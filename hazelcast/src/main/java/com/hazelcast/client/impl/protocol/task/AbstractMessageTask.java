@@ -165,7 +165,9 @@ public abstract class AbstractMessageTask<P>
         String message = throwable.getMessage();
         StringWriter sw = new StringWriter();
         throwable.printStackTrace(new PrintWriter(sw));
-        return ExceptionResultParameters.encode(className, message, sw.toString());
+        Throwable cause = throwable.getCause();
+        String causeClassName = cause != null ? cause.getClass().getName() : null;
+        return ExceptionResultParameters.encode(className, causeClassName, message, sw.toString());
     }
 
     protected abstract void processMessage();

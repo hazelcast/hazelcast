@@ -19,22 +19,16 @@ package com.hazelcast.client.quorum;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.PartitionedCluster;
-import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -43,6 +37,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
@@ -50,7 +51,6 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientMapReadWriteQuorumTest {
 
     static PartitionedCluster cluster;
@@ -459,6 +459,7 @@ public class ClientMapReadWriteQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
+    @Ignore
     public void testExecuteOnEntriesOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
         map4.executeOnEntries(new LoggingEntryProcessor());
     }

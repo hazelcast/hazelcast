@@ -19,6 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -212,7 +213,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                     try {
                         Object resp;
                         try {
-                            resp = resolveResponse();
+                            resp = GenericResultParameters.decode((ClientMessage) resolveResponse()).result;
                         } catch (Throwable t) {
                             callback.onFailure(t);
                             return;

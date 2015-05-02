@@ -35,8 +35,10 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -346,14 +348,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             try {
                 handleClientMessage(packet.getClientMessage());
             } catch (Exception e) {
-                logger.severe("Failed to process task: " + packet + " on responseThread :" + getName());
+                logger.severe("Failed to process task: " + packet + " on responseThread :" + getName(), e);
             } finally {
                 conn.decrementPacketCount();
             }
         }
 
         private void handleClientMessage(ClientMessage clientMessage) throws ClassNotFoundException,
-                IllegalAccessException, InstantiationException {
+                NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
             int correlationId = clientMessage.getCorrelationId();
 
             final ClientInvocation future = deRegisterCallId(correlationId);
@@ -364,13 +366,23 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
             if (ClientMessageType.EXCEPTION.id() == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
-                Class<?> clazz = Class.forName(exceptionResultParameters.className);
                 Throwable exception;
-                try {
-                    Constructor<?> constructor = clazz.getConstructor(new Class[]{String.class});
+                boolean hasCause = !exceptionResultParameters.causeClassName.equals("null");
+                if (hasCause) {
+                    Class<?> causeClazz = Class.forName(exceptionResultParameters.causeClassName);
+                    Constructor<?> causeConstructor = causeClazz.getDeclaredConstructor(new Class[]{String.class});
+                    causeConstructor.setAccessible(true);
+                    Throwable cause = (Throwable) causeConstructor.newInstance(exceptionResultParameters.message);
+
+                    Class<?> clazz = Class.forName(exceptionResultParameters.className);
+                    Constructor<?> constructor = clazz.getDeclaredConstructor(new Class[]{String.class, Throwable.class});
+                    constructor.setAccessible(true);
+                    exception = (Throwable) constructor.newInstance(exceptionResultParameters.message, cause);
+                } else {
+                    Class<?> clazz = Class.forName(exceptionResultParameters.className);
+                    Constructor<?> constructor = clazz.getDeclaredConstructor(new Class[]{String.class});
+                    constructor.setAccessible(true);
                     exception = (Throwable) constructor.newInstance(exceptionResultParameters.message);
-                } catch (Exception e) {
-                    exception = (Throwable) clazz.newInstance();
                 }
                 future.notifyException(exception);
             } else {

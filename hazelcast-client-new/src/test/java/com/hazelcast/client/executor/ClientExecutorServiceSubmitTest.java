@@ -60,7 +60,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientExecutorServiceSubmitTest {
 
     private static final int CLUSTER_SIZE = 3;
