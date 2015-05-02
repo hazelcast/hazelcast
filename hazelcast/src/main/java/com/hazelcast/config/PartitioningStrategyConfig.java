@@ -78,4 +78,22 @@ public class PartitioningStrategyConfig {
         sb.append('}');
         return sb.toString();
     }
+
+    /**
+     * Contains the configuration for strategy of partitioning
+     */
+    static class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
+
+        public PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
+            super(config);
+        }
+
+        public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

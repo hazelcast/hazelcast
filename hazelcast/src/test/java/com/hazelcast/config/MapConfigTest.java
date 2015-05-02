@@ -261,7 +261,7 @@ public class MapConfigTest {
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMapStoreConfigSetWriteBatchSize() {
-        new MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
+        new MapStoreConfig.MapStoreConfigReadOnly(new MapStoreConfig()).setWriteBatchSize(1);
     }
 
     /**
@@ -269,6 +269,6 @@ public class MapConfigTest {
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMapStoreConfigSetInitialLoadMode() {
-        new MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        new MapStoreConfig.MapStoreConfigReadOnly(new MapStoreConfig()).setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
     }
 }

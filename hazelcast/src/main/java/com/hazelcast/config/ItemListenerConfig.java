@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.ItemListener;
 
+import java.util.EventListener;
+
 /**
  * Contains the configuration for an Item Listener.
  */
@@ -107,5 +109,31 @@ public class ItemListenerConfig extends ListenerConfig {
         int result = super.hashCode();
         result = 31 * result + (includeValue ? 1 : 0);
         return result;
+    }
+
+    /**
+     * Contains the configuration for an Item Listener(Read-only).
+     */
+    static class ItemListenerConfigReadOnly extends ItemListenerConfig {
+
+        public ItemListenerConfigReadOnly(ItemListenerConfig config) {
+            super(config);
+        }
+
+        public ItemListenerConfig setImplementation(ItemListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public ItemListenerConfig setIncludeValue(boolean includeValue) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

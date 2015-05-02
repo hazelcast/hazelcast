@@ -181,4 +181,31 @@ public class SemaphoreConfig {
         sb.append('}');
         return sb.toString();
     }
+
+    /**
+     * Contains configuration for Semaphore(read only)
+     */
+
+    static class SemaphoreConfigReadOnly extends SemaphoreConfig {
+
+        public SemaphoreConfigReadOnly(SemaphoreConfig config) {
+            super(config);
+        }
+
+        public SemaphoreConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        public SemaphoreConfig setInitialPermits(int initialPermits) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        public SemaphoreConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+    }
 }

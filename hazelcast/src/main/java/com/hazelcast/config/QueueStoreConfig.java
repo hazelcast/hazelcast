@@ -127,4 +127,42 @@ public class QueueStoreConfig {
         sb.append('}');
         return sb.toString();
     }
+
+    /**
+     * Contains the configuration for an {@link QueueStore}.
+     */
+    static class QueueStoreConfigReadOnly extends QueueStoreConfig {
+
+        public QueueStoreConfigReadOnly(QueueStoreConfig config) {
+            super(config);
+        }
+
+        public QueueStoreConfig setStoreImplementation(QueueStore storeImplementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public QueueStoreConfig setEnabled(boolean enabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public QueueStoreConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public QueueStoreConfig setProperties(Properties properties) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public QueueStoreConfig setProperty(String name, String value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public QueueStoreConfig setFactoryClassName(String factoryClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

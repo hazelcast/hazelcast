@@ -27,6 +27,8 @@ import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -453,5 +455,112 @@ public class CacheConfig<K, V>
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
                 + '}';
+    }
+
+    /**
+     * Readonly version of {@link CacheConfig}
+     *
+     * @param <K> type of the key
+     * @param <V> type of the value
+     */
+    static class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
+
+        CacheConfigReadOnly(CacheConfig config) {
+            super(config);
+        }
+
+        // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+        // since "CacheEvictionConfig" is deprecated
+        @Override
+        public CacheEvictionConfig getEvictionConfig() {
+            final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+            if (evictionConfig == null) {
+                return null;
+            }
+            return (CacheEvictionConfig) evictionConfig.getAsReadOnly();
+        }
+
+        @Override
+        public WanReplicationRef getWanReplicationRef() {
+            final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
+            if (wanReplicationRef == null) {
+                return null;
+            }
+            return wanReplicationRef.getAsReadOnly();
+        }
+
+        @Override
+        public Iterable<CacheEntryListenerConfiguration<K, V>> getCacheEntryListenerConfigurations() {
+            Iterable<CacheEntryListenerConfiguration<K, V>> listenerConfigurations = super.getCacheEntryListenerConfigurations();
+            return Collections.unmodifiableSet((Set<CacheEntryListenerConfiguration<K, V>>) listenerConfigurations);
+        }
+
+        @Override
+        public CacheConfig<K, V> addCacheEntryListenerConfiguration(
+                CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> removeCacheEntryListenerConfiguration(
+                CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setName(final String name) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setManagerPrefix(final String managerPrefix) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setUriString(final String uriString) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setBackupCount(final int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setEvictionConfig(final EvictionConfig evictionConfig) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setInMemoryFormat(final InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setManagementEnabled(final boolean enabled) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setTypes(final Class<K> keyType, final Class<V> valueType) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig<K, V> setStoreByValue(final boolean storeByValue) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheConfig setWanReplicationRef(final WanReplicationRef wanReplicationRef) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
     }
 }
