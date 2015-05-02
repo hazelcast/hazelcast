@@ -50,10 +50,34 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.config.XmlElements.CACHE;
+import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlElements.GROUP;
+import static com.hazelcast.config.XmlElements.IMPORT;
+import static com.hazelcast.config.XmlElements.JOB_TRACKER;
+import static com.hazelcast.config.XmlElements.LICENSE_KEY;
+import static com.hazelcast.config.XmlElements.LIST;
+import static com.hazelcast.config.XmlElements.LISTENERS;
+import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
+import static com.hazelcast.config.XmlElements.MAP;
+import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
+import static com.hazelcast.config.XmlElements.MULTIMAP;
+import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
+import static com.hazelcast.config.XmlElements.NETWORK;
+import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
+import static com.hazelcast.config.XmlElements.PROPERTIES;
+import static com.hazelcast.config.XmlElements.QUEUE;
+import static com.hazelcast.config.XmlElements.QUORUM;
+import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
+import static com.hazelcast.config.XmlElements.SECURITY;
+import static com.hazelcast.config.XmlElements.SEMAPHORE;
+import static com.hazelcast.config.XmlElements.SERIALIZATION;
+import static com.hazelcast.config.XmlElements.SERVICES;
+import static com.hazelcast.config.XmlElements.SET;
+import static com.hazelcast.config.XmlElements.TOPIC;
+import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
+import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-//CHECKSTYLE:OFF
-import static com.hazelcast.config.XmlElements.*;
-//CHECKSTYLE:ON
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
