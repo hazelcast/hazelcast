@@ -68,6 +68,7 @@ public abstract class AbstractMessageTask<P>
         this.endpoint = getEndpoint();
     }
 
+    @SuppressWarnings("unchecked")
     public <S> S getService(String serviceName) {
         return (S) node.nodeEngine.getService(serviceName);
     }
@@ -90,17 +91,17 @@ public abstract class AbstractMessageTask<P>
                 handleMissingEndpoint();
                 return;
             }
-            //process message
+            // process message
             if (!node.joined()) {
                 throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
             }
-            final Credentials credentials = endpoint.getCredentials();
+            Credentials credentials = endpoint.getCredentials();
             interceptBefore(credentials);
             checkPermissions(endpoint);
             processMessage();
             interceptAfter(credentials);
-
         } catch (Throwable e) {
+            logProcessingFailure(e);
             handleProcessingFailure(e);
         }
     }
@@ -115,7 +116,7 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    private void handleProcessingFailure(Throwable throwable) {
+    private void logProcessingFailure(Throwable throwable) {
         Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
         if (logger.isLoggable(level)) {
             if (parameters == null) {
@@ -124,10 +125,12 @@ public abstract class AbstractMessageTask<P>
                 logger.log(level, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
             }
         }
+    }
+
+    private void handleProcessingFailure(Throwable throwable) {
         if (parameters != null && endpoint != null) {
             sendClientMessage(throwable);
         }
-
     }
 
     private void interceptBefore(Credentials credentials) {

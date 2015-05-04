@@ -13,6 +13,8 @@ import com.hazelcast.map.impl.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
+import org.junit.After;
 
 import java.util.UUID;
 
@@ -20,7 +22,7 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-abstract class ClientMapUnboundReturnValuesTestSupport {
+public abstract class ClientMapUnboundReturnValuesTestSupport {
 
     protected static final int PARTITION_COUNT = 271;
 
@@ -35,6 +37,15 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
 
     private int configLimit;
     private int upperLimit;
+
+    @After
+    public void tearDown() {
+        if (serverMap != null) {
+            serverMap.destroy();
+        }
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
 
     /**
      * This test calls {@link IMap} methods once which are expected to throw {@link QueryResultSizeExceededException}.
@@ -53,8 +64,6 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
 
         fillToUpperLimit(serverMap, clientMap);
         internalRunWithException(clientMap);
-
-        shutdown(serverMap);
     }
 
     /**
@@ -74,8 +83,6 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
 
         fillToUpperLimit(serverMap, clientMap);
         internalRunWithoutException(clientMap);
-
-        shutdown(serverMap);
     }
 
     /**
@@ -87,8 +94,6 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
         internalSetUpClient(PARTITION_COUNT, 1, 1, PRE_CHECK_TRIGGER_LIMIT_INACTIVE);
 
         internalRunCheckUnsupported(clientMap);
-
-        shutdown(serverMap);
     }
 
     /**
@@ -108,8 +113,6 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
 
         fillToUpperLimit(serverMap, clientMap);
         internalRunTxnWithException(clientMap.getName());
-
-        shutdown(serverMap);
     }
 
     /**
@@ -129,8 +132,6 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
 
         fillToUpperLimit(serverMap, clientMap);
         internalRunTxnWithoutException(clientMap.getName());
-
-        shutdown(serverMap);
     }
 
     private void internalSetUpClient(int partitionCount, int clusterSize, int limit, int preCheckTrigger) {
@@ -178,6 +179,13 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
         assertEquals("Expected map size of client map to match upperLimit", upperLimit, queryMap.size());
     }
 
+    private void checkException(QueryResultSizeExceededException e) {
+        String exception = ExceptionUtil.toString(e);
+        if (exception.contains("QueryPartitionOperation")) {
+            fail("QueryResultSizeExceededException was thrown by QueryPartitionOperation:\n" + exception);
+        }
+    }
+
     private void failExpectedException(String methodName) {
         fail(format("Expected QueryResultSizeExceededException while calling %s with limit %d and upperLimit %d",
                 methodName, configLimit, upperLimit));
@@ -200,21 +208,21 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
             queryMap.values(TruePredicate.INSTANCE);
             failExpectedException("IMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             queryMap.keySet(TruePredicate.INSTANCE);
             failExpectedException("IMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             queryMap.entrySet(TruePredicate.INSTANCE);
             failExpectedException("IMap.entrySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
     }
 
@@ -240,6 +248,7 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
 
         /*
         // FIXME: the performance of IMap.entrySet() is too bad to test it with the required number of entries
+        // @see https://github.com/hazelcast/hazelcast/issues/5130
         try {
             assertEquals("IMap.entrySet()", upperLimit, queryMap.entrySet().size());
         } catch (QueryResultSizeExceededException e) {
@@ -282,24 +291,26 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
      */
     private void internalRunTxnWithException(String mapName) {
         TransactionContext transactionContext = instance.newTransactionContext();
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(mapName);
-
         try {
-            txnMap.values(TruePredicate.INSTANCE);
-            failExpectedException("TransactionalMap.values(predicate)");
-        } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
-        }
+            transactionContext.beginTransaction();
+            TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(mapName);
 
-        try {
-            txnMap.keySet(TruePredicate.INSTANCE);
-            failExpectedException("TransactionalMap.keySet(predicate)");
-        } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
-        }
+            try {
+                txnMap.values(TruePredicate.INSTANCE);
+                failExpectedException("TransactionalMap.values(predicate)");
+            } catch (QueryResultSizeExceededException e) {
+                checkException(e);
+            }
 
-        transactionContext.rollbackTransaction();
+            try {
+                txnMap.keySet(TruePredicate.INSTANCE);
+                failExpectedException("TransactionalMap.keySet(predicate)");
+            } catch (QueryResultSizeExceededException e) {
+                checkException(e);
+            }
+        } finally {
+            transactionContext.rollbackTransaction();
+        }
     }
 
     /**
@@ -311,27 +322,24 @@ abstract class ClientMapUnboundReturnValuesTestSupport {
      */
     private void internalRunTxnWithoutException(String mapName) {
         TransactionContext transactionContext = instance.newTransactionContext();
-        transactionContext.beginTransaction();
-
-        TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(mapName);
-
         try {
-            assertEquals("TransactionalMap.values()", upperLimit, txnMap.values().size());
-        } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("TransactionalMap.values()");
+            transactionContext.beginTransaction();
+
+            TransactionalMap<Object, Integer> txnMap = transactionContext.getMap(mapName);
+
+            try {
+                assertEquals("TransactionalMap.values()", upperLimit, txnMap.values().size());
+            } catch (QueryResultSizeExceededException e) {
+                failUnwantedException("TransactionalMap.values()");
+            }
+
+            try {
+                assertEquals("TransactionalMap.keySet()", upperLimit, txnMap.keySet().size());
+            } catch (QueryResultSizeExceededException e) {
+                failUnwantedException("TransactionalMap.keySet()");
+            }
+        } finally {
+            transactionContext.rollbackTransaction();
         }
-
-        try {
-            assertEquals("TransactionalMap.keySet()", upperLimit, txnMap.keySet().size());
-        } catch (QueryResultSizeExceededException e) {
-            failUnwantedException("TransactionalMap.keySet()");
-        }
-
-        transactionContext.rollbackTransaction();
-    }
-
-    private void shutdown(IMap map) {
-        map.destroy();
-        Hazelcast.shutdownAll();
     }
 }

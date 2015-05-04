@@ -142,9 +142,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (partitionIds.isEmpty()) {
                 return result;
             }
-        } catch (QueryResultSizeExceededException e) {
-            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
+            if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw ExceptionUtil.rethrow(t);
+            }
             logger.warning("Could not get results", t);
         }
 
@@ -182,9 +183,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
                 return result;
             }
-        } catch (QueryResultSizeExceededException e) {
-            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
+            if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw ExceptionUtil.rethrow(t);
+            }
             logger.warning("Could not get results", t);
         }
 
@@ -219,9 +221,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) result).last());
                 return result;
             }
-        } catch (QueryResultSizeExceededException e) {
-            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
+            if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw ExceptionUtil.rethrow(t);
+            }
             logger.warning("Could not get results", t);
         }
 
@@ -263,9 +266,10 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             if (partitionIds.isEmpty()) {
                 return result;
             }
-        } catch (QueryResultSizeExceededException e) {
-            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
+            if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw ExceptionUtil.rethrow(t);
+            }
             logger.warning("Could not get results", t);
         }
 

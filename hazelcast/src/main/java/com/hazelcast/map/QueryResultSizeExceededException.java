@@ -27,6 +27,10 @@ import static java.lang.String.format;
  */
 public class QueryResultSizeExceededException extends HazelcastException {
 
+    public QueryResultSizeExceededException(String message) {
+        super(message);
+    }
+
     public QueryResultSizeExceededException() {
         super("This exception has been thrown to prevent an OOME on this Hazelcast instance."
                 + " An OOME might occur when a query collects large data sets from the whole cluster,"

@@ -295,9 +295,10 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             if (partitions.size() == partitionCount) {
                 return result;
             }
-        } catch (QueryResultSizeExceededException e) {
-            throw ExceptionUtil.rethrow(e);
         } catch (Throwable t) {
+            if (t.getCause() instanceof QueryResultSizeExceededException) {
+                throw ExceptionUtil.rethrow(t);
+            }
             EmptyStatement.ignore(t);
         }
 

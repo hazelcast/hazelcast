@@ -42,6 +42,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -97,8 +98,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     @SuppressWarnings("unchecked")
     private void collectResults(QueryResultSet result, List<Future> futures, Set<Integer> finishedPartitions)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
-
+            throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
@@ -141,7 +141,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     @SuppressWarnings("unchecked")
     private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
+            throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             result.addAll(queryResult.getResult());
