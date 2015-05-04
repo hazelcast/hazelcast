@@ -23,7 +23,6 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
