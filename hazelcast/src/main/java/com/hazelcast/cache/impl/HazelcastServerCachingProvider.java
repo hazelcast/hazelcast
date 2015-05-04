@@ -56,7 +56,8 @@ public final class HazelcastServerCachingProvider
     }
 
     @Override
-    protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
+    protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                      Properties properties) {
         final HazelcastInstance instance;
         //uri is null or default or a non hazelcast one, then we use the internal shared instance
         if (uri == null || uri.equals(getDefaultURI())) {
@@ -71,6 +72,9 @@ public final class HazelcastServerCachingProvider
         } else {
             try {
                 instance = instanceFromProperties(classLoader, properties, false);
+                if (instance == null) {
+                    throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
+                }
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

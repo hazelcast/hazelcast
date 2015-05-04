@@ -68,6 +68,9 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
         } else {
             try {
                 instance = instanceFromProperties(classLoader, properties, false);
+                if (instance == null) {
+                    throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
+                }
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }
