@@ -326,7 +326,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
         connection.start();
 
-        log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress());
+        log(Level.INFO, "Established socket connection between "
+                + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
 
         return connection;
     }

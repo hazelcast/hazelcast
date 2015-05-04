@@ -133,8 +133,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final long maxWaitMillisBeforeJoin;
 
-    private final long heartbeatInterval;
-
     private final long maxNoHeartbeatMillis;
 
     private final long maxNoMasterConfirmationMillis;
@@ -191,9 +189,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitMillisBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
-        long heartbeatIntervalSeconds = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
-        heartbeatIntervalSeconds = heartbeatIntervalSeconds <= 0 ? 1 : heartbeatIntervalSeconds;
-        heartbeatInterval = heartbeatIntervalSeconds;
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         maxNoMasterConfirmationMillis = node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS.getInteger() * 1000L;
         icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
@@ -325,7 +320,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
          */
         long clockJump = 0L;
         if (lastHeartBeat != 0L) {
-            clockJump = now - lastHeartBeat - TimeUnit.SECONDS.toMillis(heartbeatInterval);
+            clockJump = now - lastHeartBeat - heartbeatIntervalMillis;
             if (Math.abs(clockJump) > HEARTBEAT_LOG_THRESHOLD) {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
                 logger.info("System clock apparently jumped from " + sdf.format(new Date(lastHeartBeat)) + " to " +
@@ -610,6 +605,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         if (node.isMaster()) {
             resetMemberMasterConfirmations();
+            clusterClock.reset();
         } else {
             sendMasterConfirmation();
         }
@@ -1231,7 +1227,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             if (isMaster(member)) {
                 clusterClock.setMasterTime(timestamp);
             }
-            heartbeatTimes.put(member, Clock.currentTimeMillis());
+            heartbeatTimes.put(member, timestamp);
         }
     }
 

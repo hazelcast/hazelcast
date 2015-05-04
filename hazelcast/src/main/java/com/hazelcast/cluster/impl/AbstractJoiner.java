@@ -273,7 +273,7 @@ public abstract class AbstractJoiner implements Joiner {
                 new JoinCheckOperation(node.createSplitBrainJoinMessage()), target)
                 .setTryCount(1).invoke();
         try {
-            return (JoinMessage) f.get(5, TimeUnit.SECONDS);
+            return (JoinMessage) f.get(10, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             logger.finest("Timeout during join check!", e);
         } catch (Exception e) {
