@@ -26,9 +26,9 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
@@ -36,6 +36,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     protected transient Data dataOldValue;
     protected transient EntryEventType eventType;
+    protected transient boolean putTransient;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value, -1);
@@ -100,7 +101,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         if (mapDataStore.isPostProcessingMapStore()) {
             dataValueForBackup = mapService.getMapServiceContext().toData(record.getValue());
         }
-        return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo);
+        return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo, putTransient);
     }
 
     @Override

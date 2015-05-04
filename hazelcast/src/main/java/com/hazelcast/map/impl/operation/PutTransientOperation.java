@@ -30,6 +30,7 @@ public class PutTransientOperation extends BasePutOperation {
     @Override
     public void run() {
         recordStore.putTransient(dataKey, dataValue, ttl);
+        putTransient = true;
     }
 
     @Override
