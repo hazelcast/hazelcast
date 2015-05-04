@@ -43,7 +43,7 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
     public void handle(Packet packet) throws Exception {
         Response response = serializationService.toObject(packet);
         try {
-            invocationRegistry.notify(response);
+            invocationRegistry.notify(response, packet.getConn().getEndPoint());
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
         }

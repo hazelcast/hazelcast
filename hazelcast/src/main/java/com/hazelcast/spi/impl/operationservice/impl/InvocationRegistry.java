@@ -137,7 +137,7 @@ public class InvocationRegistry {
      * @param invocation The invocation to register.
      */
     public void register(Invocation invocation) {
-        assert invocation.op.getCallId() == 0 : "can't register twice:" + invocation;
+        assert invocation.op.getCallId() == 0 : "can't register twice: " + invocation;
 
         long callId = callIdSequence.next(invocation);
         setCallId(invocation.op, callId);
@@ -168,7 +168,9 @@ public class InvocationRegistry {
         }
 
         boolean deleted = invocations.remove(callId) != null;
-        assert deleted : "failed to deregister callId:" + callId + " " + invocation;
+        if (!deleted && logger.isFinestEnabled()) {
+            logger.finest("failed to deregister callId: " + callId + " " + invocation);
+        }
     }
 
     /**
@@ -194,16 +196,17 @@ public class InvocationRegistry {
      * Notifies the invocation that a Response is available.
      *
      * @param response The response that is available.
+     * @param sender Endpoint who sent the response
      */
-    public void notify(Response response) {
+    public void notify(Response response, Address sender) {
         if (response instanceof NormalResponse) {
-            notifyNormalResponse((NormalResponse) response);
+            notifyNormalResponse((NormalResponse) response, sender);
         } else if (response instanceof BackupResponse) {
             notifyBackupComplete(response.getCallId());
         } else if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout((CallTimeoutResponse) response);
+            notifyCallTimeout((CallTimeoutResponse) response, sender);
         } else if (response instanceof ErrorResponse) {
-            notifyErrorResponse((ErrorResponse) response);
+            notifyErrorResponse((ErrorResponse) response, sender);
         } else {
             logger.severe("Unrecognized response: " + response);
         }
@@ -231,14 +234,13 @@ public class InvocationRegistry {
         }
     }
 
-    private void notifyErrorResponse(ErrorResponse response) {
+    private void notifyErrorResponse(ErrorResponse response, Address sender) {
         responseErrorCounter.inc();
-
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
             if (nodeEngine.isActive()) {
-                logger.warning("No Invocation found for response: " + response);
+                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
             }
             return;
         }
@@ -246,28 +248,26 @@ public class InvocationRegistry {
         invocation.notifyError(response.getCause());
     }
 
-    private void notifyNormalResponse(NormalResponse response) {
+    private void notifyNormalResponse(NormalResponse response, Address sender) {
         responseNormalCounter.inc();
-
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
             if (nodeEngine.isActive()) {
-                logger.warning("No Invocation found for response: " + response);
+                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
             }
             return;
         }
         invocation.notifyNormalResponse(response.getValue(), response.getBackupCount());
     }
 
-    private void notifyCallTimeout(CallTimeoutResponse response) {
+    private void notifyCallTimeout(CallTimeoutResponse response, Address sender) {
         responseTimeoutCounter.inc();
-
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
             if (nodeEngine.isActive()) {
-                logger.warning("No Invocation found for response: " + response);
+                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
             }
             return;
         }

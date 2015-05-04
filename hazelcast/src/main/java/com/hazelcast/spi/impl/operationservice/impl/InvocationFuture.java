@@ -165,6 +165,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     logger.finest("Future response is already set! Current response: "
                             + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
+
+                operationService.invocationsRegistry.deregister(invocation);
                 return;
             }
 
