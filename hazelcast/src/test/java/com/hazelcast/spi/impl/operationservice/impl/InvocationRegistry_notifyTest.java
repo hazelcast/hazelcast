@@ -68,7 +68,7 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
 
         long callId = invocation.op.getCallId();
         Object value = "foo";
-        invocationRegistry.notify(new NormalResponse(value, callId, 0, false));
+        invocationRegistry.notify(new NormalResponse(value, callId, 0, false), null);
 
         assertEquals(value, invocation.invocationFuture.getSafely());
         assertNull(invocationRegistry.get(callId));
@@ -81,7 +81,7 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.deregister(invocation);
 
-        invocationRegistry.notify(new NormalResponse("foo", callId, 0, false));
+        invocationRegistry.notify(new NormalResponse("foo", callId, 0, false), null);
 
         assertNull(invocationRegistry.get(callId));
     }
@@ -93,11 +93,11 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
 
         long callId = invocation.op.getCallId();
 
-        invocationRegistry.notify(new BackupResponse(callId, false));
+        invocationRegistry.notify(new BackupResponse(callId, false), null);
         assertSame(invocation, invocationRegistry.get(callId));
 
         Object value = "foo";
-        invocationRegistry.notify(new NormalResponse(value, callId, 1, false));
+        invocationRegistry.notify(new NormalResponse(value, callId, 1, false), null);
         assertNull(invocationRegistry.get(callId));
 
         assertEquals(value, invocation.invocationFuture.getSafely());
@@ -113,7 +113,7 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
 
         String result = "foo";
-        invocationRegistry.notify(new NormalResponse(result, callId, 1, false));
+        invocationRegistry.notify(new NormalResponse(result, callId, 1, false), null);
 
         assertEquals(result, invocation.invocationFuture.get(1, TimeUnit.MINUTES));
         assertNull(invocationRegistry.get(callId));
@@ -134,10 +134,10 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
 
         long callId = invocation.op.getCallId();
         Object value = "foo";
-        invocationRegistry.notify(new NormalResponse(value, callId, 1, false));
+        invocationRegistry.notify(new NormalResponse(value, callId, 1, false), null);
         assertSame(invocation, invocationRegistry.get(callId));
 
-        invocationRegistry.notify(new BackupResponse(callId, false));
+        invocationRegistry.notify(new BackupResponse(callId, false), null);
         assertNull(invocationRegistry.get(callId));
 
         assertEquals(value, invocation.invocationFuture.getSafely());
@@ -150,7 +150,7 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
         invocationRegistry.deregister(invocation);
 
-        invocationRegistry.notify(new BackupResponse(callId, false));
+        invocationRegistry.notify(new BackupResponse(callId, false), null);
         assertNull(invocationRegistry.get(callId));
     }
 
@@ -162,7 +162,8 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
 
         long callId = invocation.op.getCallId();
-        invocationRegistry.notify(new ErrorResponse(new ExpectedRuntimeException(), callId, false));
+        invocationRegistry.notify(new ErrorResponse(new ExpectedRuntimeException(), callId, false),
+                null);
 
         try {
             invocation.invocationFuture.getSafely();
@@ -180,7 +181,8 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.deregister(invocation);
 
-        invocationRegistry.notify(new ErrorResponse(new ExpectedRuntimeException(), callId, false));
+        invocationRegistry.notify(new ErrorResponse(new ExpectedRuntimeException(), callId, false),
+                null);
 
         assertNull(invocationRegistry.get(callId));
     }
@@ -193,7 +195,7 @@ public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
         invocationRegistry.register(invocation);
 
         long callId = invocation.op.getCallId();
-        invocationRegistry.notify(new CallTimeoutResponse(callId, false));
+        invocationRegistry.notify(new CallTimeoutResponse(callId, false), null);
 
         assertNull(invocation.invocationFuture.getSafely());
         assertNull(invocationRegistry.get(callId));

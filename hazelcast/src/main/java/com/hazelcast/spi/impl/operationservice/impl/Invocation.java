@@ -47,6 +47,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.logging.Level;
 
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
@@ -60,6 +61,7 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperati
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -424,7 +426,8 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         operationService.callTimeoutCount.inc();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+            logger.finest("Call timed-out either in operation queue or during wait-notify phase, retrying call: "
+                    + toString());
         }
 
         if (op instanceof WaitSupport) {
@@ -510,10 +513,10 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void handleRetry(Object cause) {
         operationService.retryCount.inc();
-
-        if (invokeCount > LOG_MAX_INVOCATION_COUNT && invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
-            if (logger.isLoggable(WARNING)) {
-                logger.warning("Retrying invocation: " + toString() + ", Reason: " + cause);
+        if (invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
+            Level level = invokeCount > LOG_MAX_INVOCATION_COUNT ? WARNING : FINEST;
+            if (logger.isLoggable(level)) {
+                logger.log(level, "Retrying invocation: " + toString() + ", Reason: " + cause);
             }
         }
 

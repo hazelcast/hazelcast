@@ -45,7 +45,7 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
         Data data = packet.getData();
         Response response = serializationService.toObject(data);
         try {
-            invocationRegistry.notify(response);
+            invocationRegistry.notify(response, packet.getConn().getEndPoint());
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
         }
