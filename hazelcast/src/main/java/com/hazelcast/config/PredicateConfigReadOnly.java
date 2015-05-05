@@ -23,7 +23,7 @@ import com.hazelcast.query.Predicate;
  *
  * @since 3.5
  */
-public class PredicateConfigReadOnly extends PredicateConfig {
+class PredicateConfigReadOnly extends PredicateConfig {
 
     public PredicateConfigReadOnly(PredicateConfig config) {
         super(config);
@@ -41,7 +41,6 @@ public class PredicateConfigReadOnly extends PredicateConfig {
 
     @Override
     public String toString() {
-        return "PredicateConfigReadOnly{ "
-                + super.toString() + '}';
+        return "PredicateConfigReadOnly{} " + super.toString();
     }
 }

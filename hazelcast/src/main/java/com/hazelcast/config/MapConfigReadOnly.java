@@ -97,6 +97,16 @@ public class MapConfigReadOnly extends MapConfig {
         return nearCacheConfig.getAsReadOnly();
     }
 
+    @Override
+    public List<QueryCacheConfig> getQueryCacheConfigs() {
+        List<QueryCacheConfig> queryCacheConfigs = super.getQueryCacheConfigs();
+        List<QueryCacheConfig> readOnlyOnes = new ArrayList<QueryCacheConfig>(queryCacheConfigs.size());
+        for (QueryCacheConfig config : queryCacheConfigs) {
+            readOnlyOnes.add(config.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyOnes);
+    }
+
     public MapConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }

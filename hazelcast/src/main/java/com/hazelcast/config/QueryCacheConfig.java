@@ -121,11 +121,36 @@ public class QueryCacheConfig {
 
     private List<MapIndexConfig> indexConfigs;
 
+    private QueryCacheConfigReadOnly readOnly;
+
     public QueryCacheConfig() {
     }
 
     public QueryCacheConfig(String name) {
         setName(name);
+    }
+
+    public QueryCacheConfig(QueryCacheConfig other) {
+        this.batchSize = other.batchSize;
+        this.bufferSize = other.bufferSize;
+        this.delaySeconds = other.delaySeconds;
+        this.includeValue = other.includeValue;
+        this.populate = other.populate;
+        this.coalesce = other.coalesce;
+        this.inMemoryFormat = other.inMemoryFormat;
+        this.name = other.name;
+        this.predicateConfig = other.predicateConfig;
+        this.evictionConfig = other.evictionConfig;
+        this.entryListenerConfigs = other.entryListenerConfigs;
+        this.indexConfigs = other.indexConfigs;
+    }
+
+
+    public QueryCacheConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new QueryCacheConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**
@@ -405,6 +430,76 @@ public class QueryCacheConfig {
         return this;
     }
 
+    //CHECKSTYLE:OFF
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof QueryCacheConfig)) {
+            return false;
+        }
+
+        QueryCacheConfig that = (QueryCacheConfig) o;
+
+        if (batchSize != that.batchSize) {
+            return false;
+        }
+        if (bufferSize != that.bufferSize) {
+            return false;
+        }
+        if (delaySeconds != that.delaySeconds) {
+            return false;
+        }
+        if (includeValue != that.includeValue) {
+            return false;
+        }
+        if (populate != that.populate) {
+            return false;
+        }
+        if (coalesce != that.coalesce) {
+            return false;
+        }
+        if (inMemoryFormat != that.inMemoryFormat) {
+            return false;
+        }
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (predicateConfig != null ? !predicateConfig.equals(that.predicateConfig) : that.predicateConfig != null) {
+            return false;
+        }
+        if (evictionConfig != null ? !evictionConfig.equals(that.evictionConfig) : that.evictionConfig != null) {
+            return false;
+        }
+        if (entryListenerConfigs != null ? !entryListenerConfigs.equals(that.entryListenerConfigs)
+                : that.entryListenerConfigs != null) {
+            return false;
+        }
+        return !(indexConfigs != null ? !indexConfigs.equals(that.indexConfigs) : that.indexConfigs != null);
+
+    }
+
+
+    @Override
+    public int hashCode() {
+        int result = batchSize;
+        result = 31 * result + bufferSize;
+        result = 31 * result + delaySeconds;
+        result = 31 * result + (includeValue ? 1 : 0);
+        result = 31 * result + (populate ? 1 : 0);
+        result = 31 * result + (coalesce ? 1 : 0);
+        result = 31 * result + inMemoryFormat.hashCode();
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + predicateConfig.hashCode();
+        result = 31 * result + evictionConfig.hashCode();
+        result = 31 * result + (entryListenerConfigs != null ? entryListenerConfigs.hashCode() : 0);
+        result = 31 * result + (indexConfigs != null ? indexConfigs.hashCode() : 0);
+        return result;
+    }
+    //CHECKSTYLE:ON
+
     @Override
     public String toString() {
         return "QueryCacheConfig{"
@@ -418,6 +513,10 @@ public class QueryCacheConfig {
                 + ", name='" + name + '\''
                 + ", predicateConfig=" + predicateConfig
                 + ", evictionConfig=" + evictionConfig
+                + ", entryListenerConfigs=" + entryListenerConfigs
+                + ", indexConfigs=" + indexConfigs
+                + ", readOnly=" + (this instanceof QueryCacheConfigReadOnly)
                 + '}';
     }
+
 }
