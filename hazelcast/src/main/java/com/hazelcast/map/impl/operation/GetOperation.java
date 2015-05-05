@@ -79,7 +79,7 @@ public final class GetOperation extends KeyBasedMapOperation
 
     @Override
     public String toString() {
-        return "GetOperation{}";
+        return "GetOperation{" + name + "}";
     }
 
     @Override
