@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+
 import java.io.IOException;
 
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation,
@@ -35,16 +36,23 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     // todo It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
     private boolean unlockKey;
     private RecordInfo recordInfo;
+    private boolean putTransient;
+
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
-        super(name, dataKey, dataValue);
-        this.recordInfo = recordInfo;
+        this(name, dataKey, dataValue, recordInfo, false, false);
     }
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean unlockKey) {
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean putTransient) {
+        this(name, dataKey, dataValue, recordInfo, false, putTransient);
+    }
+
+    public PutBackupOperation(String name, Data dataKey, Data dataValue,
+                              RecordInfo recordInfo, boolean unlockKey, boolean putTransient) {
         super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
         this.recordInfo = recordInfo;
+        this.putTransient = putTransient;
     }
 
     public PutBackupOperation() {
@@ -53,7 +61,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     @Override
     public void run() {
         ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
+        final Record record = recordStore.putBackup(dataKey, dataValue, ttl, putTransient);
         if (recordInfo != null) {
             Records.applyRecordInfo(record, recordInfo);
         }
@@ -92,6 +100,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         } else {
             out.writeBoolean(false);
         }
+        out.writeBoolean(putTransient);
     }
 
     @Override
@@ -103,6 +112,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             recordInfo = new RecordInfo();
             recordInfo.readData(in);
         }
+        putTransient = in.readBoolean();
     }
 
     @Override

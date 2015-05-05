@@ -43,7 +43,14 @@ public interface RecordStore {
 
     Record putBackup(Data key, Object value);
 
-    Record putBackup(Data key, Object value, long ttl);
+    /**
+     * @param key          the key to be processed.
+     * @param value        the value to be processed.
+     * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
+     * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
+     * @return previous record if exists otherwise null.
+     */
+    Record putBackup(Data key, Object value, long ttl, boolean putTransient);
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 

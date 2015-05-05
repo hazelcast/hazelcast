@@ -126,17 +126,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Record putBackup(Data key, Object value) {
-        return putBackup(key, value, DEFAULT_TTL);
+        return putBackup(key, value, DEFAULT_TTL, false);
     }
 
-    /**
-     * @param key   the key to be processed.
-     * @param value the value to be processed.
-     * @param ttl   milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
-     * @return previous record if exists otherwise null.
-     */
+
     @Override
-    public Record putBackup(Data key, Object value, long ttl) {
+    public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
         final long now = getNow();
         markRecordStoreExpirable(ttl);
 
@@ -150,7 +145,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateRecord(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
         }
-        mapDataStore.addBackup(key, value, now);
+        if (putTransient) {
+            mapDataStore.addTransient(key, now);
+        } else {
+            mapDataStore.addBackup(key, value, now);
+        }
         return record;
     }
 
