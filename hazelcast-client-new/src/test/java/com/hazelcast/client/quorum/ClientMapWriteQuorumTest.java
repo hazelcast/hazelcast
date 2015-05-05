@@ -362,7 +362,6 @@ public class ClientMapWriteQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    @Ignore
     public void testExecuteOnEntriesOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
         map4.executeOnEntries(new LoggingEntryProcessor());
     }

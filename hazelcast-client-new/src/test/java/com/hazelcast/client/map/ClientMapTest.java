@@ -17,6 +17,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -34,6 +35,10 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.NamedPortable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.TestSerializationConstants;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -86,8 +91,23 @@ public class ClientMapTest {
                         .setWriteDelaySeconds(1000)
                         .setImplementation(transientMapStore));
 
+        PortableFactory portableFactory = new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                if (classId == TestSerializationConstants.NAMED_PORTABLE) {
+                    return new NamedPortable();
+                }
+                return null;
+            }
+        };
+        config.getSerializationConfig().addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID,
+                portableFactory);
         server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient(null);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig().addPortableFactory(TestSerializationConstants.PORTABLE_FACTORY_ID,
+                portableFactory);
+        client = HazelcastClient.newHazelcastClient(clientConfig);
     }
 
 
@@ -593,15 +613,35 @@ public class ClientMapTest {
                 countDownLatch.countDown();
             }
         };
-//        AuthenticationRequest key = new AuthenticationRequest(new UsernamePasswordCredentials("a", "b"));
-//        tradeMap.addEntryListener(listener, key, true);
-//        AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
-//        tradeMap.put(key2, 1);
+        NamedPortable key = new NamedPortable("named", 1);
+        tradeMap.addEntryListener(listener, key, true);
+        NamedPortable key2 = new NamedPortable("named", 2);
 
+        tradeMap.put(key2, 1);
+        tradeMap.put(key, 1);
 
-        assertFalse(countDownLatch.await(5, TimeUnit.SECONDS));
-        assertEquals(0, atomicInteger.get());
+        assertOpenEventually(countDownLatch);
+        assertEquals(1, atomicInteger.get());
     }
+
+    @Test
+    public void testExecuteOnEntriesWithPredicate() {
+        final IMap map = createMap();
+        IncrementorEntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        map.put(1, 2);
+        map.executeOnEntries(entryProcessor);
+        assertEquals(map.get(1), 3);
+    }
+
+    @Test
+    public void testExecuteOnKeyWithPredicate() {
+        final IMap map = createMap();
+        IncrementorEntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        map.put(1, 2);
+        map.executeOnKey(1, entryProcessor);
+        assertEquals(map.get(1), 3);
+    }
+
 
     @Test
     public void testBasicPredicate() {

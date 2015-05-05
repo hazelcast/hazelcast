@@ -441,7 +441,7 @@ public class ClientMessage
         sb.append("length=").append(len);
         if (len >= HEADER_SIZE) {
             sb.append(", correlationId=").append(getCorrelationId());
-            sb.append(", messageType=").append(getMessageType());
+            sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", partitionId=").append(getPartitionId());
             sb.append(", isComplete=").append(isComplete());
             sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));

@@ -388,10 +388,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data valueData = toData(value);
         invalidateNearCache(keyData);
 
-        ClientMessage putMessage = MapPutParameters.encode(name, keyData, valueData,
+        ClientMessage request = MapPutParameters.encode(name, keyData, valueData,
                 ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
-        ClientMessage request = invoke(putMessage, keyData);
-        GenericResultParameters resultParameters = GenericResultParameters.decode(request);
+        ClientMessage response = invoke(request, keyData);
+        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
         return toObject(resultParameters.result);
     }
 
@@ -1061,8 +1061,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
         ClientMessage request = MapExecuteOnAllKeysParameters.encode(name, toData(entryProcessor));
-
-        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(request);
+        ClientMessage response = invoke(request);
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
 
         int size = resultParameters.keys.size();
         Map<K, Object> result = new HashMap<K, Object>();
@@ -1080,7 +1080,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
         ClientMessage request = MapExecuteWithPredicateParameters.encode(name,
                 toData(entryProcessor), toData(predicate));
-        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(request);
+        ClientMessage response = invoke(request);
+
+        DataEntryListResultParameters resultParameters = DataEntryListResultParameters.decode(response);
 
 
         int size = resultParameters.keys.size();

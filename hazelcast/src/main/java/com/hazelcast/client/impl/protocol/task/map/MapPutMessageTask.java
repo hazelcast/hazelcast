@@ -58,9 +58,6 @@ public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutParameter
         if (parameters.ttl == -1) {
             return new Object[]{parameters.key, parameters.value};
         }
-        //TODO what should be the types of the key and value passed to securityContext
         return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
     }
-
-
 }
