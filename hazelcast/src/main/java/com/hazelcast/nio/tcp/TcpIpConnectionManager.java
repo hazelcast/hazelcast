@@ -258,10 +258,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
         }
         ioBalancer.connectionAdded(connection);
-        Connection oldConnection = connectionsMap.put(remoteEndPoint, connection);
-        if (oldConnection != null) {
-            ioBalancer.connectionRemoved(oldConnection);
-        }
+        connectionsMap.put(remoteEndPoint, connection);
         connectionsInProgress.remove(remoteEndPoint);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
             @Override

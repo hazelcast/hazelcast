@@ -62,7 +62,7 @@ public class IOBalancer {
     private final LoadTracker outLoadTracker;
 
     private final HazelcastThreadGroup threadGroup;
-    private volatile boolean shouldStart;
+    private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
 
     public IOBalancer(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors, HazelcastThreadGroup threadGroup,
@@ -75,7 +75,7 @@ public class IOBalancer {
         this.inLoadTracker = new LoadTracker(inSelectors, loggingService);
         this.outLoadTracker = new LoadTracker(outSelectors, loggingService);
 
-        this.shouldStart = shouldStart(inSelectors, outSelectors);
+        this.enabled = isEnabled(inSelectors, outSelectors);
     }
 
     public void connectionAdded(Connection connection) {
@@ -120,7 +120,7 @@ public class IOBalancer {
     }
 
     public void start() {
-        if (shouldStart) {
+        if (enabled) {
             ioBalancerThread = new IOBalancerThread(this, migrationIntervalSeconds, threadGroup, log);
             ioBalancerThread.start();
         }
@@ -147,7 +147,7 @@ public class IOBalancer {
         }
     }
 
-    private boolean shouldStart(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
+    private boolean isEnabled(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
         if (migrationIntervalSeconds < 0) {
             if (log.isFinestEnabled()) {
                 log.finest("I/O Balancer is disabled as the '"
