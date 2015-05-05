@@ -53,12 +53,12 @@ class QueryCacheConfigReadOnly extends QueryCacheConfig {
 
     @Override
     public EvictionConfig getEvictionConfig() {
-        return new EvictionConfigReadOnly(super.getEvictionConfig());
+        return super.getEvictionConfig().getAsReadOnly();
     }
 
     @Override
     public PredicateConfig getPredicateConfig() {
-        return new PredicateConfigReadOnly(super.getPredicateConfig());
+        return super.getPredicateConfig().getAsReadOnly();
     }
 
     @Override
