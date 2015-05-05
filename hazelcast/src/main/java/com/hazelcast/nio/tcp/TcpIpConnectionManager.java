@@ -257,7 +257,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 tcpConnection.setMonitor(connectionMonitor);
             }
         }
-        connectionsMap.put(remoteEndPoint, connection);
+        ioBalancer.connectionAdded(connection);
+        Connection oldConnection = connectionsMap.put(remoteEndPoint, connection);
+        if (oldConnection != null) {
+            ioBalancer.connectionRemoved(oldConnection);
+        }
         connectionsInProgress.remove(remoteEndPoint);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
             @Override
@@ -320,7 +324,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
-        ioBalancer.connectionAdded(connection);
 
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
