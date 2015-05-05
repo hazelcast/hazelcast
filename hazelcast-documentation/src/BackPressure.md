@@ -1,30 +1,52 @@
-
 ## Back Pressure
 
-Hazelcast 3.4 provides the back pressure feature for synchronous calls with asynchronous backups. Using the back pressure feature, you can prevent the overload caused by pending asynchronous backups. 
+Hazelcast uses operations to make remote calls. For example, a `map.get` is an operation and a `map.put` is one operation for the primary 
+and one operation for each of the backups, i.e. `map.put` is executed for the primary and also for each backup. In most cases, there will be a natural balance between the number of threads performing operations
+and the number of operations being executed. However, there are two situations where this balance and operations 
+can pile up and eventually lead to Out of Memory Exception (OOME):
 
-An example scenario is a map that is configured with a single
-asynchronous backup, and a `put` operation is executed on the map. Without back pressure, the system may produce the new asynchronous backups faster than they are processed; asynchronous backups may be produced at a higher rate than the consumption of the backups. This can
-lead to problems like out of memory exceptions. When you use the back pressure feature, you can prevent these problems from occurring.
+- Asynchronous calls: With async calls, the system may be flooded with the requests.
 
-Back pressure is disabled by default. To enable it, set the system property
-`hazelcast.backpressure.enabled` to `true`. There is no overhead for calls without backups or calls with synchronous backups. Therefore, back pressure does not impact performance for those calls.
+- Asynchronous backups: The asynchronous backups may be piling up.
 
-Currently, back pressure is implemented by transforming an asynchronous backup operation to a synchronous one. This prevents the accumulation
-of the asynchronous backup operations since the caller needs to wait for the queue to drain.
+To prevent the system from crashing, Hazelcast provides back pressure. Back pressure works by:
+ 
+- limiting the number of concurrent operation invocations, 
 
-By default, the value of the sync window is 100. This means that 1 call out of 100 calls will be transformed to a synchronous call. You can configure the sync window
-using the system property `hazelcast.backpressure.syncwindow`. Each member tracks each connection and each partition for their
-sync-delay, and each member decrements this delay for every asynchronous backup. Once the sync-delay reaches null, the call is transformed into a synchronous call and a new sync-delay is calculated using the formula *0.75 * sync-window + random(0.5 \* sync-window)*. For a sync window with the value 100, the sync-delay will be between
-75 and 125. This randomness prevents resonance.
+- periodically making an async backup sync.
 
-### Future Improvements
+Back pressure is disabled by default and you can enable it using the following system property:
 
-In Hazelcast 3.4.1, the same technique will be applied for regular asynchronous calls.
+`hazelcast.backpressure.enabled`
 
-In the future, a back pressure based on a TCP/IP based congestion control will be added. This requires changes since we need
-to use multiple channels. The TCP/IP buffer cannot be consumed because a single channel is used for regular operations,
-responses and system operations like heartbeats.
+To control the number of concurrent invocations, you can configure the number of invocations allowed per partition using the 
+following system property:
 
+`hazelcast.backpressure.max.concurrent.invocations.per.partition`
 
+This system property's default value is 100 and using a default configuration, a system is allowed to have (271+1)*100=27200 concurrent invocations.
+ 
+Back pressure is only applied to normal operations. System operations like heart beats and partition migration operations 
+are not influenced by back pressure. 27200 invocations might seem like a lot, but keep in mind that executing a task on `IExecutor` 
+or acquiring a lock also requires an operation.
+
+If the maximum number of invocations has been reached, Hazelcast will automatically apply an exponential back off policy. This
+gives the system some time to deal with the load. Using the following system property, you can configure the maximum time to wait before a `HazelcastOverloadException` is thrown:
+
+`hazelcast.backpressure.backoff.timeout.millis`
+
+This system property's default value is 60000 ms.
+
+The Health Monitor keeps an eye on the usage of the invocations. If it sees a member has consumed 70% or more of the invocations, it starts to log health messages.
+
+Apart from controlling the number of invocations, you also need to control the number of pending async backups. This is done
+by periodically making these backups sync instead of async. This forces all pending backups to get drained. For this, Hazelcast tracks the number of asynchronous backups for each partition. At every **Nth** call, one synchronization is forced. This **N** is 
+controlled through the following property:
+
+`hazelcast.backpressure.syncwindow`
+
+This system property's default value is 100. It means, out of 100 *ansynchronous* backups, Hazelcast makes 1 of them a *synchronous* one. Some randomization is added, so the sync window with default configuration will be between 75 and 125 
+invocations. 
+
+<br> </br>
 
