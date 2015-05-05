@@ -53,10 +53,10 @@ Property Name | Default Value | Type | Description
 `hazelcast.connection.monitor.interval` | 100 | int  |   Minimum interval in milliseconds to consider a connection error as critical.
 `hazelcast.connection.monitor.max.faults` | 3 | int  |   Maximum IO error count before disconnecting from a node.
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
-`hazelcast.enterprise.wanrep.batch.size`|50|int|Defines maximum number of WAN replication events to be drained and sent to the target cluster in a batch.
-`hazelcast.enterprise.wanrep.batchfrequency.seconds`|5|int|Defines batch sending frequency in seconds.
-`hazelcast.enterprise.wanrep.optimeout.millis`|-1|int|Defines timeout duration (in milliseconds) for a WAN replication event before retry.
-`hazelcast.enterprise.wanrep.queuecapacity`|100000|int| Queue size for the WAN replication.
+`hazelcast.enterprise.wanrep.batch.size`|50|int|Maximum number of WAN replication events to be drained and sent to the target cluster in a batch.
+`hazelcast.enterprise.wanrep.batchfrequency.seconds`|5|int|Batch sending frequency in seconds.
+`hazelcast.enterprise.wanrep.optimeout.millis`|-1|int|Timeout duration (in milliseconds) for a WAN replication event before retry.
+`hazelcast.enterprise.wanrep.queue.capacity`|100000|int|Event queue capacity for WAN replication.
 `hazelcast.event.queue.capacity` | 1000000 | int | Capacity of internal event queue.
 `hazelcast.event.queue.timeout.millis` | 250 | int | Timeout to enqueue events to event queue.
 `hazelcast.event.thread.count` | 5 | int | Number of event handler threads.
