@@ -28,9 +28,6 @@ import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
-import com.hazelcast.util.EmptyStatement;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.
@@ -65,7 +62,8 @@ public class IOBalancer {
     private final LoadTracker outLoadTracker;
 
     private final HazelcastThreadGroup threadGroup;
-    private volatile boolean isActive;
+    private volatile boolean shouldStart;
+    private IOBalancerThread ioBalancerThread;
 
     public IOBalancer(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors, HazelcastThreadGroup threadGroup,
                       int migrationIntervalSeconds, LoggingService loggingService) {
@@ -77,7 +75,7 @@ public class IOBalancer {
         this.inLoadTracker = new LoadTracker(inSelectors, loggingService);
         this.outLoadTracker = new LoadTracker(outSelectors, loggingService);
 
-        this.isActive = shouldStart(inSelectors, outSelectors);
+        this.shouldStart = shouldStart(inSelectors, outSelectors);
     }
 
     public void connectionAdded(Connection connection) {
@@ -86,15 +84,14 @@ public class IOBalancer {
         }
 
         ReadHandler readHandler = ((TcpIpConnection) connection).getReadHandler();
-        if (log.isFinestEnabled()) {
-            log.finest("Adding a read handler " + readHandler);
-        }
-        inLoadTracker.addHandler(readHandler);
-
         WriteHandler writeHandler = ((TcpIpConnection) connection).getWriteHandler();
+
         if (log.isFinestEnabled()) {
-            log.info("Adding a write handler " + writeHandler);
+            log.finest("Connection " + connection + " uses read handler " + readHandler + " and write handler "
+                    + writeHandler);
         }
+
+        inLoadTracker.addHandler(readHandler);
         outLoadTracker.addHandler(writeHandler);
     }
 
@@ -117,23 +114,27 @@ public class IOBalancer {
     }
 
     public void stop() {
-        isActive = false;
+        if (ioBalancerThread != null) {
+            ioBalancerThread.interrupt();
+        }
     }
 
     public void start() {
-        Thread ioBalancerThread = new IOBalancerThread();
-        ioBalancerThread.start();
+        if (shouldStart) {
+            ioBalancerThread = new IOBalancerThread(this, migrationIntervalSeconds, threadGroup, log);
+            ioBalancerThread.start();
+        }
     }
 
-    private void checkWriteHandlers() {
+    void checkWriteHandlers() {
         scheduleMigrationIfNeeded(outLoadTracker);
     }
 
-    private void checkReadHandlers() {
+    void checkReadHandlers() {
         scheduleMigrationIfNeeded(inLoadTracker);
     }
 
-    public void scheduleMigrationIfNeeded(LoadTracker loadTracker) {
+    private void scheduleMigrationIfNeeded(LoadTracker loadTracker) {
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
         if (strategy.imbalanceDetected(loadImbalance)) {
             tryMigrate(loadImbalance);
@@ -177,27 +178,5 @@ public class IOBalancer {
                     + " from a selector thread " + sourceSelector + " to " + destinationSelector);
         }
         handler.migrate(destinationSelector);
-    }
-
-    private final class IOBalancerThread extends Thread {
-        private IOBalancerThread() {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("IOBalancerThread"));
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (isActive) {
-                    log.finest("Starting IOBalancer thread");
-                    checkReadHandlers();
-                    checkWriteHandlers();
-                    TimeUnit.SECONDS.sleep(migrationIntervalSeconds);
-                }
-            } catch (InterruptedException e) {
-                log.finest("IOBalancer thread stopped");
-                //this thread is about to exit, no reason restoring the interrupt flag
-                EmptyStatement.ignore(e);
-            }
-        }
     }
 }
