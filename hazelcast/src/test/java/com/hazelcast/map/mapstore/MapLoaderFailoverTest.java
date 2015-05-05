@@ -71,7 +71,6 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         map.size();
         assertSizeAndLoadCount(map);
 
-        System.err.println("terminate");
         hz3.getLifecycleService().terminate();
         waitAllForSafeState(nodeFactory.getAllHazelcastInstances());
 
@@ -152,14 +151,12 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = nodes[2];
 
         String mapName = generateKeyOwnedBy(hz3);
-        System.err.println(mapName);
         IMap<Object, Object> map = nodes[0].getMap(mapName);
 
         // trigger loading and pause half way through
         map.putAsync(1, 2);
         pausingLoader.awaitPause();
 
-        System.err.println("terminate");
         hz3.getLifecycleService().terminate();
         waitAllForSafeState(nodeFactory.getAllHazelcastInstances());
 

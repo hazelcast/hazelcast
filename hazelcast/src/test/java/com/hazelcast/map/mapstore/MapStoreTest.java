@@ -1084,7 +1084,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
 
         public void store(Object key, Object value) {
-            System.err.println("store call: " + key);
             store.put(key, value);
             callCount.incrementAndGet();
             latchStore.countDown();
