@@ -48,10 +48,12 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.resource.NotSupportedException;
 import javax.resource.ResourceException;
@@ -339,6 +341,14 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return getHazelcastInstance().getLocalEndpoint();
     }
 
+    @Override
+    public HazelcastXAResource getXAResource() {
+        try {
+            return (HazelcastXAResource) managedConnection.getXAResource();
+        } catch (ResourceException e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
 
     // unsupported operations
 

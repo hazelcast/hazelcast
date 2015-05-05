@@ -50,6 +50,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
@@ -128,6 +129,7 @@ final class ServiceManager {
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
         registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
+        registerService(XAService.SERVICE_NAME, new XAService(nodeEngine));
         registerCacheServiceIfAvailable();
     }
 

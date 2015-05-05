@@ -56,13 +56,9 @@ public interface TransactionContext extends TransactionalTaskContext {
      * Gets xaResource which will participate in XATransaction.
      *
      * @return the xaResource.
+     * @deprecated since 3.5 please use HazelcastInstance.getXAResource()
      */
+    @Deprecated
     XAResource getXaResource();
 
-    /**
-     * Indicates that the related transaction is managed by XAResource
-     *
-     * @return true if the related transaction is managed by XAResource, false otherwise
-     */
-    boolean isXAManaged();
 }

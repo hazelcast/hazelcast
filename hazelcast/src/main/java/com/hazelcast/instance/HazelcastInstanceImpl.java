@@ -71,11 +71,13 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
@@ -399,6 +401,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     public MemoryStats getMemoryStats() {
         return node.getNodeExtension().getMemoryStats();
+    }
+
+    @Override
+    public HazelcastXAResource getXAResource() {
+        return getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
     }
 
     @Override

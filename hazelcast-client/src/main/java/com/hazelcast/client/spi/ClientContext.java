@@ -31,6 +31,7 @@ public final class ClientContext {
     private final ClientExecutionService executionService;
     private final ClientListenerService listenerService;
     private final NearCacheManager nearCacheManager;
+    private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
 
@@ -44,6 +45,7 @@ public final class ClientContext {
         this.nearCacheManager = client.getNearCacheManager();
         this.proxyManager = proxyManager;
         this.clientConfig = client.getClientConfig();
+        this.transactionManager = client.getTransactionManager();
     }
 
     public HazelcastInstance getHazelcastInstance() {
@@ -64,6 +66,10 @@ public final class ClientContext {
 
     public ClientInvocationService getInvocationService() {
         return invocationService;
+    }
+
+    public ClientTransactionManagerService getTransactionManager() {
+        return transactionManager;
     }
 
     public ClientExecutionService getExecutionService() {

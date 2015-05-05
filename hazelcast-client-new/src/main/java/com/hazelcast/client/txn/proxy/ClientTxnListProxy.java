@@ -19,19 +19,19 @@ package com.hazelcast.client.txn.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalListAddParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalListRemoveParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalListSizeParameters;
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListAddParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalListSizeParameters;
 
 public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalList<E> {
 
-    public ClientTxnListProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnListProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     public String getServiceName() {

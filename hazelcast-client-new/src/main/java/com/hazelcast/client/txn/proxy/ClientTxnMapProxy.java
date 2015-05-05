@@ -37,7 +37,7 @@ import com.hazelcast.client.impl.protocol.parameters.TransactionalMapSetParamete
 import com.hazelcast.client.impl.protocol.parameters.TransactionalMapSizeParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalMapValuesParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalMapValuesWithPredicateParameters;
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
@@ -50,12 +50,12 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
+ * Proxy implementation of {@link TransactionalMap} interface.
  */
 public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements TransactionalMap<K, V> {
 
-    public ClientTxnMapProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnMapProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     @Override

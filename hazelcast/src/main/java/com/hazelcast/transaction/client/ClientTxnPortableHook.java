@@ -34,9 +34,12 @@ public class ClientTxnPortableHook implements PortableHook {
     public static final int CREATE = 1;
     public static final int COMMIT = 2;
     public static final int ROLLBACK = 3;
-    public static final int PREPARE = 4;
-    public static final int RECOVER_ALL = 5;
-    public static final int RECOVER = 6;
+    public static final int PREPARE_XA = 4;
+    public static final int CREATE_XA = 5;
+    public static final int COMMIT_XA = 6;
+    public static final int ROLLBACK_XA = 7;
+    public static final int FINALIZE_XA = 8;
+    public static final int COLLECT_XA = 9;
 
     @Override
     public int getFactoryId() {
@@ -54,12 +57,18 @@ public class ClientTxnPortableHook implements PortableHook {
                         return new CommitTransactionRequest();
                     case ROLLBACK:
                         return new RollbackTransactionRequest();
-                    case PREPARE:
-                        return new PrepareTransactionRequest();
-                    case RECOVER_ALL:
-                        return new RecoverAllTransactionsRequest();
-                    case RECOVER:
-                        return new RecoverTransactionRequest();
+                    case PREPARE_XA:
+                        return new PrepareXATransactionRequest();
+                    case CREATE_XA:
+                        return new CreateXATransactionRequest();
+                    case COMMIT_XA:
+                        return new CommitXATransactionRequest();
+                    case ROLLBACK_XA:
+                        return new RollbackXATransactionRequest();
+                    case FINALIZE_XA:
+                        return new FinalizeXATransactionRequest();
+                    case COLLECT_XA:
+                        return new CollectXATransactionsRequest();
                     default:
                         return null;
                 }

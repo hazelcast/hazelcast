@@ -42,6 +42,7 @@ import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.txn.proxy.xa.XAResourceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -67,6 +68,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Constructor;
@@ -118,6 +120,7 @@ public final class ProxyManager {
         register(CountDownLatchService.SERVICE_NAME, ClientCountDownLatchProxy.class);
         register(MapReduceService.SERVICE_NAME, ClientMapReduceProxy.class);
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
+        register(XAService.SERVICE_NAME, XAResourceProxy.class);
 
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {

@@ -18,12 +18,9 @@ package com.hazelcast.jca;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionOptions;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionEvent;
-import javax.transaction.xa.XAException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
@@ -132,11 +129,6 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
 
     public void setTxContext(TransactionContext txContext) {
         this.txContext = txContext;
-    }
-
-    public static TransactionContext createTransaction(int timeout, HazelcastInstance hazelcastInstance) throws XAException {
-        final TransactionOptions transactionOptions = TransactionOptions.getDefault().setTimeout(timeout, TimeUnit.SECONDS);
-        return hazelcastInstance.newTransactionContext(transactionOptions);
     }
 
 }

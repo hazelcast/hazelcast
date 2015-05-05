@@ -45,6 +45,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -242,6 +243,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
     @Override
     public ConcurrentMap<String, Object> getUserContext() {
         return getOriginal().getUserContext();
+    }
+
+    @Override
+    public HazelcastXAResource getXAResource() {
+        return getOriginal().getXAResource();
     }
 
     @Override

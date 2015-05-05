@@ -17,6 +17,7 @@
 package com.hazelcast.jca;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.transaction.HazelcastXAResource;
 
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
@@ -47,7 +48,7 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
     private final ManagedConnectionFactoryImpl factory;
     private final ConnectionRequestInfo cxRequestInfo;
 
-    private final XAResourceWrapper xaResource;
+    private final HazelcastXAResource xaResource;
     private HazelcastTransactionImpl tx;
 
     // Application server will always register at least one listener
@@ -62,7 +63,8 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 
         this.id = ID_GEN.incrementAndGet();
         this.tx = new HazelcastTransactionImpl(factory, this);
-        this.xaResource = new XAResourceWrapper(this);
+        HazelcastInstance instance = factory.getResourceAdapter().getHazelcast();
+        this.xaResource = instance.getXAResource();
 
         factory.logHzConnectionEvent(this, HzConnectionEvent.CREATE);
     }

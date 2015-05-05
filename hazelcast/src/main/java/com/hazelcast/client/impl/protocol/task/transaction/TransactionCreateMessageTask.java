@@ -26,8 +26,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.security.Permission;
@@ -51,10 +49,6 @@ public class TransactionCreateMessageTask
         TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
         TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
-        if (parameters.xid != null) {
-            Transaction transaction = TransactionAccessor.getTransaction(context);
-            transactionManager.addManagedTransaction(parameters.xid, transaction);
-        }
         context.beginTransaction();
         endpoint.setTransactionContext(context);
         return TransactionCreateResultParameters.encode(context.getTxnId());
