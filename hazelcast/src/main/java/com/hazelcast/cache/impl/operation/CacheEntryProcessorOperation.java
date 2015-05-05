@@ -63,7 +63,16 @@ public class CacheEntryProcessorOperation
         if (backupEntryProcessor != null) {
             return new CacheBackupEntryProcessorOperation(name, key, backupEntryProcessor, arguments);
         } else {
-            return new CachePutBackupOperation(name, key, backupRecord);
+            if (backupRecord != null) {
+                // After entry processor is executed if there is a record, this means that possible add/update
+                return new CachePutBackupOperation(name, key, backupRecord);
+            } else {
+                // If there is no record, this means possible remove by entry processor.
+                // TODO In case of non-existing key, this cause redundant remove operation to backups
+                // Better solution may be using a new interface like "EntryProcessorListener" on "invoke" method
+                // for handling add/update/remove cases properly at execution of "EntryProcessor".
+                return new CacheRemoveBackupOperation(name, key);
+            }
         }
     }
 
