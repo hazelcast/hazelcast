@@ -52,6 +52,10 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     @Override
     public String addMessageListener(final MessageListener<E> listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
         AddMessageListenerRequest request = new AddMessageListenerRequest(name);
 
         EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {

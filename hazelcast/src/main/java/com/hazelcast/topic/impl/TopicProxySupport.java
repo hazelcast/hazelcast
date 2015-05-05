@@ -30,7 +30,7 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
-abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
+public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;
     private final ClassLoader configClassLoader;
@@ -38,7 +38,7 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
     private final LocalTopicStatsImpl topicStats;
     private final MemberImpl localMember;
 
-    TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
+    public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
         this.name = name;
         this.configClassLoader = nodeEngine.getConfigClassLoader();

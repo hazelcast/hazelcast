@@ -36,6 +36,10 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
 
     @Override
     public String addMessageListener(MessageListener<E> listener) {
+        if (listener == null) {
+            throw new NullPointerException("listener can't be null");
+        }
+
         return addMessageListenerInternal(listener);
     }
 

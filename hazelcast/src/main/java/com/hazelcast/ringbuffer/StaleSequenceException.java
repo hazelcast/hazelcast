@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.ringbuffer;
+
+import com.hazelcast.spi.annotation.Beta;
+
+/**
+ * An {@link RuntimeException} that is thrown when accessing an item in the {@link Ringbuffer} using a sequence that is smaller
+ * than the current head sequence. This means that the and old item is read, but it isn't available anymore in the ringbuffer.
+ */
+@Beta
+public class StaleSequenceException extends RuntimeException {
+
+    private final long headSeq;
+
+    /**
+     * Creates a SequenceOutOfBoundsException with the given message.
+     *
+     * @param message the message
+     * @param headSeq the last known head sequence.
+     */
+    public StaleSequenceException(String message, long headSeq) {
+        super(message);
+        this.headSeq = headSeq;
+    }
+
+    /**
+     * Returns the last known head sequence. Beware that this sequence could already be stale again if you want to use it
+     * to do a {@link com.hazelcast.ringbuffer.Ringbuffer#readOne(long)}.
+     *
+     * @return last known head sequence.
+     */
+    public long getHeadSeq() {
+        return headSeq;
+    }
+}

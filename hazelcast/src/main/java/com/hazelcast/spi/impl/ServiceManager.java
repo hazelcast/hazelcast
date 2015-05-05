@@ -43,6 +43,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -126,6 +127,7 @@ final class ServiceManager {
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+        registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
         registerCacheServiceIfAvailable();
     }
 

@@ -224,6 +224,14 @@
         <async-backup-count>0</async-backup-count>
     </semaphore>
 
+    <ringbuffer name="default">
+        <capacity>10000</capacity>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <time-to-live-seconds>30</time-to-live-seconds>
+        <in-memory-format>BINARY</in-memory-format>
+    </ringbuffer>
+
     <serialization>
         <portable-version>0</portable-version>
     </serialization>

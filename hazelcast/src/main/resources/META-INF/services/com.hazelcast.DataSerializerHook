@@ -17,3 +17,4 @@ com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook
 com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook
 com.hazelcast.mapreduce.aggregation.impl.AggregationsDataSerializerHook
 com.hazelcast.cache.impl.CacheDataSerializerHook
+com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook
