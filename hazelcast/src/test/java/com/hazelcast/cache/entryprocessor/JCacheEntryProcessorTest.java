@@ -17,6 +17,8 @@
 package com.hazelcast.cache.entryprocessor;
 
 import com.hazelcast.cache.BackupAwareEntryProcessor;
+import com.hazelcast.cache.HazelcastCachingProvider;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
@@ -43,12 +45,15 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
 import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -105,6 +110,32 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
     public void whenBackupEntryProcessor_isNull() throws Exception {
         EntryProcessor<Integer, String, Void> entryProcessor = new NullBackupAwareEntryProcessor();
         executeTestInternal(entryProcessor);
+    }
+
+    @Test
+    public void removeRecordWithEntryProcessor() {
+        final int ENTRY_COUNT = 10;
+
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        CompleteConfiguration<Integer, String> cacheConfig =
+                new MutableConfiguration<Integer, String>()
+                    .setTypes(Integer.class, String.class);
+        ICache<Integer, String> cache = cacheManager.createCache("MyCache", cacheConfig).unwrap(ICache.class);
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i * 1000, "Value-" + (i * 1000));
+        }
+
+        assertEquals(ENTRY_COUNT, cache.size());
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            if (i % 2 == 0) {
+                cache.invoke(i * 1000, new RemoveRecordEntryProcessor());
+            }
+        }
+
+        assertEquals(ENTRY_COUNT / 2, cache.size());
     }
 
     private void executeTestInternal(EntryProcessor<Integer, String, Void> entryProcessor) {
@@ -221,6 +252,17 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
                 throws EntryProcessorException {
 
             entry.setValue("Foo");
+            return null;
+        }
+    }
+
+    public static class RemoveRecordEntryProcessor
+            implements EntryProcessor<Integer, String, Void>, Serializable {
+
+        @Override
+        public Void process(MutableEntry<Integer, String> entry, Object... arguments)
+                throws EntryProcessorException {
+            entry.remove();
             return null;
         }
     }
