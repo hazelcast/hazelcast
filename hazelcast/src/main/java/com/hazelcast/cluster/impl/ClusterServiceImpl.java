@@ -604,10 +604,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
 
-        if (isJoinRequestFromAnExistingMember(joinRequest, connection)) {
-            return;
-        }
-
         if (!node.isMaster()) {
             sendMasterAnswer(joinRequest.getAddress());
             return;
@@ -623,6 +619,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         lock.lock();
         try {
+            if (isJoinRequestFromAnExistingMember(joinRequest, connection)) {
+                return;
+            }
+
             long now = Clock.currentTimeMillis();
             if (logger.isFinestEnabled()) {
                 String msg = "Handling join from " + joinRequest.getAddress() + ", inProgress: " + joinInProgress
@@ -749,26 +749,21 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return true;
         }
 
-        lock.lock();
-        try {
-            // If this node is master then remove old member and process join request.
-            // If requesting address is equal to master node's address, that means master node
-            // somehow disconnected and wants to join back.
-            // So drop old member and process join request if this node becomes master.
-            if (node.isMaster() || target.equals(node.getMasterAddress())) {
-                logger.warning("New join request has been received from an existing endpoint! => " + member
-                        + " Removing old member and processing join request...");
+        // If this node is master then remove old member and process join request.
+        // If requesting address is equal to master node's address, that means master node
+        // somehow disconnected and wants to join back.
+        // So drop old member and process join request if this node becomes master.
+        if (node.isMaster() || target.equals(node.getMasterAddress())) {
+            logger.warning("New join request has been received from an existing endpoint! => " + member
+                    + " Removing old member and processing join request...");
 
-                doRemoveAddress(target, false);
-                Connection existing = node.connectionManager.getConnection(target);
-                if (existing != connection) {
-                    node.connectionManager.destroyConnection(existing);
-                    node.connectionManager.registerConnection(target, connection);
-                }
-                return false;
+            doRemoveAddress(target, false);
+            Connection existing = node.connectionManager.getConnection(target);
+            if (existing != connection) {
+                node.connectionManager.destroyConnection(existing);
+                node.connectionManager.registerConnection(target, connection);
             }
-        } finally {
-            lock.unlock();
+            return false;
         }
         return true;
     }
@@ -867,7 +862,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 public void run() {
                     lifecycleService.fireLifecycleEvent(MERGING);
                     final NodeEngineImpl nodeEngine = node.nodeEngine;
-                    final Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
+                    final Collection<SplitBrainHandlerService> services = nodeEngine
+                            .getServices(SplitBrainHandlerService.class);
                     final Collection<Runnable> tasks = new LinkedList<Runnable>();
                     for (SplitBrainHandlerService service : services) {
                         final Runnable runnable = service.prepareMergeRunnable();
