@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
@@ -295,5 +296,69 @@ public class QueueConfig {
         sb.append(", statisticsEnabled=").append(statisticsEnabled);
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
+     */
+    static class QueueConfigReadOnly extends QueueConfig {
+
+        QueueConfigReadOnly(QueueConfig config) {
+            super(config);
+        }
+
+        public List<ItemListenerConfig> getItemListenerConfigs() {
+            final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
+            final List<ItemListenerConfig> readOnlyItemListenerConfigs
+                    = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
+            for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
+                readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyItemListenerConfigs);
+        }
+
+        public QueueStoreConfig getQueueStoreConfig() {
+            final QueueStoreConfig queueStoreConfig = super.getQueueStoreConfig();
+            if (queueStoreConfig == null) {
+                return null;
+            }
+            return queueStoreConfig.getAsReadOnly();
+        }
+
+        public QueueConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setMaxSize(int maxSize) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig addItemListenerConfig(ItemListenerConfig listenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
+
+        public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only queue: " + getName());
+        }
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
@@ -223,5 +224,64 @@ public class MultiMapConfig {
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         return sb.toString();
+    }
+
+    /**
+     * Contains the configuration for an {@link com.hazelcast.core.MultiMap}.
+     */
+    static class MultiMapConfigReadOnly extends MultiMapConfig {
+
+        public MultiMapConfigReadOnly(MultiMapConfig defConfig) {
+            super(defConfig);
+        }
+
+        public List<EntryListenerConfig> getEntryListenerConfigs() {
+            final List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
+            final List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
+            for (EntryListenerConfig listenerConfig : listenerConfigs) {
+                readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyListenerConfigs);
+        }
+
+        public MultiMapConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setValueCollectionType(String valueCollectionType) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setValueCollectionType(ValueCollectionType valueCollectionType) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setBinary(boolean binary) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
+
+        public MultiMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+        }
     }
 }

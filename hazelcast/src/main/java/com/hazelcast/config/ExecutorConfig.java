@@ -122,4 +122,30 @@ public class ExecutorConfig {
         sb.append('}');
         return sb.toString();
     }
+
+    /**
+     * Configuration for Executor(Read Only)
+     */
+    static class ExecutorConfigReadOnly extends ExecutorConfig {
+
+        public ExecutorConfigReadOnly(ExecutorConfig config) {
+            super(config);
+        }
+
+        public ExecutorConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+
+        public ExecutorConfig setPoolSize(int poolSize) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+
+        public ExecutorConfig setQueueCapacity(int queueCapacity) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+
+        public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+    }
 }

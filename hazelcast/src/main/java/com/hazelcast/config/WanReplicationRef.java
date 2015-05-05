@@ -106,4 +106,27 @@ public class WanReplicationRef implements DataSerializable, Serializable {
                 + '\''
                 + '}';
     }
+
+    /**
+     * Configuration for Wan target replication reference(read only)
+     */
+    static class WanReplicationRefReadOnly extends WanReplicationRef {
+
+        public WanReplicationRefReadOnly(WanReplicationRef ref) {
+            super(ref);
+        }
+
+        public WanReplicationRef setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public WanReplicationRef setMergePolicy(String mergePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public WanReplicationRef setRepublishingEnabled(boolean republishingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

@@ -113,4 +113,22 @@ public class MapIndexConfig {
         sb.append('}');
         return sb.toString();
     }
+
+    /**
+     * Contains the configuration for a index of Map.
+     */
+    static class MapIndexConfigReadOnly extends MapIndexConfig {
+
+        public MapIndexConfigReadOnly(MapIndexConfig config) {
+            super(config);
+        }
+
+        public MapIndexConfig setAttribute(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public MapIndexConfig setOrdered(boolean ordered) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+    }
 }

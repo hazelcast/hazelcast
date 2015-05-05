@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.map.listener.MapPartitionLostListener;
 
+import java.util.EventListener;
+
 /**
  * Configuration for MapPartitionLostListener
  * @see com.hazelcast.map.listener.MapPartitionLostListener
@@ -83,5 +85,29 @@ public class MapPartitionLostListenerConfig
         int result = super.hashCode();
         result = 31 * result + (readOnly != null ? readOnly.hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Read-Only Configuration for MapPartitionLostListener
+     * @see MapPartitionLostListener
+     */
+    static class MapPartitionLostListenerConfigReadOnly
+            extends MapPartitionLostListenerConfig {
+
+        public MapPartitionLostListenerConfigReadOnly(MapPartitionLostListenerConfig config) {
+            super(config);
+        }
+
+        public MapPartitionLostListener getImplementation() {
+            return (MapPartitionLostListener) implementation;
+        }
+
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
     }
 }

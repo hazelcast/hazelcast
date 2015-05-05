@@ -27,10 +27,10 @@ import org.junit.runner.RunWith;
 public class ReplicatedMapConfigTest {
 
     /**
-     * Test method for {@link ReplicatedMapConfigReadOnly#setStatisticsEnabled(boolean)}
+     * Test method for {@link ReplicatedMapConfig.ReplicatedMapConfigReadOnly#setStatisticsEnabled(boolean)}
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyReplicatedMapConfigSetStatisticsEnabled() {
-        new ReplicatedMapConfigReadOnly(new ReplicatedMapConfig()).setStatisticsEnabled(true);
+        new ReplicatedMapConfig.ReplicatedMapConfigReadOnly(new ReplicatedMapConfig()).setStatisticsEnabled(true);
     }
 }

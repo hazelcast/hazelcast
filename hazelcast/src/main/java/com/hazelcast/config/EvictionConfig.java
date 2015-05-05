@@ -206,4 +206,28 @@ public class EvictionConfig
                 + '}';
     }
 
+    /**
+     * Read only version of {@link EvictionConfig}.
+     */
+    static class EvictionConfigReadOnly
+            extends EvictionConfig {
+
+        public EvictionConfigReadOnly(EvictionConfig config) {
+            super(config);
+        }
+
+        public EvictionConfigReadOnly setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public EvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+    }
 }

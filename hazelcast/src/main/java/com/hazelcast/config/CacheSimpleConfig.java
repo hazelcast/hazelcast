@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
@@ -286,4 +287,120 @@ public class CacheSimpleConfig {
         this.wanReplicationRef = wanReplicationRef;
     }
 
+    /**
+     * Readonly version of {@link CacheSimpleConfig}
+     */
+    static class CacheSimpleConfigReadOnly
+            extends CacheSimpleConfig {
+
+        public CacheSimpleConfigReadOnly(CacheSimpleConfig cacheSimpleConfig) {
+            super(cacheSimpleConfig);
+        }
+
+        @Override
+        public EvictionConfig getEvictionConfig() {
+            final EvictionConfig evictionConfig = super.getEvictionConfig();
+            if (evictionConfig == null) {
+                return null;
+            }
+            return evictionConfig.getAsReadOnly();
+        }
+
+        @Override
+        public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
+            final List<CacheSimpleEntryListenerConfig> listenerConfigs = super.getCacheEntryListeners();
+            final List<CacheSimpleEntryListenerConfig> readOnlyListenerConfigs = new ArrayList<CacheSimpleEntryListenerConfig>(
+                    listenerConfigs.size());
+            for (CacheSimpleEntryListenerConfig listenerConfig : listenerConfigs) {
+                readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyListenerConfigs);
+        }
+
+        @Override
+        public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setCacheEntryListeners(List<CacheSimpleEntryListenerConfig> cacheEntryListeners) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setCacheLoaderFactory(String cacheLoaderFactory) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setCacheWriterFactory(String cacheWriterFactory) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setExpiryPolicyFactory(String expiryPolicyFactory) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setKeyType(String keyType) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setManagementEnabled(boolean managementEnabled) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setReadThrough(boolean readThrough) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setValueType(String valueType) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig setWriteThrough(boolean writeThrough) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public CacheSimpleConfig addEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+        @Override
+        public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+            throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+        }
+
+    }
 }

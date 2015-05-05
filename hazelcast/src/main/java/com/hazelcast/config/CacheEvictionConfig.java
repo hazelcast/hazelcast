@@ -151,4 +151,36 @@ public class CacheEvictionConfig
                 + '}';
     }
 
+    /**
+     * Read only version of {@link CacheEvictionConfig}.
+     *
+     * @deprecated Use {@link EvictionConfigReadOnly} instead of this
+     */
+    @Deprecated
+    static class CacheEvictionConfigReadOnly
+            extends CacheEvictionConfig {
+
+        public CacheEvictionConfigReadOnly(EvictionConfig config) {
+            super(config);
+        }
+
+        public CacheEvictionConfigReadOnly setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        public CacheEvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy cacheMaxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+    }
 }

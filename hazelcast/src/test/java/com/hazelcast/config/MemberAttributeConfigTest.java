@@ -29,10 +29,10 @@ import java.util.HashMap;
 public class MemberAttributeConfigTest {
 
     /**
-     * Test method for {@link com.hazelcast.config.MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
+     * Test method for {@link MemberAttributeConfig.MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
      */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMemberAttributeConfigSetAttributes() {
-        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<String, Object>());
+        new MemberAttributeConfig.MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<String, Object>());
     }
 }

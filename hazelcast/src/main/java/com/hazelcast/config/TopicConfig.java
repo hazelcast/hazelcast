@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -163,5 +164,46 @@ public class TopicConfig {
 
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
+    }
+
+    /**
+     * Configuration for topic(Read only)
+     */
+
+    static class TopicConfigReadOnly extends TopicConfig {
+
+        public TopicConfigReadOnly(TopicConfig config) {
+            super(config);
+        }
+
+        public List<ListenerConfig> getMessageListenerConfigs() {
+            final List<ListenerConfig> messageListenerConfigs = super.getMessageListenerConfigs();
+            final List<ListenerConfig> readOnlyMessageListenerConfigs
+                    = new ArrayList<ListenerConfig>(messageListenerConfigs.size());
+            for (ListenerConfig messageListenerConfig : messageListenerConfigs) {
+                readOnlyMessageListenerConfigs.add(messageListenerConfig.getAsReadOnly());
+            }
+            return Collections.unmodifiableList(readOnlyMessageListenerConfigs);
+        }
+
+        public TopicConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        public TopicConfig setGlobalOrderingEnabled(boolean globalOrderingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        public TopicConfig addMessageListenerConfig(ListenerConfig listenerConfig) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
+
+        public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only topic: " + getName());
+        }
     }
 }
