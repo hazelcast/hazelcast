@@ -45,8 +45,12 @@ controlled through the following property:
 
 `hazelcast.backpressure.syncwindow`
 
-This system property's default value is 100. It means, out of 100 *ansynchronous* backups, Hazelcast makes 1 of them a *synchronous* one. Some randomization is added, so the sync window with default configuration will be between 75 and 125 
+This system property's default value is 100. It means, out of 100 *asynchronous* backups, Hazelcast makes 1 of them a *synchronous* one. A randomization is added; the sync window with default configuration (100) will be between 75 and 125 
 invocations. 
+
+***RELATED INFORMATION***
+
+*Please refer to the [System Properties section](#system-properties) to learn how to configure the system properties.*
 
 <br> </br>
 
