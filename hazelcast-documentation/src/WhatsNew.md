@@ -9,8 +9,7 @@
 This section provides the new features introduced with Hazelcast 3.5 release. 
 
 - **Async Back Pressure**: The Back Pressure introduced with Hazelcast 3.4 now supports async operations. For more information, please see [???](#???).
-- **Client Configuration Import**: ???. For more information, please see [???](#???).
-- **Client Statistics on Management Center**: ???. For more information, please see [???](#???).
+- **Client Configuration Import**: Hazelcast now supports replacing variables with system properties in the declarative configuration of Hazelcast client. Moreover, now you can compose the Hazelcast client declarative configuration out of smaller configuration snippets. For more information, please see [???](#???).
 - **Cluster Quorum**: This feature enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. For more information, please see  the [Cluster Quorum section](#cluster-quorum).
 - **Complete Implementation of XA Transactions**: ???. For more information, please see [???](#???).
 - **Continuous Query Caching**: ???. For more information, please see [???](#???).
