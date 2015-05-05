@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,7 @@ public class LocalLockCleanupOperation extends UnlockOperation implements Notifi
         final NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         InternalPartition partition = partitionService.getPartition(getPartitionId());
-        return nodeEngine.getThisAddress().equals(partition.getOwnerOrNull())
-                && Boolean.TRUE.equals(response);
+        return partition.isLocal() && Boolean.TRUE.equals(response);
     }
 
     @Override

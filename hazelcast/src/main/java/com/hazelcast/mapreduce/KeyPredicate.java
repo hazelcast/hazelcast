@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.spi.annotation.Beta;
 import java.io.Serializable;
 
 /**
- * This interface is used to pre evaluate keys before spreading the MapReduce task to the cluster.
+ * This interface is used to pre-evaluate keys before spreading the MapReduce task to the cluster.
  * Pre-selecting keys can speed up the job since not all partitions may be used.
  *
  * @param <Key> key type
@@ -32,10 +32,10 @@ public interface KeyPredicate<Key>
         extends Serializable {
 
     /**
-     * This methods implementation contains the evaluation code whether to select a key or not.
+     * This method evaluates whether or not to select a key.
      *
      * @param key The key to evaluate
-     * @return true if the MapReduce task should be executed on this key otherwise false
+     * @return true if the MapReduce task should be executed on this key, false otherwise
      */
     boolean evaluate(Key key);
 

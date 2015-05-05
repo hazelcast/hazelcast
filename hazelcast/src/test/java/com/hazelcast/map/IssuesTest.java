@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -37,7 +40,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,23 +57,23 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> imap = factory.newHazelcastInstance(null).getMap("testIssue321_1");
-        final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
-        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
+            public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
                 events2.add(event);
             }
         }, false);
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
+            public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
                 events1.add(event);
             }
         }, true);
         imap.put(1, 1);
-        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.SECONDS);
-        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.SECONDS);
+        final com.hazelcast.core.EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.SECONDS);
+        final com.hazelcast.core.EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.SECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
         assertNotNull(event1.getValue());
@@ -79,24 +86,24 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> imap = factory.newHazelcastInstance(null).getMap("testIssue321_2");
-        final BlockingQueue<EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
-        final BlockingQueue<EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
+            public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
                 events1.add(event);
             }
         }, true);
         Thread.sleep(50L);
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
+            public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
                 events2.add(event);
             }
         }, false);
         imap.put(1, 1);
-        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.SECONDS);
-        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.SECONDS);
+        final com.hazelcast.core.EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.SECONDS);
+        final com.hazelcast.core.EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.SECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
         assertNotNull(event1.getValue());
@@ -109,10 +116,10 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> imap = factory.newHazelcastInstance(null).getMap("testIssue321_3");
-        final BlockingQueue<EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         final EntryAdapter<Integer, Integer> listener = new EntryAdapter<Integer, Integer>() {
             @Override
-            public void entryAdded(EntryEvent<Integer, Integer> event) {
+            public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
                 events.add(event);
             }
         };
@@ -120,8 +127,8 @@ public class IssuesTest extends HazelcastTestSupport {
         Thread.sleep(50L);
         imap.addEntryListener(listener, false);
         imap.put(1, 1);
-        final EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.SECONDS);
-        final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.SECONDS);
+        final com.hazelcast.core.EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.SECONDS);
+        final com.hazelcast.core.EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.SECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
         assertNotNull(event1.getValue());
@@ -286,8 +293,7 @@ public class IssuesTest extends HazelcastTestSupport {
         assertFalse("equals method should not have been called on key during clear", CompositeKey.equalsCalled);
     }
 
-    public static class CompositeKey implements Serializable
-    {
+    public static class CompositeKey implements Serializable {
         static boolean hashCodeCalled = false;
         static boolean equalsCalled = false;
 

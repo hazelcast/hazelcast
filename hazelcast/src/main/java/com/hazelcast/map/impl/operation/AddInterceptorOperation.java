@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,24 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.NamedOperation;
 import java.io.IOException;
 
-public class AddInterceptorOperation extends AbstractOperation {
+public class AddInterceptorOperation extends AbstractOperation implements MutatingOperation, NamedOperation {
 
-    MapService mapService;
-    String id;
-    MapInterceptor mapInterceptor;
-    String mapName;
+    private MapService mapService;
+    private String id;
+    private MapInterceptor mapInterceptor;
+    private String mapName;
 
+    public AddInterceptorOperation() {
+    }
 
     public AddInterceptorOperation(String id, MapInterceptor mapInterceptor, String mapName) {
         this.id = id;
@@ -37,19 +42,19 @@ public class AddInterceptorOperation extends AbstractOperation {
         this.mapName = mapName;
     }
 
-    public AddInterceptorOperation() {
-    }
-
-    public void run() {
-        mapService = getService();
-        mapService.getMapServiceContext().getMapContainer(mapName).addInterceptor(id, mapInterceptor);
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public void run() {
+        mapService = getService();
+        MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
+        mapContainer.addInterceptor(id, mapInterceptor);
     }
 
+    @Override
     public Object getResponse() {
         return true;
     }
@@ -75,4 +80,8 @@ public class AddInterceptorOperation extends AbstractOperation {
         return "AddInterceptorOperation{}";
     }
 
+    @Override
+    public String getName() {
+        return mapName;
+    }
 }

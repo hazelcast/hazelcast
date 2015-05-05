@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,15 +24,16 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation {
+public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation,
+        MutatingOperation {
 
     private List<Map.Entry<Data, Data>> entries;
     private List<RecordInfo> recordInfos;
@@ -47,6 +48,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
     public PutAllBackupOperation() {
     }
 
+    @Override
     public void run() {
         int partitionId = getPartitionId();
         recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
@@ -65,8 +67,7 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
 
     @Override
     public String toString() {
-        return "PutAllBackupOperation{" + '}';
-
+        return "PutAllBackupOperation{}";
     }
 
     @Override
@@ -97,7 +98,5 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
             recordInfo.readData(in);
             recordInfos.add(recordInfo);
         }
-
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,61 +20,61 @@ import java.io.Serializable;
 
 /**
  * MapInterceptor is used to intercept changes to the map, allowing access to the values before and
- * after adding it to the map
+ * after adding them to the map.
  *
  * MapInterceptors are chained when added to the map, which means that when an interceptor is added
- * on node initialization it could be added twice. To prevent this make sure to implement the
+ * on node initialization, it could be added twice. To prevent this, make sure to implement the
  * hashCode method to return the same value for every instance of the class.
  *
  */
 public interface MapInterceptor extends Serializable {
 
     /**
-     * Intercept get operation before returning value.
+     * Intercept the get operation before returning value.
      * Return another object to change the return value of get(..)
-     * Returning null will cause the get(..) operation return original value,
-     * namely return null if you do not want to change anything.
+     * Returning null will cause the get(..) operation to return the original value,
+     * so return null if you do not want to change anything.
      * <p/>
-     * Mutations made to value do not affect the stored value. They do affect the returned value.
+     * Mutations made to the value do not affect the stored value. They do affect the returned value.
      *
      * @param value the original value to be returned as the result of get(..) operation
-     * @return the new value that will be returned by get(..) operation
+     * @return the new value that will be returned by the get(..) operation
      */
     Object interceptGet(Object value);
 
     /**
-     * Called after get(..) operation is completed.
+     * Called after the get(..) operation is completed.
      * <p/>
      * Mutations made to value do not affect the stored value.
      *
-     * @param value the value returned as the result of get(..) operation
+     * @param value the value returned as the result of the get(..) operation
      */
     void afterGet(Object value);
 
     /**
-     * Intercept put operation before modifying map data.
+     * Intercept the put operation before modifying the map data.
      * Return the object to be put into the map.
      * Returning null will cause the put(..) operation to operate as expected, namely no interception.
      * Throwing an exception will cancel the put operation.
      * <p/>
      *
      * @param oldValue the value currently in map
-     * @param newValue the new value to be put
-     * @return new value after intercept operation
+     * @param newValue the new value to be put into the map
+     * @return new value after the intercept operation
      */
     Object interceptPut(Object oldValue, Object newValue);
 
     /**
-     * Called after put(..) operation is completed.
+     * Called after the put(..) operation is completed.
      * <p/>
      *
-     * @param value the value returned as the result of put(..) operation
+     * @param value the value returned as the result of the put(..) operation
      */
     void afterPut(Object value);
 
     /**
      * Intercept remove operation before removing the data.
-     * Return the object to be returned as the result of remove operation.
+     * Return the object to be returned as the result of the remove operation.
      * Throwing an exception will cancel the remove operation.
      * <p/>
      *
@@ -84,10 +84,10 @@ public interface MapInterceptor extends Serializable {
     Object interceptRemove(Object removedValue);
 
     /**
-     * Called after remove(..) operation is completed.
+     * Called after the remove(..) operation is completed.
      * <p/>
      *
-     * @param value the value returned as the result of remove(..) operation
+     * @param value the value returned as the result of the remove(..) operation
      */
     void afterRemove(Object value);
 

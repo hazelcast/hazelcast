@@ -1,9 +1,25 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.core;
 
 import java.util.EventObject;
 
 /**
- * An abstract {@link com.hazelcast.core.IMapEvent}.
+ * The abstract class for a map event {@link com.hazelcast.core.IMapEvent}.
  */
 public abstract class AbstractIMapEvent extends EventObject implements IMapEvent {
 
@@ -14,11 +30,11 @@ public abstract class AbstractIMapEvent extends EventObject implements IMapEvent
     private final Member member;
 
     /**
-     * Constructs a prototypical Event.
+     * Constructs a prototypical map Event.
      *
      * @param source    The object on which the Event initially occurred.
-     * @param member    Member node.
-     * @param eventType Type of event as an integer.{@link EntryEventType}
+     * @param member    The interface to the cluster member (node).
+     * @param eventType The event type as an enum {@link EntryEventType} integer.
      * @throws IllegalArgumentException if source is null.
      */
     public AbstractIMapEvent(Object source, Member member, int eventType) {
@@ -29,15 +45,20 @@ public abstract class AbstractIMapEvent extends EventObject implements IMapEvent
     }
 
 
+    /**
+     * Returns the object on which the event initially occurred.
+     *
+     * @return The object on which the event initially occurred.
+     */
     @Override
     public Object getSource() {
         return name;
     }
 
     /**
-     * Returns the member fired this event.
+     * Returns the member that fired this event.
      *
-     * @return the member fired this event.
+     * @return The member that fired this event.
      */
     @Override
     public Member getMember() {
@@ -45,9 +66,9 @@ public abstract class AbstractIMapEvent extends EventObject implements IMapEvent
     }
 
     /**
-     * Return the event type
+     * Returns the event type {@link EntryEventType}.
      *
-     * @return event type
+     * @return The event type {@link EntryEventType}.
      */
     @Override
     public EntryEventType getEventType() {
@@ -57,13 +78,18 @@ public abstract class AbstractIMapEvent extends EventObject implements IMapEvent
     /**
      * Returns the name of the map for this event.
      *
-     * @return name of the map.
+     * @return The name of the map for this event.
      */
     @Override
     public String getName() {
         return name;
     }
 
+    /**
+     * Returns a String representation of this event.
+     *
+     * @return A String representation of this event.
+     */
     @Override
     public String toString() {
         return String.format("entryEventType=%s, member=%s, name='%s'",

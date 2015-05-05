@@ -15,6 +15,6 @@ This means that if 3 is used, in total there are 7 IO-threads; 1 accept-IO-threa
 
 In case of the read-IO-thread, when sufficient bytes for a packet have been received, the Packet object is created. This Packet is 
 then sent to the System where it is de-multiplexed. If the Packet header signals that it is an operation/response, the Packet is handed 
-over to the operation service (please see [Operation Threading](#operation-threading)). If the Packet is an event, it is handed 
-over to the event service (please see [Event Threading](#event-threading)). 
+over to the operation service (please see the [Operation Threading section](#operation-threading)). If the Packet is an event, it is handed 
+over to the event service (please see the [Event Threading section](#event-threading)). 
 

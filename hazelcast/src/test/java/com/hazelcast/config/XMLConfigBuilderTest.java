@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,16 @@ package com.hazelcast.config;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.List;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -37,6 +36,14 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,14 +51,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import org.xml.sax.SAXException;
 
 //it needs to run serial because some tests are relying on System properties they are setting themselves.
 @RunWith(HazelcastSerialClassRunner.class)
@@ -72,8 +71,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         new XmlConfigBuilder();
     }
 
-    @Test(expected = HazelcastException.class)
-    public void testJoinValidation(){
+    @Test(expected = InvalidConfigurationException.class)
+    public void testJoinValidation() {
         String xml = "<hazelcast>\n" +
                 "    <network>\n" +
                 "        <join>\n" +
@@ -233,7 +232,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void networkReuseAddress() {
-       Config config = buildConfig("<hazelcast>\n" +
+        Config config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <reuse-address>true</reuse-address>\n" +
                 "    </network>\n" +
@@ -250,9 +249,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                         "    </semaphore>" +
                         "    <semaphore name=\"custom\">\n" +
                         "        <initial-permits>10</initial-permits>\n" +
-                        "        <semaphore-factory enabled=\"true\">" +
-                        "             <class-name>com.acme.MySemaphore</class-name>\n" +
-                        "        </semaphore-factory>" +
                         "    </semaphore>" +
                         "</hazelcast>";
         Config config = buildConfig(xml);
@@ -260,6 +256,27 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
+    }
+
+    @Test
+    public void readRingbuffer() {
+        String xml =
+                "<hazelcast>\n" +
+                        "    <ringbuffer name=\"custom\">\n" +
+                        "        <capacity>10</capacity>\n" +
+                        "        <backup-count>2</backup-count>\n" +
+                        "        <async-backup-count>1</async-backup-count>\n" +
+                        "        <time-to-live-seconds>9</time-to-live-seconds>\n" +
+                        "        <in-memory-format>OBJECT</in-memory-format>\n" +
+                        "    </ringbuffer>" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        RingbufferConfig ringbufferConfig = config.getRingbufferConfig("custom");
+        assertEquals(10, ringbufferConfig.getCapacity());
+        assertEquals(2, ringbufferConfig.getBackupCount());
+        assertEquals(1, ringbufferConfig.getAsyncBackupCount());
+        assertEquals(9, ringbufferConfig.getTimeToLiveSeconds());
+        assertEquals(InMemoryFormat.OBJECT, ringbufferConfig.getInMemoryFormat());
     }
 
     @Test
@@ -300,12 +317,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml =
                 "<hazelcast>\n" +
                         "<map name=\"testCaseInsensitivity\">" +
-                        "<in-memory-format>binary</in-memory-format>     " +
+                        "<in-memory-format>BINARY</in-memory-format>     " +
                         "<backup-count>1</backup-count>                 " +
                         "<async-backup-count>0</async-backup-count>    " +
                         "<time-to-live-seconds>0</time-to-live-seconds>" +
                         "<max-idle-seconds>0</max-idle-seconds>    " +
-                        "<eviction-policy>none</eviction-policy>  " +
+                        "<eviction-policy>NONE</eviction-policy>  " +
                         "<max-size policy=\"per_partition\">0</max-size>" +
                         "<eviction-percentage>25</eviction-percentage>" +
                         "<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>" +
@@ -428,20 +445,20 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testMapConfig_optimizeQueries() {
         String xml1 =
                 "<hazelcast>" +
-                    "<map name=\"mymap1\">" +
+                        "<map name=\"mymap1\">" +
                         "<optimize-queries>true</optimize-queries>" +
-                    "</map>" +
-                "</hazelcast>";
+                        "</map>" +
+                        "</hazelcast>";
         final Config config1 = buildConfig(xml1);
         final MapConfig mapConfig1 = config1.getMapConfig("mymap1");
         assertTrue(mapConfig1.isOptimizeQueries());
 
         String xml2 =
                 "<hazelcast>" +
-                    "<map name=\"mymap2\">" +
+                        "<map name=\"mymap2\">" +
                         "<optimize-queries>false</optimize-queries>" +
-                    "</map>" +
-                "</hazelcast>";
+                        "</map>" +
+                        "</hazelcast>";
         final Config config2 = buildConfig(xml2);
         final MapConfig mapConfig2 = config2.getMapConfig("mymap2");
         assertFalse(mapConfig2.isOptimizeQueries());
@@ -451,9 +468,9 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testMapConfig_optimizeQueries_defaultValue() {
         String xml =
                 "<hazelcast>" +
-                    "<map name=\"mymap\">" +
-                    "</map>" +
-                "</hazelcast>";
+                        "<map name=\"mymap\">" +
+                        "</map>" +
+                        "</hazelcast>";
         final Config config = buildConfig(xml);
         final MapConfig mapConfig = config.getMapConfig("mymap");
         assertFalse(mapConfig.isOptimizeQueries());
@@ -491,6 +508,49 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapStoreConfig_writeCoalescing_whenDefault() {
+        boolean writeCoalescingEnabled = MapStoreConfig.DEFAULT_WRITE_COALESCING;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, true);
+
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenSetFalse() {
+        boolean writeCoalescingEnabled = false;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, false);
+
+        assertFalse(mapStoreConfig.isWriteCoalescing());
+    }
+
+    @Test
+    public void testMapStoreConfig_writeCoalescing_whenSetTrue() {
+        boolean writeCoalescingEnabled = true;
+        final MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(writeCoalescingEnabled, false);
+
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+    }
+
+    private MapStoreConfig getWriteCoalescingMapStoreConfig(boolean writeCoalescing, boolean useDefault) {
+        String xml = getWriteCoalescingConfigXml(writeCoalescing, useDefault);
+        final Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+
+    private String getWriteCoalescingConfigXml(boolean value, boolean useDefault) {
+        String writeCoalescingConfigPart = useDefault ? ""
+                : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>";
+        return "<hazelcast>\n" +
+                "<map name=\"mymap\">" +
+                "<map-store >" +
+                writeCoalescingConfigPart +
+                "</map-store>" +
+                "</map>" +
+                "</hazelcast>";
+    }
+
+    @Test
     public void testNearCacheInMemoryFormat() {
         String mapName = "testMapNearCacheInMemoryFormat";
         String xml =
@@ -508,7 +568,28 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
     }
 
-    @Test(expected = HazelcastException.class)
+    @Test
+    public void testMapWanReplicationRef() {
+        String mapName = "testMapWanReplicationRef";
+        String refName = "test";
+        String mergePolicy = "TestMergePolicy";
+        String xml =
+                "<hazelcast>\n" +
+                        "  <map name=\"" + mapName + "\">\n" +
+                        "    <wan-replication-ref name=\"test\">\n" +
+                        "      <merge-policy>TestMergePolicy</merge-policy>\n" +
+                        "    </wan-replication-ref>\n" +
+                        "  </map>\n" +
+                        "</hazelcast>";
+        final Config config = buildConfig(xml);
+        System.out.println("config = " + config);
+        WanReplicationRef wanRef = config.getMapConfig(mapName).getWanReplicationRef();
+        assertEquals(refName, wanRef.getName());
+        assertEquals(mergePolicy, wanRef.getMergePolicy());
+        assertTrue(wanRef.isRepublishingEnabled());
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
     public void testParseExceptionIsNotSwallowed() {
         String invalidXml =
                 "<hazelcast>\n" +
@@ -543,9 +624,46 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(o instanceof DummyMapStore);
     }
 
+    @Test
+    public void testMapPartitionLostListenerConfig() {
+        String mapName = "map1";
+        String listenerName = "DummyMapPartitionLostListenerImpl";
+        String xml = createMapPartitionLostListenerConfiguredXml(mapName, listenerName);
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("map1");
+        assertMapPartitionLostListener(listenerName, mapConfig);
+    }
+
+    @Test
+    public void testMapPartitionLostListenerConfigReadOnly() {
+        String mapName = "map1";
+        String listenerName = "DummyMapPartitionLostListenerImpl";
+        String xml = createMapPartitionLostListenerConfiguredXml(mapName, listenerName);
+
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.findMapConfig("map1");
+        assertMapPartitionLostListener(listenerName, mapConfig);
+    }
+
+    private void assertMapPartitionLostListener(String listenerName, MapConfig mapConfig) {
+        assertFalse(mapConfig.getPartitionLostListenerConfigs().isEmpty());
+        assertEquals(listenerName, mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
+    }
+
+    private String createMapPartitionLostListenerConfiguredXml(String mapName, String listenerName) {
+        return "<hazelcast>\n" +
+                "<map name=\"" + mapName + "\">\n" +
+                "<partition-lost-listeners>\n" +
+                "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n" +
+                "</partition-lost-listeners>\n" +
+                "</map>\n" +
+                "</hazelcast>\n";
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.4.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.5.xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
@@ -563,4 +681,167 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         return configBuilder.build();
     }
 
+    @Test
+    public void readMulticastConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "   <group>\n" +
+                        "        <name>dev</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>\n" +
+                        "    <network>\n" +
+                        "        <port auto-increment=\"true\">5701</port>\n" +
+                        "        <join>\n" +
+                        "            <multicast enabled=\"true\" loopbackModeEnabled=\"true\">\n" +
+                        "                <multicast-group>224.2.2.3</multicast-group>\n" +
+                        "                <multicast-port>54327</multicast-port>\n" +
+                        "            </multicast>\n" +
+                        "            <tcp-ip enabled=\"false\">\n" +
+                        "                <interface>127.0.0.1</interface>\n" +
+                        "            </tcp-ip>\n" +
+                        "            <aws enabled=\"false\" connection-timeout-seconds=\"10\" >\n" +
+                        "                <access-key>access</access-key>\n" +
+                        "                <secret-key>secret</secret-key>\n" +
+                        "            </aws>\n" +
+                        "        </join>\n" +
+                        "        <interfaces enabled=\"false\">\n" +
+                        "            <interface>10.10.1.*</interface>\n" +
+                        "        </interfaces>\n" +
+                        "    </network>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MulticastConfig mcastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        assertTrue(mcastConfig.isEnabled());
+        assertTrue(mcastConfig.isLoopbackModeEnabled());
+        assertEquals("224.2.2.3", mcastConfig.getMulticastGroup());
+        assertEquals(54327, mcastConfig.getMulticastPort());
+    }
+
+    @Test
+    public void testWanConfig() {
+        String xml =
+                "<hazelcast>\n" +
+                        "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
+                        "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
+                        "       <replication-impl>com.hazelcast.enterprise.wan.replication.WanBatchReplication</replication-impl>\n" +
+                        "       <end-points>\n" +
+                        "          <address>20.30.40.50:5701</address>\n" +
+                        "          <address>20.30.40.50:5702</address>\n" +
+                        "       </end-points>\n" +
+                        "    </target-cluster>\n" +
+                        "</wan-replication>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        WanReplicationConfig wanConfig = config.getWanReplicationConfig("my-wan-cluster");
+        assertNotNull(wanConfig);
+        assertTrue(wanConfig.isSnapshotEnabled());
+        List<WanTargetClusterConfig> targetClusterConfigs = wanConfig.getTargetClusterConfigs();
+        assertEquals(1, targetClusterConfigs.size());
+        WanTargetClusterConfig targetClusterConfig = targetClusterConfigs.get(0);
+        assertEquals("test-cluster-1", targetClusterConfig.getGroupName());
+        assertEquals("test-pass", targetClusterConfig.getGroupPassword());
+        List<String> targetEndpoints = targetClusterConfig.getEndpoints();
+        assertEquals(2, targetEndpoints.size());
+        assertTrue(targetEndpoints.contains("20.30.40.50:5701"));
+        assertTrue(targetEndpoints.contains("20.30.40.50:5702"));
+    }
+
+    @Test
+    public void testQuorumConfig() throws Exception {
+        String xml =
+                "<hazelcast>\n" +
+                        "      <quorum enabled=\"true\" name=\"myQuorum\">\n" +
+                        "        <quorum-size>3</quorum-size>\n" +
+                        "        <quorum-function-class-name>com.my.quorum.function</quorum-function-class-name>\n" +
+                        "        <quorum-type>READ</quorum-type>\n" +
+                        "      </quorum>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertTrue("quorum should be enabled", quorumConfig.isEnabled());
+        assertEquals(3, quorumConfig.getSize());
+        assertEquals(QuorumType.READ, quorumConfig.getType());
+        assertEquals("com.my.quorum.function", quorumConfig.getQuorumFunctionClassName());
+        assertTrue(quorumConfig.getListenerConfigs().isEmpty());
+    }
+
+    @Test
+    public void testQuorumListenerConfig() throws Exception {
+        String xml =
+                "<hazelcast>\n" +
+                        "      <quorum enabled=\"true\" name=\"myQuorum\">\n" +
+                        "        <quorum-size>3</quorum-size>\n" +
+                        "        <quorum-listeners>" +
+                        "           <quorum-listener>com.abc.my.quorum.listener</quorum-listener>" +
+                        "           <quorum-listener>com.abc.my.second.listener</quorum-listener>" +
+                        "       </quorum-listeners> " +
+                        "    </quorum>\n" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertFalse(quorumConfig.getListenerConfigs().isEmpty());
+        assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
+        assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
+
+    }
+
+    @Test
+    public void testQueryCacheFullConfig() throws Exception {
+        String xml =
+                "<hazelcast>"
+                        + "<map name=\"test\">"
+                        + "<query-caches>"
+                        + "<query-cache name=\"cache-name\">"
+                        + "<entry-listeners>"
+                        + "<entry-listener include-value=\"true\" " +
+                        "local=\"false\">com.hazelcast.examples.EntryListener</entry-listener>"
+                        + "</entry-listeners>"
+                        + "<include-value>true</include-value>"
+                        + "<batch-size>1</batch-size>"
+                        + "<buffer-size>16</buffer-size>"
+                        + "<delay-seconds>0</delay-seconds>"
+                        + "<in-memory-format>BINARY</in-memory-format>"
+                        + "<coalesce>false</coalesce>"
+                        + "<populate>true</populate>"
+                        + "<indexes>"
+                        + "<index ordered=\"false\">name</index>"
+                        + "</indexes>"
+                        + "<predicate type=\"class-name\"> "
+                        + "com.hazelcast.examples.SimplePredicate"
+                        + "</predicate>"
+                        + "<eviction eviction-policy=\"LRU\" max-size-policy=\"ENTRY_COUNT\" size=\"133\"/>"
+                        + "</query-cache>"
+                        + "</query-caches>"
+                        + "</map>"
+                        + "</hazelcast>";
+        Config config = buildConfig(xml);
+        QueryCacheConfig queryCacheConfig = config.getMapConfig("test").getQueryCacheConfigs().get(0);
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertEquals("cache-name", queryCacheConfig.getName());
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+        assertEquals("com.hazelcast.examples.EntryListener", entryListenerConfig.getClassName());
+        assertTrue(queryCacheConfig.isIncludeValue());
+        assertEquals(1, queryCacheConfig.getBatchSize());
+        assertEquals(16, queryCacheConfig.getBufferSize());
+        assertEquals(0, queryCacheConfig.getDelaySeconds());
+        assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
+        assertFalse(queryCacheConfig.isCoalesce());
+        assertTrue(queryCacheConfig.isPopulate());
+        assertIndexesEqual(queryCacheConfig);
+        assertEquals("com.hazelcast.examples.SimplePredicate", queryCacheConfig.getPredicateConfig().getClassName());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
+        Iterator<MapIndexConfig> iterator = queryCacheConfig.getIndexConfigs().iterator();
+        while (iterator.hasNext()) {
+            MapIndexConfig mapIndexConfig = iterator.next();
+            assertEquals("name", mapIndexConfig.getAttribute());
+            assertFalse(mapIndexConfig.isOrdered());
+        }
+    }
 }

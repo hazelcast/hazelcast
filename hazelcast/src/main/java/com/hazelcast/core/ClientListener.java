@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@ public interface ClientListener extends EventListener {
     /**
      * Invoked when a new client is connected.
      *
-     * @param client Client instance
+     * @param client the client instance
      */
     void clientConnected(Client client);
 
     /**
      * Invoked when a new client is disconnected.
      *
-     * @param client Client instance
+     * @param client the client instance
      */
     void clientDisconnected(Client client);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
-public class ContainsKeyOperation extends KeyBasedMapOperation implements ReadonlyOperation, WaitSupport {
+public class ContainsKeyOperation extends KeyBasedMapOperation implements  ReadonlyOperation, WaitSupport {
 
     private boolean containsKey;
 
@@ -46,14 +47,9 @@ public class ContainsKeyOperation extends KeyBasedMapOperation implements Readon
     }
 
     @Override
-    public String toString() {
-        return "ContainsKeyOperation{"
-                + '}';
-    }
-
-    @Override
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+        DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+        return new LockWaitNotifyKey(namespace, dataKey);
     }
 
     @Override
@@ -66,6 +62,12 @@ public class ContainsKeyOperation extends KeyBasedMapOperation implements Readon
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+    }
+
+    @Override
+    public String toString() {
+        return "ContainsKeyOperation{}";
     }
 }

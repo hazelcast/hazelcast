@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Client;
@@ -46,11 +45,12 @@ import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
@@ -64,6 +64,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public HazelcastClientProxy(HazelcastClientInstanceImpl client) {
         this.client = client;
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -206,6 +211,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     @Override
     public PartitionService getPartitionService() {
         return getClient().getPartitionService();
+    }
+
+    @Override
+    public QuorumService getQuorumService() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

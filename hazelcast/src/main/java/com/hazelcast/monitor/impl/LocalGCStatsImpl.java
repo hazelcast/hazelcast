@@ -1,6 +1,23 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.util.Clock;
 
@@ -18,6 +35,15 @@ public class LocalGCStatsImpl implements LocalGCStats {
 
     public LocalGCStatsImpl() {
         creationTime = Clock.currentTimeMillis();
+    }
+
+    public LocalGCStatsImpl(GarbageCollectorStats gcStats) {
+        setMajorCount(gcStats.getMajorCollectionCount());
+        setMajorTime(gcStats.getMajorCollectionTime());
+        setMinorCount(gcStats.getMinorCollectionCount());
+        setMinorTime(gcStats.getMinorCollectionTime());
+        setUnknownCount(gcStats.getUnknownCollectionCount());
+        setUnknownTime(gcStats.getUnknownCollectionTime());
     }
 
     @Override
@@ -74,30 +100,6 @@ public class LocalGCStatsImpl implements LocalGCStats {
         this.unknownTime = unknownTime;
     }
 
-//    @Override
-//    public void writeData(ObjectDataOutput out)
-//            throws IOException {
-//        out.writeLong(creationTime);
-//        out.writeLong(majorCount);
-//        out.writeLong(majorTime);
-//        out.writeLong(minorCount);
-//        out.writeLong(minorTime);
-//        out.writeLong(unknownCount);
-//        out.writeLong(unknownTime);
-//    }
-//
-//    @Override
-//    public void readData(ObjectDataInput in)
-//            throws IOException {
-//        creationTime = in.readLong();
-//        majorCount = in.readLong();
-//        majorTime = in.readLong();
-//        minorCount = in.readLong();
-//        minorTime = in.readLong();
-//        unknownCount = in.readLong();
-//        unknownTime = in.readLong();
-//    }
-
     @Override
     public long getCreationTime() {
         return creationTime;
@@ -129,7 +131,7 @@ public class LocalGCStatsImpl implements LocalGCStats {
 
     @Override
     public String toString() {
-        return "LocalGCStatsImpl{"
+        return "LocalGCStats{"
                 + "creationTime=" + creationTime
                 + ", minorCount=" + minorCount
                 + ", minorTime=" + minorTime

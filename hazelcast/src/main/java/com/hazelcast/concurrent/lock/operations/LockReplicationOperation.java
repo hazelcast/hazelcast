@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,10 @@ public class LockReplicationOperation extends AbstractOperation
         return LockServiceImpl.SERVICE_NAME;
     }
 
+    public boolean isEmpty() {
+        return locks.isEmpty();
+    }
+
     @Override
     public int getFactoryId() {
         return LockDataSerializerHook.F_ID;
@@ -96,9 +100,5 @@ public class LockReplicationOperation extends AbstractOperation
                 locks.add(ls);
             }
         }
-    }
-
-    public boolean isEmpty() {
-        return locks.isEmpty();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * @author mdogan 6/6/13
@@ -189,9 +191,7 @@ public final class SampleObjects {
         double salary;
         Timestamp date;
         Date createDate;
-        java.sql.Date sqlDate;
         State state;
-        BigDecimal bigDecimal = new BigDecimal("1.23E3");
 
         public Employee(long id, String name, int age, boolean live, double salary, State state) {
             this(id, name, age, live, salary);
@@ -219,7 +219,6 @@ public final class SampleObjects {
             this.salary = salary;
             this.createDate = new Date();
             this.date = new Timestamp(createDate.getTime());
-            this.sqlDate = new java.sql.Date(createDate.getTime());
         }
 
         public Employee() {
@@ -239,14 +238,6 @@ public final class SampleObjects {
 
         public void setCreateDate(Date createDate) {
             this.createDate = createDate;
-        }
-
-        public java.sql.Date getSqlDate() {
-            return sqlDate;
-        }
-
-        public void setSqlDate(java.sql.Date sqlDate) {
-            this.sqlDate = sqlDate;
         }
 
         public void setName(String name) {
@@ -271,14 +262,6 @@ public final class SampleObjects {
 
         public void setDate(Timestamp date) {
             this.date = date;
-        }
-
-        public void setBigDecimal(BigDecimal bigDecimal) {
-            this.bigDecimal = bigDecimal;
-        }
-
-        public BigDecimal getBigDecimal() {
-            return bigDecimal;
         }
 
         public Timestamp getDate() {
@@ -348,6 +331,174 @@ public final class SampleObjects {
             sb.append(", salary=").append(salary);
             sb.append('}');
             return sb.toString();
+        }
+    }
+
+    public static class ObjectWithInteger implements Serializable {
+        private int attribute;
+
+        public ObjectWithInteger(int attribute) {
+            this.attribute = attribute;
+        }
+
+        public int getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithLong implements Serializable {
+        private long attribute;
+
+        public ObjectWithLong(long attribute) {
+            this.attribute = attribute;
+        }
+
+        public long getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithShort implements Serializable {
+        private short attribute;
+
+        public ObjectWithShort(short attribute) {
+            this.attribute = attribute;
+        }
+
+        public short getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithByte implements Serializable {
+        private byte attribute;
+
+        public ObjectWithByte(byte attribute) {
+            this.attribute = attribute;
+        }
+
+        public byte getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithFloat implements Serializable {
+        private float attribute;
+
+        public ObjectWithFloat(float attribute) {
+            this.attribute = attribute;
+        }
+
+        public float getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithDouble implements Serializable {
+        private double attribute;
+
+        public ObjectWithDouble(double attribute) {
+            this.attribute = attribute;
+        }
+
+        public double getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithChar implements Serializable {
+        private char attribute;
+
+        public ObjectWithChar(char attribute) {
+            this.attribute = attribute;
+        }
+
+        public char getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithBoolean implements Serializable {
+        private boolean attribute;
+
+        public ObjectWithBoolean(boolean attribute) {
+            this.attribute = attribute;
+        }
+
+        public boolean getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithBigDecimal implements Serializable {
+        private BigDecimal attribute;
+
+        public ObjectWithBigDecimal(BigDecimal attribute) {
+            this.attribute = attribute;
+        }
+
+        public BigDecimal getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithBigInteger implements Serializable {
+        private BigInteger attribute;
+
+        public ObjectWithBigInteger(BigInteger attribute) {
+            this.attribute = attribute;
+        }
+
+        public BigInteger getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithSqlTimestamp implements Serializable {
+        private Timestamp attribute;
+
+        public ObjectWithSqlTimestamp(Timestamp attribute) {
+            this.attribute = attribute;
+        }
+
+        public Timestamp getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithSqlDate implements Serializable {
+        private java.sql.Date attribute;
+
+        public ObjectWithSqlDate(java.sql.Date attribute) {
+            this.attribute = attribute;
+        }
+
+        public java.sql.Date getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithDate implements Serializable {
+        private Date attribute;
+
+        public ObjectWithDate(Date attribute) {
+            this.attribute = attribute;
+        }
+
+        public Date getAttribute() {
+            return attribute;
+        }
+    }
+
+    public static class ObjectWithUUID implements Serializable {
+        private UUID attribute;
+
+        public ObjectWithUUID(UUID attribute) {
+            this.attribute = attribute;
+        }
+
+        public UUID getAttribute() {
+            return attribute;
         }
     }
 }

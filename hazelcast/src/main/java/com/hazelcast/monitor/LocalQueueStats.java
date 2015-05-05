@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,35 +24,35 @@ public interface LocalQueueStats extends LocalInstanceStats {
     /**
      * Returns the number of owned items in this member.
      *
-     * @return number of owned items.
+     * @return number of owned items in this member.
      */
     long getOwnedItemCount();
 
     /**
      * Returns the number of backup items in this member.
      *
-     * @return number of backup items.
+     * @return number of backup items in this member.
      */
     long getBackupItemCount();
 
     /**
-     * Returns the min age of the items in this member.
+     * Returns the minimum age of the items in this member.
      *
-     * @return min age
+     * @return minimum age of the items in this member
      */
     long getMinAge();
 
     /**
-     * Returns the max age of the items in this member.
+     * Returns the maximum age of the items in this member.
      *
-     * @return max age
+     * @return maximum age of the items in this member
      */
     long getMaxAge();
 
     /**
      * Returns the average age of the items in this member.
      *
-     * @return average age
+     * @return average age of the items in this member
      */
     long getAvgAge();
 
@@ -62,7 +62,7 @@ public interface LocalQueueStats extends LocalInstanceStats {
      * #getRejectedOfferOperationCount can be used
      * to get the rejected offers.
      *
-     * @return number offer/put/add operations
+     * @return number of offer/put/add operations
      */
     long getOfferOperationCount();
 

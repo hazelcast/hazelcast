@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * non-strong values may disappear before their corresponding key.
  * <p/>
  * While this table does allow the use of both strong keys and values, it is
- * recommended to use {@link java.util.concurrent.ConcurrentHashMap} for such a
+ * recommended you use {@link java.util.concurrent.ConcurrentHashMap} for such a
  * configuration, since it is optimized for that case.
  * <p/>
  * Just like {@link java.util.concurrent.ConcurrentHashMap}, this class obeys
@@ -95,7 +95,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * its synchronization details.
  * <p/>
  * <p/>
- * Retrieval operations (including <tt>get</tt>) generally do not block, so
+ * Retrieval operations (including <tt>get</tt>) generally do not block, so they
  * may overlap with update operations (including <tt>put</tt> and
  * <tt>remove</tt>). Retrievals reflect the results of the most recently
  * <em>completed</em> update operations holding upon their onset. For
@@ -121,7 +121,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * noticeable impact. A value of one is appropriate when it is known that only
  * one thread will modify and all others will only read. Also, resizing this or
  * any other kind of hash table is a relatively slow operation, so, when
- * possible, it is a good idea to provide estimates of expected table sizes in
+ * possible, it is a good idea that you provide estimates of expected table sizes in
  * constructors.
  * <p/>
  * <p/>
@@ -460,7 +460,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     static final class Segment<K, V> extends ReentrantLock implements Serializable {
         /*
          * Segments maintain a table of entry lists that are ALWAYS
-         * kept in a consistent state, so can be read without locking.
+         * kept in a consistent state, so they can be read without locking.
          * Next fields of nodes are immutable (final).  All list
          * additions are performed at the front of each bin. This
          * makes it easy to check changes, and also fast to traverse.
@@ -509,7 +509,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
          * used during bulk-read methods to make sure they see a
          * consistent snapshot: If modCounts change during a traversal
          * of segments computing size or checking containsValue, then
-         * we might have an inconsistent view of state so (usually)
+         * we might have an inconsistent view of state so (usually) we
          * must retry.
          */
         // I have faith in Doug Lea's techical decision
@@ -742,7 +742,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             /*
              * Reclassify nodes in each list to new Map.  Because we are
              * using power-of-two expansion, the elements from each bin
-             * must either stay at same index, or move with a power of two
+             * must either stay at the same index, or move with a power of two
              * offset. We eliminate unnecessary node creation by catching
              * cases where old nodes can be reused because their next
              * fields won't change. Statistically, at the default
@@ -804,7 +804,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         }
 
         /**
-         * Remove; match on key only if value null, else match both.
+         * Remove: match on key only if value is null, else match both.
          */
         V remove(Object key, int hash, Object value, boolean refRemove) {
             lock();
@@ -881,7 +881,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Creates a new, empty map with the specified initial
-     * capacity, reference types, load factor and concurrency level.
+     * capacity, reference types, load factor, and concurrency level.
      * <p/>
      * Behavioral changing options such as {@link Option#IDENTITY_COMPARISONS}
      * can also be specified.
@@ -940,10 +940,10 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Creates a new, empty map with the specified initial
-     * capacity, load factor and concurrency level.
+     * capacity, load factor, and concurrency level.
      *
      * @param initialCapacity  the initial capacity. The implementation
-     *                         performs internal sizing to accommodate this many elements.
+     *                         performs internal sizing to accommodate this number of elements.
      * @param loadFactor       the load factor threshold, used to control resizing.
      *                         Resizing may be performed when the average number of elements per
      *                         bin exceeds this threshold.
@@ -966,7 +966,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * strong values), and concurrencyLevel (16).
      *
      * @param initialCapacity The implementation performs internal
-     *                        sizing to accommodate this many elements.
+     *                        sizing to accommodate this number of elements.
      * @param loadFactor      the load factor threshold, used to control resizing.
      *                        Resizing may be performed when the average number of elements per
      *                        bin exceeds this threshold.
@@ -981,7 +981,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Creates a new, empty map with the specified initial capacity,
-     * reference types and with default load factor (0.75) and concurrencyLevel (16).
+     * reference types, and with a default load factor (0.75) and concurrencyLevel (16).
      *
      * @param initialCapacity the initial capacity. The implementation
      *                        performs internal sizing to accommodate this many elements.
@@ -1154,7 +1154,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
      * <p/>
-     * <p>More formally, if this map contains a mapping from a key
+     * <p>If this map contains a mapping from a key
      * {@code k} to a value {@code v} such that {@code key.equals(k)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
@@ -1183,7 +1183,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Returns <tt>true</tt> if this map maps one or more keys to the
      * specified value. Note: This method requires a full internal
-     * traversal of the hash table, and so is much slower than
+     * traversal of the hash table, therefore it is much slower than the
      * method <tt>containsKey</tt>.
      *
      * @param value value whose presence in this map is to be tested
@@ -1374,8 +1374,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * as cleaning up old references to a ClassLoader in a multi-classloader
      * environment.
      * <p/>
-     * Note: this method will acquire locks, one at a time, across all segments
-     * of this table, so if it is to be used, it should be used sparingly.
+     * Note: this method will acquire locks one at a time across all segments
+     * of this table, so this method should be used sparingly.
      */
     public void purgeStaleEntries() {
         for (int i = 0; i < segments.length; ++i)
@@ -1437,7 +1437,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * <p/>
      * <p>The view's <tt>iterator</tt> is a "weakly consistent" iterator
      * that will never throw {@link ConcurrentModificationException},
-     * and guarantees to traverse elements as they existed upon
+     * and is guaranteed to traverse elements as they existed upon
      * construction of the iterator, and may (but is not guaranteed to)
      * reflect any modifications subsequent to construction.
      */
@@ -1567,12 +1567,12 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     /*
      * This class is needed for JDK5 compatibility.
      */
-    static class SimpleEntry<K, V> implements Entry<K, V>,
+    protected static class SimpleEntry<K, V> implements Entry<K, V>,
             java.io.Serializable {
         private static final long serialVersionUID = -8499721149061103585L;
 
-        private final K key;
-        private V value;
+        protected final K key;
+        protected V value;
 
         public SimpleEntry(K key, V value) {
             this.key = key;
@@ -1625,16 +1625,16 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * Custom Entry class used by EntryIterator.next(), that relays setValue
      * changes to the underlying map.
      */
-    final class WriteThroughEntry extends SimpleEntry<K, V> {
+    protected class WriteThroughEntry extends SimpleEntry<K, V> {
         private static final long serialVersionUID = -7900634345345313646L;
 
-        WriteThroughEntry(K k, V v) {
+        protected WriteThroughEntry(K k, V v) {
             super(k, v);
         }
 
         /**
-         * Set our entry's value and write through to the map. The
-         * value to return is somewhat arbitrary here. Since a
+         * Set our entry's value and writes it through to the map. The
+         * value to return is somewhat arbitrary: since a
          * WriteThroughEntry does not necessarily track asynchronous
          * changes, the most recent "previous" value could be
          * different from what we return (or could even have been

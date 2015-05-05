@@ -2,7 +2,7 @@
 
 
 
-### Create the Class
+### Creating Class
 
 To have the counter as a functioning distributed object, we need a class. This class (named CounterService in the following sample) will be the gateway between Hazelcast internals and the counter, allowing us to add features to the counter. In the following sample, the class `CounterService` is created. Its lifecycle will be managed by Hazelcast. 
 

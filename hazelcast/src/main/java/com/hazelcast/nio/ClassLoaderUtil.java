@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.util.ConcurrentReferenceHashMap;
-import com.hazelcast.util.ValidationUtil;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -26,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Utility class to deal with classloaders.
@@ -79,7 +80,7 @@ public final class ClassLoaderUtil {
     public static Class<?> loadClass(final ClassLoader classLoader, final String className)
             throws ClassNotFoundException {
 
-        ValidationUtil.isNotNull(className, "className");
+        isNotNull(className, "className");
         if (className.length() <= MAX_PRIM_CLASSNAME_LENGTH && Character.isLowerCase(className.charAt(0))) {
             final Class primitiveClass = PRIMITIVE_CLASSES.get(className);
             if (primitiveClass != null) {
@@ -155,7 +156,7 @@ public final class ClassLoaderUtil {
         }
 
         public <T> Constructor<T> get(ClassLoader classLoader, String className) {
-            ValidationUtil.isNotNull(className, "className");
+            isNotNull(className, "className");
             ConcurrentMap<String, WeakReference<Constructor>> innerCache = cache.get(classLoader);
             if (innerCache == null) {
                 return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,14 @@ public interface ItemListener<E> extends EventListener {
     /**
      * Invoked when an item is added.
      *
-     * @param item added item
+     * @param item the added item
      */
     void itemAdded(ItemEvent<E> item);
 
     /**
      * Invoked when an item is removed.
      *
-     * @param item removed item.
+     * @param item the removed item.
      */
     void itemRemoved(ItemEvent<E> item);
 }

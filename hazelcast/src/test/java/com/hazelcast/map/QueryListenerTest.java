@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();

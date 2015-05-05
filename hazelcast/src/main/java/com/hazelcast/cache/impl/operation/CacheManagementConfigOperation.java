@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,11 @@ public class CacheManagementConfigOperation
     }
 
     @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
+    }
+
+    @Override
     public void run()
             throws Exception {
         final CacheService service = getService();
@@ -58,16 +63,6 @@ public class CacheManagementConfigOperation
         } else {
             service.setManagementEnabled(null, name, enabled);
         }
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
     }
 
     @Override

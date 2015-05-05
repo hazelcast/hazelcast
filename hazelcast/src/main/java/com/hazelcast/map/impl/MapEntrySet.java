@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,9 +65,13 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             Data value = in.readData();
-            Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value);
+            Map.Entry<Data, Data> entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value);
             entrySet.add(entry);
         }
+    }
+
+    public boolean isEmpty() {
+        return entrySet.isEmpty();
     }
 
     @Override
@@ -79,5 +83,4 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
     public int getId() {
         return MapDataSerializerHook.ENTRY_SET;
     }
-
 }

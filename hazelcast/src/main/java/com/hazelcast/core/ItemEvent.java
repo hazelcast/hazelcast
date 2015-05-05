@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,18 +48,18 @@ public class ItemEvent<E> extends EventObject {
     }
 
     /**
-     * Returns the item related to event.
+     * Returns the item related to the event.
      *
-     * @return the item.
+     * @return the item related to the event.
      */
     public E getItem() {
         return item;
     }
 
     /**
-     * Returns the member fired this event.
+     * Returns the member that fired this event.
      *
-     * @return the member fired this event.
+     * @return the member that fired this event.
      */
     public Member getMember() {
         return member;

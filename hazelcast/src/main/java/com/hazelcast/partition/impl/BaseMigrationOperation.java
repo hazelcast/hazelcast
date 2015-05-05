@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,13 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         setPartitionId(migrationInfo.getPartitionId());
     }
 
-    @Override
-    public Object getResponse() {
-        return success;
+    public MigrationInfo getMigrationInfo() {
+        return migrationInfo;
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public Object getResponse() {
+        return success;
     }
 
     @Override
@@ -80,11 +79,6 @@ public abstract class BaseMigrationOperation extends AbstractOperation
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getName());
-        sb.append("{partitionId=").append(getPartitionId());
-        sb.append(", migration=").append(migrationInfo);
-        sb.append('}');
-        return sb.toString();
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo + '}';
     }
 }

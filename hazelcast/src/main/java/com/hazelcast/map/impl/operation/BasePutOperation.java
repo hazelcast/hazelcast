@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,22 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
-public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
+public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     protected transient Data dataOldValue;
     protected transient EntryEventType eventType;
+    protected transient boolean putTransient;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value, -1);
@@ -58,15 +61,17 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     private void publishWANReplicationEvent(MapServiceContext mapServiceContext, MapEventPublisher mapEventPublisher) {
-        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-            Record record = recordStore.getRecord(dataKey);
-            if (record == null) {
-                return;
-            }
-            final Data valueConvertedData = mapServiceContext.toData(dataValue);
-            final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
-            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+        if (mapContainer.getWanReplicationPublisher() == null || mapContainer.getWanMergePolicy() == null) {
+            return;
         }
+
+        Record record = recordStore.getRecord(dataKey);
+        if (record == null) {
+            return;
+        }
+        final Data valueConvertedData = mapServiceContext.toData(dataValue);
+        final EntryView entryView = EntryViews.createSimpleEntryView(dataKey, valueConvertedData, record);
+        mapEventPublisher.publishWanReplicationUpdate(name, entryView);
     }
 
     private EntryEventType getEventType() {
@@ -76,6 +81,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return eventType;
     }
 
+    @Override
     public boolean shouldBackup() {
         Record record = recordStore.getRecord(dataKey);
         if (record == null) {
@@ -84,20 +90,31 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
         final RecordInfo replicationInfo = buildRecordInfo(record);
-        return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
+        MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
+        Data dataValueForBackup = dataValue;
+        // if data-store is post processing, then we need to retrieve the 'processed' value from record
+        // not the value initially provided
+        if (mapDataStore.isPostProcessingMapStore()) {
+            dataValueForBackup = mapService.getMapServiceContext().toData(record.getValue());
+        }
+        return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo, putTransient);
     }
 
+    @Override
     public final int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
+    @Override
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }
 
+    @Override
     public void onWaitExpire() {
         final ResponseHandler responseHandler = getResponseHandler();
         responseHandler.sendResponse(null);

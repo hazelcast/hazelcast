@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ public final class OutSelectorImpl extends AbstractIOSelector {
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isWritable()) {
             writeEvents++;
-            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }

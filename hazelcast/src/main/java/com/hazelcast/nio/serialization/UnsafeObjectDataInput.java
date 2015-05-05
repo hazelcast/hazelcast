@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,12 +30,12 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
-    UnsafeObjectDataInput(Data data, SerializationService service) {
-        super(data, service, ByteOrder.nativeOrder());
-    }
-
     UnsafeObjectDataInput(byte[] buffer, SerializationService service) {
         super(buffer, service, ByteOrder.nativeOrder());
+    }
+
+    UnsafeObjectDataInput(byte[] buffer, int offset, SerializationService service) {
+        super(buffer, offset, service, ByteOrder.nativeOrder());
     }
 
     public int read() throws IOException {
@@ -78,14 +78,41 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         return UnsafeHelper.UNSAFE.getInt(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
+    @Override
+    public int readInt(int position, ByteOrder byteOrder) throws IOException {
+        int v = readInt(position);
+        if (byteOrder != ByteOrder.nativeOrder()) {
+            v = Integer.reverseBytes(v);
+        }
+        return v;
+    }
+
     public long readLong(int position) throws IOException {
         checkAvailable(position, LONG_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getLong(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
     }
 
+    @Override
+    public long readLong(int position, ByteOrder byteOrder) throws IOException {
+        long v = readLong(position);
+        if (byteOrder != ByteOrder.nativeOrder()) {
+            v = Long.reverseBytes(v);
+        }
+        return v;
+    }
+
     public short readShort(int position) throws IOException {
         checkAvailable(position, SHORT_SIZE_IN_BYTES);
         return UnsafeHelper.UNSAFE.getShort(data, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position);
+    }
+
+    @Override
+    public short readShort(int position, ByteOrder byteOrder) throws IOException {
+        short v = readShort(position);
+        if (byteOrder != ByteOrder.nativeOrder()) {
+            v = Short.reverseBytes(v);
+        }
+        return v;
     }
 
     public char[] readCharArray() throws IOException {

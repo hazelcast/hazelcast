@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import java.io.IOException;
 public class CacheEntryProcessorRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
+    private Data key;
     private EntryProcessor entryProcessor;
     private Object[] arguments;
     private int completionId;
@@ -54,10 +54,12 @@ public class CacheEntryProcessorRequest
         this.arguments = arguments;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.ENTRY_PROCESSOR;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -68,6 +70,7 @@ public class CacheEntryProcessorRequest
         return operationProvider.createEntryProcessorOperation(key, completionId, entryProcessor, arguments);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -84,6 +87,7 @@ public class CacheEntryProcessorRequest
         }
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -101,6 +105,7 @@ public class CacheEntryProcessorRequest
         }
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }

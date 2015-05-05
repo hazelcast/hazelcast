@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@ public class CacheGetAllRequest
     private Set<Data> keys = new HashSet<Data>();
     private ExpiryPolicy expiryPolicy;
 
-
     public CacheGetAllRequest() {
     }
 
@@ -60,10 +59,12 @@ public class CacheGetAllRequest
         this.expiryPolicy = expiryPolicy;
     }
 
+    @Override
     public int getFactoryId() {
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.GET_ALL;
     }
@@ -88,6 +89,7 @@ public class CacheGetAllRequest
         return resultSet;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -101,6 +103,7 @@ public class CacheGetAllRequest
         output.writeObject(expiryPolicy);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -115,6 +118,7 @@ public class CacheGetAllRequest
         expiryPolicy = input.readObject();
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return null;
     }
@@ -128,4 +132,5 @@ public class CacheGetAllRequest
     public Object[] getParameters() {
         return new Object[]{keys};
     }
+
 }

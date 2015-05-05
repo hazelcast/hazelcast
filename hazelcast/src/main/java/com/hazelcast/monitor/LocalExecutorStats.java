@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,44 +19,44 @@ package com.hazelcast.monitor;
 public interface LocalExecutorStats extends LocalInstanceStats {
 
     /**
-     * Returns the number of pending operations of the executor service
+     * Returns the number of pending operations on the executor service.
      *
-     * @return the number of pending operations
+     * @return the number of pending operations on the executor service
      */
     long getPendingTaskCount();
 
     /**
-     * Returns the number of started operations of the executor service
+     * Returns the number of started operations on the executor service.
      *
-     * @return the number of started operations
+     * @return the number of started operations on the executor service
      */
     long getStartedTaskCount();
 
     /**
-     * Returns the number of completed operations of the executor service
+     * Returns the number of completed operations on the executor service.
      *
-     * @return the number of completed operations
+     * @return the number of completed operations on the executor service
      */
     long getCompletedTaskCount();
 
     /**
-     * Returns the number of cancelled operations of the executor service
+     * Returns the number of cancelled operations on the executor service.
      *
-     * @return the number of cancelled operations
+     * @return the number of cancelled operations on the executor service
      */
     long getCancelledTaskCount();
 
     /**
-     * Returns the total start latency of operations started
+     * Returns the total start latency of operations started.
      *
-     * @return the total start latency
+     * @return the total start latency of operations started
      */
     long getTotalStartLatency();
 
     /**
-     * Returns the total execution time of operations finished
+     * Returns the total execution time of operations finished.
      *
-     * @return the total execution time
+     * @return the total execution time of operations finished
      */
     long getTotalExecutionLatency();
 

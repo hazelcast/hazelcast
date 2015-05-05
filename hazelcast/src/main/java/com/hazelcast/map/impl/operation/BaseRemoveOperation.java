@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,11 @@ import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
-public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
+public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     protected transient Data dataOldValue;
 
@@ -35,6 +36,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
     public BaseRemoveOperation() {
     }
 
+    @Override
     public void afterRun() {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         mapServiceContext.interceptAfterRemove(name, dataValue);
@@ -53,18 +55,22 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         return dataOldValue;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new RemoveBackupOperation(name, dataKey);
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
+    @Override
     public int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }

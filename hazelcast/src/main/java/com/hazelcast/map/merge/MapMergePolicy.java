@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public interface MapMergePolicy extends DataSerializable {
      * @param mapName       name of the map
      * @param mergingEntry  entry merging into the destination cluster
      * @param existingEntry existing entry in the destination cluster
-     * @return final value of the entry. If returns null then entry will be removed.
+     * @return final value of the entry. If returns null, then the entry will be removed.
      */
     Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
 

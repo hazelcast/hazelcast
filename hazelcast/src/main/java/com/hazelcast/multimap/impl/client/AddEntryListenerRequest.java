@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapPortableHook;
@@ -57,7 +56,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final MultiMapService service = getService();
-        EntryListener listener = new EntryAdapter() {
+        EntryAdapter listener = new EntryAdapter() {
             @Override
             public void onEntryEvent(EntryEvent event) {
                 if (endpoint.isAlive()) {
@@ -68,13 +67,14 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
+                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, type, uuid);
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, mergingValue
+                            , type, uuid);
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
-
             @Override
             public void onMapEvent(MapEvent event) {
                 if (endpoint.isAlive()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * This interface describes a trackable job. In the default implementation
- * the internal assigned operation processor is a TrackableJob so the process
- * can be watched on while processing.<br/>
- * To request the TrackableJob of a map reduce job use the following code snippet
+ * This interface describes a trackable job. In the default implementation,
+ * the internal assigned operation processor is a TrackableJob, so the process
+ * can be watched while processing.<br/>
+ * To request the TrackableJob of a map reduce job, you can use the following code snippet.
  * <pre>
  * JobTracker tracker = hazelcastInstance.getJobTracker(...);
  * Job job = tracker.newJob(...);
@@ -62,7 +62,7 @@ public interface TrackableJob<V> {
 
     /**
      * Returns the {@link com.hazelcast.core.ICompletableFuture} to add callbacks
-     * or wait for the resulting value of the tracked job
+     * or wait for the resulting value of the tracked job.
      *
      * @return ICompletableFuture of the tracked job
      */
@@ -70,12 +70,12 @@ public interface TrackableJob<V> {
 
     /**
      * Returns an instance of {@link com.hazelcast.mapreduce.JobProcessInformation} to find out the state and
-     * statistics of a running task or null if the underlying job id is not available because job is already
-     * finished or not yet submitted.<br/>
-     * It even returns null if not requested on the job issuing cluster member or client since those values are
+     * statistics of a running task, or returns null if the underlying job id is not available because the job is already
+     * finished or has not yet been submitted.<br/>
+     * It returns null if not requested on the job issuing cluster member or client, since those values are
      * not distributed to all clusters for traffic reasons.
      *
-     * @return instance of the jobs process information or null if job id is not available
+     * @return instance of the job process information, or null if job id is not available
      */
     JobProcessInformation getJobProcessInformation();
 

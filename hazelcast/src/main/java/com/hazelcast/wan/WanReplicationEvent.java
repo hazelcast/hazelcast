@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,18 +39,38 @@ public class WanReplicationEvent
         this.eventObject = eventObject;
     }
 
+    /**
+     * Returns the service name for this event object.
+     *
+     * @return the service name for this event object.
+     */
     public String getServiceName() {
         return serviceName;
     }
 
+    /**
+     * Sets the service name for this event object.
+     *
+     * @param serviceName the service name for this event object.
+     */
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
 
+    /**
+     * Gets the event object.
+     *
+     * @return the event object.
+     */
     public Object getEventObject() {
         return eventObject;
     }
 
+    /**
+     * Sets the event object.
+     *
+     * @param eventObject the event object.
+     */
     public void setEventObject(ReplicationEventObject eventObject) {
         this.eventObject = eventObject;
     }

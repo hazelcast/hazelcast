@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package com.hazelcast.memory;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * MemorySize represents a memory size with given value and <tt>MemoryUnit</tt>.
@@ -37,15 +39,14 @@ public final class MemorySize {
         if (value < 0) {
             throw new IllegalArgumentException("Memory size cannot be negative! -> " + value);
         }
-        if (unit == null) {
-            throw new NullPointerException("MemoryUnit is required!");
-        }
+
         this.value = value;
-        this.unit = unit;
+        this.unit = checkNotNull(unit, "MemoryUnit is required!");
     }
 
     /**
      * Returns value of memory size in its original unit.
+     *
      * @return memory size in its original unit
      */
     public long getValue() {
@@ -54,6 +55,7 @@ public final class MemorySize {
 
     /**
      * Returns unit of memory size
+     *
      * @return unit of memory size
      */
     public MemoryUnit getUnit() {
@@ -62,6 +64,7 @@ public final class MemorySize {
 
     /**
      * Returns value of memory size in bytes.
+     *
      * @return memory size in bytes
      */
     public long bytes() {
@@ -70,6 +73,7 @@ public final class MemorySize {
 
     /**
      * Returns value of memory size in kilo-bytes.
+     *
      * @return memory size in kilo-bytes
      */
     public long kiloBytes() {
@@ -78,6 +82,7 @@ public final class MemorySize {
 
     /**
      * Returns value of memory size in mega-bytes.
+     *
      * @return memory size in mega-bytes
      */
     public long megaBytes() {
@@ -86,6 +91,7 @@ public final class MemorySize {
 
     /**
      * Returns value of memory size in giga-bytes.
+     *
      * @return memory size in giga-bytes
      */
     public long gigaBytes() {
@@ -159,7 +165,8 @@ public final class MemorySize {
 
     /**
      * Returns a pretty format String representation of this memory size.
-     * @return  a pretty format representation of this memory size
+     *
+     * @return a pretty format representation of this memory size
      */
     public String toPrettyString() {
         return toPrettyString(value, unit);
@@ -172,6 +179,7 @@ public final class MemorySize {
 
     /**
      * Utility method to create a pretty format representation of given value in bytes.
+     *
      * @param size size in bytes
      * @return pretty format representation of given value
      */
@@ -181,6 +189,7 @@ public final class MemorySize {
 
     /**
      * Utility method to create a pretty format representation of given value in given unit.
+     *
      * @param size memory size
      * @param unit memory unit
      * @return pretty format representation of given value

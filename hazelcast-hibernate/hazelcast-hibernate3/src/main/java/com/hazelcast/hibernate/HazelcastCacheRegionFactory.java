@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import com.hazelcast.hibernate.distributed.IMapRegionCache;
 import com.hazelcast.hibernate.region.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.region.HazelcastEntityRegion;
 import com.hazelcast.hibernate.region.HazelcastTimestampsRegion;
-import org.hibernate.cache.CollectionRegion;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.CacheException;
+import org.hibernate.cache.CollectionRegion;
 import org.hibernate.cache.EntityRegion;
-import org.hibernate.cache.TimestampsRegion;
 import org.hibernate.cache.RegionFactory;
+import org.hibernate.cache.TimestampsRegion;
 
 import java.util.Properties;
 

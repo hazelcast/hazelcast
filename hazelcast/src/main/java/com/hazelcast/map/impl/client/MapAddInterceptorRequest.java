@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -68,12 +69,18 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
     @Override
     protected OperationFactory createOperationFactory() {
         final MapService mapService = getService();
-        id = mapService.getMapServiceContext().addInterceptor(name, mapInterceptor);
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        id = mapServiceContext.generateInterceptorId(name, mapInterceptor);
         return new AddInterceptorOperationFactory(id, name, mapInterceptor);
     }
 
     @Override
     protected Object reduce(Map<Address, Object> map) {
+        for (Object result : map.values()) {
+            if (result instanceof Throwable) {
+                return result;
+            }
+        }
         return id;
     }
 
@@ -82,9 +89,7 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-            if (!member.localMember()) {
-                addresses.add(member.getAddress());
-            }
+            addresses.add(member.getAddress());
         }
         return addresses;
     }

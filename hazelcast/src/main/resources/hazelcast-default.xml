@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
     - no hazelcast.xml if present
 
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -45,6 +45,9 @@
             </multicast>
             <tcp-ip enabled="false">
                 <interface>127.0.0.1</interface>
+                <member-list>
+                    <member>127.0.0.1</member>
+                </member-list>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
@@ -197,11 +200,6 @@
         <value-collection-type>SET</value-collection-type>
     </multimap>
 
-    <multimap name="default">
-        <backup-count>1</backup-count>
-        <value-collection-type>SET</value-collection-type>
-    </multimap>
-
     <list name="default">
         <backup-count>1</backup-count>
     </list>
@@ -225,6 +223,14 @@
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
     </semaphore>
+
+    <ringbuffer name="default">
+        <capacity>10000</capacity>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <time-to-live-seconds>30</time-to-live-seconds>
+        <in-memory-format>BINARY</in-memory-format>
+    </ringbuffer>
 
     <serialization>
         <portable-version>0</portable-version>

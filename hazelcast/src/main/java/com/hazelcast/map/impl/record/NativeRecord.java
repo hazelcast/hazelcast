@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.storage.DataRef;
-import com.hazelcast.storage.Storage;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 
 class NativeRecord extends AbstractRecord<Data> {
 

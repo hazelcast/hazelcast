@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +38,9 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class DateHelperTest {
 
-    public static final String DATE_FORMAT = "EEE MMM dd HH:mm:ss zzz yyyy";
+    public static final String DATE_FORMAT = DateHelper.DATE_FORMAT;
+    public static final String TIMESTAMP_FORMAT = DateHelper.TIMESTAMP_FORMAT;
+    public static final String SQL_DATE_FORMAT = DateHelper.SQL_DATE_FORMAT;
 
     @Test
     public void testSqlDate() {

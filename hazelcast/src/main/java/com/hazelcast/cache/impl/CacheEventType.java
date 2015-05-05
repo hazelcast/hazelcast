@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,12 @@ public enum CacheEventType {
     /**
      * An event type indicating that the cache operation has completed.
      */
-    COMPLETED(7);
+    COMPLETED(7),
+
+    /**
+     * An event type indicationg that the expiration time of cache record has been updated
+     */
+    EXPIRATION_TIME_UPDATED(8);
 
     private int type;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,34 +21,34 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * The result of a Event Registration.
- *
  */
 public interface EventRegistration extends DataSerializable {
 
     /**
-     * Returns event registration id.
-     * @return event registration id
+     * Returns the event registration id.
+     *
+     * @return the event registration id
      */
     String getId();
 
     /**
-     * Returns {@link EventFilter} attached to this registration.
+     * Returns the {@link EventFilter} attached to this registration.
      *
-     * @return event filter attached to this registration
+     * @return the event filter attached to this registration
      */
     EventFilter getFilter();
 
     /**
-     * Returns subscriber of this registration.
+     * Returns the subscriber of this registration.
      *
-     * @return subscriber of this registration
+     * @return the subscriber of this registration
      */
     Address getSubscriber();
 
     /**
      * Returns true if this registration is for locally fired events only.
      *
-     * @return true if this registration is local only, false otherwise.
+     * @return true if this registration is for locally fired events only, false otherwise.
      */
     boolean isLocalOnly();
 

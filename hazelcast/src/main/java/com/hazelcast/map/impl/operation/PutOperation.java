@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
+    public PutOperation() {
+    }
+
     public PutOperation(String name, Data dataKey, Data value, long ttl) {
         super(name, dataKey, value, ttl);
     }
 
-    public PutOperation() {
-    }
-
+    @Override
     public void run() {
         dataOldValue = mapService.getMapServiceContext().toData(recordStore.put(dataKey, dataValue, ttl));
     }
@@ -43,10 +44,12 @@ public final class PutOperation extends BasePutOperation implements IdentifiedDa
         return "PutOperation{" + name + "}";
     }
 
+    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return MapDataSerializerHook.PUT;
     }

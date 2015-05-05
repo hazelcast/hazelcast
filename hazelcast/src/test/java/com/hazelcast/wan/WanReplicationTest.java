@@ -4,9 +4,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
@@ -16,13 +18,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +25,14 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,9 +49,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
     private HazelcastInstance[] clusterC = new HazelcastInstance[2];
 
-    private Config configA;
-    private Config configB;
-    private Config configC;
+    public Config configA;
+    public Config configB;
+    public Config configC;
 
     private Random random = new Random();
 
@@ -354,6 +356,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
 
     @Test
+    @Ignore
     public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy() {
 
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
@@ -455,7 +458,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
     }
 
 
-
     @Test
     public void linkTopo_ActiveActiveReplication_2clusters_Test_HigherHitsMapMergePolicy() {
 
@@ -531,6 +533,29 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterC, "map", 1000);
     }
 
+
+    @Test
+    public void willFireNewOnMergeEventAtReceivingCluster() {
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+
+        initClusterA();
+        initClusterB();
+
+        IMap<String, String> map = clusterB[0].getMap("map");
+        int entryCount = 1000;
+        final CountDownLatch mergeEventFiredCounter = new CountDownLatch(entryCount);
+        map.addEntryListener(new EntryMergedListener<String, String>() {
+            @Override
+            public void entryMerged(EntryEvent<String, String> event) {
+                mergeEventFiredCounter.countDown();
+            }
+        }, true);
+
+        createDataIn(clusterA, "map", 0, entryCount);
+        assertKeysIn(clusterB, "map", 0, entryCount);
+        assertDataSizeEventually(clusterB, "map", entryCount);
+        assertOpenEventually(mergeEventFiredCounter);
+    }
 
     private void printReplicaConfig(Config c) {
 

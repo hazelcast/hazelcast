@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,26 +23,23 @@ import org.junit.runners.model.Statement;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Runs the tests in parallel with multiple threads.
+ */
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
-    private static final int MAX_THREADS;
+    private static final int MAX_THREADS = !TestEnvironment.isMockNetwork() ? 1
+                : Math.max(Runtime.getRuntime().availableProcessors(), 8);
 
-    static {
-        int cores = Runtime.getRuntime().availableProcessors();
-        if (!TestEnvironment.isMockNetwork()) {
-            MAX_THREADS = 1;
-        } else if (cores < 8) {
-            MAX_THREADS = 8;
-        } else {
-            MAX_THREADS = cores;
-        }
-    }
-
-    private final AtomicInteger numThreads;
+    private final AtomicInteger numThreads = new AtomicInteger(0);
 
     public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
-        numThreads = new AtomicInteger(0);
+    }
+
+    public HazelcastParallelClassRunner(Class<?> klass, Object[] parameters,
+                                        String name) throws InitializationError {
+        super(klass, parameters, name);
     }
 
     @Override
@@ -51,9 +48,8 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
-                System.err.println("Interrupted: " + method.getName());
-                e.printStackTrace();
-                return; // The user may have interrupted us; this won't happen normally
+                Thread.currentThread().interrupt();
+                return;
             }
         }
         numThreads.incrementAndGet();
@@ -85,14 +81,18 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
         @Override
         public void run() {
-            long start = System.currentTimeMillis();
-            String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-            System.out.println("Started Running Test: " + testName);
-            HazelcastParallelClassRunner.super.runChild(method, notifier);
-            numThreads.decrementAndGet();
-            float took = (float) (System.currentTimeMillis() - start) / 1000;
-            System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+            FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
+            try {
+                long start = System.currentTimeMillis();
+                String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+                System.out.println("Started Running Test: " + testName);
+                HazelcastParallelClassRunner.super.runChild(method, notifier);
+                numThreads.decrementAndGet();
+                float took = (float) (System.currentTimeMillis() - start) / 1000;
+                System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+            }finally {
+                FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+            }
         }
     }
-
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -605,6 +605,7 @@
             </xs:choice>
             <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="write-batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="write-coalescing" type="xs:boolean"  minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" default="true" type="xs:boolean"/>

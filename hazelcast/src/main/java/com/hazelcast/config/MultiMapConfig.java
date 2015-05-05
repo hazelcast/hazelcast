@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package com.hazelcast.config;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
 
 /**
  * Configuration for Multi-map.
@@ -50,6 +53,10 @@ public class MultiMapConfig {
     private MultiMapConfigReadOnly readOnly;
 
     public MultiMapConfig() {
+    }
+
+    public MultiMapConfig(String name) {
+        setName(name);
     }
 
     public MultiMapConfig(MultiMapConfig defConfig) {
@@ -148,8 +155,18 @@ public class MultiMapConfig {
         return backupCount;
     }
 
+    /**
+     * Sets the number of synchronous backups.
+     *
+     * @param backupCount the number of synchronous backups to set
+     * @return the current MultiMapConfig
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setAsyncBackupCount(int)
+     */
     public MultiMapConfig setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -157,8 +174,19 @@ public class MultiMapConfig {
         return asyncBackupCount;
     }
 
+    /**
+     * Sets the number of asynchronous backups. 0 means no backups
+     *
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated MultiMapConfig
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
+     */
     public MultiMapConfig setAsyncBackupCount(int asyncBackupCount) {
-        this.asyncBackupCount = asyncBackupCount;
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 

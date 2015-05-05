@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,24 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
             if (runnable == null) {
                 return;
             }
+            executeTask(runnable);
+        }
+    }
+
+    private void executeTask(Runnable runnable) {
+        IOSelector target = getTargetIOSelector(runnable);
+        if (target == this) {
             runnable.run();
+        } else {
+            target.addTask(runnable);
+        }
+    }
+
+    private IOSelector getTargetIOSelector(Runnable runnable) {
+        if (runnable instanceof MigratableHandler) {
+            return ((MigratableHandler) runnable).getOwner();
+        } else {
+            return this;
         }
     }
 
@@ -163,7 +180,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    private void handleSelectionKeyFailure(final Throwable e) {
+    public void handleSelectionKeyFailure(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {

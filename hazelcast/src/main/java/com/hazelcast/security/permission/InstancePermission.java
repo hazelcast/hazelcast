@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.security.permission;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.config.matcher.WildcardConfigPatternMatcher;
 
 import java.security.Permission;
 
@@ -28,6 +28,8 @@ public abstract class InstancePermission extends ClusterPermission {
     protected static final int NONE = 0;
     protected static final int CREATE = 1;
     protected static final int DESTROY = 2;
+
+    private static final WildcardConfigPatternMatcher CONFIG_PATTERN_MATCHER = new WildcardConfigPatternMatcher();
 
     protected final int mask;
     protected final String actions;
@@ -64,7 +66,7 @@ public abstract class InstancePermission extends ClusterPermission {
             return false;
         }
 
-        if (!Config.nameMatches(that.getName(), this.getName())) {
+        if (!CONFIG_PATTERN_MATCHER.matches(that.getName(), this.getName())) {
             return false;
         }
 

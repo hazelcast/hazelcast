@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.config.MapStoreConfig;
@@ -14,10 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
-import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createSafeBoundedArrayWriteBehindQueue;
+import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createBoundedWriteBehindQueue;
 
 /**
- * Factory class responsible for creating various daa store implementations.
+ * Factory class responsible for creating various data store implementations.
  *
  * @see com.hazelcast.map.impl.mapstore.MapDataStore
  */
@@ -31,7 +47,7 @@ public final class MapDataStores {
      *
      * @param mapStoreContext      context for map store operations.
      * @param partitionId          partition id of partition.
-     * @param writeBehindProcessor
+     * @param writeBehindProcessor the {@link WriteBehindProcessor}
      * @param <K>                  type of key to store.
      * @param <V>                  type of value to store.
      * @return new write behind store manager.
@@ -44,21 +60,20 @@ public final class MapDataStores {
         final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         final int writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
-        // TODO writeCoalescing should be configurable.
-        boolean writeCoalescing = true;
+        final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, writeCoalescing);
-        final WriteBehindQueue writeBehindQueue = pickWriteBehindQueue(mapServiceContext, writeCoalescing);
+                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId);
+        final WriteBehindQueue writeBehindQueue = newWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
     }
 
-    private static WriteBehindQueue pickWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
+    private static WriteBehindQueue newWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
         final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
         final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
         return writeCoalescing ? createDefaultWriteBehindQueue()
-                : createSafeBoundedArrayWriteBehindQueue(capacity, counter);
+                : createBoundedWriteBehindQueue(capacity, counter);
     }
 
     /**

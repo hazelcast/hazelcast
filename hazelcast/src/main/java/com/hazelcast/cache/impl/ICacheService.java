@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
@@ -43,7 +44,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     void destroyCache(String objectName, boolean isLocal, String callerUuid);
 
-    CacheConfig createCacheConfigIfAbsent(CacheConfig config, boolean isLocal);
+    CacheSimpleConfig findCacheConfig(String simpleName);
+
+    CacheConfig createCacheConfigIfAbsent(CacheConfig config);
 
     CacheConfig deleteCacheConfig(String name);
 
@@ -60,7 +63,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     Collection<CacheConfig> getCacheConfigs();
 
     void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
-            boolean isOldValueAvailable, int orderKey, int completionId);
+                      boolean isOldValueAvailable, int orderKey, int completionId, long expirationTime,
+                      String origin);
 
     void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey);
 
@@ -78,4 +82,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
+
+    void sendInvalidationEvent(String name, Data key, String sourceUuid);
+
+
 }

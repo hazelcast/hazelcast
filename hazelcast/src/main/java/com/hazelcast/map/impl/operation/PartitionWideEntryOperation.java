@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -90,40 +89,21 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return responses;
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        entryProcessor = in.readObject();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(entryProcessor);
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryOperation{}";
-    }
-
     public boolean shouldBackup() {
         return entryProcessor.getBackupProcessor() != null;
     }
 
+    @Override
     public int getSyncBackupCount() {
         return 0;
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return mapContainer.getTotalBackupCount();
     }
@@ -146,4 +126,22 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     protected Predicate getPredicate() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryOperation{}";
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        entryProcessor = in.readObject();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(entryProcessor);
+    }
+
 }

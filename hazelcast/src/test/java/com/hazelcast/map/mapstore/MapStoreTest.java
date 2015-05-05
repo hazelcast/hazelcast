@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -192,22 +193,22 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test(timeout = 120000)
     public void testInitialLoadModeEager() {
         int size = 10000;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
+        String mapName = randomMapName();
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
         Config cfg = new Config();
-        GroupConfig groupConfig = new GroupConfig("testEager");
-        cfg.setGroupConfig(groupConfig);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
         mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
-        cfg.getMapConfig("testMapInitialLoad").setMapStoreConfig(mapStoreConfig);
+        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
 
-        IMap map = instance1.getMap("testMapInitialLoad");
-        assertEquals(size, map.size());
+        IMap map = instance1.getMap(mapName);
 
+        assertSizeEventually(size, map);
     }
 
     @Test(timeout = 120000)
@@ -278,9 +279,10 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(size, map2Size);
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 240000)
     public void testMapInitialLoad() throws InterruptedException {
         int size = 10000;
+        String mapName = randomMapName();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         Config cfg = new Config();
@@ -288,13 +290,14 @@ public class MapStoreTest extends HazelcastTestSupport {
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(size, true));
 
-        MapConfig mc = cfg.getMapConfig("default");
+        MapConfig mc = cfg.getMapConfig(mapName);
         mc.setMapStoreConfig(mapStoreConfig);
 
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance1.getMap("testMapInitialLoad");
-        assertEquals(size, map.size());
+        IMap map = instance1.getMap(mapName);
+
+        assertSizeEventually(size, map);
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
@@ -858,7 +861,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(6, testMapStore.callCount.get());
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 300000)
     public void testTwoMemberWriteThrough2() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1000, 0, 0);
         Config config = newConfig(testMapStore, 0);
@@ -870,8 +873,8 @@ public class MapStoreTest extends HazelcastTestSupport {
         for (int i = 0; i < 1000; i++) {
             map1.put(i, "value" + i);
         }
-        assertTrue("store operations could not be done wisely ",
-                testMapStore.latchStore.await(30, TimeUnit.SECONDS));
+
+        assertOpenEventually("store operations could not be done wisely ", testMapStore.latchStore);
         assertEquals(1000, testMapStore.getStore().size());
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
@@ -1266,32 +1269,72 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    @Test(timeout = 120000)
-    public void testIssue1110() throws InterruptedException {
-        final int mapSize = 10;
-        final String mapName = "testIssue1110";
+    /**
+     * Test for issue https://github.com/hazelcast/hazelcast/issues/1110
+     */
+    @Test(timeout = 300000)
+    public void testMapLoader_withMapLoadChunkSize() throws InterruptedException {
+        final int chunkSize = 5;
+        final int numberOfEntriesToLoad = 100;
+        final String mapName = randomString();
+
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, "5");
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new SimpleMapLoader(mapSize, false));
-        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance1.getMap(mapName);
-        final CountDownLatch latch = new CountDownLatch(mapSize);
+
+        ChunkedLoader chunkedLoader = new ChunkedLoader(numberOfEntriesToLoad, false);
+        Config cfg = createChunkedMapLoaderConfig(mapName, chunkSize, chunkedLoader);
+
+        HazelcastInstance node = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap map = node.getMap(mapName);
+
+        final CountDownLatch latch = new CountDownLatch(numberOfEntriesToLoad);
         map.addEntryListener(new EntryAdapter() {
             @Override
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
             }
         }, true);
-        // create all partition recordstores.
+        // force creation of all partition record-stores.
         map.size();
-        //wait map load.
-        latch.await();
-        assertEquals(mapSize, map.size());
+
+        //await finish of map load.
+        assertOpenEventually(latch, 240);
+
+        final int expectedChunkCount = numberOfEntriesToLoad / chunkSize;
+        final int actualChunkCount = chunkedLoader.numberOfChunks.get();
+        assertEquals(expectedChunkCount, actualChunkCount);
+
+        assertEquals(numberOfEntriesToLoad, map.size());
+    }
+
+    private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
+        Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
+
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(chunkedLoader);
+
+        MapConfig mapConfig = cfg.getMapConfig(mapName);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        return cfg;
+    }
+
+    private static class ChunkedLoader extends SimpleMapLoader {
+
+        private AtomicInteger numberOfChunks = new AtomicInteger(0);
+
+        ChunkedLoader(int size, boolean slow) {
+            super(size, slow);
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            numberOfChunks.incrementAndGet();
+            return super.loadAll(keys);
+        }
     }
 
     @Test(timeout = 120000)
@@ -1482,10 +1525,31 @@ public class MapStoreTest extends HazelcastTestSupport {
         MapService mapService = (MapService) map.getService();
         MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(mapName);
         MapStoreWrapper mapStoreWrapper = mapContainer.getMapStoreContext().getMapStoreWrapper();
-        Set keys = mapStoreWrapper.loadAllKeys();
-        assertEquals(2, keys.size());
+        Iterator keys = mapStoreWrapper.loadAllKeys().iterator();
+
+        final Set<String> loadedKeySet = loadedKeySet(keys);
+        final Set<String> expectedKeySet = expectedKeySet();
+
+        assertEquals(expectedKeySet, loadedKeySet);
+
         assertEquals("true", mapStoreWrapper.load("my-prop-1"));
         assertEquals("foo", mapStoreWrapper.load("my-prop-2"));
+    }
+
+    private Set<String> expectedKeySet() {
+        final Set<String> expectedKeySet = new HashSet<String>();
+        expectedKeySet.add("my-prop-1");
+        expectedKeySet.add("my-prop-2");
+        return expectedKeySet;
+    }
+
+    private Set<String> loadedKeySet(Iterator keys) {
+        final Set<String> keySet = new HashSet<String>();
+        while (keys != null && keys.hasNext()) {
+            final String key = (String) keys.next();
+            keySet.add(key);
+        }
+        return keySet;
     }
 
     @Test(timeout = 120000)

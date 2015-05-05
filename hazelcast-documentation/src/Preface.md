@@ -17,6 +17,8 @@ Throughout this manual:
 
 Hazelcast is free provided under the Apache 2 license. Hazelcast Enterprise is commercially licensed by Hazelcast, Inc.
 
+For more detailed information on licensing, please see the [License Questions appendix](#license-questions).
+
 ##### Trademarks
 
 Hazelcast is a registered trademark of Hazelcast, Inc. All other trademarks in this manual are held by their respective owners. 
@@ -28,6 +30,14 @@ Support for Hazelcast is provided via [GitHub](https://github.com/hazelcast/haze
 
 For information on support for Hazelcast Enterprise, please see [hazelcast.com/pricing](http://hazelcast.com/pricing/).
 
+##### Contributing to Hazelcast
+
+You can contribute to the Hazelcast code, report a bug or request an enhancement. Please see the following resources.
+
+- [Developing with Git](https://hazelcast.atlassian.net/wiki/display/COM/Developing+with+Git): Document that explains the branch mechanism of Hazelcast and how to request changes.
+- [Hazelcast Contributor Agreement form](https://hazelcast.atlassian.net/wiki/display/COM/Hazelcast+Contributor+Agreement): Form that each contributing developer needs to fill and send back to Hazelcast.
+- [Hazelcast on GitHub](https://github.com/hazelcast/hazelcast): Hazelcast repository where the code is developed, issues and pull requests are managed.
+
 ##### Typographical Conventions
 
 Below table shows the conventions used in this manual.
@@ -35,10 +45,11 @@ Below table shows the conventions used in this manual.
 |Convention|Description|
 |:-|:-|
 |**bold font**| - Indicates part of a sentence that require the reader's specific attention. <br> - Also indicates property/parameter values.|
-|*italic font*|- When italicized words are enclosed with "<" and ">", indicates a variable in command or code syntax that you must replace, e.g. `hazelcast-<`*version*`>.jar`. <br> - Note and Related Information text is in italics.|
+|*italic font*|- When italicized words are enclosed with "<" and ">", indicates a variable in command or code syntax that you must replace, e.g. `hazelcast-<`*version*`>.jar`. <br> - Note and Related Information texts are in italics.|
 |`monospace`|- Indicates files, folders, class and library names, code snippets, and inline code words in a sentence.|
 |***RELATED INFORMATION***|- Indicates a resource that is relevant to the topic, usually with a link or cross-reference.|
 |![image](images/NoteSmall.jpg) ***NOTE***| Indicates information that is of special interest or importance, e.g. an additional action required only in certain circumstances.|
+|element & attribute|Mostly used in the context of declarative configuration, i.e. configuration performed by the Hazelcast XML file.  Element refers to an XML tag used to configure a Hazelcast feature. Attribute is a parameter owned by an element, contributing into the declaration of that element's configuration. Please see the following example.<br></br>`<port port-count="100">5701</port>`<br></br> In this example, `port-count` is an **attribute** of the `port` **element**.
 
 <br></br>
 

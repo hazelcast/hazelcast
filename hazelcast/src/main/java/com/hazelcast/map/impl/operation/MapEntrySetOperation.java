@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,20 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
+
 import java.util.Map;
 import java.util.Set;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    Set<Map.Entry<Data, Data>> entrySet;
+public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+    private Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySetOperation(String name) {
         super(name);
@@ -34,12 +38,15 @@ public class MapEntrySetOperation extends AbstractMapOperation implements Partit
     public MapEntrySetOperation() {
     }
 
+    @Override
     public void run() {
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         entrySet = recordStore.entrySetData();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getMapServiceContext()
-                    .getLocalMapStatsProvider().getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            LocalMapStatsImpl localMapStatsImpl = localMapStatsProvider.getLocalMapStatsImpl(name);
+            localMapStatsImpl.incrementOtherOperations();
         }
     }
 
@@ -47,6 +54,4 @@ public class MapEntrySetOperation extends AbstractMapOperation implements Partit
     public Object getResponse() {
         return new MapEntrySet(entrySet);
     }
-
-
 }

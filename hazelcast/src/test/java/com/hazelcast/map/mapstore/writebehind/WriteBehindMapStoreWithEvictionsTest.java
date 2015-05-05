@@ -1,22 +1,26 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
+import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -159,6 +163,71 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertEquals(100, map.get(1));
     }
 
+    @Test
+    public void testWriteBehindFlushPersistsAllRecords_afterShutdownAll() throws Exception {
+        int nodeCount = 2;
+        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(nodeCount)
+                .withNodeFactory(factory)
+                .withBackupCount(0)
+                .withWriteDelaySeconds(100)
+                .withPartitionCount(100)
+                .build();
+        final int numberOfItems = 1000;
+
+        // add some expiration logic by setting a 10 seconds ttl to puts.
+        populateMap(map, numberOfItems, 10);
+
+        factory.shutdownAll();
+
+        assertEquals(numberOfItems, mapStore.countStore.get());
+    }
+
+
+    @Test
+    public void testWriteBehind_shouldNotMakeDuplicateStoreOperationForAKey_uponEviction() throws Exception {
+        final AtomicInteger storeCount = new AtomicInteger(0);
+        MapStore store = createSlowMapStore(storeCount);
+
+        IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(store)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withBackupCount(0)
+                .withWriteDelaySeconds(1)
+                .build();
+
+        map.put(1, 1);
+        map.evict(1);
+
+        // give some time to process write-behind.
+        sleepSeconds(2);
+
+        assertStoreCount(1, storeCount);
+    }
+
+    private void assertStoreCount(final int expected, final AtomicInteger storeCount) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(expected, storeCount.get());
+            }
+        });
+    }
+
+    private MapStore createSlowMapStore(final AtomicInteger storeCount) {
+        return new MapStoreAdapter<Integer, Integer>() {
+            @Override
+            public void store(Integer key, Integer value) {
+                storeCount.incrementAndGet();
+                sleepSeconds(5);
+            }
+        };
+    }
+
     private void assertFinalValueEquals(final int expected, final int actual) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -170,8 +239,12 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
 
 
     private void populateMap(IMap map, int numberOfItems) {
+        populateMap(map, numberOfItems, 0);
+    }
+
+    private void populateMap(IMap map, int numberOfItems, int ttlSeconds) {
         for (int i = 0; i < numberOfItems; i++) {
-            map.put(i, i);
+            map.put(i, i, ttlSeconds, TimeUnit.SECONDS);
         }
     }
 

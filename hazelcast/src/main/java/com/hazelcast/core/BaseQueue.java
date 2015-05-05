@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@ public interface BaseQueue<E> extends DistributedObject {
 
     /**
      * Inserts the specified element into this queue if it is possible to do
-     * so immediately without violating capacity restrictions, returning
+     * so immediately without violating capacity restrictions. Returns
      * <tt>true</tt> upon success and <tt>false</tt> if no space is currently
      * available.
      *
      * @param e the element to add
-     * @return <tt>true</tt> if the element was added to this queue, else
-     *         <tt>false</tt>
+     * @return <tt>true</tt> if the element was added to this queue,
+     *         <tt>false</tt> otherwise
      */
     boolean offer(E e);
 
@@ -48,7 +48,7 @@ public interface BaseQueue<E> extends DistributedObject {
      * @param e the element to add
      * @param timeout how long to wait before giving up, in units of
      *        <tt>unit</tt>
-     * @param unit a <tt>TimeUnit</tt> determining how to interpret the
+     * @param unit a <tt>TimeUnit</tt> determines how to interpret the
      *        <tt>timeout</tt> parameter
      * @return <tt>true</tt> if successful, or <tt>false</tt> if
      *         the specified waiting time elapses before space is available

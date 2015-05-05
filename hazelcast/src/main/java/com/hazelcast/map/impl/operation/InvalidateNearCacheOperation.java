@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,15 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
-public class InvalidateNearCacheOperation extends AbstractOperation {
+public class InvalidateNearCacheOperation extends AbstractOperation implements MutatingOperation {
 
     private Data key;
     private String mapName;
@@ -36,10 +38,16 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     public InvalidateNearCacheOperation() {
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     public void run() {
         MapService mapService = getService();
-        if (mapService.getMapServiceContext().getMapContainer(mapName).isNearCacheEnabled()) {
-            mapService.getMapServiceContext().getNearCacheProvider().invalidateNearCache(mapName, key);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        if (mapServiceContext.getMapContainer(mapName).isNearCacheEnabled()) {
+            mapServiceContext.getNearCacheProvider().invalidateNearCache(mapName, key);
         } else {
             getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
                     + mapName + " map. Possible configuration conflict among nodes.");

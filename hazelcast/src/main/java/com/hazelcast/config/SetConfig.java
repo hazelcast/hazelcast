@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ public class SetConfig extends CollectionConfig<SetConfig> {
     private SetConfigReadOnly readOnly;
 
     public SetConfig() {
+    }
+
+    public SetConfig(String name) {
+        setName(name);
     }
 
     public SetConfig(SetConfig config) {

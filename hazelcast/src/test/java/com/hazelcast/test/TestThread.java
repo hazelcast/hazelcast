@@ -12,11 +12,18 @@ public abstract class TestThread extends Thread {
     public TestThread() {
     }
 
+    public TestThread(String name) {
+        super(name);
+    }
+
     @Override
     public final void run() {
+        System.out.println(getName()+" Starting");
         try {
             doRun();
+            System.out.println(getName() + " Completed");
         } catch (Throwable t) {
+            System.out.println(getName()+" Completed with failure");
             t.printStackTrace();
             this.error = t;
         }

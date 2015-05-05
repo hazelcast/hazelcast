@@ -1,5 +1,5 @@
 
-### Start the Service
+### Starting Service
 
 Now, let's start a `HazelcastInstance` as shown below, which will start the `CounterService`.
 

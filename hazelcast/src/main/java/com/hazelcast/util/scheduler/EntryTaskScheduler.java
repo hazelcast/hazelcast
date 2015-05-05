@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ public interface EntryTaskScheduler<K, V> {
     boolean schedule(long delayMillis, K key, V object);
 
     ScheduledEntry<K, V> cancel(K key);
+
+    int cancelIfExists(K key, V value);
 
     ScheduledEntry<K, V> get(K key);
 

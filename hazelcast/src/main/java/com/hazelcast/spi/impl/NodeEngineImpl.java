@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,71 +22,84 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
-import com.hazelcast.spi.WaitNotifyService;
-import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.storage.DataRef;
-import com.hazelcast.storage.Storage;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
+import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.transceiver.impl.PacketTransceiverImpl;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.concurrent.TimeUnit;
 
+/**
+ * The NodeEngineImpl is the where the construction of the Hazelcast dependencies take place. It can be
+ * compared to a Spring ApplicationContext. It is fine that we refer to concrete types, and it is fine
+ * that we cast to a concrete type within this class (e.g. to call shutdown). In an application context
+ * you get exactly the same behavior.
+ * <p/>
+ * But the crucial thing is that we don't want to leak concrete dependencies to the outside. For example
+ * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
+ */
 public class NodeEngineImpl implements NodeEngine {
-
-    private static final int RETRY_NUMBER = 5;
-    private static final int DELAY_FACTOR = 100;
-
-    final InternalOperationService operationService;
-    final ExecutionServiceImpl executionService;
-    final EventServiceImpl eventService;
-    final WaitNotifyServiceImpl waitNotifyService;
 
     private final Node node;
     private final ILogger logger;
-
+    private final EventServiceImpl eventService;
+    private final OperationServiceImpl operationService;
+    private final ExecutionServiceImpl executionService;
+    private final WaitNotifyServiceImpl waitNotifyService;
     private final ServiceManager serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
+    private final PacketTransceiver packetTransceiver;
+    private final QuorumServiceImpl quorumService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
-        logger = node.getLogger(NodeEngine.class.getName());
-        proxyService = new ProxyServiceImpl(this);
-        serviceManager = new ServiceManager(this);
-        executionService = new ExecutionServiceImpl(this);
-        operationService = new BasicOperationService(this);
-        eventService = new EventServiceImpl(this);
-        waitNotifyService = new WaitNotifyServiceImpl(this);
-        transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+        this.logger = node.getLogger(NodeEngine.class.getName());
+        this.proxyService = new ProxyServiceImpl(this);
+        this.serviceManager = new ServiceManager(this);
+        this.executionService = new ExecutionServiceImpl(this);
+        this.operationService = new OperationServiceImpl(this);
+        this.eventService = new EventServiceImpl(this);
+        this.waitNotifyService = new WaitNotifyServiceImpl(this);
+        this.transactionManagerService = new TransactionManagerServiceImpl(this);
+        this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+        this.packetTransceiver = new PacketTransceiverImpl(
+                node, logger, operationService, eventService, wanReplicationService, executionService);
+        quorumService = new QuorumServiceImpl(this);
     }
 
-    @PrivateApi
+    public PacketTransceiver getPacketTransceiver() {
+        return packetTransceiver;
+    }
+
     public void start() {
         serviceManager.start();
         proxyService.init();
@@ -118,7 +131,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public EventService getEventService() {
+    public InternalEventService getEventService() {
         return eventService;
     }
 
@@ -127,17 +140,13 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getSerializationService();
     }
 
-    public PortableContext getPortableContext() {
-        return node.getSerializationService().getPortableContext();
-    }
-
     @Override
-    public OperationService getOperationService() {
+    public InternalOperationService getOperationService() {
         return operationService;
     }
 
     @Override
-    public ExecutionService getExecutionService() {
+    public InternalExecutionService getExecutionService() {
         return executionService;
     }
 
@@ -156,18 +165,23 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public ProxyService getProxyService() {
+    public InternalProxyService getProxyService() {
         return proxyService;
     }
 
     @Override
-    public WaitNotifyService getWaitNotifyService() {
+    public InternalWaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
     }
 
     @Override
     public WanReplicationService getWanReplicationService() {
         return wanReplicationService;
+    }
+
+    @Override
+    public QuorumServiceImpl getQuorumService() {
+        return quorumService;
     }
 
     @Override
@@ -198,67 +212,6 @@ public class NodeEngineImpl implements NodeEngine {
         return node.hazelcastInstance;
     }
 
-    public boolean send(Packet packet, Connection connection) {
-        if (connection == null || !connection.isAlive()) {
-            return false;
-        }
-        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
-        }
-        return connection.write(packet);
-    }
-
-    /**
-     * Retries sending packet maximum 5 times until connection to target becomes available.
-     */
-    public boolean send(Packet packet, Address target) {
-        return send(packet, target, null);
-    }
-
-    private boolean send(Packet packet, Address target, SendTask sendTask) {
-        ConnectionManager connectionManager = node.getConnectionManager();
-        Connection connection = connectionManager.getConnection(target);
-        if (connection != null) {
-            return send(packet, connection);
-        }
-
-        if (sendTask == null) {
-            sendTask = new SendTask(packet, target);
-        }
-
-        final int retries = sendTask.retries;
-        if (retries < RETRY_NUMBER && node.isActive()) {
-            connectionManager.getOrConnect(target, true);
-            // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-            executionService.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
-            return true;
-        }
-        return false;
-    }
-
-    private final class SendTask implements Runnable {
-        private final Packet packet;
-        private final Address target;
-        private volatile int retries;
-
-        private SendTask(Packet packet, Address target) {
-            this.packet = packet;
-            this.target = target;
-        }
-
-        //retries is incremented by a single thread, but will be read by multiple. So there is no problem.
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
-        @Override
-        public void run() {
-            retries++;
-            if (logger.isFinestEnabled()) {
-                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
-            }
-            send(packet, target, this);
-        }
-    }
-
     @Override
     public ILogger getLogger(String name) {
         return node.getLogger(name);
@@ -274,25 +227,12 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getGroupProperties();
     }
 
-    @PrivateApi
-    public void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationService.executeOperation(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-            eventService.handleEvent(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
-            wanReplicationService.handleEvent(packet);
-        } else {
-            logger.severe("Unknown packet type! Header: " + packet.getHeader());
-        }
-    }
-
-    @PrivateApi
     public <T> T getService(String serviceName) {
         final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
         return serviceInfo != null ? (T) serviceInfo.getService() : null;
     }
 
+    @Override
     public <T extends SharedService> T getSharedService(String serviceName) {
         final Object service = getService(serviceName);
         if (service == null) {
@@ -309,34 +249,28 @@ public class NodeEngineImpl implements NodeEngine {
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      */
-    @PrivateApi
     public <S> Collection<S> getServices(Class<S> serviceClass) {
         return serviceManager.getServices(serviceClass);
     }
 
-    @PrivateApi
     public Collection<ServiceInfo> getServiceInfos(Class serviceClass) {
         return serviceManager.getServiceInfos(serviceClass);
     }
 
-    @PrivateApi
     public Node getNode() {
         return node;
     }
 
-    @PrivateApi
     public void onMemberLeft(MemberImpl member) {
         waitNotifyService.onMemberLeft(member);
         operationService.onMemberLeft(member);
         eventService.onMemberLeft(member);
     }
 
-    @PrivateApi
     public void onClientDisconnected(String clientUuid) {
         waitNotifyService.onClientDisconnected(clientUuid);
     }
 
-    @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
         waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
     }
@@ -348,7 +282,6 @@ public class NodeEngineImpl implements NodeEngine {
      * Post join operations should return response, at least a null response.
      * <p/>
      */
-    @PrivateApi
     public Operation[] getPostJoinOperations() {
         final Collection<Operation> postJoinOps = new LinkedList<Operation>();
         Operation eventPostJoinOp = eventService.getPostJoinOperation();
@@ -357,22 +290,19 @@ public class NodeEngineImpl implements NodeEngine {
         }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
-            final Operation pjOp = service.getPostJoinOperation();
-            if (pjOp != null) {
-                if (pjOp instanceof PartitionAwareOperation) {
+            final Operation postJoinOperation = service.getPostJoinOperation();
+            if (postJoinOperation != null) {
+                if (postJoinOperation.getPartitionId() >= 0) {
                     logger.severe(
-                            "Post-join operations cannot implement PartitionAwareOperation! Service: " + service + ", Operation: "
-                                    + pjOp);
+                            "Post-join operations cannot implement PartitionAwareOperation! Service: "
+                                    + service + ", Operation: "
+                                    + postJoinOperation);
                     continue;
                 }
-                postJoinOps.add(pjOp);
+                postJoinOps.add(postJoinOperation);
             }
         }
         return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
-    }
-
-    public long getClusterTime() {
-        return node.getClusterService().getClusterTime();
     }
 
     @Override
@@ -380,7 +310,11 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getNodeExtension().getNativeDataStorage();
     }
 
-    @PrivateApi
+    public void reset() {
+        waitNotifyService.reset();
+        operationService.reset();
+    }
+
     public void shutdown(final boolean terminate) {
         logger.finest("Shutting down services...");
         waitNotifyService.shutdown();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -71,13 +70,27 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
         }
     }
 
+    protected Predicate getPredicate() {
+        return null;
+    }
+
     @Override
-    public boolean returnsResponse() {
+    public Object getResponse() {
         return true;
     }
 
-    protected Predicate getPredicate() {
-        return null;
+    private boolean applyPredicate(Data dataKey, Object key, Object value) {
+        if (getPredicate() == null) {
+            return true;
+        }
+        final SerializationService ss = getNodeEngine().getSerializationService();
+        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
+        return getPredicate().apply(queryEntry);
+    }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryBackupOperation{}";
     }
 
     @Override
@@ -90,24 +103,5 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(backupProcessor);
-    }
-
-    @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryBackupOperation{}";
-    }
-
-    private boolean applyPredicate(Data dataKey, Object key, Object value) {
-        if (getPredicate() == null) {
-            return true;
-        }
-        final SerializationService ss = getNodeEngine().getSerializationService();
-        QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
-        return getPredicate().apply(queryEntry);
     }
 }

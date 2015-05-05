@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public final class StripedExecutor implements Executor {
     /**
      * Shuts down this StripedExecutor.
      * <p/>
-     * No checking is done if the StripedExecutor already is shut down, so it should be called only once.
+     * No checking is done to see if the StripedExecutor already is shut down, so it should be called only once.
      * <p/>
      * If there is any pending work, it will be thrown away.
      */
@@ -93,7 +93,7 @@ public final class StripedExecutor implements Executor {
     /**
      * Checks if this StripedExecutor is alive (so not shut down).
      *
-     * @return
+     * @return live (true)
      */
     public boolean isLive() {
         return live;

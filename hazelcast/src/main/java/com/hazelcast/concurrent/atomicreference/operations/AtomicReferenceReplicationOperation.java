@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -46,9 +46,9 @@ public class AtomicReferenceReplicationOperation extends AbstractOperation
         AtomicReferenceService atomicReferenceService = getService();
         for (Map.Entry<String, Data> entry : migrationData.entrySet()) {
             String name = entry.getKey();
-            ReferenceWrapper reference = atomicReferenceService.getReference(name);
+            AtomicReferenceContainer atomicReferenceContainer = atomicReferenceService.getReferenceContainer(name);
             Data value = entry.getValue();
-            reference.set(value);
+            atomicReferenceContainer.set(value);
         }
     }
 

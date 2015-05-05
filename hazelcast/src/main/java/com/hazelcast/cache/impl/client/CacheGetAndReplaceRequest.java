@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ import java.io.IOException;
 public class CacheGetAndReplaceRequest
         extends AbstractCacheRequest {
 
-    protected Data key;
-    protected Data value;
-    protected ExpiryPolicy expiryPolicy;
+    private Data key;
+    private Data value;
+    private ExpiryPolicy expiryPolicy;
     private int completionId;
 
     public CacheGetAndReplaceRequest() {
@@ -54,10 +54,12 @@ public class CacheGetAndReplaceRequest
         this.expiryPolicy = expiryPolicy;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.GET_AND_REPLACE;
     }
 
+    @Override
     protected Object getKey() {
         return key;
     }
@@ -68,6 +70,7 @@ public class CacheGetAndReplaceRequest
         return operationProvider.createGetAndReplaceOperation(key, value, expiryPolicy, completionId);
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -78,6 +81,7 @@ public class CacheGetAndReplaceRequest
         out.writeObject(expiryPolicy);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -88,6 +92,7 @@ public class CacheGetAndReplaceRequest
         expiryPolicy = in.readObject();
     }
 
+    @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
     }

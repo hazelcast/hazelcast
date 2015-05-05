@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
-public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, DataSerializable {
+public class ClearBackupOperation extends AbstractNamedOperation implements BackupOperation, MutatingOperation, DataSerializable {
 
-    MapService mapService;
-    RecordStore recordStore;
+    private MapService mapService;
+    private RecordStore recordStore;
 
     public ClearBackupOperation() {
     }
@@ -35,19 +36,23 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void beforeRun() throws Exception {
         mapService = getService();
         recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
     }
 
+    @Override
     public void run() {
         recordStore.clear();
     }
 
     @Override
     public String toString() {
-        return "ClearBackupOperation{"
-                + '}';
-
+        return "ClearBackupOperation{}";
     }
 }

@@ -33,7 +33,7 @@ The next step will be to create a new `Job` and configure it to execute our firs
 
 #### Job
 
-As mentioned in the last section, a Job is created using the retrieved `JobTracker` instance. A Job defines exactly one configuration of a MapReduce task. Mapper, combiner and reducers will be defined per job but since the Job instance is only a configuration, it is possible to be submitted multiple times, no matter if executions happening in parallel or one after the other.
+As mentioned in the [JobTracker section](#jobtracker), a Job is created using the retrieved `JobTracker` instance. A Job defines exactly one configuration of a MapReduce task. Mapper, combiner and reducers will be defined per job but since the Job instance is only a configuration, it is possible to be submitted multiple times, no matter if executions happening in parallel or one after the other.
 
 A submitted job is always identified using a unique combination of the `JobTracker`'s name and a jobId generated on submit-time. The way for retrieving the jobId will be shown in one of the later sections.
 
@@ -95,7 +95,7 @@ KeyValueSource<String, String> source = KeyValueSource.fromList( list );
 ```
 
 ```java
-// KeyValueSource from com.hazelcast.core.IList
+// KeyValueSource from com.hazelcast.core.ISet
 ISet<String> set = hazelcastInstance.getSet( "my-set" );
 KeyValueSource<String, String> source = KeyValueSource.fromSet( set );
 ```
@@ -217,7 +217,7 @@ public class WordCountReducerFactory implements ReducerFactory<String, Long, Lon
 }
 ```
 
-Different from combiners, reducers tend to switch threads if running out of data to prevent blocking threads from the `JobTracker` configuration. They are rescheduled at a later point when new data to be processed arrives, but they are unlikely to be executed on the same thread as before. Due to this fact, some volatility of the internal state might be necessary.
+Different from combiners, reducers tend to switch threads if running out of data to prevent blocking threads from the `JobTracker` configuration. They are rescheduled at a later point when new data to be processed arrives but unlikely to be executed on the same thread as before. As of Hazelcast version 3.3.3 the guarantee for memory visibility on the new thread is ensured by the framework. This means the previous requirement for making fields volatile is dropped.
 
 #### Collator
 
@@ -328,4 +328,11 @@ being sent to the reducers. To prevent this, you might want to use a combiner to
 - **communicate-stats:** Defines if statistics (for example, statistics about processed entries) are transmitted to the job emitter. This can show progress to a user inside of an UI system, but it produces additional traffic. If not needed, you might want to deactivate this.
 - **topology-changed-strategy:** Defines how the MapReduce framework will react on topology changes while executing a job. Currently, only CANCEL_RUNNING_OPERATION is fully supported, which throws an exception to the job emitter (will throw a `com.hazelcast.mapreduce.TopologyChangedException`).
 
+
+<br></br>
+
+***RELATED INFORMATION***
+
+
+*Please refer to the [MapReduce Jobtracker Configuration section](#mapreduce-jobtracker-configuration) for a full description of Hazelcast MapReduce JobTracker configuration (includes an example programmatic configuration).*
 

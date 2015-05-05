@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,21 +29,21 @@ public interface MigrationListener extends EventListener {
     /**
      * Invoked when a partition migration is started.
      *
-     * @param migrationEvent event
+     * @param migrationEvent the event for the started partition migration
      */
     void migrationStarted(MigrationEvent migrationEvent);
 
     /**
      * Invoked when a partition migration is completed.
      *
-     * @param migrationEvent event
+     * @param migrationEvent the event for the completed partition migration
      */
     void migrationCompleted(MigrationEvent migrationEvent);
 
     /**
      * Invoked when a partition migration is failed.
      *
-     * @param migrationEvent event
+     * @param migrationEvent the event for the failed partition migration
      */
     void migrationFailed(MigrationEvent migrationEvent);
 }

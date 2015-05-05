@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,24 +46,24 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
 
     private NodeEngine nodeEngine;
-    private final ConcurrentMap<String, LongWrapper> numbers = new ConcurrentHashMap<String, LongWrapper>();
-    private final ConstructorFunction<String, LongWrapper> atomicLongConstructorFunction =
-            new ConstructorFunction<String, LongWrapper>() {
-                public LongWrapper createNew(String key) {
-                    return new LongWrapper();
+    private final ConcurrentMap<String, AtomicLongContainer> containers = new ConcurrentHashMap<String, AtomicLongContainer>();
+    private final ConstructorFunction<String, AtomicLongContainer> atomicLongConstructorFunction =
+            new ConstructorFunction<String, AtomicLongContainer>() {
+                public AtomicLongContainer createNew(String key) {
+                    return new AtomicLongContainer();
                 }
             };
 
     public AtomicLongService() {
     }
 
-    public LongWrapper getNumber(String name) {
-        return getOrPutIfAbsent(numbers, name, atomicLongConstructorFunction);
+    public AtomicLongContainer getLongContainer(String name) {
+        return getOrPutIfAbsent(containers, name, atomicLongConstructorFunction);
     }
 
     // need for testing..
     public boolean containsAtomicLong(String name) {
-        return numbers.containsKey(name);
+        return containers.containsKey(name);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
     @Override
     public void reset() {
-        numbers.clear();
+        containers.clear();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
     @Override
     public void destroyDistributedObject(String name) {
-        numbers.remove(name);
+        containers.remove(name);
     }
 
     @Override
@@ -103,10 +103,10 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
         Map<String, Long> data = new HashMap<String, Long>();
         int partitionId = event.getPartitionId();
-        for (String name : numbers.keySet()) {
+        for (String name : containers.keySet()) {
             if (partitionId == getPartitionId(name)) {
-                LongWrapper number = numbers.get(name);
-                data.put(name, number.get());
+                AtomicLongContainer container = containers.get(name);
+                data.put(name, container.get());
             }
         }
         return data.isEmpty() ? null : new AtomicLongReplicationOperation(data);
@@ -121,24 +121,24 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     @Override
     public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
         if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            removeNumber(partitionMigrationEvent.getPartitionId());
+            removeContainers(partitionMigrationEvent.getPartitionId());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent partitionMigrationEvent) {
         if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            removeNumber(partitionMigrationEvent.getPartitionId());
+            removeContainers(partitionMigrationEvent.getPartitionId());
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        removeNumber(partitionId);
+        removeContainers(partitionId);
     }
 
-    public void removeNumber(int partitionId) {
-        final Iterator<String> iterator = numbers.keySet().iterator();
+    public void removeContainers(int partitionId) {
+        final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
             if (getPartitionId(name) == partitionId) {

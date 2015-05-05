@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,11 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.operations.MemberAttributeChangedOperation;
-import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -34,25 +30,17 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 import static com.hazelcast.cluster.MemberAttributeOperationType.REMOVE;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
-public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
+public final class MemberImpl
+        extends AbstractMember
+        implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
-    private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
     private boolean localMember;
-    private Address address;
-    private String uuid;
     private volatile HazelcastInstanceImpl instance;
     private volatile long lastRead;
     private volatile long lastWrite;
@@ -72,58 +60,21 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
                       Map<String, Object> attributes) {
+        super(address, uuid, attributes);
         this.localMember = localMember;
-        this.address = address;
         this.lastRead = Clock.currentTimeMillis();
-        this.uuid = uuid;
         this.instance = instance;
-        if (attributes != null) {
-            this.attributes.putAll(attributes);
-        }
     }
 
     public MemberImpl(MemberImpl member) {
+        super(member);
         this.localMember = member.localMember;
-        this.address = member.address;
         this.lastRead = member.lastRead;
-        this.uuid = member.uuid;
-        this.attributes.putAll(member.attributes);
-    }
-
-    public Address getAddress() {
-        return address;
-    }
-
-    public int getPort() {
-        return address.getPort();
-    }
-
-    public InetAddress getInetAddress() {
-        try {
-            return address.getInetAddress();
-        } catch (UnknownHostException e) {
-            if (logger != null) {
-                logger.warning(e);
-            }
-            return null;
-        }
     }
 
     @Override
-    public InetSocketAddress getInetSocketAddress() {
-        return getSocketAddress();
-    }
-
-    @Override
-    public InetSocketAddress getSocketAddress() {
-        try {
-            return address.getInetSocketAddress();
-        } catch (UnknownHostException e) {
-            if (logger != null) {
-                logger.warning(e);
-            }
-            return null;
-        }
+    protected ILogger getLogger() {
+        return logger;
     }
 
     @Override
@@ -162,33 +113,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     public long getLastWrite() {
         return lastWrite;
-    }
-
-    void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    @Override
-    public String getUuid() {
-        return uuid;
-    }
-
-    @Override
-    public Map<String, Object> getAttributes() {
-        return Collections.unmodifiableMap(attributes);
-    }
-
-    public void updateAttribute(MemberAttributeOperationType operationType, String key, Object value) {
-        switch (operationType) {
-            case PUT:
-                attributes.put(key, value);
-                break;
-            case REMOVE:
-                attributes.remove(key);
-                break;
-            default:
-                throw new IllegalArgumentException("Not a known OperationType " + operationType);
-        }
     }
 
     @Override
@@ -273,7 +197,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     @Override
     public void removeAttribute(String key) {
-        isLocalMamber();
+        isLocalMember();
         isNotNull(key, "key");
 
         Object value = attributes.remove(key);
@@ -287,18 +211,14 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    private void isLocalMamber() {
+    private void isLocalMember() {
         if (!localMember) {
             throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         }
     }
 
-    private Object getAttribute(String key) {
-        return attributes.get(key);
-    }
-
     private void setAttribute(String key, Object value) {
-        isLocalMamber();
+        isLocalMember();
         isNotNull(key, "key");
         isNotNull(value, "value");
 
@@ -331,31 +251,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        address = new Address();
-        address.readData(in);
-        uuid = in.readUTF();
-        int size = in.readInt();
-        for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            Object value = IOUtil.readAttributeValue(in);
-            attributes.put(key, value);
-        }
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        address.writeData(out);
-        out.writeUTF(uuid);
-        Map<String, Object> attributes = new HashMap<String, Object>(this.attributes);
-        out.writeInt(attributes.size());
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            out.writeUTF(entry.getKey());
-            IOUtil.writeAttributeValue(entry.getValue(), out);
-        }
-    }
-
     public int getFactoryId() {
         return ClusterDataSerializerHook.F_ID;
     }
@@ -363,49 +258,6 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     @Override
     public int getId() {
         return ClusterDataSerializerHook.MEMBER;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("Member [");
-        sb.append(address.getHost());
-        sb.append("]");
-        sb.append(":");
-        sb.append(address.getPort());
-        if (localMember) {
-            sb.append(" this");
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((address == null) ? 0 : address.hashCode());
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final MemberImpl other = (MemberImpl) obj;
-        if (address == null) {
-            if (other.address != null) {
-                return false;
-            }
-        } else if (!address.equals(other.address)) {
-            return false;
-        }
-        return true;
     }
 
 }

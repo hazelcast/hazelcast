@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ final class ByteArrayInputOutputFactory implements InputOutputFactory {
 
     @Override
     public BufferObjectDataInput createInput(Data data, SerializationService service) {
-        return new ByteArrayObjectDataInput(data, service, byteOrder);
+        return new ByteArrayObjectDataInput(data.toByteArray(), DefaultData.DATA_OFFSET, service, byteOrder);
     }
 
     @Override

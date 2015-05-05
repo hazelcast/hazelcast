@@ -80,10 +80,10 @@
 
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
-     <!--<module name="Header">-->
-       <!--<property name="headerFile" value="${basedir}/checkstyle/ClassHeader.txt"/>-->
-       <!--<property name="fileExtensions" value="java"/>-->
-     <!--</module>-->
+    <module name="Header">
+       <property name="headerFile" value="${main.basedir}/checkstyle/ClassHeader.txt"/>
+       <property name="fileExtensions" value="java"/>
+     </module>
 
     <module name="TreeWalker">
         <!-- Activate comment suppression filters -->
@@ -112,7 +112,6 @@
         </module>
 
         <module name="TrailingComment"/>
-
 
 
         <!-- Checks for Naming Conventions.                  -->
@@ -180,14 +179,13 @@
         </module>
 
 
-
         <!-- Checks for whitespace                               -->
         <!-- See http://checkstyle.sf.net/config_whitespace.html -->
-        <module name="EmptyForIteratorPad"/>
+        <!-- module name="EmptyForIteratorPad"/ -->
         <module name="GenericWhitespace"/>
         <module name="MethodParamPad"/>
-        <module name="NoWhitespaceAfter"/>
-        <module name="NoWhitespaceBefore"/>
+        <!-- module name="NoWhitespaceAfter"/ -->
+        <!-- module name="NoWhitespaceBefore"/ -->
         <module name="OperatorWrap"/>
         <module name="ParenPad"/>
         <module name="TypecastParenPad"/>
@@ -237,7 +235,6 @@
             <property name="tokens" value="PARAMETER_DEF, METHOD_DEF"/>
         </module>
         <module name="InnerAssignment"/>
-        <module name="JUnitTestCase"/>
         <module name="ReturnCount">
             <property name="max" value="5"/>
         </module>
@@ -248,10 +245,6 @@
             <property name="max" value="2"/>
         </module>
         <module name="PackageDeclaration"/>
-        <module name="RedundantThrows">
-            <property name="severity" value="warning"/>
-            <property name="allowUnchecked" value="true"/>
-        </module>
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -266,7 +259,6 @@
         <module name="IllegalInstantiation"/>
         <module name="InnerAssignment"/>
         <module name="MissingSwitchDefault"/>
-
 
 
         <!-- Checks for class design                         -->
@@ -297,7 +289,6 @@
         <module name="NPathComplexity">
             <property name="max" value="50"/>
         </module>
-
 
 
         <!-- Miscellaneous other checks.                   -->

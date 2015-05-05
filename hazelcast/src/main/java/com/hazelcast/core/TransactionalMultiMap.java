@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,12 @@ import com.hazelcast.transaction.TransactionalObject;
 import java.util.Collection;
 
 /**
- *
  * Transactional implementation of {@link BaseMultiMap}.
  *
- * @see BaseMultiMap
- * @see MultiMap
  * @param <K> key
  * @param <V> value
+ * @see BaseMultiMap
+ * @see MultiMap
  */
 public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
 

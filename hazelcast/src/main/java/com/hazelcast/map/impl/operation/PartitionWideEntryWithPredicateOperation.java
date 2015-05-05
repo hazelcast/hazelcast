@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation {
@@ -43,6 +42,24 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     }
 
     @Override
+    public Operation getBackupOperation() {
+        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        if (backupProcessor == null) {
+            return null;
+        }
+        return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+    }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryWithPredicateOperation{"
+                + "name='" + name
+                + "', entryProcessor='" + entryProcessor.toString()
+                + "', predicate='" + predicate.toString()
+                + "'}";
+    }
+
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         predicate = in.readObject();
@@ -52,17 +69,5 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(predicate);
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryWithPredicateOperation{}";
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null
-                ? new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate) : null;
     }
 }

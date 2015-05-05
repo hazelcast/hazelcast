@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,20 @@
 
 package com.hazelcast.nio.ascii;
 
-import com.hazelcast.ascii.CommandParser;
-import com.hazelcast.ascii.TextCommand;
-import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.ascii.memcache.GetCommandParser;
-import com.hazelcast.ascii.memcache.SetCommandParser;
-import com.hazelcast.ascii.memcache.DeleteCommandParser;
-import com.hazelcast.ascii.memcache.IncrementCommandParser;
-import com.hazelcast.ascii.memcache.SimpleCommandParser;
-import com.hazelcast.ascii.memcache.TouchCommandParser;
-import com.hazelcast.ascii.memcache.ErrorCommand;
-import com.hazelcast.ascii.rest.HttpCommand;
-import com.hazelcast.ascii.rest.HttpDeleteCommandParser;
-import com.hazelcast.ascii.rest.HttpGetCommandParser;
-import com.hazelcast.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.internal.ascii.CommandParser;
+import com.hazelcast.internal.ascii.TextCommand;
+import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.ascii.memcache.GetCommandParser;
+import com.hazelcast.internal.ascii.memcache.SetCommandParser;
+import com.hazelcast.internal.ascii.memcache.DeleteCommandParser;
+import com.hazelcast.internal.ascii.memcache.IncrementCommandParser;
+import com.hazelcast.internal.ascii.memcache.SimpleCommandParser;
+import com.hazelcast.internal.ascii.memcache.TouchCommandParser;
+import com.hazelcast.internal.ascii.memcache.ErrorCommand;
+import com.hazelcast.internal.ascii.rest.HttpCommand;
+import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
+import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
+import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
@@ -41,19 +41,19 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ADD;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.APPEND;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.INCREMENT;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.REPLACE;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.SET;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.DECREMENT;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.PREPEND;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.TOUCH;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.QUIT;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.STATS;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.VERSION;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
-import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
 public class SocketTextReader implements SocketReader {
 

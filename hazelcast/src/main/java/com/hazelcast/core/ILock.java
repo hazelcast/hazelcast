@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public interface ILock extends Lock, DistributedObject {
      * <p/>
      *
      * @param leaseTime time to wait before releasing the lock.
-     * @param timeUnit unit of time to specify lease time.
+     * @param timeUnit unit of time for the lease time.
      *
      * @throws IllegalMonitorStateException if the current thread does not
      * hold this lock
@@ -91,7 +91,7 @@ public interface ILock extends Lock, DistributedObject {
 
     /**
      * Releases the lock regardless of the lock owner.
-     * It always successfully unlocks, never blocks  and returns immediately.
+     * It always successfully unlocks, never blocks, and returns immediately.
      */
     void forceUnlock();
 
@@ -134,7 +134,7 @@ public interface ILock extends Lock, DistributedObject {
     /**
      * Returns re-entrant lock hold count, regardless of lock ownership.
      *
-     * @return lock hold count.
+     * @return the lock hold count.
      */
     int getLockCount();
 

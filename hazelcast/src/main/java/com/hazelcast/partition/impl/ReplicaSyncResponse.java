@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
@@ -27,7 +28,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,27 +61,44 @@ public class ReplicaSyncResponse extends Operation
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
 
-        InternalPartitionImpl partition = partitionService.getPartition(partitionId, false);
-        boolean isBackup = partition.isOwnerOrBackup(nodeEngine.getThisAddress());
+        InternalPartitionImpl partition = partitionService.getPartitionImpl(partitionId);
+        Address thisAddress = nodeEngine.getThisAddress();
+        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
         try {
-            if (isBackup) {
+            if (replicaIndex == currentReplicaIndex) {
                 executeTasks();
             } else {
-                ILogger logger = getLogger();
-                if (logger.isFinestEnabled()) {
-                    logger.finest("This node is not backup replica of partition: " + partitionId
-                            + ", replica: " + replicaIndex + " anymore.");
-                }
+                logNodeNotOwnsBackup(partitionId, replicaIndex, currentReplicaIndex);
             }
             if (tasks != null) {
                 tasks.clear();
             }
         } finally {
-            if (isBackup) {
-                partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
-            } else {
-                partitionService.clearReplicaSync(partitionId, replicaIndex);
+            postProcessReplicaSync(partitionService, currentReplicaIndex);
+        }
+    }
+
+    private void postProcessReplicaSync(InternalPartitionServiceImpl partitionService, int currentReplicaIndex) {
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+
+        if (replicaIndex == currentReplicaIndex) {
+            partitionService.finalizeReplicaSync(partitionId, replicaIndex, replicaVersions);
+        } else {
+            partitionService.clearReplicaSyncRequest(partitionId, replicaIndex);
+            if (currentReplicaIndex < 0) {
+                partitionService.clearPartitionReplicaVersions(partitionId);
+            } else if (currentReplicaIndex > 0) {
+                partitionService.triggerPartitionReplicaSync(partitionId, currentReplicaIndex, 0);
             }
+        }
+    }
+
+    private void logNodeNotOwnsBackup(int partitionId, int replicaIndex, int currentReplicaIndex) {
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("This node is not backup replica of partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+                    + " anymore. current replicaIndex=" + currentReplicaIndex);
         }
     }
 
@@ -106,12 +123,21 @@ public class ReplicaSyncResponse extends Operation
                     logException(op, e);
                 }
             }
+        } else {
+            logEmptyTaskList(partitionId, replicaIndex);
+        }
+    }
+
+    private void logEmptyTaskList(int partitionId, int replicaIndex) {
+        ILogger logger = getLogger();
+        if (logger.isFinestEnabled()) {
+            logger.finest("No data available for replica sync, partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
         }
     }
 
     private void logException(Operation op, Throwable e) {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        ILogger logger = nodeEngine.getLogger(getClass());
+        ILogger logger = getLogger();
+        NodeEngine nodeEngine = getNodeEngine();
         Level level = nodeEngine.isActive() ? Level.WARNING : Level.FINEST;
         if (logger.isLoggable(level)) {
             logger.log(level, "While executing " + op, e);
@@ -119,10 +145,9 @@ public class ReplicaSyncResponse extends Operation
     }
 
     private void logApplyReplicaSync(int partitionId, int replicaIndex) {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        ILogger logger = nodeEngine.getLogger(getClass());
+        ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
+            logger.finest("Applying replica sync for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex);
         }
     }
 
@@ -183,13 +208,8 @@ public class ReplicaSyncResponse extends Operation
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("ReplicaSyncResponse");
-        sb.append("{partition=").append(getPartitionId());
-        sb.append(", replica=").append(getReplicaIndex());
-        sb.append(", version=").append(Arrays.toString(replicaVersions));
-        sb.append('}');
-        return sb.toString();
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
+                + ", replicaVersions=" + Arrays.toString(replicaVersions) + '}';
     }
 
     private static final class ErrorLoggingResponseHandler implements ResponseHandler {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,13 @@ public class HazelcastExpiryPolicy implements ExpiryPolicy, IdentifiedDataSerial
     private Duration create;
     private Duration access;
     private Duration update;
+
+    /**
+     * Default constructor to serialize/deserialize
+     */
+    public HazelcastExpiryPolicy() {
+
+    }
 
     /**
      * Constructs an expiry policy with provided values for creation, access and update in milliseconds.

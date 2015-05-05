@@ -1,6 +1,6 @@
 
 
-### Create the Containers
+### Creating Containers
 
 Let's create a Container for every partition in the system. This container will contain all counters and proxies.
 

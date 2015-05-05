@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -261,7 +261,7 @@ public class LocalRegionCache implements RegionCache {
             if (v.getLock() == LOCK_SUCCESS) {
                 continue;
             }
-            if (v.getCreationTime() + timeToLive < now) {
+            if (timeToLive > 0 && v.getCreationTime() + timeToLive < now) {
                 iter.remove();
             } else if (limitSize) {
                 if (entries == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@ import com.hazelcast.cache.JCacheListenerTest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -46,14 +46,20 @@ public class JCacheClientListenerTest extends JCacheListenerTest {
 
     @Override
     protected CachingProvider getCachingProvider() {
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        Config config = new Config();
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.getAwsConfig().setEnabled(false);
+        joinConfig.getMulticastConfig().setEnabled(false);
+        joinConfig.getTcpIpConfig().setEnabled(false);
+
+        Hazelcast.newHazelcastInstance(config);
+        Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1");
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
 
-        return HazelcastClientCachingProvider.createCachingProvider(client);
+        return HazelcastClientCachingProvider.createCachingProvider(hazelcastInstance);
     }
 }

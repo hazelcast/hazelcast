@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
-public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
+public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation,
+        IdentifiedDataSerializable {
 
     private boolean unlockKey;
+
+    public RemoveBackupOperation() {
+    }
 
     public RemoveBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -40,9 +45,7 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         this.unlockKey = unlockKey;
     }
 
-    public RemoveBackupOperation() {
-    }
-
+    @Override
     public void run() {
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -64,22 +67,26 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         return Boolean.TRUE;
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.REMOVE_BACKUP;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
-    }
-
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.REMOVE_BACKUP;
     }
 
 }

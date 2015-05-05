@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
@@ -56,6 +56,8 @@ public interface IOService {
 
     void handleClientPacket(Packet p);
 
+    void handleClientMessage(ClientMessage cm, Connection connection);
+
     TextCommandService getTextCommandService();
 
     boolean isMemcacheEnabled();
@@ -67,6 +69,8 @@ public interface IOService {
     String getThreadPrefix();
 
     ThreadGroup getThreadGroup();
+
+    void onSuccessfulConnection(Address address);
 
     void onFailedConnection(Address address);
 
@@ -94,6 +98,11 @@ public interface IOService {
 
     int getConnectionMonitorMaxFaults();
 
+    /**
+     * @return Time interval between two I/O imbalance checks.
+     */
+    int getBalancerIntervalSeconds();
+
     void onDisconnect(Address endpoint);
 
     boolean isClient();
@@ -109,8 +118,6 @@ public interface IOService {
     Object toObject(Data data);
 
     SerializationService getSerializationService();
-
-    PortableContext getPortableContext();
 
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     }
 
     public AbstractMapOperation(String name) {
-        super();
         this.name = name;
     }
 
@@ -40,16 +39,15 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
         innerBeforeRun();
     }
 
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
     public void innerBeforeRun() {
     }
 
     @Override
     public void afterRun() throws Exception {
     }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
 }

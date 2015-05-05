@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.PartitionEvent;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -31,7 +32,7 @@ import java.io.IOException;
  * @see PartitionService
  * @see MigrationListener
  */
-public class MigrationEvent implements DataSerializable {
+public class MigrationEvent implements DataSerializable, PartitionEvent {
 
     private int partitionId;
     private Member oldOwner;
@@ -49,9 +50,9 @@ public class MigrationEvent implements DataSerializable {
     }
 
     /**
-     * Returns the id of the partition which is (or being) migrated
+     * Returns the id of the partition which is (or is being) migrated
      *
-     * @return partition id
+     * @return the id of the partition which is (or is being) migrated
      */
     public int getPartitionId() {
         return partitionId;
@@ -60,7 +61,7 @@ public class MigrationEvent implements DataSerializable {
     /**
      * Returns the old owner of the migrating partition
      *
-     * @return old owner of partition
+     * @return the old owner of the migrating partition
      */
     public Member getOldOwner() {
         return oldOwner;
@@ -69,16 +70,16 @@ public class MigrationEvent implements DataSerializable {
     /**
      * Returns the new owner of the migrating partition
      *
-     * @return new owner of partition
+     * @return the new owner of the migrating partition
      */
     public Member getNewOwner() {
         return newOwner;
     }
 
     /**
-     * Returns the status of the migration: Started, completed or failed
+     * Returns the status of the migration: started, completed or failed
      *
-     * @return migration status
+     * @return the migration status: started, completed or failed
      */
     public MigrationStatus getStatus() {
         return status;

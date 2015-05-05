@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,11 @@ public class TestServlet extends HttpServlet {
         } else if (req.getRequestURI().endsWith("isNew")) {
             session = req.getSession();
             resp.getWriter().write(session.isNew() == true ? "true" : "false");
+        } else if (req.getRequestURI().endsWith("issue5186_remove_then_set")) {
+            session = req.getSession();
+            session.removeAttribute("key");
+            session.setAttribute("key", "value-changed");
+            resp.getWriter().write("true");
         }
     }
 }

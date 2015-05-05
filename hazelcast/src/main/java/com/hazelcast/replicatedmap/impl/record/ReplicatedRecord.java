@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,17 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * @param <K> key type
  * @param <V> value type
  */
-public class ReplicatedRecord<K, V>
-        implements IdentifiedDataSerializable {
+public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(ReplicatedRecord.class, "hits");
-    private static final AtomicLongFieldUpdater<ReplicatedRecord> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
     private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
 
     // These fields are only accessed through the updaters
+    @SuppressWarnings("unused")
     private volatile long hits;
+    @SuppressWarnings("unused")
     private volatile long lastAccessTime;
 
     private K key;
@@ -67,11 +66,19 @@ public class ReplicatedRecord<K, V>
 
     public K getKey() {
         access();
+        return getKeyInternal();
+    }
+
+    public K getKeyInternal() {
         return key;
     }
 
     public V getValue() {
         access();
+        return getValueInternal();
+    }
+
+    public V getValueInternal() {
         return value;
     }
 
@@ -123,6 +130,10 @@ public class ReplicatedRecord<K, V>
 
     public V setValue(V value, int hash, long ttlMillis) {
         access();
+        return setValueInternal(value, hash, ttlMillis);
+    }
+
+    public V setValueInternal(V value, int hash, long ttlMillis) {
         V oldValue = this.value;
         this.value = value;
         this.latestUpdateHash = hash;
@@ -147,9 +158,9 @@ public class ReplicatedRecord<K, V>
         return lastAccessTime;
     }
 
-    public void access() {
+    private void access() {
         HITS_UPDATER.incrementAndGet(this);
-        LAST_ACCESS_TIME_UPDATER.set(this, Clock.currentTimeMillis());
+        lastAccessTime = Clock.currentTimeMillis();
     }
 
     @Override
@@ -233,7 +244,6 @@ public class ReplicatedRecord<K, V>
         sb.append('}');
         return sb.toString();
     }
-
 }
 
 

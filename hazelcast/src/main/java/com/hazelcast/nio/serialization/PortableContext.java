@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,6 @@ import java.nio.ByteOrder;
 
 public interface PortableContext {
 
-    int HEADER_ENTRY_LENGTH = 12;
-    int HEADER_FACTORY_OFFSET = 0;
-    int HEADER_CLASS_OFFSET = 4;
-    int HEADER_VERSION_OFFSET = 8;
-
     int getVersion();
 
     int getClassVersion(int factoryId, int classId);
@@ -36,13 +31,7 @@ public interface PortableContext {
 
     ClassDefinition lookupClassDefinition(int factoryId, int classId, int version);
 
-    ClassDefinition lookupClassDefinition(Data data);
-
-    boolean hasClassDefinition(Data data);
-
-    ClassDefinition[] getClassDefinitions(Data data);
-
-    ClassDefinition createClassDefinition(int factoryId, byte[] binary) throws IOException;
+    ClassDefinition lookupClassDefinition(Data data) throws IOException;
 
     ClassDefinition registerClassDefinition(ClassDefinition cd);
 

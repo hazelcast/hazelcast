@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Set;
 /**
- * This interface using for create filterable Predicates.
+ * This interface is used for create filterable Predicates.
  */
 public interface IndexAwarePredicate extends Predicate {
 

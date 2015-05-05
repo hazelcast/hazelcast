@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ThreadUtil;
-import com.hazelcast.util.ValidationUtil;
+import com.hazelcast.util.Preconditions;
 
 import java.util.AbstractMap;
 import java.util.Collection;
@@ -71,9 +71,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
-import static com.hazelcast.util.ValidationUtil.shouldBePositive;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * @author ali 5/19/13
@@ -241,8 +241,8 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkPositive(leaseTime, "leaseTime should be positive");
 
-        shouldBePositive(leaseTime, "leaseTime");
         final Data keyData = toData(key);
         MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
                 getTimeInMillis(leaseTime, timeUnit), -1, name);
@@ -313,7 +313,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                                                     JobTracker jobTracker) {
 
         try {
-            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            Preconditions.isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);

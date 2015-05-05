@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ public class LongMaxAggregation<Key, Value>
     private static final class LongMaxReducer
             extends Reducer<Long, Long> {
 
-        private volatile long max = Long.MIN_VALUE;
+        private long max = Long.MIN_VALUE;
 
         @Override
         public void reduce(Long value) {

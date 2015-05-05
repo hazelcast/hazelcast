@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,6 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node);
-        return new TcpIpConnectionManager(ioService, serverSocketChannel);
+        return new TcpIpConnectionManager(ioService, serverSocketChannel, node.getHazelcastThreadGroup(), node.loggingService);
     }
 }

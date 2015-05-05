@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.wan.impl;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanTargetClusterConfig;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -127,9 +128,12 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         if (ex == null) {
             synchronized (mutex) {
                 if (executor == null) {
+                    HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
                     executor = new StripedExecutor(node.getLogger(WanReplicationServiceImpl.class),
-                            node.getThreadNamePrefix("wan"),
-                            node.threadGroup, ExecutorConfig.DEFAULT_POOL_SIZE, ExecutorConfig.DEFAULT_QUEUE_CAPACITY);
+                            threadGroup.getThreadNamePrefix("wan"),
+                            threadGroup.getInternalThreadGroup(),
+                            ExecutorConfig.DEFAULT_POOL_SIZE,
+                            ExecutorConfig.DEFAULT_QUEUE_CAPACITY);
                 }
                 ex = executor;
             }

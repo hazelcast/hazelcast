@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation for counting all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT COUNT(*) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT COUNT(*) FROM x</pre>
      *
      * @param <Key> the input key type
      * @return the count of all supplied elements
@@ -76,7 +76,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation for selecting all distinct values.<br/>
-     * This aggregation is similar to <pre>SELECT DISTINCT * FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT DISTINCT * FROM x</pre>
      *
      * @param <Key>          the input key type
      * @param <Value>        the supplied value type
@@ -91,7 +91,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to calculate the integer average of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT AVG(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -103,7 +103,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to calculate the integer sum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT SUM(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT SUM(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -115,7 +115,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to find the integer minimum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MIN(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -127,7 +127,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to find the integer maximum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MAX(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -139,7 +139,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to calculate the long average of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT AVG(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -151,7 +151,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to calculate the long sum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT SUM(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT SUM(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -163,7 +163,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to find the long minimum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MIN(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -175,7 +175,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to find the long maximum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MAX(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -187,7 +187,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to calculate the double average of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT AVG(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -199,7 +199,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to calculate the double sum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT SUM(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT SUM(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -211,7 +211,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to find the double minimum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MIN(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -223,7 +223,7 @@ public final class Aggregations {
 
     /**
      * Returns an aggregation to find the double maximum of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MAX(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -236,7 +236,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to calculate the {@link java.math.BigDecimal} average
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT AVG(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -249,7 +249,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to calculate the {@link java.math.BigDecimal} sum
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT SUM(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT SUM(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -262,7 +262,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to find the {@link java.math.BigDecimal} minimum
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MIN(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -275,7 +275,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to find the {@link java.math.BigDecimal} maximum
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MAX(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -288,7 +288,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to calculate the {@link java.math.BigInteger} average
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT AVG(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT AVG(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -301,7 +301,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to calculate the {@link java.math.BigInteger} sum
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT SUM(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT SUM(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -314,7 +314,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to find the {@link java.math.BigInteger} minimum
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MIN(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -327,7 +327,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to find the {@link java.math.BigInteger} maximum
      * of all supplied values.<br/>
-     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MAX(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -340,7 +340,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to find the minimum value of all supplied
      * {@link java.lang.Comparable} implementing values.<br/>
-     * This aggregation is similar to <pre>SELECT MIN(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MIN(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -353,7 +353,7 @@ public final class Aggregations {
     /**
      * Returns an aggregation to find the maximum value of all supplied
      * {@link java.lang.Comparable} implementing values.<br/>
-     * This aggregation is similar to <pre>SELECT MAX(value) FROM x</pre>
+     * This aggregation is similar to: <pre>SELECT MAX(value) FROM x</pre>
      *
      * @param <Key>   the input key type
      * @param <Value> the supplied value type
@@ -366,7 +366,7 @@ public final class Aggregations {
     /**
      * Adapter class from internal {@link com.hazelcast.mapreduce.aggregation.impl.AggType}
      * to public API {@link com.hazelcast.mapreduce.aggregation.Aggregation}s. It is used to
-     * make the internal aggregations implementation more type-safe but exporting only necessary
+     * make the internal aggregations implementation more type-safe while exporting only necessary
      * types to the public API.
      *
      * @param <Key>      the input key type

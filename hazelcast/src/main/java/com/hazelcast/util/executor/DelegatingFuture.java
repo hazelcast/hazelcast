@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
@@ -39,17 +41,14 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private volatile boolean done;
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService) {
-        this.future = future;
-        this.serializationService = serializationService;
-        this.defaultValue = null;
-        this.hasDefaultValue = false;
+        this(future, serializationService, null);
     }
 
     public DelegatingFuture(ICompletableFuture future, SerializationService serializationService, V defaultValue) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = defaultValue;
-        this.hasDefaultValue = true;
+        this.hasDefaultValue = defaultValue != null;
     }
 
     @Override
@@ -105,6 +104,12 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
             object = serializationService.toObject(data);
             serializationService.disposeData(data);
         }
+        if (object instanceof ClientMessage) {
+            GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) object);
+            Data data = resultParameters.result;
+            object = serializationService.toObject(data);
+            serializationService.disposeData(data);
+        }
         return (V) object;
     }
 
@@ -131,6 +136,10 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
     protected void setDone() {
         this.done = true;
+    }
+
+    protected ICompletableFuture getFuture() {
+        return future;
     }
 
     @Override

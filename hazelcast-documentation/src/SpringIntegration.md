@@ -48,7 +48,7 @@ You can declare Hazelcast Objects using the default Spring *beans* namespace. Yo
 
 ***Classpath Configuration*** 
 
-Hazelcast-Spring integration requires the following jar files in the classpath:
+Hazelcast-Spring integration requires the following JAR files in the classpath:
 
 - `hazelcast-spring-`<*version*>`.jar`
 - `hazelcast-`<*version*>`.jar`
@@ -59,7 +59,7 @@ or
 
 ***Bean Declaration*** 
 
-Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add the namespace declaration *xmlns:hz="http://www.hazelcast.com/schema/spring"* to the `beans` tag in the context file so that *hz* namespace shortcut can be used as a bean declaration.
+Hazelcast has its own namespace **hazelcast** for bean definitions. You can easily add the namespace declaration *xmlns:hz="http://www.hazelcast.com/schema/spring"* to the `beans` element in the context file so that *hz* namespace shortcut can be used as a bean declaration.
 
 Here is an example schema definition for Hazelcast 3.3.x:
 
@@ -205,12 +205,12 @@ Hazelcast Distributed Objects could be marked with @SpringAware if the object wa
 - to apply factory callbacks such as `ApplicationContextAware`, `BeanNameAware`,
 - to apply bean post-processing annotations such as `InitializingBean`, `@PostConstruct`.
 
-Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` as explained in [Spring Configuration](#spring-configuration) section.
+Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed object, can benefit from these features. To enable SpringAware objects, you must first configure `HazelcastInstance` using *hazelcast* namespace as explained in the [Spring Configuration section](#spring-configuration) and add `<hz:spring-aware />` tag.
 
 #### SpringAware Examples
 
 - Configure a Hazelcast Instance (3.3.x) via Spring Configuration and define *someBean* as Spring Bean.
-
+- Add `<hz:spring-aware />` to Hazelcast configuration to enable @SpringAware.
 
 ```xml
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -228,6 +228,7 @@ Hazelcast Distributed `ExecutorService`, or more generally any Hazelcast managed
 
   <hz:hazelcast id="instance">
     <hz:config>
+      <hz:spring-aware />
       <hz:group name="dev" password="password"/>
       <hz:network port="5701" port-auto-increment="false">
         <hz:join>
@@ -435,7 +436,7 @@ If you are using Hibernate with Hazelcast as 2nd level cache provider, you can e
 - LOCAL
 - DISTRIBUTED 
 
-Please refer to Hibernate [RegionFactory Options](#regionfactory-options) section for more information.
+Please refer to the Hibernate [RegionFactory Options section](#regionfactory-options) for more information.
 
 ### Best Practices
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -39,24 +39,9 @@ public abstract class AtomicLongBaseOperation extends Operation
         this.name = name;
     }
 
-    public LongWrapper getNumber() {
+    public AtomicLongContainer getLongContainer() {
         AtomicLongService service = getService();
-        return service.getNumber(name);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return AtomicLongDataSerializerHook.F_ID;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        return service.getLongContainer(name);
     }
 
     @Override
@@ -76,4 +61,25 @@ public abstract class AtomicLongBaseOperation extends Operation
     public boolean returnsResponse() {
         return true;
     }
+
+    @Override
+    public String getServiceName() {
+        return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AtomicLongDataSerializerHook.F_ID;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,22 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
-import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.util.Properties;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -44,6 +47,8 @@ import static java.text.MessageFormat.format;
  */
 public class Config {
 
+    private static final ILogger LOGGER = Logger.getLogger(Config.class);
+
     private URL configurationUrl;
 
     private File configurationFile;
@@ -57,6 +62,8 @@ public class Config {
     private GroupConfig groupConfig = new GroupConfig();
 
     private NetworkConfig networkConfig = new NetworkConfig();
+
+    private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
@@ -81,6 +88,10 @@ public class Config {
     private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private final Map<String, JobTrackerConfig> jobTrackerConfigs = new ConcurrentHashMap<String, JobTrackerConfig>();
+
+    private final Map<String, QuorumConfig> quorumConfigs = new ConcurrentHashMap<String, QuorumConfig>();
+
+    private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
@@ -138,6 +149,17 @@ public class Config {
     public Config setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
+    }
+
+    public ConfigPatternMatcher getConfigPatternMatcher() {
+        return configPatternMatcher;
+    }
+
+    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+        if (configPatternMatcher == null) {
+            throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
+        }
+        this.configPatternMatcher = configPatternMatcher;
     }
 
     public String getProperty(String name) {
@@ -516,6 +538,40 @@ public class Config {
         return this;
     }
 
+    public RingbufferConfig findRingbufferConfig(String name) {
+        String baseName = getBaseName(name);
+        RingbufferConfig config = lookupByPattern(ringbufferConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getRingbufferConfig("default").getAsReadOnly();
+    }
+
+    public RingbufferConfig getRingbufferConfig(String name) {
+        String baseName = getBaseName(name);
+        RingbufferConfig config = lookupByPattern(ringbufferConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        RingbufferConfig defConfig = ringbufferConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new RingbufferConfig("default");
+            addRingBufferConfig(defConfig);
+        }
+        config = new RingbufferConfig(name, defConfig);
+        addRingBufferConfig(config);
+        return config;
+    }
+
+    public Config addRingBufferConfig(RingbufferConfig ringbufferConfig) {
+        ringbufferConfigs.put(ringbufferConfig.getName(), ringbufferConfig);
+        return this;
+    }
+
+    public Map<String, RingbufferConfig> getRingbufferConfigs() {
+        return ringbufferConfigs;
+    }
+
     public TopicConfig findTopicConfig(String name) {
         String baseName = getBaseName(name);
         TopicConfig config = lookupByPattern(topicConfigs, baseName);
@@ -751,6 +807,54 @@ public class Config {
         return this;
     }
 
+    public Map<String, QuorumConfig> getQuorumConfigs() {
+        return quorumConfigs;
+    }
+
+    public QuorumConfig getQuorumConfig(String name) {
+        String baseName = getBaseName(name);
+        QuorumConfig config = lookupByPattern(quorumConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        QuorumConfig defConfig = quorumConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new QuorumConfig();
+            defConfig.setName("default");
+            addQuorumConfig(defConfig);
+        }
+        config = new QuorumConfig(defConfig);
+        config.setName(name);
+        addQuorumConfig(config);
+        return config;
+    }
+
+    public QuorumConfig findQuorumConfig(String name) {
+        String baseName = getBaseName(name);
+        QuorumConfig config = lookupByPattern(quorumConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        return getQuorumConfig("default");
+    }
+
+
+
+    public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
+        this.quorumConfigs.clear();
+        this.quorumConfigs.putAll(quorumConfigs);
+        for (final Entry<String, QuorumConfig> entry : this.quorumConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Config addQuorumConfig(QuorumConfig quorumConfig) {
+        quorumConfigs.put(quorumConfig.getName(), quorumConfig);
+        return this;
+    }
+
+
     public ManagementCenterConfig getManagementCenterConfig() {
         return managementCenterConfig;
     }
@@ -880,38 +984,24 @@ public class Config {
         return this;
     }
 
-    private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        T t = map.get(name);
-        if (t == null) {
-            for (Map.Entry<String, T> entry : map.entrySet()) {
-                String pattern = entry.getKey();
-                T value = entry.getValue();
-                if (nameMatches(name, pattern)) {
-                    return value;
-                }
-            }
+    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
+        T candidate = configPatterns.get(itemName);
+        if (candidate != null) {
+            return candidate;
         }
-        return t;
-    }
-
-    public static boolean nameMatches(final String name, final String pattern) {
-        final int index = pattern.indexOf('*');
-        if (index == -1) {
-            return name.equals(pattern);
-        } else {
-            final String firstPart = pattern.substring(0, index);
-            final int indexFirstPart = name.indexOf(firstPart, 0);
-            if (indexFirstPart == -1) {
-                return false;
-            }
-            final String secondPart = pattern.substring(index + 1);
-            final int indexSecondPart = name.indexOf(secondPart, index + 1);
-            return indexSecondPart != -1;
+        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
+        if (configPatternKey != null) {
+            return configPatterns.get(configPatternKey);
         }
+        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
+            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
+        }
+        return null;
     }
 
     // TODO: This mechanism isn't used anymore to determine if 2 HZ configurations are compatible.
     // See {@link ConfigCheck} for more information.
+
     /**
      * @param config
      * @return true if config is compatible with this one,
@@ -959,6 +1049,7 @@ public class Config {
         sb.append(", multiMapConfigs=").append(multiMapConfigs);
         sb.append(", executorConfigs=").append(executorConfigs);
         sb.append(", semaphoreConfigs=").append(semaphoreConfigs);
+        sb.append(", ringbufferConfigs=").append(ringbufferConfigs);
         sb.append(", wanReplicationConfigs=").append(wanReplicationConfigs);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", partitionGroupConfig=").append(partitionGroupConfig);

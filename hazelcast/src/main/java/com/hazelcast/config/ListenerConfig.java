@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package com.hazelcast.config;
 
 import java.util.EventListener;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link EventListener}. The configuration contains either the classname
@@ -93,7 +93,7 @@ public class ListenerConfig {
      * @see #getClassName()
      */
     public ListenerConfig setClassName(String className) {
-        this.className = hasText(className, "className");
+        this.className = checkHasText(className, "className must contain text");
         this.implementation = null;
         return this;
     }

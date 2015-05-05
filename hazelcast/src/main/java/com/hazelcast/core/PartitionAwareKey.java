@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,10 @@ package com.hazelcast.core;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ValidationUtil;
 
 import java.io.IOException;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * A {@link PartitionAware} key. This is useful in combination with a Map where you want to control the
@@ -38,19 +39,24 @@ public final class PartitionAwareKey<K, P> implements PartitionAware<Object>, Da
     /**
      * Creates a new PartitionAwareKey.
      *
-     * @param key the key
+     * @param key          the key
      * @param partitionKey the partitionKey
      * @throws IllegalArgumentException if key or partitionKey is null.
      */
     public PartitionAwareKey(K key, P partitionKey) {
-        this.key = ValidationUtil.isNotNull(key, "key");
-        this.partitionKey = ValidationUtil.isNotNull(partitionKey, "partitionKey");
+        this.key = isNotNull(key, "key");
+        this.partitionKey = isNotNull(partitionKey, "partitionKey");
     }
 
     //constructor needed for deserialization.
     private PartitionAwareKey() {
     }
 
+    /**
+     * Gets the key (not the partitionKey).
+     *
+     * @return the key (not the partitionKey)
+     */
     public K getKey() {
         return key;
     }

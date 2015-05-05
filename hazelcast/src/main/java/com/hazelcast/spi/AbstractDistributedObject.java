@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     /**
      * Gets the Service of this AbstractDistributedObject.
      *
-     * @return the service
+     * @return the Service of this AbstractDistributedObject
      * @throws HazelcastInstanceNotActiveException if object is destroyed or HazelcastInstance shutdown.
      */
     public final S getService() {
@@ -93,6 +93,16 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
             throw new HazelcastInstanceNotActiveException();
         }
         return s;
+    }
+
+    /**
+     * Gets the OperationService.
+     *
+     * @return the OperationService.
+     * @throws HazelcastInstanceNotActiveException if object is destroyed or HazelcastInstance shutdown.
+     */
+    public final OperationService getOperationService() {
+        return getNodeEngine().getOperationService();
     }
 
     @Override

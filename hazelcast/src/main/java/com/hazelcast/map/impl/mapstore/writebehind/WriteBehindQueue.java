@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
@@ -20,99 +20,89 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Main contract for write behind queues
- * which are used for map store operations.
+ * A specific queue implementation which is used for write-behind-store operations.
+ * Also supports some filtering methods e.g. {@link #getFrontByTime}, {@link  #getFrontByNumber}
  *
- * @param <E> Type of entry to be stored.
+ * @param <E> the type of element to be stored in this queue.
  */
 public interface WriteBehindQueue<E> {
 
     /**
-     * adds to the end.
+     * Inserts collection of elements to the front of this queue.
      *
-     * @param e item to be offered
-     * @return <code>true</code> if added, <code>false</code> otherwise.
+     * @param collection collection of elements to be inserted in front of this queue.
      */
-    boolean offer(E e);
+    void addFirst(Collection<E> collection);
 
     /**
-     * Gets item.
+     * Inserts to the end of this queue.
      *
-     * @param e item to be offered
-     * @return corresponding item from queue or null.
+     * @param e element to be offered
      */
-    E get(E e);
+    void addLast(E e);
 
     /**
-     * Gets first item in queue.
+     * Removes the first occurrence of the specified element in this queue
+     * when searching it by starting from the head of this queue.
      *
-     * @return corresponding item from queue or null.
+     * @param e element to be removed.
+     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
      */
-    E getFirst();
+    boolean removeFirstOccurrence(E e);
 
     /**
-     * removes head of the queue.
+     * Removes all elements from this queue and adds them to the given collection.
+     *
+     * @param collection all elements to be added to this collection.
+     * @return number of removed items from this queue.
      */
-    void removeFirst();
+    int drainTo(Collection<E> collection);
 
+    /**
+     * Checks whether an element exist in this queue.
+     *
+     * @param e item to be checked
+     * @return <code>true</code> if exists, <code>false</code> otherwise
+     */
+    boolean contains(E e);
+
+    /**
+     * Returns the number of elements in this {@link WriteBehindQueue}.
+     *
+     * @return the number of elements in this {@link WriteBehindQueue}.
+     */
     int size();
 
+    /**
+     * Removes all of the elements in this  {@link WriteBehindQueue}
+     * Queue will be empty after this method returns.
+     */
     void clear();
 
     /**
-     * @return A copy of queue at that moment. Returned copy has same characteristics with the original.
-     */
-    WriteBehindQueue<E> getSnapShot();
-
-    /**
-     * Add this collection to the front of the queue.
+     * Returns a read-only list representation of this queue.
      *
-     * @param collection collection to be added in front of this queue.
-     */
-    void addFront(Collection<E> collection);
-
-    /**
-     * Add this collection to the end of the queue.
-     *
-     * @param collection collection to be added end of this queue.
-     */
-    void addEnd(Collection<E> collection);
-
-
-    /**
-     * Removes all items in collection from queue.
-     *
-     * @param collection collection to be removed.
-     */
-    void removeAll(Collection<E> collection);
-
-
-    /**
-     * Removes and returns all items in this queue.
-     *
-     * @return removed items in this queue.
-     */
-    List<E> removeAll();
-
-    /**
-     * Empty or a real queue.
-     */
-    boolean isEnabled();
-
-    /**
-     * Returns list representation of this queue.
-     *
-     * @return list representation of this queue.
+     * @return read-only list representation of this queue.
      */
     List<E> asList();
 
     /**
-     * Returns list of entries smaller than specific time.
+     * Adds all elements to the supplied collection which are smaller than or equal to the given time.
+     * Finds elements which's delayed times were elapsed. Used in usual flow of write-behind execution.
      *
-     * @param now now in millis.
-     * @return entries to process according to time.
+     * @param time       given time.
+     * @param collection all found elements will be added to this collection.
      */
-    List<E> filterItems(long now);
+    void getFrontByTime(long time, Collection<E> collection);
+
+    /**
+     * Adds the given number of elements to the supplied collection by starting from the head of this queue.
+     * If there is a need to immediately flush some number of elements from this queue, this method will be used.
+     *
+     * @param numberOfElements get this number of elements from the start of this queue.
+     * @param collection       all found elements will be added to this collection.
+     */
+    void getFrontByNumber(int numberOfElements, Collection<E> collection);
 
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import java.util.Properties;
 
 /**
  * ICredentialsFactory is used to create {@link Credentials} objects to be used
- * during node authentication before connection accepted by master node.
+ * during node authentication before connection is accepted by the master node.
  */
 public interface ICredentialsFactory {
 
@@ -37,7 +37,7 @@ public interface ICredentialsFactory {
     /**
      * Creates new {@link Credentials} object.
      *
-     * @return Credentials
+     * @return the new Credentials object
      */
     Credentials newCredentials();
 

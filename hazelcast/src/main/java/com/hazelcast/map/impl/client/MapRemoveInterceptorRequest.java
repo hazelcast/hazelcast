@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,11 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
 
     @Override
     protected Object reduce(Map<Address, Object> map) {
+        for (Object result : map.values()) {
+            if (result instanceof Throwable) {
+                return result;
+            }
+        }
         return true;
     }
 
@@ -91,6 +96,7 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
         id = reader.readUTF("id");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_INTERCEPT);
     }

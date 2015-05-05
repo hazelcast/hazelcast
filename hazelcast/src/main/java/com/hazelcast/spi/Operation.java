@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.impl.RemotePropagatable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -36,22 +36,37 @@ import java.util.logging.Level;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
- * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
+ * An operation could be compared to a {@link Runnable}. It contains logic that is going to be executed; this logic
  * will be placed in the {@link #run()} method.
  */
-public abstract class Operation implements DataSerializable, RemotePropagatable<Operation> {
+public abstract class Operation implements DataSerializable {
+
+    public static final int GENERIC_PARTITION_ID = -1;
+
+    /**
+     * A call id for an invocation that is skipping local registration. For example, a local call without backups
+     * doesn't need to have its call id registered since it won't receive a response from a remote system.
+     */
+    public static final long CALL_ID_LOCAL_SKIPPED = Long.MAX_VALUE;
+
+    static final int BITMASK_VALIDATE_TARGET = 1;
+    static final int BITMASK_CALLER_UUID_SET = 1 << 1;
+    static final int BITMASK_REPLICA_INDEX_SET = 1 << 2;
+    static final int BITMASK_WAIT_TIMEOUT_SET = 1 << 3;
+    static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
+    static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
+    static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
 
     // serialized
     private String serviceName;
-    private int partitionId = -1;
+    private int partitionId = GENERIC_PARTITION_ID;
     private int replicaIndex;
     private long callId;
-    private boolean validateTarget = true;
+    private short flags;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private long waitTimeout = -1;
     private String callerUuid;
-    private String executorName;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -59,7 +74,11 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     private transient Address callerAddress;
     private transient Connection connection;
     private transient ResponseHandler responseHandler;
-    private transient long startTime;
+
+    public Operation() {
+        setFlag(true, BITMASK_VALIDATE_TARGET);
+        setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
+    }
 
     public boolean isUrgent() {
         return this instanceof UrgentSystemOperation;
@@ -78,21 +97,58 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public abstract Object getResponse();
 
+    // Gets the actual service name without looking at overriding methods. This method only exists for testing purposes.
+    String getRawServiceName() {
+        return serviceName;
+    }
+
     public String getServiceName() {
         return serviceName;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
+        // If the name of the service is the same as the name already provided, the call is skipped.
+        // We can do a == instead of an equals because serviceName are typically constants, and it will
+        // prevent serialization of the service-name if it is already provided by the getServiceName.
+        if (serviceName == getServiceName()) {
+            return this;
+        }
+
         this.serviceName = serviceName;
+        setFlag(serviceName != null, BITMASK_SERVICE_NAME_SET);
         return this;
     }
 
+    /**
+     * Returns the id of the partition that this Operation will be executed upon.
+     *
+     * If the partitionId is equal or larger than 0, it means that it is tied to a specific partition: for example,
+     * a map.get('foo'). If it is smaller than 0, than it means that it isn't bound to a particular partition.
+     *
+     * The partitionId should never be equal or larger than the total number of partitions. For example, if there are 271
+     * partitions, the maximum partitionId is 270.
+     *
+     * The partitionId is used by the OperationService to figure out which member owns a specific partition, and to send
+     * the operation to that member.
+     *
+     * @return the id of the partition.
+     * @see #setPartitionId(int)
+     */
     public final int getPartitionId() {
         return partitionId;
     }
 
+    /**
+     * Sets the partition id.
+     *
+     * @param partitionId the id of the partition.
+     * @return the updated Operation.
+     * @see #getPartitionId()
+     */
     public final Operation setPartitionId(int partitionId) {
         this.partitionId = partitionId;
+        setFlag(partitionId > Short.MAX_VALUE, BITMASK_PARTITION_ID_32_BIT);
         return this;
     }
 
@@ -105,18 +161,20 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             throw new IllegalArgumentException("Replica index is out of range [0-"
                     + (InternalPartition.MAX_REPLICA_COUNT - 1) + "]");
         }
+
+        setFlag(replicaIndex != 0, BITMASK_REPLICA_INDEX_SET);
         this.replicaIndex = replicaIndex;
         return this;
     }
 
-    public String getExecutorName() {
-        return executorName;
-    }
-
-    public void setExecutorName(String executorName) {
-        this.executorName = executorName;
-    }
-
+    /**
+     * Gets the callId of this Operation.
+     *
+     * The callId is used to associate the invocation of an Operation on a remote system, with the response from the execution
+     * of that operation.
+     *
+     * @return the callId.
+     */
     public final long getCallId() {
         return callId;
     }
@@ -128,11 +186,11 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     }
 
     public boolean validatesTarget() {
-        return validateTarget;
+        return isFlagSet(BITMASK_VALIDATE_TARGET);
     }
 
     public final Operation setValidateTarget(boolean validateTarget) {
-        this.validateTarget = validateTarget;
+        setFlag(validateTarget, BITMASK_VALIDATE_TARGET);
         return this;
     }
 
@@ -196,16 +254,13 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         return responseHandler;
     }
 
-    public final long getStartTime() {
-        return startTime;
-    }
-
-    // Accessed using OperationAccessor
-    final Operation setStartTime(long startTime) {
-        this.startTime = startTime;
-        return this;
-    }
-
+    /**
+     * Gets the time in milliseconds since this invocation started.
+     *
+     * For more information, see {@link com.hazelcast.cluster.ClusterClock#getClusterTime()}.
+     *
+     * @return the time of the invocation start.
+     */
     public final long getInvocationTime() {
         return invocationTime;
     }
@@ -216,13 +271,32 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
         return this;
     }
 
+    /**
+     * Gets the call timeout in milliseconds. For example, if a call should be executed within 60 seconds orotherwise it should be
+     * aborted, then the call-timeout is 60000 milliseconds.
+     *
+     * For more information about the default value, see
+     * {@link com.hazelcast.instance.GroupProperties#OPERATION_CALL_TIMEOUT_MILLIS}
+     *
+     * @return the call timeout in milliseconds.
+     * @see #setCallTimeout(long)
+     * @see com.hazelcast.spi.OperationAccessor#setCallTimeout(Operation, long)
+     */
     public final long getCallTimeout() {
         return callTimeout;
     }
 
+    /**
+     * Sets the call timeout.
+     *
+     * @param callTimeout the call timeout.
+     * @return the updated Operation.
+     * @see #getCallTimeout()
+     */
     // Accessed using OperationAccessor
     final Operation setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
+        setFlag(callTimeout > Integer.MAX_VALUE, BITMASK_CALL_TIMEOUT_64_BIT);
         return this;
     }
 
@@ -232,6 +306,7 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public final void setWaitTimeout(long timeout) {
         this.waitTimeout = timeout;
+        setFlag(timeout != -1, BITMASK_WAIT_TIMEOUT_SET);
     }
 
     public ExceptionAction onException(Throwable throwable) {
@@ -245,12 +320,29 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
 
     public Operation setCallerUuid(String callerUuid) {
         this.callerUuid = callerUuid;
+        setFlag(callerUuid != null, BITMASK_CALLER_UUID_SET);
         return this;
     }
 
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
+    }
+
+    void setFlag(boolean value, int bitmask) {
+        if (value) {
+            flags |= bitmask;
+        } else {
+            flags &= ~bitmask;
+        }
+    }
+
+    boolean isFlagSet(int bitmask) {
+        return (flags & bitmask) != 0;
+    }
+
+    short getFlags() {
+        return flags;
     }
 
     public void logError(Throwable e) {
@@ -266,6 +358,8 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
             } catch (Throwable ignored) {
                 ignore(ignored);
             }
+        } else if (e instanceof QuorumException) {
+            logger.log(Level.WARNING, e.getMessage());
         } else {
             final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
@@ -277,40 +371,101 @@ public abstract class Operation implements DataSerializable, RemotePropagatable<
     @Override
     public final void writeData(ObjectDataOutput out) throws IOException {
         // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
-        // It is used to return deserialization exceptions to the caller
+        // It is used to return deserialization exceptions to the caller.
         out.writeLong(callId);
 
-        out.writeUTF(serviceName);
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
-        out.writeBoolean(validateTarget);
+        // write state next, so that it is first available on reading.
+        out.writeShort(flags);
+
+        if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
+            out.writeUTF(serviceName);
+        }
+
+        if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
+            out.writeInt(partitionId);
+        } else {
+            out.writeShort(partitionId);
+        }
+
+        if (isFlagSet(BITMASK_REPLICA_INDEX_SET)) {
+            out.writeByte(replicaIndex);
+        }
+
         out.writeLong(invocationTime);
-        out.writeLong(callTimeout);
-        out.writeLong(waitTimeout);
-        out.writeUTF(callerUuid);
-        out.writeUTF(executorName);
+
+        if (isFlagSet(BITMASK_CALL_TIMEOUT_64_BIT)) {
+            out.writeLong(callTimeout);
+        } else {
+            out.writeInt((int) callTimeout);
+        }
+
+        if (isFlagSet(BITMASK_WAIT_TIMEOUT_SET)) {
+            out.writeLong(waitTimeout);
+        }
+
+        if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
+            out.writeUTF(callerUuid);
+        }
+
         writeInternal(out);
     }
 
     @Override
     public final void readData(ObjectDataInput in) throws IOException {
         // THIS HAS TO BE THE FIRST VALUE IN THE STREAM! DO NOT CHANGE!
-        // It is used to return deserialization exceptions to the caller
+        // It is used to return deserialization exceptions to the caller.
         callId = in.readLong();
 
-        serviceName = in.readUTF();
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
-        validateTarget = in.readBoolean();
+        flags = in.readShort();
+
+        if (isFlagSet(BITMASK_SERVICE_NAME_SET)) {
+            serviceName = in.readUTF();
+        }
+
+        if (isFlagSet(BITMASK_PARTITION_ID_32_BIT)) {
+            partitionId = in.readInt();
+        } else {
+            partitionId = in.readShort();
+        }
+
+        if (isFlagSet(BITMASK_REPLICA_INDEX_SET)) {
+            replicaIndex = in.readByte();
+        }
+
         invocationTime = in.readLong();
-        callTimeout = in.readLong();
-        waitTimeout = in.readLong();
-        callerUuid = in.readUTF();
-        executorName = in.readUTF();
+
+        if (isFlagSet(BITMASK_CALL_TIMEOUT_64_BIT)) {
+            callTimeout = in.readLong();
+        } else {
+            callTimeout = in.readInt();
+        }
+
+        if (isFlagSet(BITMASK_WAIT_TIMEOUT_SET)) {
+            waitTimeout = in.readLong();
+        }
+
+        if (isFlagSet(BITMASK_CALLER_UUID_SET)) {
+            callerUuid = in.readUTF();
+        }
+
         readInternal(in);
     }
 
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;
 
     protected abstract void readInternal(ObjectDataInput in) throws IOException;
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
+        sb.append("serviceName='").append(serviceName).append('\'');
+        sb.append(", partitionId=").append(partitionId);
+        sb.append(", callId=").append(callId);
+        sb.append(", invocationTime=").append(invocationTime);
+        sb.append(", waitTimeout=").append(waitTimeout);
+        sb.append(", callTimeout=").append(callTimeout);
+        sb.append('}');
+        return sb.toString();
+    }
+
 }

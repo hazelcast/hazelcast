@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,24 +31,45 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-final class ReadHandler extends AbstractSelectionHandler implements Runnable {
+public final class ReadHandler extends AbstractSelectionHandler {
 
-    private final ByteBuffer buffer;
-
-    private final IOSelector ioSelector;
+    private final ByteBuffer inputBuffer;
 
     private SocketReader socketReader;
 
     private volatile long lastHandle;
 
+    //This field will be incremented by a single thread. It can be read by multiple threads.
+    private volatile long eventCount;
+
     public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
-        super(connection);
+        super(connection, ioSelector, SelectionKey.OP_READ);
         this.ioSelector = ioSelector;
-        buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+        this.inputBuffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
+    }
+
+    public void start() {
+        ioSelector.addTask(new Runnable() {
+            @Override
+            public void run() {
+                getSelectionKey();
+
+            }
+        });
+
+        ioSelector.wakeup();
     }
 
     @Override
+    public long getEventCount() {
+        return eventCount;
+    }
+
+    @Override
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+            justification = "eventCount is accessed by a single thread only.")
     public void handle() {
+        eventCount++;
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             String message = "We are being asked to read, but connection is not live so we won't";
@@ -63,7 +84,7 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     return;
                 }
             }
-            int readBytes = socketChannel.read(buffer);
+            int readBytes = socketChannel.read(inputBuffer);
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
             }
@@ -72,22 +93,23 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             return;
         }
         try {
-            if (buffer.position() == 0) {
+            if (inputBuffer.position() == 0) {
                 return;
             }
-            buffer.flip();
-            socketReader.read(buffer);
-            if (buffer.hasRemaining()) {
-                buffer.compact();
+            inputBuffer.flip();
+            socketReader.read(inputBuffer);
+            if (inputBuffer.hasRemaining()) {
+                inputBuffer.compact();
             } else {
-                buffer.clear();
+                inputBuffer.clear();
             }
         } catch (Throwable t) {
             handleSocketException(t);
         }
     }
 
-    private void initializeSocketReader() throws IOException {
+    private void initializeSocketReader()
+            throws IOException {
         if (socketReader == null) {
             final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
             int readBytes = socketChannel.read(protocolBuffer);
@@ -108,9 +130,12 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY);
                     socketReader = new SocketClientDataReader(connection);
+                } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
+                    writeHandler.setProtocol(Protocols.CLIENT_BINARY_NEW);
+                    socketReader = new SocketClientMessageReader(connection, socketChannel);
                 } else {
                     writeHandler.setProtocol(Protocols.TEXT);
-                    buffer.put(protocolBuffer.array());
+                    inputBuffer.put(protocolBuffer.array());
                     socketReader = new SocketTextReader(connection);
                     connection.getConnectionManager().incrementTextConnections();
                 }
@@ -121,18 +146,8 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
     }
 
-    @Override
-    public void run() {
-        registerOp(ioSelector.getSelector(), SelectionKey.OP_READ);
-    }
-
     long getLastHandle() {
         return lastHandle;
-    }
-
-    public void register() {
-        ioSelector.addTask(this);
-        ioSelector.wakeup();
     }
 
     void shutdown() {

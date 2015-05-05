@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -104,11 +104,13 @@
                 </hz:queue-permission>
             </hz:client-permissions>
             <hz:security-interceptors>
-                <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"/>
+                <hz:interceptor class-name="com.hazelcast.spring.security.DummySecurityInterceptor"
+                                implementation="dummySecurityInterceptor"/>
             </hz:security-interceptors>
         </hz:security>
     </hz:config>
 
     <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory"/>
     <bean id="dummyPermissionPolicy" class="com.hazelcast.spring.security.DummyPermissionPolicy"/>
+    <bean id="dummySecurityInterceptor" class="com.hazelcast.spring.security.DummySecurityInterceptor"/>
 </beans>

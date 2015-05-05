@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ public interface Context<K, V> {
      * Emits a key-value pair to the intermediate working space. The same key can be used multiple
      * times to collect values under the same key.
      *
-     * @param key   emitted key.
-     * @param value emitted value.
+     * @param key   emitted key to the intermediate working space.
+     * @param value emitted value to the intermediate working space.
      */
     void emit(K key, V value);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -40,16 +40,17 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
-import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,7 +64,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-@PrivateApi
 final class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
@@ -103,6 +103,7 @@ final class ServiceManager {
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
+        registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
     }
 
     private void registerDefaultServices(ServicesConfig servicesConfig) {
@@ -111,7 +112,7 @@ final class ServiceManager {
         }
 
         logger.finest("Registering default services...");
-        registerService(MapService.SERVICE_NAME, MapService.create(nodeEngine));
+        registerService(MapService.SERVICE_NAME, createService(MapService.class));
         registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
@@ -126,7 +127,14 @@ final class ServiceManager {
         registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
         registerService(MapReduceService.SERVICE_NAME, new MapReduceService(nodeEngine));
         registerService(ReplicatedMapService.SERVICE_NAME, new ReplicatedMapService(nodeEngine));
+        registerService(RingbufferService.SERVICE_NAME, new RingbufferService(nodeEngine));
         registerCacheServiceIfAvailable();
+    }
+
+    private <T> T createService(Class<T> service) {
+        Node node = nodeEngine.getNode();
+        NodeExtension nodeExtension = node.getNodeExtension();
+        return nodeExtension.createService(service);
     }
 
     private void registerCacheServiceIfAvailable() {
@@ -137,9 +145,8 @@ final class ServiceManager {
             ClassLoader classLoader = nodeEngine.getConfigClassLoader();
             Class theClass = ClassLoaderUtil.loadClass(classLoader, localClassName);
             if (theClass != null) {
-                NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
-                Object serviceObject = nodeExtension.createService(ICacheService.class);
-                registerService(ICacheService.SERVICE_NAME, serviceObject);
+                ICacheService service = createService(ICacheService.class);
+                registerService(ICacheService.SERVICE_NAME, service);
             }
         } catch (ClassNotFoundException e) {
             logger.finest("javax.cache api is not detected on classpath. Skipping CacheService...");

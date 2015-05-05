@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -44,8 +44,12 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
-import com.hazelcast.queue.impl.QueueService;
+import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -126,7 +130,8 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
         LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
-        assertTrue(lockStore.isLocked(node.getSerializationService().toData(lock.getName())));
+        Data key = node.getSerializationService().toData(lock.getName(), StringPartitioningStrategy.INSTANCE);
+        assertTrue(lockStore.isLocked(key));
     }
 
     @Test
@@ -141,6 +146,20 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         SemaphoreService service = getNodeEngine(hz).getService(SemaphoreService.SERVICE_NAME);
         assertTrue(service.containsSemaphore(semaphore.getName()));
+    }
+
+    @Test
+    public void testRingbuffer() throws Exception {
+        String partitionKey = "hazelcast";
+        HazelcastInstance hz = getHazelcastInstance(partitionKey);
+
+        Ringbuffer ringbuffer = hz.getRingbuffer("ringbuffer@" + partitionKey);
+        ringbuffer.add("foo");
+        assertEquals("ringbuffer@" + partitionKey, ringbuffer.getName());
+        assertEquals(partitionKey, ringbuffer.getPartitionKey());
+
+        RingbufferService service = getNodeEngine(hz).getService(RingbufferService.SERVICE_NAME);
+        assertTrue(service.getContainers().containsKey(ringbuffer.getName()));
     }
 
     @Test

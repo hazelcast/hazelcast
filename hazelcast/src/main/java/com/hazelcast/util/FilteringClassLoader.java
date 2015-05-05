@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This is used to separate Server and Client inside the same JVM on new
@@ -82,7 +84,7 @@ public class FilteringClassLoader
     protected Class<?> loadClass(String name, boolean resolve)
             throws ClassNotFoundException {
 
-        ValidationUtil.isNotNull(name, "name");
+        isNotNull(name, "name");
 
         for (String excludePackage : excludePackages) {
             if (name.startsWith(excludePackage)) {

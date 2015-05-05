@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,20 +29,29 @@ public class ReplaceOperation extends BasePutOperation {
     public ReplaceOperation() {
     }
 
+    @Override
     public void run() {
         final Object oldValue = recordStore.replace(dataKey, dataValue);
         dataOldValue = mapService.getMapServiceContext().toData(oldValue);
         successful = oldValue != null;
     }
 
+    @Override
     public boolean shouldBackup() {
         return successful && recordStore.getRecord(dataKey) != null;
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
         }
+    }
+
+
+    @Override
+    public Object getResponse() {
+        return dataOldValue;
     }
 
     @Override
@@ -50,8 +59,4 @@ public class ReplaceOperation extends BasePutOperation {
         return "ReplaceOperation{" + name + "}";
     }
 
-    @Override
-    public Object getResponse() {
-        return dataOldValue;
-    }
 }

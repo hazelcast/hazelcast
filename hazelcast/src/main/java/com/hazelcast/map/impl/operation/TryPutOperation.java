@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,32 +22,37 @@ public class TryPutOperation extends BasePutOperation {
 
     private boolean successful;
 
+    public TryPutOperation() {
+    }
+
     public TryPutOperation(String name, Data dataKey, Data value, long timeout) {
         super(name, dataKey, value);
         setWaitTimeout(timeout);
     }
 
-    public TryPutOperation() {
-    }
-
+    @Override
     public void run() {
         successful = recordStore.tryPut(dataKey, dataValue, ttl);
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return successful && recordStore.getRecord(dataKey) != null;
     }
 
+    @Override
     public void onWaitExpire() {
         getResponseHandler().sendResponse(false);
     }
 
+    @Override
     public Object getResponse() {
         return successful;
     }

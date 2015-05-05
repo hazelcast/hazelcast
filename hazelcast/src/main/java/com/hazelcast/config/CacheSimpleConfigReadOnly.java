@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Readonly version of CacheSimpleConfig
+ * Readonly version of {@link com.hazelcast.config.CacheSimpleConfig}
  */
 public class CacheSimpleConfigReadOnly
         extends CacheSimpleConfig {
@@ -31,13 +31,12 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheSimpleConfig setBackupCount(int backupCount) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    public EvictionConfig getEvictionConfig() {
+        final EvictionConfig evictionConfig = super.getEvictionConfig();
+        if (evictionConfig == null) {
+            return null;
+        }
+        return evictionConfig.getAsReadOnly();
     }
 
     @Override
@@ -49,6 +48,16 @@ public class CacheSimpleConfigReadOnly
             readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
+    }
+
+    @Override
+    public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig setBackupCount(int backupCount) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
     @Override
@@ -67,17 +76,7 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setEvictionPercentage(int evictionPercentage) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheSimpleConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheSimpleConfig setEvictionThresholdPercentage(int evictionThresholdPercentage) {
+    public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
@@ -130,4 +129,10 @@ public class CacheSimpleConfigReadOnly
     public CacheSimpleConfig addEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
+
+    @Override
+    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
 }

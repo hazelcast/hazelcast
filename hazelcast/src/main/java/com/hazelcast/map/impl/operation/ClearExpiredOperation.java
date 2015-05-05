@@ -1,42 +1,40 @@
 /*
-* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
-import com.hazelcast.map.impl.mapstore.MapDataStore;
-import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * Clear expired records.
  */
-public class ClearExpiredOperation extends AbstractOperation implements PartitionAwareOperation {
+public class ClearExpiredOperation extends AbstractOperation implements PartitionAwareOperation, MutatingOperation {
 
     private int expirationPercentage;
 
@@ -45,27 +43,21 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     }
 
     @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public void run() throws Exception {
-        final long now = Clock.currentTimeMillis();
         final MapService mapService = getService();
-        final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         final ConcurrentMap<String, RecordStore> recordStores = partitionContainer.getMaps();
         final boolean backup = !isOwner();
         for (final RecordStore recordStore : recordStores.values()) {
             if (recordStore.size() > 0 && recordStore.isExpirable()) {
                 recordStore.evictExpiredEntries(expirationPercentage, backup);
             }
-            cleanupEvictionStagingArea(recordStore, now);
-        }
-    }
-
-    private void cleanupEvictionStagingArea(RecordStore recordStore, long now) {
-        if (recordStore == null) {
-            return;
-        }
-        final MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
-        if (mapDataStore instanceof WriteBehindStore) {
-            ((WriteBehindStore) mapDataStore).cleanupStagingArea(now);
         }
     }
 
@@ -78,7 +70,8 @@ public class ClearExpiredOperation extends AbstractOperation implements Partitio
     @Override
     public void afterRun() throws Exception {
         final MapService mapService = getService();
-        final PartitionContainer partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(getPartitionId());
         partitionContainer.setHasRunningCleanup(false);
         partitionContainer.setLastCleanupTime(Clock.currentTimeMillis());
     }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@
 
     <hz:hazelcast id="instance1">
         <hz:config>
+            <hz:spring-aware />
             <hz:group name="dev" password="dev-pass"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
@@ -55,6 +56,7 @@
 
     <hz:hazelcast id="instance2">
         <hz:config>
+            <hz:spring-aware />
             <hz:group name="dev" password="dev-pass"/>
             <hz:network port="5702" port-auto-increment="false">
                 <hz:join>

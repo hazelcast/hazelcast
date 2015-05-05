@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings("SynchronizationOnStaticField")
 @PrivateApi
@@ -77,12 +78,10 @@ public final class HazelcastInstanceFactory {
     }
 
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
-        if (config == null) {
-            throw new NullPointerException("config can't be null");
-        }
+        checkNotNull(config, "config can't be null");
 
         String name = config.getInstanceName();
-        hasText(name, "instanceName");
+        checkHasText(name, "instanceName must contain text");
 
         InstanceFuture future = INSTANCE_MAP.get(name);
         if (future != null) {
@@ -117,7 +116,7 @@ public final class HazelcastInstanceFactory {
     }
 
     public static HazelcastInstance newHazelcastInstance(Config config, String instanceName,
-                                                              NodeContext nodeContext) {
+                                                         NodeContext nodeContext) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
         }

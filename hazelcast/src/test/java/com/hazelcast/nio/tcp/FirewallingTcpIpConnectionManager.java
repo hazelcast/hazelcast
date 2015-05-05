@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.NodeIOService;
@@ -29,8 +31,8 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
 
     final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
-    public FirewallingTcpIpConnectionManager(NodeIOService ioService, ServerSocketChannel serverSocketChannel) {
-        super(ioService, serverSocketChannel);
+    public FirewallingTcpIpConnectionManager(LoggingService loggingService, HazelcastThreadGroup threadGroup, NodeIOService ioService, ServerSocketChannel serverSocketChannel) {
+        super(ioService, serverSocketChannel, threadGroup, loggingService);
     }
 
     @Override

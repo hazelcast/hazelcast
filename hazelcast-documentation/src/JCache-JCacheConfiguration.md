@@ -4,7 +4,7 @@
 
 Hazelcast JCache provides two different ways of cache configuration:
 
-- programmatically: the typical Hazelcast way, using the Config API seen above),
+- programmatically: the typical Hazelcast way, using the Config API seen above,
 - and declaratively: using `hazelcast.xml` or `hazelcast-client.xml`.
 
 #### JCache Declarative Configuration
@@ -22,7 +22,7 @@ Cache<Object, Object> cache = cacheManager
 ```
 
 Note that this section only describes the JCache provided standard properties. For the Hazelcast specific properties, please see the
-[ICache Configuration](#icache-configuration) section.
+[ICache Configuration section](#icache-configuration).
 
 ```xml
 <cache name="default">
@@ -40,15 +40,15 @@ Note that this section only describes the JCache provided standard properties. F
   <expiry-policy-factory
      class-name="com.example.cache.MyExpirePolicyFactory" />
 
-  <entry-listeners>
-    <entry-listener old-value-required="false" synchronous="false">
-      <entry-listener-factory
+  <cache-entry-listeners>
+    <cache-entry-listener old-value-required="false" synchronous="false">
+      <cache-entry-listener-factory
          class-name="com.example.cache.MyEntryListenerFactory" />
-      <entry-event-filter-factory
+      <cache-entry-event-filter-factory
          class-name="com.example.cache.MyEntryEventFilterFactory" />
-    </entry-listener>
+    </cache-entry-listener>
     ...
-  </entry-listeners>
+  </cache-entry-listeners>
 </cache>
 ```
 
@@ -61,11 +61,11 @@ Note that this section only describes the JCache provided standard properties. F
 - `cache-loader-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheLoader` instance to the cache.
 - `cache-writer-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheWriter` instance to the cache.
 - `expiry-policy-factory#-class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.expiry.ExpiryPolicy` instance to the cache.
-- `entry-listener`: A set of attributes and elements, explained below, to describe a `javax.cache.event.CacheEntryListener`.
-  - `entry-listener#old-value-required`: If set to true, previously assigned values for the affected keys will be sent to the `javax.cache.event.CacheEntryListener` implementation. Setting this attribute to true creates additional traffic, defaults to false.
-  - `entry-listener#synchronous`: If set to true, the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, defaults to false.
-  - `entry-listener/entry-listener-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance.
-  - `entry-listener/entry-event-filter-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance.
+- `cache-entry-listener`: A set of attributes and elements, explained below, to describe a `javax.cache.event.CacheEntryListener`.
+  - `cache-entry-listener#old-value-required`: If set to true, previously assigned values for the affected keys will be sent to the `javax.cache.event.CacheEntryListener` implementation. Setting this attribute to true creates additional traffic, defaults to false.
+  - `cache-entry-listener#synchronous`: If set to true, the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, defaults to false.
+  - `cache-entry-listener/entry-listener-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance.
+  - `cache-entry-listener/entry-event-filter-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance.
 
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *The JMX MBeans provided by Hazelcast JCache show statistics of the local node only.
@@ -92,8 +92,8 @@ your code only when you need to pass the configuration instance throughout your 
 <br></br>
 
 If you don't need to configure Hazelcast specific properties, it is recommended that you instantiate
-`javax.cache.configuration.MutableConfiguration` and that you use the setters to configure Hazelcast as shown in the example in
-[Quick Example](#quick-example). Since the configurable properties are the same as the ones explained in
-[JCache Declarative Configuration](#jcache-declarative-configuration), they are not mentioned here. For Hazelcast specific
-properties, please read the [ICache Configuration](#icache-configuration) section.
+`javax.cache.configuration.MutableConfiguration` and that you use the setters to configure Hazelcast as shown in the example in the
+[Quick Example section](#quick-example). Since the configurable properties are the same as the ones explained in the
+[JCache Declarative Configuration section](#jcache-declarative-configuration), they are not mentioned here. For Hazelcast specific
+properties, please read the [ICache Configuration section](#icache-configuration) section.
 

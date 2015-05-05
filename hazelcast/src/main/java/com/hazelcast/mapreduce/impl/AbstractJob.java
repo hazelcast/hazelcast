@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.ReducingJob;
 import com.hazelcast.mapreduce.ReducingSubmittableJob;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +36,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Base class for all map reduce job implementations
@@ -75,7 +76,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
     @Override
     public <KeyOut, ValueOut> MappingJob<KeyIn, KeyOut, ValueOut> mapper(Mapper<KeyIn, ValueIn, KeyOut, ValueOut> mapper) {
-        ValidationUtil.isNotNull(mapper, "mapper");
+        isNotNull(mapper, "mapper");
         if (this.mapper != null) {
             throw new IllegalStateException("mapper already set");
         }
@@ -154,7 +155,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
     }
 
     private void setKeyPredicate(KeyPredicate<KeyIn> predicate) {
-        ValidationUtil.isNotNull(predicate, "predicate");
+        isNotNull(predicate, "predicate");
         this.predicate = predicate;
     }
 
@@ -204,7 +205,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
 
         @Override
         public <ValueOut> ReducingJob<EntryKey, Key, ValueOut> combiner(CombinerFactory<Key, Value, ValueOut> combinerFactory) {
-            ValidationUtil.isNotNull(combinerFactory, "combinerFactory");
+            isNotNull(combinerFactory, "combinerFactory");
             if (AbstractJob.this.combinerFactory != null) {
                 throw new IllegalStateException("combinerFactory already set");
             }
@@ -215,7 +216,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         @Override
         public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
-            ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
+            isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null) {
                 throw new IllegalStateException("reducerFactory already set");
             }
@@ -247,7 +248,7 @@ public abstract class AbstractJob<KeyIn, ValueIn>
         @Override
         public <ValueOut> ReducingSubmittableJob<EntryKey, Key, ValueOut> reducer(
                 ReducerFactory<Key, Value, ValueOut> reducerFactory) {
-            ValidationUtil.isNotNull(reducerFactory, "reducerFactory");
+            isNotNull(reducerFactory, "reducerFactory");
             if (AbstractJob.this.reducerFactory != null) {
                 throw new IllegalStateException("reducerFactory already set");
             }

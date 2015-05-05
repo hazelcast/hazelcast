@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,16 +29,16 @@ public final class SSLConfig {
     private Properties properties = new Properties();
 
     /**
-     * Returns the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class
+     * Returns the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class.
      *
-     * @return the name of the class
+     * @return the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class
      */
     public String getFactoryClassName() {
         return factoryClassName;
     }
 
     /**
-     * Sets the name for the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class
+     * Sets the name for the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class.
      *
      * @param factoryClassName the name of the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation class to set
      */
@@ -48,7 +48,7 @@ public final class SSLConfig {
     }
 
     /**
-     * Returns if this configuration is enabled
+     * Returns if this configuration is enabled.
      *
      * @return true if enabled, false otherwise
      */
@@ -57,9 +57,9 @@ public final class SSLConfig {
     }
 
     /**
-     * Enables and disables this configuration
+     * Enables and disables this configuration.
      *
-     * @param enabled
+     * @param enabled true to enable, false to disable
      */
     public SSLConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -67,9 +67,9 @@ public final class SSLConfig {
     }
 
     /**
-     * Sets the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
+     * Sets the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object.
      *
-     * @param factoryImplementation factory implementation object
+     * @param factoryImplementation the factory {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
      * @return this SSLConfig instance
      */
     public SSLConfig setFactoryImplementation(Object factoryImplementation) {
@@ -78,9 +78,9 @@ public final class SSLConfig {
     }
 
     /**
-     * Returns the {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
+     * Returns the factory {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object.
      *
-     * @return {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
+     * @return the factory {@link com.hazelcast.nio.ssl.SSLContextFactory} implementation object
      */
     public Object getFactoryImplementation() {
         return factoryImplementation;
@@ -90,7 +90,7 @@ public final class SSLConfig {
      * Sets a property.
      *
      * @param name  the name of the property to set.
-     * @param value the value of the property to set
+     * @param value the value of the property to set.
      * @return the updated SSLConfig
      * @throws NullPointerException if name or value is null.
      */

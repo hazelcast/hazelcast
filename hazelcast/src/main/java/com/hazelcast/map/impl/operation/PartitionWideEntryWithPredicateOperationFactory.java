@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
-/**
- * date: 9/16/13
- * author: eminn
- */
 public class PartitionWideEntryWithPredicateOperationFactory implements OperationFactory {
     private String name;
     private EntryProcessor entryProcessor;
@@ -52,7 +48,6 @@ public class PartitionWideEntryWithPredicateOperationFactory implements Operatio
         out.writeUTF(name);
         out.writeObject(entryProcessor);
         out.writeObject(predicate);
-
     }
 
     @Override

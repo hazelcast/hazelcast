@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,18 @@ package com.hazelcast.spi;
  */
 public interface WaitNotifyKey {
 
+    /**
+     * Returns the service name of the wait notify object for this key.
+     *
+     * @return the service name of the wait notify object for this key
+     */
     String getServiceName();
 
+    /**
+     * Returns the object name of the wait notify object for this key.
+     *
+     * @return the object name of the wait notify object for this key
+     */
     String getObjectName();
 
 }

@@ -12,21 +12,17 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -73,9 +69,15 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, h2);
         assertClusterSizeEventually(1, h3);
 
-        ISemaphore semaphore1 = h1.getSemaphore(key);
-        //when member is down, permits are released.
-        assertEquals(5, semaphore1.availablePermits());
+        final ISemaphore semaphore1 = h1.getSemaphore(key);
+        // when member is down, permits are released.
+        // since releasing the permits is async, we use assert eventually
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(5, semaphore1.availablePermits());
+            }
+        });
         semaphore1.acquire(4);
 
         assertOpenEventually(lifeCycleListener.latch);
@@ -87,13 +89,6 @@ public class SemaphoreSplitBrainTest extends HazelcastTestSupport {
         assertEquals(1, testSemaphore.availablePermits());
     }
 
-    private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
-        final Node n1 = TestUtil.getNode(h1);
-        final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
-    }
 
     private Config newConfig() {
         Config config = new Config();

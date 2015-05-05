@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,17 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -51,6 +54,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 abstract class AbstractClientCacheProxyBase<K, V> {
 
     static final int TIMEOUT = 10;
+
     protected final ClientContext clientContext;
     protected final CacheConfig<K, V> cacheConfig;
     //this will represent the name from the user perspective
@@ -58,7 +62,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     protected final String nameWithPrefix;
 
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private final CacheLoader<K, V> cacheLoader;
+    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -68,13 +72,18 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
         this.cacheConfig = cacheConfig;
         this.clientContext = clientContext;
+        init();
+    }
+
+    private void init() {
         if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         } else {
             cacheLoader = null;
         }
     }
+
     //region close&destroy
     protected void ensureOpen() {
         if (isClosed()) {
@@ -108,7 +117,9 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
-            final Future future = clientContext.getInvocationService().invokeOnKeyOwner(request, nameWithPrefix);
+            final ClientInvocation clientInvocation = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -117,6 +128,20 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     public boolean isClosed() {
         return isClosed.get();
+    }
+
+    public boolean isDestroyed() {
+        return isDestroyed.get();
+    }
+
+    public void open() {
+        if (isDestroyed.get()) {
+            throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
+        }
+        if (!isClosed.compareAndSet(true, false)) {
+            return;
+        }
+        init();
     }
 
     protected abstract void closeListeners();
@@ -137,7 +162,9 @@ abstract class AbstractClientCacheProxyBase<K, V> {
 
     protected <T> T invoke(ClientRequest req) {
         try {
-            final Future future = clientContext.getInvocationService().invokeOnRandomTarget(req);
+            final ClientInvocation clientInvocation = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             Object result = future.get();
             return toObject(result);
         } catch (Exception e) {
@@ -161,10 +188,10 @@ abstract class AbstractClientCacheProxyBase<K, V> {
     }
 
     protected void submitLoadAllTask(final CacheLoadAllRequest request, final CompletionListener completionListener) {
-        final LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
-        final ClientExecutionService executionService = clientContext.getExecutionService();
+        LoadAllTask loadAllTask = new LoadAllTask(request, completionListener);
+        ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) clientContext.getExecutionService();
 
-        final ICompletableFuture<?> future = executionService.submit(loadAllTask);
+        final ICompletableFuture<?> future = executionService.submitInternal(loadAllTask);
         loadAllTasks.add(future);
         future.andThen(new ExecutionCallback() {
             @Override

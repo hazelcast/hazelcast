@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchInfo;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchContainer;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,49 +30,30 @@ import java.util.Collection;
 
 public class CountDownLatchReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
-    private Collection<CountDownLatchInfo> data;
+    private Collection<CountDownLatchContainer> data;
 
     public CountDownLatchReplicationOperation() {
     }
 
-    public CountDownLatchReplicationOperation(Collection<CountDownLatchInfo> data) {
+    public CountDownLatchReplicationOperation(Collection<CountDownLatchContainer> data) {
         this.data = data;
     }
 
     @Override
     public void run() throws Exception {
-        if (data != null) {
-            CountDownLatchService service = getService();
-            for (CountDownLatchInfo latchInfo : data) {
-                service.add(latchInfo);
-            }
+        if (data == null) {
+            return;
+        }
+
+        CountDownLatchService service = getService();
+        for (CountDownLatchContainer latchContainer : data) {
+            service.add(latchContainer);
         }
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        int len = data != null ? data.size() : 0;
-        out.writeInt(len);
-        if (len > 0) {
-            for (CountDownLatchInfo latch : data) {
-                latch.writeData(out);
-            }
-        }
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        int len = in.readInt();
-        if (len > 0) {
-            data = new ArrayList<CountDownLatchInfo>();
-            for (int i = 0; i < len; i++) {
-                CountDownLatchInfo latch = new CountDownLatchInfo();
-                latch.readData(in);
-                data.add(latch);
-            }
-        }
+    public String getServiceName() {
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     @Override
@@ -85,4 +66,29 @@ public class CountDownLatchReplicationOperation extends AbstractOperation implem
         return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REPLICATION_OPERATION;
     }
 
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        int len = data != null ? data.size() : 0;
+        out.writeInt(len);
+        if (len > 0) {
+            for (CountDownLatchContainer latchContainer : data) {
+                latchContainer.writeData(out);
+            }
+        }
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        int len = in.readInt();
+        if (len > 0) {
+            data = new ArrayList<CountDownLatchContainer>();
+            for (int i = 0; i < len; i++) {
+                CountDownLatchContainer latchContainer = new CountDownLatchContainer();
+                latchContainer.readData(in);
+                data.add(latchContainer);
+            }
+        }
+    }
 }

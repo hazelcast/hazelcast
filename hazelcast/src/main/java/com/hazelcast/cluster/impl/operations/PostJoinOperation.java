@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
+
+import static com.hazelcast.util.Preconditions.checkNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class PostJoinOperation extends AbstractOperation implements UrgentSystemOperation, JoinOperation {
 
@@ -40,12 +42,8 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
 
     public PostJoinOperation(final Operation... ops) {
         for (Operation op : ops) {
-            if (op == null) {
-                throw new NullPointerException();
-            }
-            if (op instanceof PartitionAwareOperation) {
-                throw new IllegalArgumentException("Post join operation can not be a PartitionAwareOperation!");
-            }
+            checkNotNull(op, "op can't be null");
+            checkNegative(op.getPartitionId(), "Post join operation can not have a partition-id!");
         }
         // we may need to do array copy!
         operations = ops;
@@ -95,11 +93,6 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
                 operationService.runOperationOnCallingThread(op);
             }
         }
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

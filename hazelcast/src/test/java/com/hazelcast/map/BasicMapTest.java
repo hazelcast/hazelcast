@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -27,11 +24,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.core.MapLoader;
-import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -44,14 +37,10 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -847,7 +836,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -904,7 +893,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -979,7 +968,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
@@ -1041,23 +1030,27 @@ public class BasicMapTest extends HazelcastTestSupport {
         final Object[] removedKey = new Object[1];
         final Object[] removedValue = new Object[1];
 
-        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 addedKey[0] = event.getKey();
                 addedValue[0] = event.getValue();
             }
 
+            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 removedKey[0] = event.getKey();
                 removedValue[0] = event.getOldValue();
             }
 
+            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 updatedKey[0] = event.getKey();
                 oldValue[0] = event.getOldValue();
                 newValue[0] = event.getValue();
             }
 
+            @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
             }
 
@@ -1111,45 +1104,6 @@ public class BasicMapTest extends HazelcastTestSupport {
         EntryProcessor entryProcessor = new SampleEntryProcessor();
         map.executeOnKey(1, entryProcessor);
         assertEquals(map.get(1), (Object) 2);
-    }
-
-    @Test
-    public void testMapLoaderLoadUpdatingIndex() throws Exception {
-        MapConfig mapConfig = getInstance().getConfig().getMapConfig("testMapLoaderLoadUpdatingIndex");
-        List<MapIndexConfig> indexConfigs = mapConfig.getMapIndexConfigs();
-        indexConfigs.add(new MapIndexConfig("name", true));
-
-        SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
-        MapStoreConfig storeConfig = new MapStoreConfig();
-        storeConfig.setFactoryImplementation(loader);
-        mapConfig.setMapStoreConfig(storeConfig);
-
-        IMap<Integer, SampleIndexableObject> map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
-        for (int i = 0; i < 10; i++) {
-            map.put(i, new SampleIndexableObject("My-" + i, i));
-        }
-
-        final SqlPredicate predicate = new SqlPredicate("name='My-5'");
-        Set<Entry<Integer, SampleIndexableObject>> result = map.entrySet(predicate);
-
-        assertEquals(1, result.size());
-        assertEquals(5, (int) result.iterator().next().getValue().value);
-
-        map.destroy();
-        loader.preloadValues = true;
-        map = getInstance().getMap("testMapLoaderLoadUpdatingIndex");
-        assertFalse(map.isEmpty());
-
-        final IMap<Integer, SampleIndexableObject> mapFinal = map;
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Set<Entry<Integer, SampleIndexableObject>> result = mapFinal.entrySet(predicate);
-                assertEquals(1, result.size());
-                assertEquals(5, (int) result.iterator().next().getValue().value);
-            }
-        });
-
     }
 
     @Test
@@ -1569,78 +1523,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         public void processBackup(Map.Entry entry) {
             entry.setValue((Integer) entry.getValue() + 1);
-        }
-    }
-
-    public static class SampleIndexableObject implements Serializable {
-        String name;
-        Integer value;
-
-        public SampleIndexableObject() {
-        }
-
-        public SampleIndexableObject(String name, Integer value) {
-            this.name = name;
-            this.value = value;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Integer getValue() {
-            return value;
-        }
-
-        public void setValue(Integer value) {
-            this.value = value;
-        }
-    }
-
-    public static class SampleIndexableObjectMapLoader
-            implements MapLoader<Integer, SampleIndexableObject>, MapStoreFactory<Integer, SampleIndexableObject> {
-
-        private SampleIndexableObject[] values = new SampleIndexableObject[10];
-        private Set<Integer> keys = new HashSet<Integer>();
-
-        volatile boolean preloadValues = false;
-
-        public SampleIndexableObjectMapLoader() {
-            for (int i = 0; i < 10; i++) {
-                keys.add(i);
-                values[i] = new SampleIndexableObject("My-" + i, i);
-            }
-        }
-
-        @Override
-        public SampleIndexableObject load(Integer key) {
-            if (!preloadValues) return null;
-            return values[key];
-        }
-
-        @Override
-        public Map<Integer, SampleIndexableObject> loadAll(Collection<Integer> keys) {
-            if (!preloadValues) return Collections.emptyMap();
-            Map<Integer, SampleIndexableObject> data = new HashMap<Integer, SampleIndexableObject>();
-            for (Integer key : keys) {
-                data.put(key, values[key]);
-            }
-            return data;
-        }
-
-        @Override
-        public Set<Integer> loadAllKeys() {
-            if (!preloadValues) return Collections.emptySet();
-            return Collections.unmodifiableSet(keys);
-        }
-
-        @Override
-        public MapLoader<Integer, SampleIndexableObject> newMapStore(String mapName, Properties properties) {
-            return this;
         }
     }
 

@@ -1,15 +1,34 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.MaxSizeChecker;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
@@ -59,20 +78,33 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private final EvictionPolicy evictionPolicy;
 
+    private final long backupExpiryDelayMillis;
+
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         final MapConfig mapConfig = mapContainer.getMapConfig();
         this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
         this.evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
-        this.evictionEnabled
-                = !EvictionPolicy.NONE.equals(evictionPolicy);
+        this.evictionEnabled = !EvictionPolicy.NONE.equals(evictionPolicy);
         this.expirable = isRecordStoreExpirable();
+        this.backupExpiryDelayMillis = getBackupExpiryDelayMillis();
     }
 
     private boolean isRecordStoreExpirable() {
         final MapConfig mapConfig = mapContainer.getMapConfig();
         return mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
+    }
+
+    /**
+     * @see com.hazelcast.instance.GroupProperties#PROP_MAP_EXPIRY_DELAY_SECONDS
+     */
+    private long getBackupExpiryDelayMillis() {
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        GroupProperties.GroupProperty delaySecondsProperty = groupProperties.MAP_EXPIRY_DELAY_SECONDS;
+        int delaySeconds = delaySecondsProperty.getInteger();
+        return TimeUnit.SECONDS.toMillis(delaySeconds);
     }
 
     @Override
@@ -277,50 +309,39 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         return null;
     }
 
-    public boolean isExpired(Record record, long time, boolean backup) {
+    public boolean isExpired(Record record, long now, boolean backup) {
         return record == null
-                || isIdleExpired(record, time, backup) == null
-                || isTTLExpired(record, time, backup) == null;
+                || isIdleExpired(record, now, backup) == null
+                || isTTLExpired(record, now, backup) == null;
     }
 
-    private Record isIdleExpired(Record record, long time, boolean backup) {
+    private Record isIdleExpired(Record record, long now, boolean backup) {
         if (record == null) {
             return null;
         }
-        boolean result;
         // lastAccessTime : updates on every touch (put/get).
         final long lastAccessTime = record.getLastAccessTime();
-
-        assert lastAccessTime > 0L;
-        assert time > 0L;
-        assert time >= lastAccessTime;
-
-        result = time - lastAccessTime >= calculateExpirationWithDelay(mapContainer.getMaxIdleMillis(), backup);
-
-        return result ? null : record;
+        final long maxIdleMillis = mapContainer.getMaxIdleMillis();
+        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis,
+                backupExpiryDelayMillis, backup);
+        final long elapsedMillis = now - lastAccessTime;
+        return elapsedMillis >= idleMillis ? null : record;
     }
 
-
-    private Record isTTLExpired(Record record, long time, boolean backup) {
+    private Record isTTLExpired(Record record, long now, boolean backup) {
         if (record == null) {
             return null;
         }
-        boolean result;
         final long ttl = record.getTtl();
         // when ttl is zero or negative, it should remain eternally.
         if (ttl < 1L) {
             return record;
         }
         final long lastUpdateTime = record.getLastUpdateTime();
-
-        assert ttl > 0L : String.format("wrong ttl %d", ttl);
-        assert lastUpdateTime > 0L : String.format("wrong lastUpdateTime %d", lastUpdateTime);
-        assert time > 0L : String.format("wrong time %d", time);
-        assert time >= lastUpdateTime : String.format("time >= lastUpdateTime (%d >= %d)",
-                time, lastUpdateTime);
-
-        result = time - lastUpdateTime >= calculateExpirationWithDelay(ttl, backup);
-        return result ? null : record;
+        final long ttlMillis = calculateExpirationWithDelay(ttl,
+                backupExpiryDelayMillis, backup);
+        final long elapsedMillis = now - lastUpdateTime;
+        return elapsedMillis >= ttlMillis ? null : record;
     }
 
     /**
@@ -333,10 +354,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void doPostExpirationOperations(Data key, Object value) {
         final String mapName = this.name;
         final MapServiceContext mapServiceContext = this.mapServiceContext;
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        if (nearCacheProvider.isNearCacheAndInvalidationEnabled(mapName)) {
-            nearCacheProvider.invalidateAllNearCaches(mapName, key);
-        }
         getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
     }
 

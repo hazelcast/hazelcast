@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ import java.util.Map;
  * probably a {@link com.hazelcast.mapreduce.Collator} to execute an aggregation over a
  * supplied set of data.
  * <p/>
- * As you'll see in the following example the Aggregations API is fully type-safe. Do to the lack of
- * full type inference support on Java 6 and Java 7 it seems more verbose than it actually is.
+ * As you'll see in the following example, the Aggregations API is fully type-safe. Due to the lack of
+ * full type inference support on Java 6 and Java 7, it seems more verbose than it actually is.
  * <pre>
  * IMap&lt;String, Employee> map = hazelcastInstance.getMap("employees");
  * Supplier&lt;String, Employee, Integer> supplier = Supplier.all((employee) -> employee.getSalaryPerMonth());
@@ -54,7 +54,7 @@ import java.util.Map;
 public interface Aggregation<Key, Supplied, Result> {
 
     /**
-     * Returns a Collator implementation used in this aggregation
+     * Returns the Collator implementation used in this aggregation.
      *
      * @return the aggregation defined Collator
      */
@@ -72,7 +72,7 @@ public interface Aggregation<Key, Supplied, Result> {
 
     /**
      * Returns the CombinerFactory for this aggregation to pre-reduce values on mapping
-     * nodes. Returning a CombinerFactory preserves traffic costs but implementing a
+     * nodes. Returning a CombinerFactory preserves traffic costs, but implementing a
      * {@link com.hazelcast.mapreduce.Combiner} is not always possible.
      *
      * @return the aggregation defined CombinerFactory or null
@@ -80,7 +80,7 @@ public interface Aggregation<Key, Supplied, Result> {
     CombinerFactory getCombinerFactory();
 
     /**
-     * Returns the ReducerFactory for this aggregation. If a CombinerFactory is defined
+     * Returns the ReducerFactory for this aggregation. If a CombinerFactory is defined,
      * the implemented {@link com.hazelcast.mapreduce.Reducer} has to handle values of
      * the returned type of the {@link com.hazelcast.mapreduce.Combiner}.
      *

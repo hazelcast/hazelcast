@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.nio.serialization.Data;
 
 public class DeleteOperation extends BaseRemoveOperation {
-    boolean success;
+    private boolean success;
 
     public DeleteOperation(String name, Data dataKey) {
         super(name, dataKey);
@@ -28,6 +28,7 @@ public class DeleteOperation extends BaseRemoveOperation {
     public DeleteOperation() {
     }
 
+    @Override
     public void run() {
         success = recordStore.delete(dataKey);
     }
@@ -37,12 +38,14 @@ public class DeleteOperation extends BaseRemoveOperation {
         return success;
     }
 
+    @Override
     public void afterRun() {
         if (success) {
             super.afterRun();
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return success;
     }

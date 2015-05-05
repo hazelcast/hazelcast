@@ -1,7 +1,7 @@
 
 ### Roundup of Basics
 
-In the section [Quick Example](#quick-example), we have already seen a couple of the base classes and explained how those work. Following are quick descriptions of them.
+In the [Quick Example section](#quick-example), we have already seen a couple of the base classes and explained how those work. Following are quick descriptions of them.
 
 **`javax.cache.Caching`**:
 
@@ -11,7 +11,7 @@ implementation, such as Hazelcast JCache.
 **`javax.cache.spi.CachingProvider`**:
 
 The SPI that is implemented to bridge between the JCache API and the implementation itself. Hazelcast nodes and clients use different
-providers chosen as seen in the subsection for [Provider Configuration](#provider-configuration) which enable the JCache API to
+providers chosen as seen in the [Provider Configuration section](#provider-configuration) which enable the JCache API to
 interact with Hazelcast clusters.
 
 When a `javax.cache.spi.CachingProvider::getCacheManager` overload is used that takes a `java.lang.ClassLoader` argument, this
@@ -36,7 +36,7 @@ therefore, acts as a common super type for all compatible configuration classes 
 Hazelcast itself offers a special implementation (`com.hazelcast.config.CacheConfig`) of the `Configuration` interface which
 offers more options on the specific Hazelcast properties that can be set to configure features like synchronous and asynchronous
 backups counts or selecting the underlying [In Memory Format](#in-memory-format) of the cache. For more information on this
-configuration class, please see the reference in [JCache Programmatic Configuration](#jcache-programmatic-configuration).
+configuration class, please see the reference in [JCache Programmatic Configuration section](#jcache-programmatic-configuration).
 
 **`javax.cache.Cache`**:
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
  */
 public class TopicConfig {
+
     /**
      * Default global ordering configuration
      */
@@ -44,9 +45,18 @@ public class TopicConfig {
     }
 
     /**
-     * Creates a  {@link TopicConfig} by cloning another TopicConfig.
+     * Creates a TopicConfig with the given name.
      *
-     * @param config
+     * @param name the name of the Topic.
+     */
+    public TopicConfig(String name) {
+        setName(name);
+    }
+
+    /**
+     * Creates a {@link TopicConfig} by cloning another TopicConfig.
+     *
+     * @param config the TopicConfig to clone
      */
     public TopicConfig(TopicConfig config) {
         isNotNull(config, "config");
@@ -65,7 +75,7 @@ public class TopicConfig {
     /**
      * Gets the name of the topic, null if nothing is set.
      *
-     * @return the name
+     * @return the name of the topic
      */
     public String getName() {
         return name;
@@ -74,12 +84,12 @@ public class TopicConfig {
     /**
      * Sets the name of the topic.
      *
-     * @param name the name to set
+     * @param name the topic name to set
      * @return the updated TopicConfig
      * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {
-        this.name = hasText(name, "name");
+        this.name = checkHasText(name, "name must contain text");
         return this;
     }
 

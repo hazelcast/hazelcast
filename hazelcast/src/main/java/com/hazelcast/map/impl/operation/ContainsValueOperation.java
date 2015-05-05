@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,18 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-
+import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
-public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class ContainsValueOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean contains;
     private Data testValue;
@@ -38,13 +40,15 @@ public class ContainsValueOperation extends AbstractMapOperation implements Part
     public ContainsValueOperation() {
     }
 
+    @Override
     public void run() {
         MapService mapService = getService();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(getPartitionId(), name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
         contains = recordStore.containsValue(testValue);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getMapServiceContext().getLocalMapStatsProvider()
-                    .getLocalMapStatsImpl(name).incrementOtherOperations();
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

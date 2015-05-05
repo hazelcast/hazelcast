@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,17 +27,20 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.Iterator;
 
-public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
+public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation, MutatingOperation {
 
-    String attributeName;
-    boolean ordered;
+    private String attributeName;
+    private boolean ordered;
+
+    public AddIndexOperation() {
+    }
 
     public AddIndexOperation(String name, String attributeName, boolean ordered) {
         super(name);
@@ -45,7 +48,9 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         this.ordered = ordered;
     }
 
-    public AddIndexOperation() {
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     @Override

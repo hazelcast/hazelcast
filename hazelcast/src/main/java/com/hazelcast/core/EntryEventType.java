@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,8 @@ public enum EntryEventType {
     UPDATED(3),
     EVICTED(4),
     EVICT_ALL(5),
-    CLEAR_ALL(6);
+    CLEAR_ALL(6),
+    MERGED(7);
 
     private int type;
 
@@ -34,10 +35,20 @@ public enum EntryEventType {
         this.type = type;
     }
 
+    /**
+     * Returns the event type.
+     *
+     * @return the event type.
+     */
     public int getType() {
         return type;
     }
 
+    /**
+     * Returns the EntryEventType as an enum.
+     *
+     * @return the EntryEventType as an enum.
+     */
     public static EntryEventType getByType(final int eventType) {
         for (EntryEventType entryEventType : values()) {
             if (entryEventType.type == eventType) {

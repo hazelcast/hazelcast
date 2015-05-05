@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,15 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ManagementCenterConfig;
@@ -32,15 +36,23 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
@@ -61,9 +73,17 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
+import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
@@ -77,9 +97,11 @@ import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
 import java.net.InetSocketAddress;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -109,6 +131,9 @@ public class TestFullApplicationContext {
 
     @Resource(name = "multiMap")
     private MultiMap multiMap;
+
+    @Resource(name = "replicatedMap")
+    private ReplicatedMap replicatedMap;
 
     @Resource(name = "queue")
     private IQueue queue;
@@ -164,6 +189,9 @@ public class TestFullApplicationContext {
     @Resource
     private SocketInterceptor socketInterceptor;
 
+    @Resource
+    private StreamSerializer dummySerializer;
+
     @BeforeClass
     @AfterClass
     public static void start() {
@@ -176,9 +204,22 @@ public class TestFullApplicationContext {
     }
 
     @Test
+    public void testCacheConfig() {
+        assertNotNull(config);
+        assertEquals(1, config.getCacheConfigs().size());
+        CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
+        assertEquals("testCache", cacheConfig.getName());
+
+        WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
+        assertEquals("testWan", wanRef.getName());
+        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicy());
+        assertFalse(wanRef.isRepublishingEnabled());
+    }
+
+    @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(9, config.getMapConfigs().size());
+        assertEquals(10, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -201,6 +242,7 @@ public class TestFullApplicationContext {
                 fail("unknown index!");
             }
         }
+        assertEquals("my-quorum", testMapConfig.getQuorumName());
 
         // Test that the testMapConfig has a mapStoreConfig and it is correct
         MapStoreConfig testMapStoreConfig = testMapConfig.getMapStoreConfig();
@@ -209,7 +251,8 @@ public class TestFullApplicationContext {
         assertTrue(testMapStoreConfig.isEnabled());
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
-        assertEquals(MapStoreConfig.InitialLoadMode.EAGER,testMapStoreConfig.getInitialLoadMode());
+        assertTrue(testMapStoreConfig.isWriteCoalescing());
+        assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // Test that the testMapConfig has a nearCacheConfig and it is correct
         NearCacheConfig testNearCacheConfig = testMapConfig.getNearCacheConfig();
@@ -225,7 +268,13 @@ public class TestFullApplicationContext {
         assertNotNull(testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(MapStoreConfig.InitialLoadMode.LAZY, testMapConfig2.getMapStoreConfig().getInitialLoadMode());
-        assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
+
+        //Test testMapConfig2's WanReplicationConfig
+        WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
+        assertEquals("testWan", wanReplicationRef.getName());
+        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicy());
+        assertTrue(wanReplicationRef.isRepublishingEnabled());
+
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
         assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());
@@ -320,6 +369,19 @@ public class TestFullApplicationContext {
         assertEquals(false, testTopicConfig.isStatisticsEnabled());
         ListenerConfig listenerConfig = testTopicConfig.getMessageListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyMessageListener", listenerConfig.getClassName());
+    }
+
+    @Test
+    public void testServiceConfig() {
+        ServiceConfig serviceConfig = config.getServicesConfig().getServiceConfig("my-service");
+        assertEquals("com.hazelcast.spring.MyService", serviceConfig.getClassName());
+        assertEquals("prop1-value", serviceConfig.getProperties().getProperty("prop1"));
+        assertEquals("prop2-value", serviceConfig.getProperties().getProperty("prop2"));
+        MyServiceConfig configObject = (MyServiceConfig) serviceConfig.getConfigObject();
+        assertNotNull(configObject);
+        assertEquals("prop1", configObject.stringProp);
+        assertEquals(123, configObject.intProp);
+        assertTrue(configObject.boolProp);
     }
 
     @Test
@@ -421,6 +483,7 @@ public class TestFullApplicationContext {
         assertNotNull(map1);
         assertNotNull(map2);
         assertNotNull(multiMap);
+        assertNotNull(replicatedMap);
         assertNotNull(queue);
         assertNotNull(topic);
         assertNotNull(set);
@@ -435,6 +498,7 @@ public class TestFullApplicationContext {
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("testMultimap", multiMap.getName());
+        assertEquals("replicatedMap", replicatedMap.getName());
         assertEquals("testQ", queue.getName());
         assertEquals("testTopic", topic.getName());
         assertEquals("set", set.getName());
@@ -450,6 +514,7 @@ public class TestFullApplicationContext {
     public void testWanReplicationConfig() {
         WanReplicationConfig wcfg = config.getWanReplicationConfig("testWan");
         assertNotNull(wcfg);
+        assertFalse(wcfg.isSnapshotEnabled());
         assertEquals(2, wcfg.getTargetClusterConfigs().size());
         WanTargetClusterConfig targetCfg = wcfg.getTargetClusterConfigs().get(0);
         assertNotNull(targetCfg);
@@ -517,7 +582,7 @@ public class TestFullApplicationContext {
         assertEquals("myserver:80", managementCenterConfig.getUrl());
         assertEquals(4, managementCenterConfig.getUpdateInterval());
     }
-    
+
     @Test
     public void testMemberAttributesConfig() {
         MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
@@ -530,5 +595,130 @@ public class TestFullApplicationContext {
         assertTrue(memberAttributeConfig.getBooleanAttribute("attribute.boolean"));
         assertEquals(0.0d, memberAttributeConfig.getDoubleAttribute("attribute.double"), 0.0001d);
         assertEquals(1234.5678, memberAttributeConfig.getFloatAttribute("attribute.float"), 0.0001);
+    }
+
+    @Test
+    public void testSerializationConfig() {
+        SerializationConfig serializationConfig = config.getSerializationConfig();
+        assertEquals(ByteOrder.BIG_ENDIAN, serializationConfig.getByteOrder());
+        assertEquals(false, serializationConfig.isCheckClassDefErrors());
+        assertEquals(13, serializationConfig.getPortableVersion());
+
+        Map<Integer, String> dataSerializableFactoryClasses = serializationConfig
+                .getDataSerializableFactoryClasses();
+        assertFalse(dataSerializableFactoryClasses.isEmpty());
+        assertEquals(DummyDataSerializableFactory.class.getName(), dataSerializableFactoryClasses.get(1));
+
+        Map<Integer, DataSerializableFactory> dataSerializableFactories = serializationConfig
+                .getDataSerializableFactories();
+        assertFalse(dataSerializableFactories.isEmpty());
+        assertEquals(DummyDataSerializableFactory.class, dataSerializableFactories.get(2).getClass());
+
+        Map<Integer, String> portableFactoryClasses = serializationConfig.getPortableFactoryClasses();
+        assertFalse(portableFactoryClasses.isEmpty());
+        assertEquals(DummyPortableFactory.class.getName(), portableFactoryClasses.get(1));
+
+        Map<Integer, PortableFactory> portableFactories = serializationConfig.getPortableFactories();
+        assertFalse(portableFactories.isEmpty());
+        assertEquals(DummyPortableFactory.class, portableFactories.get(2).getClass());
+
+        Collection<SerializerConfig> serializerConfigs = serializationConfig.getSerializerConfigs();
+        assertFalse(serializerConfigs.isEmpty());
+
+        GlobalSerializerConfig globalSerializerConfig = serializationConfig.getGlobalSerializerConfig();
+        assertNotNull(globalSerializerConfig);
+        assertEquals(dummySerializer, globalSerializerConfig.getImplementation());
+    }
+
+    @Test
+    public void testNativeMemoryConfig() {
+        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+        assertFalse(nativeMemoryConfig.isEnabled());
+        assertEquals(MemoryUnit.MEGABYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(256, nativeMemoryConfig.getSize().getValue());
+        assertEquals(20, nativeMemoryConfig.getPageSize());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.POOLED, nativeMemoryConfig.getAllocatorType());
+        assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
+        assertEquals(10, nativeMemoryConfig.getMinBlockSize());
+    }
+
+    @Test
+    public void testReplicatedMapConfig() {
+        assertNotNull(config);
+        assertEquals(1, config.getReplicatedMapConfigs().size());
+
+        ReplicatedMapConfig replicatedMapConfig = config.getReplicatedMapConfig("replicatedMap");
+        assertNotNull(replicatedMapConfig);
+        assertEquals("replicatedMap", replicatedMapConfig.getName());
+        assertEquals(200, replicatedMapConfig.getReplicationDelayMillis());
+        assertEquals(16, replicatedMapConfig.getConcurrencyLevel());
+        assertEquals(InMemoryFormat.OBJECT, replicatedMapConfig.getInMemoryFormat());
+        assertFalse(replicatedMapConfig.isStatisticsEnabled());
+        assertFalse(replicatedMapConfig.isAsyncFillup());
+
+        replicatedMapConfig.getListenerConfigs();
+        for (ListenerConfig listener : replicatedMapConfig.getListenerConfigs()) {
+            if (listener.getClassName() != null) {
+                assertNull(listener.getImplementation());
+                assertTrue(listener.isIncludeValue());
+                assertFalse(listener.isLocal());
+            } else {
+                assertNotNull(listener.getImplementation());
+                assertEquals(entryListener, listener.getImplementation());
+                assertTrue(listener.isLocal());
+                assertTrue(listener.isIncludeValue());
+            }
+        }
+    }
+
+    @Test
+    public void testQuorumConfig() throws Exception {
+        assertNotNull(config);
+        assertEquals(1, config.getQuorumConfigs().size());
+        QuorumConfig quorumConfig = config.getQuorumConfig("my-quorum");
+        assertNotNull(quorumConfig);
+        assertEquals("my-quorum", quorumConfig.getName());
+        assertEquals("com.hazelcast.spring.DummyQuorumFunction", quorumConfig.getQuorumFunctionClassName());
+        assertEquals(true, quorumConfig.isEnabled());
+        assertEquals(2, quorumConfig.getSize());
+        assertEquals(2, quorumConfig.getListenerConfigs().size());
+        assertEquals(QuorumType.READ, quorumConfig.getType());
+        assertEquals("com.hazelcast.spring.DummyQuorumListener", quorumConfig.getListenerConfigs().get(0).getClassName());
+        assertNotNull(quorumConfig.getListenerConfigs().get(1).getImplementation());
+    }
+
+    @Test
+    public void testFullQueryCacheConfig() throws Exception {
+        MapConfig mapConfig = config.getMapConfig("map-with-query-cache");
+        QueryCacheConfig queryCacheConfig = mapConfig.getQueryCacheConfigs().get(0);
+        EntryListenerConfig entryListenerConfig = queryCacheConfig.getEntryListenerConfigs().get(0);
+
+        assertTrue(entryListenerConfig.isIncludeValue());
+        assertFalse(entryListenerConfig.isLocal());
+
+        assertEquals("com.hazelcast.spring.DummyEntryListener", entryListenerConfig.getClassName());
+        assertFalse(queryCacheConfig.isIncludeValue());
+
+        assertEquals("my-query-cache-1", queryCacheConfig.getName());
+        assertEquals(12, queryCacheConfig.getBatchSize());
+        assertEquals(33, queryCacheConfig.getBufferSize());
+        assertEquals(12, queryCacheConfig.getDelaySeconds());
+        assertEquals(InMemoryFormat.OBJECT, queryCacheConfig.getInMemoryFormat());
+        assertTrue(queryCacheConfig.isCoalesce());
+        assertFalse(queryCacheConfig.isPopulate());
+        assertIndexesEqual(queryCacheConfig);
+        assertEquals("__key > 12", queryCacheConfig.getPredicateConfig().getSql());
+        assertEquals(EvictionPolicy.LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
+        Iterator<MapIndexConfig> iterator = queryCacheConfig.getIndexConfigs().iterator();
+        while (iterator.hasNext()) {
+            MapIndexConfig mapIndexConfig = iterator.next();
+            assertEquals("name", mapIndexConfig.getAttribute());
+            assertFalse(mapIndexConfig.isOrdered());
+        }
     }
 }

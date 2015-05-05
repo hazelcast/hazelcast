@@ -190,4 +190,12 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("false", executeRequest("isNew", serverPort2, cookieStore));
     }
 
+    @Test
+    public void testIssue5186_RemoveThenSetAttribute() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("true", executeRequest("issue5186_remove_then_set", serverPort1, cookieStore));
+        assertEquals("value-changed", executeRequest("read", serverPort1, cookieStore));
+        assertEquals("value-changed", executeRequest("read", serverPort2, cookieStore));
+    }
 }

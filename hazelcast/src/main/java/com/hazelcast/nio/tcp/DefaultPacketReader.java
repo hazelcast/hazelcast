@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.PortableContext;
 
 import java.nio.ByteBuffer;
 
@@ -68,7 +67,6 @@ public class DefaultPacketReader implements PacketReader {
     }
 
     protected Packet obtainPacket() {
-        PortableContext portableContext = ioService.getPortableContext();
-        return new Packet(portableContext);
+        return new Packet();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -70,9 +71,7 @@ public final class Address implements IdentifiedDataSerializable {
     }
 
     public Address(String hostname, InetAddress inetAddress, int port) {
-        if (inetAddress == null) {
-            throw new NullPointerException("inetAddress can't be null");
-        }
+        checkNotNull(inetAddress, "inetAddress can't be null");
 
         type = (inetAddress instanceof Inet4Address) ? IPV4 : IPV6;
         String[] addressArgs = inetAddress.getHostAddress().split("\\%");
@@ -191,9 +190,7 @@ public final class Address implements IdentifiedDataSerializable {
     }
 
     private static InetAddress resolve(InetSocketAddress inetSocketAddress) {
-        if (inetSocketAddress == null) {
-            throw new NullPointerException("inetSocketAddress can't be null");
-        }
+        checkNotNull(inetSocketAddress, "inetSocketAddress can't be null");
 
         InetAddress address = inetSocketAddress.getAddress();
         if (address == null) {

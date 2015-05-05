@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,9 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
         } else {
             try {
                 instance = instanceFromProperties(classLoader, properties, false);
+                if (instance == null) {
+                    throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
+                }
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

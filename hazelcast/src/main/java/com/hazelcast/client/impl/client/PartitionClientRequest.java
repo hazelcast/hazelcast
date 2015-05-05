@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,15 @@
 package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.spi.Callback;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 /**
  * Base class for partition based client request.
  */
-public abstract class PartitionClientRequest extends ClientRequest {
+public abstract class PartitionClientRequest extends ClientRequest implements ExecutionCallback {
 
     private static final int TRY_COUNT = 100;
 
@@ -55,9 +56,10 @@ public abstract class PartitionClientRequest extends ClientRequest {
         InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex())
                 .setTryCount(TRY_COUNT)
-                .setResultDeserialized(false)
-                .setCallback(new CallbackImpl(endpoint));
-        builder.invoke();
+                .setResultDeserialized(false);
+
+        ICompletableFuture future = builder.invoke();
+        future.andThen(this);
     }
 
     protected abstract Operation prepareOperation();
@@ -72,18 +74,15 @@ public abstract class PartitionClientRequest extends ClientRequest {
         return response;
     }
 
-    private class CallbackImpl implements Callback<Object> {
-        private final ClientEndpoint endpoint;
+    @Override
+    public final void onResponse(Object object) {
+        beforeResponse();
+        endpoint.sendResponse(filter(object), getCallId());
+        afterResponse();
+    }
 
-        public CallbackImpl(ClientEndpoint endpoint) {
-            this.endpoint = endpoint;
-        }
-
-        @Override
-        public void notify(Object object) {
-            beforeResponse();
-            endpoint.sendResponse(filter(object), getCallId());
-            afterResponse();
-        }
+    @Override
+    public final void onFailure(Throwable t) {
+        onResponse(t);
     }
 }

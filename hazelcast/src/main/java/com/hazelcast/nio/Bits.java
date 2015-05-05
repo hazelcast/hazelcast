@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,10 @@ public final class Bits {
      * Double size in bytes
      */
     public static final int DOUBLE_SIZE_IN_BYTES = 8;
+    /**
+     * Length of the data blocks used by the CPU cache sub-system in bytes.
+     */
+    public static final int CACHE_LINE_LENGTH = 64;
 
     private Bits() {
     }

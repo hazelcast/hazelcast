@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.internal.management.JsonSerializable;
 
 import java.util.List;
 
@@ -28,21 +28,21 @@ public interface MemberPartitionState extends JsonSerializable {
     /**
      * Get list of owned partitions of the member
      *
-     * @return
+     * @return list of owned partitions of the member
      */
     List<Integer> getPartitions();
 
     /**
      * Returns whether member is safe for shutdown.
      *
-     * @return
+     * @return true if member is safe for shutdown, false otherwise
      */
     boolean isMemberStateSafe();
 
     /**
      * Returns Migration queue size (This statistic is valid only for master)
      *
-     * @return
+     * @return Migration queue size (This statistic is valid only for master)
      */
     long getMigrationQueueSize();
 

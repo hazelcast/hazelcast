@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
         this.count = count;
     }
 
+    @Override
     public void run() throws Exception {
         CountDownLatchService service = getService();
         service.setCountDirect(name, count);
@@ -49,8 +50,13 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public int getFactoryId() {
+        return CountDownLatchDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 
     @Override
@@ -63,15 +69,5 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         count = in.readInt();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_BACKUP_OPERATION;
     }
 }

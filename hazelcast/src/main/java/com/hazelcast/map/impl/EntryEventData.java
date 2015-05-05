@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ public class EntryEventData extends AbstractEventData {
     protected Data dataKey;
     protected Data dataNewValue;
     protected Data dataOldValue;
+    protected Data dataMergingValue;
 
     public EntryEventData() {
     }
@@ -40,6 +41,15 @@ public class EntryEventData extends AbstractEventData {
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;
+    }
+
+    public EntryEventData(String source, String mapName, Address caller,
+                          Data dataKey, Data dataNewValue, Data dataOldValue, Data dataMergingValue, int eventType) {
+        super(source, mapName, caller, eventType);
+        this.dataKey = dataKey;
+        this.dataNewValue = dataNewValue;
+        this.dataOldValue = dataOldValue;
+        this.dataMergingValue = dataMergingValue;
     }
 
     public Data getDataKey() {
@@ -54,12 +64,17 @@ public class EntryEventData extends AbstractEventData {
         return dataOldValue;
     }
 
+    public Data getDataMergingValue() {
+        return dataMergingValue;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeData(dataKey);
         out.writeData(dataNewValue);
         out.writeData(dataOldValue);
+        out.writeData(dataMergingValue);
     }
 
     @Override
@@ -68,10 +83,11 @@ public class EntryEventData extends AbstractEventData {
         dataKey = in.readData();
         dataNewValue = in.readData();
         dataOldValue = in.readData();
+        dataMergingValue = in.readData();
     }
 
     public Object cloneWithoutValues() {
-        return new EntryEventData(getSource(), getMapName(), getCaller(), dataKey, null, null, getEventType());
+        return new EntryEventData(getSource(), getMapName(), getCaller(), dataKey, null, null, null, getEventType());
     }
 
     @Override

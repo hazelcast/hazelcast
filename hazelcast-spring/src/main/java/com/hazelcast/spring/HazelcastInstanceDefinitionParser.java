@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,15 +74,16 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
 
         public void handle(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
-            for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
+            Element config = null;
+            for (Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("config".equals(nodeName)) {
-                    final HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
-                    final AbstractBeanDefinition configBeanDef = configParser
-                            .parseInternal((Element) node, parserContext);
-                    this.builder.addConstructorArgValue(configBeanDef);
+                    config = (Element) node;
                 }
             }
+            final HazelcastConfigBeanDefinitionParser configParser = new HazelcastConfigBeanDefinitionParser();
+            final AbstractBeanDefinition configBeanDef = configParser.parseInternal(config, parserContext);
+            this.builder.addConstructorArgValue(configBeanDef);
         }
     }
 }

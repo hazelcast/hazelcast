@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -45,9 +45,9 @@ public class AtomicLongReplicationOperation extends AbstractOperation
         AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
             String name = longEntry.getKey();
-            LongWrapper number = atomicLongService.getNumber(name);
+            AtomicLongContainer atomicLongContainer = atomicLongService.getLongContainer(name);
             Long value = longEntry.getValue();
-            number.set(value);
+            atomicLongContainer.set(value);
         }
     }
 
@@ -81,8 +81,8 @@ public class AtomicLongReplicationOperation extends AbstractOperation
         migrationData = new HashMap<String, Long>(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
-            Long number = in.readLong();
-            migrationData.put(name, number);
+            Long longContainer = in.readLong();
+            migrationData.put(name, longContainer);
         }
     }
 }

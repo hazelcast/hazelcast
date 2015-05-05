@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ public class BigDecimalMinAggregation<Key, Value>
     private static final class BigDecimalMinReducer
             extends Reducer<BigDecimal, BigDecimal> {
 
-        private volatile BigDecimal min;
+        private BigDecimal min;
 
         @Override
         public void reduce(BigDecimal value) {

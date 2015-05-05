@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public interface ManagedService {
     /**
      * Initializes this ManagedService
      *
-     * @param nodeEngine the NodeEngine this ManagedService belongs to.
+     * @param nodeEngine the NodeEngine that this ManagedService belongs to.
      * @param properties the Properties. Can be used to pass settings to the service.
      */
     void init(NodeEngine nodeEngine, Properties properties);
@@ -50,7 +50,7 @@ public interface ManagedService {
      *
      * todo: what is the purpose of the terminate variable.
      *
-     * @param terminate
+     * @param terminate true to shut down the ManagedService
      */
     void shutdown(boolean terminate);
 }

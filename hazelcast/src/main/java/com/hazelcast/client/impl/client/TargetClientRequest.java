@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Callback;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-public abstract class TargetClientRequest extends ClientRequest {
+public abstract class TargetClientRequest extends ClientRequest implements ExecutionCallback {
 
     private static final int TRY_COUNT = 100;
 
@@ -31,20 +31,27 @@ public abstract class TargetClientRequest extends ClientRequest {
         final ClientEndpoint endpoint = getEndpoint();
         Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
-        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getTarget())
+
+        InvocationBuilder builder = getInvocationBuilder(op)
                 .setTryCount(TRY_COUNT)
-                .setResultDeserialized(false)
-                .setCallback(new Callback<Object>() {
-                    public void notify(Object object) {
-                        endpoint.sendResponse(filter(object), getCallId());
-                    }
-                });
-        builder.invoke();
+                .setResultDeserialized(false);
+        InternalCompletableFuture f = builder.invoke();
+        f.andThen(this);
     }
+
+    protected abstract InvocationBuilder getInvocationBuilder(Operation op);
 
     protected abstract Operation prepareOperation();
 
-    public abstract Address getTarget();
+    @Override
+    public final void onResponse(Object response) {
+        endpoint.sendResponse(filter(response), getCallId());
+    }
+
+    @Override
+    public final void onFailure(Throwable t) {
+        onResponse(t);
+    }
 
     protected Object filter(Object response) {
         return response;

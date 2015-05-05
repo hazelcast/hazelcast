@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
     /**
      * Creates an AbstractEntryProcessor.
      *
-     * @param applyOnBackup if the {@link #process(java.util.Map.Entry)} should also be applied on the backup.
+     * @param applyOnBackup true if the {@link #process(java.util.Map.Entry)} should also be applied on the backup.
      */
     public AbstractEntryProcessor(boolean applyOnBackup) {
         if (applyOnBackup) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,8 @@ public interface SecurityContext {
     /**
      * Checks whether current {@link Subject} has been granted specified permission or not.
      *
-     * @param permission
+     * @param subject the current subject
+     * @param permission the specified permission for the subject
      * @throws AccessControlException
      */
     void checkPermission(Subject subject, Permission permission) throws AccessControlException;

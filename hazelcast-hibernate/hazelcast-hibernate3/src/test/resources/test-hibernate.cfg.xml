@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@
         <property name="hibernate.cache.use_second_level_cache">true</property>
         <property name="hibernate.cache.use_query_cache">true</property>
         <property name="hibernate.cache.use_minimal_puts">true</property>
+
+        <property name="hibernate.cache.hazelcast.configuration_file_path">hazelcast-custom.xml</property>
 
         <mapping resource="com/hazelcast/hibernate/entity/DummyEntity.hbm.xml"/>
         <mapping resource="com/hazelcast/hibernate/entity/DummyProperty.hbm.xml"/>

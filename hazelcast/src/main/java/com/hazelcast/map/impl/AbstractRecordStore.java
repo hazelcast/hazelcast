@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
@@ -21,19 +37,30 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
+
 /**
  * Contains record store common parts.
  */
 abstract class AbstractRecordStore implements RecordStore {
 
     protected static final long DEFAULT_TTL = -1L;
-    protected final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+
+    // Concurrency level is 1 since at most one thread can write at a time.
+    protected final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000, 0.75f, 1);
+
     protected final RecordFactory recordFactory;
+
     protected final String name;
+
     protected final MapContainer mapContainer;
+
     protected final MapServiceContext mapServiceContext;
+
     protected final SerializationService serializationService;
+
     protected final int partitionId;
+
     private SizeEstimator sizeEstimator;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
@@ -43,7 +70,7 @@ abstract class AbstractRecordStore implements RecordStore {
         this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
         this.name = mapContainer.getName();
         this.recordFactory = mapContainer.getRecordFactory();
-        this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
+        this.sizeEstimator = createMapSizeEstimator();
     }
 
 

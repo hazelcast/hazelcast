@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,15 @@ public abstract class AbstractHazelcastCachingProvider
         implements CachingProvider {
 
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
+
+    protected static final String INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE =
+            "Not available Hazelcast instance. "
+            + "Please specify your Hazelcast configuration file path via "
+            + "\"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or "
+            + "specify Hazelcast instance name via "
+            + "\"HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME\" property "
+            + "in \"properties\" parameter.";
+
     protected volatile HazelcastInstance hazelcastInstance;
 
     protected final ClassLoader defaultClassLoader;

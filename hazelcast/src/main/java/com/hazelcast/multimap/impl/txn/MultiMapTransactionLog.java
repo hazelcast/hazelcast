@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -23,8 +24,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -34,8 +37,8 @@ import java.util.concurrent.Future;
 
 public class MultiMapTransactionLog implements KeyAwareTransactionLog {
 
-    String name;
     final List<Operation> opList = new LinkedList<Operation>();
+    String name;
     Data key;
     long ttl;
     long threadId;
@@ -72,6 +75,14 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         }
     }
 
+    @Override
+    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, opList);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId, callback);
+    }
+
     public Future rollback(NodeEngine nodeEngine) {
         TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
         try {
@@ -81,6 +92,14 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    @Override
+    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        operationService.asyncInvokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId, callback);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

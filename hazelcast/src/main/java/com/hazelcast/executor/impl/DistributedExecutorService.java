@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.executor.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
@@ -25,11 +26,14 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -40,7 +44,8 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService {
+public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService,
+        StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -157,6 +162,15 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public boolean isOperationExecuting(Address callerAddress, String callerUuid, Object identifier) {
         String uuid = String.valueOf(identifier);
         return submittedTasks.containsKey(uuid);
+    }
+
+    @Override
+    public Map<String, LocalExecutorStats> getStats() {
+        Map<String, LocalExecutorStats> executorStats = MapUtil.createHashMap(statsMap.size());
+        for (Map.Entry<String, LocalExecutorStatsImpl> queueStat : statsMap.entrySet()) {
+            executorStats.put(queueStat.getKey(), queueStat.getValue());
+        }
+        return executorStats;
     }
 
     private final class CallableProcessor extends FutureTask implements Runnable {

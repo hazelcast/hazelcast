@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.InternalPartitionService;
@@ -30,6 +32,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import javax.cache.CacheException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,7 +50,6 @@ public class CacheLoadAllOperation
 
     private Set<Data> keys;
     private boolean replaceExistingValues;
-
     private boolean shouldBackup;
 
     private transient Map<Data, CacheRecord> backupRecords;
@@ -78,9 +80,11 @@ public class CacheLoadAllOperation
                 }
             }
         }
+
         if (filteredKeys.isEmpty()) {
             return;
         }
+
         try {
             final CacheService service = getService();
             cache = service.getOrCreateCache(name, partitionId);
@@ -95,7 +99,6 @@ public class CacheLoadAllOperation
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }
-
     }
 
     @Override
@@ -131,5 +134,33 @@ public class CacheLoadAllOperation
     @Override
     public final int getAsyncBackupCount() {
         return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(replaceExistingValues);
+        out.writeBoolean(keys != null);
+        if (keys != null) {
+            out.writeInt(keys.size());
+            for (Data key : keys) {
+                out.writeData(key);
+            }
+        }
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        replaceExistingValues = in.readBoolean();
+        boolean isKeysNotNull = in.readBoolean();
+        if (isKeysNotNull) {
+            int size = in.readInt();
+            keys = new HashSet<Data>(size);
+            for (int i = 0; i < size; i++) {
+                Data key = in.readData();
+                keys.add(key);
+            }
+        }
     }
 }

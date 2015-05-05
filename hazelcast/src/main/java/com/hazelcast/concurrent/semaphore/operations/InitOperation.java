@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import com.hazelcast.concurrent.semaphore.Permit;
+import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
@@ -32,8 +32,8 @@ public class InitOperation extends SemaphoreBackupAwareOperation implements Iden
 
     @Override
     public void run() throws Exception {
-        Permit permit = getPermit();
-        response = permit.init(permitCount);
+        SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
+        response = semaphoreContainer.init(permitCount);
     }
 
     @Override

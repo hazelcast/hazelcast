@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,30 @@ package com.hazelcast.client;
 public final class ClientTypes {
 
     /**
+     * Length of type information in bytes
+     */
+    public static final int TYPE_LENGTH = 3;
+
+    /**
      * Jvm clients protocol id
      */
     public static final String JAVA = "JVM";
+
     /**
      * CSHARP client protocol id
      */
     public static final String CSHARP = "CSP";
+
     /**
      * CPP client protocol id
      */
     public static final String CPP = "CPP";
+
     /**
      * PYTHON client protocol id
      */
     public static final String PYTHON = "PHY";
+
     /**
      * RUBY client protocol id
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.Properties;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * @author ali 12/14/12
@@ -86,8 +87,7 @@ public class QueueStoreConfig {
     }
 
     public QueueStoreConfig setProperties(Properties properties) {
-        ValidationUtil.isNotNull(properties, "properties");
-        this.properties = properties;
+        this.properties = isNotNull(properties, "properties");
         return this;
     }
 

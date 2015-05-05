@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,18 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SSLConfig;
-import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
@@ -40,10 +45,12 @@ import org.w3c.dom.Node;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.StringUtil.upperCaseInternal;
+
 /**
  * BeanDefinitionParser for Hazelcast Client Configuration
  * <p/>
- *
+ * <p/>
  * <b>Sample Spring XML for Hazelcast Client:</b>
  * <pre>
  * &lt;hz:client id="client"&gt;
@@ -87,9 +94,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
-
-            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
-            this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
@@ -99,7 +103,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         public void handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             handleClientAttributes(element);
-            for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
+            for (Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("group".equals(nodeName)) {
                     createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
@@ -119,6 +123,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLoadBalancer(node);
                 } else if ("near-cache".equals(nodeName)) {
                     handleNearCache(node);
+                } else if ("spring-aware".equals(nodeName)) {
+                    handleSpringAware();
+                } else if ("query-caches".equals(nodeName)) {
+                    ManagedMap queryCaches = getQueryCaches(node);
+                    configBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
@@ -144,7 +153,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             final BeanDefinitionBuilder clientNetworkConfig = createBeanBuilder(ClientNetworkConfig.class);
             List<String> members = new ArrayList<String>(INITIAL_CAPACITY);
             fillAttributeValues(node, clientNetworkConfig);
-            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(child);
                 if ("member".equals(nodeName)) {
                     members.add(getTextContent(child));
@@ -176,7 +185,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             if (implementation != null) {
                 sslConfigBuilder.addPropertyReference(xmlToJavaName(implAttribute), implementation);
             }
-            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+            for (Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String name = cleanNodeName(child);
                 if ("properties".equals(name)) {
                     handleProperties(child, sslConfigBuilder);
@@ -197,6 +206,119 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         private void handleNearCache(Node node) {
             createAndFillListedBean(node, NearCacheConfig.class, "name", nearCacheConfigMap, "name");
         }
+
+
+        private ManagedMap getQueryCaches(Node childNode) {
+            ManagedMap queryCaches = new ManagedMap();
+            for (Node queryCacheNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                parseQueryCache(queryCaches, queryCacheNode);
+            }
+            return queryCaches;
+        }
+
+        private BeanDefinitionBuilder parseQueryCache(ManagedMap queryCaches,
+                                                      Node queryCacheNode) {
+            final BeanDefinitionBuilder builder = createBeanBuilder(QueryCacheConfig.class);
+
+            NamedNodeMap attributes = queryCacheNode.getAttributes();
+            String mapName = getTextContent(attributes.getNamedItem("map-name"));
+            String cacheName = getTextContent(attributes.getNamedItem("name"));
+
+            for (Node node : new IterableNodeList(queryCacheNode.getChildNodes(), Node.ELEMENT_NODE)) {
+                String nodeName = cleanNodeName(node.getNodeName());
+                String textContent = getTextContent(node);
+
+                parseQueryCacheInternal(builder, node, nodeName, textContent);
+            }
+
+            builder.addPropertyValue("name", cacheName);
+
+            ManagedMap configMap = (ManagedMap) queryCaches.get(mapName);
+            if (configMap == null) {
+                configMap = new ManagedMap<String, QueryCacheConfig>();
+                queryCaches.put(mapName, configMap);
+            }
+            configMap.put(cacheName, builder.getBeanDefinition());
+
+
+            return builder;
+        }
+
+        private void parseQueryCacheInternal(BeanDefinitionBuilder builder, Node node, String nodeName, String textContent) {
+            if ("predicate".equals(nodeName)) {
+                BeanDefinitionBuilder predicateBuilder = getPredicate(node, textContent);
+                builder.addPropertyValue("predicateConfig", predicateBuilder.getBeanDefinition());
+            } else if ("entry-listeners".equals(nodeName)) {
+                ManagedList listeners = getEntryListeners(node);
+                builder.addPropertyValue("entryListenerConfigs", listeners);
+            } else if ("include-value".equals(nodeName)) {
+                boolean includeValue = checkTrue(textContent);
+                builder.addPropertyValue("includeValue", includeValue);
+            } else if ("batch-size".equals(nodeName)) {
+                int batchSize = getIntegerValue("batch-size", textContent.trim(),
+                        QueryCacheConfig.DEFAULT_BATCH_SIZE);
+                builder.addPropertyValue("batchSize", batchSize);
+            } else if ("buffer-size".equals(nodeName)) {
+                int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
+                        QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+                builder.addPropertyValue("bufferSize", bufferSize);
+            } else if ("delay-seconds".equals(nodeName)) {
+                int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
+                        QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+                builder.addPropertyValue("delaySeconds", delaySeconds);
+            } else if ("in-memory-format".equals(nodeName)) {
+                String value = textContent.trim();
+                builder.addPropertyValue("inMemoryFormat", InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("coalesce".equals(nodeName)) {
+                boolean coalesce = checkTrue(textContent);
+                builder.addPropertyValue("coalesce", coalesce);
+            } else if ("populate".equals(nodeName)) {
+                boolean populate = checkTrue(textContent);
+                builder.addPropertyValue("populate", populate);
+            } else if ("indexes".equals(nodeName)) {
+                ManagedList indexes = getIndexes(node);
+                builder.addPropertyValue("indexConfigs", indexes);
+            } else if ("eviction".equals(nodeName)) {
+                builder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+            }
+        }
+
+        private BeanDefinitionBuilder getPredicate(Node node, String textContent) {
+            BeanDefinitionBuilder predicateBuilder = createBeanBuilder(PredicateConfig.class);
+            String predicateType = getTextContent(node.getAttributes().getNamedItem("type"));
+            if ("sql".equals(predicateType)) {
+                predicateBuilder.addPropertyValue("sql", textContent);
+            } else if ("class-name".equals(predicateType)) {
+                predicateBuilder.addPropertyValue("className", textContent);
+            }
+            return predicateBuilder;
+        }
+
+        private ManagedList getIndexes(Node node) {
+            ManagedList indexes = new ManagedList();
+            for (Node indexNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                final BeanDefinitionBuilder indexConfBuilder = createBeanBuilder(MapIndexConfig.class);
+                fillAttributeValues(indexNode, indexConfBuilder);
+                indexes.add(indexConfBuilder.getBeanDefinition());
+            }
+            return indexes;
+        }
+
+        private ManagedList getEntryListeners(Node node) {
+            ManagedList listeners = new ManagedList();
+            final String implementationAttr = "implementation";
+            for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(EntryListenerConfig.class);
+                fillAttributeValues(listenerNode, listenerConfBuilder, implementationAttr);
+                Node implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr);
+                if (implementationNode != null) {
+                    listenerConfBuilder.addPropertyReference(implementationAttr, getTextContent(implementationNode));
+                }
+                listeners.add(listenerConfBuilder.getBeanDefinition());
+            }
+            return listeners;
+        }
+
 
     }
 

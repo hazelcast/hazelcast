@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.core;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Adapter for MapStore.
@@ -84,7 +83,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
     /**
      * {@inheritDoc}
      */
-    public Set<K> loadAllKeys() {
+    public Iterable<K> loadAllKeys() {
         return null;
     }
 }

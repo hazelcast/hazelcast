@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,19 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
-import com.hazelcast.nio.serialization.PortableContext;
+import com.hazelcast.nio.serialization.DefaultData;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
  * A Packet is a piece of data send over the line.
  */
-public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
+public final class Packet implements SocketWritable, SocketReadable {
 
-    public static final byte VERSION = 3;
+    public static final byte VERSION = 4;
+
     public static final int HEADER_OP = 0;
     public static final int HEADER_RESPONSE = 1;
     public static final int HEADER_EVENT = 2;
@@ -35,25 +37,35 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
 
-    private static final int ST_VERSION = 10;
-    private static final int ST_HEADER = 11;
-    private static final int ST_PARTITION = 12;
+    // The value of these constants is important. The order needs to match the order in the read/write process
+    private static final short PERSIST_VERSION = 1;
+    private static final short PERSIST_HEADER = 2;
+    private static final short PERSIST_PARTITION = 3;
+    private static final short PERSIST_SIZE = 4;
+    private static final short PERSIST_VALUE = 5;
 
+    private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
+
+    private Data data;
     private short header;
     private int partitionId;
-
     private transient Connection conn;
 
-    public Packet(PortableContext context) {
-        super(context);
+    // These 2 fields are only used during read/write. Otherwise they have no meaning.
+    private int valueOffset;
+    private int size;
+    // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
+    private short persistStatus;
+
+    public Packet() {
     }
 
-    public Packet(Data value, PortableContext context) {
-        this(value, -1, context);
+    public Packet(Data data) {
+        this(data, -1);
     }
 
-    public Packet(Data value, int partitionId, PortableContext context) {
-        super(value, context);
+    public Packet(Data data, int partitionId) {
+        this.data = data;
         this.partitionId = partitionId;
     }
 
@@ -74,7 +86,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      *
      * @param conn the connection.
      */
-    public void setConn(final Connection conn) {
+    public void setConn(Connection conn) {
         this.conn = conn;
     }
 
@@ -112,59 +124,234 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
 
     @Override
     public boolean writeTo(ByteBuffer destination) {
-        if (!isStatusSet(ST_VERSION)) {
-            if (!destination.hasRemaining()) {
-                return false;
-            }
-            destination.put(VERSION);
-            setStatus(ST_VERSION);
+        if (!writeVersion(destination)) {
+            return false;
         }
-        if (!isStatusSet(ST_HEADER)) {
-            if (destination.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
-                return false;
-            }
-            destination.putShort(header);
-            setStatus(ST_HEADER);
+
+        if (!writeHeader(destination)) {
+            return false;
         }
-        if (!isStatusSet(ST_PARTITION)) {
-            if (destination.remaining() < Bits.INT_SIZE_IN_BYTES) {
-                return false;
-            }
-            destination.putInt(partitionId);
-            setStatus(ST_PARTITION);
+
+        if (!writePartition(destination)) {
+            return false;
         }
-        return super.writeTo(destination);
+
+        if (!writeSize(destination)) {
+            return false;
+        }
+
+        if (!writeValue(destination)) {
+            return false;
+        }
+
+        setPersistStatus(PERSIST_COMPLETED);
+        return true;
     }
 
     @Override
     public boolean readFrom(ByteBuffer source) {
-        if (!isStatusSet(ST_VERSION)) {
+        if (!readVersion(source)) {
+            return false;
+        }
+
+        if (!readHeader(source)) {
+            return false;
+        }
+
+        if (!readPartition(source)) {
+            return false;
+        }
+
+        if (!readSize(source)) {
+            return false;
+        }
+
+        if (!readValue(source)) {
+            return false;
+        }
+
+        setPersistStatus(PERSIST_COMPLETED);
+        return true;
+    }
+
+    // ========================= version =================================================
+
+    private boolean readVersion(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_VERSION)) {
             if (!source.hasRemaining()) {
                 return false;
             }
             byte version = source.get();
-            setStatus(ST_VERSION);
+            setPersistStatus(PERSIST_VERSION);
             if (VERSION != version) {
-                throw new IllegalArgumentException("Packet versions are not matching! This -> "
+                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
                         + VERSION + ", Incoming -> " + version);
             }
         }
-        if (!isStatusSet(ST_HEADER)) {
+        return true;
+    }
+
+    private boolean writeVersion(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_VERSION)) {
+            if (!destination.hasRemaining()) {
+                return false;
+            }
+            destination.put(VERSION);
+            setPersistStatus(PERSIST_VERSION);
+        }
+        return true;
+    }
+
+    // ========================= header =================================================
+
+    private boolean readHeader(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_HEADER)) {
             if (source.remaining() < 2) {
                 return false;
             }
             header = source.getShort();
-            setStatus(ST_HEADER);
+            setPersistStatus(PERSIST_HEADER);
         }
-        if (!isStatusSet(ST_PARTITION)) {
+        return true;
+    }
+
+    private boolean writeHeader(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_HEADER)) {
+            if (destination.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
+                return false;
+            }
+            destination.putShort(header);
+            setPersistStatus(PERSIST_HEADER);
+        }
+        return true;
+    }
+
+    // ========================= partition =================================================
+
+    private boolean readPartition(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_PARTITION)) {
             if (source.remaining() < 4) {
                 return false;
             }
             partitionId = source.getInt();
-            setStatus(ST_PARTITION);
+            setPersistStatus(PERSIST_PARTITION);
         }
-        return super.readFrom(source);
+        return true;
     }
+
+
+    private boolean writePartition(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_PARTITION)) {
+            if (destination.remaining() < Bits.INT_SIZE_IN_BYTES) {
+                return false;
+            }
+            destination.putInt(partitionId);
+            setPersistStatus(PERSIST_PARTITION);
+        }
+        return true;
+    }
+
+
+    // ========================= size =================================================
+
+    private boolean readSize(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_SIZE)) {
+            if (source.remaining() < INT_SIZE_IN_BYTES) {
+                return false;
+            }
+            size = source.getInt();
+            setPersistStatus(PERSIST_SIZE);
+        }
+        return true;
+    }
+
+    private boolean writeSize(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_SIZE)) {
+            if (destination.remaining() < INT_SIZE_IN_BYTES) {
+                return false;
+            }
+            size = data.totalSize();
+            destination.putInt(size);
+            setPersistStatus(PERSIST_SIZE);
+        }
+        return true;
+    }
+
+    // ========================= value =================================================
+
+    private boolean writeValue(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_VALUE)) {
+            if (size > 0) {
+                // the number of bytes that can be written to the bb.
+                int bytesWritable = destination.remaining();
+
+                // the number of bytes that need to be written.
+                int bytesNeeded = size - valueOffset;
+
+                int bytesWrite;
+                boolean done;
+                if (bytesWritable >= bytesNeeded) {
+                    // All bytes for the value are available.
+                    bytesWrite = bytesNeeded;
+                    done = true;
+                } else {
+                    // Not all bytes for the value are available. So lets write as much as is available.
+                    bytesWrite = bytesWritable;
+                    done = false;
+                }
+
+                byte[] byteArray = data.toByteArray();
+                destination.put(byteArray, valueOffset, bytesWrite);
+                valueOffset += bytesWrite;
+
+                if (!done) {
+                    return false;
+                }
+            }
+            setPersistStatus(PERSIST_VALUE);
+        }
+        return true;
+    }
+
+    private boolean readValue(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_VALUE)) {
+            byte[] bytes;
+            if (data == null) {
+                bytes = new byte[size];
+                data = new DefaultData(bytes);
+            } else {
+                bytes = data.toByteArray();
+            }
+
+            if (size > 0) {
+                int bytesReadable = source.remaining();
+
+                int bytesNeeded = size - valueOffset;
+
+                boolean done;
+                int bytesRead;
+                if (bytesReadable >= bytesNeeded) {
+                    bytesRead = bytesNeeded;
+                    done = true;
+                } else {
+                    bytesRead = bytesReadable;
+                    done = false;
+                }
+
+                // read the data from the byte-buffer into the bytes-array.
+                source.get(bytes, valueOffset, bytesRead);
+                valueOffset += bytesRead;
+
+                if (!done) {
+                    return false;
+                }
+            }
+
+            setPersistStatus(PERSIST_VALUE);
+        }
+        return true;
+    }
+
 
     /**
      * Returns an estimation of the packet, including its payload, in bytes.
@@ -172,8 +359,33 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
      * @return the size of the packet.
      */
     public int size() {
-        // 7 = byte(version) + short(header) + int(partitionId)
-        return (data != null ? getDataSize(data, context) : 0) + 7;
+        // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
+        return (data != null ? data.totalSize() : 0) + 11;
+    }
+
+    public Data getData() {
+        return data;
+    }
+
+    public void setData(Data data) {
+        this.data = data;
+    }
+
+    public boolean done() {
+        return isPersistStatusSet(PERSIST_COMPLETED);
+    }
+
+    public void reset() {
+        data = null;
+        persistStatus = 0;
+    }
+
+    private void setPersistStatus(short persistStatus) {
+        this.persistStatus = persistStatus;
+    }
+
+    private boolean isPersistStatusSet(short status) {
+        return this.persistStatus >= status;
     }
 
     @Override

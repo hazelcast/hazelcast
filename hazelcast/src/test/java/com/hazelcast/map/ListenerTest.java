@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,19 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,6 +41,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,9 +51,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -508,7 +517,31 @@ public class ListenerTest extends HazelcastTestSupport {
         assertEquals(value, oldValueFromEntryEvent);
     }
 
+    @Test
+    public void testMapPartitionLostListener_registeredViaImplementationInConfigObject() {
+        final String mapName = "map";
 
+        final Config config = new Config();
+        final MapConfig mapConfig = config.getMapConfig(mapName);
+        final int backupCount = 0;
+        final MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
+        mapConfig.addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig(listener));
+        mapConfig.setBackupCount(backupCount);
+
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        instance.getMap(mapName);
+
+        final EventService eventService = getNode(instance).getNodeEngine().getEventService();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                final Collection<EventRegistration> registrations = eventService.getRegistrations(MapService.SERVICE_NAME, mapName);
+                assertFalse(registrations.isEmpty());
+            }
+        });
+    }
 
     private Predicate<String, String> matchingPredicate() {
         return new Predicate<String, String>() {

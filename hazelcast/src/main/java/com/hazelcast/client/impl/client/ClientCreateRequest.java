@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.spi.ProxyService;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Collection;
 
 public class ClientCreateRequest extends CallableClientRequest implements Portable, RetryableRequest, SecureRequest {
 
@@ -75,6 +76,11 @@ public class ClientCreateRequest extends CallableClientRequest implements Portab
 
     @Override
     public Permission getRequiredPermission() {
+        ProxyService proxyService = clientEngine.getProxyService();
+        Collection<String> distributedObjectNames = proxyService.getDistributedObjectNames(serviceName);
+        if (distributedObjectNames.contains(name)) {
+            return null;
+        }
         return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_CREATE);
     }
 }

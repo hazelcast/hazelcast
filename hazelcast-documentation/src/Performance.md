@@ -173,5 +173,3 @@ The benefits of doing the same operation with distributed `ExecutorService` base
 -   Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less, thus enabling higher concurrency.
 
 
-<br> </br>
-

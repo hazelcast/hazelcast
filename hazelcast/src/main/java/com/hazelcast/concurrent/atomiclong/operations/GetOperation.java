@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 
 public class GetOperation extends AtomicLongBaseOperation {
 
@@ -32,17 +32,17 @@ public class GetOperation extends AtomicLongBaseOperation {
 
     @Override
     public void run() throws Exception {
-        LongWrapper number = getNumber();
-        returnValue = number.get();
-    }
-
-    @Override
-    public int getId() {
-        return AtomicLongDataSerializerHook.GET;
+        AtomicLongContainer atomicLongContainer = getLongContainer();
+        returnValue = atomicLongContainer.get();
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.GET;
     }
 }

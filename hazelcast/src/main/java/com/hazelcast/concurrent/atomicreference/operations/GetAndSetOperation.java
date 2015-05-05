@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,13 +40,18 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        ReferenceWrapper reference = getReference();
-        returnValue = reference.getAndSet(newValue);
+        AtomicReferenceContainer atomicReferenceContainer = getReferenceContainer();
+        returnValue = atomicReferenceContainer.getAndSet(newValue);
     }
 
     @Override
     public Object getResponse() {
         return returnValue;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, newValue);
     }
 
     @Override
@@ -57,18 +62,13 @@ public class GetAndSetOperation extends AtomicReferenceBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(newValue);
+        out.writeData(newValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        newValue = in.readObject();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, newValue);
+        newValue = in.readData();
     }
 }
 

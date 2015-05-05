@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import com.hazelcast.spi.annotation.Beta;
 public interface PartitionIdAware {
 
     /**
-     * Sets the partition id the implementing instance is executed against
+     * Sets the partition id to the implementing instance it is executed against
      *
      * @param partitionId current partitionId
      */

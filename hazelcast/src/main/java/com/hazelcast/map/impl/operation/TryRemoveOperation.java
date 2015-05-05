@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,56 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
 public class TryRemoveOperation extends BaseRemoveOperation {
 
     private boolean successful;
 
+    public TryRemoveOperation() {
+    }
+
     public TryRemoveOperation(String name, Data dataKey, long timeout) {
         super(name, dataKey);
         setWaitTimeout(timeout);
     }
 
-    public TryRemoveOperation() {
-    }
-
+    @Override
     public void run() {
-        dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey));
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
         }
     }
 
+    @Override
     public Object getResponse() {
         return successful;
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return successful;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(false);
+    }
+
+    @Override
+    public String toString() {
+        return "TryRemoveOperation{" + name + "}";
     }
 
     @Override
@@ -57,18 +76,5 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-    }
-
-    public boolean shouldBackup() {
-        return successful;
-    }
-
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
-    }
-
-    @Override
-    public String toString() {
-        return "TryRemoveOperation{" + name + "}";
     }
 }

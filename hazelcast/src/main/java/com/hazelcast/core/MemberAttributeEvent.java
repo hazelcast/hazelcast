@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         super(null, null, MEMBER_ATTRIBUTE_CHANGED, null);
     }
 
-    public MemberAttributeEvent(Cluster cluster, MemberImpl member, MemberAttributeOperationType operationType,
+    public MemberAttributeEvent(Cluster cluster, Member member, MemberAttributeOperationType operationType,
                                 String key, Object value) {
         super(cluster, member, MEMBER_ATTRIBUTE_CHANGED, null);
         this.member = member;
@@ -48,14 +48,29 @@ public class MemberAttributeEvent extends MembershipEvent implements DataSeriali
         this.value = value;
     }
 
+    /**
+     * Returns the type of member attribute change for this MemberAttributeEvent.
+     *
+     * @return the type of member attribute change for this MemberAttributeEvent
+     */
     public MemberAttributeOperationType getOperationType() {
         return operationType;
     }
 
+    /**
+     * Returns the key for this MemberAttributeEvent.
+     *
+     * @return the key for this MemberAttributeEvent
+     */
     public String getKey() {
         return key;
     }
 
+    /**
+     * Returns the value for this MemberAttributeEvent.
+     *
+     * @return the value for this MemberAttributeEvent
+     */
     public Object getValue() {
         return value;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.collection.set.SetContainer;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.collection.impl.collection.CollectionItem;
+import com.hazelcast.collection.impl.set.SetContainer;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -62,6 +62,10 @@ public class SetKeyValueSource<V>
 
     public SetKeyValueSource(String setName) {
         this.setName = setName;
+    }
+
+    public String getSetName() {
+        return setName;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,12 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
-import static com.hazelcast.aws.impl.Constants.GET;
-import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD;
-import static com.hazelcast.aws.impl.Constants.SIGNATURE_VERSION;
+import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
 
 public class DescribeInstances {
-
-    private final EC2RequestSigner rs;
-    private final AwsConfig awsConfig;
-
+    String timeStamp = getFormattedTimestamp();
+    private EC2RequestSigner rs;
+    private AwsConfig awsConfig;
     private Map<String, String> attributes = new HashMap<String, String>();
 
     public DescribeInstances(AwsConfig awsConfig) {
@@ -48,50 +45,38 @@ public class DescribeInstances {
         if (awsConfig.getAccessKey() == null) {
             throw new IllegalArgumentException("AWS access key is required!");
         }
-        rs = new EC2RequestSigner(awsConfig.getSecretKey());
+        this.awsConfig = awsConfig;
+
+        rs = new EC2RequestSigner(awsConfig, timeStamp);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
-        attributes.put("SignatureVersion", SIGNATURE_VERSION);
-        attributes.put("SignatureMethod", SIGNATURE_METHOD);
-        attributes.put("AWSAccessKeyId", awsConfig.getAccessKey());
-        attributes.put("Timestamp", getFormattedTimestamp());
-        this.awsConfig = awsConfig;
+        attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
+        attributes.put("X-Amz-Credential", rs.createFormattedCredential());
+        attributes.put("X-Amz-Date", timeStamp);
+        attributes.put("X-Amz-SignedHeaders", "host");
+        attributes.put("X-Amz-Expires", "30");
     }
 
-    /**
-     * Formats date as ISO 8601 timestamp
-     */
     private String getFormattedTimestamp() {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        SimpleDateFormat df = new SimpleDateFormat(Constants.DATE_FORMAT);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df.format(new Date());
     }
 
-
-    public String getQueryString() {
-        return CloudyUtility.getQueryString(attributes);
-    }
-
-    public Map<String, String> getAttributes() {
-        return attributes;
-    }
-
-    public void putSignature(String value) {
-        attributes.put("Signature", value);
-    }
-
-    public Map<String, String> execute(String endpoint) throws Exception {
-        rs.sign(this, endpoint);
-        InputStream stream = callService(endpoint);
+    public Map<String, String> execute() throws Exception {
+        final String endpoint = String.format(awsConfig.getHostHeader());
+        final String signature = rs.sign("ec2", attributes);
+        attributes.put("X-Amz-Signature", signature);
+        InputStream stream = callService(endpoint, signature);
         return CloudyUtility.unmarshalTheResponse(stream, awsConfig);
     }
 
-    private InputStream callService(String endpoint) throws Exception {
-        String query = getQueryString();
-        URL url = new URL("https", endpoint, -1, "/" + query);
+    private InputStream callService(String endpoint, String signature) throws Exception {
+        String query = rs.getCanonicalizedQueryString(attributes);
+        URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
-        httpConnection.setRequestMethod(GET);
-        httpConnection.setDoOutput(true);
+        httpConnection.setRequestMethod(Constants.GET);
+        httpConnection.setDoOutput(false);
         httpConnection.connect();
         return httpConnection.getInputStream();
     }

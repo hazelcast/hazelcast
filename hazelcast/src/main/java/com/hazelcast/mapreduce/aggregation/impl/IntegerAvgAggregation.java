@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,8 +136,8 @@ public class IntegerAvgAggregation<Key, Value>
     private static final class IntegerAvgReducer
             extends Reducer<AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
-        private volatile int count;
-        private volatile int amount;
+        private int count;
+        private int amount;
 
         @Override
         public void reduce(AvgTuple<Integer, Integer> value) {

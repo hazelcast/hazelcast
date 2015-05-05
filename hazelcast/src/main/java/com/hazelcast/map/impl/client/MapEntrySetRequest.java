@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.security.Permission;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,15 +54,12 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        MapEntrySet entrySet = new MapEntrySet();
+        Set<Map.Entry<Data, Data>> entrySet = new HashSet<Map.Entry<Data, Data>>();
         MapService service = getService();
         for (Object result : map.values()) {
-            Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.getMapServiceContext().toObject(result)).getEntrySet();
-            for (Map.Entry<Data, Data> entry : entries) {
-                entrySet.add(entry);
-            }
+            entrySet.addAll(((MapEntrySet) service.getMapServiceContext().toObject(result)).getEntrySet());
         }
-        return entrySet;
+        return new MapEntrySet(entrySet);
     }
 
     public String getServiceName() {

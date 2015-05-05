@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,18 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.security.Credentials;
 
 import java.util.LinkedList;
@@ -32,10 +37,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.util.Preconditions.checkFalse;
+
 /**
  * Main configuration to setup a Hazelcast Client
  */
 public class ClientConfig {
+
+    private static final ILogger LOGGER = Logger.getLogger(ClientConfig.class);
 
     /**
      * To pass properties
@@ -76,7 +85,11 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
 
+    private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
+
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
+
+    private Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs;
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
@@ -87,6 +100,15 @@ public class ClientConfig {
     private ManagedContext managedContext;
 
     private ClassLoader classLoader;
+
+    private String licenseKey;
+
+    public void setConfigPatternMatcher(ConfigPatternMatcher configPatternMatcher) {
+        if (configPatternMatcher == null) {
+            throw new IllegalArgumentException("ConfigPatternMatcher is not allowed to be null!");
+        }
+        this.configPatternMatcher = configPatternMatcher;
+    }
 
     /**
      * Gets a property already set or from system properties if not exists.
@@ -179,13 +201,13 @@ public class ClientConfig {
     /**
      * please use {@link ClientConfig#addNearCacheConfig(NearCacheConfig)}
      *
-     * @param mapName         name of the IMap that near cache config will be applied to
+     * @param name            name of the IMap / ICache that near cache config will be applied to
      * @param nearCacheConfig nearCacheConfig
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     @Deprecated
-    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig) {
-        nearCacheConfig.setName(mapName);
+    public ClientConfig addNearCacheConfig(String name, NearCacheConfig nearCacheConfig) {
+        nearCacheConfig.setName(name);
         return addNearCacheConfig(nearCacheConfig);
     }
 
@@ -226,14 +248,14 @@ public class ClientConfig {
     }
 
     /**
-     * Gets the {@link NearCacheConfig} configured for the map with mapName
+     * Gets the {@link NearCacheConfig} configured for the map / cache with name
      *
-     * @param mapName name of the map
+     * @param name name of the map / cache
      * @return Configured {@link NearCacheConfig}
      * @see com.hazelcast.config.NearCacheConfig
      */
-    public NearCacheConfig getNearCacheConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, mapName);
+    public NearCacheConfig getNearCacheConfig(String name) {
+        NearCacheConfig nearCacheConfig = lookupByPattern(nearCacheConfigMap, name);
         if (nearCacheConfig == null) {
             nearCacheConfig = nearCacheConfigMap.get("default");
         }
@@ -241,7 +263,7 @@ public class ClientConfig {
     }
 
     /**
-     * Map of all configured NearCacheConfig's with the map name key and configuration as the value
+     * Map of all configured NearCacheConfig's with the name key and configuration as the value
      *
      * @return map of NearCacheConfig
      * @see com.hazelcast.config.NearCacheConfig
@@ -253,7 +275,7 @@ public class ClientConfig {
     /**
      * Sets all {@link NearCacheConfig}'s with the provided map
      *
-     * @param nearCacheConfigMap map of (mapName, {@link NearCacheConfig})
+     * @param nearCacheConfigMap map of (name, {@link NearCacheConfig})
      * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
      */
     public ClientConfig setNearCacheConfigMap(Map<String, NearCacheConfig> nearCacheConfigMap) {
@@ -606,45 +628,55 @@ public class ClientConfig {
         return this;
     }
 
-    private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        T t = map.get(name);
-        if (t == null) {
-            int lastMatchingPoint = -1;
-            for (Map.Entry<String, T> entry : map.entrySet()) {
-                String pattern = entry.getKey();
-                T value = entry.getValue();
-                final int matchingPoint = getMatchingPoint(name, pattern);
-                if (matchingPoint > lastMatchingPoint) {
-                    lastMatchingPoint = matchingPoint;
-                    t = value;
-                }
-            }
-        }
-        return t;
+    public String getLicenseKey() {
+        return licenseKey;
     }
 
-    /**
-     * higher values means more specific matching
-     *
-     * @param name
-     * @param pattern
-     * @return -1 if name does not match at all, zero or positive otherwise
-     */
-    private static int getMatchingPoint(final String name, final String pattern) {
-        final int index = pattern.indexOf('*');
-        if (index == -1) {
-            return -1;
+    public ClientConfig setLicenseKey(final String licenseKey) {
+        this.licenseKey = licenseKey;
+        return this;
+    }
+
+    public ClientConfig addQueryCacheConfig(String mapName, QueryCacheConfig queryCacheConfig) {
+        Map<String, Map<String, QueryCacheConfig>> queryCacheConfigsPerMap = getQueryCacheConfigs();
+        String queryCacheName = queryCacheConfig.getName();
+        Map<String, QueryCacheConfig> queryCacheConfigs = queryCacheConfigsPerMap.get(mapName);
+        if (queryCacheConfigs != null) {
+            checkFalse(queryCacheConfigs.containsKey(queryCacheName),
+                    "A query cache already exists with name = [" + queryCacheName + ']');
+        } else {
+            queryCacheConfigs = new ConcurrentHashMap<String, QueryCacheConfig>();
+            queryCacheConfigsPerMap.put(mapName, queryCacheConfigs);
         }
-        final String firstPart = pattern.substring(0, index);
-        final int indexFirstPart = name.indexOf(firstPart, 0);
-        if (indexFirstPart == -1) {
-            return -1;
+
+        queryCacheConfigs.put(queryCacheName, queryCacheConfig);
+        return this;
+
+    }
+
+    public Map<String, Map<String, QueryCacheConfig>> getQueryCacheConfigs() {
+        if (queryCacheConfigs == null) {
+            queryCacheConfigs = new ConcurrentHashMap<String, Map<String, QueryCacheConfig>>();
         }
-        final String secondPart = pattern.substring(index + 1);
-        final int indexSecondPart = name.indexOf(secondPart, index + 1);
-        if (indexSecondPart == -1) {
-            return -1;
+        return queryCacheConfigs;
+    }
+
+    public void setQueryCacheConfigs(Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs) {
+        this.queryCacheConfigs = queryCacheConfigs;
+    }
+
+    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
+        T candidate = configPatterns.get(itemName);
+        if (candidate != null) {
+            return candidate;
         }
-        return firstPart.length() + secondPart.length();
+        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
+        if (configPatternKey != null) {
+            return configPatterns.get(configPatternKey);
+        }
+        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
+            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
+        }
+        return null;
     }
 }

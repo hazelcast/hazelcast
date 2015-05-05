@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,15 +169,7 @@ public class MigrationInfo implements DataSerializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MigrationInfo");
-        sb.append("{ partitionId=").append(partitionId);
-        sb.append(", source=").append(source);
-        sb.append(", destination=").append(destination);
-        sb.append(", master=").append(master);
-        sb.append(", valid=").append(valid);
-        sb.append(", processing=").append(processing.get());
-        sb.append('}');
-        return sb.toString();
+        return getClass().getName() + "{partitionId=" + partitionId + ", source=" + source + ", destination=" + destination
+                + ", master=" + master + ", valid=" + valid + ", processing=" + processing.get() + '}';
     }
 }

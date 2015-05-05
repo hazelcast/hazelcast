@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,6 @@
  */
 
 /**
- * <p>This package contains classes related to Collections (IList,ISet etc..) <br/>
+ * This package is currently a dummy package for collections. There is nothing interesting to find here.
  */
 package com.hazelcast.collection;

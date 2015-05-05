@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,11 @@ public final class Protocols {
      * Protocol that is used for clients(java, c++ , c# client)
      */
     public static final String CLIENT_BINARY = "CB1";
+
+    /**
+     * New Client Protocol that is used for clients(java, c++ , c# client)
+     */
+    public static final String CLIENT_BINARY_NEW = "CB2";
 
     /**
      * Protocol that is used by Memcache And Http

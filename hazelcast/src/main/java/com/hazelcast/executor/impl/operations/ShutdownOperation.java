@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@ public final class ShutdownOperation extends AbstractNamedOperation {
     }
 
     @Override
-    public void run() throws Exception {
-        DistributedExecutorService service = getService();
-        service.shutdownExecutor(getName());
+    public String getServiceName() {
+        return DistributedExecutorService.SERVICE_NAME;
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
+    public void run() throws Exception {
+        DistributedExecutorService service = getService();
+        service.shutdownExecutor(getName());
     }
 
     @Override

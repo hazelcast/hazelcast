@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -25,13 +27,11 @@ import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.impl.client.RemoveDistributedObjectListenerRequest;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
-import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientListProxy;
 import com.hazelcast.client.proxy.ClientLockProxy;
-import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.ClientMapReduceProxy;
 import com.hazelcast.client.proxy.ClientMultiMapProxy;
 import com.hazelcast.client.proxy.ClientQueueProxy;
@@ -39,8 +39,10 @@ import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
-import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -59,7 +61,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.queue.impl.QueueService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
@@ -101,7 +102,7 @@ public final class ProxyManager {
 
     public void init(ClientConfig config) {
         // register defaults
-        register(MapService.SERVICE_NAME, ClientMapProxy.class);
+        register(MapService.SERVICE_NAME, getServiceProxy(MapService.class));
         register(CacheService.SERVICE_NAME, ClientCacheDistributedObject.class);
         register(QueueService.SERVICE_NAME, ClientQueueProxy.class);
         register(MultiMapService.SERVICE_NAME, ClientMultiMapProxy.class);
@@ -137,6 +138,11 @@ public final class ProxyManager {
                 throw ExceptionUtil.rethrow(e);
             }
         }
+    }
+
+    private <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service) {
+        ClientExtension clientExtension = client.getClientExtension();
+        return clientExtension.getServiceProxy(service);
     }
 
     public HazelcastInstance getHazelcastInstance() {
@@ -197,8 +203,9 @@ public final class ProxyManager {
 
     private void initialize(ClientProxy clientProxy) throws Exception {
         ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
-        client.getInvocationService().invokeOnRandomTarget(request).get();
-        clientProxy.setContext(new ClientContext(client, this));
+        final ClientContext context = new ClientContext(client, this);
+        new ClientInvocation(client, request).invoke().get();
+        clientProxy.setContext(context);
         clientProxy.onInitialize();
     }
 
@@ -245,7 +252,7 @@ public final class ProxyManager {
 
             }
         };
-        return client.getListenerService().listen(request, null, eventHandler);
+        return client.getListenerService().startListening(request, null, eventHandler);
     }
 
     public boolean removeDistributedObjectListener(String id) {

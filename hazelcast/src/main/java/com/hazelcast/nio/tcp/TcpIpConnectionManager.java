@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -28,29 +30,23 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
+import com.hazelcast.nio.tcp.handlermigration.IOBalancer;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-
-import static java.lang.Boolean.parseBoolean;
 
 public class TcpIpConnectionManager implements ConnectionManager {
 
@@ -79,9 +75,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final boolean socketNoDelay;
 
-    private final ConcurrentMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
+    private final ConcurrentHashMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
 
-    private final ConcurrentMap<Address, TcpIpConnectionMonitor> monitors =
+    private final ConcurrentHashMap<Address, TcpIpConnectionMonitor> monitors =
             new ConcurrentHashMap<Address, TcpIpConnectionMonitor>(100);
 
     private final Set<Address> connectionsInProgress =
@@ -115,24 +111,25 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int outboundPortCount;
 
+    private final int handlerMigrationIntervalSeconds;
+
+    private final HazelcastThreadGroup hazelcastThreadGroup;
+
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
-
-    private final PortableContext portableContext;
 
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    // the selectorImbalanceWorkaroundEnabled is a hack to make sure that selectors get an equal number of connections
-    // to deal with this should only be used for the test lab. In the future we need to create a real fix to this problem,
-    // but without this hack we can't do reliable benchmarking because the numbers have too much variation.
-    private final boolean selectorImbalanceWorkaroundEnabled;
-    private final Map<String, Integer> selectorIndexPerHostMap;
+    private IOBalancer ioBalancer;
+    private final LoggingService loggingService;
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel,
+                                  HazelcastThreadGroup hazelcastThreadGroup, LoggingService loggingService) {
         this.ioService = ioService;
+        this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.serverSocketChannel = serverSocketChannel;
-        this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
+        this.logger = loggingService.getLogger(TcpIpConnectionManager.class.getName());
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
@@ -140,30 +137,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
         this.selectorThreadCount = ioService.getSelectorThreadCount();
+        this.handlerMigrationIntervalSeconds = ioService.getBalancerIntervalSeconds();
         this.inSelectors = new InSelectorImpl[selectorThreadCount];
         this.outSelectors = new OutSelectorImpl[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
-        this.outboundPortCount = ports == null ? 0 : ports.size();
-        if (ports != null) {
-            outboundPorts.addAll(ports);
-        }
+        this.outboundPortCount = ports.size();
+        this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-        this.portableContext = ioService.getPortableContext();
-
-        this.selectorImbalanceWorkaroundEnabled = isSelectorImbalanceEnabled();
-        this.selectorIndexPerHostMap = selectorImbalanceWorkaroundEnabled ? new HashMap<String, Integer>() : null;
-    }
-
-    private boolean isSelectorImbalanceEnabled() {
-        boolean enabled = parseBoolean(System.getProperty("hazelcast.selectorhack.enabled", "false"));
-        if (enabled) {
-            logger.severe("WARNING!!!! The 'hazelcast.selectorhack.enabled' has been enabled. This feature should not be used "
-                    + "in a production environment. It is a temporary work around to deal with imbalances between selector-load. "
-                    + "This issue will be fixed at some point in time. Using this feature in a production environment can lead "
-                    + "to other imbalance problems, e.g. when multiple members are on the same machine. Also this feature is not "
-                    + "100% reliable.  ");
-        }
-        return enabled;
+        this.loggingService = loggingService;
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -219,10 +200,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         allTextConnections.incrementAndGet();
     }
 
-    public PortableContext getPortableContext() {
-        return portableContext;
-    }
-
     public IOService getIOHandler() {
         return ioService;
     }
@@ -248,6 +225,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             return false;
         }
         connection.setEndPoint(remoteEndPoint);
+        ioService.onSuccessfulConnection(remoteEndPoint);
         if (reply) {
             sendBindRequest(connection, remoteEndPoint, false);
         }
@@ -314,13 +292,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
+        ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
             log(Level.FINEST, "Sending bind packet to " + remoteEndPoint);
         }
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
         Data bindData = ioService.toData(bind);
-        Packet packet = new Packet(bindData, portableContext);
+        Packet packet = new Packet(bindData);
         packet.setHeader(Packet.HEADER_BIND);
         connection.write(packet);
         //now you can send anything...
@@ -337,50 +316,21 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
-        InetSocketAddress remoteSocketAddress = (InetSocketAddress) channel.socket().getRemoteSocketAddress();
-        String remoteHost = remoteSocketAddress.getHostName();
-        int index = getSelectorIndex(remoteHost);
+        int index = nextSelectorIndex();
 
         final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
                 outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        ioBalancer.connectionAdded(connection);
+
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
-        connection.getReadHandler().register();
 
-        logConnectionEstablished(channel, remoteSocketAddress, index);
+        connection.start();
+
+        log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress());
 
         return connection;
-    }
-
-    private int getSelectorIndex(String remoteHost) {
-        Integer index;
-        if (selectorImbalanceWorkaroundEnabled) {
-            synchronized (selectorIndexPerHostMap) {
-                index = selectorIndexPerHostMap.get(remoteHost);
-                if (index == null) {
-                    index = nextSelectorIndex();
-                    selectorIndexPerHostMap.put(remoteHost, index);
-                    logger.info(remoteHost + " no selector index found, retrieving a new one: " + index);
-                } else {
-                    logger.info(remoteHost + " selector index found: " + index);
-                }
-            }
-        } else {
-            index = nextSelectorIndex();
-        }
-        return index;
-    }
-
-    private void logConnectionEstablished(SocketChannelWrapper channel, InetSocketAddress remoteSocketAddress, Integer index) {
-        if (selectorImbalanceWorkaroundEnabled) {
-            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
-                    + " and " + remoteSocketAddress
-                    + " using selectorIndex: " + index + " connectionCount: " + activeConnections.size());
-        } else {
-            log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress()
-                    + " and " + remoteSocketAddress);
-        }
     }
 
     void failedConnection(Address address, Throwable t, boolean silent) {
@@ -435,6 +385,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
             connectionsMap.remove(endPoint, connection);
+            ioBalancer.connectionRemoved(connection);
             if (live) {
                 ioService.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
@@ -450,8 +401,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     }
                 });
             }
-        } else {
-            log(Level.SEVERE, "ENDPOINT NULL: " + connection);
         }
         if (connection.isAlive()) {
             connection.close();
@@ -495,6 +444,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             inSelectors[i].start();
             outSelectors[i].start();
         }
+        startIOBalancer();
 
         if (socketAcceptorThread != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
@@ -504,6 +454,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
         socketAcceptorThread = new Thread(ioService.getThreadGroup(), acceptRunnable,
                 ioService.getThreadPrefix() + "Acceptor");
         socketAcceptorThread.start();
+    }
+
+    private void startIOBalancer() {
+        ioBalancer = new IOBalancer(inSelectors, outSelectors,
+                hazelcastThreadGroup, handlerMigrationIntervalSeconds, loggingService);
+        ioBalancer.start();
     }
 
     @Override
@@ -538,6 +494,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     private void stop() {
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
+        ioBalancer.stop();
         shutdownSocketAcceptor();
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             IOUtil.closeResource(socketChannel);
@@ -557,7 +514,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
         }
         shutdownIOSelectors();
-
         acceptedSockets.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();

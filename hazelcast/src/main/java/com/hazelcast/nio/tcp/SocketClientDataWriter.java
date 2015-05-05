@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-class SocketClientDataWriter implements SocketWriter<DataAdapter> {
+class SocketClientDataWriter implements SocketWriter<Packet> {
 
     @Override
-    public boolean write(DataAdapter writer, ByteBuffer socketBuffer) throws Exception {
+    public boolean write(Packet writer, ByteBuffer socketBuffer) throws Exception {
         return writer.writeTo(socketBuffer);
     }
 }

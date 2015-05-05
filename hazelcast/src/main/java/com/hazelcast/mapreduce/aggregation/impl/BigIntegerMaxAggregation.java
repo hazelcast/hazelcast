@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,7 @@ public class BigIntegerMaxAggregation<Key, Value>
     private static final class BigIntegerMaxReducer
             extends Reducer<BigInteger, BigInteger> {
 
-        private volatile BigInteger max;
+        private BigInteger max;
 
         @Override
         public void reduce(BigInteger value) {

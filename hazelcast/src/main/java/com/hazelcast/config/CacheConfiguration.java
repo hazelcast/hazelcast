@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public interface CacheConfiguration<K, V>
      * @param cacheEntryListenerConfiguration the
      *  {@link javax.cache.configuration.CacheEntryListenerConfiguration}
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
-     * @throws IllegalArgumentException is the same CacheEntryListenerConfiguration
+     * @throws IllegalArgumentException if the same CacheEntryListenerConfiguration
      * is used more than once
      */
     CacheConfiguration<K, V> addCacheEntryListenerConfiguration(
@@ -109,7 +109,7 @@ public interface CacheConfiguration<K, V>
      * It is an invalid configuration to set this to true without specifying a
      * {@link javax.cache.integration.CacheLoader} {@link javax.cache.configuration.Factory}.
      *
-     * @param isReadThrough <code>true</code> if read-through is required
+     * @param isReadThrough true if read-through is required, false otherwise
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setReadThrough(boolean isReadThrough);
@@ -120,7 +120,7 @@ public interface CacheConfiguration<K, V>
      * It is an invalid configuration to set this to true without specifying a
      * {@link javax.cache.integration.CacheWriter} {@link javax.cache.configuration.Factory}.
      *
-     * @param isWriteThrough <code>true</code> if write-through is required
+     * @param isWriteThrough true if write-through is required, false otherwise
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setWriteThrough(boolean isWriteThrough);
@@ -129,8 +129,8 @@ public interface CacheConfiguration<K, V>
      * Set if a configured cache should use store-by-value or store-by-reference
      * semantics.
      *
-     * @param isStoreByValue <code>true</code> if store-by-value is required,
-     *                       <code>false</code> for store-by-reference
+     * @param isStoreByValue true if store-by-value is required,
+     *                       false for store-by-reference
      * @return the {@link com.hazelcast.config.CacheConfiguration} to permit fluent-style method calls
      */
     CacheConfiguration<K, V> setStoreByValue(boolean isStoreByValue);

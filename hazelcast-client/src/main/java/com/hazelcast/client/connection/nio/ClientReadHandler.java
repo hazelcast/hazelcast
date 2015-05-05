@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.util.Clock;
 
@@ -86,8 +85,7 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
     private void readPacket() {
         while (buffer.hasRemaining()) {
             if (packet == null) {
-                final SerializationService ss = connection.getSerializationService();
-                packet = new Packet(ss.getPortableContext());
+                packet = new Packet();
             }
             boolean complete = packet.readFrom(buffer);
             if (complete) {

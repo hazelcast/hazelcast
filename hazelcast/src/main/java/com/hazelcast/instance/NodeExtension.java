@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.management.TimedMemberStateFactory;
+import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -25,8 +25,8 @@ import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.storage.DataRef;
-import com.hazelcast.storage.Storage;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
@@ -77,9 +77,6 @@ public interface NodeExtension {
      * @throws java.lang.IllegalArgumentException if type is not known
      */
     <T> T createService(Class<T> type);
-
-
-    TimedMemberStateFactory getTimedMemberStateFactory();
 
     /**
      * Returns <tt>MemberSocketInterceptor</tt> for this <tt>Node</tt> if available,
@@ -133,8 +130,25 @@ public interface NodeExtension {
     void onThreadStop(Thread thread);
 
     /**
+     * Returns MemoryStats of for the JVM and current HazelcastInstance.
+     *
+     * @return memory statistics
+     */
+    MemoryStats getMemoryStats();
+
+    /**
      * Destroys <tt>NodeExtension</tt>. Called on <tt>Node.shutdown()</tt>
      */
     void destroy();
+
+    /**
+     * Called before a new node is joining to cluster,
+     * executed if node is the master node before join event.
+     * {@link com.hazelcast.cluster.impl.ClusterServiceImpl} calls this method,
+     * when handleJoinRequest method is called. By this way, we can check the logic we want
+     * by implementing this method. Implementation should throw required exception, with a valid
+     * message which explains rejection reason.
+     */
+    void beforeJoin();
 
 }

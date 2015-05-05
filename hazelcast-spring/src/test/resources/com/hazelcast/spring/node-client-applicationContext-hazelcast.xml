@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -176,6 +176,44 @@
                     region="sample-region" security-group-name="sample-group"
                     tag-key="sample-tag-key" tag-value="sample-tag-value"/>
         </hz:network>
+
+    </hz:client>
+
+    <hz:client id="client5"
+               credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+
+    </hz:client>
+
+    <hz:client id="client6"
+               credentials-ref="credentials">
+        <hz:network connection-attempt-limit="0">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+        </hz:network>
+
+        <hz:query-caches>
+            <hz:query-cache name="my-query-cache-1" mapName="map-name">
+                <hz:predicate type="sql">__key > 12</hz:predicate>
+                <hz:batch-size>12</hz:batch-size>
+                <hz:buffer-size>33</hz:buffer-size>
+                <hz:coalesce>true</hz:coalesce>
+                <hz:populate>false</hz:populate>
+                <hz:delay-seconds>12</hz:delay-seconds>
+                <hz:entry-listeners>
+                    <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
+                </hz:entry-listeners>
+                <hz:eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="111"/>
+                <hz:in-memory-format>OBJECT</hz:in-memory-format>
+                <hz:include-value>false</hz:include-value>
+                <hz:indexes>
+                    <hz:index attribute="name" ordered="false"></hz:index>
+                </hz:indexes>
+            </hz:query-cache>
+        </hz:query-caches>
 
     </hz:client>
 

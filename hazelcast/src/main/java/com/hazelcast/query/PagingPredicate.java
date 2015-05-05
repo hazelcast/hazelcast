@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,12 @@ import java.util.Set;
 import java.util.List;
 
 /**
- * This class is a special Predicate which helps to get a page-by-page result of a query
- * Can be constructed with a page-size, an inner predicate for filtering, A comparator for sorting  \
+ * This class is a special Predicate which helps to get a page-by-page result of a query.
+ * It can be constructed with a page-size, an inner predicate for filtering, and a comparator for sorting.
  * This class is not thread-safe and stateless. To be able to reuse for another query, one should call
  * {@link PagingPredicate#reset()}
  * <br/>
- * Example usage could be seen like below;
+ * Here is an example usage.
  * <pre>
  * Predicate lessEqualThanFour = Predicates.lessEqual("this", 4);
  *
@@ -95,7 +95,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * results will be natural ordered
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      *
-     * @param pageSize
+     * @param pageSize page size
      */
     public PagingPredicate(int pageSize) {
         if (pageSize <= 0) {
@@ -111,8 +111,8 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
      *
-     * @param predicate
-     * @param pageSize
+     * @param predicate the inner predicate through which results will be filtered
+     * @param pageSize the page size
      */
     public PagingPredicate(Predicate predicate, int pageSize) {
         this(pageSize);
@@ -125,8 +125,8 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * results will be ordered via comparator
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      *
-     * @param comparator
-     * @param pageSize
+     * @param comparator the comparator through which results will be ordered
+     * @param pageSize the page size
      */
     public PagingPredicate(Comparator<Map.Entry> comparator, int pageSize) {
         this(pageSize);
@@ -140,15 +140,22 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
      *
-     * @param predicate
-     * @param comparator
-     * @param pageSize
+     * @param predicate the inner predicate through which results will be filtered
+     * @param comparator the comparator through which results will be ordered
+     * @param pageSize the page size
      */
     public PagingPredicate(Predicate predicate, Comparator<Map.Entry> comparator, int pageSize) {
         this(pageSize);
         setInnerPredicate(predicate);
         this.comparator = comparator;
     }
+
+    /**
+     * Sets an inner predicate.
+     * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
+     *
+     * @param predicate the inner predicate through which results will be filtered
+     */
 
     private void setInnerPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
@@ -158,7 +165,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     /**
-     * Used if inner predicate is instanceof {@link IndexAwarePredicate} for filtering
+     * Used if inner predicate is instanceof {@link IndexAwarePredicate} for filtering.
      *
      * @param queryContext
      * @return
@@ -199,7 +206,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     /**
-     * Used if inner predicate is instanceof {@link IndexAwarePredicate} for checking if indexed
+     * Used if inner predicate is instanceof {@link IndexAwarePredicate} for checking if indexed.
      *
      * @param queryContext
      * @return
@@ -213,7 +220,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     /**
-     * Used for delegating filtering to inner predicate
+     * Used for delegating filtering to inner predicate.
      *
      * @param mapEntry
      * @return
@@ -227,10 +234,10 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     /**
-     * After each query, an anchor entry is set for that page
-     * anchor entry is the last entry of the query
+     * After each query, an anchor entry is set for that page.
+     * The anchor entry is the last entry of the query.
      *
-     * @param anchor
+     * @param anchor the last entry of the query
      */
     void setAnchor(Map.Entry anchor) {
         if (anchor == null) {
@@ -250,14 +257,14 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     /**
-     * setting the page value to next page
+     * sets the page value to next page
      */
     public void nextPage() {
         page++;
     }
 
     /**
-     * setting the page value to previous page
+     * sets the page value to previous page
      */
     public void previousPage() {
         if (page != 0) {
@@ -293,7 +300,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * Retrieve the anchor object which is the last value object on the previous page.
      *
      * Note: This method will return `null` on the first page of the query result.
-     * @return Map.Entry
+     * @return Map.Entry the anchor object which is the last value object on the previous page
      */
     public Map.Entry getAnchor() {
         return anchorMap.get(page);

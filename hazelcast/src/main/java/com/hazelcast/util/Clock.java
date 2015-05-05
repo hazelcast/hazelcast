@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,28 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.nio.ClassLoaderUtil;
+
 /**
  *  Utility class to be able to simulate different time zones.
- *  Time offset can be configured with following property
- *  "com.hazelcast.clock.offset"
+ *  Time offset can be configured with the property <code>com.hazelcast.clock.offset</code>
  */
 public final class Clock {
+
+    /**
+     * Clock offset property in milliseconds. When it is set to a non-zero value,
+     * {@link Clock#currentTimeMillis()} will return a shifted {@link System#currentTimeMillis()}
+     * time by the given offset value.
+     */
+    public static final String HAZELCAST_CLOCK_OFFSET = "com.hazelcast.clock.offset";
+
+    /**
+     * Classname of a {@link com.hazelcast.util.Clock.ClockImpl} implementation.
+     * When this property is set, {@link Clock#currentTimeMillis()}
+     * will call the <code>currentTimeMillis()</code> method of given <code>ClockImpl</code>.
+     */
+    public static final String HAZELCAST_CLOCK_IMPL = "com.hazelcast.clock.impl";
+
     private static final ClockImpl CLOCK;
 
     private Clock() {
@@ -31,24 +47,42 @@ public final class Clock {
         return CLOCK.currentTimeMillis();
     }
 
+
     static {
-        final String clockOffset = System.getProperty("com.hazelcast.clock.offset");
+        CLOCK = initClock();
+    }
+
+    private static ClockImpl initClock() {
+        String clockImplClassName = System.getProperty(HAZELCAST_CLOCK_IMPL);
+        if (clockImplClassName != null) {
+            try {
+                return ClassLoaderUtil.newInstance(null, clockImplClassName);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+
+        String clockOffset = System.getProperty(HAZELCAST_CLOCK_OFFSET);
         long offset = 0L;
         if (clockOffset != null) {
             try {
                 offset = Long.parseLong(clockOffset);
-            } catch (NumberFormatException ignored) {
-                EmptyStatement.ignore(ignored);
+            } catch (NumberFormatException e) {
+                throw ExceptionUtil.rethrow(e);
             }
         }
-        if (offset == 0L) {
-            CLOCK = new SystemClock();
-        } else {
-            CLOCK = new SystemOffsetClock(offset);
+        if (offset != 0L) {
+            return new SystemOffsetClock(offset);
         }
+
+        return new SystemClock();
     }
 
-    private abstract static class ClockImpl {
+    /**
+     * Clock abstraction to be able to simulate different clocks
+     * without changing actual system time.
+     */
+    public abstract static class ClockImpl {
 
         protected abstract long currentTimeMillis();
     }

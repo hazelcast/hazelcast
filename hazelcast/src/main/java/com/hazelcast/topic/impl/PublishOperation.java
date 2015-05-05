@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,11 +64,6 @@ public class PublishOperation extends AbstractNamedOperation
     }
 
     @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public int getFactoryId() {
         return TopicDataSerializerHook.F_ID;
     }
@@ -76,6 +71,11 @@ public class PublishOperation extends AbstractNamedOperation
     @Override
     public int getId() {
         return TopicDataSerializerHook.PUBLISH;
+    }
+
+    @Override
+    public String getServiceName() {
+        return TopicService.SERVICE_NAME;
     }
 
     @Override

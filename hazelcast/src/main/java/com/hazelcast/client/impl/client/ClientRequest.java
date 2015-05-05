@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -27,7 +28,8 @@ import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
 
-public abstract class ClientRequest implements SecureRequest, VersionedPortable {
+// TODO this extends ClientMessage is temporary to not break compilation during development of client protocol
+public abstract class ClientRequest extends ClientMessage implements SecureRequest, VersionedPortable {
 
     protected volatile int callId = -1;
     protected transient ClientEngineImpl clientEngine;
@@ -35,27 +37,6 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     protected transient SerializationService serializationService;
     protected transient Object service;
     protected transient ClientEndpoint endpoint;
-
-    /**
-     * Some request needs to use a single connection like transaction request and
-     * {@link com.hazelcast.cluster.client.ClientPingRequest}
-     * if true then request will not be retried
-     */
-    private transient boolean singleConnection;
-
-    /**
-     * mark this request as SingleConnection
-     */
-    public void setSingleConnection() {
-        this.singleConnection = true;
-    }
-
-    /**
-     * @return true if this request is SingleConnection false otherwise
-     */
-    public boolean isSingleConnection() {
-        return singleConnection;
-    }
 
     public void setOperationService(OperationService operationService) {
         this.operationService = operationService;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,19 +36,20 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
-public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
+public class EntryOperation extends LockAwareOperation implements BackupAwareOperation, MutatingOperation {
 
     protected Object oldValue;
     private EntryProcessor entryProcessor;
@@ -110,17 +111,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         getResponseHandler().sendResponse(null);
     }
 
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        entryProcessor = in.readObject();
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(entryProcessor);
-    }
 
     @Override
     public Object getResponse() {
@@ -250,9 +240,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     private boolean hasRegisteredListenerForThisMap() {
-        final String serviceName = mapService.getMapServiceContext().serviceName();
         final EventService eventService = getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, name);
+        return eventService.hasEventRegistration(SERVICE_NAME, name);
     }
 
     /**
@@ -304,4 +293,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return mapServiceContext.getMapEventPublisher();
     }
 
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        entryProcessor = in.readObject();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(entryProcessor);
+    }
 }

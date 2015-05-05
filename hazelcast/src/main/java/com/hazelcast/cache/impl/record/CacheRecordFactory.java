@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,11 +67,12 @@ public class CacheRecordFactory<R extends CacheRecord> {
     }
 
     /**
-     * Determines whether the Cache Entry associated with this value would be expired
+     * Determines whether the Cache Entry associated with this value will expire
      * at the specified time.
      *
-     * @param now time in milliseconds (since the Epoc).
-     * @return true if the value would be expired at the specified time.
+     * @param expirationTime the expiration time
+     * @param now the time in milliseconds (since the Epoc)
+     * @return true if the value will expire at the specified time
      */
     public static boolean isExpiredAt(long expirationTime, long now) {
         return expirationTime > -1 && expirationTime <= now;

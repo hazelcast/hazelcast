@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import com.hazelcast.spi.annotation.Beta;
  * times <b>once the configuration is finished</b>.
  * </p>
  * <p>
- * <b>Caution: The generic types of Jobs change depending on the used methods which can make it necessary to use
+ * <b>Caution: The generic types of Jobs change depending on the used methods, which can make it necessary to use
  * different assignment variables when used over multiple source lines.</b>
  * </p>
  * <p>
@@ -54,7 +54,7 @@ public interface Job<KeyIn, ValueIn> {
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
-     * the task setting them can improve execution speed.
+     * the task, setting them can improve execution speed.
      *
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
@@ -63,7 +63,7 @@ public interface Job<KeyIn, ValueIn> {
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
-     * the task setting them can improve execution speed.
+     * the task, setting them can improve execution speed.
      *
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
@@ -72,7 +72,7 @@ public interface Job<KeyIn, ValueIn> {
 
     /**
      * Defines the number of elements per chunk. Whenever the chunk size is reached and a
-     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined the chunk will be send to the nodes that
+     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined, the chunk will be sent to the nodes that
      * is responsible for the emitted keys.<br/>
      * <b>Please note, that chunks are deactivated when no ReducerFactory is defined</b>
      *
@@ -85,7 +85,7 @@ public interface Job<KeyIn, ValueIn> {
      * Defines the strategy to handle topology changes while executing the map reduce job. For further
      * information see {@link com.hazelcast.mapreduce.TopologyChangedStrategy}.
      *
-     * @param topologyChangedStrategy strategy to use
+     * @param topologyChangedStrategy strategy to handle topology changes while executing the map reduce job
      * @return instance of this Job with generics changed on usage
      */
     Job<KeyIn, ValueIn> topologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy);

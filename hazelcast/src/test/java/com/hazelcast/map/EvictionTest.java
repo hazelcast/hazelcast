@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,17 +161,17 @@ public class EvictionTest extends HazelcastTestSupport {
     */
     @Test
     public void testIssue585SetWithoutTTL() throws InterruptedException {
-        Config config = new Config();
-        config.getGroupConfig().setName("testIssue585ZeroTTLShouldPreventEvictionWithSet");
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
-        int n = 1;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        HazelcastInstance h = factory.newHazelcastInstance(config);
-        final IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionWithSet");
-        map.set("key", "value", 1, TimeUnit.SECONDS);
-        map.set("key", "value2");
-        assertSizeEventually(0, map);
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<String, String> map = node.getMap(randomMapName());
+
+        String key = "key";
+
+        map.set(key, "value", 1, TimeUnit.SECONDS);
+        // this `set` operation should not affect existing ttl.
+        // so "key" should be expired after 1 seconds.
+        map.set(key, "value2");
+
+        assertSizeEventually(0, map, 300);
     }
 
     /*
@@ -1028,13 +1028,76 @@ public class EvictionTest extends HazelcastTestSupport {
         testExpirationDelay(expectedEntryCountAfterExpirationOnBackupPartitions, numberOfItemsToBeAdded, true);
     }
 
-    private void testExpirationDelay(final int expectedEntryCountAfterExpiration, final int numberOfItemsToBeAdded, final boolean backup) {
+    @Test
+    public void testExpiration_onReplicatedPartition() throws Exception {
+        final CountDownLatch evictedEntryCounterLatch = new CountDownLatch(1);
+        final String mapName = randomMapName();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance initialNode = factory.newHazelcastInstance();
+        final IMap<String, Integer> map = initialNode.getMap(mapName);
+        map.addEntryListener(new EntryAdapter<String, Integer>() {
+            @Override
+            public void entryEvicted(EntryEvent<String, Integer> event) {
+                evictedEntryCounterLatch.countDown();
+            }
+        }, false);
+
+        final String key = getClass().getCanonicalName();
+
+        //1. put a key to expire.
+        map.put(key, 1, 3, TimeUnit.SECONDS);
+
+        final HazelcastInstance joinerNode = factory.newHazelcastInstance();
+
+        // 2. Wait for expiration on owner node.
+        assertOpenEventually(evictedEntryCounterLatch);
+
+        // 3. Shutdown owner.
+        initialNode.shutdown();
+
+        // 4. Key should be expired on new owner.
+        assertExpirationOccuredOnJoinerNode(mapName, key, joinerNode);
+    }
+
+
+    @Test
+    @Category(NightlyTest.class)
+    public void testExpiration_onBackupPartitions_whenPuttingWithTTL() throws Exception {
+        String mapName = randomMapName();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] nodes = factory.newInstances();
+        IMap<Integer, Integer> map = nodes[0].getMap(mapName);
+
+        //1. put keys with TTL.
+        for (int i = 0; i < 60; i++) {
+            map.put(i, i, 5, TimeUnit.SECONDS);
+        }
+
+        // 2. Shutdown one node.
+        // Since we want to see previous backup partitions as owners.
+        nodes[1].shutdown();
+
+        // 3. Background task should sweep all keys.
+        assertSizeEventually(0, map);
+    }
+
+    private void assertExpirationOccuredOnJoinerNode(String mapName, String key, HazelcastInstance joinerNode) {
+        final IMap<String, Integer> newNodeMap = joinerNode.getMap(mapName);
+        final Integer value = newNodeMap.get(key);
+
+        assertNull("value of expired key should be null on a replicated partition", value);
+    }
+
+    private void testExpirationDelay(final int expectedEntryCountAfterExpiration,
+                                     final int numberOfItemsToBeAdded, final boolean backup) {
         // node count should be at least 2 since we are testing a scenario on backups.
         final int nodeCount = 2;
         final int maxIdleSeconds = 1;
         final String mapName = randomMapName();
 
         final Config config = newConfigWithExpiration(mapName, maxIdleSeconds);
+        // use a long delay for testing purposes.
+        config.setProperty(GroupProperties.PROP_MAP_EXPIRY_DELAY_SECONDS, String.valueOf(TimeUnit.HOURS.toSeconds(1)));
 
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
@@ -1063,8 +1126,6 @@ public class EvictionTest extends HazelcastTestSupport {
                         notExpiredEntryCountOnNode1 + notExpiredEntryCountOnNode2);
             }
         });
-
-
     }
 
     private int getNotExpiredEntryCount(IMap map, long now, boolean backup) {

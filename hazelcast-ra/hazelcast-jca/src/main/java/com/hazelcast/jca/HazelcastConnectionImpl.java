@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
+import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -210,6 +212,11 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     }
 
     @Override
+    public QuorumService getQuorumService() {
+        return getHazelcastInstance().getQuorumService();
+    }
+
+    @Override
     public ClientService getClientService() {
         return getHazelcastInstance().getClientService();
     }
@@ -293,6 +300,11 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     @Override
     public <K, V> ReplicatedMap<K, V> getReplicatedMap(String name) {
         return getHazelcastInstance().getReplicatedMap(name);
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        return getHazelcastInstance().getRingbuffer(name);
     }
 
     @Override

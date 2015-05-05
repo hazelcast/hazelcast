@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public interface Mapper<KeyIn, ValueIn, KeyOut, ValueOut>
     /**
      * The map method is called for every single key-value pair in the bound {@link KeyValueSource} instance
      * on this cluster node and partition.<br>
-     * Due to it's nature of a DataGrid Hazelcast distributes values all over the cluster and so this method
+     * Due to its nature of a DataGrid, Hazelcast distributes values all over the cluster and so this method
      * is executed on multiple servers at the same time.<br>
      * If you want to know more about the implementation of MapReduce algorithms read the {@see <a
      * href="http://research.google.com/archive/mapreduce-osdi04.pdf">Google Whitepaper on MapReduce</a>}.

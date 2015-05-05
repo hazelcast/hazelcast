@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.cache.impl;
 
-import com.hazelcast.cache.impl.AbstractHazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
@@ -26,16 +25,17 @@ import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
-import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -71,15 +71,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  */
 public class ClientCacheProxy<K, V>
         extends AbstractClientCacheProxy<K, V> {
-    protected final ILogger logger;
-
-    private AbstractHazelcastCacheManager cacheManager;
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig, ClientContext clientContext,
                             HazelcastClientCacheManager cacheManager) {
-        super(cacheConfig, clientContext);
-        this.cacheManager = cacheManager;
-        logger = Logger.getLogger(getClass());
+        super(cacheConfig, clientContext, cacheManager);
     }
 
     @Override
@@ -98,7 +93,7 @@ public class ClientCacheProxy<K, V>
         validateNotNull(key);
         final Data keyData = toData(key);
         Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
+        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
         CacheContainsKeyRequest request = new CacheContainsKeyRequest(nameWithPrefix, keyData, cacheConfig.getInMemoryFormat());
@@ -191,8 +186,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean replace(K key, V value) {
-        final ExpiryPolicy expiryPolicy = null;
-        return replace(key, value, expiryPolicy);
+        return replace(key, value, (ExpiryPolicy) null);
     }
 
     @Override
@@ -296,13 +290,13 @@ public class ClientCacheProxy<K, V>
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         ensureOpen();
         if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
         final EventHandler<Object> handler = createHandler(adaptor);
         final CacheAddEntryListenerRequest registrationRequest = new CacheAddEntryListenerRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().listen(registrationRequest, null, handler);
+        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
@@ -314,7 +308,7 @@ public class ClientCacheProxy<K, V>
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be " + "null");
+            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
@@ -333,14 +327,16 @@ public class ClientCacheProxy<K, V>
 
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
-        final ClientInvocationService invocationService = clientContext.getInvocationService();
         final Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         final Collection<Future> futures = new ArrayList<Future>();
         for (MemberImpl member : members) {
             try {
+                final Address address = member.getAddress();
                 final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
-                        cacheEntryListenerConfiguration, isRegister, member.getAddress());
-                final Future future = invocationService.invokeOnTarget(request, member.getAddress());
+                        cacheEntryListenerConfiguration, isRegister, address);
+                final ClientInvocation invocation = new ClientInvocation(client, request, address);
+                final Future<SerializableCollection> future = invocation.invoke();
                 futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);

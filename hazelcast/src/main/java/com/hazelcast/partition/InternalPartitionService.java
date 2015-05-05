@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,16 @@ public interface InternalPartitionService extends CoreService {
 
     long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
     long REPLICA_SYNC_RETRY_DELAY = 500L;
+
+    /**
+     * Static constant for dispatching and listening migration events
+     */
+    String MIGRATION_EVENT_TOPIC = ".migration";
+
+    /**
+     * Static constant for dispatching and listening internal partition lost events
+     */
+    String PARTITION_LOST_EVENT_TOPIC = ".partitionLost";
 
     /**
      * Gets the owner of the partition if it's set.
@@ -124,6 +134,10 @@ public interface InternalPartitionService extends CoreService {
 
     boolean removeMigrationListener(String registrationId);
 
+    String addPartitionLostListener(PartitionLostListener partitionLostListener);
+
+    boolean removePartitionLostListener(String registrationId);
+
     Member getMember(Address address);
 
     long getMigrationQueueSize();
@@ -163,5 +177,9 @@ public interface InternalPartitionService extends CoreService {
     void clearPartitionReplicaVersions(int partitionId);
 
     com.hazelcast.core.PartitionService getPartitionServiceProxy();
+
+    int getPartitionStateVersion();
+
+    boolean hasOnGoingMigrationLocal();
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import com.hazelcast.spi.WaitSupport;
 
 public abstract class LockAwareOperation extends KeyBasedMapOperation implements WaitSupport {
 
+    protected LockAwareOperation() {
+    }
+
     protected LockAwareOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
@@ -37,15 +40,15 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
         super(name, dataKey, dataValue, ttl);
     }
 
-    protected LockAwareOperation() {
-    }
-
+    @Override
     public boolean shouldWait() {
         return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
+    @Override
     public abstract void onWaitExpire();
 
+    @Override
     public final WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }

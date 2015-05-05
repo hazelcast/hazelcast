@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -227,6 +227,11 @@ public class PartitionStateGeneratorTest {
         }
 
         @Override
+        public boolean isLocal() {
+            return true;
+        }
+
+        @Override
         public int getPartitionId() {
             throw new UnsupportedOperationException();
         }
@@ -291,7 +296,7 @@ public class PartitionStateGeneratorTest {
         if (startAfter != null) {
             Address address = startAfter.getAddress();
             byte[] startIp = address.getInetAddress().getAddress();
-            if (startIp[3] < 255) {
+            if ((0xff & startIp[3]) < 255) {
                 ip[2] = startIp[2];
                 ip[3] = (byte) (startIp[3] + 1);
             } else {
@@ -315,7 +320,7 @@ public class PartitionStateGeneratorTest {
             MemberImpl m = new MemberImpl(new Address(InetAddress.getByAddress(new byte[]{ip[0], ip[1], ip[2], ip[3]})
                     , port), false);
             members.add(m);
-            if (ip[3] == 255) {
+            if ((0xff & ip[3]) == 255) {
                 ip[2] = ++ip[2];
             }
         }

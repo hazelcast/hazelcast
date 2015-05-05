@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,13 +53,15 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         for (int i = 0; i < indexes.length; i++) {
             Address owner = partitions[i].getOwnerOrNull();
             int index = -1;
-            if (owner != null) {
-                final Integer idx = addressMap.get(owner);
-                if (idx != null) {
-                    index = idx;
-                }
-
+            if (owner == null) {
+                return null;
             }
+
+            final Integer idx = addressMap.get(owner);
+            if (idx != null) {
+                index = idx;
+            }
+
             indexes[i] = index;
         }
         return new PartitionsResponse(addresses, indexes);

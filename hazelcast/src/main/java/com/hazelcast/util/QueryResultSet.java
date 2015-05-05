@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Collections.newSetFromMap;
 
 /**
- * Collection(Set) class for result of query operations
+ * Collection(Set) class for result of query operations.
  */
 public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
 
-    private final SerializationService serializationService;
     private final Set<QueryResultEntry> entries = newSetFromMap(new ConcurrentHashMap<QueryResultEntry, Boolean>());
+    private final SerializationService serializationService;
+
     private IterationType iterationType;
     private boolean data;
 
@@ -50,10 +51,11 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     public QueryResultSet(SerializationService serializationService, IterationType iterationType, boolean data) {
         this.serializationService = serializationService;
-        this.data = data;
         this.iterationType = iterationType;
+        this.data = data;
     }
 
+    @SuppressWarnings("unchecked")
     public Iterator<Map.Entry> rawIterator() {
         return new QueryResultIterator(IterationType.ENTRY);
     }
@@ -62,55 +64,22 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         return entries.add(entry);
     }
 
+    public boolean remove(QueryResultEntry entry) {
+        return entries.remove(entry);
+    }
+
+    public boolean contains(QueryResultEntry entry) {
+        return entries.contains(entry);
+    }
+
+    @Override
     public boolean add(Object entry) {
         return entries.add((QueryResultEntry) entry);
     }
 
+    @Override
     public Iterator iterator() {
         return new QueryResultIterator(iterationType);
-    }
-
-    /**
-     * Iterator for this set.
-     */
-    private final class QueryResultIterator implements Iterator {
-
-        final Iterator<QueryResultEntry> iter = entries.iterator();
-
-        final IterationType iterType;
-
-        private QueryResultIterator(IterationType iterType) {
-            this.iterType = iterType;
-        }
-
-        public boolean hasNext() {
-            return iter.hasNext();
-        }
-
-        public Object next() {
-            QueryResultEntry entry = iter.next();
-            if (iterType == IterationType.VALUE) {
-                Data valueData = entry.getValueData();
-                return (data) ? valueData : serializationService.toObject(valueData);
-            } else if (iterType == IterationType.KEY) {
-                Data keyData = entry.getKeyData();
-                return (data) ? keyData : serializationService.toObject(keyData);
-            } else {
-                Data keyData = entry.getKeyData();
-                Data valueData = entry.getValueData();
-                if (data) {
-                    return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
-                } else {
-                    Object key = serializationService.toObject(keyData);
-                    Object value = serializationService.toObject(valueData);
-                    return new AbstractMap.SimpleImmutableEntry(key, value);
-                }
-            }
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
     }
 
     @Override
@@ -173,6 +142,50 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
                 return sb.append(']').toString();
             }
             sb.append(", ");
+        }
+    }
+
+    /**
+     * Iterator for this set.
+     */
+    private final class QueryResultIterator implements Iterator {
+
+        private final Iterator<QueryResultEntry> iterator = entries.iterator();
+
+        private final IterationType iteratorType;
+
+        private QueryResultIterator(IterationType iteratorType) {
+            this.iteratorType = iteratorType;
+        }
+
+        public boolean hasNext() {
+            return iterator.hasNext();
+        }
+
+        @SuppressWarnings("unchecked")
+        public Object next() {
+            QueryResultEntry entry = iterator.next();
+            if (iteratorType == IterationType.VALUE) {
+                Data valueData = entry.getValueData();
+                return (data) ? valueData : serializationService.toObject(valueData);
+            } else if (iteratorType == IterationType.KEY) {
+                Data keyData = entry.getKeyData();
+                return (data) ? keyData : serializationService.toObject(keyData);
+            } else {
+                Data keyData = entry.getKeyData();
+                Data valueData = entry.getValueData();
+                if (data) {
+                    return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
+                } else {
+                    Object key = serializationService.toObject(keyData);
+                    Object value = serializationService.toObject(valueData);
+                    return new AbstractMap.SimpleImmutableEntry(key, value);
+                }
+            }
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 }

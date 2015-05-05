@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,15 @@ import javax.cache.configuration.Factory;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.MutableEntry;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * This class is an implementation of {@link MutableEntry} which is provided into
  * {@link javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)}.
  * <p>CacheEntryProcessorEntry may face multiple mutating operations like setValue, remove or CacheLoading, etc.</p>
  * <p>This implementation may handle multiple operations executed on this entry and persist the resultant state into
  * {@link CacheRecordStore} after entry processor get completed.</p>
+ *
  * @param <K> the type of key.
  * @param <V> the type of value.
  * @see javax.cache.processor.EntryProcessor#process(javax.cache.processor.MutableEntry, Object...)
@@ -44,6 +47,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
     protected final Data keyData;
     protected R record;
     protected R recordLoaded;
+    protected V valueLoaded;
 
     protected final AbstractCacheRecordStore cacheRecordStore;
     protected final long now;
@@ -80,9 +84,8 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
 
     @Override
     public void setValue(V value) {
-        if (value == null) {
-            throw new NullPointerException("Null value not allowed");
-        }
+        checkNotNull(value, "Null value not allowed");
+
         if (this.record == null) {
             this.state = State.CREATE;
         } else {
@@ -117,7 +120,8 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         }
         if (recordLoaded != null) {
             state = State.LOAD;
-            return getRecordValue(recordLoaded);
+            valueLoaded = getRecordValue(recordLoaded);
+            return valueLoaded;
         }
         return null;
     }
@@ -148,7 +152,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
 
         switch (state) {
             case ACCESS:
-                cacheRecordStore.accessRecord(record, expiryPolicy, now);
+                cacheRecordStore.accessRecord(keyData, record, expiryPolicy, now);
                 break;
             case UPDATE:
                 cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false, completionId);
@@ -168,7 +172,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
                 cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false, completionId);
                 break;
             case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, true, completionId);
+                cacheRecordStore.createRecordWithExpiry(keyData, valueLoaded, expiryPolicy, now, true, completionId);
                 break;
             case NONE:
                 cacheRecordStore.publishEvent(CacheEventType.COMPLETED, keyData, null, null, false, completionId);

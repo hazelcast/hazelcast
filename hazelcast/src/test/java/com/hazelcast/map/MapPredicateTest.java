@@ -128,31 +128,35 @@ public class MapPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testEntrySet() {
-        final IMap<Object, Object> map = getMapWithNodeCount(3);
+        IMap<Integer, Integer> map = getMapWithNodeCount(3);
         map.put(1, 1);
         map.put(2, 2);
         map.put(3, 3);
         map.put(4, 4);
         map.put(5, 5);
-        Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(1, 1));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(2, 2));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(3, 3));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(4, 4));
-        entrySet.add(new AbstractMap.SimpleImmutableEntry(5, 5));
+
+        Set<Map.Entry<Integer, Integer>> entrySet = new HashSet<Map.Entry<Integer, Integer>>();
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(1, 1));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(2, 2));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(3, 3));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(4, 4));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Integer, Integer>(5, 5));
+
         assertEquals(entrySet, map.entrySet());
     }
 
-    private IMap getMapWithNodeCount(int nodeCount) {
+    private <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
         }
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        HazelcastInstance node = null;
-        for (int i = 0; i < nodeCount; i++) {
-            node = factory.newHazelcastInstance();
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        while (nodeCount > 1) {
+            factory.newHazelcastInstance();
+            nodeCount--;
         }
+
+        HazelcastInstance node = factory.newHazelcastInstance();
         return node.getMap(randomMapName());
     }
-
 }

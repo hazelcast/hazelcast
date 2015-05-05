@@ -8,6 +8,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,7 +32,7 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
         super.setUp();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
         references = new IAtomicLong[REFERENCE_COUNT];
         for (int k = 0; k < references.length; k++) {
@@ -47,14 +48,15 @@ public class AtomicLongStableReadStressTest extends StressTestSupport {
 
     @After
     public void tearDown() {
-        super.tearDown();
-
         if (client != null) {
             client.shutdown();
         }
+
+        super.tearDown();
     }
 
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/4179
     public void testChangingCluster() {
         test(true);
     }

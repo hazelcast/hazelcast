@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,32 +25,43 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
+public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation,
+        IdentifiedDataSerializable, MutatingOperation {
 
     // todo unlockKey is a logic just used in transactional put operations.
     // todo It complicates here there should be another Operation for that logic. e.g. TxnSetBackup
     private boolean unlockKey;
     private RecordInfo recordInfo;
+    private boolean putTransient;
+
 
     public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo) {
-        super(name, dataKey, dataValue);
-        this.recordInfo = recordInfo;
+        this(name, dataKey, dataValue, recordInfo, false, false);
     }
 
-    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean unlockKey) {
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, RecordInfo recordInfo, boolean putTransient) {
+        this(name, dataKey, dataValue, recordInfo, false, putTransient);
+    }
+
+    public PutBackupOperation(String name, Data dataKey, Data dataValue,
+                              RecordInfo recordInfo, boolean unlockKey, boolean putTransient) {
         super(name, dataKey, dataValue);
         this.unlockKey = unlockKey;
         this.recordInfo = recordInfo;
+        this.putTransient = putTransient;
     }
 
     public PutBackupOperation() {
     }
 
+    @Override
     public void run() {
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
+        ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
+        final Record record = recordStore.putBackup(dataKey, dataValue, ttl, putTransient);
         if (recordInfo != null) {
             Records.applyRecordInfo(record, recordInfo);
         }
@@ -69,6 +80,17 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return Boolean.TRUE;
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.PUT_BACKUP;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(unlockKey);
@@ -78,8 +100,10 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         } else {
             out.writeBoolean(false);
         }
+        out.writeBoolean(putTransient);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         unlockKey = in.readBoolean();
@@ -88,20 +112,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             recordInfo = new RecordInfo();
             recordInfo.readData(in);
         }
+        putTransient = in.readBoolean();
     }
 
     @Override
     public String toString() {
         return "PutBackupOperation{" + name + "}";
     }
-
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.PUT_BACKUP;
-    }
-
-
 }

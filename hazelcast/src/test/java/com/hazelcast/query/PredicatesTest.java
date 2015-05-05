@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.query.impl.ReflectionHelper;
+import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -175,6 +175,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertFalse_withNullEntry(greaterThan("nullField", 1));
         assertFalse_withNullEntry(equal("nullField", 1));
         assertFalse_withNullEntry(notEqual("nullField", null));
+        assertFalse_withNullEntry(notEqual("nullField", 1));
         assertFalse_withNullEntry(between("nullField", 1, 1));
         assertTrue_withNullEntry(like("nullField", null));
         assertTrue_withNullEntry(ilike("nullField", null));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.PreReplicationHook;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.ReplicationChannel;
@@ -343,7 +344,8 @@ public class ReplicationPublisher<K, V>
                         .applyAndIncrementVectorClock(updateVectorClockTimestamp, localMember);
 
                 Object key = update.getKey();
-                V value = localEntry.getValue();
+                V v = localEntry.getValueInternal();
+                V value = v instanceof Data ? (V) nodeEngine.toObject(v) : v;
                 long ttlMillis = update.getTtlMillis();
                 int latestUpdateHash = localEntry.getLatestUpdateHash();
                 ReplicationMessage message = new ReplicationMessage(name, key, value, newTimestamp, localMember,
@@ -387,7 +389,7 @@ public class ReplicationPublisher<K, V>
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
         long oldTtlMillis = localEntry.getTtlMillis();
-        Object oldValue = localEntry.setValue(marshalledValue, update.getUpdateHash(), ttlMillis);
+        Object oldValue = localEntry.setValueInternal(marshalledValue, update.getUpdateHash(), ttlMillis);
 
         localEntry.applyVectorClock(remoteVectorClockTimestamp);
         if (ttlMillis > 0 || update.isRemove()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,24 +47,25 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
 
     private NodeEngine nodeEngine;
-    private final ConcurrentMap<String, ReferenceWrapper> references = new ConcurrentHashMap<String, ReferenceWrapper>();
-    private final ConstructorFunction<String, ReferenceWrapper> atomicReferenceConstructorFunction =
-            new ConstructorFunction<String, ReferenceWrapper>() {
-                public ReferenceWrapper createNew(String key) {
-                    return new ReferenceWrapper();
+    private final ConcurrentMap<String, AtomicReferenceContainer> containers
+            = new ConcurrentHashMap<String, AtomicReferenceContainer>();
+    private final ConstructorFunction<String, AtomicReferenceContainer> atomicReferenceConstructorFunction =
+            new ConstructorFunction<String, AtomicReferenceContainer>() {
+                public AtomicReferenceContainer createNew(String key) {
+                    return new AtomicReferenceContainer();
                 }
             };
 
     public AtomicReferenceService() {
     }
 
-    public ReferenceWrapper getReference(String name) {
-        return getOrPutIfAbsent(references, name, atomicReferenceConstructorFunction);
+    public AtomicReferenceContainer getReferenceContainer(String name) {
+        return getOrPutIfAbsent(containers, name, atomicReferenceConstructorFunction);
     }
 
     // need for testing..
-    public boolean containsAtomicReference(String name) {
-        return references.containsKey(name);
+    public boolean containsReferenceContainer(String name) {
+        return containers.containsKey(name);
     }
 
     @Override
@@ -74,7 +75,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
 
     @Override
     public void reset() {
-        references.clear();
+        containers.clear();
     }
 
     @Override
@@ -89,7 +90,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
 
     @Override
     public void destroyDistributedObject(String name) {
-        references.remove(name);
+        containers.remove(name);
     }
 
     @Override
@@ -104,10 +105,10 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
 
         Map<String, Data> data = new HashMap<String, Data>();
         int partitionId = event.getPartitionId();
-        for (String name : references.keySet()) {
+        for (String name : containers.keySet()) {
             if (partitionId == getPartitionId(name)) {
-                ReferenceWrapper referenceWrapper = references.get(name);
-                Data value = referenceWrapper.get();
+                AtomicReferenceContainer atomicReferenceContainer = containers.get(name);
+                Data value = atomicReferenceContainer.get();
                 data.put(name, value);
             }
         }
@@ -118,7 +119,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
         if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             int partitionId = partitionMigrationEvent.getPartitionId();
-            removeReference(partitionId);
+            removeContainers(partitionId);
         }
     }
 
@@ -126,17 +127,17 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
     public void rollbackMigration(PartitionMigrationEvent partitionMigrationEvent) {
         if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             int partitionId = partitionMigrationEvent.getPartitionId();
-            removeReference(partitionId);
+            removeContainers(partitionId);
         }
     }
 
     @Override
     public void clearPartitionReplica(int partitionId) {
-        removeReference(partitionId);
+        removeContainers(partitionId);
     }
 
-    public void removeReference(int partitionId) {
-        final Iterator<String> iterator = references.keySet().iterator();
+    public void removeContainers(int partitionId) {
+        final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
             if (getPartitionId(name) == partitionId) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,15 +42,19 @@ public class AWSClient {
     }
 
     public Collection<String> getPrivateIpAddresses() throws Exception {
-        final Map<String, String> result = new DescribeInstances(awsConfig).execute(endpoint);
+        final Map<String, String> result = new DescribeInstances(awsConfig).execute();
         return result.keySet();
     }
 
     public Map<String, String> getAddresses() throws Exception {
-        return new DescribeInstances(awsConfig).execute(endpoint);
+        return new DescribeInstances(awsConfig).execute();
     }
 
     public void setEndpoint(String s) {
         this.endpoint = s;
+    }
+
+    public String getEndpoint() {
+        return this.endpoint;
     }
 }

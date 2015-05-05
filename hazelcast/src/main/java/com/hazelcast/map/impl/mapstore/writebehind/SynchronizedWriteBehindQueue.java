@@ -1,23 +1,25 @@
 /*
-* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import java.util.Collection;
 import java.util.List;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for a not thread safe {@link WriteBehindQueue},
@@ -33,41 +35,47 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     private final Object mutex;
 
     SynchronizedWriteBehindQueue(WriteBehindQueue<E> queue) {
-        if (queue == null) {
-            throw new NullPointerException();
-        }
-        this.queue = queue;
+        this.queue = checkNotNull(queue, "queue can't be null");
         this.mutex = this;
     }
 
     @Override
-    public boolean offer(E e) {
+    public void addFirst(Collection<E> collection) {
+        if (collection == null || collection.isEmpty()) {
+            return;
+        }
         synchronized (mutex) {
-            return queue.offer(e);
+            queue.addFirst(collection);
         }
     }
 
     @Override
-    public E get(E e) {
+    public void addLast(E e) {
         synchronized (mutex) {
-            return queue.get(e);
+            queue.addLast(e);
+        }
+    }
+
+    /**
+     * Removes the first occurrence of the specified element in this queue
+     * when searching it by starting from the head of this queue.
+     *
+     * @param e element to be removed.
+     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
+     */
+    @Override
+    public boolean removeFirstOccurrence(E e) {
+        synchronized (mutex) {
+            return queue.removeFirstOccurrence(e);
         }
     }
 
     @Override
-    public E getFirst() {
+    public boolean contains(E e) {
         synchronized (mutex) {
-            return queue.getFirst();
+            return queue.contains(e);
         }
     }
-
-    @Override
-    public void removeFirst() {
-        synchronized (mutex) {
-            queue.removeFirst();
-        }
-    }
-
 
     @Override
     public int size() {
@@ -84,50 +92,9 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public WriteBehindQueue<E> getSnapShot() {
+    public int drainTo(Collection<E> collection) {
         synchronized (mutex) {
-            return new SynchronizedWriteBehindQueue<E>(queue.getSnapShot());
-        }
-    }
-
-    @Override
-    public void addFront(Collection<E> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        synchronized (mutex) {
-            queue.addFront(collection);
-        }
-    }
-
-    @Override
-    public void addEnd(Collection<E> collection) {
-        if (collection == null || collection.isEmpty()) {
-            return;
-        }
-        synchronized (mutex) {
-            queue.addEnd(collection);
-        }
-    }
-
-    @Override
-    public void removeAll(Collection<E> collection) {
-        synchronized (mutex) {
-            queue.removeAll(collection);
-        }
-    }
-
-    @Override
-    public List<E> removeAll() {
-        synchronized (mutex) {
-            return queue.removeAll();
-        }
-    }
-
-    @Override
-    public boolean isEnabled() {
-        synchronized (mutex) {
-            return queue.isEnabled();
+            return queue.drainTo(collection);
         }
     }
 
@@ -139,9 +106,16 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
-    public List<E> filterItems(long now) {
+    public void getFrontByTime(long time, Collection<E> collection) {
         synchronized (mutex) {
-            return queue.filterItems(now);
+            queue.getFrontByTime(time, collection);
+        }
+    }
+
+    @Override
+    public void getFrontByNumber(int numberOfElements, Collection<E> collection) {
+        synchronized (mutex) {
+            queue.getFrontByNumber(numberOfElements, collection);
         }
     }
 

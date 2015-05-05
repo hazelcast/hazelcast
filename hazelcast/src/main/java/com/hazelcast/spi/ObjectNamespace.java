@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,21 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * An ObjectNamespace that makes identification of in object within a service possible.
+ * An ObjectNamespace that makes identification of object within a service possible.
  */
 public interface ObjectNamespace extends DataSerializable {
 
+    /**
+     * Gets the service name.
+     *
+     * @return the service name
+     */
     String getServiceName();
 
+    /**
+     * Gets the object name within the service.
+     *
+     * @return the object name within the service
+     */
     String getObjectName();
 }

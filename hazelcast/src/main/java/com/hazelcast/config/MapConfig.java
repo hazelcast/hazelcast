@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,15 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IMap}.
@@ -39,7 +43,7 @@ public class MapConfig {
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = 6;
+    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
 
     /**
      * The number of minimum eviction percentage
@@ -115,13 +119,19 @@ public class MapConfig {
 
     private WanReplicationRef wanReplicationRef;
 
-    private List<EntryListenerConfig> listenerConfigs;
+    private List<EntryListenerConfig> entryListenerConfigs;
+
+    private List<MapPartitionLostListenerConfig> partitionLostListenerConfigs;
 
     private List<MapIndexConfig> mapIndexConfigs;
+
+    private List<QueryCacheConfig> queryCacheConfigs;
 
     private boolean statisticsEnabled = true;
 
     private PartitioningStrategyConfig partitioningStrategyConfig;
+
+    private String quorumName;
 
     private MapConfigReadOnly readOnly;
 
@@ -132,6 +142,7 @@ public class MapConfig {
     public MapConfig() {
     }
 
+    //CHECKSTYLE:OFF
     public MapConfig(MapConfig config) {
         this.name = config.name;
         this.backupCount = config.backupCount;
@@ -150,11 +161,16 @@ public class MapConfig {
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
-        this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.entryListenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.partitionLostListenerConfigs =
+                new ArrayList<MapPartitionLostListenerConfig>(config.getPartitionLostListenerConfigs());
         this.mapIndexConfigs = new ArrayList<MapIndexConfig>(config.getMapIndexConfigs());
+        this.queryCacheConfigs = new ArrayList<QueryCacheConfig>(config.getQueryCacheConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig != null
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
+        this.quorumName = config.quorumName;
     }
+    //CHECKSTYLE:ON
 
     public MapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -164,14 +180,18 @@ public class MapConfig {
     }
 
     /**
-     * @return the name
+     * Returns the name of this {@link com.hazelcast.core.IMap}
+     *
+     * @return the name of the {@link com.hazelcast.core.IMap}
      */
     public String getName() {
         return name;
     }
 
     /**
-     * @param name the name to set
+     * Sets the name of the {@link com.hazelcast.core.IMap}
+     *
+     * @param name the name to set for this {@link com.hazelcast.core.IMap}
      */
     public MapConfig setName(String name) {
         this.name = name;
@@ -179,6 +199,8 @@ public class MapConfig {
     }
 
     /**
+     * Returns the data type that will be used for storing records.
+     *
      * @return data type that will be used for storing records.
      */
     public InMemoryFormat getInMemoryFormat() {
@@ -201,7 +223,9 @@ public class MapConfig {
     }
 
     /**
-     * @return the backupCount
+     * Returns the backupCount for this {@link com.hazelcast.core.IMap}
+     *
+     * @return the backupCount for this {@link com.hazelcast.core.IMap}
      * @see #getAsyncBackupCount()
      */
     public int getBackupCount() {
@@ -213,23 +237,17 @@ public class MapConfig {
      * then all entries of the map will be copied to another JVM for
      * fail-safety. 0 means no sync backup.
      *
-     * @param backupCount the backupCount to set
+     * @param backupCount the backupCount to set for this {@link com.hazelcast.core.IMap}
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
-        if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
     /**
+     * Returns the asynchronous backup count.
+     *
      * @return the asyncBackupCount
      * @see #setBackupCount(int)
      */
@@ -238,42 +256,45 @@ public class MapConfig {
     }
 
     /**
-     * Number of asynchronous backups.
-     * 0 means no backup.
+     * Sets the number of asynchronous backups. 0 means no backups
      *
-     * @param asyncBackupCount the asyncBackupCount to set
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheConfig
+     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
      */
-    public MapConfig setAsyncBackupCount(final int asyncBackupCount) {
-        if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map async backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.asyncBackupCount = asyncBackupCount;
+    public MapConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
+    /**
+     * Returns the total number of backups: backupCount plus asyncBackupCount.
+     *
+     * @return the total number of backups: backupCount plus asyncBackupCount
+     */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
     /**
-     * @return the evictionPercentage
+     * Returns the evictionPercentage: specified percentage of the map to be evicted
+     *
+     * @return the evictionPercentage: specified percentage of the map to be evicted
      */
     public int getEvictionPercentage() {
         return evictionPercentage;
     }
 
     /**
-     * When max. size is reached, specified percentage of the map will be evicted.
+     * When maximum size is reached, the specified percentage of the map will be evicted.
      * Any integer between 0 and 100 is allowed.
-     * If 25 is set for example, 25% of the entries will get evicted.
+     * For example, if 25 is set, 25% of the entries will be evicted.
      *
-     * @param evictionPercentage the evictionPercentage to set
+     * @param evictionPercentage the evictionPercentage to set: the specified percentage of the map to be evicted
      * @throws IllegalArgumentException if evictionPercentage is not in the 0-100 range.
      */
     public MapConfig setEvictionPercentage(final int evictionPercentage) {
@@ -288,11 +309,11 @@ public class MapConfig {
     }
 
     /**
-     * Returns minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
+     * Returns the minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
      * <p/>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
      *
-     * @return number of milliseconds should pass before asking next eviction.
+     * @return number of milliseconds that should pass before asking for the next eviction.
      * @since 3.3
      */
     public long getMinEvictionCheckMillis() {
@@ -300,11 +321,11 @@ public class MapConfig {
     }
 
     /**
-     * Sets the minimum time in millis which should pass before asking if a partition of this map is evictable or not.
+     * Sets the minimum time in milliseconds which should pass before asking if a partition of this map is evictable or not.
      * <p/>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
      *
-     * @param minEvictionCheckMillis time in millis.
+     * @param minEvictionCheckMillis time in milliseconds that should pass before asking for the next eviction
      * @since 3.3
      */
     public MapConfig setMinEvictionCheckMillis(long minEvictionCheckMillis) {
@@ -316,16 +337,18 @@ public class MapConfig {
     }
 
     /**
-     * @return the timeToLiveSeconds
+     * Returns the maximum number of seconds for each entry to stay in the map.
+     *
+     * @return the maximum number of seconds for each entry to stay in the map
      */
     public int getTimeToLiveSeconds() {
         return timeToLiveSeconds;
     }
 
     /**
-     * Maximum number of seconds for each entry to stay in the map. Entries that are
-     * older than timeToLiveSeconds will get automatically evicted from the map.
-     * Updates on the entry don't change the eviction time.
+     * The maximum number of seconds for each entry to stay in the map. Entries that are
+     * older than timeToLiveSeconds will be automatically evicted from the map.
+     * Updates on the entry do not change the eviction time.
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.
      *
@@ -337,7 +360,9 @@ public class MapConfig {
     }
 
     /**
-     * @return the maxIdleSeconds
+     * Returns the maximum number of seconds for each entry to stay idle in the map.
+     *
+     * @return the maximum number of seconds for each entry to stay idle in the map
      */
     public int getMaxIdleSeconds() {
         return maxIdleSeconds;
@@ -351,7 +376,7 @@ public class MapConfig {
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.
      *
-     * @param maxIdleSeconds the maxIdleSeconds to set
+     * @param maxIdleSeconds the maxIdleSeconds (the maximum number of seconds for each entry to stay idle in the map) to set
      */
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
         this.maxIdleSeconds = maxIdleSeconds;
@@ -368,6 +393,8 @@ public class MapConfig {
     }
 
     /**
+     * Returns the evictionPolicy
+     *
      * @return the evictionPolicy
      */
     public EvictionPolicy getEvictionPolicy() {
@@ -375,6 +402,8 @@ public class MapConfig {
     }
 
     /**
+     * Sets the evictionPolicy
+     *
      * @param evictionPolicy the evictionPolicy to set
      */
     public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
@@ -385,16 +414,16 @@ public class MapConfig {
     /**
      * Returns the map store configuration
      *
-     * @return the mapStoreConfig
+     * @return the mapStoreConfig (map store configuration)
      */
     public MapStoreConfig getMapStoreConfig() {
         return mapStoreConfig;
     }
 
     /**
-     * Sets the mapStore configuration
+     * Sets the map store configuration
      *
-     * @param mapStoreConfig the mapStoreConfig to set
+     * @param mapStoreConfig the mapStoreConfig (map store configuration) to set
      */
     public MapConfig setMapStoreConfig(MapStoreConfig mapStoreConfig) {
         this.mapStoreConfig = mapStoreConfig;
@@ -452,16 +481,35 @@ public class MapConfig {
     }
 
     public List<EntryListenerConfig> getEntryListenerConfigs() {
-        if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<EntryListenerConfig>();
+        if (entryListenerConfigs == null) {
+            entryListenerConfigs = new ArrayList<EntryListenerConfig>();
         }
-        return listenerConfigs;
+        return entryListenerConfigs;
     }
 
     public MapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
-        this.listenerConfigs = listenerConfigs;
+        this.entryListenerConfigs = listenerConfigs;
         return this;
     }
+
+    public MapConfig addMapPartitionLostListenerConfig(MapPartitionLostListenerConfig listenerConfig) {
+        getPartitionLostListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
+    public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        if (partitionLostListenerConfigs == null) {
+            partitionLostListenerConfigs = new ArrayList<MapPartitionLostListenerConfig>();
+        }
+
+        return partitionLostListenerConfigs;
+    }
+
+    public MapConfig setPartitionLostListenerConfigs(List<MapPartitionLostListenerConfig> listenerConfigs) {
+        this.partitionLostListenerConfigs = listenerConfigs;
+        return this;
+    }
+
 
     public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
         getMapIndexConfigs().add(mapIndexConfig);
@@ -478,6 +526,47 @@ public class MapConfig {
     public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
         this.mapIndexConfigs = mapIndexConfigs;
         return this;
+    }
+
+    /**
+     * Adds a new {@code queryCacheConfig} to this {@code MapConfig}.
+     *
+     * @param queryCacheConfig config to be added.
+     * @return this {@code MapConfig} instance.
+     * @throws java.lang.IllegalArgumentException if there is already a {@code QueryCache}
+     *                                            with the same {@code QueryCacheConfig#name}.
+     */
+    public MapConfig addQueryCacheConfig(QueryCacheConfig queryCacheConfig) {
+        String queryCacheName = queryCacheConfig.getName();
+        List<QueryCacheConfig> queryCacheConfigs = getQueryCacheConfigs();
+        for (QueryCacheConfig cacheConfig : queryCacheConfigs) {
+            checkFalse(cacheConfig.getName().equals(queryCacheName),
+                    "A query cache already exists with name = [" + queryCacheName + ']');
+        }
+        queryCacheConfigs.add(queryCacheConfig);
+        return this;
+
+    }
+
+    /**
+     * Returns all {@code QueryCacheConfig} instances defined on this {@code MapConfig}
+     *
+     * @return all {@code QueryCacheConfig} instances defined on this {@code MapConfig}
+     */
+    public List<QueryCacheConfig> getQueryCacheConfigs() {
+        if (queryCacheConfigs == null) {
+            queryCacheConfigs = new ArrayList<QueryCacheConfig>();
+        }
+        return queryCacheConfigs;
+    }
+
+    /**
+     * Sets {@code QueryCacheConfig} instances to this {@code MapConfig}
+     *
+     * @return this {@code MapConfig} instance.
+     */
+    public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
+        this.queryCacheConfigs = queryCacheConfigs;
     }
 
     public PartitioningStrategyConfig getPartitioningStrategyConfig() {
@@ -518,6 +607,14 @@ public class MapConfig {
                 && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
                 && this.timeToLiveSeconds == other.timeToLiveSeconds
                 && this.readBackupData == other.readBackupData;
+    }
+
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    public void setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
     }
 
     @Override
@@ -601,8 +698,10 @@ public class MapConfig {
         sb.append(", mapStoreConfig=").append(mapStoreConfig);
         sb.append(", mergePolicyConfig='").append(mergePolicy).append('\'');
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
-        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", entryListenerConfigs=").append(entryListenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
+        sb.append(", quorumName=").append(quorumName);
+        sb.append(", queryCacheConfigs=").append(queryCacheConfigs);
         sb.append('}');
         return sb.toString();
     }

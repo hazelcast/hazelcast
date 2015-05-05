@@ -13,8 +13,6 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
@@ -22,14 +20,16 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import java.util.concurrent.CountDownLatch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
 
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -188,22 +188,48 @@ public class MergePolicyTest extends HazelcastTestSupport {
         assertEquals("passThroughValue", mapTest.get(key));
     }
 
+    @Test
+    public void testCustomMergePolicy() {
+        String mapName = randomMapName();
+        Config config = newConfig(CustomMergePolicy.class.getName(), mapName);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+
+        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
+        h2.getCluster().addMembershipListener(memberShipListener);
+        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1);
+        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
+
+        closeConnectionBetween(h1, h2);
+
+        assertOpenEventually(memberShipListener.latch);
+        assertClusterSizeEventually(1, h1);
+        assertClusterSizeEventually(1, h2);
+
+        IMap<Object, Object> map1 = h1.getMap(mapName);
+        String key = generateKeyOwnedBy(h1);
+        map1.put(key, "value");
+
+        IMap<Object, Object> map2 = h2.getMap(mapName);
+        map2.put(key,Integer.valueOf(1));
+
+        assertOpenEventually(lifeCycleListener.latch);
+        assertClusterSizeEventually(2, h1);
+        assertClusterSizeEventually(2, h2);
+
+        IMap<Object, Object> mapTest = h2.getMap(mapName);
+        assertNotNull(mapTest.get(key));
+        assertTrue(mapTest.get(key) instanceof Integer);
+    }
 
     private Config newConfig(String mergePolicy, String mapName) {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        config.getGroupConfig().setName(generateRandomString(10));
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMergePolicy(mergePolicy);
         return config;
-    }
-
-    private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
-        final Node n1 = TestUtil.getNode(h1);
-        final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
     }
 
     private class TestLifeCycleListener implements LifecycleListener {
@@ -246,4 +272,5 @@ public class MergePolicyTest extends HazelcastTestSupport {
         }
 
     }
+
 }

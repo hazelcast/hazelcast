@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.spi;
 
 /**
  * A handler for the {@link com.hazelcast.spi.OperationService} when it has calculated a response. This way you can hook
- * into the system and decide what to do with it, e.g. send it to the right machine,
+ * into the system and decide what to do with it: for example, send it to the right machine.
  */
 public interface ResponseHandler {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,11 +47,6 @@ public class MasterClaimOperation extends AbstractOperation implements JoinOpera
         if (logger.isFinestEnabled()) {
             logger.finest("Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
         }
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 
     @Override

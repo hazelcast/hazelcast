@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,22 +24,22 @@ import com.hazelcast.transaction.TransactionalObject;
 public interface TransactionalSet<E> extends TransactionalObject {
 
     /**
-     * Add new item to transactional set
-     * @param e item
+     * Add new item to transactional set.
+     * @param e item added to transactional set
      * @return true if item is added successfully
      */
     boolean add(E e);
 
     /**
-     * Add item from transactional set
-     * @param e item
+     * Remove item from transactional set.
+     * @param e item removed from transactional set
      * @return true if item is remove successfully
      */
     boolean remove(E e);
 
     /**
-     * Returns the size of the set
-     * @return size
+     * Returns the size of the set.
+     * @return the size of the set
      */
     int size();
 }

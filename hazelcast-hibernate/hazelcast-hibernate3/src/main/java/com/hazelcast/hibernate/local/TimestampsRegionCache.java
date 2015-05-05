@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,9 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
     protected MessageListener<Object> createMessageListener() {
         return new MessageListener<Object>() {
             public void onMessage(final Message<Object> message) {
+                if (message.getPublishingMember().localMember()) {
+                    return;
+                }
                 final Timestamp ts = (Timestamp) message.getMessageObject();
                 final Object key = ts.getKey();
 

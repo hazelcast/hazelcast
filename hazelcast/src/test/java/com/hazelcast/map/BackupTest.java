@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,9 +53,9 @@ public class BackupTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
 
-    @BeforeClass
-    @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    @Before
+    @After
+    public void killAllHazelcastInstances() throws IOException {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -265,6 +264,7 @@ public class BackupTest extends HazelcastTestSupport {
      * Test for the issue https://code.google.com/p/hazelcast/issues/detail?id=275.
      */
     @Test
+    @Ignore //https://github.com/hazelcast/hazelcast/issues/4318
     public void testBackupMigrationAndRecovery() throws Exception {
         testBackupMigrationAndRecovery(4, 1, 5000);
     }

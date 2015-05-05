@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,22 +27,22 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.queue.impl.client.AddAllRequest;
-import com.hazelcast.queue.impl.client.AddListenerRequest;
-import com.hazelcast.queue.impl.client.ClearRequest;
-import com.hazelcast.queue.impl.client.CompareAndRemoveRequest;
-import com.hazelcast.queue.impl.client.ContainsRequest;
-import com.hazelcast.queue.impl.client.DrainRequest;
-import com.hazelcast.queue.impl.client.IsEmptyRequest;
-import com.hazelcast.queue.impl.client.IteratorRequest;
-import com.hazelcast.queue.impl.client.OfferRequest;
-import com.hazelcast.queue.impl.client.PeekRequest;
-import com.hazelcast.queue.impl.client.PollRequest;
-import com.hazelcast.queue.impl.client.RemainingCapacityRequest;
-import com.hazelcast.queue.impl.client.RemoveListenerRequest;
-import com.hazelcast.queue.impl.client.RemoveRequest;
-import com.hazelcast.queue.impl.client.SizeRequest;
-import com.hazelcast.queue.impl.proxy.QueueIterator;
+import com.hazelcast.collection.impl.queue.client.AddAllRequest;
+import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
+import com.hazelcast.collection.impl.queue.client.ClearRequest;
+import com.hazelcast.collection.impl.queue.client.CompareAndRemoveRequest;
+import com.hazelcast.collection.impl.queue.client.ContainsRequest;
+import com.hazelcast.collection.impl.queue.client.DrainRequest;
+import com.hazelcast.collection.impl.queue.client.IsEmptyRequest;
+import com.hazelcast.collection.impl.queue.client.IteratorRequest;
+import com.hazelcast.collection.impl.queue.client.OfferRequest;
+import com.hazelcast.collection.impl.queue.client.PeekRequest;
+import com.hazelcast.collection.impl.queue.client.PollRequest;
+import com.hazelcast.collection.impl.queue.client.RemainingCapacityRequest;
+import com.hazelcast.collection.impl.queue.client.RemoveListenerRequest;
+import com.hazelcast.collection.impl.queue.client.RemoveRequest;
+import com.hazelcast.collection.impl.queue.client.SizeRequest;
+import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import java.util.ArrayList;

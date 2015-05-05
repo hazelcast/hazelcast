@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
@@ -13,6 +29,8 @@ import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
 class MapReplicationSupportingService implements ReplicationSupportingService {
 
     private final MapServiceContext mapServiceContext;
@@ -27,33 +45,39 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
     public void onReplicationEvent(WanReplicationEvent replicationEvent) {
         Object eventObject = replicationEvent.getEventObject();
         if (eventObject instanceof MapReplicationUpdate) {
-            MapReplicationUpdate replicationUpdate = (MapReplicationUpdate) eventObject;
-            EntryView entryView = replicationUpdate.getEntryView();
-            MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
-            String mapName = replicationUpdate.getMapName();
-            MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-            MergeOperation operation = new MergeOperation(mapName, mapServiceContext.toData(entryView.getKey(),
-                    mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
-            try {
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
-                Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
-                f.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
+            handleUpdate((MapReplicationUpdate) eventObject);
         } else if (eventObject instanceof MapReplicationRemove) {
-            MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-            WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
-                    replicationRemove.getKey());
-            try {
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
-                Future f = nodeEngine.getOperationService()
-                        .invokeOnPartition(mapServiceContext.serviceName(), operation, partitionId);
-                f.get();
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
+            handleRemove((MapReplicationRemove) eventObject);
+        }
+    }
+
+    private void handleRemove(MapReplicationRemove replicationRemove) {
+         WanOriginatedDeleteOperation operation = new WanOriginatedDeleteOperation(replicationRemove.getMapName(),
+                replicationRemove.getKey());
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
+            Future f = nodeEngine.getOperationService()
+                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    private void handleUpdate(MapReplicationUpdate replicationUpdate) {
+        EntryView entryView = replicationUpdate.getEntryView();
+        MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
+        String mapName = replicationUpdate.getMapName();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MergeOperation operation = new MergeOperation(mapName, mapServiceContext.toData(entryView.getKey(),
+                mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
+            Future f = nodeEngine.getOperationService()
+                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
         this.predicate = predicate;
     }
 
+    @Override
     protected Predicate getPredicate() {
         if (cachedPredicate == null && predicate != null) {
             cachedPredicate = new SqlPredicate(predicate);
@@ -55,10 +56,12 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
         return cachedPredicate;
     }
 
+    @Override
     public int getClassId() {
         return MapPortableHook.ADD_ENTRY_LISTENER_SQL;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         final boolean hasKey = key != null;
         writer.writeBoolean("key", hasKey);
@@ -79,6 +82,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
 
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");

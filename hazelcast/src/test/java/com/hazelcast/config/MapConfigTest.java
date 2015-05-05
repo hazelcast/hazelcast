@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,6 +218,42 @@ public class MapConfigTest {
         config.getMapConfig("test").setMapStoreConfig(mapStoreConfig);
         config.getMapConfig("default").setMapStoreConfig(null);
         assertNotNull(config.getMapConfig("test").getMapStoreConfig());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenItsNegative(){
+        MapConfig config = new MapConfig();
+        config.setAsyncBackupCount(-1);
+    }
+
+    @Test
+    public void setAsyncBackupCount_whenItsZero(){
+        MapConfig config = new MapConfig();
+        config.setAsyncBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setAsyncBackupCount_whenTooLarge(){
+        MapConfig config = new MapConfig();
+        config.setAsyncBackupCount(200); //max allowed is 6..
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_whenItsNegative(){
+        MapConfig config = new MapConfig();
+        config.setBackupCount(-1);
+    }
+
+    @Test
+    public void setBackupCount_whenItsZero(){
+        MapConfig config = new MapConfig();
+        config.setBackupCount(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setBackupCount_tooLarge(){
+        MapConfig config = new MapConfig();
+        config.setBackupCount(200); //max allowed is 6..
     }
 
     /**

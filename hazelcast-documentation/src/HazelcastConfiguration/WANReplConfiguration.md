@@ -1,4 +1,6 @@
-### WAN Replication Configuration
+## WAN Replication Configuration
+
+The following are example WAN replication configurations.
 
 **Declarative Configuration:**
 
@@ -34,12 +36,12 @@ wtcConfig.setReplicationImplObject("com.hazelcast.wan.impl.WanNoDelayReplication
 ```
 
 
-It has below attributes.
+WAN replication configuration has the following elements.
 
 - name: Name for your WAN replication configuration.
-- target-cluster: Create a group and its password using this parameter.
-- replication-impl: ???
-- end-points: ???
+- target-cluster: Creates a group and its password.
+- replication-impl: Name of the class implementation for the WAN replication.
+- end-points: IP addresses of the cluster members for which the WAN replication is implemented.
 
 
 

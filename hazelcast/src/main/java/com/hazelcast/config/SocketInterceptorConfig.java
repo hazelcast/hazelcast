@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ public class SocketInterceptorConfig {
     private Properties properties = new Properties();
 
     /**
-     * Returns the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class
+     * Returns the name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class.
      *
-     * @return name of the class
+     * @return name of the {@link com.hazelcast.nio.SocketInterceptor} implementation class
      */
     public String getClassName() {
         return className;
@@ -50,7 +50,7 @@ public class SocketInterceptorConfig {
     /**
      * Sets the {@link com.hazelcast.nio.SocketInterceptor} implementation object
      *
-     * @param implementation implementation object
+     * @param implementation the {@link com.hazelcast.nio.SocketInterceptor} implementation object to set
      * @return this SocketInterceptorConfig instance
      */
     public SocketInterceptorConfig setImplementation(Object implementation) {
@@ -61,7 +61,7 @@ public class SocketInterceptorConfig {
     /**
      * Returns the {@link com.hazelcast.nio.SocketInterceptor} implementation object
      *
-     * @return SocketInterceptor implementation object
+     * @return the {@link com.hazelcast.nio.SocketInterceptor} implementation object
      */
     public Object getImplementation() {
         return implementation;
@@ -79,7 +79,7 @@ public class SocketInterceptorConfig {
     /**
      * Enables and disables this configuration
      *
-     * @param enabled
+     * @param enabled true to enable, false to disable
      */
     public SocketInterceptorConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -90,7 +90,7 @@ public class SocketInterceptorConfig {
      * Sets a property.
      *
      * @param name  the name of the property to set.
-     * @param value the value of the property to set
+     * @param value the value of the property to set.
      * @return the updated SocketInterceptorConfig
      * @throws NullPointerException if name or value is null.
      */

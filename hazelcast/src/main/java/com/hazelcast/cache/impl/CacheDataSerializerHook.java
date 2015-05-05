@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveAllBackupOperation;
@@ -197,6 +198,12 @@ public final class CacheDataSerializerHook
         constructors[LOAD_ALL_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheLoadAllOperationFactory();
+            }
+        };
+        constructors[EXPIRY_POLICY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HazelcastExpiryPolicy();
             }
         };
         constructors[KEY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

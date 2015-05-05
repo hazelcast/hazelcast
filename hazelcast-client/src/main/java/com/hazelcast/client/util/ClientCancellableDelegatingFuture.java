@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,22 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.executor.impl.client.CancellationRequest;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -32,24 +39,17 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * A DelegatingFuture that can cancel a Runnable/Callable that is executed by an {@link com.hazelcast.core.IExecutorService}.
  * It does this by sending a CancellationRequest to the remote owning member and then cancelling the running task.
  *
- * @param <V>
+ * @param <V> Type of returned object from the get method of this class.
  */
 public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 
+    private static final int INVOCATION_WAIT_TIMEOUT_SECONDS = 5;
     private final ClientContext context;
     private final String uuid;
     private final Address target;
     private final int partitionId;
+    private final ILogger logger = Logger.getLogger(ClientCancellableDelegatingFuture.class);
     private volatile boolean cancelled;
-
-    public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
-                                             String uuid, Address target, int partitionId) {
-        super(future, context.getSerializationService());
-        this.context = context;
-        this.uuid = uuid;
-        this.target = target;
-        this.partitionId = partitionId;
-    }
 
     public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
                                              String uuid, Address target, int partitionId, V defaultValue) {
@@ -66,6 +66,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
             return false;
         }
 
+        waitForRequestToBeSend();
         final Future f = invokeCancelRequest(mayInterruptIfRunning);
         try {
             final Boolean b = context.getSerializationService().toObject(f.get());
@@ -83,20 +84,42 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     }
 
     private Future invokeCancelRequest(boolean mayInterruptIfRunning) {
-        CancellationRequest request;
-        Address address = target;
+        ClientInvocation clientInvocation;
+        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (target != null) {
-            request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
+            CancellationRequest request = new CancellationRequest(uuid, target, mayInterruptIfRunning);
+            clientInvocation = new ClientInvocation(client, request, target);
         } else {
-            final ClientPartitionService partitionService = context.getPartitionService();
-            address =  partitionService.getPartitionOwner(partitionId);
-            request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
+            ClientRequest request = new CancellationRequest(uuid, partitionId, mayInterruptIfRunning);
+            clientInvocation = new ClientInvocation(client, request, partitionId);
         }
+
         try {
-            return context.getInvocationService().invokeOnTarget(request, address);
+            return clientInvocation.invoke();
         } catch (Exception e) {
             throw rethrow(e);
         }
+    }
+
+    private void waitForRequestToBeSend() {
+        final ICompletableFuture future = getFuture();
+
+        final ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
+        ClientInvocation invocation = clientCallFuture.getInvocation();
+
+        int timeoutSeconds = INVOCATION_WAIT_TIMEOUT_SECONDS;
+        while (!invocation.isInvoked()) {
+            if (timeoutSeconds-- == 0) {
+                logger.warning("Cancel is failed because runnable/callable never send to remote !");
+                break;
+            }
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+            } catch (InterruptedException ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+        }
+
     }
 
     @Override

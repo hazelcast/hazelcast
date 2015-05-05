@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.util.ValidationUtil;
+
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- *  Contains native memory configuration.
+ * Contains native memory configuration.
  */
 public class NativeMemoryConfig {
 
@@ -65,8 +67,7 @@ public class NativeMemoryConfig {
     }
 
     public NativeMemoryConfig setSize(final MemorySize size) {
-        ValidationUtil.isNotNull(size, "Memory size");
-        this.size = size;
+        this.size = isNotNull(size, "Memory size");
         return this;
     }
 
@@ -93,8 +94,7 @@ public class NativeMemoryConfig {
     }
 
     public NativeMemoryConfig setMinBlockSize(int minBlockSize) {
-        ValidationUtil.shouldBePositive(minBlockSize, "Minimum block size");
-        this.minBlockSize = minBlockSize;
+        this.minBlockSize = checkPositive(minBlockSize, "Minimum block size should be positive");
         return this;
     }
 
@@ -103,8 +103,7 @@ public class NativeMemoryConfig {
     }
 
     public NativeMemoryConfig setPageSize(int pageSize) {
-        ValidationUtil.shouldBePositive(pageSize, "Page size");
-        this.pageSize = pageSize;
+        this.pageSize = checkPositive(pageSize, "Page size should be positive");
         return this;
     }
 
@@ -120,8 +119,8 @@ public class NativeMemoryConfig {
     /**
      * Type of memory allocator:
      * <ul>
-     *     <li>STANDARD: allocate/free memory using default OS memory manager</li>
-     *     <li>POOLED: manage memory blocks in pool</li>
+     * <li>STANDARD: allocate/free memory using default OS memory manager</li>
+     * <li>POOLED: manage memory blocks in pool</li>
      * </ul>
      */
     public enum MemoryAllocatorType {

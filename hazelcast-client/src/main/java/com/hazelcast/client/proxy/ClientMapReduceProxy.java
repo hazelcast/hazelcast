@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,9 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.client.InvocationClientRequest;
-import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.spi.impl.ClientCallFuture;
+import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.Logger;
@@ -39,7 +38,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -50,6 +48,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientMapReduceProxy
         extends ClientProxy
@@ -92,12 +92,11 @@ public class ClientMapReduceProxy
     }*/
 
     private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
-        ClientContext context = getContext();
-        ClientInvocationService cis = context.getInvocationService();
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
-            ICompletableFuture<T> future = cis.invokeOnTarget(request, runningMember);
+            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
+            final ICompletableFuture<T> future = clientInvocation.invoke();
             return future.get();
         }
         return null;
@@ -114,14 +113,15 @@ public class ClientMapReduceProxy
             try {
                 final String jobId = UuidUtil.buildRandomUuidString();
 
-                ClientContext context = getContext();
-                ClientInvocationService cis = context.getInvocationService();
                 ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
                         predicate, mapper, combinerFactory, reducerFactory, keyValueSource,
                         chunkSize, topologyChangedStrategy);
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
-                ClientCallFuture future = (ClientCallFuture) cis.invokeOnRandomTarget(request, null);
+
+                final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request);
+                final ClientInvocationFuture future = clientInvocation.invoke();
+
                 future.andThen(new ExecutionCallback() {
                     @Override
                     public void onResponse(Object res) {
@@ -151,7 +151,7 @@ public class ClientMapReduceProxy
                     }
                 });
 
-                Address runningMember = future.getConnection().getRemoteEndpoint();
+                Address runningMember = clientInvocation.getSendConnection().getRemoteEndpoint();
                 trackableJobs.putIfAbsent(jobId, new ClientTrackableJob<T>(jobId, runningMember, completableFuture));
                 return completableFuture;
             } catch (Exception e) {
@@ -204,7 +204,7 @@ public class ClientMapReduceProxy
 
         @Override
         public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            ValidationUtil.isNotNull(unit, "unit");
+            isNotNull(unit, "unit");
             if (!latch.await(timeout, unit) || !isDone()) {
                 throw new TimeoutException("timeout reached");
             }

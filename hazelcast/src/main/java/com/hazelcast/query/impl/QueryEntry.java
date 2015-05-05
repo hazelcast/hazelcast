@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,57 +17,89 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.getters.ReflectionHelper;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+
 /**
  * Entry of the Query.
  */
 public class QueryEntry implements QueryableEntry {
 
-    private final SerializationService serializationService;
-    private final Data indexKey;
-    private Data key;
+    private Data indexKey;
+    private Data keyData;
     private Object keyObject;
-    private Data value;
+    private Data valueData;
     private Object valueObject;
+    private SerializationService serializationService;
+
+    public QueryEntry() {
+    }
 
     public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
+        init(serializationService, indexKey, key, value);
+    }
+
+    /**
+     * It may be useful to use this {@code init} method in some cases that same instance of this class can be used
+     * instead of creating a new one for every iteration when scanning large data sets, for example:
+     * <pre>
+     * <code>Predicate predicate = ...
+     * QueryEntry entry = new QueryEntry()
+     * for(i == 0; i < HUGE_NUMBER; i++) {
+     *       entry.init(...)
+     *       boolean valid = predicate.apply(queryEntry);
+     *
+     *       if(valid) {
+     *          ....
+     *       }
+     *  }
+     * </code>
+     * </pre>
+     */
+    public void init(SerializationService serializationService, Data indexKey, Object key, Object value) {
         if (indexKey == null) {
             throw new IllegalArgumentException("index keyData cannot be null");
         }
         if (key == null) {
             throw new IllegalArgumentException("keyData cannot be null");
         }
+
         this.indexKey = indexKey;
-        if (key instanceof Data) {
-            this.key = (Data) key;
-        } else {
-            keyObject = key;
-        }
         this.serializationService = serializationService;
-        if (value instanceof Data) {
-            this.value = (Data) value;
+
+        if (key instanceof Data) {
+            this.keyData = (Data) key;
         } else {
-            valueObject = value;
+            this.keyObject = key;
+        }
+
+        if (value instanceof Data) {
+            this.valueData = (Data) value;
+        } else {
+            this.valueObject = value;
         }
     }
 
     @Override
     public Object getValue() {
+        // TODO: What is serialization service is null??
         if (valueObject == null && serializationService != null) {
-            valueObject = serializationService.toObject(value);
+            valueObject = serializationService.toObject(valueData);
         }
         return valueObject;
     }
 
     @Override
     public Object getKey() {
+        // TODO: What is serialization service is null??
         if (keyObject == null && serializationService != null) {
-            keyObject = serializationService.toObject(key);
+            keyObject = serializationService.toObject(keyData);
         }
         return keyObject;
     }
@@ -80,19 +112,17 @@ public class QueryEntry implements QueryableEntry {
             return (Comparable) getValue();
         }
 
-        boolean key = attributeName.startsWith(KEY_ATTRIBUTE_NAME);
-        Data data;
-        if (key) {
-            attributeName = attributeName.substring(KEY_ATTRIBUTE_NAME.length() + 1);
-            data = getKeyData();
-        } else {
-            data = getValueData();
+        boolean isKey = isKey(attributeName);
+        attributeName = getAttributeName(isKey, attributeName);
+        Data targetData = getOptionalTargetData(isKey);
+
+        // if the content is available in 'Data' format and it is portable, we can directly
+        // extract the content from the targetData, without needing to deserialize
+        if (targetData != null && targetData.isPortable()) {
+            return extractViaPortable(attributeName, targetData);
         }
 
-        if (data != null && data.isPortable()) {
-            return extractViaPortable(attributeName, data);
-        }
-        return extractViaReflection(attributeName, key);
+        return extractViaReflection(attributeName, isKey);
     }
 
     private Comparable extractViaPortable(String attributeName, Data data) {
@@ -105,9 +135,12 @@ public class QueryEntry implements QueryableEntry {
         }
     }
 
-    private Comparable extractViaReflection(String attributeName, boolean key) {
+    // This method is very inefficient because:
+    // lot of time is spend on retrieving field/method and it isn't cached
+    // the actual invocation on the Field, Method is also is quite expensive.
+    private Comparable extractViaReflection(String attributeName, boolean isKey) {
         try {
-            Object obj = key ? getKey() : getValue();
+            Object obj = isKey ? getKey() : getValue();
             return ReflectionHelper.extractValue(obj, attributeName);
         } catch (QueryException e) {
             throw e;
@@ -124,36 +157,68 @@ public class QueryEntry implements QueryableEntry {
             return ReflectionHelper.getAttributeType(getValue().getClass());
         }
 
-        boolean key = attributeName.startsWith(KEY_ATTRIBUTE_NAME);
-        Data data;
-        if (key) {
-            attributeName = attributeName.substring(KEY_ATTRIBUTE_NAME.length() + 1);
-            data = getKeyData();
-        } else {
-            data = getValueData();
-        }
+        boolean isKey = isKey(attributeName);
+        attributeName = getAttributeName(isKey, attributeName);
+        Data data = getOptionalTargetData(isKey);
 
         if (data != null && data.isPortable()) {
             PortableContext portableContext = serializationService.getPortableContext();
             return PortableExtractor.getAttributeType(portableContext, data, attributeName);
         }
-        return ReflectionHelper.getAttributeType(key ? getKey() : getValue(), attributeName);
+        return ReflectionHelper.getAttributeType(isKey ? getKey() : getValue(), attributeName);
+    }
+
+    private String getAttributeName(boolean isKey, String attributeName) {
+        if (isKey) {
+            return attributeName.substring(KEY_ATTRIBUTE_NAME.length() + 1);
+        } else {
+            return attributeName;
+        }
+    }
+
+    /**
+     * Gets the target data if available.
+     * <p/>
+     * If the key/value is a Portable instance, we always serialize to Data. This is inefficient, but the query
+     * relies on the fields mentioned in the serialized data, not the deserialized data.
+     *
+     * @param isKey true if we need to key data, false for the value.
+     * @return the target Data. Could be null
+     */
+    private Data getOptionalTargetData(boolean isKey) {
+        if (isKey) {
+            if (keyObject instanceof Portable) {
+                return getKeyData();
+            } else {
+                return keyData;
+            }
+        } else {
+            if (valueObject instanceof Portable) {
+                return getValueData();
+            } else {
+                return valueData;
+            }
+        }
+    }
+
+    public boolean isKey(String attributeName) {
+        return attributeName.startsWith(KEY_ATTRIBUTE_NAME);
     }
 
     @Override
     public Data getKeyData() {
-        if (key == null && serializationService != null) {
-            key = serializationService.toData(keyObject);
+        if (keyData == null && serializationService != null) {
+            keyData = serializationService.toData(keyObject);
         }
-        return key;
+        return keyData;
     }
 
     @Override
     public Data getValueData() {
-        if (value == null && serializationService != null) {
-            value = serializationService.toData(valueObject);
+        if (valueData == null && serializationService != null) {
+            valueData = serializationService.toData(valueObject);
         }
-        return value;
+        return valueData;
     }
 
     @Override

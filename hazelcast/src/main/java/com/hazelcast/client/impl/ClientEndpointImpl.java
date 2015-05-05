@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverter;
 import com.hazelcast.client.impl.exceptionconverters.ClientExceptionConverters;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.Credentials;
@@ -67,7 +67,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     private Credentials credentials;
     private volatile boolean authenticated;
 
-    ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
+    public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
         this.conn = conn;
         if (conn instanceof TcpIpConnection) {
@@ -172,6 +172,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         return transactionContext;
     }
 
+    @Override
     public Credentials getCredentials() {
         return credentials;
     }
@@ -269,8 +270,14 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         clientEngine.sendResponse(this, null, clientResponseObject, callId, isError, false);
     }
 
+    public void sendClientMessage(ClientMessage clientMessage) {
+        Connection conn = this.getConnection();
+        //TODO framing not implemented yet, should be split into frames before writing to connection
+        conn.write(clientMessage);
+    }
+
     @Override
-    public void sendEvent(Data key, Object event, int callId) {
+    public void sendEvent(Object key, Object event, int callId) {
         clientEngine.sendResponse(this, key, event, callId, false, true);
     }
 

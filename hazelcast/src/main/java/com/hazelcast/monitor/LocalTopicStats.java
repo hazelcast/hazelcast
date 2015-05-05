@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,14 @@ public interface LocalTopicStats extends LocalInstanceStats {
     /**
      * Returns the total number of published messages of this topic on this member
      *
-     * @return total number of publishes
+     * @return total number of published messages of this topic on this member
      */
     long getPublishOperationCount();
 
     /**
      * Returns the total number of received messages of this topic on this member
      *
-     * @return total number of receives
+     * @return total number of received messages of this topic on this member
      */
     long getReceiveOperationCount();
 

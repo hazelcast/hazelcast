@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.util.ValidationUtil;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.util.Arrays;
@@ -27,6 +26,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.CANCELLED;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This class controls all partition states and is capable of atomically updating those states. It also
@@ -112,7 +112,7 @@ public class JobProcessInformationImpl
     }
 
     public boolean updatePartitionState(JobPartitionState[] oldPartitionStates, JobPartitionState[] newPartitionStates) {
-        ValidationUtil.isNotNull(newPartitionStates, "newPartitionStates");
+        isNotNull(newPartitionStates, "newPartitionStates");
         if (oldPartitionStates.length != newPartitionStates.length) {
             throw new IllegalArgumentException("partitionStates need to have same length");
         }

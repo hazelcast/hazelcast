@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,11 +93,12 @@ public interface ClusterService extends CoreService {
     int getSize();
 
     /**
-     * Returns the cluster-time.
-     * <p/>
-     * TODO: We need to document what cluster time really means and what is can be used for.
+     * Returns the {@link com.hazelcast.cluster.ClusterClock} of the cluster.
      *
-     * @return the cluster-time.
+     * The returned value will never be null and will never change.
+     *
+     * @return the ClusterClock.
      */
-    long getClusterTime();
+    ClusterClock getClusterClock();
+
 }

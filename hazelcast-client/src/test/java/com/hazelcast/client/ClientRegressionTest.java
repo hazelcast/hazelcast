@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
@@ -46,11 +47,14 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -153,6 +157,7 @@ public class ClientRegressionTest
      * Test for issues #267 and #493
      */
     @Test
+    @Ignore
     public void testIssue493() throws Exception {
 
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
@@ -179,13 +184,13 @@ public class ClientRegressionTest
         lock.unlock();
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testOperationRedo() throws Exception {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+        Hazelcast.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setRedoOperation(true);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final Thread thread = new Thread() {
@@ -195,7 +200,7 @@ public class ClientRegressionTest
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                hz1.getLifecycleService().terminate();
+                hz1.getLifecycleService().shutdown();
             }
         };
 
@@ -226,7 +231,7 @@ public class ClientRegressionTest
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                hz1.getLifecycleService().terminate();
+                hz1.getLifecycleService().shutdown();
             }
         };
 
@@ -253,18 +258,33 @@ public class ClientRegressionTest
 
     @Test
     public void testMapDestroyIssue764() throws Exception {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        assertNoOfDistributedObject("Initially the server should have %d distributed objects, but had %d", 0, server.getDistributedObjects());
+        assertNoOfDistributedObject("Initially the client should have %d distributed objects, but had %d", 0, client.getDistributedObjects());
 
-        assertEquals(0, client.getDistributedObjects().size());
+        IMap map = client.getMap("mapToDestroy");
+        assertNoOfDistributedObject("After getMap() the server should have %d distributed objects, but had %d", 1, server.getDistributedObjects());
+        assertNoOfDistributedObject("After getMap() the client should have %d distributed objects, but had %d", 1, client.getDistributedObjects());
 
-        IMap map = client.getMap("m");
-
-        assertEquals(1, client.getDistributedObjects().size());
         map.destroy();
+        // Get the distributed objects as fast as possible to catch a race condition more likely
+        Collection<DistributedObject> serverDistributedObjects = server.getDistributedObjects();
+        Collection<DistributedObject> clientDistributedObjects = client.getDistributedObjects();
+        assertNoOfDistributedObject("After destroy() the server should should have %d distributed objects, but had %d", 0, serverDistributedObjects);
+        assertNoOfDistributedObject("After destroy() the client should should have %d distributed objects, but had %d", 0, clientDistributedObjects);
+    }
 
-        assertEquals(0, instance.getDistributedObjects().size());
-        assertEquals(0, client.getDistributedObjects().size());
+    private void assertNoOfDistributedObject(String message, int expected, Collection<DistributedObject> distributedObjects) {
+        StringBuilder sb = new StringBuilder(message + "\n");
+        for (DistributedObject distributedObject : distributedObjects) {
+            sb
+                    .append("Name: ").append(distributedObject.getName())
+                    .append(", Service: ").append(distributedObject.getServiceName())
+                    .append(", PartitionKey: ").append(distributedObject.getPartitionKey())
+                    .append("\n");
+        }
+        assertEqualsStringFormat(sb.toString(), expected, distributedObjects.size());
     }
 
     /**
@@ -552,6 +572,7 @@ public class ClientRegressionTest
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         final String mapName = randomMapName();
 
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -570,14 +591,22 @@ public class ClientRegressionTest
         instance.shutdown();
         Hazelcast.newHazelcastInstance();
 
-        assertEquals(null, map.get("a"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(null, map.get("a"));
+            }
+        });
+
     }
 
+    @Category(NightlyTest.class)
     @Test
     public void testLock_WhenDummyClientAndOwnerNodeDiesTogether() throws InterruptedException {
         testLock_WhenClientAndOwnerNodeDiesTogether(false);
     }
 
+    @Category(NightlyTest.class)
     @Test
     public void testLock_WhenSmartClientAndOwnerNodeDiesTogether() throws InterruptedException {
         testLock_WhenClientAndOwnerNodeDiesTogether(true);
@@ -594,7 +623,6 @@ public class ClientRegressionTest
         for (int i = 0; i < tryCount; i++) {
             final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
             final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
             final ILock lock = client.getLock("lock");
             assertTrue(lock.tryLock(1, TimeUnit.MINUTES));
             client.getLifecycleService().terminate(); //with client is dead, lock should be released.
@@ -716,5 +744,99 @@ public class ClientRegressionTest
         map.get(1);
         //test should finish without throwing any exception.
         client.shutdown();
+    }
+
+    @Test
+    public void testClientReconnect_thenCheckRequestsAreRetriedWithoutException() throws Exception {
+        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        final CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    clientStartedDoingRequests.await();
+                } catch (InterruptedException ignored) {
+                }
+
+                hazelcastInstance.shutdown();
+
+                Hazelcast.newHazelcastInstance();
+
+            }
+        }).start();
+
+
+        ClientConfig clientConfig = new ClientConfig();
+        //Retry all requests
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        //retry to connect to cluster forever(never shutdown the client)
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        //Retry all requests forever(until client is shutdown)
+        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        IMap<Object, Object> map = client.getMap(randomMapName());
+
+        int mapSize = 1000;
+        for (int i = 0; i < mapSize; i++) {
+            if (i == mapSize / 4) {
+                clientStartedDoingRequests.countDown();
+            }
+            try {
+                map.put(i, i);
+            } catch (Exception e) {
+                assertTrue("Requests should not throw exception with this configuration. Last put key: " + i, false);
+            }
+        }
+    }
+
+    @Test
+    public void testClusterShutdown_thenCheckOperationsNotHanging() throws Exception {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        //Retry all requests
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        //Retry all requests forever(until client is shutdown)
+        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+        final int mapSize = 1000;
+
+        final CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
+        int threadCount = 100;
+
+        final CountDownLatch testFinishedLatch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        for (int i = 0; i < mapSize; i++) {
+                            if (i == mapSize / 4) {
+                                clientStartedDoingRequests.countDown();
+                            }
+
+                            map.put(i, i);
+
+                        }
+                    } catch (Throwable ignored) {
+                    } finally {
+                        testFinishedLatch.countDown();
+                    }
+                }
+            });
+            thread.start();
+        }
+
+        assertTrue(clientStartedDoingRequests.await(30, TimeUnit.SECONDS));
+
+        hazelcastInstance.shutdown();
+
+        assertOpenEventually("Put operations should not hang.", testFinishedLatch);
+
     }
 }

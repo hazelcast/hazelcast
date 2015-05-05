@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.executor.impl.client.CancellationRequest;
 import com.hazelcast.executor.impl.client.IsShutdownRequest;
-import com.hazelcast.executor.impl.client.PartitionCallableRequest;
+import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
-import com.hazelcast.executor.impl.client.TargetCallableRequest;
+import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
@@ -35,9 +35,9 @@ public final class ExecutorPortableHook implements PortableHook {
 
     public static final int IS_SHUTDOWN_REQUEST = 1;
     public static final int CANCELLATION_REQUEST = 2;
-    public static final int TARGET_CALLABLE_REQUEST = 3;
-    public static final int PARTITION_CALLABLE_REQUEST = 4;
-    public static final int SHUTDOWN_REQUEST = 5;
+    public static final int SPECIFIC_TARGET_CALLABLE_REQUEST = 3;
+    public static final int PARTITION_TARGET_CALLABLE_REQUEST = 4;
+    public static final int SHUTDOWN_REQUEST = 6;
 
     @Override
     public int getFactoryId() {
@@ -54,10 +54,10 @@ public final class ExecutorPortableHook implements PortableHook {
                         return new IsShutdownRequest();
                     case CANCELLATION_REQUEST:
                         return new CancellationRequest();
-                    case TARGET_CALLABLE_REQUEST:
-                        return new TargetCallableRequest();
-                    case PARTITION_CALLABLE_REQUEST:
-                        return new PartitionCallableRequest();
+                    case SPECIFIC_TARGET_CALLABLE_REQUEST:
+                        return new SpecificTargetCallableRequest();
+                    case PARTITION_TARGET_CALLABLE_REQUEST:
+                        return new PartitionTargetCallableRequest();
                     case SHUTDOWN_REQUEST:
                         return new ShutdownRequest();
                     default:

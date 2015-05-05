@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package com.hazelcast.map.impl.client;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
@@ -47,10 +44,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
-abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable,
-        RetryableRequest, SecureRequest {
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
+abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, SecureRequest,
+        RetryableRequest {
 
     protected IterationType iterationType;
+
     private String name;
 
     public AbstractMapQueryRequest() {
@@ -63,32 +63,83 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     @Override
     protected final void invoke() {
-        Collection<MemberImpl> members = getClientEngine().getClusterService().getMemberList();
-        int partitionCount = getClientEngine().getPartitionService().getPartitionCount();
-        Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        final ClientEndpoint endpoint = getEndpoint();
         QueryResultSet result = new QueryResultSet(null, iterationType, true);
         try {
+            Predicate predicate = getPredicate();
+
+            Collection<MemberImpl> members = getClientEngine().getClusterService().getMemberList();
             List<Future> futures = new ArrayList<Future>();
-            final Predicate predicate = getPredicate();
             createInvocations(members, futures, predicate);
-            collectResults(plist, result, futures);
-            if (hasMissingPartitions(partitionCount, plist)) {
-                List<Integer> missingList = findMissingPartitions(partitionCount, plist);
+
+            int partitionCount = getClientEngine().getPartitionService().getPartitionCount();
+            Set<Integer> finishedPartitions = new HashSet<Integer>(partitionCount);
+            collectResults(result, futures, finishedPartitions);
+
+            if (hasMissingPartitions(finishedPartitions, partitionCount)) {
+                List<Integer> missingList = findMissingPartitions(finishedPartitions, partitionCount);
                 List<Future> missingFutures = new ArrayList<Future>(missingList.size());
-                createInvocationsForMissingPartitions(predicate, missingList, missingFutures);
+                createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
                 collectResultsFromMissingPartitions(result, missingFutures);
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-        endpoint.sendResponse(result, getCallId());
+        getEndpoint().sendResponse(result, getCallId());
     }
 
-    private boolean hasMissingPartitions(int partitionCount, Set<Integer> plist) {
-        return plist.size() != partitionCount;
+    private void createInvocations(Collection<MemberImpl> members, List<Future> futures, Predicate predicate) {
+        for (MemberImpl member : members) {
+            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
+                    member.getAddress()).invoke();
+            futures.add(future);
+        }
     }
 
+    @SuppressWarnings("unchecked")
+    private void collectResults(QueryResultSet result, List<Future> futures, Set<Integer> finishedPartitions)
+            throws InterruptedException, java.util.concurrent.ExecutionException {
+
+        for (Future future : futures) {
+            QueryResult queryResult = (QueryResult) future.get();
+            if (queryResult != null) {
+                Collection<Integer> partitionIds = queryResult.getPartitionIds();
+                if (partitionIds != null) {
+                    finishedPartitions.addAll(partitionIds);
+                    result.addAll(queryResult.getResult());
+                }
+            }
+        }
+    }
+
+    private boolean hasMissingPartitions(Set<Integer> finishedPartitions, int partitionCount) {
+        return finishedPartitions.size() != partitionCount;
+    }
+
+    private List<Integer> findMissingPartitions(Set<Integer> finishedPartitions, int partitionCount) {
+        List<Integer> missingList = new ArrayList<Integer>();
+        for (int i = 0; i < partitionCount; i++) {
+            if (!finishedPartitions.contains(i)) {
+                missingList.add(i);
+            }
+        }
+        return missingList;
+    }
+
+    private void createInvocationsForMissingPartitions(List<Integer> missingPartitionsList, List<Future> futures,
+                                                       Predicate predicate) {
+        for (Integer partitionId : missingPartitionsList) {
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+            queryPartitionOperation.setPartitionId(partitionId);
+            try {
+                Future future = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, partitionId).invoke();
+                futures.add(future);
+            } catch (Throwable t) {
+                throw ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
@@ -97,78 +148,17 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         }
     }
 
-    private void createInvocationsForMissingPartitions(Predicate predicate, List<Integer> missingList,
-                                                       List<Future> futures) {
-        for (Integer pid : missingList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-            queryPartitionOperation.setPartitionId(pid);
-            try {
-                Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).invoke();
-                futures.add(f);
-            } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
-            }
-        }
-    }
-
-    private List<Integer> findMissingPartitions(int partitionCount, Set<Integer> plist) {
-        List<Integer> missingList = new ArrayList<Integer>();
-        for (int i = 0; i < partitionCount; i++) {
-            if (!plist.contains(i)) {
-                missingList.add(i);
-            }
-        }
-        return missingList;
-    }
-
-    private void collectResults(Set<Integer> plist, QueryResultSet result, List<Future> flist)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
-        for (Future future : flist) {
-            QueryResult queryResult = (QueryResult) future.get();
-            if (queryResult != null) {
-                final Collection<Integer> partitionIds = queryResult.getPartitionIds();
-                if (partitionIds != null) {
-                    plist.addAll(partitionIds);
-                    result.addAll(queryResult.getResult());
-                }
-            }
-        }
-    }
-
-    private void createInvocations(Collection<MemberImpl> members, List<Future> flist, Predicate predicate) {
-        for (MemberImpl member : members) {
-            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
-                    member.getAddress()).invoke();
-            flist.add(future);
-        }
-    }
-
-    protected abstract Predicate getPredicate();
-
-    public final String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
+    @Override
     public final int getFactoryId() {
         return MapPortableHook.F_ID;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeUTF("t", iterationType.toString());
-        writePortableInner(writer);
+    @Override
+    public final String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
-    protected abstract void writePortableInner(PortableWriter writer) throws IOException;
-
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        iterationType = IterationType.valueOf(reader.readUTF("t"));
-        readPortableInner(reader);
-    }
-
-    protected abstract void readPortableInner(PortableReader reader) throws IOException;
-
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
@@ -177,4 +167,24 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     public String getDistributedObjectName() {
         return name;
     }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+        writer.writeUTF("t", iterationType.toString());
+        writePortableInner(writer);
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
+        iterationType = IterationType.valueOf(reader.readUTF("t"));
+        readPortableInner(reader);
+    }
+
+    protected abstract Predicate getPredicate();
+
+    protected abstract void writePortableInner(PortableWriter writer) throws IOException;
+
+    protected abstract void readPortableInner(PortableReader reader) throws IOException;
 }

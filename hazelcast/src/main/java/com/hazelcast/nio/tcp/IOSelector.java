@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.NIOThread;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 
 import java.nio.channels.Selector;
 
-public interface IOSelector extends NIOThread {
+public interface IOSelector extends OperationHostileThread {
 
     Selector getSelector();
 
@@ -34,4 +34,5 @@ public interface IOSelector extends NIOThread {
 
     void awaitShutdown();
 
+    void handleSelectionKeyFailure(Throwable e);
 }

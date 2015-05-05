@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,11 +65,6 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     }
 
     @Override
-    public int getId() {
-        return LockDataSerializerHook.LOCK;
-    }
-
-    @Override
     public final void onWaitExpire() {
         Object response;
         long timeout = getWaitTimeout();
@@ -79,5 +74,10 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
             response = Boolean.FALSE;
         }
         getResponseHandler().sendResponse(response);
+    }
+
+    @Override
+    public int getId() {
+        return LockDataSerializerHook.LOCK;
     }
 }

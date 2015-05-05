@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,15 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public final class ResponseHandlerFactory {
 
@@ -33,19 +37,20 @@ public final class ResponseHandlerFactory {
     private ResponseHandlerFactory() {
     }
 
-    public static void setRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
-        remotePropagatable.setResponseHandler(createRemoteResponseHandler(nodeEngine, remotePropagatable));
+    public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
+        ResponseHandler responseHandler = createRemoteResponseHandler(nodeEngine, operation);
+        operation.setResponseHandler(responseHandler);
     }
 
-    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
-        if (remotePropagatable.getCallId() == 0) {
-            if (remotePropagatable.returnsResponse()) {
+    public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation operation) {
+        if (operation.getCallId() == 0 || operation.getCallId() == Operation.CALL_ID_LOCAL_SKIPPED) {
+            if (operation.returnsResponse()) {
                 throw new HazelcastException(
-                        "Op: " + remotePropagatable.getClass().getName() + " can not return response without call-id!");
+                        "Op: " + operation + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeEngine, remotePropagatable);
+        return new RemoteInvocationResponseHandler(nodeEngine, operation);
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
@@ -91,34 +96,38 @@ public final class ResponseHandlerFactory {
     }
 
     private static final class RemoteInvocationResponseHandler implements ResponseHandler {
+        private static final AtomicIntegerFieldUpdater<RemoteInvocationResponseHandler> SENT
+                = AtomicIntegerFieldUpdater.newUpdater(RemoteInvocationResponseHandler.class, "sent");
 
         private final NodeEngine nodeEngine;
-        private final RemotePropagatable remotePropagatable;
-        private final AtomicBoolean sent = new AtomicBoolean(false);
+        private final Operation operation;
+        private volatile int sent;
 
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, RemotePropagatable remotePropagatable) {
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Operation operation) {
             this.nodeEngine = nodeEngine;
-            this.remotePropagatable = remotePropagatable;
+            this.operation = operation;
         }
 
         @Override
         public void sendResponse(Object obj) {
-            long callId = remotePropagatable.getCallId();
-            Connection conn = remotePropagatable.getConnection();
-            if (!sent.compareAndSet(false, true) && !(obj instanceof Throwable)) {
+            long callId = operation.getCallId();
+            Connection conn = operation.getConnection();
+            if (!SENT.compareAndSet(this, 0, 1) && !(obj instanceof Throwable)) {
                 throw new ResponseAlreadySentException("NormalResponse already sent for call: " + callId
                         + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
 
             Response response;
-            if (!(obj instanceof Response)) {
-                response = new NormalResponse(obj, remotePropagatable.getCallId(), 0, remotePropagatable.isUrgent());
+            if (obj instanceof Throwable) {
+                response = new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent());
+            } else if (!(obj instanceof Response)) {
+                response = new NormalResponse(obj, operation.getCallId(), 0, operation.isUrgent());
             } else {
                 response = (Response) obj;
             }
 
-            OperationService operationService = nodeEngine.getOperationService();
-            if (!operationService.send(response, remotePropagatable.getCallerAddress())) {
+            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            if (!operationService.send(response, operation.getCallerAddress())) {
                 throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
             }
         }

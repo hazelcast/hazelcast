@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.core.IFunction;
 
 public class AlterAndGetOperation extends AbstractAlterOperation {
@@ -30,22 +30,22 @@ public class AlterAndGetOperation extends AbstractAlterOperation {
     }
 
     @Override
-    public int getId() {
-        return AtomicLongDataSerializerHook.ALTER_AND_GET;
-    }
-
-    @Override
     public void run() throws Exception {
-        LongWrapper number = getNumber();
+        AtomicLongContainer atomicLongContainer = getLongContainer();
 
-        long input = number.get();
+        long input = atomicLongContainer.get();
         long output = function.apply(input);
         shouldBackup = input != output;
         if (shouldBackup) {
             backup = output;
-            number.set(output);
+            atomicLongContainer.set(output);
         }
 
         response = output;
+    }
+
+    @Override
+    public int getId() {
+        return AtomicLongDataSerializerHook.ALTER_AND_GET;
     }
 }

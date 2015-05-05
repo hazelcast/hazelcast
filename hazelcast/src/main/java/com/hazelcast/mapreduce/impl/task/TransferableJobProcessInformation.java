@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
-import com.hazelcast.mapreduce.impl.MapReducePortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
@@ -81,12 +80,12 @@ public class TransferableJobProcessInformation
 
     @Override
     public int getFactoryId() {
-        return MapReducePortableHook.F_ID;
+        return 1;
     }
 
     @Override
     public int getClassId() {
-        return MapReducePortableHook.TRANSFERABLE_PROCESS_INFORMATION;
+        return 2;
     }
 
 }

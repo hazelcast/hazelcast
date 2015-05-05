@@ -1,6 +1,5 @@
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
@@ -17,8 +16,8 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
-import static com.hazelcast.nio.serialization.PortableTest.transferClassDefinition;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -30,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PortableClassVersionTest {
 
-    static final int FACTORY_ID = PortableTest.FACTORY_ID;
+    static final int FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
 
     @Test
     public void testDifferentClassVersions() {
@@ -81,10 +80,7 @@ public class PortableClassVersionTest {
         NamedPortableV2 p2 = new NamedPortableV2("named-portable", 123);
         Data data2 = serializationService2.toData(p2);
 
-        transferClassDefinition(data, serializationService, serializationService2);
         NamedPortableV2 o1 = serializationService2.toObject(data);
-
-        transferClassDefinition(data2, serializationService2, serializationService);
         NamedPortable o2 = serializationService.toObject(data2);
 
         assertEquals(o1.name, o2.name);
@@ -136,17 +132,12 @@ public class PortableClassVersionTest {
         NamedPortable p1 = new NamedPortable("portable-v1", 111);
         Data data = serializationService.toData(p1);
 
-        // register class def
-        transferClassDefinition(data, serializationService, serializationService2);
-
         // emulate socket write by writing data to stream
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
         out.writeData(data);
         byte[] bytes = out.toByteArray();
-        byte[] header = ((PortableDataOutput) out).getPortableHeader();
-
         // emulate socket read by reading data from stream
-        BufferObjectDataInput in = serializationService2.createObjectDataInput(new DefaultData(0, bytes, 0, header));
+        BufferObjectDataInput in = serializationService2.createObjectDataInput(bytes);
         data = in.readData();
 
         // read data
@@ -156,12 +147,14 @@ public class PortableClassVersionTest {
         NamedPortableV2 p2 = new NamedPortableV2("portable-v2", 123);
         Data data2 = serializationService2.toData(p2);
 
-        transferClassDefinition(data2, serializationService2, serializationService);
         // de-serialize back using old version
         Object object2 = serializationService.toObject(data2);
 
-        assertTrue(object1 instanceof NamedPortableV2);
-        assertTrue(object2 instanceof NamedPortable);
+        assertNotNull("object1 should not be null!", object1);
+        assertNotNull("object2 should not be null!", object2);
+
+        assertTrue("Should be instance of NamedPortableV2: " + object1.getClass(), object1 instanceof NamedPortableV2);
+        assertTrue("Should be instance of NamedPortable: " + object2.getClass(), object2 instanceof NamedPortable);
     }
 
     @Test
@@ -204,12 +197,11 @@ public class PortableClassVersionTest {
             SerializationService serializationService2, MainPortable mainPortable) {
         final Data data = serializationService.toData(mainPortable);
 
-        transferClassDefinition(data, serializationService, serializationService2);
         assertEquals(mainPortable, serializationService2.toObject(data));
     }
 
     static ClassDefinition createInnerPortableClassDefinition() {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, InnerPortable.CLASS_ID);
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, TestSerializationConstants.INNER_PORTABLE);
         builder.addByteArrayField("b");
         builder.addCharArrayField("c");
         builder.addShortArrayField("s");
@@ -221,24 +213,5 @@ public class PortableClassVersionTest {
         return builder.build();
     }
 
-    @Test
-    public void testPacket_writeAndRead() {
-        SerializationService ss = createSerializationService(10);
 
-        UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("test", "pass");
-        ClientPrincipal principal = new ClientPrincipal("uuid", "uuid2");
-        Data data = ss.toData(new AuthenticationRequest(credentials, principal));
-
-        Packet packet = new Packet(data, ss.getPortableContext());
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        assertTrue(packet.writeTo(buffer));
-
-        SerializationService ss2 = createSerializationService(1);
-
-        buffer.flip();
-        packet = new Packet(ss2.getPortableContext());
-        assertTrue(packet.readFrom(buffer));
-
-        AuthenticationRequest request = ss2.toObject(packet.getData());
-    }
 }

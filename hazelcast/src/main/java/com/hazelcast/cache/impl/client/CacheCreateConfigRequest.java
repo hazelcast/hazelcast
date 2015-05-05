@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,15 +44,18 @@ public class CacheCreateConfigRequest
     private static final int TRY_COUNT = 100;
 
     private CacheConfig cacheConfig;
-    private boolean create;
+    private boolean createAlsoOnOthers = true;
+    private boolean ignoreLocal;
     private int partitionId;
 
     public CacheCreateConfigRequest() {
     }
 
-    public CacheCreateConfigRequest(CacheConfig cacheConfig, boolean create, int partitionId) {
+    public CacheCreateConfigRequest(CacheConfig cacheConfig, boolean createAlsoOnOthers, boolean ignoreLocal,
+                                    int partitionId) {
         this.cacheConfig = cacheConfig;
-        this.create = create;
+        this.createAlsoOnOthers = createAlsoOnOthers;
+        this.ignoreLocal = ignoreLocal;
         this.partitionId = partitionId;
     }
 
@@ -72,13 +75,15 @@ public class CacheCreateConfigRequest
     }
 
     protected Operation prepareOperation() {
-        return new CacheCreateConfigOperation(cacheConfig);
+        return new CacheCreateConfigOperation(cacheConfig, createAlsoOnOthers, ignoreLocal);
     }
 
+    @Override
     public final int getFactoryId() {
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.CREATE_CONFIG;
     }
@@ -88,17 +93,21 @@ public class CacheCreateConfigRequest
         return CacheService.SERVICE_NAME;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
-        writer.writeBoolean("c", create);
+        writer.writeBoolean("o", createAlsoOnOthers);
+        writer.writeBoolean("l", ignoreLocal);
         writer.writeInt("p", partitionId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(cacheConfig);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
-        create = reader.readBoolean("c");
+        createAlsoOnOthers = reader.readBoolean("o");
+        ignoreLocal = reader.readBoolean("l");
         partitionId = reader.readInt("p");
         final ObjectDataInput in = reader.getRawDataInput();
         cacheConfig = in.readObject();
@@ -108,4 +117,5 @@ public class CacheCreateConfigRequest
     public Permission getRequiredPermission() {
         return null;
     }
+
 }

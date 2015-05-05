@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package com.hazelcast.client.impl.client;
 
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.partition.client.AddPartitionLostListenerRequest;
 import com.hazelcast.partition.client.GetPartitionsRequest;
+import com.hazelcast.partition.client.RemovePartitionLostListenerRequest;
 
 /**
  * Factory class for central client request
@@ -69,6 +72,18 @@ public class ClientPortableFactory implements PortableFactory {
                 break;
             case ClientPortableHook.REMOVE_ALL_LISTENERS:
                 portable = new RemoveAllListeners();
+                break;
+            case ClientPortableHook.GET_MEMBER_LIST:
+                portable = new GetMemberListRequest();
+                break;
+            case ClientPortableHook.REGISTER_MEMBERSHIP_LISTENER:
+                portable = new RegisterMembershipListenerRequest();
+                break;
+            case ClientPortableHook.ADD_PARTITION_LOST_LISTENER:
+                portable = new AddPartitionLostListenerRequest();
+                break;
+            case ClientPortableHook.REMOVE_PARTITION_LOST_LISTENER:
+                portable = new RemovePartitionLostListenerRequest();
                 break;
             default:
                 portable = null;

@@ -29,7 +29,7 @@ public class ClientMultiMapListenerStressTest {
 
     private static final int MAX_SECONDS = 60 * 10;
     private static final int NUMBER_OF_CLIENTS = 8;
-    private static final int THREADS_PER_CLIENT = 8;
+    private static final int THREADS_PER_CLIENT = 4;
     private static final String MAP_NAME = randomString();
 
 
@@ -82,7 +82,7 @@ public class ClientMultiMapListenerStressTest {
     }
 
     public class PutItemsThread extends Thread {
-        public static final int MAX_ITEMS = 1000;
+        public static final int MAX_ITEMS = 100;
 
         public final MyEntryListener listener = new MyEntryListener();
         public HazelcastInstance client;

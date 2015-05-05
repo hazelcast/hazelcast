@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,8 +136,8 @@ public class LongAvgAggregation<Key, Value>
     private static final class LongAvgReducer
             extends Reducer<AvgTuple<Long, Long>, AvgTuple<Long, Long>> {
 
-        private volatile long count;
-        private volatile long amount;
+        private long count;
+        private long amount;
 
         @Override
         public void reduce(AvgTuple<Long, Long> value) {

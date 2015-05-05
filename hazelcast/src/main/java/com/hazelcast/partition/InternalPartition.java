@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,23 @@ public interface InternalPartition {
 
     int MAX_REPLICA_COUNT = 7;
     int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
+
+    /**
+     * Indicates that a replica index is waiting for a backup sync
+     */
+    int SYNC_WAITING = -1;
+
+    /**
+     * Checks if the partition is local.
+     *
+     * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the
+     * {@link com.hazelcast.cluster.ClusterService#getThisAddress()}. If the address is null or a different address, false
+     * is returned.
+     *
+     * @return true if local, false otherwise.
+     * @since 3.5
+     */
+    boolean isLocal();
 
     /**
      * Returns the partition id. The partition id will be between 0 and partitionCount (exclusive).

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,21 +23,17 @@ import com.hazelcast.nio.ObjectDataOutput;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
-import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
 import java.io.IOException;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
-import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE;
-import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_POLICY;
-import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_EVICTION_THRESHOLD_PERCENTAGE;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
 import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
-import static com.hazelcast.config.CacheSimpleConfig.MAX_BACKUP_COUNT;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
-
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}
@@ -45,7 +41,8 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
+public class CacheConfig<K, V>
+        extends AbstractCacheConfig<K, V> {
 
     private String name;
     private String managerPrefix;
@@ -53,14 +50,20 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    private int evictionPercentage = DEFAULT_EVICTION_PERCENTAGE;
-    private int evictionThresholdPercentage = DEFAULT_EVICTION_THRESHOLD_PERCENTAGE;
+    // Default value of eviction config is
+    //      * ENTRY_COUNT with 10.000 max entry count
+    //      * LRU as eviction policy
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
-    private NearCacheConfig nearCacheConfig;
+    private WanReplicationRef wanReplicationRef;
 
     public CacheConfig() {
-        super();
+    }
+
+    public CacheConfig(String name) {
+        setName(name);
     }
 
     public CacheConfig(CompleteConfiguration<K, V> configuration) {
@@ -73,16 +76,17 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.asyncBackupCount = config.asyncBackupCount;
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
-            this.evictionPolicy = config.evictionPolicy;
-            if (config.nearCacheConfig != null) {
-                this.nearCacheConfig = new NearCacheConfig(config.nearCacheConfig);
+            // Eviction config cannot be null
+            if (config.evictionConfig != null) {
+                this.evictionConfig = new CacheEvictionConfig(config.evictionConfig);
+            }
+            if (config.wanReplicationRef != null) {
+                this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
             }
         }
     }
 
-    public CacheConfig(CacheSimpleConfig simpleConfig)
-            throws Exception {
-        super();
+    public CacheConfig(CacheSimpleConfig simpleConfig) throws Exception {
         this.name = simpleConfig.getName();
         if (simpleConfig.getKeyType() != null) {
             this.keyType = (Class<K>) ClassLoaderUtil.loadClass(null, simpleConfig.getKeyType());
@@ -98,50 +102,61 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheLoaderFactory());
         }
         if (simpleConfig.getCacheWriterFactory() != null) {
-            this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
+            this.cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
         }
         if (simpleConfig.getExpiryPolicyFactory() != null) {
-            this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getExpiryPolicyFactory());
+            this.expiryPolicyFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getExpiryPolicyFactory());
         }
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
-        this.evictionPolicy = simpleConfig.getEvictionPolicy();
-        this.evictionPercentage = simpleConfig.getEvictionPercentage();
-        this.evictionThresholdPercentage = simpleConfig.getEvictionThresholdPercentage();
+        // Eviction config cannot be null
+        if (simpleConfig.getEvictionConfig() != null) {
+            this.evictionConfig = new CacheEvictionConfig(simpleConfig.getEvictionConfig());
+        }
+        if (simpleConfig.getWanReplicationRef() != null) {
+            this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
+        }
         for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
             Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
             Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
             if (simpleListener.getCacheEntryListenerFactory() != null) {
-                listenerFactory = FactoryBuilder.factoryOf(simpleListener.getCacheEntryListenerFactory());
+                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
             }
             if (simpleListener.getCacheEntryEventFilterFactory() != null) {
-                filterFactory = FactoryBuilder.factoryOf(simpleListener.getCacheEntryEventFilterFactory());
+                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();
             MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
-            this.addCacheEntryListenerConfiguration(listenerConfiguration);
+            addCacheEntryListenerConfiguration(listenerConfiguration);
         }
     }
 
     /**
-     * Immutable CacheConfig instance
+     * Gets immutable version of this config.
+     *
+     * @return Immutable version of this config
      */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
         return new CacheConfigReadOnly<K, V>(this);
     }
 
     /**
-     * @return the name
+     * Gets the name of the cache.
+     *
+     * @return the name of the cache
      */
     public String getName() {
         return name;
     }
 
     /**
-     * @param name the name to set
+     * Sets the name of the cache.
+     *
+     * @param name the name of the cache to set
+     * @return current cache config instance
      */
     public CacheConfig<K, V> setName(String name) {
         this.name = name;
@@ -149,27 +164,48 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * @return the managerPrefix
+     * Gets the manager prefix of the cache config such as "hz://".
+     *
+     * @return the manager prefix of this cache config
      */
     public String getManagerPrefix() {
         return managerPrefix;
     }
 
+    /**
+     * Sets the manager prefix of the cache config.
+     *
+     * @param managerPrefix the manager prefix of the cache config to set
+     * @return current cache config instance
+     */
     public CacheConfig<K, V> setManagerPrefix(String managerPrefix) {
         this.managerPrefix = managerPrefix;
         return this;
     }
 
+    /**
+     * Gets the URI string which is global identifier of the cache.
+     *
+     * @return the URI string of this cache config
+     */
     public String getUriString() {
         return uriString;
     }
 
+    /**
+     * Sets the URI string which is global identifier of the cache.
+     *
+     * @param uriString the URI string of the cache to set
+     * @return current cache config instance
+     */
     public CacheConfig<K, V> setUriString(String uriString) {
         this.uriString = uriString;
         return this;
     }
 
     /**
+     * Gets the full name of cache with manager scope prefix.
+     *
      * @return the name with manager scope prefix
      */
     public String getNameWithPrefix() {
@@ -177,7 +213,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * @return the backupCount
+     * Gets the number of synchronous backups of the cache config.
+     *
+     * @return the backupCount the number of synchronous backups of the cache config
      * @see #getAsyncBackupCount()
      */
     public int getBackupCount() {
@@ -185,26 +223,26 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * Number of synchronous backups. If 1 is set as the backup-count for example,
+     * Sets the number of synchronous backups. If 1 is set as the backup-count for example,
      * then all entries of the map will be copied to another JVM for
      * fail-safety. 0 means no sync backup.
      *
-     * @param backupCount the backupCount to set
+     * @param backupCount the number of synchronous backups to set
+     * @return current cache config instance
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setAsyncBackupCount(int)
      */
-    public CacheConfig<K, V> setBackupCount(final int backupCount) {
-        if (backupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + this.asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
+    public CacheConfig<K, V> setBackupCount(int backupCount) {
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
     /**
-     * @return the asyncBackupCount
+     * Gets the number of asynchronous backups of the cache config.
+     *
+     * @return the number of asynchronous backups of the cache config
      * @see #setBackupCount(int)
      */
     public int getAsyncBackupCount() {
@@ -212,53 +250,73 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * Number of asynchronous backups.
-     * 0 means no backup.
+     * Sets the number of asynchronous backups.
      *
-     * @param asyncBackupCount the asyncBackupCount to set
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheConfig
+     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
      */
-    public CacheConfig<K, V> setAsyncBackupCount(final int asyncBackupCount) {
-        if (asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map async backup count must be equal to or bigger than " + MIN_BACKUP_COUNT);
-        }
-        if ((this.backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than " + MAX_BACKUP_COUNT);
-        }
-        this.asyncBackupCount = asyncBackupCount;
+    public CacheConfig<K, V> setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
+    /**
+     * Gets the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache config.
+     *
+     * @return the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache config
+     */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
     /**
-     * @return the evictionPolicy
+     * Gets the {@link EvictionConfig} instance for eviction configuration of the cache config.
+     *
+     * @return the {@link EvictionConfig} instance for eviction configuration
      */
-    public EvictionPolicy getEvictionPolicy() {
-        return evictionPolicy;
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    public CacheEvictionConfig getEvictionConfig() {
+        return evictionConfig;
     }
 
     /**
-     * @param evictionPolicy the evictionPolicy to set
+     * Sets the {@link EvictionConfig} instance for eviction configuration of the cache config.
+     *
+     * @param evictionConfig the {@link EvictionConfig} instance for eviction configuration to set
+     * @return current cache config instance
      */
-    public CacheConfig<K, V> setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        this.evictionPolicy = evictionPolicy;
+    public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        isNotNull(evictionConfig, "Eviction config cannot be null !");
+
+        // TODO Remove this check in the future since "CacheEvictionConfig" is deprecated
+        if (evictionConfig instanceof CacheEvictionConfig) {
+            this.evictionConfig = (CacheEvictionConfig) evictionConfig;
+        } else {
+            this.evictionConfig = new CacheEvictionConfig(evictionConfig);
+        }
+
         return this;
     }
 
-    public NearCacheConfig getNearCacheConfig() {
-        return nearCacheConfig;
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRef;
     }
 
-    public CacheConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
-        this.nearCacheConfig = nearCacheConfig;
+    public CacheConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        this.wanReplicationRef = wanReplicationRef;
         return this;
     }
 
     /**
-     * @return data type that will be used for storing records.
+     * Gets the data type that will be used for storing records.
+     *
+     * @return the data storage type of the cache config
      */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
@@ -271,34 +329,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * OBJECT : values will be stored in their object forms
      *
      * @param inMemoryFormat the record type to set
+     * @return current cache config instance
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
-        return this;
-    }
-
-    /**
-     * @return eviction percentage
-     */
-    public int getEvictionPercentage() {
-        return evictionPercentage;
-    }
-
-    public CacheConfig<K, V> setEvictionPercentage(int evictionPercentage) {
-        this.evictionPercentage = evictionPercentage;
-        return this;
-    }
-
-    /**
-     * @return eviction threshold percentage
-     */
-    public int getEvictionThresholdPercentage() {
-        return evictionThresholdPercentage;
-    }
-
-    public CacheConfig<K, V> setEvictionThresholdPercentage(int evictionThresholdPercentage) {
-        this.evictionThresholdPercentage = evictionThresholdPercentage;
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 
@@ -311,13 +346,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
 
-        out.writeInt(inMemoryFormat.ordinal());
-        out.writeInt(evictionPolicy.ordinal());
-        out.writeInt(evictionPercentage);
-        out.writeInt(evictionThresholdPercentage);
+        out.writeUTF(inMemoryFormat.name());
+        out.writeObject(evictionConfig);
 
-        out.writeObject(nearCacheConfig);
-
+        out.writeObject(wanReplicationRef);
         //SUPER
         out.writeObject(keyType);
         out.writeObject(valueType);
@@ -350,15 +382,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
 
-        final int resultInMemoryFormat = in.readInt();
-        inMemoryFormat = InMemoryFormat.values()[resultInMemoryFormat];
+        String resultInMemoryFormat = in.readUTF();
+        inMemoryFormat = InMemoryFormat.valueOf(resultInMemoryFormat);
+        evictionConfig = in.readObject();
 
-        final int resultEvictionPolicy = in.readInt();
-        evictionPolicy = EvictionPolicy.values()[resultEvictionPolicy];
-        evictionPercentage = in.readInt();
-        evictionThresholdPercentage = in.readInt();
-
-        nearCacheConfig = in.readObject();
+        wanReplicationRef = in.readObject();
 
         //SUPER
         keyType = in.readObject();
@@ -391,7 +419,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         result = 31 * result + (uriString != null ? uriString.hashCode() : 0);
         return result;
     }
-
 
     @Override
     public boolean equals(final Object o) {

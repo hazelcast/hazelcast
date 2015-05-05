@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,13 @@ public final class MigrationOperation extends BaseMigrationOperation {
         if (success) {
             InternalPartitionService partitionService = getService();
             partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions, 1);
+            if (getLogger().isFinestEnabled()) {
+                getLogger().finest("ReplicaVersions are set after migration. partitionId="
+                        + migrationInfo.getPartitionId() + " replicaVersions=" + Arrays.toString(replicaVersions));
+            }
+        } else if (getLogger().isFinestEnabled()) {
+            getLogger().finest("ReplicaVersions are not set since migration failed. partitionId="
+                    + migrationInfo.getPartitionId());
         }
 
         migrationInfo.doneProcessing();
@@ -193,13 +200,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getClass().getName());
-        sb.append("{partitionId=").append(getPartitionId());
-        sb.append(", migration=").append(migrationInfo);
-        sb.append(", version=").append(Arrays.toString(replicaVersions));
-        sb.append(", tasks=").append(tasks != null ? tasks.size() : 0);
-        sb.append('}');
-        return sb.toString();
+        final int numberOfTasks = tasks != null ? tasks.size() : 0;
+        return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", migration=" + migrationInfo
+                + ", replicaVersions=" + Arrays.toString(replicaVersions) + ", numberOfTasks=" + numberOfTasks + '}';
     }
 }

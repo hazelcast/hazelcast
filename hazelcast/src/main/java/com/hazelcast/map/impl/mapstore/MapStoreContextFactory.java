@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,10 @@ public final class MapStoreContextFactory {
         @Override
         public boolean isWriteBehindMapStoreEnabled() {
             return false;
+        }
+
+        @Override
+        public void triggerInitialKeyLoad() {
         }
 
         @Override

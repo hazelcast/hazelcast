@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
@@ -27,7 +28,15 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     void writeInt(int position, int v) throws IOException;
 
+    void writeInt(int v, ByteOrder byteOrder) throws IOException;
+
+    void writeInt(int position, int v, ByteOrder byteOrder) throws IOException;
+
     void writeLong(int position, long v) throws IOException;
+
+    void writeLong(long v, ByteOrder byteOrder) throws IOException;
+
+    void writeLong(int position, long v, ByteOrder byteOrder) throws IOException;
 
     void writeBoolean(int position, boolean v) throws IOException;
 
@@ -39,9 +48,21 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     void writeDouble(int position, double v) throws IOException;
 
+    void writeDouble(double v, ByteOrder byteOrder) throws IOException;
+
+    void writeDouble(int position, double v, ByteOrder byteOrder) throws IOException;
+
     void writeFloat(int position, float v) throws IOException;
 
+    void writeFloat(float v, ByteOrder byteOrder) throws IOException;
+
+    void writeFloat(int position, float v, ByteOrder byteOrder) throws IOException;
+
     void writeShort(int position, int v) throws IOException;
+
+    void writeShort(int v, ByteOrder byteOrder) throws IOException;
+
+    void writeShort(int position, int v, ByteOrder byteOrder) throws IOException;
 
     int position();
 

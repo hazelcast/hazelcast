@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,14 +41,14 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
     }
 
     public boolean put(K key, V value) throws TransactionException {
-        checkTransactionState();
+        checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
         Data dataValue = getNodeEngine().toData(value);
         return putInternal(dataKey, dataValue);
     }
 
     public Collection<V> get(K key) {
-        checkTransactionState();
+        checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
         Collection<MultiMapRecord> coll = getInternal(dataKey);
         Collection<V> collection = new ArrayList<V>(coll.size());
@@ -59,14 +59,14 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
     }
 
     public boolean remove(Object key, Object value) {
-        checkTransactionState();
+        checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
         Data dataValue = getNodeEngine().toData(value);
         return removeInternal(dataKey, dataValue);
     }
 
     public Collection<V> remove(Object key) {
-        checkTransactionState();
+        checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
         Collection<MultiMapRecord> coll = removeAllInternal(dataKey);
         Collection<V> result = new ArrayList<V>(coll.size());
@@ -77,7 +77,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
     }
 
     public int valueCount(K key) {
-        checkTransactionState();
+        checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
         return valueCountInternal(dataKey);
     }

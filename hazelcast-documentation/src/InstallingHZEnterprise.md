@@ -54,6 +54,16 @@ To use Hazelcast Enterprise, you need to set the license key in configuration.
 </hazelcast>
 ```
 
+-   **Client Declarative Configuration**
+
+```xml
+<hazelcast-client>
+  ...
+  <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
+  ...
+</hazelcast-client>
+```
+
 -   **Programmatic Configuration**
 
 ```java

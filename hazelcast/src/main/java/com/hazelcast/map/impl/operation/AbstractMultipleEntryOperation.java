@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,20 +36,20 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
-
 import java.util.AbstractMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
+abstract class AbstractMultipleEntryOperation extends AbstractMapOperation implements MutatingOperation {
 
     protected MapEntrySet responses;
     protected EntryProcessor entryProcessor;
     protected EntryBackupProcessor backupProcessor;
     protected transient RecordStore recordStore;
-
 
     protected AbstractMultipleEntryOperation() {
     }
@@ -81,9 +81,8 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation {
     }
 
     protected boolean hasRegisteredListenerForThisMap() {
-        final String serviceName = mapService.getMapServiceContext().serviceName();
         final EventService eventService = getNodeEngine().getEventService();
-        return eventService.hasEventRegistration(serviceName, name);
+        return eventService.hasEventRegistration(SERVICE_NAME, name);
     }
 
     /**

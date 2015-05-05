@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ public final class TransactionOptions implements DataSerializable {
         sb.append("TransactionOptions");
         sb.append("{timeoutMillis=").append(timeoutMillis);
         sb.append(", durability=").append(durability);
-        sb.append(", txType=").append(transactionType.value);
+        sb.append(", txType=").append(transactionType);
         sb.append('}');
         return sb.toString();
     }
@@ -206,6 +206,10 @@ public final class TransactionOptions implements DataSerializable {
 
         TransactionType(int value) {
             this.value = value;
+        }
+
+        public int id() {
+            return value;
         }
 
         public static TransactionType getByValue(int value) {

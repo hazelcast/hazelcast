@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
 /**
- * Run the tests randomly and log the running test.
+ * Run the tests in series and log the running test.
  */
 public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
 
@@ -29,14 +29,23 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
         super(klass);
     }
 
-    @Override
-    protected void runChild(FrameworkMethod method, RunNotifier notifier) {
-        long start = System.currentTimeMillis();
-        String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-        System.out.println("Started Running Test: " + testName);
-        super.runChild(method, notifier);
-        float took = (float) (System.currentTimeMillis() - start) / 1000;
-        System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+    public HazelcastSerialClassRunner(Class<?> klass, Object[] parameters,
+                                      String name) throws InitializationError {
+        super(klass, parameters, name);
     }
 
+    @Override
+    protected void runChild(FrameworkMethod method, RunNotifier notifier) {
+        FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
+        try {
+            long start = System.currentTimeMillis();
+            String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
+            System.out.println("Started Running Test: " + testName);
+            super.runChild(method, notifier);
+            float took = (float) (System.currentTimeMillis() - start) / 1000;
+            System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+        }finally {
+            FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+        }
+    }
 }

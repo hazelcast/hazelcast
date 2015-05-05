@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MapValuesRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapValuesRequest extends AllPartitionsClientRequest implements Portable, SecureRequest, RetryableRequest {
 
     private String name;
 
@@ -62,27 +62,22 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
         return new MapValueCollection(values);
     }
 
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
     @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return MapPortableHook.VALUES;
     }
 
-    public void write(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
-    public void read(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-    }
-
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_READ);
     }
@@ -95,5 +90,15 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
     @Override
     public String getMethodName() {
         return "values";
+    }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+    }
+
+    @Override
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
     }
 }

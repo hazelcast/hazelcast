@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,14 @@ public final class RandomPicker {
         }
     }
 
+    /**
+     * Returns a pseudorandom, uniformly distributed int value between 0 (inclusive)
+     * and the specified value (exclusive), drawn from this random number generator's sequence.
+     * Starts the random number generator sequence if it has not been initialized.
+     *
+     * @param n the specified value
+     * @return a value between 0 (inclusive) and the specified value (exclusive).
+     */
     public static int getInt(int n) {
         if (randomNumberGenerator == null) {
             initRNG();

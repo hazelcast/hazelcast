@@ -3,9 +3,9 @@ com.hazelcast.partition.PartitionPortableHook
 com.hazelcast.client.impl.client.ClientPortableHook
 com.hazelcast.transaction.client.ClientTxnPortableHook
 com.hazelcast.map.impl.MapPortableHook
-com.hazelcast.queue.impl.QueuePortableHook
+com.hazelcast.collection.impl.queue.QueuePortableHook
 com.hazelcast.multimap.impl.MultiMapPortableHook
-com.hazelcast.collection.CollectionPortableHook
+com.hazelcast.collection.impl.collection.CollectionPortableHook
 com.hazelcast.topic.impl.TopicPortableHook
 com.hazelcast.executor.impl.ExecutorPortableHook
 com.hazelcast.concurrent.lock.client.LockPortableHook

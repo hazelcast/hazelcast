@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ package com.hazelcast.util;
 public interface MemoryInfoAccessor {
 
     /**
-     * Returns total amount allocated memory in JVM in bytes.
+     * Returns total amount allocated memory in the Java virtual machine in bytes.
      *
      * @return total memory allocated in bytes.
      *
@@ -34,7 +34,7 @@ public interface MemoryInfoAccessor {
     long getTotalMemory();
 
     /**
-     * Returns the amount of free memory in the JVM in bytes.
+     * Returns the amount of free memory in the Java virtual machine in bytes.
      *
      * @return free memory in bytes
      *
@@ -43,7 +43,7 @@ public interface MemoryInfoAccessor {
     long getFreeMemory();
 
     /**
-     * Returns the maximum amount of memory that the JVM will attempt to use in bytes.
+     * Returns the maximum amount of memory that the Java virtual machine will attempt to use in bytes.
      *
      * @return maximum memory in bytes.
      *

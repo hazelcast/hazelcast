@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,6 @@ public interface ICacheRecordStore {
 
     // Defined as constant for check-style error
     int ONE_HUNDRED_PERCENT = 100;
-    int MIN_FORCED_EVICT_PERCENTAGE = 20;
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -345,12 +344,23 @@ public interface ICacheRecordStore {
     /**
      * Associates the specified record with the specified key.
      * This is simply a put operation on the internal map data
-     * without any CacheLoad.
+     * without any CacheLoad. It also <b>DOES NOT</b> trigger eviction,
+     * be aware of the fact it might cause an OutOfMemoryException!
      *
      * @param key the key to the entry.
      * @param record the value to be associated with the specified key.
      */
     void setRecord(Data key, CacheRecord record);
+
+    /**
+     * Associates the specified record with the specified key.
+     * This is simply a put operation on the internal map data
+     * without any CacheLoad. It also <b>DOES</b> trigger eviction!
+     *
+     * @param key the key to the entry.
+     * @param record the value to be associated with the specified key.
+     */
+    void putRecord(Data key, CacheRecord record);
 
     /**
      * Removes the record for a key.
@@ -411,20 +421,5 @@ public interface ICacheRecordStore {
      * @return the number of evicted records.
      */
     int evictIfRequired();
-
-    /**
-     * Evict cache record store as <code>evictionPercentange</code>.
-     * <p>Eviction logic is handled as specified {@link com.hazelcast.config.EvictionPolicy}
-     * in {@link com.hazelcast.config.CacheConfig} for this record store</p>
-     * @param evictionPercentange The eviction percentage relative to cache record store capacity.
-     * @return the number of evicted records.
-     */
-    int evictExpiredRecords(int evictionPercentange);
-
-    /**
-     * Forcibly evict all expired records.
-     * @return the number of evicted records.
-     */
-    int forceEvict();
 
 }

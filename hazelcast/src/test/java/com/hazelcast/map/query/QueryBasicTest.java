@@ -6,6 +6,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
@@ -25,6 +26,9 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,13 +48,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class QueryBasicTest extends HazelcastTestSupport {
+
+    @Test
+    public void testPredicatedEvaluatedSingleThreadedByDefault() {
+        Config config = new Config();
+        GroupProperties properties = new GroupProperties(config);
+        boolean parallelEvaluation = properties.QUERY_PREDICATE_PARALLEL_EVALUATION.getBoolean();
+        assertEquals(false, parallelEvaluation);
+    }
 
     @Test(timeout = 1000 * 60)
     public void testInPredicateWithEmptyArray() {
@@ -758,8 +766,15 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryPortableObject() {
+    public void testQueryPortableObject_serial() {
         testQueryUsingPortableObject(new Config(), randomMapName());
+    }
+
+    @Test
+    public void testQueryPortableObject_parallel() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_QUERY_PREDICATE_PARALLEL_EVALUATION, "true");
+        testQueryUsingPortableObject(config, randomMapName());
     }
 
     @Test
@@ -780,6 +795,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new ParentPortableObject(1L));
+        waitAllForSafeState(hz1, hz2);
 
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
@@ -842,6 +858,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Object key = generateKeyOwnedBy(hz1);
         map.put(key, new GrandParentPortableObject(1, new ParentPortableObject(1L, new ChildPortableObject(1L))));
+        waitAllForSafeState(hz1, hz2);
 
         Collection<Object> values = map.values(new SqlPredicate("child.timestamp > 0"));
         assertEquals(1, values.size());

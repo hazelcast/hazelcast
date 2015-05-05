@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
@@ -35,6 +36,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -45,10 +47,12 @@ public class NodeIOService implements IOService {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
+    private final PacketTransceiver packetTransceiver;
 
     public NodeIOService(Node node) {
         this.node = node;
         this.nodeEngine = node.nodeEngine;
+        this.packetTransceiver = nodeEngine.getPacketTransceiver();
     }
 
     @Override
@@ -73,7 +77,8 @@ public class NodeIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
-        new Thread(node.threadGroup, node.getThreadNamePrefix("io.error.shutdown")) {
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        new Thread(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("io.error.shutdown")) {
             public void run() {
                 node.shutdown(false);
             }
@@ -104,12 +109,17 @@ public class NodeIOService implements IOService {
                 member.didRead();
             }
         }
-        nodeEngine.handlePacket(packet);
+        packetTransceiver.receive(packet);
     }
 
     @Override
     public void handleClientPacket(Packet p) {
         node.clientEngine.handlePacket(p);
+    }
+
+    @Override
+    public void handleClientMessage(ClientMessage cm, Connection connection) {
+        node.clientEngine.handleClientMessage(cm, connection);
     }
 
     @Override
@@ -139,18 +149,27 @@ public class NodeIOService implements IOService {
 
     @Override
     public String getThreadPrefix() {
-        return node.getThreadPoolNamePrefix("IO");
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        return threadGroup.getThreadPoolNamePrefix("IO");
     }
 
     @Override
     public ThreadGroup getThreadGroup() {
-        return node.threadGroup;
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        return threadGroup.getInternalThreadGroup();
+    }
+
+    @Override
+    public void onSuccessfulConnection(Address address) {
+        if (!node.joined()) {
+            node.getJoiner().unblacklist(address);
+        }
     }
 
     @Override
     public void onFailedConnection(Address address) {
         if (!node.joined()) {
-            node.getJoiner().blacklist(address);
+            node.getJoiner().blacklist(address, false);
         }
     }
 
@@ -226,6 +245,11 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public int getBalancerIntervalSeconds() {
+        return node.groupProperties.IO_BALANCER_INTERVAL_SECONDS.getInteger();
+    }
+
+    @Override
     public void executeAsync(final Runnable runnable) {
         nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
     }
@@ -248,11 +272,6 @@ public class NodeIOService implements IOService {
     @Override
     public SerializationService getSerializationService() {
         return node.getSerializationService();
-    }
-
-    @Override
-    public PortableContext getPortableContext() {
-        return node.getSerializationService().getPortableContext();
     }
 
     @Override

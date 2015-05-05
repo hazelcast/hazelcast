@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
 /**
  * Contains the configuration for global serializer.
  */
@@ -45,12 +43,7 @@ public class GlobalSerializerConfig {
         return implementation;
     }
 
-    public GlobalSerializerConfig setImplementation(final ByteArraySerializer implementation) {
-        this.implementation = implementation;
-        return this;
-    }
-
-    public GlobalSerializerConfig setImplementation(final StreamSerializer implementation) {
+    public GlobalSerializerConfig setImplementation(Serializer implementation) {
         this.implementation = implementation;
         return this;
     }

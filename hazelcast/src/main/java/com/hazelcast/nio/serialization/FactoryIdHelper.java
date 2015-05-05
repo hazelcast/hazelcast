@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,15 @@ public final class FactoryIdHelper {
     public static final String CACHE_DS_FACTORY = "hazelcast.serialization.ds.cache";
     public static final String HIBERNATE_DS_FACTORY = "hazelcast.serialization.ds.hibernate";
     public static final String ENTERPRISE_CACHE_DS_FACTORY = "hazelcast.serialization.ds.enterprise.cache";
+    public static final String HIDENSITY_CACHE_DS_FACTORY = "hazelcast.serialization.ds.hidensity.cache";
+    public static final String ENTERPRISE_WAN_REPLICATION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.wan_replication";
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
     public static final String PARTITION_PORTABLE_FACTORY = "hazelcast.serialization.portable.partition";
     public static final String CLIENT_PORTABLE_FACTORY = "hazelcast.serialization.portable.client";
     public static final String CLIENT_TXN_PORTABLE_FACTORY = "hazelcast.serialization.portable.client.txn";
     public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
+    public static final String ENTERPRISE_MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.enterprise.map";
     public static final String QUEUE_PORTABLE_FACTORY = "hazelcast.serialization.portable.queue";
     public static final String MULTIMAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.multimap";
     public static final String COLLECTION_PORTABLE_FACTORY = "hazelcast.serialization.portable.collection";

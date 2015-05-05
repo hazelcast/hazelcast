@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,13 @@ public interface ExecutionCallback<V> {
     /**
      * Called when an execution is completed successfully.
      *
-     * @param response result of execution
+     * @param response the result of the successful execution
      */
     void onResponse(V response);
 
     /**
      * Called when an execution is completed with an error.
-     * @param t exception thrown
+     * @param t the exception that is thrown
      */
     void onFailure(Throwable t);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,9 +84,7 @@ public class ReplicatedMapService
 
     @Override
     public void reset() {
-        for (ReplicatedRecordStore replicatedRecordStore : replicatedStorages.values()) {
-            replicatedRecordStore.clear(false, true);
-        }
+        // Nothing to do, it is ok for a ReplicatedMap to keep its current state on rejoins
     }
 
     @Override

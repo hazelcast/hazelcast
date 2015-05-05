@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -38,7 +38,8 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class PortableTest {
 
-    static final int FACTORY_ID = 1;
+    static final int PORTABLE_FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
+    static final int IDENTIFIED_FACTORY_ID = TestSerializationConstants.DATA_SERIALIZABLE_FACTORY_ID;
 
     @Test
     public void testBasics() {
@@ -73,7 +74,6 @@ public class PortableTest {
         NamedPortable np = nn[0];
         data = serializationService.toData(np);
         assertEquals(np, serializationService.toObject(data));
-        transferClassDefinition(data, serializationService, serializationService2);
         assertEquals(np, serializationService2.toObject(data));
 
         InnerPortable inner = new InnerPortable(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
@@ -82,7 +82,6 @@ public class PortableTest {
 
         data = serializationService.toData(inner);
         assertEquals(inner, serializationService.toObject(data));
-        transferClassDefinition(data, serializationService, serializationService2);
         assertEquals(inner, serializationService2.toObject(data));
 
         MainPortable main = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
@@ -90,18 +89,7 @@ public class PortableTest {
 
         data = serializationService.toData(main);
         assertEquals(main, serializationService.toObject(data));
-        transferClassDefinition(data, serializationService, serializationService2);
         assertEquals(main, serializationService2.toObject(data));
-    }
-
-    static void transferClassDefinition(Data data, SerializationService from, SerializationService to) {
-        ClassDefinition[] classDefinitions = from.getPortableContext().getClassDefinitions(data);
-        if (classDefinitions == null) {
-            return;
-        }
-        for (ClassDefinition cd : classDefinitions) {
-            to.getPortableContext().registerClassDefinition(cd);
-        }
     }
 
     static SerializationService createSerializationService(int version) {
@@ -111,11 +99,12 @@ public class PortableTest {
     static SerializationService createSerializationService(int version, ByteOrder order, boolean allowUnsafe) {
         return new DefaultSerializationServiceBuilder()
                 .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(order).setVersion(version)
-                .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+                .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory())
+                .addDataSerializableFactory(IDENTIFIED_FACTORY_ID, new TestDataSerializableFactory()).build();
     }
 
     static ClassDefinition createNamedPortableClassDefinition() {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, NamedPortable.CLASS_ID);
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE);
         builder.addUTFField("name");
         builder.addIntField("myint");
         return builder.build();
@@ -177,10 +166,10 @@ public class PortableTest {
     @Test
     public void testClassDefinitionConfigWithErrors() throws Exception {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(FACTORY_ID, new TestPortableFactory());
+        serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
         serializationConfig.addClassDefinition(
-                new ClassDefinitionBuilder(FACTORY_ID, RawDataPortable.CLASS_ID)
+                new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE)
                         .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build());
 
         try {
@@ -200,14 +189,14 @@ public class PortableTest {
     @Test
     public void testClassDefinitionConfig() throws Exception {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.addPortableFactory(FACTORY_ID, new TestPortableFactory());
+        serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
         serializationConfig
                 .addClassDefinition(
-                        new ClassDefinitionBuilder(FACTORY_ID, RawDataPortable.CLASS_ID)
+                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE)
                                 .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build())
                 .addClassDefinition(
-                        new ClassDefinitionBuilder(FACTORY_ID, NamedPortable.CLASS_ID)
+                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                                 .addUTFField("name").addIntField("myint").build()
                 );
 
@@ -230,7 +219,6 @@ public class PortableTest {
         Data data = serializationService.toData(o1);
 
         SerializationService serializationService2 = createSerializationService(2);
-        transferClassDefinition(data, serializationService, serializationService2);
 
         Object o2 = serializationService2.toObject(data);
         assertEquals(o1, o2);
@@ -240,7 +228,7 @@ public class PortableTest {
     @Test
     public void test_1096_ByteArrayContentSame() {
         SerializationService ss = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+                .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).build();
 
         assertRepeatedSerialisationGivesSameByteArrays(ss, new NamedPortable("issue-1096", 1096));
 
@@ -273,7 +261,7 @@ public class PortableTest {
     }
 
     @Test
-    public void testClassDefinitionLookupBigEndianHeapData() {
+    public void testClassDefinitionLookupBigEndianHeapData() throws IOException {
         SerializationService ss = new DefaultSerializationServiceBuilder()
                 .setByteOrder(ByteOrder.BIG_ENDIAN)
                 .build();
@@ -282,7 +270,7 @@ public class PortableTest {
     }
 
     @Test
-    public void testClassDefinitionLookupLittleEndianHeapData() {
+    public void testClassDefinitionLookupLittleEndianHeapData() throws IOException {
         SerializationService ss = new DefaultSerializationServiceBuilder()
                 .setByteOrder(ByteOrder.LITTLE_ENDIAN)
                 .build();
@@ -291,7 +279,7 @@ public class PortableTest {
     }
 
     @Test
-    public void testClassDefinitionLookupNativeOrderHeapData() {
+    public void testClassDefinitionLookupNativeOrderHeapData() throws IOException {
         SerializationService ss = new DefaultSerializationServiceBuilder()
                 .setUseNativeByteOrder(true)
                 .build();
@@ -299,24 +287,13 @@ public class PortableTest {
         testClassDefinitionLookup(ss);
     }
 
-    static void testClassDefinitionLookup(SerializationService ss) {
+    static void testClassDefinitionLookup(SerializationService ss) throws IOException {
         NamedPortableV2 p = new NamedPortableV2("test-portable", 123456789);
         Data data = ss.toData(p);
 
-        byte[] metadata = data.getHeader();
-        assertNotNull(metadata);
-
-        boolean bigEndian = ss.getByteOrder() == ByteOrder.BIG_ENDIAN;
-        assertEquals(p.getFactoryId(), Bits.readInt(metadata, 0, bigEndian));
-        assertEquals(p.getClassId(), Bits.readInt(metadata, 4, bigEndian));
-        assertEquals(p.getClassVersion(), Bits.readInt(metadata, 8, bigEndian));
-
-        assertEquals(p.getFactoryId(), data.readIntHeader(0, ss.getByteOrder()));
-        assertEquals(p.getClassId(), data.readIntHeader(4, ss.getByteOrder()));
-        assertEquals(p.getClassVersion(), data.readIntHeader(8, ss.getByteOrder()));
-
         PortableContext portableContext = ss.getPortableContext();
         ClassDefinition cd = portableContext.lookupClassDefinition(data);
+        assertNotNull(cd);
 
         assertEquals(p.getFactoryId(), cd.getFactoryId());
         assertEquals(p.getClassId(), cd.getClassId());
@@ -486,7 +463,7 @@ public class PortableTest {
 
         @Override
         public int getFactoryId() {
-            return FACTORY_ID;
+            return PORTABLE_FACTORY_ID;
         }
 
         @Override
@@ -517,7 +494,7 @@ public class PortableTest {
 
         @Override
         public int getFactoryId() {
-            return FACTORY_ID;
+            return PORTABLE_FACTORY_ID;
         }
 
         @Override
@@ -541,18 +518,31 @@ public class PortableTest {
 
         public Portable create(int classId) {
             switch (classId) {
-                case MainPortable.CLASS_ID:
+                case TestSerializationConstants.MAIN_PORTABLE:
                     return new MainPortable();
-                case InnerPortable.CLASS_ID:
+                case TestSerializationConstants.INNER_PORTABLE:
                     return new InnerPortable();
-                case NamedPortable.CLASS_ID:
+                case TestSerializationConstants.NAMED_PORTABLE:
                     return new NamedPortable();
-                case RawDataPortable.CLASS_ID:
+                case TestSerializationConstants.RAW_DATA_PORTABLE:
                     return new RawDataPortable();
-                case InvalidRawDataPortable.CLASS_ID:
+                case TestSerializationConstants.INVALID_RAW_DATA_PORTABLE:
                     return new InvalidRawDataPortable();
-                case InvalidRawDataPortable2.CLASS_ID:
+                case TestSerializationConstants.INVALID_RAW_DATA_PORTABLE_2:
                     return new InvalidRawDataPortable2();
+                case TestSerializationConstants.OBJECT_CARRYING_PORTABLE:
+                    return new ObjectCarryingPortable();
+            }
+            return null;
+        }
+    }
+
+    public static class TestDataSerializableFactory implements DataSerializableFactory {
+        @Override
+        public IdentifiedDataSerializable create(int typeId) {
+            switch (typeId) {
+                case TestSerializationConstants.SAMPLE_IDENTIFIED_DATA_SERIALIZABLE:
+                    return new SampleIdentifiedDataSerializable();
             }
             return null;
         }
@@ -561,7 +551,7 @@ public class PortableTest {
     @Test
     public void testWriteObject_withPortable() {
         SerializationService ss = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
                         return new NamedPortableV2();
@@ -570,7 +560,7 @@ public class PortableTest {
                 .build();
 
         SerializationService ss2 = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
                         return new NamedPortable();
@@ -583,8 +573,6 @@ public class PortableTest {
                 new ByteArrayDataSerializable(new byte[3]), null);
         Data data = ss.toData(o1);
 
-        transferClassDefinition(data, ss, ss2);
-
         Object o2 = ss2.toObject(data);
         assertEquals(o1, o2);
     }
@@ -592,7 +580,7 @@ public class PortableTest {
     @Test
     public void testWriteData_withPortable() {
         SerializationService ss = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
                         return new NamedPortableV2();
@@ -601,7 +589,7 @@ public class PortableTest {
                 .build();
 
         SerializationService ss2 = new DefaultSerializationServiceBuilder()
-                .addPortableFactory(FACTORY_ID, new PortableFactory() {
+                .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
                         return new NamedPortable();
@@ -614,7 +602,6 @@ public class PortableTest {
         Object o1 = new DataDataSerializable(ss.toData(p1));
 
         Data data = ss.toData(o1);
-        transferClassDefinition(data, ss, ss2);
 
         DataDataSerializable o2 = ss2.toObject(data);
         assertEquals(o1, o2);
@@ -646,6 +633,49 @@ public class PortableTest {
 
         Data data = ss.toData(new ParentGenericPortable<ChildGenericPortable2>(new ChildGenericPortable2("ccc")));
         ss.toObject(data);
+
+    }
+
+    @Test
+    public void testWriteObjectWithPortable() {
+        SerializationService serializationService = createSerializationService(1);
+
+        NamedPortable namedPortable = new NamedPortable("name", 2);
+        ObjectCarryingPortable objectCarryingPortable1 = new ObjectCarryingPortable(namedPortable);
+        Data data = serializationService.toData(objectCarryingPortable1);
+        ObjectCarryingPortable objectCarryingPortable2 = serializationService.toObject(data);
+        assertEquals(objectCarryingPortable1, objectCarryingPortable2);
+    }
+
+    @Test
+    public void testWriteObjectWithIdentifiedDataSerializable() {
+        SerializationService serializationService = createSerializationService(1);
+
+        SampleIdentifiedDataSerializable namedPortable = new SampleIdentifiedDataSerializable('c', 2);
+        ObjectCarryingPortable objectCarryingPortable1 = new ObjectCarryingPortable(namedPortable);
+        Data data = serializationService.toData(objectCarryingPortable1);
+        ObjectCarryingPortable objectCarryingPortable2 = serializationService.toObject(data);
+        assertEquals(objectCarryingPortable1, objectCarryingPortable2);
+    }
+
+    @Test
+    public void testWriteObjectWithCustomSerializable() {
+        SerializationConfig config = new SerializationConfig();
+        SerializerConfig sc = new SerializerConfig()
+                .setImplementation(new CustomSerializationTest.FooXmlSerializer())
+                .setTypeClass(CustomSerializationTest.Foo.class);
+        config.addSerializerConfig(sc);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
+                .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).setConfig(config).build();
+
+        CustomSerializationTest.Foo foo = new CustomSerializationTest.Foo("f");
+
+        ObjectCarryingPortable objectCarryingPortable1 = new ObjectCarryingPortable(foo);
+        Data data = serializationService.toData(objectCarryingPortable1);
+        ObjectCarryingPortable objectCarryingPortable2 = serializationService.toObject(data);
+        assertEquals(objectCarryingPortable1, objectCarryingPortable2);
+
+
     }
 
     static class ParentGenericPortable<T extends Portable> implements Portable {

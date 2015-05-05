@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,15 @@
 package com.hazelcast.cache.entryprocessor;
 
 import com.hazelcast.cache.BackupAwareEntryProcessor;
+import com.hazelcast.cache.HazelcastCachingProvider;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.Data;
@@ -42,235 +45,136 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.MutableConfiguration;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
 import javax.cache.spi.CachingProvider;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JCacheEntryProcessorTest extends HazelcastTestSupport {
 
-    private static TestHazelcastInstanceFactory factory;
-    private static HazelcastInstance hz1;
-    private static HazelcastInstance hz2;
+    private static final int ASSERTION_TIMEOUT_SECONDS = 300;
 
-    private static CacheService cacheServiceHz1;
-    private static CacheService cacheServiceHz2;
+    private static TestHazelcastInstanceFactory factory;
+    private static HazelcastInstance node1;
+    private static HazelcastInstance node2;
+
+    private static CacheService cacheServiceOnNode1;
+    private static CacheService cacheServiceOnNode2;
 
     private static SerializationService serializationService;
 
     @BeforeClass
-    public static void setup() throws Exception {
-        factory = new TestHazelcastInstanceFactory(2);
-        hz1 = factory.newHazelcastInstance();
-        hz2 = factory.newHazelcastInstance();
-
-        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
-        original.setAccessible(true);
-
-        HazelcastInstanceImpl impl1 = (HazelcastInstanceImpl) original.get(hz1);
-        HazelcastInstanceImpl impl2 = (HazelcastInstanceImpl) original.get(hz2);
-
-        cacheServiceHz1 = impl1.node.getNodeEngine().getService(CacheService.SERVICE_NAME);
-        cacheServiceHz2 = impl2.node.getNodeEngine().getService(CacheService.SERVICE_NAME);
-
-        serializationService = impl1.node.getNodeEngine().getSerializationService();
+    public static void setUp() throws Exception {
+        setUpInternal();
     }
 
     @AfterClass
-    public static void teardown() {
+    public static void tearDown() {
         factory.shutdownAll();
     }
 
+    /**
+     * If there is not any implemented backup entry processor,
+     * we are only sending the result of execution to the backup node.
+     */
     @Test
-    public void test_execution_entryprocessor_default_backup() throws Exception {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        CacheManager cacheManager = cachingProvider.getCacheManager();
-
-        final String cacheName = randomString();
-
-        CompleteConfiguration<Integer, String> config =
-                new MutableConfiguration<Integer, String>()
-                        .setTypes(Integer.class, String.class);
-
-        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-
-        cache.invoke(1, new SimpleEntryProcessor());
-
-        final Data key = serializationService.toData(1);
-        final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-
-                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
-                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
-
-                CacheRecord record1 = recordStore1.getRecord(key);
-                CacheRecord record2 = recordStore2.getRecord(key);
-
-                checkIfRecordsNull(record1, record2);
-
-                Object value1 = serializationService.toObject(record1.getValue());
-                Object value2 = serializationService.toObject(record2.getValue());
-
-                assertEquals("Foo", value1);
-                assertEquals("Foo", value2);
-            }
-        });
+    public void whenBackupEntryProcessor_isNotImplemented() throws Exception {
+        EntryProcessor<Integer, String, Void> entryProcessor = new SimpleEntryProcessor();
+        executeTestInternal(entryProcessor);
     }
 
-    private ICacheRecordStore getRecordStore(CacheService cacheService, String cacheName, int partitionId) {
-        try {
-            return cacheService.getOrCreateCache("/hz/" + cacheName, partitionId);
-        } catch (Exception e) {
-            fail("CacheRecordStore not yet initialized!!!");
+    @Test
+    public void whenBackupEntryProcessor_isImplemented() throws Exception {
+        EntryProcessor<Integer, String, Void> entryProcessor = new CustomBackupAwareEntryProcessor();
+        executeTestInternal(entryProcessor);
+    }
+
+    @Test
+    public void whenBackupEntryProcessor_isSame_withPrimaryEntryProcessor() throws Exception {
+        EntryProcessor<Integer, String, Void> entryProcessor = new SimpleBackupAwareEntryProcessor();
+        executeTestInternal(entryProcessor);
+    }
+
+    @Test
+    public void whenBackupEntryProcessor_isNull() throws Exception {
+        EntryProcessor<Integer, String, Void> entryProcessor = new NullBackupAwareEntryProcessor();
+        executeTestInternal(entryProcessor);
+    }
+
+    @Test
+    public void removeRecordWithEntryProcessor() {
+        final int ENTRY_COUNT = 10;
+
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+        CompleteConfiguration<Integer, String> cacheConfig =
+                new MutableConfiguration<Integer, String>()
+                    .setTypes(Integer.class, String.class);
+        ICache<Integer, String> cache = cacheManager.createCache("MyCache", cacheConfig).unwrap(ICache.class);
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            cache.put(i * 1000, "Value-" + (i * 1000));
         }
-        return null;
-    }
 
-    private void checkIfRecordsNull(CacheRecord record1, CacheRecord record2) {
-        if (record1 == null || record2 == null) {
-            fail("Backups are not done yet!!!");
+        assertEquals(ENTRY_COUNT, cache.size());
+
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            if (i % 2 == 0) {
+                cache.invoke(i * 1000, new RemoveRecordEntryProcessor());
+            }
         }
+
+        assertEquals(ENTRY_COUNT / 2, cache.size());
     }
 
-    @Test
-    public void test_execution_entryprocessor_with_backup_entry_processor() throws Exception {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        CacheManager cacheManager = cachingProvider.getCacheManager();
-
+    private void executeTestInternal(EntryProcessor<Integer, String, Void> entryProcessor) {
         final String cacheName = randomString();
+        final Integer key = 1;
 
-        CompleteConfiguration<Integer, String> config =
-                new MutableConfiguration<Integer, String>()
-                        .setTypes(Integer.class, String.class);
+        executeEntryProcessor(key, entryProcessor, cacheName);
 
-        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-
-        cache.invoke(1, new SimpleBackupAwareEntryProcessor());
-
-        final Data key = serializationService.toData(1);
-        final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-
-                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
-                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
-
-                CacheRecord record1 = recordStore1.getRecord(key);
-                CacheRecord record2 = recordStore2.getRecord(key);
-
-                checkIfRecordsNull(record1, record2);
-
-                Object value1 = serializationService.toObject(record1.getValue());
-                Object value2 = serializationService.toObject(record2.getValue());
-
-                assertEquals("Foo", value1);
-                assertEquals("Foo", value2);
-            }
-        });
+        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode1);
+        assertKeyExistsInCache("Foo", key, cacheName, cacheServiceOnNode2);
     }
 
-    @Test
-    public void test_execution_entryprocessor_with_backup_entry_processor_null() throws Exception {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        CacheManager cacheManager = cachingProvider.getCacheManager();
-
-        final String cacheName = randomString();
-
-        CompleteConfiguration<Integer, String> config =
-                new MutableConfiguration<Integer, String>()
-                        .setTypes(Integer.class, String.class);
-
-        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-
-        cache.invoke(1, new NullBackupAwareEntryProcessor());
-
-        final Data key = serializationService.toData(1);
-        final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
-
-
+    private void assertKeyExistsInCache(final String expectedValue, final Integer key,
+                                        final String cacheName, final CacheService cacheService) {
         assertTrueEventually(new AssertTask() {
+
             @Override
-            public void run()
-                    throws Exception {
-                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
-                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
+            public void run() throws Exception {
 
-                CacheRecord record1 = recordStore1.getRecord(key);
-                CacheRecord record2 = recordStore2.getRecord(key);
+                final Data dataKey = serializationService.toData(key);
+                final PartitionService partitionService = node1.getPartitionService();
+                final Partition partition = partitionService.getPartition(key);
+                final int partitionId = partition.getPartitionId();
+                final ICacheRecordStore recordStore = getRecordStore(cacheService, cacheName, partitionId);
+                final CacheRecord record = recordStore.getRecord(dataKey);
 
-                checkIfRecordsNull(record1, record2);
+                assertNotNull("Backups are not done yet!!!", record);
 
-                Object value1 = serializationService.toObject(record1.getValue());
-                Object value2 = serializationService.toObject(record2.getValue());
-
-                assertEquals("Foo", value1);
-                assertEquals("Foo", value2);
+                final Object value = serializationService.toObject(record.getValue());
+                assertEquals(expectedValue, value);
             }
-        });
-    }
+        }, ASSERTION_TIMEOUT_SECONDS);
 
-    @Test
-    public void test_execution_entryprocessor_with_backup_entry_processor_custom_backup() throws Exception {
-        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
-        CacheManager cacheManager = cachingProvider.getCacheManager();
-
-        final String cacheName = randomString();
-
-        CompleteConfiguration<Integer, String> config =
-                new MutableConfiguration<Integer, String>()
-                        .setTypes(Integer.class, String.class);
-
-        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-
-        cache.invoke(1, new CustomBackupAwareEntryProcessor());
-
-        final Data key = serializationService.toData(1);
-        final int partitionId = hz1.getPartitionService().getPartition(1).getPartitionId();
-
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                ICacheRecordStore recordStore1 = getRecordStore(cacheServiceHz1, cacheName, partitionId);
-                ICacheRecordStore recordStore2 = getRecordStore(cacheServiceHz2, cacheName, partitionId);
-
-                CacheRecord record1 = recordStore1.getRecord(key);
-                CacheRecord record2 = recordStore2.getRecord(key);
-
-                checkIfRecordsNull(record1, record2);
-
-                Object value1 = serializationService.toObject(record1.getValue());
-                Object value2 = serializationService.toObject(record2.getValue());
-
-                Partition partition = hz1.getPartitionService().getPartition(1);
-                if (hz1.getCluster().getLocalMember().equals(partition.getOwner())) {
-                    assertEquals("Foo1", value1);
-                    assertEquals("Foo2", value2);
-                } else {
-                    assertEquals("Foo1", value2);
-                    assertEquals("Foo2", value1);
-                }
-            }
-        });
     }
 
     public static class SimpleEntryProcessor
             implements EntryProcessor<Integer, String, Void>, Serializable {
+
+        private static final long serialVersionUID = -396575576353368113L;
 
         @Override
         public Void process(MutableEntry<Integer, String> entry, Object... arguments)
@@ -283,6 +187,8 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
 
     public static class SimpleBackupAwareEntryProcessor
             implements BackupAwareEntryProcessor<Integer, String, Void>, Serializable {
+
+        private static final long serialVersionUID = -5274605583423489718L;
 
         @Override
         public Void process(MutableEntry<Integer, String> entry, Object... arguments)
@@ -301,6 +207,8 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
     public static class NullBackupAwareEntryProcessor
             implements BackupAwareEntryProcessor<Integer, String, Void>, Serializable {
 
+        private static final long serialVersionUID = -8423196656316041614L;
+
         @Override
         public Void process(MutableEntry<Integer, String> entry, Object... arguments)
                 throws EntryProcessorException {
@@ -318,11 +226,13 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
     public static class CustomBackupAwareEntryProcessor
             implements BackupAwareEntryProcessor<Integer, String, Void>, Serializable {
 
+        private static final long serialVersionUID = 3409663318028125754L;
+
         @Override
         public Void process(MutableEntry<Integer, String> entry, Object... arguments)
                 throws EntryProcessorException {
 
-            entry.setValue("Foo1");
+            entry.setValue("Foo");
             return null;
         }
 
@@ -335,12 +245,65 @@ public class JCacheEntryProcessorTest extends HazelcastTestSupport {
     public static class BackupEntryProcessor
             implements EntryProcessor<Integer, String, Void>, Serializable {
 
+        private static final long serialVersionUID = -6376894786246368848L;
+
         @Override
         public Void process(MutableEntry<Integer, String> entry, Object... arguments)
                 throws EntryProcessorException {
 
-            entry.setValue("Foo2");
+            entry.setValue("Foo");
             return null;
         }
     }
+
+    public static class RemoveRecordEntryProcessor
+            implements EntryProcessor<Integer, String, Void>, Serializable {
+
+        @Override
+        public Void process(MutableEntry<Integer, String> entry, Object... arguments)
+                throws EntryProcessorException {
+            entry.remove();
+            return null;
+        }
+    }
+
+    private void executeEntryProcessor(Integer key, EntryProcessor<Integer, String, Void> entryProcessor, String cacheName) {
+        CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(node1);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        CompleteConfiguration<Integer, String> config =
+                new MutableConfiguration<Integer, String>()
+                        .setTypes(Integer.class, String.class);
+
+        Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
+
+        cache.invoke(key, entryProcessor);
+    }
+
+    private ICacheRecordStore getRecordStore(CacheService cacheService, String cacheName, int partitionId) {
+        try {
+            return cacheService.getOrCreateCache("/hz/" + cacheName, partitionId);
+        } catch (Exception e) {
+            fail("CacheRecordStore not yet initialized!!!");
+        }
+        return null;
+    }
+
+    private static void setUpInternal() throws NoSuchFieldException, IllegalAccessException {
+        factory = new TestHazelcastInstanceFactory(2);
+        node1 = factory.newHazelcastInstance();
+        node2 = factory.newHazelcastInstance();
+
+        Field original = HazelcastInstanceProxy.class.getDeclaredField("original");
+        original.setAccessible(true);
+
+        HazelcastInstanceImpl impl1 = (HazelcastInstanceImpl) original.get(node1);
+        HazelcastInstanceImpl impl2 = (HazelcastInstanceImpl) original.get(node2);
+
+        cacheServiceOnNode1 = impl1.node.getNodeEngine().getService(CacheService.SERVICE_NAME);
+        cacheServiceOnNode2 = impl2.node.getNodeEngine().getService(CacheService.SERVICE_NAME);
+
+        serializationService = impl1.node.getNodeEngine().getSerializationService();
+    }
+
 }

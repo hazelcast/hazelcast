@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -37,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * This is the base class for all {@link ReplicatedRecordStore} implementations
  *
@@ -47,9 +48,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         extends AbstractBaseReplicatedRecordStore<K, V> {
     static final String CLEAR_REPLICATION_MAGIC_KEY = ReplicatedMapService.SERVICE_NAME + "$CLEAR$MESSAGE$";
 
-//    entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
-//    order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
-//    keep the tombstone alive. if there is no event in this period then the tombstone is removed.
+    // entries are not removed on replicatedMap.remove() as it would reset a vector clock and we wouldn't be able to
+    // order subsequent events related to the entry. a tombstone is created instead. this constant says how long we
+    // keep the tombstone alive. if there is no event in this period then the tombstone is removed.
     static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
 
     public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
@@ -60,12 +61,12 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public void removeTombstone(Object key) {
-        ValidationUtil.isNotNull(key, "key");
+        isNotNull(key, "key");
         storage.checkState();
         K marshalledKey = (K) marshallKey(key);
         synchronized (getMutex(marshalledKey)) {
             ReplicatedRecord<K, V> current = storage.get(marshalledKey);
-            if (current == null || current.getValue() != null) {
+            if (current == null || current.getValueInternal() != null) {
                 return;
             }
             storage.remove(marshalledKey, current);
@@ -74,7 +75,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object remove(Object key) {
-        ValidationUtil.isNotNull(key, "key");
+        isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
         storage.checkState();
         V oldValue;
@@ -85,7 +86,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             if (current == null) {
                 oldValue = null;
             } else {
-                oldValue = (V) current.getValue();
+                oldValue = (V) current.getValueInternal();
                 if (oldValue != null) {
                     current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
                     scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
@@ -106,7 +107,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public void evict(Object key) {
-        ValidationUtil.isNotNull(key, "key");
+        isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
         storage.checkState();
         V oldValue;
@@ -116,9 +117,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
             if (current == null) {
                 oldValue = null;
             } else {
-                oldValue = (V) current.getValue();
+                oldValue = (V) current.getValueInternal();
                 if (oldValue != null) {
-                    current.setValue(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
+                    current.setValueInternal(null, localMemberHash, TOMBSTONE_REMOVAL_PERIOD_MS);
                     scheduleTtlEntry(TOMBSTONE_REMOVAL_PERIOD_MS, marshalledKey, null);
                     current.incrementVectorClock(localMember);
                 }
@@ -133,7 +134,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object get(Object key) {
-        ValidationUtil.isNotNull(key, "key");
+        isNotNull(key, "key");
         long time = Clock.currentTimeMillis();
         storage.checkState();
         ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
@@ -153,17 +154,17 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public Object put(Object key, Object value) {
-        ValidationUtil.isNotNull(key, "key");
-        ValidationUtil.isNotNull(value, "value");
+        isNotNull(key, "key");
+        isNotNull(value, "value");
         storage.checkState();
         return put(key, value, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
-        ValidationUtil.isNotNull(key, "key");
-        ValidationUtil.isNotNull(value, "value");
-        ValidationUtil.isNotNull(timeUnit, "timeUnit");
+        isNotNull(key, "key");
+        isNotNull(value, "value");
+        isNotNull(timeUnit, "timeUnit");
         if (ttl < 0) {
             throw new IllegalArgumentException("ttl must be a positive integer");
         }
@@ -180,7 +181,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
                 record = buildReplicatedRecord(marshalledKey, marshalledValue, new VectorClockTimestamp(), ttlMillis);
                 storage.put(marshalledKey, record);
             } else {
-                oldValue = (V) old.getValue();
+                oldValue = (V) old.getValueInternal();
                 storage.get(marshalledKey).setValue(marshalledValue, localMemberHash, ttlMillis);
             }
             if (ttlMillis > 0) {
@@ -203,15 +204,22 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public boolean containsKey(Object key) {
-        ValidationUtil.isNotNull(key, "key");
+        isNotNull(key, "key");
         storage.checkState();
         mapStats.incrementOtherOperations();
-        return storage.containsKey(marshallKey(key));
+
+        return containsKeyAndValue(key);
+    }
+
+    // IMPORTANT >> Increments hit counter
+    private boolean containsKeyAndValue(Object key) {
+        ReplicatedRecord replicatedRecord = storage.get(marshallKey(key));
+        return replicatedRecord != null && replicatedRecord.getValue() != null;
     }
 
     @Override
     public boolean containsValue(Object value) {
-        ValidationUtil.isNotNull(value, "value");
+        isNotNull(value, "value");
         storage.checkState();
         mapStats.incrementOtherOperations();
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
@@ -228,7 +236,9 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         storage.checkState();
         Set keySet = new HashSet(storage.size());
         for (K key : storage.keySet()) {
-            keySet.add(unmarshallKey(key));
+            if (containsKeyAndValue(key)) {
+                keySet.add(unmarshallKey(key));
+            }
         }
         mapStats.incrementOtherOperations();
         return keySet;
@@ -257,8 +267,13 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         storage.checkState();
         Set entrySet = new HashSet(storage.size());
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
-            Object key = unmarshallKey(entry.getKey());
-            Object value = unmarshallValue(entry.getValue().getValue());
+            K keyOfEntry = entry.getKey();
+            if (!containsKeyAndValue(keyOfEntry)) {
+                continue;
+            }
+            Object key = unmarshallKey(keyOfEntry);
+            // getValueInternal() is used here because hit count is incremented by containsKeyAndValue() above
+            Object value = unmarshallValue(entry.getValue().getValueInternal());
             entrySet.add(new AbstractMap.SimpleEntry(key, value));
         }
         mapStats.incrementOtherOperations();
@@ -267,7 +282,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public ReplicatedRecord getReplicatedRecord(Object key) {
-        ValidationUtil.isNotNull(key, "key");
+        isNotNull(key, "key");
         storage.checkState();
         return storage.get(marshallKey(key));
     }
@@ -299,7 +314,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public String addEntryListener(EntryListener listener, Object key) {
-        ValidationUtil.isNotNull(listener, "listener");
+        isNotNull(listener, "listener");
         EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, getName());
@@ -307,7 +322,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
-        ValidationUtil.isNotNull(listener, "listener");
+        isNotNull(listener, "listener");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(marshallKey(key), predicate);
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, getName());
@@ -315,7 +330,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
 
     @Override
     public boolean removeEntryListenerInternal(String id) {
-        ValidationUtil.isNotNull(id, "id");
+        isNotNull(id, "id");
         mapStats.incrementOtherOperations();
         return replicatedMapService.removeEventListener(getName(), id);
     }

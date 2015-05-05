@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,41 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Contains the configuration for an {@link com.hazelcast.cache.ICache} (read-only).
+ * Readonly version of {@link com.hazelcast.config.CacheConfig}
  *
- * @param <K>
- * @param <V>
+ * @param <K> type of the key
+ * @param <V> type of the value
  */
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     CacheConfigReadOnly(CacheConfig config) {
         super(config);
+    }
+
+    // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
+    // since "CacheEvictionConfig" is deprecated
+    @Override
+    public CacheEvictionConfig getEvictionConfig() {
+        final CacheEvictionConfig evictionConfig = super.getEvictionConfig();
+        if (evictionConfig == null) {
+            return null;
+        }
+        return (CacheEvictionConfig) evictionConfig.getAsReadOnly();
+    }
+
+    @Override
+    public WanReplicationRef getWanReplicationRef() {
+        final WanReplicationRef wanReplicationRef = super.getWanReplicationRef();
+        if (wanReplicationRef == null) {
+            return null;
+        }
+        return wanReplicationRef.getAsReadOnly();
+    }
+
+    @Override
+    public Iterable<CacheEntryListenerConfiguration<K, V>> getCacheEntryListenerConfigurations() {
+        Iterable<CacheEntryListenerConfiguration<K, V>> listenerConfigurations = super.getCacheEntryListenerConfigurations();
+        return Collections.unmodifiableSet((Set<CacheEntryListenerConfiguration<K, V>>) listenerConfigurations);
     }
 
     @Override
@@ -42,12 +68,6 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     public CacheConfig<K, V> removeCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public Iterable<CacheEntryListenerConfiguration<K, V>> getCacheEntryListenerConfigurations() {
-        Iterable<CacheEntryListenerConfiguration<K, V>> listenerConfigurations = super.getCacheEntryListenerConfigurations();
-        return Collections.unmodifiableSet((Set<CacheEntryListenerConfiguration<K, V>>) listenerConfigurations);
     }
 
     @Override
@@ -76,12 +96,7 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public CacheConfig<K, V> setEvictionPolicy(final EvictionPolicy evictionPolicy) {
-        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
-    }
-
-    @Override
-    public CacheConfig setNearCacheConfig(final NearCacheConfig nearCacheConfig) {
+    public CacheConfig<K, V> setEvictionConfig(final EvictionConfig evictionConfig) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
@@ -106,11 +121,8 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
-    public NearCacheConfig getNearCacheConfig() {
-        final NearCacheConfig nearCacheConfig = super.getNearCacheConfig();
-        if (nearCacheConfig == null) {
-            return null;
-        }
-        return nearCacheConfig.getAsReadOnly();
+    public CacheConfig setWanReplicationRef(final WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
+
 }

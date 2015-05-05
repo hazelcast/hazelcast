@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,16 @@ public class MapConfigReadOnly extends MapConfig {
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
 
+    public List<MapPartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        final List<MapPartitionLostListenerConfig> listenerConfigs = super.getPartitionLostListenerConfigs();
+        final List<MapPartitionLostListenerConfig> readOnlyListenerConfigs =
+                new ArrayList<MapPartitionLostListenerConfig>(listenerConfigs.size());
+        for (MapPartitionLostListenerConfig listenerConfig : listenerConfigs) {
+            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyListenerConfigs);
+    }
+
     public List<MapIndexConfig> getMapIndexConfigs() {
         final List<MapIndexConfig> mapIndexConfigs = super.getMapIndexConfigs();
         final List<MapIndexConfig> readOnlyMapIndexConfigs = new ArrayList<MapIndexConfig>(mapIndexConfigs.size());
@@ -85,6 +95,16 @@ public class MapConfigReadOnly extends MapConfig {
             return null;
         }
         return nearCacheConfig.getAsReadOnly();
+    }
+
+    @Override
+    public List<QueryCacheConfig> getQueryCacheConfigs() {
+        List<QueryCacheConfig> queryCacheConfigs = super.getQueryCacheConfigs();
+        List<QueryCacheConfig> readOnlyOnes = new ArrayList<QueryCacheConfig>(queryCacheConfigs.size());
+        for (QueryCacheConfig config : queryCacheConfigs) {
+            readOnlyOnes.add(config.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyOnes);
     }
 
     public MapConfig setName(String name) {

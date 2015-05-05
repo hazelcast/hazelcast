@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,16 +53,19 @@ public class CacheGetConfigRequest
         return new CacheGetConfigOperation(name, simpleName);
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.GET_CONFIG;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
         writer.writeUTF("s", simpleName);
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);

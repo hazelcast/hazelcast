@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.mapreduce;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * This interface holds basic information about a running map reduce job like
+ * This interface holds basic information about a running map reduce job, such as the
  * state of the different partitions and the number of currently processed
  * records.<br/>
- * The number of processed records is not a real time value but updated
- * on regular base (after 1000 processed elements per node).
+ * The number of processed records is not a real time value, it is updated
+ * on a regular basis (after 1000 processed elements per node).
  *
  * @since 3.2
  */
@@ -45,8 +45,8 @@ public interface JobProcessInformation {
 
     /**
      * Returns the number of processed records.<br/>
-     * The number of processed records is not a real time value but updated
-     * on regular base (after 1000 processed elements per node).
+     * The number of processed records is not a real time value, it is updated
+     * on a regular basis (after 1000 processed elements per node).
      *
      * @return number of processed records
      */

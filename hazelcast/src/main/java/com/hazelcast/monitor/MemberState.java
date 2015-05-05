@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.management.JsonSerializable;
-import com.hazelcast.management.SerializableClientEndPoint;
-import com.hazelcast.management.SerializableMXBeans;
+import com.hazelcast.internal.management.JsonSerializable;
+import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.MXBeansDTO;
 
 import java.util.Collection;
 import java.util.Map;
@@ -41,11 +41,17 @@ public interface MemberState extends JsonSerializable {
 
     LocalCacheStats getLocalCacheStats(String cacheName);
 
-    Collection<SerializableClientEndPoint> getClients();
+    Collection<ClientEndPointDTO> getClients();
 
-    SerializableMXBeans getMXBeans();
+    MXBeansDTO getMXBeans();
 
     LocalMemoryStats getLocalMemoryStats();
+
+    /**
+     * Returns the local operation statistics.
+     * @return LocalOperationStats statistics
+     */
+    LocalOperationStats getOperationStats();
 
     MemberPartitionState getMemberPartitionState();
 

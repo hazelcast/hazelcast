@@ -1,5 +1,22 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl;
 
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -25,8 +42,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @see MapManagedService
  */
-public interface MapServiceContext extends MapServiceContextSupport,
-        MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
+public interface MapServiceContext extends MapServiceContextInterceptorSupport, MapServiceContextEventListenerSupport {
+
+    Object toObject(Object data);
+
+    Data toData(Object object, PartitioningStrategy partitionStrategy);
+
+    Data toData(Object object);
+
+    boolean compare(String mapName, Object value1, Object value2);
 
     MapContainer getMapContainer(String mapName);
 
@@ -37,8 +61,6 @@ public interface MapServiceContext extends MapServiceContextSupport,
     void initPartitionsContainers();
 
     void clearPartitionData(int partitionId);
-
-    String serviceName();
 
     MapService getService();
 
@@ -87,4 +109,12 @@ public interface MapServiceContext extends MapServiceContextSupport,
     MapContextQuerySupport getMapContextQuerySupport();
 
     LocalMapStatsProvider getLocalMapStatsProvider();
+
+    /**
+     * Sets an {@link EvictionOperator} to this {@link MapServiceContext}.
+     * Used for testing purposes.
+     *
+     * @param evictionOperator {@link EvictionOperator} to be set.
+     */
+    void setEvictionOperator(EvictionOperator evictionOperator);
 }

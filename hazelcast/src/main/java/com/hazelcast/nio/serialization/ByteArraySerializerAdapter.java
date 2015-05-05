@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,20 +38,10 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
 
     public Object read(ObjectDataInput in) throws IOException {
         byte[] bytes = in.readByteArray();
-        if (bytes == null || bytes.length == 0) {
+        if (bytes == null) {
             return null;
         }
         return serializer.read(bytes);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Data toData(Object object, int partitionHash) throws IOException {
-        byte[] data = serializer.write(object);
-        return new DefaultData(serializer.getTypeId(), data, partitionHash);
-    }
-
-    public Object toObject(Data data) throws IOException {
-        return serializer.read(data.getData());
     }
 
     public int getTypeId() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public interface JobCompletableFuture<V>
      * Returns the unique identifier for this mapreduce job. This jobId is used to identify the same
      * job on all cluster nodes and is unique in the cluster.
      *
-     * @return jobId for this job
+     * @return jobId, the unique identifier for this mapreduce job
      */
     String getJobId();
 

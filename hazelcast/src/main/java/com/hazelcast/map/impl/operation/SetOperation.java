@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,22 @@ import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {
 
-    boolean newRecord;
+    private boolean newRecord;
+
+    public SetOperation() {
+    }
 
     public SetOperation(String name, Data dataKey, Data value, long ttl) {
         super(name, dataKey, value, ttl);
     }
 
-    public SetOperation() {
-    }
-
+    @Override
     public void afterRun() {
         eventType = newRecord ? EntryEventType.ADDED : EntryEventType.UPDATED;
         super.afterRun();
     }
 
+    @Override
     public void run() {
         newRecord = recordStore.set(dataKey, dataValue, ttl);
     }

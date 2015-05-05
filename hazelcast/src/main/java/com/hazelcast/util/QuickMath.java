@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,20 +21,19 @@ package com.hazelcast.util;
  * Methods are allowed to put additional constraints on the range of input values if required for efficiency.
  * Methods are <b>not</b> required to perform validation of input arguments, but they have to indicate the constraints
  * in theirs contract.
- *
- *
  */
 public final class QuickMath {
 
-    private QuickMath() { }
+    private QuickMath() {
+    }
 
     /**
      * Return true if input argument is power of two.
      * Input has to be a a positive integer.
-     *
+     * <p/>
      * Result is undefined for zero or negative integers.
      *
-     * @param x
+     * @param x test <code>x</code> to see if it is a power of two
      * @return <code>true</code> if <code>x</code> is power of two
      */
     public static boolean isPowerOfTwo(long x) {
@@ -43,11 +42,11 @@ public final class QuickMath {
 
     /**
      * Computes the remainder of the division of <code>a</code> by <code>b</code>.
-     * <code>a</code> has to be non-negative integer and <code>b</code> has to be power of two
+     * <code>a</code> has to be a non-negative integer and <code>b</code> has to be a power of two,
      * otherwise the result is undefined.
      *
-     * @param a
-     * @param b
+     * @param a divide a by b. a must be a non-negative integer
+     * @param b divide a by b. b must be a power of two
      * @return remainder of the division of a by b.
      */
     public static int modPowerOfTwo(int a, int b) {
@@ -56,17 +55,23 @@ public final class QuickMath {
 
     /**
      * Computes the remainder of the division of <code>a</code> by <code>b</code>.
-     * <code>a</code> has to be non-negative integer and <code>b</code> has to be power of two
+     * <code>a</code> has to be a non-negative integer and <code>b</code> has to be a power of two,
      * otherwise the result is undefined.
      *
-     * @param a
-     * @param b
+     * @param a divide a by b. a must be a non-negative integer
+     * @param b divide a by b. b must be a power of two
      * @return remainder of the division of a by b.
      */
     public static long modPowerOfTwo(long a, int b) {
         return a & (b - 1);
     }
 
+    /**
+     * Returns the next power of two that is larger than the specified int value.
+     *
+     * @param value the int value
+     * @return the next power of two that is larger than the specified int value.
+     */
     public static int nextPowerOfTwo(int value) {
         if (!isPowerOfTwo(value)) {
             value--;
@@ -80,6 +85,12 @@ public final class QuickMath {
         return value;
     }
 
+    /**
+     * Returns the next power of two that is larger than the specified long value.
+     *
+     * @param value the long value
+     * @return the next power of two that is larger than the specified long value
+     */
     public static long nextPowerOfTwo(long value) {
         if (!isPowerOfTwo(value)) {
             value--;
@@ -94,35 +105,138 @@ public final class QuickMath {
         return value;
     }
 
+    /**
+     * Return the log 2 result for this int.
+     *
+     * @param value the int value
+     * @return the log 2 result for value
+     */
     public static int log2(int value) {
         return 31 - Integer.numberOfLeadingZeros(value);
     }
 
+    /**
+     * Return the log 2 result for this long.
+     *
+     * @param value the long value
+     * @return the log 2 result for value
+     */
     public static int log2(long value) {
         return 63 - Long.numberOfLeadingZeros(value);
     }
 
+    /**
+     * Divide d by k and return the smallest integer greater than or equal to the result.
+     *
+     * @param d divide d by k
+     * @param k divide d by k
+     * @return the smallest integer greater than or equal to the result
+     */
     public static int divideByAndCeilToInt(double d, int k) {
         return (int) Math.ceil(d / k);
     }
 
+    /**
+     * Divide d by k and return the smallest integer greater than or equal to the result.
+     *
+     * @param d divide d by k
+     * @param k divide d by k
+     * @return the smallest integer greater than or equal to the result
+     */
     public static long divideByAndCeilToLong(double d, int k) {
         return (long) Math.ceil(d / k);
     }
 
+    /**
+     * Divide d by k and return the int value closest to the result.
+     *
+     * @param d divide d by k
+     * @param k divide d by k
+     * @return the int value closest to the result
+     */
     public static int divideByAndRoundToInt(double d, int k) {
         return (int) Math.rint(d / k);
     }
 
+    /**
+     * Divide d by k and return the long value closest to the result.
+     *
+     * @param d divide d by k
+     * @param k divide d by k
+     * @return the long value closest to the result
+     */
     public static long divideByAndRoundToLong(double d, int k) {
         return (long) Math.rint(d / k);
     }
 
+    /**
+     * Divide value by factor, take the smallest integer greater than or equal to the result,
+     * multiply that integer by factor, and return it.
+     *
+     * @param value  normalize this value by factor
+     * @param factor normalize this value by factor
+     * @return the result of value being normalized by factor
+     */
     public static int normalize(int value, int factor) {
         return divideByAndCeilToInt(value, factor) * factor;
     }
 
+    /**
+     * Divide value by factor, take the smallest integer greater than or equal to the result,
+     * multiply that integer by factor, and return it.
+     *
+     * @param value  normalize this value by factor
+     * @param factor normalize this value by factor
+     * @return the result of value being normalized by factor
+     */
     public static long normalize(long value, int factor) {
         return divideByAndCeilToLong(value, factor) * factor;
     }
+
+    public static String bytesToHex(byte[] in) {
+        final char[] hexArray = "0123456789abcdef".toCharArray();
+
+        char[] hexChars = new char[in.length * 2];
+        for (int j = 0; j < in.length; j++) {
+            int v = in[j] & 0xff;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0xf];
+        }
+        return new String(hexChars);
+    }
+
+    /**
+     * Compares two integers
+     *
+     * @param i1 First number to compare with second one
+     * @param i2 Second number to compare with first one
+     * @return +1 if i1 > i2, -1 if i2 > i1, 0 if i1 and i2 are equals
+     */
+    public static int compareIntegers(int i1, int i2) {
+        if (i1 > i2) {
+            return +1;
+        } else if (i2 > i1) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * Compares two longs
+     *
+     * @param l1 First number to compare with second one
+     * @param l2 Second number to compare with first one
+     * @return +1 if l1 > l2, -1 if l2 > l1, 0 if l1 and l2 are equals
+     */
+    public static int compareLongs(long l1, long l2) {
+        if (l1 > l2) {
+            return +1;
+        } else if (l2 > l1) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
 }

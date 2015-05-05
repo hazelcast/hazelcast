@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,14 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.partition.InternalPartition;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Simple configuration to hold parsed xml configuration.
@@ -28,14 +34,17 @@ public class CacheSimpleConfig {
      * The number of minimum backup counter
      */
     public static final int MIN_BACKUP_COUNT = 0;
+
     /**
      * The number of maximum backup counter
      */
-    public static final int MAX_BACKUP_COUNT = 6;
+    public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
+
     /**
      * The number of default backup counter
      */
     public static final int DEFAULT_BACKUP_COUNT = 1;
+
     /**
      * Default InMemory Format.
      */
@@ -44,27 +53,7 @@ public class CacheSimpleConfig {
     /**
      * Default Eviction Policy.
      */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.RANDOM;
-
-    /**
-     * Minimum eviction percentage
-     */
-    public static final  int MIN_EVICTION_PERCENTAGE = 0;
-
-    /**
-     * Default eviction percentage
-     */
-    public static final int DEFAULT_EVICTION_PERCENTAGE = 10;
-
-    /**
-     * The threshold default value for eviction
-     */
-    public static final int DEFAULT_EVICTION_THRESHOLD_PERCENTAGE = 95;
-
-    /**
-     * Maximum eviction percentage
-     */
-    public static final int MAX_EVICTION_PERCENTAGE = 100;
+    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
 
     private String name;
 
@@ -86,9 +75,11 @@ public class CacheSimpleConfig {
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
-    private EvictionPolicy evictionPolicy = DEFAULT_EVICTION_POLICY;
-    private int evictionPercentage;
-    private int evictionThresholdPercentage;
+    // Default value of eviction config is
+    //      * ENTRY_COUNT with 10.000 max entry count
+    //      * LRU as eviction policy
+    private EvictionConfig evictionConfig = new EvictionConfig();
+    private WanReplicationRef wanReplicationRef;
 
     private CacheSimpleConfig readOnly;
 
@@ -107,13 +98,14 @@ public class CacheSimpleConfig {
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
         this.inMemoryFormat = cacheSimpleConfig.inMemoryFormat;
-        this.evictionPolicy = cacheSimpleConfig.evictionPolicy;
-        this.evictionPercentage = cacheSimpleConfig.evictionPercentage;
-        this.evictionThresholdPercentage = cacheSimpleConfig.evictionThresholdPercentage;
+        // Eviction config cannot be null
+        if (cacheSimpleConfig.evictionConfig != null) {
+            this.evictionConfig = cacheSimpleConfig.evictionConfig;
+        }
+        this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
     }
 
     public CacheSimpleConfig() {
-
     }
 
     public CacheSimpleConfig getAsReadOnly() {
@@ -234,8 +226,19 @@ public class CacheSimpleConfig {
         return asyncBackupCount;
     }
 
+    /**
+     * Sets the number of asynchronous backups.
+     *
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @return the updated CacheSimpleConfig
+     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setBackupCount(int)
+     * @see #getAsyncBackupCount()
+     */
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
-        this.asyncBackupCount = asyncBackupCount;
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -243,8 +246,17 @@ public class CacheSimpleConfig {
         return backupCount;
     }
 
+    /**
+     * Sets the number of backups
+     *
+     * @param backupCount the new backupCount
+     * @return the updated CacheSimpleConfig
+     * @throws new IllegalArgumentException if backupCount smaller than 0,
+     *             or larger than the maximum number of backup
+     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     */
     public CacheSimpleConfig setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
     }
 
@@ -253,34 +265,25 @@ public class CacheSimpleConfig {
     }
 
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = inMemoryFormat;
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 
-    public EvictionPolicy getEvictionPolicy() {
-        return evictionPolicy;
+    public EvictionConfig getEvictionConfig() {
+        return evictionConfig;
     }
 
-    public CacheSimpleConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        this.evictionPolicy = evictionPolicy;
+    public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
+        this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
     }
 
-    public int getEvictionPercentage() {
-        return evictionPercentage;
+    public WanReplicationRef getWanReplicationRef() {
+        return wanReplicationRef;
     }
 
-    public CacheSimpleConfig setEvictionPercentage(int evictionPercentage) {
-        this.evictionPercentage = evictionPercentage;
-        return this;
+    public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        this.wanReplicationRef = wanReplicationRef;
     }
 
-    public int getEvictionThresholdPercentage() {
-        return evictionThresholdPercentage;
-    }
-
-    public CacheSimpleConfig setEvictionThresholdPercentage(int evictionThresholdPercentage) {
-        this.evictionThresholdPercentage = evictionThresholdPercentage;
-        return this;
-    }
 }

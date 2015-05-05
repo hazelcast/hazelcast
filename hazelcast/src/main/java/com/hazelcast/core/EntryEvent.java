@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ package com.hazelcast.core;
  * @param <K> key of the map entry
  * @param <V> value of the map entry
  * @see com.hazelcast.core.EntryListener
- * @see com.hazelcast.core.IMap#addEntryListener(EntryListener, boolean)
+ * @see com.hazelcast.map.listener.MapListener
+ * @see com.hazelcast.core.IMap#addEntryListener(com.hazelcast.map.listener.MapListener, boolean)
  */
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class EntryEvent<K, V> extends AbstractIMapEvent {
@@ -35,10 +36,34 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     protected V value;
 
+    protected V mergingValue;
+
+    /**
+     * Constructs an entry event.
+     *
+     * @param source    The object on which the event initially occurred.
+     * @param member    The interface to the cluster member (node).
+     * @param eventType The event type as an enum {@link EntryEventType} integer.
+     * @param key       The key for this entry event.
+     * @param value     The value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
     public EntryEvent(Object source, Member member, int eventType, K key, V value) {
         this(source, member, eventType, key, null, value);
     }
 
+
+    /**
+     * Constructs an entry event.
+     *
+     * @param source    The object on which the Event initially occurred.
+     * @param member    The interface to the cluster member (node).
+     * @param eventType The event type as an enum {@link EntryEventType} integer.
+     * @param key       The key of this entry event.
+     * @param oldValue  The old value of the entry event.
+     * @param value     The value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
     public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value) {
         super(source, member, eventType);
         this.key = key;
@@ -47,30 +72,59 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
     }
 
     /**
-     * Returns the key of the entry event
+     * Constructs an entry event.
      *
-     * @return the key
+     * @param source       The object on which the Event initially occurred.
+     * @param member       The interface to the cluster member (node).
+     * @param eventType    The event type as an enum {@link EntryEventType} integer.
+     * @param key          The key of this entry event.
+     * @param oldValue     The old value of the entry event.
+     * @param value        The value of the entry event.
+     * @param mergingValue The incoming merging value of the entry event.
+     * @throws IllegalArgumentException if source is null.
+     */
+    public EntryEvent(Object source, Member member, int eventType, K key, V oldValue, V value, V mergingValue) {
+        super(source, member, eventType);
+        this.key = key;
+        this.oldValue = oldValue;
+        this.value = value;
+        this.mergingValue = mergingValue;
+    }
+
+    /**
+     * Returns the key of the entry event.
+     *
+     * @return the key of the entry event
      */
     public K getKey() {
         return key;
     }
 
     /**
-     * Returns the old value of the entry event
+     * Returns the old value of the entry event.
      *
-     * @return old value.
+     * @return the old value of the entry event.
      */
     public V getOldValue() {
         return this.oldValue;
     }
 
     /**
-     * Returns the value of the entry event
+     * Returns the value of the entry event.
      *
-     * @return value.
+     * @return the value of the entry event
      */
     public V getValue() {
         return value;
+    }
+
+    /**
+     * Returns the incoming merging value of the entry event.
+     *
+     * @return merge value
+     */
+    public V getMergingValue() {
+        return mergingValue;
     }
 
     @Override
@@ -80,6 +134,7 @@ public class EntryEvent<K, V> extends AbstractIMapEvent {
                 + ", key=" + getKey()
                 + ", oldValue=" + getOldValue()
                 + ", value=" + getValue()
+                + ", mergingValue=" + getMergingValue()
                 + '}';
     }
 }

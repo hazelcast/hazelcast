@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 /**
- * PartitioningStrategy allows keys to be located on the same member
- * This makes related data to be stored in the same location. (See data-affinity.)
+ * PartitioningStrategy allows keys to be located on the same member.
+ * This causes related data to be stored in the same location. (See data-affinity.)
  *
  * @param <K> key type
  */
@@ -27,8 +27,8 @@ public interface PartitioningStrategy<K> {
     /**
      * Returns the key object that will be used by Hazelcast to specify the partition.
      *
-     * @param key actual key object
-     * @return partition key object or null to fallback to default partition calculation
+     * @param key actual key object used by Hazelcast to specify the partition
+     * @return the partition key object, or null to fallback to the default partition calculation
      */
     Object getPartitionKey(K key);
 }

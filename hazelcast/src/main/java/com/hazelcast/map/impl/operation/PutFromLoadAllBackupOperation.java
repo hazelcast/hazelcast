@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupOperation;
-
+import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +35,8 @@ import java.util.List;
  *
  * @see PutFromLoadAllOperation
  */
-public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, DataSerializable {
+public class PutFromLoadAllBackupOperation extends AbstractMapOperation implements BackupOperation, MutatingOperation,
+        DataSerializable {
 
     private List<Data> keyValueSequence;
 
@@ -55,13 +57,19 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
         }
         final int partitionId = getPartitionId();
         final MapService mapService = this.mapService;
-        final RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, name);
         for (int i = 0; i < keyValueSequence.size(); i += 2) {
             final Data key = keyValueSequence.get(i);
             final Data value = keyValueSequence.get(i + 1);
-            final Object object = mapService.getMapServiceContext().toObject(value);
+            final Object object = mapServiceContext.toObject(value);
             recordStore.putFromLoad(key, object);
         }
+    }
+
+    @Override
+    public String toString() {
+        return "PutFromLoadAllBackupOperation{}";
     }
 
     @Override
@@ -90,10 +98,4 @@ public class PutFromLoadAllBackupOperation extends AbstractMapOperation implemen
             keyValueSequence = tmpKeyValueSequence;
         }
     }
-
-    @Override
-    public String toString() {
-        return "PutFromLoadAllBackupOperation{}";
-    }
-
 }

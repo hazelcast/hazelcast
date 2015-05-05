@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
-abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
+public abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;
     private final ClassLoader configClassLoader;
@@ -38,7 +38,7 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
     private final LocalTopicStatsImpl topicStats;
     private final MemberImpl localMember;
 
-    TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
+    public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
         this.name = name;
         this.configClassLoader = nodeEngine.getConfigClassLoader();

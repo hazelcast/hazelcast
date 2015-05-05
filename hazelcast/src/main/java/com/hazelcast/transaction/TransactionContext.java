@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.transaction;
 import javax.transaction.xa.XAResource;
 
 /**
- * Provides a context to do transactional operations; so beginning/committing transactions, but also retrieving
+ * Provides a context to perform transactional operations: beginning/committing transactions, but also retrieving
  * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
  */
 public interface TransactionContext extends TransactionalTaskContext {
@@ -41,7 +41,7 @@ public interface TransactionContext extends TransactionalTaskContext {
     /**
      * Rollback of the current transaction.
      *
-     * @throws IllegalStateException if no there is no active transaction.
+     * @throws IllegalStateException if there is no active transaction.
      */
     void rollbackTransaction();
 
@@ -53,16 +53,16 @@ public interface TransactionContext extends TransactionalTaskContext {
     String getTxnId();
 
     /**
-     * Gets xaResource which will participate in XATransaction
+     * Gets xaResource which will participate in XATransaction.
      *
      * @return the xaResource.
      */
     XAResource getXaResource();
 
     /**
-     * Indicates that related transaction is managed by XAResource
+     * Indicates that the related transaction is managed by XAResource
      *
-     * @return true if related transaction is managed by XAResource, false otherwise
+     * @return true if the related transaction is managed by XAResource, false otherwise
      */
     boolean isXAManaged();
 }

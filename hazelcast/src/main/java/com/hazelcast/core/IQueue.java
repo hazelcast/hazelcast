@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Concurrent, blocking, distributed, observable queue.
  *
- * The IQueue is not a partitioned data-structure. So all the content of the IQueue is stored in a single machine (and
- * in the backup). So the IQueue will not scale by adding more members in the cluster.
+ * The IQueue is not a partitioned data-structure. All the content of the IQueue is stored in a single machine (and
+ * in the backup). The IQueue will not scale by adding more members in the cluster.
  *
  * @see BaseQueue
  * @see java.util.Queue
@@ -40,7 +40,7 @@ public interface IQueue<E> extends BlockingQueue<E>, BaseQueue<E>, ICollection<E
      * methods here to prevent wrong method return type issue when
      * compiled with java 8.
      *
-     * For additional details see;
+     * For additional details see:
      *
      * http://mail.openjdk.java.net/pipermail/compiler-dev/2014-November/009139.html
      * https://bugs.openjdk.java.net/browse/JDK-8064803

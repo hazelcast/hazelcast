@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package com.hazelcast.monitor;
 
-import com.hazelcast.management.JsonSerializable;
+import com.hazelcast.internal.management.JsonSerializable;
 
 public interface LocalInstanceStats extends JsonSerializable {
 
     /**
-     * Fill a stat value with this if it's not available
+     * Fill a stat value with this if it is not available
      */
     long STAT_NOT_AVAILABLE = -99L;
 
     long getCreationTime();
-
 }

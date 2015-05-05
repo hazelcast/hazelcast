@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,10 @@ public class ClientPortableHook implements PortableHook {
     public static final int GET_PARTITIONS = 12;
     public static final int REMOVE_LISTENER = 13;
     public static final int REMOVE_ALL_LISTENERS = 14;
+    public static final int GET_MEMBER_LIST = 15;
+    public static final int REGISTER_MEMBERSHIP_LISTENER = 16;
+    public static final int ADD_PARTITION_LOST_LISTENER = 17;
+    public static final int REMOVE_PARTITION_LOST_LISTENER = 18;
 
     @Override
     public int getFactoryId() {

@@ -1,5 +1,5 @@
 
-### Create the Backups
+### Creating Backups
 
 Finally, we make sure that the data of counter is available on another node when a member goes down. We need to have the `IncOperation` class implement the `BackupAwareOperation` interface contained in the SPI package. See the following code.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,20 @@
 
 package com.hazelcast.cache.impl.record;
 
+import com.hazelcast.cache.impl.eviction.Evictable;
+import com.hazelcast.cache.impl.eviction.Expirable;
+
 /**
  * <p>
- * An expirable data object which represents a cache entry.
+ * An expirable and evictable data object which represents a cache entry.
  * </p>
  * Record of {@link com.hazelcast.cache.impl.ICacheRecordStore}.
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V> extends Expirable {
+public interface CacheRecord<V> extends Expirable, Evictable {
+
+    int EXPIRATION_TIME_NOT_AVAILABLE = -1;
 
     /**
      * Gets the value of this {@link CacheRecord}.
@@ -41,54 +46,33 @@ public interface CacheRecord<V> extends Expirable {
     void setValue(V value);
 
     /**
-     * Gets the creation time of this {@link CacheRecord} in milliseconds.
+     * Sets the creation time of this {@link Evictable} in milliseconds.
      *
-     * @return the creation time of this {@link CacheRecord} in milliseconds
-     */
-    long getCreationTime();
-
-    /**
-     * Sets the creation time of this {@link CacheRecord} in milliseconds.
-     *
-     * @param time the creation time for this {@link CacheRecord} in milliseconds
+     * @param time the creation time for this {@link Evictable} in milliseconds
      */
     void setCreationTime(long time);
 
     /**
-     * Gets the latest access time difference of this {@link CacheRecord} in milliseconds.
+     * Sets the access time of this {@link Evictable} in milliseconds.
      *
-     * @return the latest access time of this {@link CacheRecord} in milliseconds
-     */
-    long getAccessTime();
-
-    /**
-     * Sets the access time of this {@link CacheRecord} in milliseconds.
-     *
-     * @param time the latest access time of this {@link CacheRecord} in milliseconds
+     * @param time the latest access time of this {@link Evictable} in milliseconds
      */
     void setAccessTime(long time);
 
     /**
-     * Gets the access hit count of this {@link CacheRecord}.
+     * Sets the access hit count of this {@link Evictable}.
      *
-     * @return the access hit count of this {@link CacheRecord}
-     */
-    int getAccessHit();
-
-    /**
-     * Sets the access hit count of this {@link CacheRecord}.
-     *
-     * @param hit the access hit count for this {@link CacheRecord}
+     * @param hit the access hit count for this {@link Evictable}
      */
     void setAccessHit(int hit);
 
     /**
-     * Increases the access hit count of this {@link CacheRecord} as <code>1</code>.
+     * Increases the access hit count of this {@link Evictable} as <code>1</code>.
      */
     void incrementAccessHit();
 
     /**
-     * Resets the access hit count of this {@link CacheRecord} to <code>0</code>.
+     * Resets the access hit count of this {@link Evictable} to <code>0</code>.
      */
     void resetAccessHit();
 

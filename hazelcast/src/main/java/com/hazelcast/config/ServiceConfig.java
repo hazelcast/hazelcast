@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,11 @@ public class ServiceConfig {
 
     public ServiceConfig setProperties(final Properties properties) {
         this.properties = properties;
+        return this;
+    }
+
+    public ServiceConfig addProperty(String propertyName, String value) {
+        properties.setProperty(propertyName, value);
         return this;
     }
 

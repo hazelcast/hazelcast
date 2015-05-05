@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -25,6 +26,8 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
+
+import java.util.Map;
 
 /**
  * The client Engine.
@@ -54,4 +57,13 @@ public interface ClientEngine {
     MemberImpl getLocalMember();
 
     SecurityContext getSecurityContext();
+
+    /**
+     * Returns Map which contains number of connected clients to the cluster.
+     *
+     * The returned map can be used to get information about connected clients to the cluster.
+     *
+     * @return Map<ClientType,Integer> .
+     */
+    Map<ClientType, Integer> getConnectedClientStats();
 }

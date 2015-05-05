@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,12 @@ final class FinalizeMigrationOperation extends AbstractOperation
         PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, partitionId);
         for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
             finishMigration(event, service);
+        }
+
+        if (endpoint == MigrationEndpoint.SOURCE && success) {
+            partitionService.clearPartitionReplicaVersions(partitionId);
+        } else if (endpoint == MigrationEndpoint.DESTINATION && !success) {
+            partitionService.clearPartitionReplicaVersions(partitionId);
         }
 
         partitionService.removeActiveMigration(partitionId);

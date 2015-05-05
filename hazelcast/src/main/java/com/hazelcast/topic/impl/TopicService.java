@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package com.hazelcast.topic.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
@@ -29,9 +31,12 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,7 +46,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class TopicService implements ManagedService, RemoteService, EventPublishingService {
+public class TopicService implements ManagedService, RemoteService, EventPublishingService, StatisticsAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
     public static final int ORDERING_LOCKS_LENGTH = 1000;
@@ -99,22 +104,20 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     @Override
-    public TopicProxy createDistributedObject(String name) {
-        if (isGlobalOrderingEnabled(name)) {
+    public ITopic createDistributedObject(String name) {
+        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
+
+        if (topicConfig.isGlobalOrderingEnabled()) {
             return new TotalOrderedTopicProxy(name, nodeEngine, this);
         } else {
             return new TopicProxy(name, nodeEngine, this);
         }
     }
 
-    private boolean isGlobalOrderingEnabled(String name) {
-        TopicConfig topicConfig = nodeEngine.getConfig().findTopicConfig(name);
-        return topicConfig.isGlobalOrderingEnabled();
-    }
-
     @Override
     public void destroyDistributedObject(String objectId) {
         statsMap.remove(objectId);
+        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, objectId);
     }
 
     @Override
@@ -159,5 +162,14 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public boolean removeMessageListener(String name, String registrationId) {
         return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
+    }
+
+    @Override
+    public Map<String, LocalTopicStats> getStats() {
+        Map<String, LocalTopicStats> topicStats = MapUtil.createHashMap(statsMap.size());
+        for (Map.Entry<String, LocalTopicStatsImpl> queueStat : statsMap.entrySet()) {
+            topicStats.put(queueStat.getKey(), queueStat.getValue());
+        }
+        return topicStats;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddEntryListenerSqlRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
+import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
+import com.hazelcast.map.impl.client.MapAddPartitionLostListenerRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
@@ -49,6 +51,7 @@ import com.hazelcast.map.impl.client.MapQueryRequest;
 import com.hazelcast.map.impl.client.MapRemoveEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapRemoveIfSameRequest;
 import com.hazelcast.map.impl.client.MapRemoveInterceptorRequest;
+import com.hazelcast.map.impl.client.MapRemovePartitionLostListenerRequest;
 import com.hazelcast.map.impl.client.MapRemoveRequest;
 import com.hazelcast.map.impl.client.MapReplaceIfSameRequest;
 import com.hazelcast.map.impl.client.MapReplaceRequest;
@@ -67,11 +70,9 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.Collection;
 
-/**
- * @author mdogan 5/2/13
- */
 public class MapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_PORTABLE_FACTORY, -10);
@@ -121,6 +122,9 @@ public class MapPortableHook implements PortableHook {
     public static final int LOAD_ALL_GIVEN_KEYS = 47;
     public static final int LOAD_ALL_KEYS = 48;
     public static final int IS_EMPTY = 49;
+    public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
+    public static final int ADD_MAP_PARTITION_LOST_LISTENER = 51;
+    public static final int REMOVE_MAP_PARTITION_LOST_LISTENER = 52;
 
     public int getFactoryId() {
         return F_ID;
@@ -128,7 +132,8 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[IS_EMPTY + 1];
+            final ConstructorFunction<Integer, Portable>[] constructors
+                    = new ConstructorFunction[REMOVE_MAP_PARTITION_LOST_LISTENER + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -397,6 +402,24 @@ public class MapPortableHook implements PortableHook {
                 constructors[IS_EMPTY] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapIsEmptyRequest();
+                    }
+                };
+
+                constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddNearCacheEntryListenerRequest();
+                    }
+                };
+
+                constructors[ADD_MAP_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddPartitionLostListenerRequest();
+                    }
+                };
+
+                constructors[REMOVE_MAP_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapRemovePartitionLostListenerRequest();
                     }
                 };
             }

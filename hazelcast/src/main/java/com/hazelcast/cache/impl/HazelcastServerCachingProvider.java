@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,8 @@ public final class HazelcastServerCachingProvider
     }
 
     @Override
-    protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader, Properties properties) {
+    protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                      Properties properties) {
         final HazelcastInstance instance;
         //uri is null or default or a non hazelcast one, then we use the internal shared instance
         if (uri == null || uri.equals(getDefaultURI())) {
@@ -71,6 +72,9 @@ public final class HazelcastServerCachingProvider
         } else {
             try {
                 instance = instanceFromProperties(classLoader, properties, false);
+                if (instance == null) {
+                    throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
+                }
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,19 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * With PartitionGroupConfig you can control how primary and backup partitions are mapped to physical Members.
+ * With PartitionGroupConfig, you can control how primary and backup partitions are mapped to physical Members.
  * <p/>
  * Hazelcast will always place partitions on different partition groups so as to provide redundancy.
  * There are three partition group schemes defined in {@link MemberGroupType}: PER_MEMBER, HOST_AWARE
  * and CUSTOM.
  * <p/>
- * In all cases a partition will never be created on the same "group". If there are more partitions defined than
- * there are partition groups, then only those partitions up to the number of partition groups will be created.
- * For example, if you define 2 backups then with the primary that makes 3. If you have only two partition groups
- * only two will get created.
+ * In all cases a partition will never be created on the same group. If there are more partitions defined than
+ * there are partition groups, then only those partitions, up to the number of partition groups, will be created.
+ * For example, if you define 2 backups, then with the primary, that makes 3. If you have only two partition groups
+ * only two will be created.
  * <h1>PER_MEMBER Partition Groups</h1>
  * This is the default partition scheme and is used if no other scheme is defined.
  * Each Member is in a group of its own.
@@ -57,10 +57,10 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * </pre>
  * </code>
  * <h1>CUSTOM Partition Groups</h1>
- * In this scheme, IP addresses, or IP address ranges are allocated to groups. Partitions are not written to the same
+ * In this scheme, IP addresses, or IP address ranges, are allocated to groups. Partitions are not written to the same
  * group. This is very useful for ensuring partitions are written to different racks or even availability zones.
  * <p/>
- * Say that members in data center 1 have IP addresses in the range 10.10.1.* and for data center 2 they have
+ * For example, members in data center 1 have IP addresses in the range 10.10.1.* and for data center 2 they have
  * the IP address range 10.10.2.*. You would achieve HA by configuring a <code>CUSTOM</code> partition group as follows:
  * <p/>
  * <pre>
@@ -79,7 +79,7 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * The interfaces can be configured with wildcards ('*') and also with address ranges e.g. '10-20'. Each member-group
  * can have an unlimited number of interfaces.
  * <p/>
- * You can define as many <code>member-group</code> s as you want. Hazelcast will always store backups in a different
+ * You can define as many <code>member-group</code>s as you want. Hazelcast will always store backups in a different
  * member-group to the primary partition.
  * <p/>
  * <h2>Overlapping Groups</h2>
@@ -129,7 +129,7 @@ public class PartitionGroupConfig {
     /**
      * Checks if this PartitionGroupConfig is enabled.
      *
-     * @return true if enabled, false otherwise.
+     * @return true if this PartitionGroupConfig is enabled, false otherwise.
      */
     public boolean isEnabled() {
         return enabled;
@@ -138,7 +138,7 @@ public class PartitionGroupConfig {
     /**
      * Enables or disables this PartitionGroupConfig.
      *
-     * @param enabled true if enabled, false if disabled.
+     * @param enabled true to enable, false to disable.
      * @return the updated PartitionGroupConfig.
      */
     public PartitionGroupConfig setEnabled(final boolean enabled) {
@@ -186,7 +186,7 @@ public class PartitionGroupConfig {
     /**
      * Returns an unmodifiable collection containing all {@link MemberGroupConfig} elements.
      *
-     * @return the MemberGroupConfig elements.
+     * @return an unmodifiable collection containing all {@link MemberGroupConfig} elements
      * @see #setMemberGroupConfigs(java.util.Collection)
      */
     public Collection<MemberGroupConfig> getMemberGroupConfigs() {
@@ -205,7 +205,7 @@ public class PartitionGroupConfig {
     }
 
     /**
-     * Adds a MemberGroupConfig. This MemberGroupConfig only has meaning when the group-type is set the
+     * Adds a MemberGroupConfig. This MemberGroupConfig only has meaning when the group-type is set to
      * {@link MemberGroupType#CUSTOM}. See the {@link PartitionGroupConfig} for more information and examples
      * of how this mechanism works.
      *

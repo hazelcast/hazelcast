@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ public interface Connection {
     /**
      * Closes this connection.
      * <p/>
-     * todo: what happens with all pending SocketWritables? Are they flushed, discarded or undefined behavior?
+     * Pending packets on this connection are discarded
      * <p/>
      * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
      */

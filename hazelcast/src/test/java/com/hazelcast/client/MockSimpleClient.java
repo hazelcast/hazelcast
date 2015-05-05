@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class MockSimpleClient implements SimpleClient {
 
     public void send(Object o) throws IOException {
         Data data = serializationService.toData(o);
-        Packet packet = new Packet(data, serializationService.getPortableContext());
+        Packet packet = new Packet(data);
         packet.setConn(connection);
         clientEngine.handlePacket(packet);
     }

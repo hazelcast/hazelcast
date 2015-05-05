@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
+class ClassDefinitionImpl implements ClassDefinition {
 
-    private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
-    private final Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
-            FieldDefinition>();
+    private int factoryId;
+    private int classId;
+    private int version = -1;
+    private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
 
     public ClassDefinitionImpl() {
     }
@@ -40,7 +39,6 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     void addFieldDef(FieldDefinitionImpl fd) {
-        fieldDefinitions.add(fd);
         fieldDefinitionsMap.put(fd.getName(), fd);
     }
 
@@ -49,7 +47,15 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     public FieldDefinition getField(int fieldIndex) {
-        return fieldDefinitions.get(fieldIndex);
+        if (fieldIndex < 0 || fieldIndex >= fieldDefinitionsMap.size()) {
+            throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
+        }
+        for (FieldDefinition fieldDefinition : fieldDefinitionsMap.values()) {
+            if (fieldIndex == fieldDefinition.getIndex()) {
+                return fieldDefinition;
+            }
+        }
+        throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
     }
 
     public boolean hasField(String fieldName) {
@@ -77,12 +83,24 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
     }
 
     Collection<FieldDefinition> getFieldDefinitions() {
-        return fieldDefinitions;
+        return fieldDefinitionsMap.values();
     }
 
     @Override
     public int getFieldCount() {
-        return fieldDefinitions.size();
+        return fieldDefinitionsMap.size();
+    }
+
+    public final int getFactoryId() {
+        return factoryId;
+    }
+
+    public final int getClassId() {
+        return classId;
+    }
+
+    public final int getVersion() {
+        return version;
     }
 
     void setVersionIfNotSet(int version) {
@@ -113,7 +131,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         if (getFieldCount() != that.getFieldCount()) {
             return false;
         }
-        for (FieldDefinition fd : fieldDefinitions) {
+        for (FieldDefinition fd : fieldDefinitionsMap.values()) {
             FieldDefinition fd2 = that.getField(fd.getName());
             if (fd2 == null) {
                 return false;
@@ -141,7 +159,7 @@ class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefiniti
         sb.append("{factoryId=").append(factoryId);
         sb.append(", classId=").append(classId);
         sb.append(", version=").append(version);
-        sb.append(", fieldDefinitions=").append(fieldDefinitions);
+        sb.append(", fieldDefinitions=").append(fieldDefinitionsMap.values());
         sb.append('}');
         return sb.toString();
     }

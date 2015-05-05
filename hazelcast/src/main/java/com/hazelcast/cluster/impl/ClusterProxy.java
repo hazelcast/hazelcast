@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
-
 import java.util.Set;
 
 public class ClusterProxy implements Cluster {
@@ -42,7 +41,7 @@ public class ClusterProxy implements Cluster {
 
     @Override
     public long getClusterTime() {
-        return clusterService.getClusterTime();
+        return clusterService.getClusterClock().getClusterTime();
     }
 
     @Override

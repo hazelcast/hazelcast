@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomicreference.operations;
 
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.atomicreference.ReferenceWrapper;
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -33,16 +33,38 @@ public abstract class AtomicReferenceBaseOperation extends Operation
     protected String name;
 
     public AtomicReferenceBaseOperation() {
-        super();
     }
 
     public AtomicReferenceBaseOperation(String name) {
         this.name = name;
     }
 
-    public ReferenceWrapper getReference() {
+    @Override
+    public String getServiceName() {
+        return AtomicReferenceService.SERVICE_NAME;
+    }
+
+    public AtomicReferenceContainer getReferenceContainer() {
         AtomicReferenceService service = getService();
-        return service.getReference(name);
+        return service.getReferenceContainer(name);
+    }
+
+    @Override
+    public void beforeRun() throws Exception {
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+    }
+
+    @Override
+    public Object getResponse() {
+        return null;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
@@ -58,23 +80,5 @@ public abstract class AtomicReferenceBaseOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
     }
 }

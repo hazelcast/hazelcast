@@ -1,6 +1,6 @@
-### Member Attributes Configuration
+## Member Attributes Configuration
 
-It is used to tag your cluster members in case, for example, you want to direct some tasks to specific members.
+Member attributes configuration tags your cluster members in case, for example, you want to direct some tasks to specific members.
 
 **Declarative Configuration:**
 
@@ -21,9 +21,9 @@ HazelcastInstance member1 = Hazelcast.newHazelcastInstance( member1Config );
 ```
 
 
-It has only "attribute" parameter.
+Member attributes configuration has only the `attribute` element.
 
-- attribute: You specify the name, type and value of your attribute here.
+- `attribute`: You specify the name, type and value of your attribute here.
 
 
 

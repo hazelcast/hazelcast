@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,8 +139,8 @@ public class BigDecimalAvgAggregation<Key, Value>
     private static final class BigDecimalAvgReducer
             extends Reducer<AvgTuple<Long, BigDecimal>, AvgTuple<Long, BigDecimal>> {
 
-        private volatile long count;
-        private volatile BigDecimal amount = BigDecimal.ZERO;
+        private long count;
+        private BigDecimal amount = BigDecimal.ZERO;
 
         @Override
         public void reduce(AvgTuple<Long, BigDecimal> value) {

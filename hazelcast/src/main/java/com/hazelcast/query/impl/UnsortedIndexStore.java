@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,19 +134,19 @@ public class UnsortedIndexStore extends BaseIndexStore {
             Set<Comparable> values = recordMap.keySet();
             for (Comparable value : values) {
                 boolean valid;
-                int result = value.compareTo(searchedValue);
+                int result = searchedValue.compareTo(value);
                 switch (comparisonType) {
                     case LESSER:
-                        valid = result < 0;
-                        break;
-                    case LESSER_EQUAL:
-                        valid = result <= 0;
-                        break;
-                    case GREATER:
                         valid = result > 0;
                         break;
-                    case GREATER_EQUAL:
+                    case LESSER_EQUAL:
                         valid = result >= 0;
+                        break;
+                    case GREATER:
+                        valid = result < 0;
+                        break;
+                    case GREATER_EQUAL:
+                        valid = result <= 0;
                         break;
                     case NOT_EQUAL:
                         valid = result != 0;

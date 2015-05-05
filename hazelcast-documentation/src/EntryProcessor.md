@@ -4,6 +4,10 @@
 
 Hazelcast supports entry processing. An entry processor is a function that executes your code on a map entry in an atomic way. 
 
+Entry Processor is a good option if you perform bulk processing on an `IMap`.  Usually, you might consider to perform a loop of keys executing `IMap.get(key)`, then mutating the value and finally putting the entry back in the map using `IMap.put(key,value)`.  If you are performing this process from a client or from a member where the keys do not exist, you effectively perform 2 network hops for each update. The first to retrieve the data and the second to update the mutated value.
+
+If you are doing the above, you should consider Entry Processors. An Entry Processor executes a read and update upon the member where the data resides.  This eliminates the costly network hops as described previously.
+
 ### Entry Processor Overview
 
 An entry processor enables fast in-memory operations on a map without having to worry about locks or concurrency issues. It can be applied to a single map entry or to all map entries. It supports choosing target entries using predicates. You do not need any explicit lock on entry: Hazelcast locks the entry, runs the EntryProcessor, and then unlocks the entry.
@@ -75,4 +79,8 @@ public interface EntryBackupProcessor<K, V> extends Serializable {
 
 
 ![image](images/NoteSmall.jpg) ***NOTE***: *You should explicitly call `setValue` method of `Map.Entry` when modifying data in Entry Processor. Otherwise, Entry Processor will be accepted as read-only.*
+
+![image](images/NoteSmall.jpg) ***NOTE***: *An EntryProcessor instance is not thread safe. If you are storing partition specific state between invocations be sure to register this in a thread-local.  A EntryProcessor instance can be used by multiple partition threads.*
+
+![image](images/NoteSmall.jpg) ***NOTE***: *EntryProcessors run via Operation Threads that are dedicated to specific partitions.  Therefore with long running EntryProcessor executions other partition operations cannot be processed, such as a 'map.put(key)'.  With this is in mind it is good practice to make your EntryProcessor executions as quick as possible*
 

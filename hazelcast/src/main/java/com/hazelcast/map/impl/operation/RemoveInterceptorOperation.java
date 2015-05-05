@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,39 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.NamedOperation;
 import java.io.IOException;
 
-public class RemoveInterceptorOperation extends AbstractOperation {
+public class RemoveInterceptorOperation extends AbstractOperation implements MutatingOperation, NamedOperation {
 
-    MapService mapService;
-    String mapName;
-    String id;
+    private MapService mapService;
+    private String mapName;
+    private String id;
+
+    public RemoveInterceptorOperation() {
+    }
 
     public RemoveInterceptorOperation(String mapName, String id) {
         this.mapName = mapName;
         this.id = id;
     }
 
-    public RemoveInterceptorOperation() {
-    }
-
+    @Override
     public void run() {
-        mapService = (MapService) getService();
-        mapService.getMapServiceContext().getMapContainer(mapName).removeInterceptor(id);
+        mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        mapContainer.removeInterceptor(id);
     }
 
-    public boolean returnsResponse() {
-        return true;
-    }
-
+    @Override
     public Object getResponse() {
         return true;
     }
@@ -64,8 +68,12 @@ public class RemoveInterceptorOperation extends AbstractOperation {
     }
 
     @Override
+    public String getName() {
+        return mapName;
+    }
+
+    @Override
     public String toString() {
         return "RemoveInterceptorOperation{}";
     }
-
 }

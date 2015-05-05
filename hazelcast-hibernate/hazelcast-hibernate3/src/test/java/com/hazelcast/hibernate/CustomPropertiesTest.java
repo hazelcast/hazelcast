@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -38,27 +37,12 @@ import org.junit.runner.RunWith;
 import java.util.Date;
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class CustomPropertiesTest extends HibernateTestSupport {
-
-    @Test
-    public void test() {
-        Properties props = getDefaultProperties();
-        props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "false");
-        SessionFactory sf = createSessionFactory(props);
-        HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
-        assertEquals(1, hz.getCluster().getMembers().size());
-        MapConfig cfg = hz.getConfig().getMapConfig("com.hazelcast.hibernate.entity.*");
-        assertNotNull(cfg);
-        assertEquals(30, cfg.getTimeToLiveSeconds());
-        assertEquals(50, cfg.getMaxSizeConfig().getSize());
-        sf.close();
-        assertTrue(hz.getLifecycleService().isRunning());
-        hz.shutdown();
-    }
 
     @Test
     public void testNativeClient() throws Exception {
@@ -70,6 +54,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_GROUP, "dev-custom");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_PASSWORD, "dev-pass");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_ADDRESS, "localhost");
+        props.setProperty(CacheEnvironment.CONFIG_FILE_PATH,"hazelcast-client-custom.xml");
         SessionFactory sf = createSessionFactory(props);
         HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz instanceof HazelcastClientProxy);

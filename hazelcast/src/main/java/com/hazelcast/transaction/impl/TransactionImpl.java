@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
@@ -296,7 +297,10 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 for (TransactionLog txLog : txLogs) {
                     futures.add(txLog.commit(nodeEngine));
                 }
-                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, commitExceptionHandler);
+                // We should rethrow exception if transaction is not TWO_PHASE
+                ExceptionHandler exceptionHandler = transactionType.equals(TransactionType.TWO_PHASE)
+                        ? commitExceptionHandler : FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
+                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, exceptionHandler);
 
                 state = COMMITTED;
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.4.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -256,6 +256,7 @@
             <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
             <write-delay-seconds>0</write-delay-seconds>
             <write-batch-size>1</write-batch-size>
+            <write-coalescing>true</write-coalescing>
             <properties>
                 <property name="dummy.property">value</property>
             </properties>
@@ -282,6 +283,31 @@
         <entry-listeners>
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
+
+        <partition-lost-listeners>
+            <partition-lost-listener>com.hazelcast.examples.MapPartitionLostListener</partition-lost-listener>
+        </partition-lost-listeners>
+
+        <query-caches>
+            <query-cache name="query-cache-name">
+                <predicate type="class-name">com.hazelcast.examples.ExamplePredicate</predicate>
+                <entry-listeners>
+                    <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
+                </entry-listeners>
+                <include-value>true</include-value>
+                <batch-size>1</batch-size>
+                <buffer-size>16</buffer-size>
+                <delay-seconds>0</delay-seconds>
+                <in-memory-format>BINARY</in-memory-format>
+                <coalesce>false</coalesce>
+                <populate>true</populate>
+                <eviction eviction-policy="LRU" max-size-policy="ENTRY_COUNT" size="10000"/>
+                <indexes>
+                    <index ordered="false">name</index>
+                    <index ordered="true">age</index>
+                </indexes>
+            </query-cache>
+        </query-caches>
 
     </map>
 
@@ -326,10 +352,44 @@
         <async-backup-count>0</async-backup-count>
     </semaphore>
 
+    <ringbuffer name="default">
+        <capacity>25311</capacity>
+        <backup-count>2</backup-count>
+        <async-backup-count>1</async-backup-count>
+        <time-to-live-seconds>29</time-to-live-seconds>
+        <in-memory-format>OBJECT</in-memory-format>
+    </ringbuffer>
+
+    <cache name="default">
+        <key-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.Object"/>
+        <statistics-enabled>false</statistics-enabled>
+        <management-enabled>false</management-enabled>
+
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader-factory
+                class-name="com.example.cache.MyCacheLoaderFactory"/>
+        <cache-writer-factory
+                class-name="com.example.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory
+                class-name="com.example.cache.MyExpirePolicyFactory"/>
+
+        <cache-entry-listeners>
+            <cache-entry-listener old-value-required="false" synchronous="false">
+                <cache-entry-listener-factory
+                        class-name="com.example.cache.MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory
+                        class-name="com.example.cache.MyEntryEventFilterFactory"/>
+            </cache-entry-listener>
+        </cache-entry-listeners>
+    </cache>
+
     <listeners>
         <listener>com.hazelcast.examples.MembershipListener</listener>
         <listener>com.hazelcast.examples.InstanceListener</listener>
         <listener>com.hazelcast.examples.MigrationListener</listener>
+        <listener>com.hazelcast.examples.PartitionLostListener</listener>
     </listeners>
 
     <serialization>
@@ -343,13 +403,14 @@
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <serializer type-class="com.hazelcast.examples.DummyType" class-name="com.hazelcast.examples.SerializerFactory"/>
+            <serializer type-class="com.hazelcast.examples.DummyType"
+                        class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
 
     <native-memory allocator-type="POOLED" enabled="true">
-        <size unit="MEGABYTES" value="256" />
+        <size unit="MEGABYTES" value="256"/>
         <metadata-space-percentage>12.5</metadata-space-percentage>
     </native-memory>
 

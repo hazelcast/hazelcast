@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,17 @@ public final class TcpIpConnection implements Connection {
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.readHandler = new ReadHandler(this, in);
         this.writeHandler = new WriteHandler(this, out);
+        this.readHandler = new ReadHandler(this, in);
+    }
+
+    /**
+     * Starts this connection.
+     *
+     * Starting means that the connection is going to register itself to listen to incoming traffic.
+     */
+    public void start() {
+        readHandler.start();
     }
 
     @Override
@@ -89,7 +98,7 @@ public final class TcpIpConnection implements Connection {
             }
             return false;
         }
-        writeHandler.enqueueSocketWritable(packet);
+        writeHandler.offer(packet);
         return true;
     }
 

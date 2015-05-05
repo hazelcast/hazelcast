@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,29 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.EventServiceImpl.EventPacket;
-import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.spi.impl.eventservice.impl.EventPacket;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
+import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
 
-    static final int NORMAL_RESPONSE = 0;
-    static final int BACKUP = 1;
-    static final int BACKUP_RESPONSE = 2;
-    static final int PARTITION_ITERATOR = 3;
-    static final int PARTITION_RESPONSE = 4;
-    static final int PARALLEL_OPERATION_FACTORY = 5;
-    static final int EVENT_PACKET = 6;
-    static final int COLLECTION = 7;
-    static final int CALL_TIMEOUT_RESPONSE = 8;
+    public static final int NORMAL_RESPONSE = 0;
+    public static final int BACKUP = 1;
+    public static final int BACKUP_RESPONSE = 2;
+    public static final int PARTITION_ITERATOR = 3;
+    public static final int PARTITION_RESPONSE = 4;
+    public static final int PARALLEL_OPERATION_FACTORY = 5;
+    public static final int EVENT_PACKET = 6;
+    public static final int COLLECTION = 7;
+    public static final int CALL_TIMEOUT_RESPONSE = 8;
+    public static final int ERROR_RESPONSE = 9;
 
     @Override
     public DataSerializableFactory createFactory() {
@@ -61,6 +68,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new SerializableCollection();
                     case CALL_TIMEOUT_RESPONSE:
                         return new CallTimeoutResponse();
+                    case ERROR_RESPONSE:
+                        return new ErrorResponse();
                     default:
                         return null;
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ public interface WanReplicationService
     String SERVICE_NAME = "hz:core:wanReplicationService";
 
     /**
-     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name, if
-     * already existing returns the previous instance.
+     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name. If
+     * the name already exists, returns the previous instance.
      *
      * @param name name of the WAN replication configuration
      * @return instance of the corresponding replication publisher
@@ -52,7 +52,7 @@ public interface WanReplicationService
     void handleEvent(Packet packet);
 
     /**
-     * Starts the shutdown process of the WAN replication service
+     * Starts the shutdown process of the WAN replication service.
      */
     void shutdown();
 }

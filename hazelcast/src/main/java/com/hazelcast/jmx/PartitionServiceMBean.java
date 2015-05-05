@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,5 +57,17 @@ public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionServi
     public int getActivePartitionCount() {
         InetSocketAddress address = hazelcastInstance.getCluster().getLocalMember().getSocketAddress();
         return managedObject.getMemberPartitions(new Address(address)).size();
+    }
+
+    @ManagedAnnotation("isClusterSafe")
+    @ManagedDescription("Is the cluster in a safe state")
+    public boolean isClusterSafe() {
+        return hazelcastInstance.getPartitionService().isClusterSafe();
+    }
+
+    @ManagedAnnotation("isLocalMemberSafe")
+    @ManagedDescription("Is the local member safe to shutdown")
+    public boolean isLocalMemberSafe() {
+        return hazelcastInstance.getPartitionService().isLocalMemberSafe();
     }
 }

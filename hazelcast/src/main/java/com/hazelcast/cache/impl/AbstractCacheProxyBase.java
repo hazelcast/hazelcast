@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -30,16 +33,22 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
-import javax.cache.CacheException;
-import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CompletionListener;
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.cache.CacheException;
+import javax.cache.configuration.Factory;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CompletionListener;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
@@ -65,7 +74,7 @@ abstract class AbstractCacheProxyBase<K, V> {
 
     private final NodeEngine nodeEngine;
     private final CopyOnWriteArrayList<Future> loadAllTasks = new CopyOnWriteArrayList<Future>();
-    private final CacheLoader<K, V> cacheLoader;
+    private CacheLoader<K, V> cacheLoader;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
@@ -76,15 +85,19 @@ abstract class AbstractCacheProxyBase<K, V> {
         this.cacheConfig = cacheConfig;
         this.nodeEngine = nodeEngine;
         this.cacheService = cacheService;
-        this.serializationService = this.nodeEngine.getSerializationService();
+        this.serializationService = nodeEngine.getSerializationService();
+        this.operationProvider =
+                cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
+        init();
+    }
+
+    private void init() {
         if (cacheConfig.getCacheLoaderFactory() != null) {
-            final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
+            final Factory<CacheLoader<K, V>> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
         } else {
             cacheLoader = null;
         }
-
-        operationProvider = cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
     }
 
     //region close&destroy
@@ -140,6 +153,20 @@ abstract class AbstractCacheProxyBase<K, V> {
         return isClosed.get();
     }
 
+    public boolean isDestroyed() {
+        return isDestroyed.get();
+    }
+
+    public void open() {
+        if (isDestroyed.get()) {
+            throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
+        }
+        if (!isClosed.compareAndSet(true, false)) {
+            return;
+        }
+        init();
+    }
+
     protected abstract void closeListeners();
     //endregion close&destroy
 
@@ -178,8 +205,8 @@ abstract class AbstractCacheProxyBase<K, V> {
         }
     }
 
-    protected void submitLoadAllTask(final OperationFactory operationFactory, final CompletionListener completionListener) {
-        final LoadAllTask loadAllTask = new LoadAllTask(operationFactory, completionListener);
+    protected void submitLoadAllTask(LoadAllTask loadAllTask) {
+
         final ExecutionService executionService = nodeEngine.getExecutionService();
         final CompletableFutureTask<?> future = (CompletableFutureTask<?>) executionService
                 .submit("loadAll-" + nameWithPrefix, loadAllTask);
@@ -198,22 +225,41 @@ abstract class AbstractCacheProxyBase<K, V> {
         });
     }
 
-    private final class LoadAllTask
+    protected final class LoadAllTask
             implements Runnable {
 
-        private final OperationFactory operationFactory;
         private final CompletionListener completionListener;
+        private final CacheOperationProvider operationProvider;
+        private final Set<Data> keysData;
+        private final boolean replaceExistingValues;
 
-        private LoadAllTask(OperationFactory operationFactory, CompletionListener completionListener) {
-            this.operationFactory = operationFactory;
+        public LoadAllTask(CacheOperationProvider operationProvider,
+                Set<Data> keysData, boolean replaceExistingValues, CompletionListener completionListener) {
+            this.operationProvider = operationProvider;
+            this.keysData = keysData;
+            this.replaceExistingValues = replaceExistingValues;
             this.completionListener = completionListener;
         }
 
         @Override
         public void run() {
             try {
-                final Map<Integer, Object> results = getNodeEngine().getOperationService()
-                        .invokeOnAllPartitions(getServiceName(), operationFactory);
+                OperationService operationService = getNodeEngine().getOperationService();
+                OperationFactory operationFactory;
+
+                InternalPartitionService partitionService = getNodeEngine().getPartitionService();
+                Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
+                Map<Integer, Object> results = new HashMap<Integer, Object>();
+
+                for (Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
+                    Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
+                    Set<Data> ownerKeys = filterOwnerKeys(partitionService, partitions);
+                    operationFactory = operationProvider.createLoadAllOperationFactory(ownerKeys, replaceExistingValues);
+                    Map<Integer, Object> memberResults;
+                    memberResults = operationService.invokeOnPartitions(getServiceName(), operationFactory, partitions);
+                    results.putAll(memberResults);
+                }
+
                 validateResults(results);
                 if (completionListener != null) {
                     completionListener.onCompletion();
@@ -224,6 +270,19 @@ abstract class AbstractCacheProxyBase<K, V> {
                 }
             }
         }
+
+        private Set<Data> filterOwnerKeys(InternalPartitionService partitionService, Set<Integer> partitions) {
+            Set<Data> ownerKeys = new HashSet<Data>();
+            for (Data key: keysData) {
+                int keyPartitionId = partitionService.getPartitionId(key);
+                if (partitions.contains(keyPartitionId)) {
+                    ownerKeys.add(key);
+                }
+            }
+            return ownerKeys;
+        }
+
+
     }
     //endregion CacheLoader
 

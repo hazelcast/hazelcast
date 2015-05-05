@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.Resu
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 /**
- * This operation tells the job owner to mark a partition as cully processed
+ * This operation tells the job owner to mark a partition as fully processed
  */
 public class RequestPartitionProcessed
         extends ProcessingOperation {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,14 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
-import org.junit.Ignore;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-@Ignore("not a JUnit test")
 public final class TestUtil {
 
     static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
@@ -68,6 +67,17 @@ public final class TestUtil {
     }
 
     public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
+        for (HazelcastInstance instance : instances) {
+            final PartitionService ps = instance.getPartitionService();
+            for (Partition partition : ps.getPartitions()) {
+                while (partition.getOwner() == null) {
+                    Thread.sleep(10);
+                }
+            }
+        }
+    }
+
+    public static void warmUpPartitions(Collection<HazelcastInstance> instances) throws InterruptedException {
         for (HazelcastInstance instance : instances) {
             final PartitionService ps = instance.getPartitionService();
             for (Partition partition : ps.getPartitions()) {

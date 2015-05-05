@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,10 +66,12 @@ public class CacheClearRequest
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.CLEAR;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -87,6 +89,7 @@ public class CacheClearRequest
         }
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -124,4 +127,5 @@ public class CacheClearRequest
     public Permission getRequiredPermission() {
         return null;
     }
+
 }

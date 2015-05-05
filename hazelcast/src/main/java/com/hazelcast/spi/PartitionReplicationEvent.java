@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.EventObject;
 
 /**
- * An event send to {@link com.hazelcast.spi.MigrationAwareService} when partitions changes happen.
+ * An event send to {@link com.hazelcast.spi.MigrationAwareService} when partition changes happen.
  */
 public class PartitionReplicationEvent extends EventObject {
 
@@ -40,7 +40,7 @@ public class PartitionReplicationEvent extends EventObject {
     }
 
     /**
-     * The id of the partition.
+     * Gets the id of the partition.
      *
      * @return the id of the partition
      */
@@ -49,7 +49,7 @@ public class PartitionReplicationEvent extends EventObject {
     }
 
     /**
-     * The replica index. 0 is priimary, the rest is backup.
+     * Gets the replica index. 0 is primary, the rest is backup.
      *
      * @return the replica index
      */

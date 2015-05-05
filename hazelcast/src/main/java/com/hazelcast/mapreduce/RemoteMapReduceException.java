@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastException;
 import java.util.List;
 
 /**
- * This exception class is used to show stacktraces of multiple failed
+ * This exception class is used to show stack traces of multiple failed
  * remote operations at once. This can happen if the {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation}
  * fails to retrieve values for some reason.
  */

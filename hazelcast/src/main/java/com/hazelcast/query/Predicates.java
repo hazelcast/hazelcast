@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -407,7 +407,7 @@ public final class Predicates {
 
 
         protected int getFlags() {
-            //no flags
+            //no addFlag
             return 0;
         }
 
@@ -731,6 +731,11 @@ public final class Predicates {
 
         @Override
         public boolean apply(Map.Entry entry) {
+            Comparable entryValue = readAttribute(entry);
+            if (entryValue == null) {
+                return false;
+            }
+
             return !super.apply(entry);
         }
 
@@ -841,7 +846,8 @@ public final class Predicates {
                 } else if (type != null) {
                     return type.getConverter().convert(attributeValue);
                 } else {
-                    throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
+                    throw new QueryException("Unknown attribute type: " + attributeValue.getClass().getName()
+                            + " for attribute: " + attribute);
                 }
             }
         }

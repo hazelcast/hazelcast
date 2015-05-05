@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
 import java.io.IOException;
 
 public class ReplaceIfSameOperation extends BasePutOperation {
@@ -27,14 +26,15 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     private Data expect;
     private boolean successful;
 
+    public ReplaceIfSameOperation() {
+    }
+
     public ReplaceIfSameOperation(String name, Data dataKey, Data expect, Data update) {
         super(name, dataKey, update);
         this.expect = expect;
     }
 
-    public ReplaceIfSameOperation() {
-    }
-
+    @Override
     public void run() {
         successful = recordStore.replace(dataKey, expect, dataValue);
         if (successful) {
@@ -42,16 +42,19 @@ public class ReplaceIfSameOperation extends BasePutOperation {
         }
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
         }
     }
 
+    @Override
     public Object getResponse() {
         return successful;
     }
 
+    @Override
     public boolean shouldBackup() {
         return successful && recordStore.getRecord(dataKey) != null;
     }

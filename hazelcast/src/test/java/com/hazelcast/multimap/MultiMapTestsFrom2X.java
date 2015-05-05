@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
@@ -65,7 +65,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         expectedValues.add("hello");
         expectedValues.add("world");
         expectedValues.add("again");
-        map.addEntryListener(new EntryListener<String, String>() {
+        map.addEntryListener(new EntryAdapter<String, String>() {
 
             public void entryAdded(EntryEvent<String, String> event) {
                 String key = event.getKey();

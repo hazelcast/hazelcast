@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,35 +21,57 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GetAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class GetAllOperation extends AbstractMapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
-    Set<Data> keys = new HashSet<Data>();
-    MapEntrySet entrySet;
+    private Set<Data> keys = new HashSet<Data>();
+    private MapEntrySet entrySet;
+    private transient RecordStore recordStore;
+
+    public GetAllOperation() {
+    }
 
     public GetAllOperation(String name, Set<Data> keys) {
         super(name);
         this.keys = keys;
     }
 
-    public GetAllOperation() {
-    }
-
+    @Override
     public void run() {
+        InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
+        recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, name);
         Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
-            if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
+            if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);
             }
         }
         entrySet = recordStore.getAll(partitionKeySet);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        if (!entrySet.isEmpty()) {
+            evict(false);
+        }
+    }
+
+    protected void evict(boolean backup) {
+        if (recordStore == null) {
+            return;
+        }
+        final long now = Clock.currentTimeMillis();
+        recordStore.evictEntries(now, backup);
     }
 
     @Override
@@ -59,9 +81,7 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public String toString() {
-        return "GetAllOperation{"
-                + '}';
-
+        return "GetAllOperation{}";
     }
 
     @Override

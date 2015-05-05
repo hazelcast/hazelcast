@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class AtomicReferenceProxy<E> extends AbstractDistributedObject<AtomicReferenceService>
         implements AsyncAtomicReference<E> {

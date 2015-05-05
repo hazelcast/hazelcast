@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,20 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
-public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
+public class EvictOperation extends LockAwareOperation implements MutatingOperation, BackupAwareOperation {
 
-    boolean evicted;
-    boolean asyncBackup;
+    private boolean evicted;
+    private boolean asyncBackup;
 
     public EvictOperation(String name, Data dataKey, boolean asyncBackup) {
         super(name, dataKey);
@@ -38,8 +40,10 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     public EvictOperation() {
     }
 
+    @Override
     public void run() {
-        dataValue = mapService.getMapServiceContext().toData(recordStore.evict(dataKey, false));
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        dataValue = mapServiceContext.toData(recordStore.evict(dataKey, false));
         evicted = dataValue != null;
     }
 
@@ -57,20 +61,25 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         return new RemoveBackupOperation(name, dataKey);
     }
 
+    @Override
     public int getAsyncBackupCount() {
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
         if (asyncBackup) {
-            return mapService.getMapServiceContext().getMapContainer(name).getTotalBackupCount();
-        } else {
-            return mapService.getMapServiceContext().getMapContainer(name).getAsyncBackupCount();
+            return mapContainer.getTotalBackupCount();
         }
+
+        return mapContainer.getAsyncBackupCount();
     }
 
+    @Override
     public int getSyncBackupCount() {
         if (asyncBackup) {
             return 0;
-        } else {
-            return mapService.getMapServiceContext().getMapContainer(name).getBackupCount();
         }
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(name);
+        return mapContainer.getBackupCount();
     }
 
     public boolean shouldBackup() {
@@ -78,13 +87,15 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void afterRun() {
-        if (evicted) {
-            mapService.getMapServiceContext().interceptAfterRemove(name, dataValue);
-            EntryEventType eventType = EntryEventType.EVICTED;
-            mapService.getMapServiceContext().getMapEventPublisher()
-                    .publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
-            invalidateNearCaches();
+        if (!evicted) {
+            return;
         }
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.interceptAfterRemove(name, dataValue);
+        EntryEventType eventType = EntryEventType.EVICTED;
+        mapServiceContext.getMapEventPublisher()
+                .publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
+        invalidateNearCaches();
     }
 
     @Override

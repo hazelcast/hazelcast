@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
 
         this.recordStoreLoader = createRecordStoreLoader();
-        this.recordStoreLoader.loadInitialKeys();
+        this.recordStoreLoader.loadInitialKeys(true);
     }
 
     @Override
@@ -74,6 +74,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     @Override
     public void setLoaded(boolean loaded) {
         recordStoreLoader.setLoaded(loaded);
+    }
+
+    @Override
+    public void loadAllFromStore(boolean replaceExisting) {
+        recordStoreLoader.setLoaded(false);
+        recordStoreLoader.loadInitialKeys(replaceExisting);
     }
 
     @Override
@@ -111,6 +117,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void putRecord(Data key, Record record) {
+        markRecordStoreExpirable(record.getTtl());
+
         final Record existingRecord = records.put(key, record);
         updateSizeEstimator(-calculateRecordHeapCost(existingRecord));
         updateSizeEstimator(calculateRecordHeapCost(record));
@@ -118,17 +126,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public Record putBackup(Data key, Object value) {
-        return putBackup(key, value, DEFAULT_TTL);
+        return putBackup(key, value, DEFAULT_TTL, false);
     }
 
-    /**
-     * @param key   the key to be processed.
-     * @param value the value to be processed.
-     * @param ttl   milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
-     * @return previous record if exists otherwise null.
-     */
+
     @Override
-    public Record putBackup(Data key, Object value, long ttl) {
+    public Record putBackup(Data key, Object value, long ttl, boolean putTransient) {
         final long now = getNow();
         markRecordStoreExpirable(ttl);
 
@@ -142,7 +145,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateRecord(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
         }
-        mapDataStore.addBackup(key, value, now);
+        if (putTransient) {
+            mapDataStore.addTransient(key, now);
+        } else {
+            mapDataStore.addBackup(key, value, now);
+        }
         return record;
     }
 
@@ -185,7 +192,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
     }
 
     /**
@@ -395,25 +402,20 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
         clearRecordsMap(lockedRecords);
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
         return numOfClearedEntries;
     }
 
     @Override
     public void reset() {
-        checkIfLoaded();
-
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
-        mapDataStore.reset();
+        mapDataStore.clear();
     }
-
 
     @Override
     public Object evict(Data key, boolean backup) {
-        checkIfLoaded();
-
         return evictInternal(key, backup);
     }
 
@@ -626,7 +628,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         }
         final Map entriesLoaded = mapDataStore.loadAll(keys);
         addMapEntrySet(entriesLoaded, mapEntrySet);
-        postReadCleanUp(now, false);
+
+        // add loaded key-value pairs to this record-store.
+        Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+        for (Map.Entry<Data, Data> entry : entrySet) {
+            // correct TTL will be set in the put method below, when creating record.
+            // use putTransient since we already fetched entries from map-loader.
+            putTransient(entry.getKey(), entry.getValue(), DEFAULT_TTL);
+        }
         return mapEntrySet;
     }
 
@@ -768,6 +777,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
+        mergingEntry = EntryViews.convertToLazyEntryView(mergingEntry, serializationService, mergePolicy);
         Object newValue;
         if (record == null) {
             final Object notExistingKey = mapServiceContext.toObject(key);

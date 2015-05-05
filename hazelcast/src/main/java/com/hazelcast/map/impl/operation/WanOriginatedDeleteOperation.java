@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,21 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 
 public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
 
-    boolean success;
+    private boolean success;
+
+    public WanOriginatedDeleteOperation() {
+    }
 
     public WanOriginatedDeleteOperation(String name, Data dataKey) {
         super(name, dataKey);
     }
 
-    public WanOriginatedDeleteOperation() {
-    }
-
+    @Override
     public void run() {
         success = recordStore.remove(dataKey) != null;
     }
@@ -41,15 +43,19 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
 
     @Override
     public void afterRun() {
-        if (success) {
-            mapService.getMapServiceContext().interceptAfterRemove(name, dataValue);
-            mapService.getMapServiceContext().getMapEventPublisher()
-                    .publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
-            invalidateNearCaches();
-            evict(false);
+        if (!success) {
+            return;
         }
+
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        mapServiceContext.interceptAfterRemove(name, dataValue);
+        mapServiceContext.getMapEventPublisher()
+                .publishEvent(getCallerAddress(), name, EntryEventType.REMOVED, dataKey, dataOldValue, null);
+        invalidateNearCaches();
+        evict(false);
     }
 
+    @Override
     public boolean shouldBackup() {
         return success;
     }

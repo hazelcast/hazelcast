@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ final class TypeConverters {
         @Override
         public Comparable convert(Comparable value) {
             if (value == null) {
-                return null;
+                return IndexImpl.NULL;
             }
             String enumString = value.toString();
             if (enumString.contains(".")) {
@@ -63,6 +63,9 @@ final class TypeConverters {
     static class SqlDateConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof java.sql.Date) {
                 return value;
             }
@@ -80,6 +83,9 @@ final class TypeConverters {
     static class SqlTimestampConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Timestamp) {
                 return value;
             }
@@ -97,6 +103,9 @@ final class TypeConverters {
     static class DateConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Date) {
                 return value;
             }
@@ -114,6 +123,9 @@ final class TypeConverters {
     static class DoubleConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Double) {
                 return value;
             }
@@ -131,6 +143,9 @@ final class TypeConverters {
     static class LongConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Long) {
                 return value;
             }
@@ -148,6 +163,9 @@ final class TypeConverters {
     static class BigIntegerConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof BigInteger) {
                 return value;
             }
@@ -158,6 +176,9 @@ final class TypeConverters {
     static class BigDecimalConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof BigDecimal) {
                 return value;
             }
@@ -171,6 +192,9 @@ final class TypeConverters {
     static class IntegerConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Integer) {
                 return value;
             }
@@ -201,6 +225,9 @@ final class TypeConverters {
     static class FloatConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Float) {
                 return value;
             }
@@ -218,6 +245,9 @@ final class TypeConverters {
     static class ShortConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Short) {
                 return value;
             }
@@ -235,6 +265,9 @@ final class TypeConverters {
     static class BooleanConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Boolean) {
                 return value;
             }
@@ -252,6 +285,9 @@ final class TypeConverters {
     static class ByteConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value instanceof Byte) {
                 return value;
             }
@@ -269,6 +305,9 @@ final class TypeConverters {
     static class CharConverter implements TypeConverter {
         @Override
         public Comparable convert(Comparable value) {
+            if (value == null) {
+                return IndexImpl.NULL;
+            }
             if (value.getClass() == char.class) {
                 return value;
             }

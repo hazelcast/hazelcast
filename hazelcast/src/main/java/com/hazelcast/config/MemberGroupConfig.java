@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.hasText;
-import static com.hazelcast.util.ValidationUtil.isNotNull;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for a single member group.
@@ -42,8 +42,8 @@ public class MemberGroupConfig {
      * @see #getInterfaces()
      * @see #clear()
      */
-    public MemberGroupConfig addInterface(final String ip) {
-        interfaces.add(hasText(ip, "ip"));
+    public MemberGroupConfig addInterface(String ip) {
+        interfaces.add(checkHasText(ip, "ip must contain text"));
         return this;
     }
 
@@ -62,7 +62,7 @@ public class MemberGroupConfig {
     /**
      * Gets an unmodifiable collection containing all interfaces.
      *
-     * @return the collection of interfaces.
+     * @return the unmodifiable collection containing all interfaces.
      * @see #setInterfaces(java.util.Collection)
      */
     public Collection<String> getInterfaces() {
@@ -74,7 +74,7 @@ public class MemberGroupConfig {
      * <p/>
      * If the interfaces is empty, it will have the same effect as calling {@link #clear()}.
      *
-     * @param interfaces the interfaces to set.
+     * @param interfaces the interfaces to set that are part of a group.
      * @return the updated MemberGroupConfig
      * @throws IllegalArgumentException if interfaces is null.
      * @see #getInterfaces()

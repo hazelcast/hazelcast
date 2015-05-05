@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,29 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryListener;
+import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.wan.WanReplicationEvent;
 
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -47,10 +53,16 @@ import java.util.Properties;
  * @see MapPostJoinAwareService
  * @see MapSplitBrainHandlerService
  * @see MapReplicationSupportingService
+ * @see MapStatisticsAwareService
+ * @see MapPartitionAwareService
+ * @see MapQuorumAwareService
+ * @see MapClientAwareService
+ * @see MapServiceContext
  */
-public final class MapService implements ManagedService, MigrationAwareService,
-        TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
+public class MapService implements ManagedService, MigrationAwareService,
+        TransactionalService, RemoteService, EventPublishingService<EventData, ListenerAdapter>,
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService, StatisticsAwareService,
+        PartitionAwareService, ClientAwareService, QuorumAwareService {
 
     /**
      * Service name of map service used
@@ -58,21 +70,25 @@ public final class MapService implements ManagedService, MigrationAwareService,
      */
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
-    private ManagedService managedService;
-    private MigrationAwareService migrationAwareService;
-    private TransactionalService transactionalService;
-    private RemoteService remoteService;
-    private EventPublishingService eventPublishingService;
-    private PostJoinAwareService postJoinAwareService;
-    private SplitBrainHandlerService splitBrainHandlerService;
-    private ReplicationSupportingService replicationSupportingService;
-    private MapServiceContext mapServiceContext;
+    protected ManagedService managedService;
+    protected MigrationAwareService migrationAwareService;
+    protected TransactionalService transactionalService;
+    protected RemoteService remoteService;
+    protected EventPublishingService eventPublishingService;
+    protected PostJoinAwareService postJoinAwareService;
+    protected SplitBrainHandlerService splitBrainHandlerService;
+    protected ReplicationSupportingService replicationSupportingService;
+    protected StatisticsAwareService statisticsAwareService;
+    protected PartitionAwareService partitionAwareService;
+    protected ClientAwareService clientAwareService;
+    protected QuorumAwareService quorumAwareService;
+    protected MapServiceContext mapServiceContext;
 
-    private MapService() {
+    public MapService() {
     }
 
     @Override
-    public void dispatchEvent(EventData event, EntryListener listener) {
+    public void dispatchEvent(EventData event, ListenerAdapter listener) {
         eventPublishingService.dispatchEvent(event, listener);
     }
 
@@ -137,6 +153,11 @@ public final class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
+    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+        partitionAwareService.onPartitionLost(partitionLostEvent);
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         return splitBrainHandlerService.prepareMergeRunnable();
     }
@@ -151,78 +172,23 @@ public final class MapService implements ManagedService, MigrationAwareService,
         transactionalService.rollbackTransaction(transactionId);
     }
 
-    public void setMapServiceContext(MapServiceContext mapServiceContext) {
-        this.mapServiceContext = mapServiceContext;
+    @Override
+    public Map<String, LocalMapStats> getStats() {
+        return statisticsAwareService.getStats();
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        return quorumAwareService.getQuorumName(name);
     }
 
     public MapServiceContext getMapServiceContext() {
         return mapServiceContext;
     }
 
-    /**
-     * Static factory method which creates a new map service object.
-     *
-     * @param nodeEngine node engine.
-     * @return new map service object.
-     */
-    public static MapService create(NodeEngine nodeEngine) {
-        final MapServiceContext mapServiceContext = new DefaultMapServiceContext(nodeEngine);
-        final ManagedService managedService = new MapManagedService(mapServiceContext);
-        final MigrationAwareService migrationAwareService = new MapMigrationAwareService(mapServiceContext);
-        final TransactionalService transactionalService = new MapTransactionalService(mapServiceContext);
-        final RemoteService remoteService = new MapRemoteService(mapServiceContext);
-        final EventPublishingService eventPublisher = new MapEventPublishingService(mapServiceContext);
-        final PostJoinAwareService postJoinAwareService = new MapPostJoinAwareService(mapServiceContext);
-        final SplitBrainHandlerService splitBrainHandler = new MapSplitBrainHandlerService(mapServiceContext);
-        final ReplicationSupportingService replicationSupportingService
-                = new MapReplicationSupportingService(mapServiceContext);
-
-        final MapService mapService = new MapService();
-        mapService.setManagedService(managedService);
-        mapService.setMigrationAwareService(migrationAwareService);
-        mapService.setTransactionalService(transactionalService);
-        mapService.setRemoteService(remoteService);
-        mapService.setEventPublishingService(eventPublisher);
-        mapService.setPostJoinAwareService(postJoinAwareService);
-        mapService.setSplitBrainHandlerService(splitBrainHandler);
-        mapService.setReplicationSupportingService(replicationSupportingService);
-        mapService.setMapServiceContext(mapServiceContext);
-
-        mapServiceContext.setService(mapService);
-
-        return mapService;
-    }
-
-    void setManagedService(ManagedService managedService) {
-        this.managedService = managedService;
-    }
-
-    void setMigrationAwareService(MigrationAwareService migrationAwareService) {
-        this.migrationAwareService = migrationAwareService;
-    }
-
-    void setTransactionalService(TransactionalService transactionalService) {
-        this.transactionalService = transactionalService;
-    }
-
-    void setRemoteService(RemoteService remoteService) {
-        this.remoteService = remoteService;
-    }
-
-    void setEventPublishingService(EventPublishingService eventPublishingService) {
-        this.eventPublishingService = eventPublishingService;
-    }
-
-    void setPostJoinAwareService(PostJoinAwareService postJoinAwareService) {
-        this.postJoinAwareService = postJoinAwareService;
-    }
-
-    void setSplitBrainHandlerService(SplitBrainHandlerService splitBrainHandlerService) {
-        this.splitBrainHandlerService = splitBrainHandlerService;
-    }
-
-    void setReplicationSupportingService(ReplicationSupportingService replicationSupportingService) {
-        this.replicationSupportingService = replicationSupportingService;
+    @Override
+    public void clientDisconnected(String clientUuid) {
+        clientAwareService.clientDisconnected(clientUuid);
     }
 
 }

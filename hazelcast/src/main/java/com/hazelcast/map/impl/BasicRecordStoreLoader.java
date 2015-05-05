@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl;
 
 import com.hazelcast.logging.ILogger;
@@ -8,6 +24,7 @@ import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -15,7 +32,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -87,7 +103,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * Every partition (record-store) loads its own key set.
      */
     @Override
-    public void loadInitialKeys() {
+    public void loadInitialKeys(boolean replaceExisting) {
         if (isLoaded()) {
             return;
         }
@@ -96,16 +112,23 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
             return;
         }
 
-        final Runnable task = new InitialKeysLoaderTask();
+        final Runnable task = new InitialKeysLoaderTask(replaceExisting);
         final String executorName = MAP_INITIAL_LOAD_EXECUTOR;
         executeTask(executorName, task);
     }
 
     private final class InitialKeysLoaderTask implements Runnable {
+
+        private final boolean replaceExisting;
+
+        public InitialKeysLoaderTask(boolean replaceExisting) {
+            this.replaceExisting = replaceExisting;
+        }
+
         @Override
         public void run() {
             try {
-                loadAllKeysInternal();
+                loadAllKeysInternal(replaceExisting);
             } catch (Throwable t) {
                 setLoaderException(t);
             }
@@ -124,19 +147,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     private ExecutionService getExecutionService() {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         return nodeEngine.getExecutionService();
-    }
-
-    private void loadAllKeysInternal() throws Exception {
-        final MapContainer mapContainer = recordStore.getMapContainer();
-        final MapStoreContext basicMapStoreContext = mapContainer.getMapStoreContext();
-        basicMapStoreContext.waitInitialLoadFinish();
-
-        final Map<Data, Object> loadedKeys = basicMapStoreContext.getInitialKeys();
-        if (loadedKeys == null || loadedKeys.isEmpty()) {
-            setLoaded(true);
-            return;
-        }
-        doChunkedLoad(loadedKeys, mapServiceContext.getNodeEngine());
     }
 
     @Override
@@ -169,6 +179,19 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         public void run() {
             loadKeysInternal(keys, replaceExistingValues);
         }
+    }
+
+    private void loadAllKeysInternal(boolean replaceExistingValues) throws Exception {
+        final MapContainer mapContainer = recordStore.getMapContainer();
+        final MapStoreContext basicMapStoreContext = mapContainer.getMapStoreContext();
+        basicMapStoreContext.waitInitialLoadFinish();
+
+        final Map<Data, Object> loadedKeys = basicMapStoreContext.getInitialKeys();
+        if (loadedKeys == null || loadedKeys.isEmpty()) {
+            setLoaded(true);
+            return;
+        }
+        doChunkedLoad(loadedKeys, mapServiceContext.getNodeEngine(), replaceExistingValues);
     }
 
     private void loadKeysInternal(List<Data> keys, boolean replaceExistingValues) {
@@ -305,13 +328,10 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        final long now = getNow();
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             final Data key = iterator.next();
-            final Record record = recordStore.getRecord(key);
-            final long lastUpdateTime = record == null ? 0L : record.getLastUpdateTime();
-            if (!mapDataStore.loadable(key, lastUpdateTime, now)) {
+            if (!mapDataStore.loadable(key)) {
                 iterator.remove();
             }
         }
@@ -321,21 +341,34 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         return mapServiceContext.getNodeEngine().getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
     }
 
-    private long getNow() {
-        return Clock.currentTimeMillis();
+    private boolean shouldLoad(Data key, boolean replaceExisting) {
+        Record record = recordStore.getRecord(key);
+
+        if (record != null) {
+            if (!mapDataStore.loadable(key)) {
+                return false;
+            }
+
+            return replaceExisting;
+        }
+
+        return true;
     }
 
-    private void doChunkedLoad(Map<Data, Object> loadedKeys, NodeEngine nodeEngine) {
-        final int mapLoadChunkSize = getLoadBatchSize();
-        final Queue<Map> chunks = new LinkedList<Map>();
+    private void doChunkedLoad(Map<Data, Object> loadedKeys, NodeEngine nodeEngine, boolean replaceExisting) {
+        int mapLoadChunkSize = getLoadBatchSize();
+        Queue<Map> chunks = new LinkedList<Map>();
         Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
-        final int partitionId = this.partitionId;
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
         Iterator<Map.Entry<Data, Object>> iterator = loadedKeys.entrySet().iterator();
+
         while (iterator.hasNext()) {
             final Map.Entry<Data, Object> entry = iterator.next();
-            final Data data = entry.getKey();
-            if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
-                partitionKeys.put(data, entry.getValue());
+            final Data key = entry.getKey();
+
+            if (partitionId == partitionService.getPartitionId(key) && shouldLoad(key, replaceExisting)) {
+
+                partitionKeys.put(key, entry.getValue());
                 //split into chunks
                 if (partitionKeys.size() >= mapLoadChunkSize) {
                     chunks.add(partitionKeys);

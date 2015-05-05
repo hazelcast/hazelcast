@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public interface JobTracker
 
     /**
      * Builds a {@link Job} instance for the given {@link KeyValueSource} instance. The returning
-     * implementation is depending on the {@link com.hazelcast.core.HazelcastInstance} that was creating
+     * implementation depends on the {@link com.hazelcast.core.HazelcastInstance} that created
      * the JobTracker.<br>
      * <b>Caution: Do not use the JobTracker with data structures of other
      * {@link com.hazelcast.core.HazelcastInstance} instances than the one used for creation of the
@@ -73,19 +73,19 @@ public interface JobTracker
      * {@link com.hazelcast.core.HazelcastInstance} instances than the one used for creation of the JobTracker.
      * Unexpected results may happen!</b>
      *
-     * @param source data source the created Job should work on
+     * @param source data source that the created Job should work on
      * @return instance of the ProcessJob bound to the given KeyValueSource
      */
     // This feature is moved to Hazelcast 3.3
     //<K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source);
 
     /**
-     * Returns an implementation of {@link TrackableJob} if the job or null if the job id is not available
-     * or is already finished.
+     * Returns an implementation of {@link TrackableJob}, or null if the job id is not available
+     * or the job is already finished.
      *
      * @param jobId job id to search the TrackableJob for
      * @param <V>   type of the resulting value
-     * @return a trackable job for given job id or null if job id is not available
+     * @return a trackable job for given job id or null if the job id is not available
      */
     <V> TrackableJob<V> getTrackableJob(String jobId);
 

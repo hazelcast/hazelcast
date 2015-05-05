@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -12,6 +28,8 @@ import javax.cache.integration.CacheWriter;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Base class for {@link CacheConfig}
@@ -119,15 +137,13 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      *
      * @param cacheEntryListenerConfiguration the {@link CacheEntryListenerConfiguration}
      * @return the {@link CacheConfig}
-     * @throws IllegalArgumentException is the same CacheEntryListenerConfiguration
+     * @throws IllegalArgumentException if the same CacheEntryListenerConfiguration
      *                                  is used more than once
      */
     public CacheConfiguration<K, V> addCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
-        }
+        checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
         if (!listenerConfigurations.add(cacheEntryListenerConfiguration)) {
             throw new IllegalArgumentException("A CacheEntryListenerConfiguration can "
                     + "be registered only once");
@@ -143,9 +159,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
      */
     public CacheConfiguration<K, V> removeCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
-        }
+        checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
         listenerConfigurations.remove(cacheEntryListenerConfiguration);
         return this;
     }
@@ -183,7 +197,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether statistics gathering is enabled on a cache.
+     * Sets whether or not statistics gathering is enabled on a cache.
      * <p/>
      * Statistics may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableStatistics(String, boolean)}.
@@ -202,7 +216,7 @@ abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, Da
     }
 
     /**
-     * Sets whether management is enabled on a cache.
+     * Sets whether or not management is enabled on a cache.
      * <p/>
      * Management may be enabled or disabled at runtime via
      * {@link javax.cache.CacheManager#enableManagement(String, boolean)}.

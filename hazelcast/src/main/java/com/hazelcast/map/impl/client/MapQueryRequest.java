@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.IterationType;
+
 import java.io.IOException;
 
 public final class MapQueryRequest extends AbstractMapQueryRequest {
@@ -38,22 +39,8 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
     }
 
     @Override
-    protected Predicate getPredicate() {
-        return predicate;
-    }
-
     public int getClassId() {
         return MapPortableHook.QUERY;
-    }
-
-    protected void writePortableInner(PortableWriter writer) throws IOException {
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(predicate);
-    }
-
-    protected void readPortableInner(PortableReader reader) throws IOException {
-        final ObjectDataInput in = reader.getRawDataInput();
-        predicate = in.readObject();
     }
 
     @Override
@@ -71,5 +58,22 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
     @Override
     public Object[] getParameters() {
         return new Object[]{predicate};
+    }
+
+    @Override
+    protected Predicate getPredicate() {
+        return predicate;
+    }
+
+    @Override
+    protected void writePortableInner(PortableWriter writer) throws IOException {
+        final ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeObject(predicate);
+    }
+
+    @Override
+    protected void readPortableInner(PortableReader reader) throws IOException {
+        final ObjectDataInput in = reader.getRawDataInput();
+        predicate = in.readObject();
     }
 }

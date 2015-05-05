@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWideEntryBackupOperation {
@@ -30,9 +29,19 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     public PartitionWideEntryWithPredicateBackupOperation() {
     }
 
-    public PartitionWideEntryWithPredicateBackupOperation(String name, EntryBackupProcessor entryProcessor, Predicate predicate) {
+    public PartitionWideEntryWithPredicateBackupOperation(String name, EntryBackupProcessor entryProcessor,
+                                                          Predicate predicate) {
         super(name, entryProcessor);
         this.predicate = predicate;
+    }
+
+    protected Predicate getPredicate() {
+        return predicate;
+    }
+
+    @Override
+    public String toString() {
+        return "PartitionWideEntryWithPredicateBackupOperation{}";
     }
 
     @Override
@@ -46,14 +55,4 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
         super.writeInternal(out);
         out.writeObject(predicate);
     }
-
-    protected Predicate getPredicate() {
-        return predicate;
-    }
-
-    @Override
-    public String toString() {
-        return "PartitionWideEntryWithPredicateBackupOperation{}";
-    }
-
 }

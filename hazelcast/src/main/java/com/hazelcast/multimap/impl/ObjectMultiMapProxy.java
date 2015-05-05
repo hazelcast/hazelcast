@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,8 +51,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
-import static com.hazelcast.util.ValidationUtil.shouldBePositive;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ObjectMultiMapProxy<K, V>
         extends MultiMapProxySupport
@@ -238,8 +238,8 @@ public class ObjectMultiMapProxy<K, V>
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkPositive(leaseTime, "leaseTime should be positive");
 
-        shouldBePositive(leaseTime, "leaseTime");
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         lockSupport.lock(nodeEngine, dataKey, timeUnit.toMillis(leaseTime));
@@ -308,7 +308,7 @@ public class ObjectMultiMapProxy<K, V>
                                                     JobTracker jobTracker) {
 
         try {
-            ValidationUtil.isNotNull(jobTracker, "jobTracker");
+            isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMultiMap(this);
             Job<K, V> job = jobTracker.newJob(keyValueSource);
             Mapper mapper = aggregation.getMapper(supplier);

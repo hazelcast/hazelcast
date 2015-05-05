@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.countdownlatch.operations;
 
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchInfo;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchContainer;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -34,8 +34,8 @@ abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOper
     @Override
     public Operation getBackupOperation() {
         CountDownLatchService service = getService();
-        CountDownLatchInfo latch = service.getLatch(name);
-        int count = latch != null ? latch.getCount() : 0;
+        CountDownLatchContainer latchContainer = service.getCountDownLatchContainer(name);
+        int count = latchContainer != null ? latchContainer.getCount() : 0;
         return new CountDownLatchBackupOperation(name, count);
     }
 

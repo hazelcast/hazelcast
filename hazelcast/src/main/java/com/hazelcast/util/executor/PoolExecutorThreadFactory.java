@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.Queue;
@@ -31,6 +32,11 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
 
     public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         super(threadGroup, classLoader);
+        this.threadNamePrefix = threadNamePrefix;
+    }
+
+    public PoolExecutorThreadFactory(HazelcastThreadGroup threadGroup, String threadNamePrefix) {
+        super(threadGroup.getInternalThreadGroup(), threadGroup.getClassLoader());
         this.threadNamePrefix = threadNamePrefix;
     }
 

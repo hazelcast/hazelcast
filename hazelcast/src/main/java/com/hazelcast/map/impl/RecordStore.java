@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,14 @@ public interface RecordStore {
 
     Record putBackup(Data key, Object value);
 
-    Record putBackup(Data key, Object value, long ttl);
+    /**
+     * @param key          the key to be processed.
+     * @param value        the value to be processed.
+     * @param ttl          milliseconds. Check out {@link com.hazelcast.map.impl.proxy.MapProxySupport#putInternal}
+     * @param putTransient {@code true} if putting transient entry, otherwise {@code false}
+     * @return previous record if exists otherwise null.
+     */
+    Record putBackup(Data key, Object value, long ttl, boolean putTransient);
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 
@@ -250,7 +257,14 @@ public interface RecordStore {
     boolean isExpirable();
 
     /**
-     * Loads all keys from defined map store.
+     * Loads all keys from the map store.
+     *
+     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     */
+    void loadAllFromStore(boolean replaceExistingValues);
+
+    /**
+     * Loads all given keys from defined map store.
      *
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>

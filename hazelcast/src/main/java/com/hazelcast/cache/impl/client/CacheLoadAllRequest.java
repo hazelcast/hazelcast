@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,10 +57,12 @@ public class CacheLoadAllRequest
         this.replaceExistingValues = replaceExistingValues;
     }
 
+    @Override
     public int getFactoryId() {
         return CachePortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return CachePortableHook.LOAD_ALL;
     }
@@ -76,10 +78,12 @@ public class CacheLoadAllRequest
         return map;
     }
 
+    @Override
     public String getServiceName() {
         return CacheService.SERVICE_NAME;
     }
 
+    @Override
     public void write(PortableWriter writer)
             throws IOException {
         super.write(writer);
@@ -93,6 +97,7 @@ public class CacheLoadAllRequest
         }
     }
 
+    @Override
     public void read(PortableReader reader)
             throws IOException {
         super.read(reader);
@@ -107,6 +112,7 @@ public class CacheLoadAllRequest
         }
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return null;
     }
@@ -120,4 +126,5 @@ public class CacheLoadAllRequest
     public Object[] getParameters() {
         return new Object[]{keys};
     }
+
 }

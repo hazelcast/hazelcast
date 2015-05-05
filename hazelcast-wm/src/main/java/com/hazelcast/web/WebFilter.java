@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -530,7 +530,16 @@ public class WebFilter implements Filter {
         }
 
         HttpSession getOriginalSession(boolean create) {
-            return super.getSession(create);
+            // Find the top non-wrapped Http Servlet request
+            HttpServletRequest req = (HttpServletRequest) getRequest();
+            while (req instanceof HttpServletRequestWrapper) {
+                req = (HttpServletRequest) ((HttpServletRequestWrapper) req).getRequest();
+            }
+            if (req != null) {
+                return req.getSession(create);
+            } else {
+                return super.getSession(create);
+            }
         }
 
         @Override
@@ -608,6 +617,11 @@ public class WebFilter implements Filter {
                 prepareReloadingSession(hazelcastSession);
             }
             return hazelcastSession;
+        }
+
+        public String changeSessionId() {
+            HazelcastHttpSession newSession = getSession(true);
+            return newSession.getOriginalSessionId();
         }
     } // END of RequestWrapper
 
@@ -740,6 +754,7 @@ public class WebFilter implements Filter {
                     localCache.put(name, entry);
                 }
                 entry.value = value;
+                entry.removed = false;
                 entry.dirty = true;
             } else {
                 getClusterMap().set(buildAttributeName(name), value);

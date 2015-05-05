@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
@@ -33,10 +33,38 @@ import java.util.Collection;
 final class ClearReplicaOperation extends AbstractOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
+    private final int oldReplicaIndex;
+
+    public ClearReplicaOperation(int oldReplicaIndex) {
+        this.oldReplicaIndex = oldReplicaIndex;
+    }
+
     @Override
     public void run() throws Exception {
         int partitionId = getPartitionId();
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        InternalPartitionServiceImpl partitionService = getService();
+        InternalPartitionImpl partition = partitionService.getPartitionImpl(partitionId);
+        Address thisAddress = getNodeEngine().getThisAddress();
+
+        // currentReplicaIndex == -1;               not owner/backup then clear data
+        // currentReplicaIndex > oldReplicaIndex;   replica is demoted then clear data
+        // currentReplicaIndex < oldReplicaIndex;   replica is promoted then keep data
+        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
+        if (currentReplicaIndex == -1 || currentReplicaIndex > oldReplicaIndex) {
+            if (currentReplicaIndex == -1) {
+                partitionService.cancelReplicaSync(partitionId);
+            }
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Clearing partition replica... partitionId=" + partitionId
+                        + ", old-replicaIndex=" + oldReplicaIndex + ", current-replicaIndex=" + currentReplicaIndex);
+            }
+            clearPartition(partitionId, partitionService);
+        }
+    }
+
+    private void clearPartition(int partitionId, InternalPartitionServiceImpl partitionService) {
+        NodeEngineImpl nodeEngine = partitionService.getNode().getNodeEngine();
         final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
         for (MigrationAwareService service : services) {
             try {
@@ -45,13 +73,12 @@ final class ClearReplicaOperation extends AbstractOperation
                 logMigrationError(e);
             }
         }
-        InternalPartitionService partitionService = getService();
         partitionService.clearPartitionReplicaVersions(partitionId);
     }
 
     private void logMigrationError(Throwable e) {
         ILogger logger = getLogger();
-        logger.warning("While clearing partition data: " + getPartitionId(), e);
+        logger.warning("Error while clearing data. partitionId=" + getPartitionId() + " old-replicaIndex=" + oldReplicaIndex, e);
     }
 
     @Override

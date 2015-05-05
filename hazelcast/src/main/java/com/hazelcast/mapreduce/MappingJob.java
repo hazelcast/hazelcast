@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * <p>
  * This interface describes a mapping mapreduce Job.<br>
- * For further information {@link Job}.
+ * For further information see {@link Job}.
  * </p>
  *
  * @param <EntryKey> type of the original input key
@@ -38,7 +38,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
-     * the task setting them can improve execution speed.
+     * the task, setting them can improve execution speed.
      *
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
@@ -47,7 +47,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines keys to execute the mapper and a possibly defined reducer against. If keys are known before submitting
-     * the task setting them can improve execution speed.
+     * the task, setting them can improve execution speed.
      *
      * @param keys keys to be executed against
      * @return instance of this Job with generics changed on usage
@@ -55,7 +55,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
     MappingJob<EntryKey, KeyIn, ValueIn> onKeys(EntryKey... keys);
 
     /**
-     * Defines the {@link KeyPredicate} implementation to preselect keys the MapReduce task will be executed on.
+     * Defines the {@link KeyPredicate} implementation to preselect keys that the MapReduce task will be executed on.
      * Preselecting keys can speed up the job massively.<br>
      * This method can be used in conjunction with {@link #onKeys(Iterable)} or {@link #onKeys(Object...)} to define a
      * range of known and evaluated keys.
@@ -67,8 +67,8 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines the number of elements per chunk. Whenever the chunk size is reached and a
-     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined the chunk will be send to the nodes that
-     * is responsible for the emitted keys.<br/>
+     * {@link com.hazelcast.mapreduce.ReducerFactory} is defined, the chunk will be sent to the nodes that
+     * are responsible for the emitted keys.<br/>
      * <b>Please note, that chunks are deactivated when no ReducerFactory is defined</b>
      *
      * @param chunkSize the number of elements per chunk
@@ -87,7 +87,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines the {@link CombinerFactory} for this task. This method is not idempotent and is callable only one time. Further
-     * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
+     * calls result in an {@link IllegalStateException} thrown telling you to not change the internal state.
      *
      * @param combinerFactory CombinerFactory to build Combiner
      * @param <ValueOut>      type of the combined value
@@ -97,7 +97,7 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**
      * Defines the {@link ReducerFactory} for this task. This method is not idempotent and is callable only one time. Further
-     * calls result in an {@link IllegalStateException} to be thrown telling you to not change the internal state.
+     * calls result in an {@link IllegalStateException} thrown telling you to not change the internal state.
      *
      * @param reducerFactory ReducerFactory to build Reducers
      * @param <ValueOut>     type of the reduced value
@@ -106,14 +106,14 @@ public interface MappingJob<EntryKey, KeyIn, ValueIn> {
     <ValueOut> ReducingSubmittableJob<EntryKey, KeyIn, ValueOut> reducer(ReducerFactory<KeyIn, ValueIn, ValueOut> reducerFactory);
 
     /**
-     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes
+     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes.
      *
      * @return JobCompletableFuture to wait for mapped and possibly reduced result
      */
     JobCompletableFuture<Map<KeyIn, List<ValueIn>>> submit();
 
     /**
-     * Submits the task to Hazelcast and executes the defined mapper and reducer on all cluster nodes and executes the
+     * Submits the task to Hazelcast, executes the defined mapper and reducer on all cluster nodes, and executes the
      * collator before returning the final result.
      *
      * @param collator   collator to use after map and reduce

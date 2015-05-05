@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,19 @@
 
 package com.hazelcast.client.impl;
 
+import com.hazelcast.cache.impl.nearcache.NearCacheManager;
+import com.hazelcast.cache.impl.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
@@ -84,13 +89,32 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public SocketInterceptor getSocketInterceptor() {
+    public SocketInterceptor createSocketInterceptor() {
         LOGGER.warning("SocketInterceptor feature is only available on Hazelcast Enterprise!");
         return null;
     }
 
     @Override
-    public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
+    public SocketChannelWrapperFactory createSocketChannelWrapperFactory() {
         return new DefaultSocketChannelWrapperFactory();
     }
+
+
+    @Override
+    public <T> Class<? extends ClientProxy> getServiceProxy(Class<T> service) {
+        if (MapService.class.isAssignableFrom(service)) {
+            return ClientMapProxy.class;
+        }
+
+        throw new IllegalArgumentException("Proxy cannot be created. Unknown service : " + service);
+    }
+
+    @Override
+    public NearCacheManager createNearCacheManager() {
+        // If there is a specific behaviour for client,
+        // there maybe a custom "NearCacheManager" implementation such as "ClientNearCacheManager".
+        // Currently "DefaultNearCacheManager" is enough.
+        return new DefaultNearCacheManager();
+    }
+
 }

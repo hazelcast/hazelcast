@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
+import com.hazelcast.security.SecurityInterceptor;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -159,5 +160,7 @@ public class TestSecureApplicationContext {
         final SecurityInterceptorConfig interceptorConfig = interceptorConfigs.get(0);
         final String className = interceptorConfig.getClassName();
         assertEquals(DummySecurityInterceptor.class.getName(), className);
+        final SecurityInterceptor securityInterceptor = interceptorConfig.getImplementation();
+        assertTrue(securityInterceptor instanceof DummySecurityInterceptor);
     }
 }

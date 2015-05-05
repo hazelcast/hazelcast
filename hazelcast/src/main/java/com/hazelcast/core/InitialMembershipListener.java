@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package com.hazelcast.core;
 
 /**
- * The InitializingMembershipListener is a {@link MembershipListener} that will first receives a
+ * The InitializingMembershipListener is a {@link MembershipListener} that first receives a
  * {@link InitialMembershipEvent} when it is registered so it immediately knows which members are available. After
  * that event has been received, it will receive the normal MembershipEvents.
  *
  * When the InitializingMembershipListener already is registered on a {@link Cluster} and is registered again on the same
- * Cluster instance, it will not receive an additional MembershipInitializeEvent. So this is a once only event.
+ * Cluster instance, it will not receive an additional MembershipInitializeEvent. This is a once only event.
  *
  * @author Peter Veentjer.
  * @see Cluster#addMembershipListener(MembershipListener)
@@ -31,9 +31,9 @@ package com.hazelcast.core;
 public interface InitialMembershipListener extends MembershipListener {
 
     /**
-     * Is called when this listener is registered.
+     * Called when this listener is registered.
      *
-     * @param event the MembershipInitializeEvent
+     * @param event the MembershipInitializeEvent received when the listener is registered
      */
     void init(InitialMembershipEvent event);
 }

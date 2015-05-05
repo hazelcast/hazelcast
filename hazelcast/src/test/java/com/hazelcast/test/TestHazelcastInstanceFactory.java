@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public final class TestHazelcastInstanceFactory {
 
@@ -75,7 +75,7 @@ public final class TestHazelcastInstanceFactory {
             if (nodeIndex.get() >= addresses.length) {
                 throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
             }
-            config = init(config);
+            init(config);
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex.getAndIncrement()]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -67,9 +66,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
 
-
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
-
+        EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.isAlive()) {
@@ -81,12 +78,12 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue,
+                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
                             event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }
-
             @Override
             public void onMapEvent(MapEvent event) {
                 if (endpoint.isAlive()) {
@@ -99,16 +96,20 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
             }
         };
 
-        EventFilter eventFilter;
-        if (getPredicate() == null) {
-            eventFilter = new EntryEventFilter(includeValue, key);
-        } else {
-            eventFilter = new QueryEventFilter(includeValue, key, getPredicate());
-        }
-        String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
+        final EventFilter eventFilter = getEventFilter();
+        final String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
         endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
+
+
+    protected EventFilter getEventFilter() {
+        if (getPredicate() == null) {
+            return new EntryEventFilter(includeValue, key);
+        }
+        return new QueryEventFilter(includeValue, key, getPredicate());
+    }
+
 
     @Override
     public String getServiceName() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,16 @@ package com.hazelcast.config;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
+import com.hazelcast.wan.impl.WanNoDelayReplication;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -48,6 +50,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
+import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -57,15 +60,16 @@ import static com.hazelcast.config.XmlElements.LIST;
 import static com.hazelcast.config.XmlElements.LISTENERS;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
-import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
 import static com.hazelcast.config.XmlElements.MULTIMAP;
-import static com.hazelcast.config.XmlElements.NETWORK;
 import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
+import static com.hazelcast.config.XmlElements.NETWORK;
 import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
+import static com.hazelcast.config.XmlElements.QUORUM;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
+import static com.hazelcast.config.XmlElements.RINGBUFFER;
 import static com.hazelcast.config.XmlElements.SECURITY;
 import static com.hazelcast.config.XmlElements.SEMAPHORE;
 import static com.hazelcast.config.XmlElements.SERIALIZATION;
@@ -74,18 +78,19 @@ import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
  * A XML {@link ConfigBuilder} implementation.
  */
-public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
+public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlConfigBuilder.class);
 
     private static final int DEFAULT_VALUE = 5;
     private static final int THOUSAND_FACTOR = 5;
-    private final XmlConfigPreProcessor xmlConfigPreProcessor = new XmlConfigPreProcessor(this);
 
     private Config config;
     private InputStream in;
@@ -95,11 +100,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private Set<String> occurrenceSet = new HashSet<String>();
     private Element root;
 
-
     /**
-     * Constructs a XmlConfigBuilder that reads from the provided file.
+     * Constructs a XmlConfigBuilder that reads from the provided XML file.
      *
-     * @param xmlFileName the name of the XML file
+     * @param xmlFileName the name of the XML file that the XmlConfigBuilder reads from
      * @throws FileNotFoundException if the file can't be found.
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
@@ -120,14 +124,13 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     /**
-     * Constructs a XMLConfigBuilder that read from the given URL
-     * @param url
+     * Constructs a XMLConfigBuilder that reads from the given URL.
+     *
+     * @param url the given url that the XMLConfigBuilder reads from
      * @throws IOException
      */
     public XmlConfigBuilder(URL url) throws IOException {
-        if (url == null) {
-            throw new NullPointerException("URL is null!");
-        }
+        checkNotNull(url, "URL is null!");
         in = url.openStream();
     }
 
@@ -144,7 +147,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Gets the current used properties. Can be null if no properties are set.
      *
-     * @return the used properties.
+     * @return the current used properties.
      * @see #setProperties(java.util.Properties)
      */
     public Properties getProperties() {
@@ -165,6 +168,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     @Override
+    protected ConfigType getXmlType() {
+        return ConfigType.SERVER;
+    }
+
+    @Override
     public Config build() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -177,7 +185,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         try {
             parseAndBuildConfig(config);
         } catch (Exception e) {
-            throw new HazelcastException(e.getMessage(), e);
+            throw ExceptionUtil.rethrow(e);
         }
         return config;
     }
@@ -191,35 +199,37 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Throwable e) {
             domLevel3 = false;
         }
-        xmlConfigPreProcessor.process(root);
+        process(root);
+        schemaValidation(root.getOwnerDocument());
         handleConfig(root);
     }
 
-    Document parse(InputStream is) throws Exception {
+    @Override
+    protected Document parse(InputStream is) throws Exception {
         final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document doc;
         try {
             doc = builder.parse(is);
         } catch (final Exception e) {
+            String lineSeparator = StringUtil.getLineSeperator();
             if (configurationFile != null) {
                 String msg = "Failed to parse " + configurationFile
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
 
             } else if (configurationUrl != null) {
                 String msg = "Failed to parse " + configurationUrl
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
             } else {
                 String msg = "Failed to parse the inputstream"
-                        + "\nException: " + e.getMessage()
-                        + "\nHazelcast startup interrupted.";
+                        + lineSeparator + "Exception: " + e.getMessage()
+                        + lineSeparator + "Hazelcast startup interrupted.";
                 LOGGER.severe(msg);
-
             }
-            throw e;
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             IOUtil.closeResource(is);
         }
@@ -230,7 +240,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node node : new IterableNodeList(docElement.getChildNodes())) {
             final String nodeName = cleanNodeName(node.getNodeName());
             if (occurrenceSet.contains(nodeName)) {
-                throw new IllegalStateException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
             }
             if (handleXmlNode(node, nodeName)) {
                 continue;
@@ -245,7 +255,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         if (NETWORK.isEqual(nodeName)) {
             handleNetwork(node);
         } else if (IMPORT.isEqual(nodeName)) {
-            throw new IllegalStateException("<import> element can appear only in the top level of the XML");
+            throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         } else if (GROUP.isEqual(nodeName)) {
             handleGroup(node);
         } else if (PROPERTIES.isEqual(nodeName)) {
@@ -278,6 +288,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             handleJobTracker(node);
         } else if (SEMAPHORE.isEqual(nodeName)) {
             handleSemaphore(node);
+        } else if (RINGBUFFER.isEqual(nodeName)) {
+            handleRingbuffer(node);
         } else if (LISTENERS.isEqual(nodeName)) {
             handleListeners(node);
         } else if (PARTITION_GROUP.isEqual(nodeName)) {
@@ -292,11 +304,42 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             config.setLicenseKey(getTextContent(node));
         } else if (MANAGEMENT_CENTER.isEqual(nodeName)) {
             handleManagementCenterConfig(node);
+        } else if (QUORUM.isEqual(nodeName)) {
+            handleQuorum(node);
         } else {
             return true;
         }
         return false;
     }
+
+    private void handleQuorum(final org.w3c.dom.Node node) {
+        QuorumConfig quorumConfig = new QuorumConfig();
+        final String name = getAttribute(node, "name");
+        quorumConfig.setName(name);
+        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        final boolean enabled = attrEnabled != null ? checkTrue(getTextContent(attrEnabled)) : false;
+        quorumConfig.setEnabled(enabled);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String value = getTextContent(n).trim();
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("quorum-size".equals(nodeName)) {
+                quorumConfig.setSize(getIntegerValue("quorum-size", value, 0));
+            } else if ("quorum-listeners".equals(nodeName)) {
+                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+                    if ("quorum-listener".equals(cleanNodeName(listenerNode))) {
+                        String listenerClass = getTextContent(listenerNode);
+                        quorumConfig.addListenerConfig(new QuorumListenerConfig(listenerClass));
+                    }
+                }
+            } else if ("quorum-type".equals(nodeName)) {
+                quorumConfig.setType(QuorumType.valueOf(upperCaseInternal(value)));
+            } else if ("quorum-function-class-name".equals(nodeName)) {
+                quorumConfig.setQuorumFunctionClassName(value);
+            }
+        }
+        this.config.addQuorumConfig(quorumConfig);
+    }
+
 
     private void handleServices(final Node node) {
         final Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
@@ -326,7 +369,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         Node parserNode = n.getAttributes().getNamedItem("parser");
                         String parserClass = getTextContent(parserNode);
                         if (parserNode == null || parserClass == null) {
-                            throw new IllegalArgumentException("Parser is required!");
+                            throw new InvalidConfigurationException("Parser is required!");
                         }
                         try {
                             ServiceConfigurationParser parser = ClassLoaderUtil.newInstance(config.getClassLoader(), parserClass);
@@ -345,8 +388,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleWanReplication(final Node node) throws Exception {
         final Node attName = node.getAttributes().getNamedItem("name");
         final String name = getTextContent(attName);
+
+        final Node attSnapshotEnabled = node.getAttributes().getNamedItem("snapshot-enabled");
+        final boolean snapshotEnabled = checkTrue(getTextContent(attSnapshotEnabled));
+
         final WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
         wanReplicationConfig.setName(name);
+        wanReplicationConfig.setSnapshotEnabled(snapshotEnabled);
+
         for (org.w3c.dom.Node nodeTarget : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(nodeTarget.getNodeName());
             if ("target-cluster".equals(nodeName)) {
@@ -362,6 +411,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 for (org.w3c.dom.Node targetChild : new IterableNodeList(nodeTarget.getChildNodes())) {
                     final String targetChildName = cleanNodeName(targetChild.getNodeName());
                     if ("replication-impl".equals(targetChildName)) {
+                        String replicationImpl = getTextContent(targetChild);
+                        if (WanNoDelayReplication.class.getName().equals(replicationImpl)
+                                && wanReplicationConfig.isSnapshotEnabled()) {
+                            throw new InvalidConfigurationException("snapshot-enabled property "
+                                    + "only can be set to true when used with Enterprise Wan Batch Replication");
+                        }
                         wanTarget.setReplicationImpl(getTextContent(targetChild));
                     } else if ("end-points".equals(targetChildName)) {
                         for (org.w3c.dom.Node address : new IterableNodeList(targetChild.getChildNodes())) {
@@ -590,6 +645,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 multicastConfig.setEnabled(checkTrue(value));
+            } else if ("loopbackModeEnabled".equalsIgnoreCase(att.getNodeName())) {
+                multicastConfig.setLoopbackModeEnabled(checkTrue(value));
             }
         }
         for (Node n : new IterableNodeList(node.getChildNodes())) {
@@ -634,9 +691,27 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (int i = 0; i < nodelist.getLength(); i++) {
             final org.w3c.dom.Node n = nodelist.item(i);
             final String value = getTextContent(n).trim();
-            if (cleanNodeName(n.getNodeName()).equals("required-member")) {
+            if (cleanNodeName(n.getNodeName()).equals("member-list")) {
+                handleMemberList(n);
+            } else if (cleanNodeName(n.getNodeName()).equals("required-member")) {
+                if (tcpIpConfig.getRequiredMember() != null) {
+                    throw new InvalidConfigurationException("Duplicate required-member"
+                            + " definition found in XML configuration. ");
+                }
                 tcpIpConfig.setRequiredMember(value);
             } else if (memberTags.contains(cleanNodeName(n.getNodeName()))) {
+                tcpIpConfig.addMember(value);
+            }
+        }
+    }
+
+    private void handleMemberList(final Node node) {
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        final TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("member".equals(nodeName)) {
+                final String value = getTextContent(n).trim();
                 tcpIpConfig.addMember(value);
             }
         }
@@ -836,13 +911,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.config.addReplicatedMapConfig(replicatedMapConfig);
     }
 
-    private void handleMap(final org.w3c.dom.Node node) throws Exception {
-        final String name = getAttribute(node, "name");
+    //CHECKSTYLE:OFF
+    private void handleMap(final org.w3c.dom.Node parentNode) throws Exception {
+        final String name = getAttribute(parentNode, "name");
         final MapConfig mapConfig = new MapConfig();
         mapConfig.setName(name);
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
-            final String value = getTextContent(n).trim();
+        for (org.w3c.dom.Node node : new IterableNodeList(parentNode.getChildNodes())) {
+            final String nodeName = cleanNodeName(node.getNodeName());
+            final String value = getTextContent(node).trim();
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("in-memory-format".equals(nodeName)) {
@@ -853,11 +929,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
             } else if ("max-size".equals(nodeName)) {
                 final MaxSizeConfig msc = mapConfig.getMaxSizeConfig();
-                final Node maxSizePolicy = n.getAttributes().getNamedItem("policy");
+                final Node maxSizePolicy = node.getAttributes().getNamedItem("policy");
                 if (maxSizePolicy != null) {
-                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(upperCaseInternal(getTextContent(maxSizePolicy))));
+                    msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
+                            upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size = sizeParser(value);
+                final int size = sizeParser(value);
                 msc.setSize(size);
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value,
@@ -872,10 +949,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setMaxIdleSeconds(getIntegerValue("max-idle-seconds", value,
                         MapConfig.DEFAULT_MAX_IDLE_SECONDS));
             } else if ("map-store".equals(nodeName)) {
-                MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
+                MapStoreConfig mapStoreConfig = createMapStoreConfig(node);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
             } else if ("near-cache".equals(nodeName)) {
-                handleViaReflection(n, mapConfig, new NearCacheConfig());
+                handleViaReflection(node, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
                 mapConfig.setMergePolicy(value);
             } else if ("read-backup-data".equals(nodeName)) {
@@ -885,17 +962,24 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("optimize-queries".equals(nodeName)) {
                 mapConfig.setOptimizeQueries(checkTrue(value));
             } else if ("wan-replication-ref".equals(nodeName)) {
-                mapWanReplicationRefHandle(n, mapConfig);
+                mapWanReplicationRefHandle(node, mapConfig);
             } else if ("indexes".equals(nodeName)) {
-                mapIndexesHandle(n, mapConfig);
+                mapIndexesHandle(node, mapConfig);
             } else if ("entry-listeners".equals(nodeName)) {
-                mapEntryListenerHandle(n, mapConfig);
+                mapEntryListenerHandle(node, mapConfig);
+            } else if ("partition-lost-listeners".equals(nodeName)) {
+                mapPartitionLostListenerHandle(node, mapConfig);
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
+            } else if ("quorum-ref".equals(nodeName)) {
+                mapConfig.setQuorumName(value);
+            } else if ("query-caches".equals(nodeName)) {
+                mapQueryCacheHandler(node, mapConfig);
             }
         }
         this.config.addMapConfig(mapConfig);
     }
+    //CHECKSTYLE:ON
 
     private void handleCache(final org.w3c.dom.Node node)
             throws Exception {
@@ -931,17 +1015,84 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 cacheConfig.setBackupCount(getIntegerValue("backup-count", value, CacheSimpleConfig.DEFAULT_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
                 cacheConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, CacheSimpleConfig.MIN_BACKUP_COUNT));
-            } else if ("eviction-percentage".equals(nodeName)) {
-                cacheConfig.setEvictionPercentage(
-                        getIntegerValue("eviction-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
-            } else if ("eviction-threshold-percentage".equals(nodeName)) {
-                cacheConfig.setEvictionThresholdPercentage(
-                        getIntegerValue("eviction-threshold-percentage", value, CacheSimpleConfig.DEFAULT_EVICTION_PERCENTAGE));
-            } else if ("eviction-policy".equals(nodeName)) {
-                cacheConfig.setEvictionPolicy(EvictionPolicy.valueOf(upperCaseInternal(value)));
+            } else if ("wan-replication-ref".equals(nodeName)) {
+                cacheWanReplicationRefHandle(n, cacheConfig);
+            } else if ("eviction".equals(nodeName)) {
+                cacheConfig.setEvictionConfig(getEvictionConfig(n));
             }
         }
         this.config.addCacheConfig(cacheConfig);
+    }
+
+    private NearCacheConfig getNearCacheConfig(final org.w3c.dom.Node node) {
+        final String name = getAttribute(node, "name");
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("max-size".equals(nodeName)) {
+                nearCacheConfig.setMaxSize(
+                        getIntegerValue("max-size", value, NearCacheConfig.DEFAULT_MAX_SIZE));
+            } else if ("time-to-live-seconds".equals(nodeName)) {
+                nearCacheConfig.setTimeToLiveSeconds(
+                        getIntegerValue("time-to-live-seconds", value, NearCacheConfig.DEFAULT_TTL_SECONDS));
+            } else if ("max-idle-seconds".equals(nodeName)) {
+                nearCacheConfig.setMaxIdleSeconds(
+                        getIntegerValue("max-idle-seconds", value, NearCacheConfig.DEFAULT_MAX_IDLE_SECONDS));
+            } else if ("eviction-policy".equals(nodeName)) {
+                nearCacheConfig.setEvictionPolicy(value);
+            } else if ("invalidate-on-change".equals(nodeName)) {
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
+            } else if ("in-memory-format".equals(nodeName)) {
+                nearCacheConfig.setInMemoryFormat(
+                        InMemoryFormat.valueOf(upperCaseInternal(value)));
+            } else if ("cache-local-entries".equals(nodeName)) {
+                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
+            } else if ("eviction".equals(nodeName)) {
+                nearCacheConfig.setEvictionConfig(getEvictionConfig(n));
+            }
+        }
+        return nearCacheConfig;
+    }
+
+    private EvictionConfig getEvictionConfig(final org.w3c.dom.Node node) {
+        final EvictionConfig evictionConfig = new EvictionConfig();
+        final Node size = node.getAttributes().getNamedItem("size");
+        final Node maxSizePolicy = node.getAttributes().getNamedItem("max-size-policy");
+        final Node evictionPolicy = node.getAttributes().getNamedItem("eviction-policy");
+        if (size != null) {
+            evictionConfig.setSize(Integer.parseInt(getTextContent(size)));
+        }
+        if (maxSizePolicy != null) {
+            evictionConfig.setMaximumSizePolicy(
+                    EvictionConfig.MaxSizePolicy.valueOf(
+                            upperCaseInternal(getTextContent(maxSizePolicy)))
+            );
+        }
+        if (evictionPolicy != null) {
+            evictionConfig.setEvictionPolicy(
+                    EvictionPolicy.valueOf(
+                            upperCaseInternal(getTextContent(evictionPolicy)))
+            );
+        }
+        return evictionConfig;
+    }
+
+    private void cacheWanReplicationRefHandle(Node n, CacheSimpleConfig cacheConfig) {
+        WanReplicationRef wanReplicationRef = new WanReplicationRef();
+        final String wanName = getAttribute(n, "name");
+        wanReplicationRef.setName(wanName);
+        for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
+            final String wanChildName = cleanNodeName(wanChild.getNodeName());
+            final String wanChildValue = getTextContent(wanChild);
+            if ("merge-policy".equals(wanChildName)) {
+                wanReplicationRef.setMergePolicy(wanChildValue);
+            } else if ("republishing-enabled".equals(wanChildName)) {
+                wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
+            }
+        }
+        cacheConfig.setWanReplicationRef(wanReplicationRef);
     }
 
     private void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {
@@ -970,9 +1121,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         wanReplicationRef.setName(wanName);
         for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
             final String wanChildName = cleanNodeName(wanChild.getNodeName());
-            final String wanChildValue = getTextContent(n);
+            final String wanChildValue = getTextContent(wanChild);
             if ("merge-policy".equals(wanChildName)) {
                 wanReplicationRef.setMergePolicy(wanChildValue);
+            } else if ("republishing-enabled".equals(wanChildName)) {
+                wanReplicationRef.setRepublishingEnabled(checkTrue(wanChildValue));
             }
         }
         mapConfig.setWanReplicationRef(wanReplicationRef);
@@ -989,6 +1142,17 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
+    private void queryCacheIndexesHandle(Node n, QueryCacheConfig queryCacheConfig) {
+        for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
+            if ("index".equals(cleanNodeName(indexNode))) {
+                final NamedNodeMap attrs = indexNode.getAttributes();
+                boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                String attribute = getTextContent(indexNode);
+                queryCacheConfig.addIndexConfig(new MapIndexConfig(attribute, ordered));
+            }
+        }
+    }
+
     private void mapEntryListenerHandle(Node n, MapConfig mapConfig) {
         for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
             if ("entry-listener".equals(cleanNodeName(listenerNode))) {
@@ -999,6 +1163,88 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
             }
         }
+    }
+
+    private void mapPartitionLostListenerHandle(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+            if ("partition-lost-listener".equals(cleanNodeName(listenerNode))) {
+                String listenerClass = getTextContent(listenerNode);
+                mapConfig.addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig(listenerClass));
+            }
+        }
+    }
+
+    private void mapQueryCacheHandler(Node n, MapConfig mapConfig) {
+        for (org.w3c.dom.Node queryCacheNode : new IterableNodeList(n.getChildNodes())) {
+            if ("query-cache".equals(cleanNodeName(queryCacheNode))) {
+                NamedNodeMap attrs = queryCacheNode.getAttributes();
+                String cacheName = getTextContent(attrs.getNamedItem("name"));
+                QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
+                for (org.w3c.dom.Node childNode : new IterableNodeList(queryCacheNode.getChildNodes())) {
+                    String nodeName = cleanNodeName(childNode);
+                    if ("entry-listeners".equals(nodeName)) {
+                        for (org.w3c.dom.Node listenerNode : new IterableNodeList(childNode.getChildNodes())) {
+                            if ("entry-listener".equals(cleanNodeName(listenerNode))) {
+                                NamedNodeMap listenerNodeAttributes = listenerNode.getAttributes();
+                                boolean incValue = checkTrue(
+                                        getTextContent(listenerNodeAttributes.getNamedItem("include-value")));
+                                boolean local = checkTrue(getTextContent(listenerNodeAttributes.getNamedItem("local")));
+                                String listenerClass = getTextContent(listenerNode);
+                                queryCacheConfig.addEntryListenerConfig(
+                                        new EntryListenerConfig(listenerClass, local, incValue));
+                            }
+                        }
+                    } else {
+                        String textContent = getTextContent(childNode);
+                        if ("include-value".equals(nodeName)) {
+                            boolean includeValue = checkTrue(textContent);
+                            queryCacheConfig.setIncludeValue(includeValue);
+                        } else if ("batch-size".equals(nodeName)) {
+                            int batchSize = getIntegerValue("batch-size", textContent.trim(),
+                                    QueryCacheConfig.DEFAULT_BATCH_SIZE);
+                            queryCacheConfig.setBatchSize(batchSize);
+                        } else if ("buffer-size".equals(nodeName)) {
+                            int bufferSize = getIntegerValue("buffer-size", textContent.trim(),
+                                    QueryCacheConfig.DEFAULT_BUFFER_SIZE);
+                            queryCacheConfig.setBufferSize(bufferSize);
+                        } else if ("delay-seconds".equals(nodeName)) {
+                            int delaySeconds = getIntegerValue("delay-seconds", textContent.trim(),
+                                    QueryCacheConfig.DEFAULT_DELAY_SECONDS);
+                            queryCacheConfig.setDelaySeconds(delaySeconds);
+                        } else if ("in-memory-format".equals(nodeName)) {
+                            String value = textContent.trim();
+                            queryCacheConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
+                        } else if ("coalesce".equals(nodeName)) {
+                            boolean coalesce = checkTrue(textContent);
+                            queryCacheConfig.setCoalesce(coalesce);
+                        } else if ("populate".equals(nodeName)) {
+                            boolean populate = checkTrue(textContent);
+                            queryCacheConfig.setPopulate(populate);
+                        } else if ("indexes".equals(nodeName)) {
+                            queryCacheIndexesHandle(childNode, queryCacheConfig);
+                        } else if ("predicate".equals(nodeName)) {
+                            queryCachePredicateHandler(childNode, queryCacheConfig);
+                        } else if ("eviction".equals(nodeName)) {
+                            queryCacheConfig.setEvictionConfig(getEvictionConfig(childNode));
+                        }
+                    }
+                }
+                mapConfig.addQueryCacheConfig(queryCacheConfig);
+            }
+        }
+    }
+
+    private void queryCachePredicateHandler(Node childNode, QueryCacheConfig queryCacheConfig) {
+        NamedNodeMap predicateAttributes = childNode.getAttributes();
+        String predicateType = getTextContent(predicateAttributes.getNamedItem("type"));
+        String textContent = getTextContent(childNode);
+        PredicateConfig predicateConfig = new PredicateConfig();
+        if ("class-name".equals(predicateType)) {
+            predicateConfig.setClassName(textContent);
+        } else if ("sql".equals(predicateType)) {
+            predicateConfig.setSql(textContent);
+        }
+        queryCacheConfig.setPredicateConfig(predicateConfig);
     }
 
 
@@ -1050,6 +1296,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("write-batch-size".equals(nodeName)) {
                 mapStoreConfig.setWriteBatchSize(getIntegerValue("write-batch-size", getTextContent(n).trim(),
                         MapStoreConfig.DEFAULT_WRITE_BATCH_SIZE));
+            } else if ("write-coalescing".equals(nodeName)) {
+                final String writeCoalescing = getTextContent(n).trim();
+                if (isNullOrEmpty(writeCoalescing)) {
+                    mapStoreConfig.setWriteCoalescing(MapStoreConfig.DEFAULT_WRITE_COALESCING);
+                } else {
+                    mapStoreConfig.setWriteCoalescing(checkTrue(writeCoalescing));
+                }
+
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
@@ -1176,6 +1430,33 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         config.addSemaphoreConfig(sConfig);
+    }
+
+    private void handleRingbuffer(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        RingbufferConfig rbConfig = new RingbufferConfig(name);
+        for (Node n : new IterableNodeList(node.getChildNodes())) {
+            String nodeName = cleanNodeName(n.getNodeName());
+            String value = getTextContent(n).trim();
+            if ("capacity".equals(nodeName)) {
+                int capacity = getIntegerValue("capacity", value, RingbufferConfig.DEFAULT_CAPACITY);
+                rbConfig.setCapacity(capacity);
+            } else if ("backup-count".equals(nodeName)) {
+                int backupCount = getIntegerValue("backup-count", value, RingbufferConfig.DEFAULT_SYNC_BACKUP_COUNT);
+                rbConfig.setBackupCount(backupCount);
+            } else if ("async-backup-count".equals(nodeName)) {
+                int asyncBackupCount = getIntegerValue("async-backup-count", value, RingbufferConfig.DEFAULT_ASYNC_BACKUP_COUNT);
+                rbConfig.setAsyncBackupCount(asyncBackupCount);
+            } else if ("time-to-live-seconds".equals(nodeName)) {
+                int timeToLiveSeconds = getIntegerValue("time-to-live-seconds", value, RingbufferConfig.DEFAULT_TTL_SECONDS);
+                rbConfig.setTimeToLiveSeconds(timeToLiveSeconds);
+            } else if ("in-memory-format".equals(nodeName)) {
+                InMemoryFormat inMemoryFormat = InMemoryFormat.valueOf(upperCaseInternal(value));
+                rbConfig.setInMemoryFormat(inMemoryFormat);
+            }
+        }
+        config.addRingBufferConfig(rbConfig);
     }
 
     private void handleListeners(final org.w3c.dom.Node node) throws Exception {

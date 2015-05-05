@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
-import com.hazelcast.concurrent.atomiclong.LongWrapper;
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -41,8 +41,8 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        LongWrapper number = getNumber();
-        returnValue = number.compareAndSet(expect, update);
+        AtomicLongContainer atomicLongContainer = getLongContainer();
+        returnValue = atomicLongContainer.compareAndSet(expect, update);
         shouldBackup = !returnValue;
     }
 
@@ -51,6 +51,10 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
         return returnValue;
     }
 
+    @Override
+    public Operation getBackupOperation() {
+        return new SetBackupOperation(name, update);
+    }
 
     @Override
     public int getId() {
@@ -69,9 +73,5 @@ public class CompareAndSetOperation extends AtomicLongBackupAwareOperation {
         super.readInternal(in);
         expect = in.readLong();
         update = in.readLong();
-    }
-
-    public Operation getBackupOperation() {
-        return new SetBackupOperation(name, update);
     }
 }

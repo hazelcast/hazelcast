@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.io.Serializable;
 /**
  * A ReducerFactory implementation is used to build {@link Reducer} instances per key.<br/>
  * An implementation needs to be serializable by Hazelcast since it might be distributed
- * inside the cluster to do parallel calculations of reducing step.
+ * inside the cluster to do parallel calculations for reducing.
  *
  * @param <KeyIn>    key type of the resulting keys
  * @param <ValueIn>  value type of the incoming values
@@ -37,7 +37,7 @@ public interface ReducerFactory<KeyIn, ValueIn, ValueOut>
     /**
      * Build a new {@link Reducer} instance specific to the supplied key.
      *
-     * @param key key the Reducer is build for
+     * @param key key the Reducer is built for
      * @return a Reducer instance specific for the given key
      */
     Reducer<ValueIn, ValueOut> newReducer(KeyIn key);

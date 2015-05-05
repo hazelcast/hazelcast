@@ -17,6 +17,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
@@ -31,7 +32,7 @@ import java.util.concurrent.CountDownLatch;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 public class LockSplitBrainTest extends HazelcastTestSupport {
 
     @Before
@@ -84,13 +85,6 @@ public class LockSplitBrainTest extends HazelcastTestSupport {
         assertTrue(testLock.isLocked());
     }
 
-    private void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
-        final Node n1 = TestUtil.getNode(h1);
-        final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
-    }
 
     private Config newConfig() {
         Config config = new Config();

@@ -9,7 +9,7 @@ IMap<Employee> map = hazelcastInstance.getMap( "employee" );
 Set<Employee> employees = map.values( new SqlPredicate( "active AND age < 30" ) );
 ```
 
-#### Supported SQL syntax:
+#### Supported SQL Syntax
 
 **AND/OR:** `<expression> AND <expression> AND <expression>... `
 
