@@ -154,6 +154,7 @@ public class PredicateConfig {
         this.implementation = null;
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -165,11 +166,6 @@ public class PredicateConfig {
 
         PredicateConfig that = (PredicateConfig) o;
 
-        return equalsInternal(that);
-
-    }
-
-    private boolean equalsInternal(PredicateConfig that) {
         if (className != null ? !className.equals(that.className) : that.className != null) {
             return false;
         }
@@ -178,7 +174,10 @@ public class PredicateConfig {
         }
         return !(implementation != null
                 ? !implementation.equals(that.implementation) : that.implementation != null);
+
     }
+    //CHECKSTYLE:ON
+
 
     @Override
     public int hashCode() {
