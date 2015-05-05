@@ -26,12 +26,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ValidationUtil;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,8 +50,7 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     // keep the tombstone alive. if there is no event in this period then the tombstone is removed.
     static final int TOMBSTONE_REMOVAL_PERIOD_MS = 5 * 60 * 1000;
 
-    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                         ReplicatedMapService replicatedMapService) {
+    public AbstractReplicatedRecordStore(String name, NodeEngine nodeEngine, ReplicatedMapService replicatedMapService) {
 
         super(name, nodeEngine, replicatedMapService);
     }
@@ -233,50 +230,40 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public Set keySet() {
         storage.checkState();
-        Set keySet = new HashSet(storage.size());
-        for (K key : storage.keySet()) {
-            if (containsKeyAndValue(key)) {
-                keySet.add(unmarshallKey(key));
-            }
-        }
         mapStats.incrementOtherOperations();
-        return keySet;
+
+        // Lazy evaluation to prevent to much copying
+        return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), storage);
     }
 
     @Override
     public Collection values() {
         storage.checkState();
-        List values = new ArrayList(storage.size());
-        for (ReplicatedRecord record : storage.values()) {
-            values.add(unmarshallValue(record.getValue()));
-        }
         mapStats.incrementOtherOperations();
-        return values;
+
+        // Lazy evaluation to prevent to much copying
+        return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), storage);
     }
 
     @Override
     public Collection values(Comparator comparator) {
-        List values = (List) values();
+        storage.checkState();
+        List values = new ArrayList(storage.size());
+        for (ReplicatedRecord record : storage.values()) {
+            values.add(unmarshallValue(record.getValue()));
+        }
         Collections.sort(values, comparator);
+        mapStats.incrementOtherOperations();
         return values;
     }
 
     @Override
     public Set entrySet() {
         storage.checkState();
-        Set entrySet = new HashSet(storage.size());
-        for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
-            K keyOfEntry = entry.getKey();
-            if (!containsKeyAndValue(keyOfEntry)) {
-                continue;
-            }
-            Object key = unmarshallKey(keyOfEntry);
-            // getValueInternal() is used here because hit count is incremented by containsKeyAndValue() above
-            Object value = unmarshallValue(entry.getValue().getValueInternal());
-            entrySet.add(new AbstractMap.SimpleEntry(key, value));
-        }
         mapStats.incrementOtherOperations();
-        return entrySet;
+
+        // Lazy evaluation to prevent to much copying
+        return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), storage);
     }
 
     @Override

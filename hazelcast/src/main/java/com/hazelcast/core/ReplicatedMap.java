@@ -127,24 +127,28 @@ public interface ReplicatedMap<K, V>
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
 
     /**
-     * Returns a {@link Collection} view of the values contained in this map.
+     * Returns a lazy {@link Collection} view of the values contained in this map.
      * The collection is <b>NOT</b> backed by the map, so changes to the map are
      * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior. If a specific order is needed, use
      * {@link #values(java.util.Comparator)} to force reordering of the
-     * elements before returning.
+     * elements before returning.<br/>
+     * Changes to any returned object are <b>NOT</b> replicated back to other
+     * members.
      *
      * @return a collection view of the values contained in this map
      */
     Collection<V> values();
 
     /**
-     * Returns a {@link Collection} view of the values contained in this map.
+     * Returns a eagerly populated {@link Collection} view of the values contained in this map.
      * The collection is <b>NOT</b> backed by the map, so changes to the map are
      * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
      * The order of the elements is guaranteed by executing the given
-     * {@link java.util.Comparator} before returning the elements.
+     * {@link java.util.Comparator} before returning the elements.<br/>
+     * Changes to any returned object are <b>NOT</b> replicated back to other
+     * members.
      *
      * @param comparator the Comparator to sort the returned elements
      * @return a collection view of the values contained in this map
@@ -152,14 +156,28 @@ public interface ReplicatedMap<K, V>
     Collection<V> values(Comparator<V> comparator);
 
     /**
-     * Returns a {@link Set} view of the mappings contained in this map.
+     * Returns a lazy {@link Set} view of the mappings contained in this map.
      * The set is <b>NOT</b> backed by the map, so changes to the map are
      * <b>NOT</b> reflected in the set, and vice-versa.<br/>
      * The order of the elements is not guaranteed due to the internal
-     * asynchronous replication behavior.
+     * asynchronous replication behavior.<br/>
+     * Changes to any returned object are <b>NOT</b> replicated back to other
+     * members.
      *
      * @return a set view of the mappings contained in this map
      */
     Set<Entry<K, V>> entrySet();
 
+    /**
+     * Returns a lazy {@link Set} view of the key contained in this map.
+     * The set is <b>NOT</b> backed by the map, so changes to the map are
+     * <b>NOT</b> reflected in the set, and vice-versa.<br/>
+     * The order of the elements is not guaranteed due to the internal
+     * asynchronous replication behavior.<br/>
+     * Changes to any returned object are <b>NOT</b> replicated back to other
+     * members.
+     *
+     * @return a collection view of the keys contained in this map
+     */
+    Set<K> keySet();
 }
