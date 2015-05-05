@@ -41,6 +41,7 @@ public class AddAllOperation extends AbstractRingBufferOperation
     public AddAllOperation() {
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public AddAllOperation(String name, Data[] items, OverflowPolicy overflowPolicy) {
         super(name);
         this.items = items;

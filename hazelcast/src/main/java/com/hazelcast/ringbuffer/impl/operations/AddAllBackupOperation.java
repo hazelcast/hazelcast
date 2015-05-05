@@ -33,6 +33,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
     public AddAllBackupOperation() {
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public AddAllBackupOperation(String name, Data[] items) {
         super(name);
         this.items = items;
