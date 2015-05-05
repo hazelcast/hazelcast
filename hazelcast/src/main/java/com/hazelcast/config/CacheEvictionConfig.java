@@ -142,6 +142,24 @@ public class CacheEvictionConfig
     }
 
     @Override
+    public CacheEvictionConfig setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+        super.setMaximumSizePolicy(maxSizePolicy);
+        return this;
+    }
+
+    @Override
+    public CacheEvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
+        super.setEvictionPolicy(evictionPolicy);
+        return this;
+    }
+
+    @Override
+    public CacheEvictionConfig setSize(int size) {
+        super.setSize(size);
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "CacheEvictionConfig{"
                 + "size=" + size
