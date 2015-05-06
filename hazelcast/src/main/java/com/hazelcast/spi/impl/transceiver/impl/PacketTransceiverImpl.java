@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.transceiver.impl;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -24,9 +23,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -65,10 +64,6 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     public boolean transmit(Packet packet, Connection connection) {
         if (connection == null || !connection.isAlive()) {
             return false;
-        }
-        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
         }
         return connection.write(packet);
     }

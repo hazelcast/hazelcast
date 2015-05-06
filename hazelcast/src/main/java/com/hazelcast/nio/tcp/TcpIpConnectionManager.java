@@ -419,6 +419,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (live) {
             return;
         }
+        if (!serverSocketChannel.isOpen()) {
+            throw new IllegalStateException("ConnectionManager is already shutdown. Cannot start!");
+        }
+
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
         IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
@@ -460,12 +464,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public synchronized void restart() {
-        stop();
-        start();
-    }
-
-    @Override
     public synchronized void shutdown() {
         if (!live) {
             return;
@@ -488,7 +486,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
     }
 
-    private void stop() {
+    @Override
+    public synchronized void stop() {
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
         ioBalancer.stop();

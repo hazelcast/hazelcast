@@ -102,13 +102,6 @@ public class NodeIOService implements IOService {
 
     @Override
     public void handleMemberPacket(final Packet packet) {
-        final Address endPoint = packet.getConn().getEndPoint();
-        if (endPoint != null) {
-            final MemberImpl member = node.clusterService.getMember(endPoint);
-            if (member != null) {
-                member.didRead();
-            }
-        }
         packetTransceiver.receive(packet);
     }
 

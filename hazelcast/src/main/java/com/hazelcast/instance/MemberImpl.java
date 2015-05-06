@@ -27,7 +27,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
@@ -42,9 +41,6 @@ public final class MemberImpl
 
     private boolean localMember;
     private volatile HazelcastInstanceImpl instance;
-    private volatile long lastRead;
-    private volatile long lastWrite;
-    private volatile long lastPing;
     private volatile ILogger logger;
 
     public MemberImpl() {
@@ -62,14 +58,12 @@ public final class MemberImpl
                       Map<String, Object> attributes) {
         super(address, uuid, attributes);
         this.localMember = localMember;
-        this.lastRead = Clock.currentTimeMillis();
         this.instance = instance;
     }
 
     public MemberImpl(MemberImpl member) {
         super(member);
         this.localMember = member.localMember;
-        this.lastRead = member.lastRead;
     }
 
     @Override
@@ -89,30 +83,6 @@ public final class MemberImpl
     @Override
     public boolean localMember() {
         return localMember;
-    }
-
-    public void didWrite() {
-        lastWrite = Clock.currentTimeMillis();
-    }
-
-    public void didRead() {
-        lastRead = Clock.currentTimeMillis();
-    }
-
-    public void didPing() {
-        lastPing = Clock.currentTimeMillis();
-    }
-
-    public long getLastPing() {
-        return lastPing;
-    }
-
-    public long getLastRead() {
-        return lastRead;
-    }
-
-    public long getLastWrite() {
-        return lastWrite;
     }
 
     @Override

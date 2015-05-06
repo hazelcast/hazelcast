@@ -21,7 +21,6 @@ import com.hazelcast.cluster.impl.AbstractJoiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
@@ -268,6 +267,7 @@ final class TestNodeRegistry {
             return getConnection(address);
         }
 
+        @Override
         public void shutdown() {
             for (Address address : addresses) {
                 if (address.equals(node.getThisAddress())) continue;
@@ -290,17 +290,20 @@ final class TestNodeRegistry {
             return true;
         }
 
+        @Override
         public void start() {
         }
 
+        @Override
         public void addConnectionListener(ConnectionListener connectionListener) {
         }
 
+        @Override
         public void destroyConnection(Connection conn) {
         }
 
-
-        public void restart() {
+        @Override
+        public void stop() {
         }
 
         @Override
@@ -308,6 +311,7 @@ final class TestNodeRegistry {
             return 0;
         }
 
+        @Override
         public int getCurrentClientConnections() {
             return 0;
         }
@@ -317,6 +321,7 @@ final class TestNodeRegistry {
             return 0;
         }
 
+        @Override
         public int getAllTextConnections() {
             return 0;
         }
@@ -350,10 +355,6 @@ final class TestNodeRegistry {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
                 Packet newPacket = readFromPacket(packet);
-                MemberImpl member = nodeEngine.getClusterService().getMember(localEndpoint);
-                if (member != null) {
-                    member.didRead();
-                }
                 nodeEngine.getPacketTransceiver().receive(newPacket);
                 return true;
             }
