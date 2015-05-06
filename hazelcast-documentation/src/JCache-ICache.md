@@ -90,15 +90,11 @@ undefined behavior.*
 
 #### Named Instance Scope
 
-A `CacheManager` can be bound to an existing and named `HazelcastInstance` instance. This requires that the instance was created
-using a `com.hazelcast.config.Config` and requires that an `instanceName` be set. Multiple `CacheManager`s created using an equal
-`java.net.URI` will share the same `HazelcastInstance`.
+A `CacheManager` can be bound to an existing and named `HazelcastInstance` instance. If the `instanceName` is specified in `com.hazelcast.config.Config`, it can be used directly by passing it to `CachingProvider` implementation. Otherwise (`instanceName` not set or instance is a client instance) instance name must be get over `HazelcastInstance` instance via `String getName()` method to pass the `CachingProvider` implementation. In general, `String getName()` method over `HazelcastInstance` is more safe and preferable way for getting name of instance. Multiple `CacheManager`s created using an equal `java.net.URI` will share the same `HazelcastInstance`.
 
-A named scope is applied nearly the same way as the configuration scope: pass in the instance name using the
-`HazelcastCachingProvider#HAZELCAST_INSTANCE_NAME` (which resolves to `hazelcast.instance.name`) property as a mapping inside a
-`java.util.Properties` instance to the `CachingProvider#getCacheManager(uri, classLoader, properties)` call.
+A named scope is applied nearly the same way as the configuration scope: pass in the instance name using the `HazelcastCachingProvider#HAZELCAST_INSTANCE_NAME` (which resolves to `hazelcast.instance.name`) property as a mapping inside a `java.util.Properties` instance to the `CachingProvider#getCacheManager(uri, classLoader, properties)` call.
 
-Here is an example of Named Instance Scope.
+Here is an example of Named Instance Scope with specified name.
 
 ```java
 Config config = new Config();
@@ -112,6 +108,49 @@ CachingProvider cachingProvider = Caching.getCachingProvider();
 Properties properties = new Properties();
 properties.setProperty( HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME,
      "my-named-hazelcast-instance" );
+
+URI cacheManagerName = new URI( "my-cache-manager" );
+CacheManager cacheManager = cachingProvider
+    .getCacheManager( cacheManagerName, null, properties );
+```
+
+Here is an example of Named Instance Scope with auto-generated name.
+
+```java
+Config config = new Config();
+// Create a auto-generated named HazelcastInstance
+HazelcastInstance instance = Hazelcast.newHazelcastInstance( config );
+String instanceName = instance.getName();
+
+CachingProvider cachingProvider = Caching.getCachingProvider();
+
+// Create Properties instance pointing to a named HazelcastInstance
+Properties properties = new Properties();
+properties.setProperty( HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, 
+     instanceName );
+
+URI cacheManagerName = new URI( "my-cache-manager" );
+CacheManager cacheManager = cachingProvider
+    .getCacheManager( cacheManagerName, null, properties );
+```
+
+Here is an example of Named Instance Scope with auto-generated name on client instance.
+
+```java
+ClientConfig clientConfig = new ClientConfig();
+ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+networkConfig.addAddress("127.0.0.1", "127.0.0.2");
+
+// Create a client side HazelcastInstance
+HazelcastInstance instance = HazelcastClient.newHazelcastClient( clientConfig );
+String instanceName = instance.getName();
+
+CachingProvider cachingProvider = Caching.getCachingProvider();
+
+// Create Properties instance pointing to a named HazelcastInstance
+Properties properties = new Properties();
+properties.setProperty( HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, 
+     instanceName );
 
 URI cacheManagerName = new URI( "my-cache-manager" );
 CacheManager cacheManager = cachingProvider
