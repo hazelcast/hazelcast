@@ -54,6 +54,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
+@Ignore
 public class ClientMapNearCacheTest {
 
     private static final int MAX_CACHE_SIZE = 100;
