@@ -62,8 +62,21 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
     @Override
     public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+        leaseTime = getLeaseTime(leaseTime);
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, false);
+    }
+
+    private long getLeaseTime(long leaseTime) {
+        long maxLeaseTimeInMillis = lockService.getMaxLeaseTimeInMillis();
+        if (leaseTime > maxLeaseTimeInMillis) {
+            throw new IllegalArgumentException("Max allowed lease time: " + maxLeaseTimeInMillis + "ms. "
+                    + "Given lease time: " + leaseTime + "ms.");
+        }
+        if (leaseTime < 0) {
+            leaseTime = maxLeaseTimeInMillis;
+        }
+        return leaseTime;
     }
 
     @Override

@@ -36,18 +36,18 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
         super(namespace, key, threadId, timeout);
     }
 
-    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
-        super(namespace, key, threadId, ttl, timeout);
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout) {
+        super(namespace, key, threadId, leaseTime, timeout);
     }
 
     @Override
     public void run() throws Exception {
-        response = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), ttl);
+        response = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
     }
 
     @Override
     public Operation getBackupOperation() {
-        LockBackupOperation operation = new LockBackupOperation(namespace, key, threadId, getCallerUuid());
+        LockBackupOperation operation = new LockBackupOperation(namespace, key, threadId, leaseTime, getCallerUuid());
         operation.setReferenceCallId(getReferenceCallId());
         return operation;
     }

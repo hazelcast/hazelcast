@@ -16,17 +16,22 @@
 
 package com.hazelcast.client.impl.protocol.task.lock;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.LockLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -35,13 +40,15 @@ import java.util.concurrent.TimeUnit;
 public class LockLockMessageTask
         extends AbstractPartitionMessageTask<LockLockCodec.RequestParameters> {
 
+    private Data key;
+
     public LockLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        final Data key = serializationService.toData(parameters.name);
+        key = serializationService.toData(parameters.name);
         return new LockOperation(new InternalLockNamespace(parameters.name)
                 , key, parameters.threadId, parameters.leaseTime, -1);
     }
@@ -54,6 +61,31 @@ public class LockLockMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return LockLockCodec.encodeResponse();
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        if (t instanceof OperationTimeoutException) {
+            safeUnlock();
+        }
+        super.onFailure(t);
+    }
+
+    private void safeUnlock() {
+        ClientEndpoint endpoint = getEndpoint();
+        Operation op = new UnlockOperation(new InternalLockNamespace(parameters.name), key, parameters.threadId);
+        op.setCallerUuid(endpoint.getUuid());
+        InvocationBuilder builder = nodeEngine.getOperationService()
+                .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                .setResultDeserialized(false);
+        try {
+            builder.invoke();
+        } catch (Throwable e) {
+            ILogger logger = clientEngine.getLogger(getClass());
+            if (logger.isFinestEnabled()) {
+                logger.finest("Error while unlocking because of a lock operation timeout!", e);
+            }
+        }
     }
 
     @Override

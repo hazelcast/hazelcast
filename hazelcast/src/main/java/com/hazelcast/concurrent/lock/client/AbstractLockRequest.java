@@ -16,16 +16,21 @@
 
 package com.hazelcast.concurrent.lock.client;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.KeyBasedClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
@@ -57,6 +62,30 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest
 
     protected String getName() {
         return serializationService.toObject(key);
+    }
+
+    @Override
+    protected Object filter(Object response) {
+        if (response instanceof OperationTimeoutException) {
+            safeUnlock();
+        }
+        return super.filter(response);
+    }
+
+    private void safeUnlock() {
+        ClientEndpoint endpoint = getEndpoint();
+        Operation op = new UnlockOperation(getNamespace(), key, threadId);
+        op.setCallerUuid(endpoint.getUuid());
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
+                .setReplicaIndex(getReplicaIndex());
+        try {
+            builder.invoke();
+        } catch (Throwable e) {
+            ILogger logger = clientEngine.getLogger(getClass());
+            if (logger.isFinestEnabled()) {
+                logger.finest("Error while unlocking because of a lock operation timeout!", e);
+            }
+        }
     }
 
     @Override

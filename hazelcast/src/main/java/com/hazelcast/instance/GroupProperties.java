@@ -169,6 +169,7 @@ public class GroupProperties {
     public static final String PROP_PARTITIONING_STRATEGY_CLASS = "hazelcast.partitioning.strategy.class";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
+    public static final String PROP_LOCK_MAX_LEASE_TIME_SECONDS = "hazelcast.lock.max.lease.time.seconds";
 
     /**
      * Enables or disables the {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector}.
@@ -551,6 +552,8 @@ public class GroupProperties {
 
     public final GroupProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
 
+    public final GroupProperty LOCK_MAX_LEASE_TIME_SECONDS;
+
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
@@ -691,6 +694,9 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "false");
         SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
                 = new GroupProperty(config, PROP_SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS, "-1");
+
+        LOCK_MAX_LEASE_TIME_SECONDS = new GroupProperty(config, PROP_LOCK_MAX_LEASE_TIME_SECONDS,
+                Long.toString(Long.MAX_VALUE));
 
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");

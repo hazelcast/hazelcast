@@ -42,7 +42,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         super(nodeEngine, lockService);
         this.name = name;
         this.key = getNameAsPartitionAwareData();
-        this.lockSupport = new LockProxySupport(new InternalLockNamespace(name));
+        this.lockSupport = new LockProxySupport(new InternalLockNamespace(name), lockService.getMaxLeaseTimeInMillis());
         this.partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
     }
 

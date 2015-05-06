@@ -295,7 +295,10 @@ final class LockResourceImpl implements DataSerializable, LockResource {
 
     @Override
     public long getRemainingLeaseTime() {
-        if (expirationTime == Long.MAX_VALUE || expirationTime < 0) {
+        if (!isLocked()) {
+            return -1L;
+        }
+        if (expirationTime < 0) {
             return Long.MAX_VALUE;
         }
         long now = Clock.currentTimeMillis();
@@ -310,7 +313,8 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return expirationTime;
     }
 
-    int getVersion() {
+    @Override
+    public int getVersion() {
         return version;
     }
 

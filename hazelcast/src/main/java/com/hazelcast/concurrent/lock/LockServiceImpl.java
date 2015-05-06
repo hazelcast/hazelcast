@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -51,6 +52,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
@@ -75,12 +77,22 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
             };
 
+    private final long maxLeaseTimeInMillis;
+
     public LockServiceImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.containers = new LockStoreContainer[nodeEngine.getPartitionService().getPartitionCount()];
         for (int i = 0; i < containers.length; i++) {
             containers[i] = new LockStoreContainer(this, i);
         }
+
+        maxLeaseTimeInMillis = getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties());
+    }
+
+    public static long getMaxLeaseTimeInMillis(GroupProperties groupProperties) {
+        long maxLeaseTime = groupProperties.LOCK_MAX_LEASE_TIME_SECONDS.getLong();
+        maxLeaseTime = TimeUnit.SECONDS.toMillis(maxLeaseTime);
+        return maxLeaseTime;
     }
 
     @Override
@@ -116,6 +128,11 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         for (LockStoreContainer container : containers) {
             container.clear();
         }
+    }
+
+    @Override
+    public long getMaxLeaseTimeInMillis() {
+        return maxLeaseTimeInMillis;
     }
 
     @Override
@@ -278,7 +295,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
 
                 long leaseTime = expirationTime - now;
-                scheduleEviction(ls.getNamespace(), lock.getKey(), 0, leaseTime);
+                scheduleEviction(ls.getNamespace(), lock.getKey(), lock.getVersion(), leaseTime);
             }
         }
     }
