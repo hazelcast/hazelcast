@@ -38,6 +38,7 @@ import org.junit.runner.RunWith;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -589,32 +590,45 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     @Test
     public void testKeySet_notIncludes_removedKeys() throws Exception {
         HazelcastInstance node = createHazelcastInstance();
-        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        final ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
         map.put(2, Integer.MIN_VALUE);
 
         map.remove(1);
 
-        Set<Integer> keys = map.keySet();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
 
-        assertFalse(keys.contains(1));
+                Set<Integer> keys = new HashSet<Integer>(map.keySet());
+                assertFalse(keys.contains(1));
+            }
+        }, 20);
     }
 
     @Test
     public void testEntrySet_notIncludes_removedKeys() throws Exception {
         HazelcastInstance node = createHazelcastInstance();
-        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        final ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
         map.put(2, Integer.MIN_VALUE);
 
         map.remove(1);
 
-        Set<Entry<Integer, Integer>> entries = map.entrySet();
-        for (Entry<Integer, Integer> entry : entries) {
-            if (entry.getKey().equals(1)) {
-                fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+
+                Set<Entry<Integer, Integer>> entries = map.entrySet();
+                for (Entry<Integer, Integer> entry : entries) {
+                    if (entry.getKey().equals(1)) {
+                        fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
+                    }
+                }
             }
-        }
+        }, 20);
     }
 
     private void testRemove(Config config) throws Exception {
