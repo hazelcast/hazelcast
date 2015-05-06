@@ -267,6 +267,9 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     boolean executing = operationService.getIsStillRunningService().isOperationExecuting(invocation);
                     if (!executing) {
                         Object operationTimeoutException = invocation.newOperationTimeoutException(pollCount * pollTimeoutMs);
+                        if (response != null) {
+                            continue;
+                        }
                         // tries to set an OperationTimeoutException response if response is not set yet
                         set(operationTimeoutException);
                     }
