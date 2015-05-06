@@ -44,7 +44,7 @@ import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 
 final class TransactionProxy {
 
-    private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
 
     private final TransactionOptions options;
     private final HazelcastClientInstanceImpl client;
@@ -75,15 +75,15 @@ final class TransactionProxy {
                 throw new IllegalStateException("Transaction is already active");
             }
             checkThread();
-            if (THREAD_FLAG.get() != null) {
+            if (TRANSACTION_EXISTS.get() != null) {
                 throw new IllegalStateException("Nested transactions are not allowed!");
             }
-            THREAD_FLAG.set(Boolean.TRUE);
+            TRANSACTION_EXISTS.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
             txnId = invoke(new CreateTransactionRequest(options));
             state = ACTIVE;
         } catch (Exception e) {
-            THREAD_FLAG.set(null);
+            TRANSACTION_EXISTS.set(null);
             throw ExceptionUtil.rethrow(e);
         }
     }
@@ -101,7 +101,7 @@ final class TransactionProxy {
             state = ROLLING_BACK;
             throw ExceptionUtil.rethrow(e);
         } finally {
-            THREAD_FLAG.set(null);
+            TRANSACTION_EXISTS.set(null);
         }
     }
 
@@ -122,7 +122,7 @@ final class TransactionProxy {
             }
             state = ROLLED_BACK;
         } finally {
-            THREAD_FLAG.set(null);
+            TRANSACTION_EXISTS.set(null);
         }
     }
 

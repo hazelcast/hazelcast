@@ -58,7 +58,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public class TransactionImpl implements Transaction, TransactionSupport {
 
-    private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;
 
@@ -176,7 +176,7 @@ public class TransactionImpl implements Transaction, TransactionSupport {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        if (THREAD_FLAG.get() != null) {
+        if (TRANSACTION_EXISTS.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
         startTime = Clock.currentTimeMillis();
@@ -229,7 +229,7 @@ public class TransactionImpl implements Transaction, TransactionSupport {
 
     private void setThreadFlag(Boolean flag) {
         if (checkThreadAccess) {
-            THREAD_FLAG.set(flag);
+            TRANSACTION_EXISTS.set(flag);
         }
     }
 

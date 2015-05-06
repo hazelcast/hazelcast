@@ -146,10 +146,6 @@ public class HazelcastXATest extends HazelcastTestSupport {
      * Start two nodes.
      * One node in a new thread prepares tx and shutdowns. Check if remaining node can recover tx or not.
      * <p/>
-     * Start tx in a new thread since {@link com.hazelcast.transaction.impl.TransactionImpl#THREAD_FLAG} is thread local
-     * and during node shutdown thread flag does not cleared.
-     * This is the reason of failures in repetitive test calls from same thread.
-     *
      * @throws XAException
      */
     @Test
