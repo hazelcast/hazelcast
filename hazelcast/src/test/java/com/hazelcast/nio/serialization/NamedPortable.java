@@ -5,15 +5,15 @@ import java.io.IOException;
 /**
 * @author mdogan 22/05/14
 */
-class NamedPortable implements Portable {
+public class NamedPortable implements Portable {
 
     String name;
     int k;
 
-    NamedPortable() {
+    public NamedPortable() {
     }
 
-    NamedPortable(String name, int k) {
+    public NamedPortable(String name, int k) {
         this.name = name;
         this.k = k;
     }

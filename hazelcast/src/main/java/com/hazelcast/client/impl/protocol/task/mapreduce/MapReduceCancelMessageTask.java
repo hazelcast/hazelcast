@@ -31,7 +31,7 @@ import java.util.concurrent.CancellationException;
 
 public class MapReduceCancelMessageTask extends AbstractCallableMessageTask<MapReduceCancelParameters> {
 
-    protected MapReduceCancelMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public MapReduceCancelMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
