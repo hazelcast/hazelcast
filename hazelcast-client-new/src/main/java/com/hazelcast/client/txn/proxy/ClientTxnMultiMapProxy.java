@@ -26,7 +26,7 @@ import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapRemove
 import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapRemoveParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapSizeParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapValueCountParameters;
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
@@ -40,8 +40,8 @@ public class ClientTxnMultiMapProxy<K, V>
         extends ClientTxnProxy
         implements TransactionalMultiMap<K, V> {
 
-    public ClientTxnMultiMapProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnMultiMapProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     public boolean put(K key, V value)

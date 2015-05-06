@@ -56,9 +56,9 @@ import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
-final class TransactionImpl implements Transaction, TransactionSupport {
+public class TransactionImpl implements Transaction, TransactionSupport {
 
-    private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;
 
@@ -80,7 +80,6 @@ final class TransactionImpl implements Transaction, TransactionSupport {
     private State state = NO_TXN;
     private long startTime;
     private Address[] backupAddresses;
-    private SerializableXID xid;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
@@ -118,14 +117,6 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
         this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
-    }
-
-    public void setXid(SerializableXID xid) {
-        this.xid = xid;
-    }
-
-    public SerializableXID getXid() {
-        return xid;
     }
 
     @Override
@@ -185,7 +176,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        if (THREAD_FLAG.get() != null) {
+        if (TRANSACTION_EXISTS.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
         startTime = Clock.currentTimeMillis();
@@ -229,7 +220,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                 final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                        new BeginTxBackupOperation(txOwnerUuid, txnId, xid), backupAddress);
+                        new BeginTxBackupOperation(txOwnerUuid, txnId), backupAddress);
                 futures.add(f);
             }
         }
@@ -238,7 +229,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
 
     private void setThreadFlag(Boolean flag) {
         if (checkThreadAccess) {
-            THREAD_FLAG.set(flag);
+            TRANSACTION_EXISTS.set(flag);
         }
     }
 
@@ -368,10 +359,6 @@ final class TransactionImpl implements Transaction, TransactionSupport {
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
             futures.clear();
         }
-    }
-
-    public void setRollbackOnly() {
-        state = ROLLING_BACK;
     }
 
     private void purgeTxBackups() {

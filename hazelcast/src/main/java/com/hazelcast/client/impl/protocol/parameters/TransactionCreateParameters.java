@@ -19,16 +19,13 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.client.impl.protocol.util.BitUtil;
-import com.hazelcast.transaction.impl.SerializableXID;
 
-import javax.transaction.xa.Xid;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public final class TransactionCreateParameters {
 
 
     public static final ClientMessageType TYPE = ClientMessageType.TRANSACTION_CREATE;
-    public Xid xid;
     public long timeout;
     public int durability;
     public int transactionType;
@@ -36,32 +33,30 @@ public final class TransactionCreateParameters {
 
 
     private TransactionCreateParameters(ClientMessage clientMessage) {
-        xid = XIDCodec.decode(clientMessage);
         timeout = clientMessage.getLong();
         durability = clientMessage.getInt();
         transactionType = clientMessage.getInt();
+        threadId = clientMessage.getLong();
     }
 
     public static TransactionCreateParameters decode(ClientMessage clientMessage) {
         return new TransactionCreateParameters(clientMessage);
     }
 
-    public static ClientMessage encode(Xid xid, long timeout, int durability,
+    public static ClientMessage encode(long timeout, int durability,
                                        int transactionType, long threadId) {
-        final int requiredDataSize = calculateDataSize(xid, timeout, durability, transactionType, threadId);
+        final int requiredDataSize = calculateDataSize(timeout, durability, transactionType, threadId);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.ensureCapacity(requiredDataSize);
-        XIDCodec.encode(xid, clientMessage);
         clientMessage.set(timeout).set(durability).set(transactionType).set(threadId);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();
         return clientMessage;
     }
 
-    public static int calculateDataSize(Xid xid, long timeout, int durability,
+    public static int calculateDataSize(long timeout, int durability,
                                         int transactionType, long threadId) {
         return ClientMessage.HEADER_SIZE
-                + XIDCodec.calculateDataSize(xid)
                 + BitUtil.SIZE_OF_LONG
                 + BitUtil.SIZE_OF_INT
                 + BitUtil.SIZE_OF_INT

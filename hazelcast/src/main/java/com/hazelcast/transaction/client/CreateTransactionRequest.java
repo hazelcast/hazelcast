@@ -17,8 +17,8 @@
 package com.hazelcast.transaction.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -26,9 +26,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.SerializableXID;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
@@ -37,14 +34,12 @@ import java.security.Permission;
 public class CreateTransactionRequest extends BaseTransactionRequest implements SecureRequest {
 
     private TransactionOptions options;
-    private SerializableXID sXid;
 
     public CreateTransactionRequest() {
     }
 
-    public CreateTransactionRequest(TransactionOptions options, SerializableXID sXid) {
+    public CreateTransactionRequest(TransactionOptions options) {
         this.options = options;
-        this.sXid = sXid;
     }
 
     @Override
@@ -54,10 +49,6 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
         TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
-        if (sXid != null) {
-            Transaction transaction = TransactionAccessor.getTransaction(context);
-            transactionManager.addManagedTransaction(sXid, transaction);
-        }
         context.beginTransaction();
         endpoint.setTransactionContext(context);
         return context.getTxnId();
@@ -83,10 +74,6 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
         options.writeData(out);
-        out.writeBoolean(sXid != null);
-        if (sXid != null) {
-            sXid.writeData(out);
-        }
     }
 
     @Override
@@ -95,11 +82,6 @@ public class CreateTransactionRequest extends BaseTransactionRequest implements 
         ObjectDataInput in = reader.getRawDataInput();
         options = new TransactionOptions();
         options.readData(in);
-        boolean sXidNotNull = in.readBoolean();
-        if (sXidNotNull) {
-            sXid = new SerializableXID();
-            sXid.readData(in);
-        }
 
     }
 

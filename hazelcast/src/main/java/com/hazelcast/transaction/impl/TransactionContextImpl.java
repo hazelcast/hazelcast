@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.TransactionalList;
@@ -26,46 +27,32 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.xa.XAService;
 
+import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
-    private final TransactionManagerServiceImpl transactionManager;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
-    private XAResourceImpl xaResource;
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
                            TransactionOptions options, String ownerUuid) {
-        this.transactionManager = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid);
-    }
-
-    @Override
-    public XAResourceImpl getXaResource() {
-        if (xaResource == null) {
-            xaResource = new XAResourceImpl(transactionManager, this, nodeEngine);
-        }
-        return xaResource;
-    }
-
-    @Override
-    public boolean isXAManaged() {
-        return transaction.getXid() != null;
     }
 
     @Override
@@ -155,46 +142,9 @@ final class TransactionContextImpl implements TransactionContext {
         return transaction;
     }
 
-    public boolean setTransactionTimeout(int seconds) {
-        return transaction.setTimeoutMillis(TimeUnit.SECONDS.toMillis(seconds));
-    }
-
-    private static class TransactionalObjectKey {
-
-        private final String serviceName;
-        private final String name;
-
-        TransactionalObjectKey(String serviceName, String name) {
-            this.serviceName = serviceName;
-            this.name = name;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof TransactionalObjectKey)) {
-                return false;
-            }
-
-            TransactionalObjectKey that = (TransactionalObjectKey) o;
-
-            if (!name.equals(that.name)) {
-                return false;
-            }
-            if (!serviceName.equals(that.serviceName)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = serviceName.hashCode();
-            result = 31 * result + name.hashCode();
-            return result;
-        }
+    @Override
+    public XAResource getXaResource() {
+        ProxyService proxyService = nodeEngine.getProxyService();
+        return (HazelcastXAResource) proxyService.getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
     }
 }

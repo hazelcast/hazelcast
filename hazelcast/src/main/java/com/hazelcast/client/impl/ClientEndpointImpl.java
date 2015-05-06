@@ -32,9 +32,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
-import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -46,8 +44,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 
 /**
  * The {@link com.hazelcast.client.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
@@ -234,19 +230,15 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
             lc.logout();
         }
         for (TransactionContext context : transactionContextMap.values()) {
-            Transaction transaction = TransactionAccessor.getTransaction(context);
-            if (context.isXAManaged() && transaction.getState() == PREPARED) {
-                TransactionManagerServiceImpl transactionManager =
-                        (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
-                transactionManager.addTxBackupLogForClientRecovery(transaction);
-            } else {
-                try {
-                    context.rollbackTransaction();
-                } catch (HazelcastInstanceNotActiveException e) {
-                    getLogger().finest(e);
-                } catch (Exception e) {
-                    getLogger().warning(e);
-                }
+            if (context instanceof XATransactionContextImpl) {
+                continue;
+            }
+            try {
+                context.rollbackTransaction();
+            } catch (HazelcastInstanceNotActiveException e) {
+                getLogger().finest(e);
+            } catch (Exception e) {
+                getLogger().warning(e);
             }
         }
         authenticated = false;

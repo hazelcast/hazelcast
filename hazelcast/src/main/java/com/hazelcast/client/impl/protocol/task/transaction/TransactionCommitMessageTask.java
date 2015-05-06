@@ -25,8 +25,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
 
 import java.security.Permission;
 
@@ -39,12 +37,7 @@ public class TransactionCommitMessageTask extends AbstractTransactionalMessageTa
     @Override
     protected ClientMessage innerCall() throws Exception {
         TransactionContext transactionContext = endpoint.getTransactionContext(parameters.transactionId);
-        if (parameters.prepareAndCommit) {
-            transactionContext.commitTransaction();
-        } else {
-            Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
-            transaction.commit();
-        }
+        transactionContext.commitTransaction();
         endpoint.removeTransactionContext(parameters.transactionId);
         return VoidResultParameters.encode();
     }

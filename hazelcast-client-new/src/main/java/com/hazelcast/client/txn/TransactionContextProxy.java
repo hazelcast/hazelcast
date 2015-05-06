@@ -18,12 +18,15 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientTransactionContext;
+import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.txn.proxy.ClientTxnListProxy;
 import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
 import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
 import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
 import com.hazelcast.client.txn.proxy.ClientTxnSetProxy;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.TransactionalList;
@@ -33,30 +36,27 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionalObjectKey;
 
 import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-public class TransactionContextProxy implements TransactionContext {
+public class TransactionContextProxy implements ClientTransactionContext {
 
-    final ClientTransactionManager transactionManager;
+    final ClientTransactionManagerServiceImpl transactionManager;
     final HazelcastClientInstanceImpl client;
     final TransactionProxy transaction;
     final ClientConnection connection;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
             new HashMap<TransactionalObjectKey, TransactionalObject>(2);
-    private XAResourceProxy xaResource;
 
-    public TransactionContextProxy(ClientTransactionManager transactionManager, TransactionOptions options) {
+    public TransactionContextProxy(ClientTransactionManagerServiceImpl transactionManager, TransactionOptions options) {
         this.transactionManager = transactionManager;
         this.client = transactionManager.getClient();
         try {
@@ -79,7 +79,7 @@ public class TransactionContextProxy implements TransactionContext {
 
     @Override
     public void commitTransaction() throws TransactionException {
-        transaction.commit(true);
+        transaction.commit();
     }
 
     @Override
@@ -149,62 +149,8 @@ public class TransactionContextProxy implements TransactionContext {
         return client;
     }
 
-    public ClientTransactionManager getTransactionManager() {
-        return transactionManager;
-    }
-
     @Override
     public XAResource getXaResource() {
-        if (xaResource == null) {
-            xaResource = new XAResourceProxy(this);
-        }
-        return xaResource;
-    }
-
-    @Override
-    public boolean isXAManaged() {
-        return transaction.getXid() != null;
-    }
-
-    public boolean setTransactionTimeout(int seconds) {
-        return transaction.setTimeoutMillis(TimeUnit.SECONDS.toMillis(seconds));
-    }
-
-    private static class TransactionalObjectKey {
-        private final String serviceName;
-        private final String name;
-
-        TransactionalObjectKey(String serviceName, String name) {
-            this.serviceName = serviceName;
-            this.name = name;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof TransactionalObjectKey)) {
-                return false;
-            }
-
-            TransactionalObjectKey that = (TransactionalObjectKey) o;
-
-            if (!name.equals(that.name)) {
-                return false;
-            }
-            if (!serviceName.equals(that.serviceName)) {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = serviceName.hashCode();
-            result = 31 * result + name.hashCode();
-            return result;
-        }
+        return client.getXAResource();
     }
 }

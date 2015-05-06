@@ -40,8 +40,6 @@ public interface Transaction {
 
     void rollback() throws IllegalStateException;
 
-    void setRollbackOnly();
-
     String getTxnId();
 
     State getState();

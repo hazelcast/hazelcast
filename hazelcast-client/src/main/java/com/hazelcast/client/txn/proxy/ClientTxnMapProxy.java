@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.txn.proxy;
 
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
@@ -35,8 +35,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements TransactionalMap<K, V> {
 
-    public ClientTxnMapProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnMapProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     @Override

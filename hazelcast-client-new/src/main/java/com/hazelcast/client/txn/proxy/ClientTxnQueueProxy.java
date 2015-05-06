@@ -20,23 +20,24 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.collection.impl.queue.QueueService;
+import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueOfferParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalQueuePeekParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalQueuePollParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueSizeParameters;
 import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueTakeParameters;
-import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.impl.queue.QueueService;
-import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ThreadUtil;
+
 
 import java.util.concurrent.TimeUnit;
 
 public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E> {
 
-    public ClientTxnQueueProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnQueueProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     public boolean offer(E e) {

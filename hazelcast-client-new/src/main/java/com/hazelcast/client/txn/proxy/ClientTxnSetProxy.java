@@ -19,19 +19,19 @@ package com.hazelcast.client.txn.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalSetAddParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalSetRemoveParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalSetSizeParameters;
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalSetAddParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalSetRemoveParameters;
+import com.hazelcast.client.impl.protocol.parameters.TransactionalSetSizeParameters;
 
 public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
 
-    public ClientTxnSetProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnSetProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     public boolean add(E e) {

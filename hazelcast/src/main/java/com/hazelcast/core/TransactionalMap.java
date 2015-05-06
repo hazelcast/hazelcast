@@ -34,21 +34,21 @@ import java.util.concurrent.TimeUnit;
  * <pre>
  * <code>
  *
- * final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+ * HazelcastInstance client = HazelcastClient.newHazelcastClient();
  *
  * UserTransactionManager tm = new UserTransactionManager();
  * tm.setTransactionTimeout(60);
  * tm.begin();
  *
- * final TransactionContext context = client.newTransactionContext();
  *
- * final XAResource xaResource = context.getXaResource();
- * final Transaction transaction = tm.getTransaction();
+ * HazelcastXAResource xaResource = client.getXAResource();
+ * Transaction transaction = tm.getTransaction();
  * transaction.enlistResource(xaResource);
  *
  * // you can enlist more resources here like a database XAResource
  * try {
- *      final TransactionalMap map = context.getMap("map");
+ *      TransactionContext context = xaResource.getTransactionContext()
+ *      TransactionalMap map = context.getMap("map");
  *      map.put("key", "value");
  *      final TransactionalQueue queue = context.getQueue("queue");
  *      queue.offer("item");

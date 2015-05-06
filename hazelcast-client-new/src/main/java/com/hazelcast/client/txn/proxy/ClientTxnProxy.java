@@ -16,10 +16,12 @@
 
 package com.hazelcast.client.txn.proxy;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DestroyProxyParameters;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.transaction.TransactionalObject;
@@ -30,16 +32,18 @@ import java.util.concurrent.Future;
 abstract class ClientTxnProxy implements TransactionalObject {
 
     final String objectName;
-    final TransactionContextProxy proxy;
+    final ClientTransactionContext transactionContext;
 
-    ClientTxnProxy(String objectName, TransactionContextProxy proxy) {
+    ClientTxnProxy(String objectName, ClientTransactionContext transactionContext) {
         this.objectName = objectName;
-        this.proxy = proxy;
+        this.transactionContext = transactionContext;
     }
 
     final ClientMessage invoke(ClientMessage request) {
         try {
-            ClientInvocation invocation = new ClientInvocation(proxy.getClient(), request, proxy.getConnection());
+            HazelcastClientInstanceImpl client = transactionContext.getClient();
+            ClientConnection connection = transactionContext.getConnection();
+            ClientInvocation invocation = new ClientInvocation(client, request, connection);
             Future<ClientMessage> future = invocation.invoke();
             return future.get();
         } catch (Exception e) {
@@ -48,7 +52,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     }
 
     protected String getTransactionId() {
-        return proxy.getTxnId();
+        return transactionContext.getTxnId();
     }
 
     abstract void onDestroy();
@@ -71,10 +75,10 @@ abstract class ClientTxnProxy implements TransactionalObject {
     }
 
     Data toData(Object obj) {
-        return proxy.getClient().getSerializationService().toData(obj);
+        return transactionContext.getClient().getSerializationService().toData(obj);
     }
 
     Object toObject(Data data) {
-        return proxy.getClient().getSerializationService().toObject(data);
+        return transactionContext.getClient().getSerializationService().toObject(data);
     }
 }
