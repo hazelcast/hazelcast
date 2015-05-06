@@ -11,11 +11,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,6 +19,12 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -59,9 +60,8 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
                 } catch (Exception e) {
                     exception = e;
                 }
-                assertNotNull(exception);
+                assertNotNull("Exception not propagated to client", exception);
                 assertEquals(ClassCastException.class, exception.getClass());
-
             }
         });
     }

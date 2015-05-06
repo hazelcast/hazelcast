@@ -48,7 +48,7 @@ public final class IterableUtil {
     }
 
     /** Transform the Iterator by applying a function to each element  **/
-    private static <T, R> Iterator<R> map(final Iterator<T> iterator, final IFunction<T, R> mapper) {
+    public static <T, R> Iterator<R> map(final Iterator<T> iterator, final IFunction<T, R> mapper) {
         return new Iterator<R>() {
             @Override
             public boolean hasNext() {
@@ -67,9 +67,32 @@ public final class IterableUtil {
         };
     }
 
+    public static <T, R> Iterator<R> limit(final Iterator<R> iterator, final int limit) {
+        return new Iterator<R>() {
+            private int iterated;
+
+            @Override
+            public boolean hasNext() {
+                return iterated < limit && iterator.hasNext();
+            }
+
+            @Override
+            public R next() {
+                iterated++;
+                return iterator.next();
+            }
+
+            @Override
+            public void remove() {
+                iterator.remove();
+            }
+        };
+    }
+
     /** Return empty Iterable if argument is null **/
     public static <T> Iterable<T> nullToEmpty(Iterable<T> iterable) {
         return iterable == null ? Collections.<T>emptyList() : iterable;
     }
+
 
 }

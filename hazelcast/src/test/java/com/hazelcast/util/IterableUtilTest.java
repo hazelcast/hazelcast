@@ -27,6 +27,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,6 +53,15 @@ public class IterableUtilTest {
         for(Integer i : numbers) {
             assertEquals(i.toString(), iter.next());
         }
+    }
+
+    @Test
+    public void testUpToNElement_whenIteratorLimited() throws Exception {
+        Iterator<Integer> limitedIterator = IterableUtil.limit(numbers.iterator(), 2);
+
+        assertEquals(Integer.valueOf(1), limitedIterator.next());
+        assertEquals(Integer.valueOf(2), limitedIterator.next());
+        assertFalse( limitedIterator.hasNext() );
     }
 
     @Test

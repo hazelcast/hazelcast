@@ -18,14 +18,12 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventFilter;
@@ -33,6 +31,7 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -218,18 +217,6 @@ class MapServiceContextImpl implements MapServiceContext {
             partitions = Collections.emptySet();
         }
         ownedPartitions.set(Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions)));
-    }
-
-    @Override
-    public boolean isOwnedKey(Data key) {
-        InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        Integer partitionId = partitionService.getPartitionId(key);
-        try {
-            Address owner = partitionService.getPartitionOwnerOrWait(partitionId);
-            return nodeEngine.getThisAddress().equals(owner);
-        } catch (InterruptedException e) {
-            throw new HazelcastException(e);
-        }
     }
 
     @Override

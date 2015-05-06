@@ -115,6 +115,7 @@ public class LoadAllTest extends HazelcastTestSupport {
         populateMap(map, itemCount);
         map.evictAll();
         map.putTransient(0, -1, 0, SECONDS);
+
         map.loadAll(false);
 
         assertEquals(itemCount, map.size());

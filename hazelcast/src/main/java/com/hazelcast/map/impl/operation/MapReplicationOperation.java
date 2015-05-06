@@ -83,7 +83,6 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
         readDelayedEntries(container);
     }
 
-
     private void readDelayedEntries(PartitionContainer container) {
         delayedEntries = new HashMap<String, Collection<DelayedEntry>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
@@ -111,6 +110,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
                 recordStore.reset();
+
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
@@ -119,8 +119,6 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
                 }
-                recordStore.setLoaded(true);
-
             }
         }
         for (Entry<String, Collection<DelayedEntry>> entry : delayedEntries.entrySet()) {

@@ -16,15 +16,16 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -37,12 +38,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -170,13 +176,28 @@ public class FutureUtilTest extends HazelcastTestSupport {
         assertTrue(throwable.getCause() instanceof SpecialRuntimeException);
     }
 
-
     @Test(expected = TransactionTimedOutException.class)
     public void testTransactionTimedOutExceptionHandler() throws Exception {
         final ExceptionHandler exceptionHandler = FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
         final Throwable throwable = new TimeoutException();
 
         exceptionHandler.handleException(throwable);
+    }
+
+    @Test
+    public void testAllDone_whenAllFuturesCompleted() {
+        Collection<Future> futures = Arrays.asList((Future) new CompletedFuture(null, null, null));
+        assertTrue(FutureUtil.allDone(futures));
+
+        futures = Arrays.asList((Future) new UncancellableFuture());
+        assertFalse(FutureUtil.allDone(futures));
+    }
+
+    @Test(expected = InterruptedException.class)
+    public void testgetAllDoneThrowsException_whenSomeFutureHasException() throws Exception {
+        InterruptedException exception = new InterruptedException();
+        Collection<Future> futures = Arrays.asList((Future) new CompletedFuture(null, exception, null));
+        FutureUtil.checkAllDone(futures);
     }
 
     private static final class ExceptionCollector implements ExceptionHandler {
@@ -287,4 +308,27 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
     }
 
+    private static class UncancellableFuture<V> extends AbstractCompletableFuture<V> {
+
+        public UncancellableFuture() {
+            super(null, null);
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public V get(long timeout, TimeUnit unit) throws InterruptedException,
+                ExecutionException, TimeoutException {
+            return null;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+    }
 }

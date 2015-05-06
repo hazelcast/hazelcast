@@ -84,14 +84,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void reloadOwnedPartitions();
 
-    /**
-     * Check if key belongs on partitions of the this node
-     *
-     * @param key key to be queried.
-     * @return true if this node owns the key
-     */
-    boolean isOwnedKey(Data key);
-
     AtomicInteger getWriteBehindQueueItemCounter();
 
     ExpirationManager getExpirationManager();
