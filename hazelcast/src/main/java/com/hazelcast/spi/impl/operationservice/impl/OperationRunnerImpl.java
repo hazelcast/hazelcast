@@ -36,6 +36,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -223,7 +224,12 @@ class OperationRunnerImpl extends OperationRunner {
         if (responseHandler == null) {
             throw new IllegalStateException("ResponseHandler should not be null! " + op);
         }
-        responseHandler.sendResponse(op, response);
+
+        try {
+            responseHandler.sendResponse(op, response);
+        } catch (ResponseAlreadySentException e) {
+            logOperationError(op, e);
+        }
     }
 
     private void afterRun(Operation op) {
