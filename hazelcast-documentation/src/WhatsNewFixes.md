@@ -5,10 +5,13 @@
 
 This section lists issues solved for **Hazelcast 3.5** release.
 
-
+- The test for unbounded return values runs forever with the new client implementation [[#5230]](https://github.com/hazelcast/hazelcast/issues/5230).
+- The method `putTransient` actuated the MapStore unexpectedly in an environment with multiple instances [[#5225]](https://github.com/hazelcast/hazelcast/issues/5225).
+- The method `removeAttribute` will prevent any updates by the method `setAttribute` in the deferred write mode [[#5186]](https://github.com/hazelcast/hazelcast/issues/5186).
+- Backward compatibility of eviction configuration for cache is broken since `CacheEvictionConfig` class was renamed to `EvictionConfig` for general usage [[#5180]](https://github.com/hazelcast/hazelcast/issues/5180).
 - When host names are not registered in DNS or in `/etc/hosts` and the members are configured manually with IP addresses and while one node is running, a second node joins to the cluster 5 minutes after it started [[#5072]](https://github.com/hazelcast/hazelcast/issues/5072).
 - The `SlowOperationDTO.operation` shows only the class name, not the package. This can lead to ambiguity and the actual class cannot be tracked [[#5041]](https://github.com/hazelcast/hazelcast/issues/5041).
-- There is no documentation comment for the MessageListener interface of ITopic [[#5019]](https://github.com/hazelcast/hazelcast/issues/5019).
+- There is no documentation comment for the `MessageListener` interface of ITopic [[#5019]](https://github.com/hazelcast/hazelcast/issues/5019).
 - The method `InvocationFuture.isDone` returns `true` as soon as there is a response including `WAIT_RESPONSE`. However, `WAIT_RESPONSE` is an intermediate response, not a final one [[#5002]](https://github.com/hazelcast/hazelcast/issues/5002).
 - The method `InvocationFuture.andThen` does not deal with the null response correctly [[#5001]](https://github.com/hazelcast/hazelcast/issues/5001).
 - `CacheCreationTest` fails due to the multiple `TestHazelcastInstanceFactory` creations in the same test [[#4987]](https://github.com/hazelcast/hazelcast/issues/4987).

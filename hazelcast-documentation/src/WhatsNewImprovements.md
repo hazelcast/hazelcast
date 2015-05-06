@@ -10,6 +10,7 @@ This section lists the enhancements performed for Hazelcast 3.5 release.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers.
  
+- Since near cache is not supported as embedded but only at client, at the moment, there is no need for `NearCacheConfig` in `CacheConfig` [[5215]](https://github.com/hazelcast/hazelcast/issues/5215).
 - `SlowOperationDetector` should have an option to not to log the stacktraces to the log file. There is no need to have the stacktraces written to the normal log file if the Hazelcast Management Center or the performance monitor is being used [[5043]](https://github.com/hazelcast/hazelcast/issues/5043).
 - There are no Spring tags available for Native Memory configuration [[4772]](https://github.com/hazelcast/hazelcast/issues/4772).
 - In the class `BasicInvocationFuture`, there is no need to create an additional `AtomicInteger` object. It should be
