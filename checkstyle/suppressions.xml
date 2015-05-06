@@ -49,6 +49,7 @@
 
     <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
+    <suppress checks="JavadocPackage" files="[\\/]impl[\\/]"/>
 
     <!-- Cluster -->
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
@@ -125,7 +126,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
-
+    <suppress checks="MethodLength" files="com.hazelcast.config.XmlConfigBuilder"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>

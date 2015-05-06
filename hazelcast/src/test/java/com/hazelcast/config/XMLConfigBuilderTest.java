@@ -23,6 +23,7 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -257,6 +258,36 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
     }
+
+    @Test
+    public void readReliableTopic() {
+        String xml =
+                "<hazelcast>\n" +
+                        "    <reliable-topic name=\"custom\">\n" +
+                        "           <read-batch-size>35</read-batch-size>\n" +
+                        "           <statistics-enabled>false</statistics-enabled>\n" +
+                        "           <topic-overload-policy>DISCARD_OLDEST</topic-overload-policy>\n" +
+                        "           <message-listeners>" +
+                        "               <message-listener>MessageListenerImpl</message-listener>" +
+                        "           </message-listeners>" +
+                        "    </reliable-topic>\n" +
+                        "</hazelcast>";
+
+        Config config = buildConfig(xml);
+
+        ReliableTopicConfig topicConfig = config.getReliableTopicConfig("custom");
+
+        assertEquals(35, topicConfig.getReadBatchSize());
+        assertFalse(topicConfig.isStatisticsEnabled());
+        assertEquals(TopicOverloadPolicy.DISCARD_OLDEST, topicConfig.getTopicOverloadPolicy());
+
+        // checking listener configuration
+        assertEquals(1, topicConfig.getMessageListenerConfigs().size());
+        ListenerConfig listenerConfig = topicConfig.getMessageListenerConfigs().get(0);
+        assertEquals("MessageListenerImpl", listenerConfig.getClassName());
+        assertNull(listenerConfig.getImplementation());
+    }
+
 
     @Test
     public void readRingbuffer() {

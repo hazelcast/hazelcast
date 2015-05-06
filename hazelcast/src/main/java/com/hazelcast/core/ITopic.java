@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.topic.TopicOverloadException;
 
 /**
  * Hazelcast provides distribution mechanism for publishing messages that are delivered to multiple subscribers,
@@ -46,6 +47,8 @@ public interface ITopic<E> extends DistributedObject {
      * Publishes the message to all subscribers of this topic
      *
      * @param message the message to publish to all subscribers of this topic
+     * @throws TopicOverloadException if the consumer is too slow. Only works in combination with
+     *                                                   reliable topic.
      */
     void publish(E message);
 

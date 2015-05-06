@@ -224,6 +224,12 @@
         <async-backup-count>0</async-backup-count>
     </semaphore>
 
+    <reliable-topic name="default">
+        <read-batch-size>10</read-batch-size>
+        <topic-overload-policy>BLOCK</topic-overload-policy>
+        <statistics-enabled>true</statistics-enabled>
+    </reliable-topic>
+    
     <ringbuffer name="default">
         <capacity>10000</capacity>
         <backup-count>1</backup-count>

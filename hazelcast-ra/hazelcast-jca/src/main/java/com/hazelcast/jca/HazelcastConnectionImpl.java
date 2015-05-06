@@ -153,6 +153,11 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     }
 
     @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getHazelcastInstance().getReliableTopic(name);
+    }
+
+    @Override
     public <E> ISet<E> getSet(String name) {
         return getHazelcastInstance().getSet(name);
     }

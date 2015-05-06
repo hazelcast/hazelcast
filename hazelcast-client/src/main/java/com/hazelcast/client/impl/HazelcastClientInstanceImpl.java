@@ -284,6 +284,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public <E> ISet<E> getSet(String name) {
         return getDistributedObject(SetService.SERVICE_NAME, name);
     }

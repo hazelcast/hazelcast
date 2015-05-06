@@ -653,6 +653,10 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertTrueFiveSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 5);
+    }
+
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
         for (int k = 0; k < durationSeconds; k++) {
             try {

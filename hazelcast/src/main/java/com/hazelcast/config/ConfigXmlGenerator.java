@@ -115,6 +115,8 @@ public class ConfigXmlGenerator {
 
         listenerXmlGenerator(xml, config);
 
+        reliableTopicXmlGenerator(xml, config);
+
         xml.append("</hazelcast>");
 
         return format(xml.toString(), INDENT);
@@ -183,6 +185,30 @@ public class ConfigXmlGenerator {
             xml.append("</topic>");
         }
     }
+
+    private void reliableTopicXmlGenerator(StringBuilder xml, Config config) {
+        final Collection<ReliableTopicConfig> tCfgs = config.getReliableTopicConfigs().values();
+        for (ReliableTopicConfig t : tCfgs) {
+            xml.append("<reliable-topic name=\"").append(t.getName()).append("\">");
+            xml.append("<read-batch-size>").append(t.getReadBatchSize()).append("</read-batch-size>");
+            xml.append("<statistics-enabled>").append(t.isStatisticsEnabled()).append("</statistics-enabled>");
+            xml.append("<topic-overload-policy>").append(t.getTopicOverloadPolicy().name()).append("</topic-overload-policy>");
+
+            if (!t.getMessageListenerConfigs().isEmpty()) {
+                xml.append("<message-listeners>");
+                for (ListenerConfig lc : t.getMessageListenerConfigs()) {
+                    xml.append("<message-listener>");
+                    final String clazz = lc.getImplementation()
+                            != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
+                    xml.append("</message-listener>");
+                }
+                xml.append("</message-listeners>");
+            }
+            xml.append("</reliable-topic>");
+        }
+    }
+
 
     private void multiMapXmlGenerator(StringBuilder xml, Config config) {
         final Collection<MultiMapConfig> mmCfgs = config.getMultiMapConfigs().values();

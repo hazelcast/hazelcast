@@ -48,6 +48,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class RingbufferService implements ManagedService, RemoteService, MigrationAwareService {
 
     /**
+     * Prefix of ringbuffers that are created for topics. Using a prefix prevents users accidentally retrieving the ringbuffer.
+     */
+    public static final String TOPIC_RB_PREFIX = "_hz_rb_";
+
+    /**
      * The name of the {@link RingbufferService}.
      */
     public static final String SERVICE_NAME = "hz:impl:ringbufferService";
@@ -67,7 +72,8 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        return new RingbufferProxy(nodeEngine, this, objectName);
+        RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
+        return new RingbufferProxy(nodeEngine, this, objectName, ringbufferConfig);
     }
 
     @Override
@@ -154,11 +160,15 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
             return ringbuffer;
         }
 
-        Config config = nodeEngine.getConfig();
-        RingbufferConfig ringbufferConfig = config.getRingbufferConfig(name);
-        ringbuffer = new RingbufferContainer(ringbufferConfig, nodeEngine.getSerializationService());
+        RingbufferConfig ringbufferConfig = getRingbufferConfig(name);
+        ringbuffer = new RingbufferContainer(name, ringbufferConfig, nodeEngine.getSerializationService());
         containers.put(name, ringbuffer);
         return ringbuffer;
+    }
+
+    private RingbufferConfig getRingbufferConfig(String name) {
+        Config config = nodeEngine.getConfig();
+        return config.getRingbufferConfig(getConfigName(name));
     }
 
     public void addRingbuffer(String name, RingbufferContainer ringbuffer) {
@@ -168,4 +178,12 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
         ringbuffer.init(nodeEngine);
         containers.put(name, ringbuffer);
     }
+
+    private static String getConfigName(String name) {
+        if (name.startsWith(TOPIC_RB_PREFIX)) {
+            name = name.substring(TOPIC_RB_PREFIX.length());
+        }
+        return name;
+    }
+
 }

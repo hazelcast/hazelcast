@@ -71,6 +71,8 @@ public class Config {
 
     private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
+    private final Map<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<String, ReliableTopicConfig>();
+
     private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
 
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
@@ -604,6 +606,44 @@ public class Config {
         return this;
     }
 
+    public ReliableTopicConfig findReliableTopicConfig(String name) {
+        String baseName = getBaseName(name);
+        ReliableTopicConfig config = lookupByPattern(reliableTopicConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getReliableTopicConfig("default").getAsReadOnly();
+    }
+
+    public ReliableTopicConfig getReliableTopicConfig(String name) {
+        String baseName = getBaseName(name);
+        ReliableTopicConfig config = lookupByPattern(reliableTopicConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        ReliableTopicConfig defConfig = reliableTopicConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ReliableTopicConfig("default");
+            addReliableTopicConfig(defConfig);
+        }
+        config = new ReliableTopicConfig(defConfig, name);
+        addReliableTopicConfig(config);
+        return config;
+    }
+
+    /**
+     * @return the reliable topic configs
+     */
+    public Map<String, ReliableTopicConfig> getReliableTopicConfigs() {
+        return reliableTopicConfigs;
+    }
+
+    public Config addReliableTopicConfig(ReliableTopicConfig topicConfig) {
+        reliableTopicConfigs.put(topicConfig.getName(), topicConfig);
+        return this;
+    }
+
+
     /**
      * @return the topicConfigs
      */
@@ -1045,6 +1085,7 @@ public class Config {
         sb.append(", networkConfig=").append(networkConfig);
         sb.append(", mapConfigs=").append(mapConfigs);
         sb.append(", topicConfigs=").append(topicConfigs);
+        sb.append(", reliableTopicConfigs=").append(reliableTopicConfigs);
         sb.append(", queueConfigs=").append(queueConfigs);
         sb.append(", multiMapConfigs=").append(multiMapConfigs);
         sb.append(", executorConfigs=").append(executorConfigs);

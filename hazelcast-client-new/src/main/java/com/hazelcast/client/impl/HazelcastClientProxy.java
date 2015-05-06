@@ -93,6 +93,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     }
 
     @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getClient().getReliableTopic(name);
+    }
+
+    @Override
     public <E> ISet<E> getSet(String name) {
         return getClient().getSet(name);
     }

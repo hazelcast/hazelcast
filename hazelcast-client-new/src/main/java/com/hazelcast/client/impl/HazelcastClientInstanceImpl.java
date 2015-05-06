@@ -83,10 +83,12 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -183,11 +185,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
             c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
         }
         return c;
-    }
-
-    @Override
-    public <E> Ringbuffer<E> getRingbuffer(String name) {
-        throw new UnsupportedOperationException();
     }
 
     private ClientInvocationService initInvocationService() {
@@ -326,11 +323,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
+    }
+
+    @Override
     @Deprecated
     public ILock getLock(Object key) {
         //this method will be deleted in the near future.
         String name = LockProxy.convertToStringKey(key, serializationService);
         return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
 
     @Override
