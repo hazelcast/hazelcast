@@ -33,7 +33,6 @@ import java.util.List;
 public final class TestUtil {
 
     static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-
     private TestUtil() {
     }
 
