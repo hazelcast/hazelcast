@@ -71,6 +71,10 @@ final class OperationBackupHandler {
             syncBackups = 0;
         }
 
+        if (syncBackups + asyncBackups == 0) {
+            return 0;
+        }
+
         return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups);
     }
 
@@ -150,16 +154,7 @@ final class OperationBackupHandler {
         InternalPartitionService partitionService = node.getPartitionService();
         InternalPartition partition = partitionService.getPartition(partitionId);
 
-        Operation backupOp = backupAwareOp.getBackupOperation();
-        if (backupOp == null) {
-            throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
-        }
-        Operation op = (Operation) backupAwareOp;
-        // set service name of backup operation.
-        // if getServiceName() method is overridden to return the same name
-        // then this will have no effect.
-        backupOp.setServiceName(op.getServiceName());
-        Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
+        Data backupOpData = getBackupOperationData(backupAwareOp);
 
         for (int replicaIndex = 1; replicaIndex <= syncBackups + asyncBackups; replicaIndex++) {
             Address target = partition.getReplicaAddress(replicaIndex);
@@ -181,6 +176,19 @@ final class OperationBackupHandler {
         }
 
         return sendSyncBackups;
+    }
+
+    private Data getBackupOperationData(BackupAwareOperation backupAwareOp) {
+        Operation backupOp = backupAwareOp.getBackupOperation();
+        if (backupOp == null) {
+            throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
+        }
+        Operation op = (Operation) backupAwareOp;
+        // set service name of backup operation.
+        // if getServiceName() method is overridden to return the same name
+        // then this will have no effect.
+        backupOp.setServiceName(op.getServiceName());
+        return nodeEngine.getSerializationService().toData(backupOp);
     }
 
     private Backup newBackup(BackupAwareOperation backupAwareOp, Data backupOpData, long[] replicaVersions,
