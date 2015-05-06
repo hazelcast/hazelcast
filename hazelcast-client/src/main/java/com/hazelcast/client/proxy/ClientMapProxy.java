@@ -470,7 +470,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        return tryLock(key, time, timeunit, Long.MAX_VALUE, null);
+        return tryLock(key, time, timeunit, -1, null);
     }
 
     @Override

@@ -84,11 +84,12 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public void lock() {
-        lock(Long.MAX_VALUE, null);
+        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), -1, -1);
+        invoke(request);
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), Long.MAX_VALUE, -1);
+        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), -1, -1);
         invokeInterruptibly(request, getKeyData());
     }
 
@@ -101,7 +102,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
-        return tryLock(timeout, unit, Long.MAX_VALUE, null);
+        return tryLock(timeout, unit, -1, null);
     }
 
     @Override

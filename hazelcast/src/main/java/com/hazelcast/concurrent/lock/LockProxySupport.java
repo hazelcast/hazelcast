@@ -36,9 +36,11 @@ import static com.hazelcast.util.ThreadUtil.getThreadId;
 public final class LockProxySupport {
 
     private final ObjectNamespace namespace;
+    private final long maxLeaseTimeInMillis;
 
-    public LockProxySupport(ObjectNamespace namespace) {
+    public LockProxySupport(ObjectNamespace namespace, long maxLeaseTimeInMillis) {
         this.namespace = namespace;
+        this.maxLeaseTimeInMillis = maxLeaseTimeInMillis;
     }
 
     public boolean isLocked(NodeEngine nodeEngine, Data key) {
@@ -74,8 +76,10 @@ public final class LockProxySupport {
         lock(nodeEngine, key, -1);
     }
 
-    public void lock(NodeEngine nodeEngine, Data key, long ttl) {
-        LockOperation operation = new LockOperation(namespace, key, getThreadId(), ttl, -1);
+    public void lock(NodeEngine nodeEngine, Data key, long leaseTime) {
+        leaseTime = getLeaseTime(leaseTime);
+
+        LockOperation operation = new LockOperation(namespace, key, getThreadId(), leaseTime, -1);
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
         if (!f.getSafely()) {
             throw new IllegalStateException();
@@ -86,14 +90,27 @@ public final class LockProxySupport {
         lockInterruptly(nodeEngine, key, -1);
     }
 
-    public void lockInterruptly(NodeEngine nodeEngine, Data key, long ttl) throws InterruptedException {
-        LockOperation operation = new LockOperation(namespace, key, getThreadId(), ttl, -1);
+    public void lockInterruptly(NodeEngine nodeEngine, Data key, long leaseTime) throws InterruptedException {
+        leaseTime = getLeaseTime(leaseTime);
+
+        LockOperation operation = new LockOperation(namespace, key, getThreadId(), leaseTime, -1);
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
         try {
             f.get();
         } catch (Throwable t) {
             throw rethrowAllowInterrupted(t);
         }
+    }
+
+    private long getLeaseTime(long leaseTime) {
+        if (leaseTime > maxLeaseTimeInMillis) {
+            throw new IllegalArgumentException("Max allowed lease time: " + maxLeaseTimeInMillis + "ms. "
+                    + "Given lease time: " + leaseTime + "ms.");
+        }
+        if (leaseTime < 0) {
+            leaseTime = maxLeaseTimeInMillis;
+        }
+        return leaseTime;
     }
 
     public boolean tryLock(NodeEngine nodeEngine, Data key) {
