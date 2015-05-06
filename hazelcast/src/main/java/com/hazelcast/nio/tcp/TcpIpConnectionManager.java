@@ -467,7 +467,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public synchronized void shutdown() {
-        live = false;
         shutdownSocketAcceptor();
         closeServerSocket();
         stop();
