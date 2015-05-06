@@ -4,3 +4,8 @@ Required packages:
 - Bfdocs: http://beautifuldocs.com
 - Pandoc: http://johnmacfarlane.net/pandoc/installing.html
 - BasicTeX: http://www.tug.org/mactex/morepackages.html
+
+Installation with Ubuntu:
+
+- sudo apt-get install nodejs nodejs-legacy npm pandoc texlive
+- sudo npm install -g beautiful-docs
