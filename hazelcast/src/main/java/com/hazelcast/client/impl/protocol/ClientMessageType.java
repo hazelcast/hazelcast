@@ -130,7 +130,9 @@ public enum ClientMessageType {
 
     XA_TRANSACTION_COLLECT(49),
 
-    XA_TRANSACTION_FINALIZE(50);
+    XA_TRANSACTION_FINALIZE(50),
+
+    XA_TRANSACTION_CLEAR(51);
 
     private final int id;
 

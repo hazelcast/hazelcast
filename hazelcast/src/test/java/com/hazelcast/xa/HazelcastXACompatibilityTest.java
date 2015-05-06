@@ -145,9 +145,12 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         transactionContext.rollbackTransaction();
     }
 
+    private void recover(XAResource xaResource) throws XAException {
+        xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
+    }
+
     @Test
     public void testCommitConcurrently() throws InterruptedException, XAException {
-
         int count = 10000;
         String name = randomString();
         ExecutorService executorService = Executors.newFixedThreadPool(5);
@@ -158,10 +161,6 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         }
         IMap<Object, Object> map = instance.getMap(name);
         assertSizeEventually(count, map);
-    }
-
-    private void recover(XAResource xaResource) throws XAException {
-        xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
     }
 
     static class XATransactionRunnable implements Runnable {

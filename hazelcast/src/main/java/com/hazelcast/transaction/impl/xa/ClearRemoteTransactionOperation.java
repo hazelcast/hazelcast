@@ -18,6 +18,7 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
@@ -25,20 +26,22 @@ import java.io.IOException;
 
 public class ClearRemoteTransactionOperation extends Operation implements BackupAwareOperation {
 
-    private SerializableXID xid;
+    private Data xidData;
 
+    private transient SerializableXID xid;
     private transient boolean returnsResponse = true;
 
     public ClearRemoteTransactionOperation() {
     }
 
-    public ClearRemoteTransactionOperation(SerializableXID xid) {
-        this.xid = xid;
+    public ClearRemoteTransactionOperation(Data xidData) {
+        this.xidData = xidData;
     }
 
     @Override
     public void beforeRun() throws Exception {
         returnsResponse = false;
+        xid = getNodeEngine().toObject(xidData);
     }
 
     @Override
@@ -54,7 +57,7 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return returnsResponse;
     }
 
     @Override
@@ -89,11 +92,11 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeObject(xid);
+        out.writeData(xidData);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        xid = in.readObject();
+        xidData = in.readData();
     }
 }

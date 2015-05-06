@@ -40,6 +40,7 @@ public class ClientTxnPortableHook implements PortableHook {
     public static final int ROLLBACK_XA = 7;
     public static final int FINALIZE_XA = 8;
     public static final int COLLECT_XA = 9;
+    public static final int CLEAR_XA = 10;
 
     @Override
     public int getFactoryId() {
@@ -69,6 +70,8 @@ public class ClientTxnPortableHook implements PortableHook {
                         return new FinalizeXATransactionRequest();
                     case COLLECT_XA:
                         return new CollectXATransactionsRequest();
+                    case CLEAR_XA:
+                        return new ClearRemoteTransactionRequest();
                     default:
                         return null;
                 }

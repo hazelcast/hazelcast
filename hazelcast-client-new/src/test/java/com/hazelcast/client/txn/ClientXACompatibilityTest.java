@@ -4,8 +4,10 @@ import com.atomikos.datasource.xa.XID;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -20,20 +22,17 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientXACompatibilityTest {
-
-    private static String createTid() throws InterruptedException {
-        // wait a few millis to ensure uniqueness among subsequent calls
-        Thread.sleep(10);
-        return String.valueOf(System.currentTimeMillis());
-    }
+public class ClientXACompatibilityTest extends HazelcastTestSupport {
 
     private static Xid createXid() throws InterruptedException {
-        return new XID(createTid(), "test");
+        return new XID(randomString(), "test");
     }
 
     private HazelcastInstance instance, secondInstance, client, secondClient;
@@ -189,5 +188,62 @@ public class ClientXACompatibilityTest {
         xaResource.start(xid, XAResource.TMNOFLAGS);
         TransactionContext transactionContext = xaResource.getTransactionContext();
         transactionContext.rollbackTransaction();
+    }
+
+    @Test
+    public void testCommitConcurrently() throws InterruptedException, XAException {
+        int count = 10000;
+        String name = randomString();
+        ExecutorService executorService = Executors.newFixedThreadPool(5);
+        ExecutorService executorServiceForCommit = Executors.newFixedThreadPool(5);
+        for (int i = 0; i < count; i++) {
+            XATransactionRunnable runnable = new XATransactionRunnable(xaResource, name, executorServiceForCommit, i);
+            executorService.execute(runnable);
+        }
+        IMap<Object, Object> map = client.getMap(name);
+        assertSizeEventually(count, map);
+    }
+
+    static class XATransactionRunnable implements Runnable {
+
+        HazelcastXAResource xaResource;
+
+        String name;
+
+        ExecutorService executorServiceForCommit;
+
+        int i;
+
+        public XATransactionRunnable(HazelcastXAResource xaResource, String name,
+                                     ExecutorService executorServiceForCommit, int i) {
+            this.xaResource = xaResource;
+            this.name = name;
+            this.executorServiceForCommit = executorServiceForCommit;
+            this.i = i;
+        }
+
+        @Override
+        public void run() {
+            try {
+                final Xid xid = createXid();
+                xaResource.start(xid, XAResource.TMNOFLAGS);
+                TransactionContext context = xaResource.getTransactionContext();
+                TransactionalMap<Object, Object> map = context.getMap(name);
+                map.put(i, i);
+                xaResource.end(xid, XAResource.TMSUCCESS);
+                executorServiceForCommit.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            xaResource.commit(xid, true);
+                        } catch (XAException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

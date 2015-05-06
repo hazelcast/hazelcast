@@ -91,8 +91,8 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         }
     }
 
-    public TransactionContext newXaTransactionContext(Xid xid, int defaultTimeout) {
-        return new XATransactionContextProxy(this, xid, defaultTimeout);
+    public TransactionContext newXATransactionContext(Xid xid, int timeoutInSeconds) {
+        return new XATransactionContextProxy(this, xid, timeoutInSeconds);
     }
 
     public void shutdown() {

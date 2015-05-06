@@ -18,43 +18,47 @@ package com.hazelcast.transaction.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
-import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.TransactionPermission;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.impl.xa.SerializableXID;
-import com.hazelcast.transaction.impl.xa.TransactionAccessor;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.xa.ClearRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.io.IOException;
 import java.security.Permission;
 
-public class CreateXATransactionRequest extends CallableClientRequest implements SecureRequest {
+public class ClearRemoteTransactionRequest extends CallableClientRequest {
 
-    SerializableXID xid;
+    private static final int TRY_COUNT = 100;
 
-    int timeout;
+    Data xidData;
 
-    public CreateXATransactionRequest() {
+    public ClearRemoteTransactionRequest() {
     }
 
-    public CreateXATransactionRequest(SerializableXID xid, int timeout) {
-        this.xid = xid;
-        this.timeout = timeout;
+    public ClearRemoteTransactionRequest(Data xidData) {
+        this.xidData = xidData;
     }
 
     @Override
     public Object call() throws Exception {
+        int partitionId = getClientEngine().getPartitionService().getPartitionId(xidData);
         ClientEndpoint endpoint = getEndpoint();
-        XAService xaService = getService();
-        TransactionContext context = xaService.newXATransactionContext(xid, timeout);
-        TransactionAccessor.getTransaction(context).begin();
-        endpoint.setTransactionContext(context);
-        return context.getTxnId();
+        Operation op = new ClearRemoteTransactionOperation(xidData);
+        op.setCallerUuid(endpoint.getUuid());
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId)
+                .setTryCount(TRY_COUNT)
+                .setResultDeserialized(false);
+
+        builder.invoke();
+        return null;
     }
+
 
     @Override
     public String getServiceName() {
@@ -68,7 +72,7 @@ public class CreateXATransactionRequest extends CallableClientRequest implements
 
     @Override
     public int getClassId() {
-        return ClientTxnPortableHook.CREATE_XA;
+        return ClientTxnPortableHook.CLEAR_XA;
     }
 
     @Override
@@ -79,16 +83,14 @@ public class CreateXATransactionRequest extends CallableClientRequest implements
     @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
-        writer.writeInt("t", timeout);
-        ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
-        rawDataOutput.writeObject(xid);
+        ObjectDataOutput out = writer.getRawDataOutput();
+        out.writeData(xidData);
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
-        timeout = reader.readInt("t");
-        ObjectDataInput rawDataInput = reader.getRawDataInput();
-        xid = rawDataInput.readObject();
+        ObjectDataInput in = reader.getRawDataInput();
+        xidData = in.readData();
     }
 }

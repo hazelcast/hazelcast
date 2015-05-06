@@ -80,7 +80,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     public void destroyDistributedObject(String objectName) {
     }
 
-    public TransactionContext newXaTransactionContext(Xid xid, int timeout) {
+    public TransactionContext newXATransactionContext(Xid xid, int timeout) {
         return new XATransactionContextImpl(nodeEngine, xid, null, timeout);
     }
 

@@ -18,38 +18,48 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionCreateResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XATransactionCreateParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.XAClearRemoteTransactionParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.permission.TransactionPermission;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.impl.xa.TransactionAccessor;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.transaction.impl.xa.ClearRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
 
-public class XATransactionCreateMessageTask
-        extends AbstractCallableMessageTask<XATransactionCreateParameters> {
+public class XAClearRemoteTransactionMessageTask extends AbstractCallableMessageTask<XAClearRemoteTransactionParameters> {
 
-    public XATransactionCreateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    private static final int TRY_COUNT = 100;
+
+    public XAClearRemoteTransactionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
-        XAService xaService = getService(getServiceName());
-        TransactionContext context = xaService.newXATransactionContext(parameters.xid, (int) parameters.timeout);
-        TransactionAccessor.getTransaction(context).begin();
-        endpoint.setTransactionContext(context);
-        return TransactionCreateResultParameters.encode(context.getTxnId());
+    protected XAClearRemoteTransactionParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XAClearRemoteTransactionParameters.decode(clientMessage);
     }
 
     @Override
-    protected XATransactionCreateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XATransactionCreateParameters.decode(clientMessage);
+    protected ClientMessage call() throws Exception {
+        InternalOperationService operationService = nodeEngine.getOperationService();
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        ClientEndpoint endpoint = getEndpoint();
+
+        Operation op = new ClearRemoteTransactionOperation(parameters.xidData);
+        op.setCallerUuid(endpoint.getUuid());
+        int partitionId = partitionService.getPartitionId(parameters.xidData);
+
+        InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
+        builder.setTryCount(TRY_COUNT).setResultDeserialized(false);
+        builder.invoke();
+        return VoidResultParameters.encode();
     }
 
     @Override

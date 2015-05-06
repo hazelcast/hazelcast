@@ -32,7 +32,13 @@ public interface ClientTransactionManagerService {
 
     TransactionContext newTransactionContext(TransactionOptions options);
 
-    TransactionContext newXaTransactionContext(Xid xid, int defaultTimeout);
+    /**
+     *
+     * @param xid branch qualifier
+     * @param timeoutInSeconds transaction timeout in seconds
+     * @return
+     */
+    TransactionContext newXATransactionContext(Xid xid, int timeoutInSeconds);
 
     void shutdown();
 

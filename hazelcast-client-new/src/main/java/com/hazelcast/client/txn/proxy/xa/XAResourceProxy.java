@@ -18,6 +18,7 @@ package com.hazelcast.client.txn.proxy.xa;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
+import com.hazelcast.client.impl.protocol.parameters.XAClearRemoteTransactionParameters;
 import com.hazelcast.client.impl.protocol.parameters.XACollectTransactionsParameters;
 import com.hazelcast.client.impl.protocol.parameters.XAFinalizeTransactionParameters;
 import com.hazelcast.client.spi.ClientContext;
@@ -89,7 +90,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     private TransactionContext createTransactionContext(Xid xid) {
         ClientContext clientContext = getContext();
         ClientTransactionManagerService transactionManager = clientContext.getTransactionManager();
-        TransactionContext context = transactionManager.newXaTransactionContext(xid, DEFAULT_TIMEOUT);
+        TransactionContext context = transactionManager.newXATransactionContext(xid, DEFAULT_TIMEOUT);
         getTransaction(context).begin();
         return context;
     }
@@ -146,6 +147,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
             XATransactionProxy transaction = getTransaction(context);
             transaction.commit(onePhase);
         }
+        clearRemoteTransactions(xid);
     }
 
     @Override
@@ -158,6 +160,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         for (TransactionContext context : contexts) {
             getTransaction(context).rollback();
         }
+        clearRemoteTransactions(xid);
     }
 
     private void finalizeTransactionRemotely(Xid xid, boolean isCommit) {
@@ -175,6 +178,16 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         if (contexts == null) {
             throw new XAException("No context with the given xid: " + xid);
         }
+        clearRemoteTransactions(xid);
+    }
+
+    private void clearRemoteTransactions(Xid xid) {
+        SerializableXID serializableXID =
+                new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
+        SerializationService serializationService = getContext().getSerializationService();
+        Data xidData = serializationService.toData(serializableXID);
+        ClientMessage request = XAClearRemoteTransactionParameters.encode(xidData);
+        invoke(request, xidData);
     }
 
     @Override

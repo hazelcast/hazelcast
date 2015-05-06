@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.client.ClearRemoteTransactionRequest;
 import com.hazelcast.transaction.client.CollectXATransactionsRequest;
 import com.hazelcast.transaction.client.FinalizeXATransactionRequest;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -88,7 +89,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     private TransactionContext createTransactionContext(Xid xid) {
         ClientContext clientContext = getContext();
         ClientTransactionManagerService transactionManager = clientContext.getTransactionManager();
-        TransactionContext context = transactionManager.newXaTransactionContext(xid, DEFAULT_TIMEOUT);
+        TransactionContext context = transactionManager.newXATransactionContext(xid, DEFAULT_TIMEOUT);
         getTransaction(context).begin();
         return context;
     }
@@ -145,6 +146,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
             XATransactionProxy transaction = getTransaction(context);
             transaction.commit(onePhase);
         }
+        clearRemoteTransactions(xid);
     }
 
     @Override
@@ -157,6 +159,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         for (TransactionContext context : contexts) {
             getTransaction(context).rollback();
         }
+        clearRemoteTransactions(xid);
     }
 
     private void finalizeTransactionRemotely(Xid xid, boolean isCommit) {
@@ -174,6 +177,16 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         if (contexts == null) {
             throw new XAException("No context with the given xid: " + xid);
         }
+        clearRemoteTransactions(xid);
+    }
+
+    private void clearRemoteTransactions(Xid xid) {
+        SerializableXID serializableXID =
+                new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
+        SerializationService serializationService = getContext().getSerializationService();
+        Data xidData = serializationService.toData(serializableXID);
+        ClearRemoteTransactionRequest request = new ClearRemoteTransactionRequest(xidData);
+        invoke(request, xidData);
     }
 
     @Override

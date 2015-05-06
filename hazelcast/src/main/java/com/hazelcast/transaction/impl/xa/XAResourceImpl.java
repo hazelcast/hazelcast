@@ -99,7 +99,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
 
     private TransactionContext createTransactionContext(Xid xid) {
         XAService xaService = getService();
-        TransactionContext context = xaService.newXaTransactionContext(xid, DEFAULT_TIMEOUT);
+        TransactionContext context = xaService.newXATransactionContext(xid, DEFAULT_TIMEOUT);
         getTransaction(context).begin();
         return context;
     }
@@ -202,8 +202,9 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         OperationService operationService = nodeEngine.getOperationService();
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
-        int partitionId = partitionService.getPartitionId(serializableXID);
-        ClearRemoteTransactionOperation operation = new ClearRemoteTransactionOperation(serializableXID);
+        Data xidData = nodeEngine.toData(serializableXID);
+        int partitionId = partitionService.getPartitionId(xidData);
+        ClearRemoteTransactionOperation operation = new ClearRemoteTransactionOperation(xidData);
         operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
     }
 
