@@ -63,6 +63,8 @@ public final class GarbageCollectionMetricSet {
         metricsRegistry.scanAndRegister(stats, "gc");
     }
 
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_FIELD" })
     static class GcStats implements Runnable {
         @Probe
         volatile long minorCount;
