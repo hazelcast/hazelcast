@@ -29,6 +29,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.EmptyStatement;
 
@@ -86,22 +87,27 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private boolean getPartitions() {
         ClientClusterService clusterService = client.getClientClusterService();
-        Address master = clusterService.getMasterAddress();
-        GetPartitionsResultParameters response = getPartitionsFrom(master);
+        Address ownerAddress = clusterService.getOwnerConnectionAddress();
+        if (ownerAddress == null) {
+            return false;
+        }
+        Connection connection = client.getConnectionManager().getConnection(ownerAddress);
+        GetPartitionsResultParameters response = getPartitionsFrom(connection);
         if (response != null) {
             return processPartitionResponse(response);
         }
         return false;
     }
 
-    private GetPartitionsResultParameters getPartitionsFrom(Address address) {
+    private GetPartitionsResultParameters getPartitionsFrom(Connection connection) {
+        if (connection == null) {
+            return null;
+        }
         try {
             ClientMessage requestMessage = GetPartitionsParameters.encode();
-            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, address).invoke();
+            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, connection).invoke();
             ClientMessage responseMessage = future.get();
-            GetPartitionsResultParameters partitionsResponse = GetPartitionsResultParameters.decode(responseMessage);
-
-            return partitionsResponse;
+            return GetPartitionsResultParameters.decode(responseMessage);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
                 LOGGER.severe("Error while fetching cluster partition table!", e);

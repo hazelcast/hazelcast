@@ -35,9 +35,6 @@ import java.util.Map;
 
 public class GetPartitionsMessageTask extends AbstractCallableMessageTask<GetPartitionsParameters> {
 
-    private static final ClientMessage EMPTY_PARTITIONS
-            = GetPartitionsResultParameters.encode(new Address[0], new int[0]);
-
     public GetPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -63,7 +60,7 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<GetPar
             Address owner = partitions[i].getOwnerOrNull();
             int index = -1;
             if (owner == null) {
-                return EMPTY_PARTITIONS;
+                return GetPartitionsResultParameters.encode(new Address[0], new int[0]);
             }
 
             final Integer idx = addressMap.get(owner);
