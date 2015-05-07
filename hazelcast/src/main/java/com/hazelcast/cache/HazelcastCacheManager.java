@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.core.HazelcastInstance;
+
 import javax.cache.CacheManager;
 
 /**
@@ -25,6 +27,13 @@ import javax.cache.CacheManager;
  */
 public interface HazelcastCacheManager
         extends CacheManager {
+
+    /**
+     +     * Gets the underlying {@link HazelcastInstance} implementation.
+     +     *
+     +     * @return the underlying {@link HazelcastInstance} implementation
+     +     */
+    HazelcastInstance getHazelcastInstance();
 
     /**
      * Destroys cache manager.
