@@ -12,31 +12,33 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 - Cluster Quorum: This feature enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. For more information, please see the Cluster Quorum section.
 
-- Complete Implementation of XA Transactions: ???. 
+- Hazelcast Client Protocol: Starting with 3.5, Hazelcast introduces the support for different versions of clients in a cluster. Please keep in mind that this support is not valid for the releases before 3.5.
 
-- Continuous Query Caching: ???. 
+- Complete Implementation of XA Transactions
 
-- Dynamic Selector Rebalancing: ???.
+- Continuous Query Caching
 
-- Fail Fast on Invalid Configuration: ???. 
+- Dynamic Selector Rebalancing
 
-- Enterprise WAN Replication: ???. 
+- Fail Fast on Invalid Configuration 
 
-- Hazelcast Client Protocol: ???. 
+- Enterprise WAN Replication 
 
-- Increased Visibility of Slow Operations: ???. 
+- Hazelcast Client Protocol
 
-- Listener for Lost Partitions: ???. 
+- Increased Visibility of Slow Operations
 
-- Management of Unbounded Return Values: ???. 
+- Listener for Lost Partitions
 
-- Near Cache for JCache: ???. 
+- Management of Unbounded Return Values
 
-- New License Management Features: ???. 
+- Near Cache for JCache 
 
-- One Listener Interface per Event: ???. 
+- New License Management Features
 
-- Scalable Map Loader: ???. 
+- One Listener Interface per Event
+
+- Scalable Map Loader
 
 
 
