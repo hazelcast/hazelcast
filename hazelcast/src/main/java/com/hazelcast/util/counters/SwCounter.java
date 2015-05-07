@@ -100,8 +100,7 @@ public abstract class SwCounter implements Counter {
 
         @Override
         public void inc() {
-            long newLocalValue = ++localValue;
-            localValue = newLocalValue;
+            long newLocalValue = localValue += 1;
             UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
         }
 
