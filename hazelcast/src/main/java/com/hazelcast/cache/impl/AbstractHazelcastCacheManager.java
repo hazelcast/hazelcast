@@ -135,6 +135,11 @@ public abstract class AbstractHazelcastCacheManager
     }
 
     @Override
+    public HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
+    }
+
+    @Override
     public <K, V, C extends Configuration<K, V>> ICache<K, V> createCache(String cacheName, C configuration)
             throws IllegalArgumentException {
         return createCacheInternal(cacheName, configuration);
