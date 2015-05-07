@@ -104,13 +104,14 @@ _You can download the white paper **Hazelcast on AWS: Best Practices for Deploym
 
 *Please refer to the [WAN Replication Configuration section](#wan-replication-configuration) for a full description of Hazelcast WAN Replication configuration.*
 
-##Enterprise WAN Replication
+## Enterprise WAN Replication
 
 ![](images/enterprise-onlycopy.jpg)
 
 ### Replication implementations
-Enterprise WAN replication has two diffent replication implementations. These are `WanNoDelayReplication` and `WanBatchReplication` implementations.
-You can configure them using configuration property `replication-impl`.
+
+Enterprise WAN replication has two different replication implementations. These are `WanNoDelayReplication` and `WanBatchReplication` implementations.
+You can configure them using the configuration element `replication-impl`, as shown below.
 
 ```xml
 <hazelcast>
@@ -134,19 +135,21 @@ You can configure them using configuration property `replication-impl`.
 </hazelcast>
 ```
 
-`WanNoDelayReplication` sends replication events to target cluster as soon as they are generated. As it's name suggests,
-`WanBatchReplication` waits until a pre-defined number of replication events are generated (Please refer to the [Wan Replication Batch Size Section(#wan-replication-batch-size)])
-or a pre-defined amount of time is passed. (Please refer to the [Wan Replication Batch Frequency Section(#wan-replication-batch-frequency)])
+`WanNoDelayReplication` sends replication events to the target cluster as soon as they are generated. As its name suggests,
+`WanBatchReplication` waits until:
+
+-  a pre-defined number of replication events are generated, (please refer to the [Wan Replication Batch Size section](#wan-replication-batch-size)).
+- or a pre-defined amount of time is passed (please refer to the [Wan Replication Batch Frequency section](#wan-replication-batch-frequency)).
 
 ### WAN Replication Batch Size
 
-When `WanBatchReplication` is preferred as replication implementation, maximum size of events that is sent in a single batch can be changed 
+When `WanBatchReplication` is preferred as the replication implementation, the maximum size of events that are sent in a single batch can be changed 
 depending on your needs. Default value for batch size is `50`.
 
-To change the `WanBatchReplication` batch size, a Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.batch.size`
-configuration property.
+To change the `WanBatchReplication` batch size, the Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.batch.size`
+configuration element.
 
-You can do this by setting the property on the command line (where xxx is the batch size):
+You can do this by setting the property on the command line (where xxx is the batch size),
 
 ```plain
 -Dhazelcast.enterprise.wanrep.batch.size=xxx
@@ -164,15 +167,15 @@ or by setting the properties inside the `hazelcast.xml` (where xxx is the reques
 
 ### WAN Replication Batch Frequency
 
-When `WanBatchReplication`is preferred as replication implementation and the number generated WAN replication events don't reach [[Wan Replication Batch Size (#wan-replication-batch-size)],
-they are sent to target cluster after a certain amount of time is passed.
+When `WanBatchReplication`is preferred as the replication implementation and the number of generated WAN replication events does not reach [Wan Replication Batch Size](#wan-replication-batch-size),
+they are sent to the target cluster after a certain amount of time is passed.
 
 Default value of for this duration is `5` seconds.
 
-To change the `WanBatchReplication` batch sending frequency, a Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.batchfrequency.seconds`
-configuration property.
+To change the `WanBatchReplication` batch sending frequency, the Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.batchfrequency.seconds`
+configuration element.
 
-You can do this by setting the property on the command line (where xxx is the batch sending frequency in seconds):
+You can do this by setting the property on the command line (where xxx is the batch sending frequency in seconds),
 
 ```plain
 -Dhazelcast.enterprise.wanrep.batchfrequency.seconds=xxx
@@ -190,15 +193,15 @@ or by setting the properties inside the `hazelcast.xml` (where xxx is the reques
 
 ### WAN Replication Operation Timeout
 
-After a replication event is sent to target cluster, an acknowledge is waited from target member to be sure that event is reached to target.
-If confirmation is not received in the period of timeout duration, event is resent to target cluster.
+After a replication event is sent to the target cluster, target member waits for an acknowledge to be sure that event is reached to target.
+If confirmation is not received in the period of timeout duration, event is resent to the target cluster.
 
 Default value of for this duration is `5000` milliseconds.
 
-You can change this duration depending on your network latency, a Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.optimeout.millis`
-configuration property to change timeout duration.
+You can change this duration depending on your network latency. The Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.optimeout.millis`
+configuration element to change the timeout duration.
 
-You can do this by setting the property on the command line (where xxx is the timeout duration in milliseconds):
+You can do this by setting the property on the command line (where xxx is the timeout duration in milliseconds),
 
 ```plain
 -Dhazelcast.enterprise.wanrep.optimeout.millis=xxx
@@ -215,14 +218,15 @@ or by setting the properties inside the `hazelcast.xml` (where xxx is the reques
 ``` 
 
 ### WAN Replication Queue Capacity
+
 For huge clusters or high data mutation rates, you might need to increase the replication queue size. The default queue
 size for replication queues is `100000`. This means, if you have heavy put/update/remove rates, you might exceed the queue size
 so that the oldest, not yet replicated, updates might get lost.
  
-To increase the replication queue capacity, a Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queue.capacity`
-configuration property.
+To increase the replication queue capacity, the Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queue.capacity`
+configuration element.
 
-You can do this by setting the property on the command line (where xxx is the queue size):
+You can do this by setting the property on the command line (where xxx is the queue size),
 
 ```plain
 -Dhazelcast.enterprise.wanrep.queue.capacity=xxx
@@ -238,11 +242,11 @@ or by setting the properties inside the `hazelcast.xml` (where xxx is the reques
 </hazelcast>
 ```
 
-### Enterpise WAN Replication Additional Information
+### Enterprise WAN Replication Additional Information
 
-Each cluster in WAN topology has to have a unique `group-name` property for proper handling of forwarded events. 
+Each cluster in WAN topology has to have a unique `group-name` property for a proper handling of forwarded events. 
 
-*Please refer to the [Enterprise WAN Replication Configuration section](#enterprise-wan-replication-configuration) for a full description of Hazelcast WAN Replication configuration.*
+*Please refer to the [WAN Replication Configuration section](#wan-replication-configuration) for a full description of Hazelcast WAN Replication configuration.*
 
 
 
