@@ -232,7 +232,7 @@ Here is the `MapLoader` initialization flow:
 
 #### Incremental Key Loading
 
-If the number of keys to load is large it is more efficient to load them incrementally than loading them all at once. To support incremental loading `MapLoader.loadAllKeys()` returns an `Iterable` which can be lazily populated with results of a database query. Hazelcast will iterate over the iterable and while doing so will send out the keys to their respective owner nodes. The `Iterator` obtained from `MapLoader.loadAllKeys()` may also implement the `Closeable` interface in which case it will be closed once iteration is over. This is intended for releasing resources such as closing a JDBC result set. 
+If the number of keys to load is large, it is more efficient to load them incrementally than loading them all at once. To support incremental loading, `MapLoader.loadAllKeys()` returns an `Iterable` which can be lazily populated with results of a database query. Hazelcast iterates over the iterable and, while doing so, sends out the keys to their respective owner nodes. The `Iterator` obtained from `MapLoader.loadAllKeys()` may also implement the `Closeable` interface in which case it is closed once the iteration is over. This is intended for releasing resources such as closing a JDBC result set. 
 
 #### Forcing All Keys To Be Loaded
 
