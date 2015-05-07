@@ -4,7 +4,7 @@
 
 You may want to set up Hazelcast Simulator on the environments different than your clusters placed on a cloud: for example, your local machines, a test laboratory, etc. In this case, perform the following steps.
 
-1. Copy the `STABILIZER_HOME/conf/simulator.properties` to your working directory.
+1. Copy the `SIMULATOR_HOME/conf/simulator.properties` to your working directory.
 
 2. Edit the `USER` in the `simulator.properties` file if you want to use a different user name than `simulator`.
 

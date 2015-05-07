@@ -67,7 +67,7 @@ to the sudousers list. Also, the public key of your local user is copied to the 
 `~/.ssh/authorized_keys`. You can login to that machine using the following command.
 
 ```
-ssh stabilizer@ip
+ssh simulator@ip
 ```
 
 You can change the name of the created user to something else by setting the `USER=<somename>` property in the file `simulator.properties`. Be careful not to pick a name that is used on the target image: for example, if you use `ec2-user/ubuntu`, and the
