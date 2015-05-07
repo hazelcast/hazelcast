@@ -54,6 +54,7 @@ Chapter 20 - Hazelcast Simulator
 
 Chapter 21 - WAN
 - WAN Replication Queue Capacity: The previous heading title (WAN Replication Queue Size) and the system property name (`hazelcast.enterprise.wanrep.queuesize`) changed to WAN Replication Queue Capacity and `hazelcast.enterprise.wanrep.queue.capacity`.
+- Enterprise WAN Replication added as a new section.
 
 Chapter 22 - Hazelcast Configuration
 - Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
