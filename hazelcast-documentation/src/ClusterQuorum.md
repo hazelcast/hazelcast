@@ -4,9 +4,9 @@ Hazelcast Cluster Quorum enables you to define the minimum number of machines re
 
 When a network partitioning happens, by default Hazelcast chooses to be available. With Cluster Quorum, you can tune your Hazelcast instance towards to achieve better consistency, by rejecting updates with a minimum threshold, this reduces the chance that number of concurrent updates to an entry from two partitioned clusters . Note that the consistency defined here is best effort not full or strong consistency.
 
-By default, Hazelcast invokes a quorum when a change happens on the member list. You can also provide quorum results to the quorum service over the `Quorum` instance and hazelcast can act on them.
+Hazelcast initiates a quorum when a change happens on the member list.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Currently cluster quorum only applies to the Map and Transactional Map, support for other data structures will be added soon.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Currently cluster quorum only applies to the Map and Transactional Map, support for other data structures will be added soon. Also lock methods in the IMap interface does not participate in a quorum.*
 
 
 #### Configuration
@@ -111,46 +111,24 @@ config.addMapConfig(mapConfig);
 
 
 #### Quorum Service
-Quorum service gives an ability to provide quorum results of your own over the `Quorum` instances. With quorum instances, instead of sticking to a fixed size quorum check, you can implement any quorum resolution logic of your own. You just need to notify the result to hazelcast. Hazelcast will allow or reject operations that requires quorum based on the provided quorum result.
-
+Quorum service gives an ability to query quorum results over the `Quorum` instances.
 
 ##### Quorum
 
-Quorum instances let you to provide quorum result of your own to the hazelcast quorum service.
+Quorum instances let you to query quorum result of a particular quorum.
 
 Here is the Quorum interface that you can interact with.
 ```java
 /**
- * {@link Quorum} can be used to notify quorum service for a particular quorum result that originated externally.
+ * {@link Quorum} provides access to the current status of a quorum.
  */
 public interface Quorum {
     /**
-     * Returns latest presence/absence of the quorum.
+     * Returns true if quorum is present, false if absent.
      *
      * @return boolean presence of the quorum
      */
     boolean isPresent();
-
-    /**
-     * Sets given quorum result as the result of the quorum locally.
-     * Quorum aware operations on this node will see this result
-     *
-     * @param presence
-     */
-    void setLocalResult(boolean presence);
-
-    /**
-     * Sets given quorum result as the result of the quorum on all cluster members.
-     * Quorum aware operations on the cluster will see this result
-     * <p/>
-     * Note: This method is not thread-safe. You should be providing quorum results from single place,
-     * If you update quorum state from multiple nodes with different values, you might see inconsistent quorum
-     * states between cluster members.
-     *
-     * @param presence
-     */
-    void setGlobalResult(boolean presence);
-}
 }
 ```
 You can retrieve quorum instance for a particular quorum over the quorum service. An example can be seen below
@@ -172,10 +150,6 @@ HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 QuorumService quorumService = hazelcastInstance.getQuorumService();
 Quorum quorum = quorumService.getQuorum(quorumName);
 
-// from now on you can listen to any event in the cluster that you might be interested, make quorum then notify the hazelcast with the result.
-quorum.setResult(false); // this will reject operations for the particular quorum.
+boolean quorumPresence = quorum.isPresent();
 
 ```
-
-
-Imagine that you have a use case like in your cluster there is a special member which has an ability to make heavy calculations, and if that special member is not present in the cluster you don't want to try processing entries. You can achieve to implement such scenario with quorums.  
