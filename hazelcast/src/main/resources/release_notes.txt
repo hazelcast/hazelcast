@@ -6,37 +6,38 @@ to the full descriptions of the issues at https://github.com/hazelcast/hazelcast
 1. New Features
 This section provides the new features introduced with Hazelcast 3.5 release. 
 
-- Async Back Pressure: The Back Pressure introduced with Hazelcast 3.4 now supports async operations. For more information, please see ???.
+- Async Back Pressure: The Back Pressure introduced with Hazelcast 3.4 now supports async operations.
 
-- Client Configuration Import: ???. For more information, please see ???.
-
-- Client Statistics on Management Center: ???. For more information, please see ???.
+- Client Configuration Import: Hazelcast now supports replacing variables with system properties in the declarative configuration of Hazelcast client. Moreover, now you can compose the Hazelcast client declarative configuration out of smaller configuration snippets. 
 
 - Cluster Quorum: This feature enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. For more information, please see the Cluster Quorum section.
 
-- Complete Implementation of XA Transactions: ???. For more information, please see ???.
+- Complete Implementation of XA Transactions: ???. 
 
-- Continuous Query Caching: ???. For more information, please see ???.
+- Continuous Query Caching: ???. 
 
-- Dynamic Selector Rebalancing: ???. For more information, please see ???.
+- Dynamic Selector Rebalancing: ???.
 
-- Fail Fast on Invalid Configuration: ???. For more information, please see ???.
+- Fail Fast on Invalid Configuration: ???. 
 
-- Enterprise WAN Replication: ???. For more information, please see ???.
+- Enterprise WAN Replication: ???. 
 
-- Hazelcast Client Protocol: ???. For more information, please see ???.
+- Hazelcast Client Protocol: ???. 
 
-- Increased Visibility of Slow Operations: ???. For more information, please see ???.
+- Increased Visibility of Slow Operations: ???. 
 
-- Listener for Lost Partitions: ???. For more information, please see ???.
+- Listener for Lost Partitions: ???. 
 
-- Management of Unbounded Return Values: ???. For more information, please see ???.
+- Management of Unbounded Return Values: ???. 
 
-- Near Cache for JCache: ???. For more information, please see ???.
+- Near Cache for JCache: ???. 
 
-- New License Management Features: ???. For more information, please see ???.
+- New License Management Features: ???. 
 
-- One Listener Interface per Event: ???. For more information, please see ???.
+- One Listener Interface per Event: ???. 
+
+- Scalable Map Loader: ???. 
+
 
 
 2. Enhancements
@@ -49,6 +50,8 @@ This section lists the enhancements performed for Hazelcast 3.5 release.
  
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers.
+
+- Since near cache is not supported as embedded but only at client, at the moment, there is no need for `NearCacheConfig` in `CacheConfig` [#5215].
  
 - `SlowOperationDetector` should have an option to not to log the stacktraces to the log file. There is no need to have the stacktraces written to the normal log file if the Hazelcast Management Center or the performance monitor is being used [#5043].
 
@@ -82,6 +85,14 @@ resolver [#2431].
 *3.5 Fixes*
 
 This section lists issues solved for **Hazelcast 3.5** release.
+
+- The test for unbounded return values runs forever with the new client implementation [#5230].
+
+- The method `putTransient` actuated the MapStore unexpectedly in an environment with multiple instances [#5225].
+
+- The method `removeAttribute` will prevent any updates by the method `setAttribute` in the deferred write mode [#5186].
+
+- Backward compatibility of eviction configuration for cache is broken since `CacheEvictionConfig` class was renamed to `EvictionConfig` for general usage [#5180].
 
 - When host names are not registered in DNS or in `/etc/hosts` and the members are configured manually with IP addresses and while one node is running, a second node joins to the cluster 5 minutes after it started [#5072].
 
