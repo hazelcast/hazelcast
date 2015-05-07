@@ -127,9 +127,27 @@ public interface ReplicatedMap<K, V>
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key);
 
     /**
-     * Returns a lazy {@link Collection} view of the values contained in this map.
-     * The collection is <b>NOT</b> backed by the map, so changes to the map are
-     * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
+     * Returns a lazy {@link Collection} view of the values contained in this map.<br/>
+     * A LazyCollection is optimized for querying speed (preventing eager deserialization
+     * and hashing on HashSet insertion) and does <b>NOT</b> provide all operations.
+     * Any kind of mutating function will throw an
+     * {@link java.lang.UnsupportedOperationException}. Same is true for operations
+     * like {@link java.util.Collection#contains(Object)} and
+     * {@link java.util.Collection#containsAll(java.util.Collection)} would result in
+     * very poor performance if called repeatedly (for example in a loop). If the use
+     * case is different from querying the data please copy the resulting set into a
+     * new {@link java.util.List} or similar data structure.
+     * <pre>
+     *     ReplicatedMap&lt;K, V> repMap = ...;
+     *     // Returns a LazyCollection
+     *     Collection&lt;V> values = repMap.values();
+     *     List&lt;V> copy = new ArrayList&lt;V>(values);
+     *     if (copy.containsAll(possibleValues)) {
+     *         // ...
+     *     }
+     * </pre>
+     * Due to the lazy nature of the returned set so changes to the map (addition,
+     * removal, update) might be reflected in the set.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior. If a specific order is needed, use
      * {@link #values(java.util.Comparator)} to force reordering of the
@@ -142,7 +160,8 @@ public interface ReplicatedMap<K, V>
     Collection<V> values();
 
     /**
-     * Returns a eagerly populated {@link Collection} view of the values contained in this map.
+     * Returns a eagerly populated {@link Collection} view of the values contained
+     * in this map.<br/>
      * The collection is <b>NOT</b> backed by the map, so changes to the map are
      * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
      * The order of the elements is guaranteed by executing the given
@@ -156,9 +175,24 @@ public interface ReplicatedMap<K, V>
     Collection<V> values(Comparator<V> comparator);
 
     /**
-     * Returns a lazy {@link Set} view of the mappings contained in this map.
-     * The set is <b>NOT</b> backed by the map, so changes to the map are
-     * <b>NOT</b> reflected in the set, and vice-versa.<br/>
+     * Returns a lazy {@link Set} view of the mappings contained in this map.<br/>
+     * A LazySet is optimized for querying speed (preventing eager deserialization
+     * and hashing on HashSet insertion) and does <b>NOT</b> provide all operations.
+     * Any kind of mutating function will throw an
+     * {@link java.lang.UnsupportedOperationException}. Same is true for operations
+     * like {@link java.util.Set#contains(Object)} and
+     * {@link java.util.Set#containsAll(java.util.Collection)} which would result in
+     * very poor performance if called repeatedly (for example i a loop). If the use
+     * case is different from querying the data please copy the resulting set into a
+     * new {@link java.util.HashSet}.
+     * <pre>
+     *     ReplicatedMap&lt;K, V> repMap = ...;
+     *     // Returns a LazySet
+     *     Set&lt;Map.Entry&lt;K, V>> entrySet = repMap.entrySet();
+     *     Set&lt;Map.Entry&lt;K, V>> copy = new HashSet&lt;Map.Entry&lt;K, V>>(entrySet);
+     * </pre>
+     * Due to the lazy nature of the returned set so changes to the map (addition,
+     * removal, update) might be reflected in the set.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior.<br/>
      * Changes to any returned object are <b>NOT</b> replicated back to other
@@ -169,9 +203,29 @@ public interface ReplicatedMap<K, V>
     Set<Entry<K, V>> entrySet();
 
     /**
-     * Returns a lazy {@link Set} view of the key contained in this map.
-     * The set is <b>NOT</b> backed by the map, so changes to the map are
-     * <b>NOT</b> reflected in the set, and vice-versa.<br/>
+     * Returns a lazy {@link Set} view of the key contained in this map.<br/>
+     * A LazySet is optimized for querying speed (preventing eager deserialization
+     * and hashing on HashSet insertion) and does <b>NOT</b> provide all operations.
+     * Any kind of mutating function will throw an
+     * {@link java.lang.UnsupportedOperationException}. Same is true for operations
+     * like {@link java.util.Set#contains(Object)} and
+     * {@link java.util.Set#containsAll(java.util.Collection)} which would result in
+     * very poor performance if called repeatedly (for example i a loop). If the use
+     * case is different from querying the data please copy the resulting set into a
+     * new {@link java.util.HashSet}.
+     * <pre>
+     *     ReplicatedMap&lt;K, V> repMap = ...;
+     *     // Returns a LazySet
+     *     Set&lt;K> keySet = repMap.keySet();
+     *     Set&lt;K> copy = new HashSet&lt;K>(keySet);
+     *     for (K key : possibleKeys) {
+     *       if (!copy.contains(key))
+     *         return false;
+     *     }
+     * </pre>
+     * <p/>
+     * Due to the lazy nature of the returned set so changes to the map (addition,
+     * removal, update) might be reflected in the set.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior.<br/>
      * Changes to any returned object are <b>NOT</b> replicated back to other
