@@ -168,7 +168,7 @@ This pie chart shows what percentage of partitions each node has, as shown below
 
 ![](images/Home-PartitionDistribution.jpg)
 
-You can see each node's partition percentages by moving the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [Advanced Configuration Properties](http://hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#advanced-configuration-properties)).
+You can see each node's partition percentages by moving the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see [System Properties](#system-properties)).
 
 ## System Warnings
 This part of the page shows informative warnings in situations like shutting down a node, as shown below.

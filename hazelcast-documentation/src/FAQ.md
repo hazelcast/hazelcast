@@ -321,7 +321,7 @@ Hazelcast supports symmetric encryption, secure sockets layer (SSL), and Java Au
 
 ## How can I set socket options?
 
-Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, and `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained in the [Advanced Configuration Properties section](#advanced-configuration-properties).
+Hazelcast allows you to set some socket options such as `SO_KEEPALIVE`, `SO_SNDBUF`, and `SO_RCVBUF` using Hazelcast configuration properties. Please see `hazelcast.socket.*` properties explained in the [System Properties section](#system-properties).
 
 <br></br>
 

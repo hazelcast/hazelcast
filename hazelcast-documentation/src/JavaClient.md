@@ -695,7 +695,7 @@ Hazelcast has an internal executor service (different from the data structure *E
 
 ### Client System Properties
 
-There are some advanced client configuration properties to tune some aspects of Hazelcast Client. You can set them as property name and value pairs through declarative configuration, programmatic configuration, or JVM system property. Please see the [Advanced Configuration Properties section](#advanced-configuration-properties) to learn how to set these properties.
+There are some advanced client configuration properties to tune some aspects of Hazelcast Client. You can set them as property name and value pairs through declarative configuration, programmatic configuration, or JVM system property. Please see the [System Properties section](#system-properties) to learn how to set these properties.
 
 The table below lists the client configuration properties with their descriptions.
 
