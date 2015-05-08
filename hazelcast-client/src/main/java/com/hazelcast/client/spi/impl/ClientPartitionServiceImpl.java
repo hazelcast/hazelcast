@@ -26,6 +26,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
@@ -85,8 +86,12 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private boolean getPartitions() {
         ClientClusterService clusterService = client.getClientClusterService();
-        Address master = clusterService.getMasterAddress();
-        PartitionsResponse response = getPartitionsFrom(master);
+        Address ownerAddress = clusterService.getOwnerConnectionAddress();
+        if (ownerAddress == null) {
+            return false;
+        }
+        Connection connection = client.getConnectionManager().getConnection(ownerAddress);
+        PartitionsResponse response = getPartitionsFrom(connection);
         if (response != null) {
             processPartitionResponse(response);
             return true;
@@ -94,10 +99,13 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return false;
     }
 
-    private PartitionsResponse getPartitionsFrom(Address address) {
+    private PartitionsResponse getPartitionsFrom(Connection connection) {
+        if (connection == null) {
+            return null;
+        }
         try {
             final GetPartitionsRequest request = new GetPartitionsRequest();
-            Future<PartitionsResponse> future = new ClientInvocation(client, request, address).invoke();
+            Future<PartitionsResponse> future = new ClientInvocation(client, request, connection).invoke();
             return client.getSerializationService().toObject(future.get());
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
