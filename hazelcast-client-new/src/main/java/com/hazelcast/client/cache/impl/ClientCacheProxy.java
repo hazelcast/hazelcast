@@ -38,7 +38,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -345,7 +344,7 @@ public class ClientCacheProxy<K, V>
                 final ClientMessage request = CacheListenerRegistrationParameters
                         .encode(nameWithPrefix, configData, isRegister, address.getHost(), address.getPort());
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
-                final Future<SerializableCollection> future = invocation.invoke();
+                final Future future = invocation.invoke();
                 futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);

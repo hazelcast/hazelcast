@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.impl;
 
+import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.client.CacheDestroyRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -27,7 +28,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <K> the type of key
  * @param <V> the type of value
  */
-abstract class AbstractClientCacheProxyBase<K, V> {
+abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V> {
 
     static final int TIMEOUT = 10;
 
@@ -115,8 +115,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
             final ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
-            final Future<SerializableCollection> future = clientInvocation.invoke();
-            future.get();
+            clientInvocation.invoke().get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

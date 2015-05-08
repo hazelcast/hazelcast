@@ -44,6 +44,8 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.Client;
@@ -58,7 +60,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
-import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -184,11 +185,11 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
             HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
-            final ICompletableFuture<T> f = clientInvocation.invoke();
+            ClientInvocationFuture f = clientInvocation.invoke();
             if (completionOperation) {
                 waitCompletionLatch(completionId);
             }
-            return f;
+            return new ClientDelegatingFuture<T>(f, clientContext.getSerializationService());
         } catch (Throwable e) {
             if (e instanceof IllegalStateException) {
                 close();
@@ -234,7 +235,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        return future;
     }
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
@@ -265,7 +266,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<T>(future, clientContext.getSerializationService());
+        return future;
     }
 
     protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
@@ -311,7 +312,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DelegatingFuture<Boolean>(future, clientContext.getSerializationService());
+        return future;
     }
 
     protected void removeAllInternal(Set<? extends K> keys) {
