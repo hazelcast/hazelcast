@@ -4,20 +4,20 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.Clock;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +49,7 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
         HazelcastInstance target = instances[instances.length - 1];
 
         String name = randomNameOwnedBy(target, "reliableTopic");
-        topic = (ReliableTopicProxy)local.getReliableTopic(name);
+        topic = (ReliableTopicProxy) local.getReliableTopic(name);
         ringbuffer = topic.ringbuffer;
     }
 
@@ -153,6 +153,7 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
         });
     }
 
+    @Repeat(100)
     @Test
     public void publishMultiple() throws InterruptedException {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
@@ -170,7 +171,7 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                 assertEquals(items, listener.objects);
+                assertEquals(items, Arrays.asList(listener.objects.toArray()));
             }
         });
     }
@@ -225,7 +226,7 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(asList("4", "5", "6"), listener.objects);
+                assertEquals(asList("4", "5", "6"), Arrays.asList(listener.objects.toArray()));
             }
         });
     }
