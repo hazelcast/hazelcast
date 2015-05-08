@@ -173,6 +173,7 @@ src/Performance.md
 		src/ThreadingEvent.md
 		src/ThreadingExecutor.md
 		src/ThreadingOperation.md
+	src/SlowOperationDetector.md
 	src/HazelcastPerformanceOnAWS.md
 src/HazelcastSimulator/SimulatorOverview.md
 	src/HazelcastSimulator/InstallingSimulator.md

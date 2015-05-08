@@ -178,12 +178,14 @@ public class GroupProperties {
 
     /**
      * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered to be slow.
-     * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stack trace.
+     * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stacktrace.
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
             = "hazelcast.slow.operation.detector.threshold.millis";
+
     /**
-     * This value defines the retention time of slow operation log invocations.
+     * This value defines the retention time of invocations in slow operation logs.
+     * <p/>
      * If an invocation is older than this value, it will be purged from the log to prevent unlimited memory usage.
      * When all invocations are purged from a log, the log itself will be deleted.
      * <p/>
@@ -191,6 +193,7 @@ public class GroupProperties {
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS
             = "hazelcast.slow.operation.detector.log.retention.seconds";
+
     /**
      * Purge interval for slow operation logs.
      * <p/>
@@ -200,7 +203,7 @@ public class GroupProperties {
             = "hazelcast.slow.operation.detector.log.purge.interval.seconds";
 
     /**
-     * Defines if the stack traces of slow operations are logged in the log file. Stack traces will always be reported to the
+     * Defines if the stacktraces of slow operations are logged in the log file. Stacktraces will always be reported to the
      * Management Center, but by default they are not printed to keep the log size small.
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
