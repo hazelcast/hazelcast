@@ -10,7 +10,6 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -153,7 +152,6 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
         });
     }
 
-    @Repeat(100)
     @Test
     public void publishMultiple() throws InterruptedException {
         final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
