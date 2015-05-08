@@ -24,7 +24,7 @@ following system property:
 
 `hazelcast.backpressure.max.concurrent.invocations.per.partition`
 
-This system property's default value is 100 and using a default configuration, a system is allowed to have (271+1)*100=27200 concurrent invocations.
+The default value of this system property is 100. Using a default configuration a system is allowed to have (271 + 1) * 100 = 27200 concurrent invocations (271 partitions + 1 for generic operations).
  
 Back pressure is only applied to normal operations. System operations like heart beats and partition migration operations 
 are not influenced by back pressure. 27200 invocations might seem like a lot, but keep in mind that executing a task on `IExecutor` 
@@ -48,10 +48,8 @@ controlled through the following property:
 This system property's default value is 100. It means, out of 100 *asynchronous* backups, Hazelcast makes 1 of them a *synchronous* one. A randomization is added, so the sync window with default configuration will be between 75 and 125 
 invocations. 
 
+<br></br>
+
 ***RELATED INFORMATION***
 
 *Please refer to the [System Properties section](#system-properties) to learn how to configure the system properties.*
-
-
-<br> </br>
-

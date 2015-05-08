@@ -207,10 +207,10 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/ServicesConfiguration.md
 	src/HazelcastConfiguration/MgtCenterConfiguration.md
 	src/HazelcastConfiguration/WANReplConfiguration.md
-	src/PartitionGroupConfig.md
-	src/ListenerConfig.md
-	src/Logging.md
-	src/HazelcastConfiguration/AdvConfProperties.md
+	src/HazelcastConfiguration/PartitionGroupConfig.md
+	src/HazelcastConfiguration/ListenerConfig.md
+	src/HazelcastConfiguration/Logging.md
+	src/HazelcastConfiguration/SystemProperties.md
 src/NetworkPartitioning.md
 src/Licenses.md
 src/FAQ.md

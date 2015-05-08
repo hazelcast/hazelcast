@@ -13,10 +13,10 @@ Let's get the values of these system properties in the declarative configuration
 
 ```xml
 <hazelcast>
- <group>
-        <name>${group.name}</name>
-        <password>${group.password}</password>
-    </group>
+  <group>
+    <name>${group.name}</name>
+    <password>${group.password}</password>
+  </group>
 </hazelcast>
 ```
 
@@ -24,24 +24,22 @@ This also applies to the declarative configuration of Hazelcast Client, as shown
 
 ```xml
 <hazelcast-client>
-    <group>
-        <name>${group.name}</name>
-        <password>${group.password}</password>
-    </group>
+  <group>
+    <name>${group.name}</name>
+    <password>${group.password}</password>
+  </group>
 </hazelcast-client>
 ```
 
 If you do not want to rely on the system properties, you can use the `XmlConfigBuilder` and explicitly set a `Properties` instance, as shown below.
-
  
 ```java
 Properties properties = new Properties();
 
-//fill the properties, e.g. from database/LDAP, etc.
+// fill the properties, e.g. from database/LDAP, etc.
 
 XmlConfigBuilder builder = new XmlConfigBuilder();
 builder.setProperties(properties)
 Config config = builder.build();
 HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-}
 ```
