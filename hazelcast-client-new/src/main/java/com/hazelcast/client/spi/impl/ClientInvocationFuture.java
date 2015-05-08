@@ -19,13 +19,11 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
@@ -40,7 +38,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
+public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
 
     static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
 
@@ -88,7 +86,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     }
 
     @Override
-    public V get() throws InterruptedException, ExecutionException {
+    public ClientMessage get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException exception) {
@@ -97,7 +95,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     }
 
     @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public ClientMessage get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         final int heartBeatInterval = invocation.getHeartBeatInterval();
         if (response == null) {
             long waitMillis = unit.toMillis(timeout);
@@ -145,13 +143,13 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
             this.response = response;
             this.notifyAll();
             for (ExecutionCallbackNode node : callbackNodeList) {
-                runAsynchronous(node.callback, node.executor, node.deserialized);
+                runAsynchronous(node.callback, node.executor);
             }
             callbackNodeList.clear();
         }
     }
 
-    private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
+    private ClientMessage resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
             ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
@@ -171,33 +169,33 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         if (response == null) {
             throw new TimeoutException();
         }
-        return (V) response;
+        return (ClientMessage) response;
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback) {
+    public void andThen(ExecutionCallback<ClientMessage> callback) {
         andThen(callback, executionService.getAsyncExecutor());
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
+    public void andThen(ExecutionCallback<ClientMessage> callback, Executor executor) {
         synchronized (this) {
             if (response != null) {
-                runAsynchronous(callback, executor, true);
+                runAsynchronous(callback, executor);
                 return;
             }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor, true));
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
         }
     }
 
-    public void andThenInternal(ExecutionCallback<Data> callback) {
+    public void andThenInternal(ExecutionCallback<ClientMessage> callback) {
         ExecutorService executor = executionService.getAsyncExecutor();
         synchronized (this) {
             if (response != null) {
-                runAsynchronous(callback, executor, false);
+                runAsynchronous(callback, executor);
                 return;
             }
-            callbackNodeList.add(new ExecutionCallbackNode(callback, executor, false));
+            callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
         }
     }
 
@@ -205,21 +203,18 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         return handler;
     }
 
-    private void runAsynchronous(final ExecutionCallback callback, Executor executor, final boolean deserialized) {
+    private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
         try {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Object resp;
+                        ClientMessage resp;
                         try {
-                            resp = GenericResultParameters.decode((ClientMessage) resolveResponse()).result;
+                            resp = resolveResponse();
                         } catch (Throwable t) {
                             callback.onFailure(t);
                             return;
-                        }
-                        if (deserialized) {
-                            resp = serializationService.toObject(resp);
                         }
                         callback.onResponse(resp);
                     } catch (Throwable t) {
@@ -237,16 +232,14 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         return invocation;
     }
 
-    class ExecutionCallbackNode {
+    static class ExecutionCallbackNode {
 
         final ExecutionCallback callback;
         final Executor executor;
-        final boolean deserialized;
 
-        ExecutionCallbackNode(ExecutionCallback callback, Executor executor, boolean deserialized) {
+        ExecutionCallbackNode(ExecutionCallback callback, Executor executor) {
             this.callback = callback;
             this.executor = executor;
-            this.deserialized = deserialized;
         }
     }
 }

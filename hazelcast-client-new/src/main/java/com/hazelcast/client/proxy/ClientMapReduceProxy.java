@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.parameters.MapReduceCancelParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapReduceForCustomParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapReduceForMapParameters;
 import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationParameters;
+import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationResultParameters;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -106,12 +107,12 @@ public class ClientMapReduceProxy
         return null;
     }*/
 
-    private <T> T invoke(ClientMessage request, String jobId) throws Exception {
+    private ClientMessage invoke(ClientMessage request, String jobId) throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
-            final ICompletableFuture<T> future = clientInvocation.invoke();
+            ClientInvocationFuture future = clientInvocation.invoke();
             return future.get();
         }
         return null;
@@ -313,7 +314,9 @@ public class ClientMapReduceProxy
         public JobProcessInformation getJobProcessInformation() {
             try {
                 ClientMessage request = MapReduceJobProcessInformationParameters.encode(getName(), jobId);
-                return invoke(request, jobId);
+
+                MapReduceJobProcessInformationResultParameters.decode(invoke(request, jobId));
+                return null;
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

@@ -28,13 +28,14 @@ import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.executor.DelegatingFuture;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -81,7 +82,8 @@ abstract class AbstractClientCacheProxy<K, V>
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return createCompletedFuture(cached);
         }
-        CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
+        CacheGetRequest request =
+                new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
         ClientInvocationFuture future;
         try {
             final int partitionId = clientContext.getPartitionService().getPartitionId(key);
@@ -91,8 +93,10 @@ abstract class AbstractClientCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+        SerializationService serializationService = clientContext.getSerializationService();
+        ClientDelegatingFuture<V> delegatingFuture = new ClientDelegatingFuture<V>(future, serializationService);
         if (nearCache != null) {
-            future.andThenInternal(new ExecutionCallback<Data>() {
+            delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
                 public void onResponse(Data valueData) {
                     storeInNearCache(keyData, valueData, null);
                 }
@@ -101,7 +105,7 @@ abstract class AbstractClientCacheProxy<K, V>
                 }
             });
         }
-        return new DelegatingFuture<V>(future, clientContext.getSerializationService());
+        return delegatingFuture;
     }
 
     @Override

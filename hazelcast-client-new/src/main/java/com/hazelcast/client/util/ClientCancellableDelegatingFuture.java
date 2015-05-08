@@ -24,15 +24,12 @@ import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnPart
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -43,7 +40,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  *
  * @param <V> Type of returned object from the get method of this class.
  */
-public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture<V> {
+public final class ClientCancellableDelegatingFuture<V> extends ClientDelegatingFuture<V> {
 
     private static final int INVOCATION_WAIT_TIMEOUT_SECONDS = 5;
     private final ClientContext context;
@@ -53,7 +50,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     private final ILogger logger = Logger.getLogger(ClientCancellableDelegatingFuture.class);
     private volatile boolean cancelled;
 
-    public ClientCancellableDelegatingFuture(ICompletableFuture future, ClientContext context,
+    public ClientCancellableDelegatingFuture(ClientInvocationFuture future, ClientContext context,
                                              String uuid, Address target, int partitionId, V defaultValue) {
         super(future, context.getSerializationService(), defaultValue);
         this.context = context;
@@ -69,10 +66,10 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
         }
 
         waitForRequestToBeSend();
-        final Future<ClientMessage> f = invokeCancelRequest(mayInterruptIfRunning);
+        ClientInvocationFuture f = invokeCancelRequest(mayInterruptIfRunning);
         try {
-            final Boolean b = BooleanResultParameters.decode(f.get()).result;
-            if (b != null && b) {
+            boolean cancelSuccessful =  BooleanResultParameters.decode(f.get()).result;
+            if (cancelSuccessful) {
                 setError(new CancellationException());
                 cancelled = true;
                 return true;
@@ -85,7 +82,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
         }
     }
 
-    private Future<ClientMessage> invokeCancelRequest(boolean mayInterruptIfRunning) {
+    private ClientInvocationFuture invokeCancelRequest(boolean mayInterruptIfRunning) {
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (target != null) {
@@ -106,9 +103,7 @@ public final class ClientCancellableDelegatingFuture<V> extends DelegatingFuture
     }
 
     private void waitForRequestToBeSend() {
-        final ICompletableFuture future = getFuture();
-
-        final ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
+        ClientInvocationFuture clientCallFuture = getFuture();
         ClientInvocation invocation = clientCallFuture.getInvocation();
 
         int timeoutSeconds = INVOCATION_WAIT_TIMEOUT_SECONDS;
