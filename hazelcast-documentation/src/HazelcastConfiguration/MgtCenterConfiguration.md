@@ -18,13 +18,9 @@ config.getManagementCenterConfig().setEnabled( "true" )
          .setUrl( "http://localhost:8080/mancenter" )
             .setUpdateInterval( "3" );
 ```
-   
 
 Management Center configuration has the following attributes.
-
 
 - `enabled`: Set to `true` to enable Management Center.
 - `url`: The URL where Management Center will work.
 - `updateInterval`: The time frequency (in seconds) for which Management Center will take information from Hazelcast cluster.
-
-

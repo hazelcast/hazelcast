@@ -1,8 +1,4 @@
-
-
-
 ## Management Center
-
 
 ### Introduction
 
@@ -14,25 +10,25 @@ You have two options for installing Hazelcast Management Center. You can either 
 
 Here are the steps:
 
--   Download the latest Hazelcast ZIP from [hazelcast.org](http://www.hazelcast.org/download/). The ZIP contains the `mancenter`-*version*`.war` file. 
--   You can directly start `mancenter`-*version*`.war` file from the command line. The following command will start Hazelcast Management Center on port 8080 with context root 'mancenter' (`http://localhost:8080/mancenter`).
+-	Download the latest Hazelcast ZIP from [hazelcast.org](http://www.hazelcast.org/download/). The ZIP contains the `mancenter`-*version*`.war` file. 
+-	You can directly start `mancenter`-*version*`.war` file from the command line. The following command will start Hazelcast Management Center on port 8080 with context root 'mancenter' (`http://localhost:8080/mancenter`).
 
 ```java
 java -jar mancenter-*version*.war 8080 mancenter
 ```
 
-- Or, you can deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
-- After you perform the above steps, make sure that `http://localhost:8080/mancenter` is up.
-- Configure your Hazelcast nodes by adding the URL of your web application to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
-
+-	Or, you can deploy it to your web server (Tomcat, Jetty, etc.). Let us say it is running at `http://localhost:8080/mancenter`.
+-	After you perform the above steps, make sure that `http://localhost:8080/mancenter` is up.
+-	Configure your Hazelcast nodes by adding the URL of your web application to your `hazelcast.xml`. Hazelcast nodes will send their states to this URL.
 
 ```xml
-<management-center enabled="true">http://localhost:8080/mancenter</management-center>
+<management-center enabled="true">
+  http://localhost:8080/mancenter
+</management-center>
 ```
 
--   Start your Hazelcast cluster.
-
--   Browse to `http://localhost:8080/mancenter` and login. **Initial login username/password is `admin/admin`**
+-	Start your Hazelcast cluster.
+-	Browse to `http://localhost:8080/mancenter` and login. **Initial login username/password is `admin/admin`**
 
 The Management Center creates a folder with the name "mancenter" under your "user/home" folder to save data files. You can change the data folder by setting the `hazelcast.mancenter.home` system property.
 
@@ -40,9 +36,7 @@ The Management Center creates a folder with the name "mancenter" under your "use
 
 ***RELATED INFORMATION***
 
-
 *Please refer to the [Management Center Configuration section](#management-center-configuration) for a full description of Hazelcast Management Center configuration.*
-
 
 
 ### Tool Overview
@@ -51,12 +45,13 @@ Once the page is loaded after selecting a cluster, the tool's home page appears 
 
 ![](images/NonHostedMCHomePage.jpg)
 
-This page provides the fundamental properties of the selected cluster which are explained in the [Home Page](#homepage) section. The page has a toolbar on the top and a menu on the left.
+This page provides the fundamental properties of the selected cluster which are explained in the [Home Page](#home-page) section. The page has a toolbar on the top and a menu on the left.
 
 #### Toolbar
+
 The toolbar has the following buttons:
 
--	**Home**: Loads the home page shown above. Please see the [Home Page section](#homepage).
+-	**Home**: Loads the home page shown above. Please see the [Home Page section](#home-page).
 -	**Scripting**: Loads the page used to write and execute user`s own scripts on the cluster. Please see the [Scripting section](#scripting).
 -	**Console**: Loads the page used to execute commands on the cluster. Please see the [Console section](#console).
 -	**Alerts**: Creates alerts by specifying filters. Please see the [Alerts section](#alerts).
@@ -70,22 +65,20 @@ The toolbar has the following buttons:
   The user can select any cluster and once selected, the page immediately loads with the selected cluster's information.
 -	**Logout**: Closes the current user's session.
 
-
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Some of the above listed toolbar items are not visible to users who are not admin or who have **read-only** permission. Also, some of the operations explained in the later sections cannot be performed by users with read-only permission. Please see the [Administration section](#administration) for details.*
 
-
 #### Menu
+
 The Home page includes a menu on the left which lists the distributed data structures in the cluster and all the cluster members (nodes), as shown below.
 
 ![](images/LeftMenu.jpg)
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *Distributed data structures will be shown there when the proxies are created for them.*
 
-
 You can expand and collapse menu items by clicking on them. Below is the list of menu items with links to their explanations.
 
-- [Caches](#caches)
-- [Maps](#maps)
+-	[Caches](#caches)
+-	[Maps](#maps)
 -	[Queues](#queues)
 -	[Topics](#topics)
 -	[MultiMaps](#MultiMaps)
@@ -93,28 +86,28 @@ You can expand and collapse menu items by clicking on them. Below is the list of
 -	[Members](#members)
 
 #### Tabbed View
+
 Each time you select an item from the toolbar or menu, the item is added to the main view as a tab, as shown below.
 
 ![](images/NonHMCTabbedView.jpg)
 
 In the above example, *Home*, *Scripting*, *Console*, *queue1* and *map1* windows can be seen as tabs. Windows can be closed using the ![](images/CloseIcon.jpg) icon on each tab (except the Home Page; it cannot be closed).
 
----
-
 
 ### Home Page
+
 This is the first page appearing after logging in. It gives an overview of the connected cluster. The following subsections describe each portion of the page.
 
-
 #### CPU Utilization
+
 This part of the page provides load and utilization information for the CPUs for each node, as shown below.
 
 ![](images/NonHMCCPUUtil.jpg)
 
 The first column lists the nodes with their IPs and ports. The next columns list the loads on each CPU for the last 1, 5 and 15 minutes. The last column (**Chart**) graphically shows the utilization of CPUs. When you move the mouse cursor on a desired graph, you can see the CPU utilization at the time where the cursor is placed. Graphs under this column shows the CPU utilizations approximately for the last 2 minutes.
 
-
 #### Memory Utilization
+
 This part of the page provides information related to memory usages for each node, as shown below.
 
 ![](images/NonHMCMemoryUtil.jpg)
@@ -122,6 +115,7 @@ This part of the page provides information related to memory usages for each nod
 The first column lists the nodes with their IPs and ports. The next columns show the used and free memories out of the total memory reserved for Hazelcast usage, in real-time. The **Max** column lists the maximum memory capacity of each node and the **Percent** column lists the percentage value of used memory out of the maximum memory. The last column (**Chart**) shows the memory usage of nodes graphically. When you move the mouse cursor on a desired graph, you can see the memory usage at the time where the cursor is placed. Graphs under this column shows the memory usages approximately for the last 2 minutes.
 
 #### Memory Distribution
+
 This part of the page graphically provides the cluster wise breakdown of memory, as shown below. The blue area is the memory used by maps, the dark yellow area is the memory used by non-Hazelcast entities, and the green area is the free memory out of the whole cluster`s memory capacity.
 
 ![](images/Home-MemoryDistribution.jpg)
@@ -129,6 +123,7 @@ This part of the page graphically provides the cluster wise breakdown of memory,
 In the above example, you can see 0.32% of the total memory is used by Hazelcast maps (it can be seen by placing the mouse cursor on it), 58.75% is used by non-Hazelcast entities and 40.85% of the total memory is free.
 
 #### Map Memory Distribution
+
 This part is the breakdown of the blue area shown in the **Memory Distribution** graph explained above. It provides the percentage values of the memories used by each map, out of the total cluster memory reserved for all Hazelcast maps.
 
 ![](images/Home-MapMemoryDistribution.jpg)
@@ -136,13 +131,14 @@ This part is the breakdown of the blue area shown in the **Memory Distribution**
 In the above example, you can see 49.55% of the total map memory is used by **map1** and 49.55% is used by **map2**.
 
 #### Partition Distribution
+
 This pie chart shows what percentage of partitions each node has, as shown below.
 
 ![](images/Home-PartitionDistribution.jpg)
 
 You can see each node's partition percentages by placing the mouse cursor on the chart. In the above example, you can see the node "127.0.0.1:5708" has 5.64% of the total partition count (which is 271 by default and configurable, please see the `hazelcast.partition.count` property explained in the [System Properties section](#system-properties)).
 
----
+
 ### Caches
 
 You can monitor your caches' metrics by clicking the cache name listed on the left panel under **Caches** menu item. A new tab for monitoring that cache instance is opened on the right, as shown below.
@@ -154,6 +150,7 @@ On top of the page, four charts monitor the **Gets**, **Puts**, **Removals** and
 Under these charts is the Cache Statistics Data Table. From left to right, this table lists the IP addresses and ports of each node, get, put, removal, eviction, hit and miss count per second in real-time.
 
 You can navigate through the pages using the buttons at the bottom right of the table (**First, Previous, Next, Last**). You can ascend or descend the order of the listings in each column by clicking on column headings.
+
 
 ### Maps
 
@@ -172,6 +169,7 @@ Map Browser is a tool you can use to retrieve properties of the entries stored i
 Once the key and key's type is specified and the **Browse** button is clicked, the key's properties along with its value are listed.
 
 #### Map Config
+
 By using the Map Config tool, you can set selected map's attributes like the backup count, TTL, and eviction policy. To open it, click on the **Map Config** button, located at the top right of the window. Once opened, the tool appears as a dialog, as shown below.
 
 ![](images/Map-MapConfig.jpg)
@@ -197,7 +195,6 @@ When you click on a desired monitoring, the chart is loaded with the selected op
 -	**Hits**: Monitors the hit count of the map.
 -	**Puts/s, Gets/s, Removes/s**: These three charts monitor the put, get and remove operations (per second) performed on the selected map.
 
-
 Under these charts are **Map Memory** and **Map Throughput** data tables. The Map Memory data table provides memory metrics distributed over nodes, as shown below.
 
 ![](images/Map-MemoryDataTable.jpg)
@@ -214,19 +211,18 @@ You can select the period in the combo box placed at the top right corner of the
 
 You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). To ascend or descent the order of the listings, click on the column headings.
 
+
 ### Queues
 
 Using the menu item **Queues**, you can monitor your queues data structure. When you expand this menu item and click on a queue, a new tab for monitoring that queue instance is opened on the right, as shown below.
 
 ![](images/Queues-Home.jpg)
 
-
 On top of the page, small charts monitor the size, offers and polls of the selected queue in real-time. The X-axis of all the charts shows the current system time. To open a chart as a separate dialog, click on the ![](images/MaximizeChart.jpg) button placed at the top right of each chart. The monitoring charts below are available:
 
 -	**Size**: Monitors the size of the queue. Y-axis is the entry count (should be multiplied by 1000).
 -	**Offers**: Monitors the offers sent to the selected queue. Y-axis is the offer count.
 -	**Polls**: Monitors the polls sent to the selected queue. Y-axis is the poll count.
-
 
 Under these charts are **Queue Statistics** and **Queue Operation Statistics** tables. The Queue Statistics table provides item and backup item counts in the queue and age statistics of items and backup items at each node, as shown below.
 
@@ -244,6 +240,7 @@ You can select the period in the combo box placed at the top right corner of the
 
 You can navigate through the pages using the buttons placed at the bottom right of the table (**First, Previous, Next, Last**). Click on the column headings to ascend or descend the order of the listings.
 
+
 ### Topics
 
 To monitor your topics' metrics, click the topic name listed on the left panel under the **Topics** menu item. A new tab for monitoring that topic instance opens on the right, as shown below.
@@ -258,11 +255,12 @@ You can navigate through the pages using the buttons placed at the bottom right 
 
 
 ### MultiMaps
+
 MultiMap is a specialized map where you can associate a key with multiple values. This monitoring option is similar to the **Maps** option: the same monitoring charts and data tables monitor MultiMaps. The differences are that you cannot browse the MultiMaps and re-configure it. Please see the [Maps section](#maps).
 
 
-
 ### Executors
+
 Executor instances are listed under the **Executors** menu item on the left. When you click on a executor, a new tab for monitoring that executor instance opens on the right, as shown below.
 
 ![](images/ExecutorsHome.jpg)
@@ -290,11 +288,19 @@ From left to right, this table lists the IP address and port of nodes, the count
 
 Use this menu item to monitor each cluster member (node) and perform operations like running garbage collection (GC) and taking a thread dump. Once you select a member from the menu, a new tab for monitoring that member opens on the right, as shown below.
 
-![](images/MembersHome.jpg)
+![](images/MembersHome.png)
 
 The **CPU Utilization** chart shows the percentage of CPU usage on the selected member. The **Memory Utilization** chart shows the memory usage on the selected member with three different metrics (maximum, used and total memory). You can open both of these charts as separate windows using the ![](images/ChangeWindowIcon.jpg) button placed at top right of each chart; this gives you a clearer view of the chart.
 
 The window titled **Partitions** shows which partitions are assigned to the selected member. **Runtime** is a dynamically updated window tab showing the processor number, the start and up times, and the maximum, total and free memory sizes of the selected member. Next to this, the **Properties** tab shows the system properties. The **Member Configuration** window shows the connected Hazelcast cluster's XML configuration.
+
+The **List of Slow Operations** gives an overview of detected slow operations which occurred on that member. The data is collected by the [SlowOperationDetector](#slowoperationdetector).
+
+![](images/ListOfSlowOperations.png)
+
+By clicking on an entry you can open a dialog which shows the stacktrace and detailed information about each slow invocation of this operation.
+
+![](images/SlowOperationDetail.png)
 
 Besides the aforementioned monitoring charts and windows, you can also perform operations on the selected member through this page. The operation buttons are located at the top right of the page, as explained below:
 
@@ -302,11 +308,7 @@ Besides the aforementioned monitoring charts and windows, you can also perform o
 -	**Thread Dump**: When pressed, thread dump of the selected member is taken and shown as a separate dialog to the user.
 -	**Shutdown Node**: It is used to shutdown the selected member.
 
-
-
-
 ### Scripting
-
 
 You can use the scripting feature of this tool to execute codes on the cluster. To open this feature as a tab, select **Scripting** located at the toolbar on top. Once selected, the scripting feature opens as shown below.
 
@@ -320,7 +322,6 @@ There are **Save** and **Delete** buttons on the top right of the scripting edit
 
 In the scripting engine you have a `HazelcastInstance` bonded to a variable named `hazelcast`. You can invoke any method that `HazelcastInstance` has via the `hazelcast` variable. You can see example usage for JavaScript below.
 
-
 ```javascript
 var name = hazelcast.getName();
 var node = hazelcast.getCluster().getLocalMember();
@@ -330,8 +331,6 @@ employees.get("1"); // will return "John Doe"
 ```
 
 
-
-
 ### Console
 
 The Management Center has a console feature that enables you to execute commands on the cluster. For example, you can perform `put`s and `get`s on a map, after you set the namespace with the command `ns <name of your map>`. The same is valid for queues, topics, etc. To execute your command, type it into the field below the console and press **Enter**. Type `help` to see all the commands that you can use.
@@ -339,7 +338,6 @@ The Management Center has a console feature that enables you to execute commands
 Open a console window by clicking on the **Console** button located on the toolbar. Below is a sample view with some executed commands.
 
 ![](images/console.jpg)
-
 
 
 ### Alerts
@@ -400,7 +398,6 @@ After you specify the criteria and click the **Next** button, give a name for th
 Click on the **Save** button; your filter will be saved and put into the **Filters** part of the page. To edit the filter, click on the ![](images/EditIcon.jpg) icon. To delete it, click on the ![](images/DeleteIcon.jpg) icon.
 
 
-
 ### Administration
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *This toolbar item is available only to admin users, i.e. the users who initially have ***admin*** as their both usernames and passwords.*
@@ -416,9 +413,7 @@ To add a user to the system, specify the username, e-mail and password in the **
 
 After you enter/select all fields, click **Save** button to create the user. You will see the newly created user's username on the left side, in the **Users** part of the page.
 
-
 To edit or delete a user, select a username listed in the **Users**. Selected user information appears on the right side of the page. To update the user information, change the fields as desired and click the **Save** button. To delete the user from the system, click the **Delete** button.
-
 
 
 ### Time Travel
@@ -435,9 +430,11 @@ You can go back in time using the slider and/or calendar and check your cluster'
 
 The historical data collected with Time Travel feature are stored in a file database on the disk. These files can be found on the folder specified by `hazelcast.mancenter.home` (by default `mancenter3` folder in the user home folder).
 
+
 ### Documentation
 
 To see the documentation, click on the **Documentation** button located at the toolbar. Management Center manual will appear as a tab.
+
 
 ### Suggested Heap Size
 
@@ -463,6 +460,3 @@ To see the documentation, click on the **Documentation** button located at the t
 | 1024m | 1k | 1k | 1k |
 
 \* With 256m heap, management center is unable to collect statistics.
-
-<br> </br>
-
