@@ -22,7 +22,8 @@
 |[Chapter 17 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
 |[Chapter 18 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
 |[Chapter 19 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
-||[Back Pressure](#back-pressure)|Added as a new section. 
+||[Back Pressure](#back-pressure)|Added as a new section.
+||[SlowOperationDetector](#slowoperationdetector)|Added as a new section explaining the `SlowOperationDetector`, a monitoring feature that collects information of all slow operations.
 |[Chapter 20 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.|
 |[Chapter 21 - WAN](#wan)|[WAN Replication Queue Capacity](#wan-replication-queue-capacity)|The previous heading title (WAN Replication Queue Size) and the system property name (`hazelcast.enterprise.wanrep.queuesize`) changed to WAN Replication Queue Capacity and `hazelcast.enterprise.wanrep.queue.capacity`.|
 ||[Enterprise WAN Replication](#enterprise-wan-replication)|Added as a new section.

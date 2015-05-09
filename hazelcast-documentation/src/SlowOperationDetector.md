@@ -9,7 +9,8 @@ The `SlowOperationDetector` is configured via system properties. Please refer to
 
 ### Logging of Slow Operations
 
-The detected slow operations are logged as warning in the Hazelcast log files:
+The detected slow operations are logged as warnings in the Hazelcast log files:
+
 ```
 WARN 2015-05-07 11:05:30,890 SlowOperationDetector: [127.0.0.1]:5701
   Slow operation detected: com.hazelcast.map.impl.operation.PutOperation
@@ -23,10 +24,10 @@ WARN 2015-05-07 11:05:30,892 SlowOperationDetector: [127.0.0.1]:5701
   (3 invocations)
 ```
 
-Stacktraces will always be reported to the Management Center, but by default they are not printed to keep the log size small. If logging of stacktraces is enabled the full stacktrace is printed every 100 invocations. All other invocations print a shortened version.
+Stacktraces are always reported to the Management Center, but by default they are not printed to keep the log size small. If logging of stacktraces is enabled, the full stacktrace is printed every 100 invocations. All other invocations print a shortened version.
 
 ### Purging of Slow Operation Logs
 
-Since a Hazelcast cluster can run for a very long time we purge the slow operation logs periodically to prevent an OOME. You can configure the purge interval and the retention time for each invocation.
+Since a Hazelcast cluster can run for a very long time, Hazelcast purges the slow operation logs periodically to prevent an OOME. You can configure the purge interval and the retention time for each invocation.
 
-The purging removes each invocation whose retention time is exceeded. When all invocations are purged from a slow operation log, the log itself will be deleted.
+The purging removes each invocation whose retention time is exceeded. When all invocations are purged from a slow operation log, the log is deleted.
