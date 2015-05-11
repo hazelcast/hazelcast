@@ -66,7 +66,7 @@ public class Activator
             return;
         }
 
-        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.osgi.ScriptEngineActivator");
+        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.internal.osgi.ScriptEngineActivator");
         Method register = clazz.getDeclaredMethod("registerOsgiScriptEngineManager", BundleContext.class);
         register.invoke(clazz, context);
     }
