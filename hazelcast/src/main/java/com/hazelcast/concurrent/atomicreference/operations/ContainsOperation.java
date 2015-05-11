@@ -56,12 +56,12 @@ public class ContainsOperation extends AtomicReferenceBaseOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(contains);
+        out.writeData(contains);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        contains = in.readObject();
+        contains = in.readData();
     }
 }
