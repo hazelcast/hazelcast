@@ -60,15 +60,15 @@ public class CompareAndSetOperation extends AtomicReferenceBackupAwareOperation 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(expect);
-        out.writeObject(update);
+        out.writeData(expect);
+        out.writeData(update);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        expect = in.readObject();
-        update = in.readObject();
+        expect = in.readData();
+        update = in.readData();
     }
 
     @Override
