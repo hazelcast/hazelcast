@@ -23,13 +23,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.UnmodifiableIterator;
-import com.hazelcast.util.ValidationUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 import static com.hazelcast.map.impl.eviction.MaxSizeChecker.getApproximateMaxSize;
 
@@ -61,7 +61,9 @@ public final class MapKeyLoaderUtil {
 
             @Override
             public Map<Integer, List<Data>> next() {
-                ValidationUtil.checkHasNext(entries, "No next element");
+                if (!entries.hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 return nextBatch(entries, maxBatch);
             }
         };
