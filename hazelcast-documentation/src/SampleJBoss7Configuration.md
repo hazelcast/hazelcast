@@ -16,6 +16,7 @@ Deployment on JBoss AS 7 or JBoss EAP 6 is a fairly straightforward process. The
     <resource-root path="hazelcast-jca-<version>.jar"/>
   </resources>
   <dependencies>
+    <module name="sun.jdk"/>
     <module name="javax.api"/>
     <module name="javax.resource.api"/>
     <module name="javax.validation.api"/>
