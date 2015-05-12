@@ -92,11 +92,10 @@ public class DefaultContext<KeyIn, ValueIn>
         return collected;
     }
 
-    public <Chunk> Map<KeyIn, Chunk> finish() {
+    public void finalizeCombiners() {
         for (Combiner<ValueIn, ?> combiner : combiners.values()) {
             combiner.finalizeCombine();
         }
-        return requestChunk();
     }
 
     public Combiner<ValueIn, ?> getOrCreateCombiner(KeyIn key) {
