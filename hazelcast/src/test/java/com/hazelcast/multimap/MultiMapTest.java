@@ -61,6 +61,47 @@ import static org.junit.Assert.assertTrue;
 public class MultiMapTest extends HazelcastTestSupport {
 
     /**
+     * idGen is not set while replicating
+     */
+    @Test
+    public void testIssue5220() {
+        String name = randomString();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        MultiMap<Object, Object> mm1 = instance1.getMultiMap(name);
+        // populate multimap while instance1 is owner
+        // records will have ids from 0 to 10
+        for (int i = 0; i < 10; i++) {
+            mm1.put("ping-address", "instance1-" + i);
+        }
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        MultiMap<Object, Object> mm2 = instance2.getMultiMap(name);
+        // now the second instance is the owner
+        // if idGen is not set while replicating
+        // these entries will have ids from 0 to 10 too
+        for (int i = 0; i < 10; i++) {
+            mm2.put("ping-address", "instance2-" + i);
+        }
+        HazelcastInstance instance3 = factory.newHazelcastInstance();
+        MultiMap<Object, Object> mm3 = instance3.getMultiMap(name);
+
+        // since remove iterates all items and check equals it will remove correct item from owner-side
+        // but for the backup we just sent the recordId. if idGen is not set while replicating
+        // we may end up removing instance1's items
+        for (int i = 0; i < 10; i++) {
+            mm2.remove("ping-address", "instance2-" + i);
+        }
+        instance2.getLifecycleService().terminate();
+
+        for (int i = 0; i < 10; i++) {
+            mm1.remove("ping-address", "instance1-" + i);
+        }
+        instance1.shutdown();
+
+        assertEquals(0, mm3.size());
+    }
+
+    /**
      * ConcurrentModificationExceptions
      */
     @Test
@@ -142,7 +183,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
         System.out.println("test = " + multiMap.containsKey("test"));
-        multiMap.put("test","test");
+        multiMap.put("test", "test");
         System.out.println("test = " + multiMap.containsKey("test"));
         multiMap.remove("test");
         System.out.println("test = " + multiMap.containsKey("test"));

@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
  */
 public class MultiMapContainer extends MultiMapContainerSupport {
 
+    private static final int ID_PROMOTION_OFFSET = 100000;
+
     private static final AtomicLongFieldUpdater<MultiMapContainer> ID_GEN_UPDATER = AtomicLongFieldUpdater
             .newUpdater(MultiMapContainer.class, "idGen");
     private static final AtomicLongFieldUpdater<MultiMapContainer> LAST_ACCCESS_TIME_UPDATER = AtomicLongFieldUpdater
@@ -99,6 +101,10 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public long nextId() {
         return ID_GEN_UPDATER.getAndIncrement(this);
+    }
+
+    public void setId(long newValue) {
+        ID_GEN_UPDATER.set(this, newValue + ID_PROMOTION_OFFSET);
     }
 
     public void delete(Data dataKey) {
