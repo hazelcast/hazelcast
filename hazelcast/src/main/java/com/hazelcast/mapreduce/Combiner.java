@@ -116,8 +116,9 @@ public abstract class Combiner<ValueIn, ValueOut> {
     }
 
     /**
-     * This method is called after the mapping phase is over. It is intended to be overridden
-     * to clean up internal state and free possible resources.
+     * This method is called after the mapping phase on the local node is over. No further combining
+     * runs will take place after this call. This method is intended to be overridden to clean up
+     * internal state and free possible acquired external resources.
      */
     public void finalizeCombine() {
     }
