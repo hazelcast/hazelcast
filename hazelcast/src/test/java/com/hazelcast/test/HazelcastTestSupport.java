@@ -34,7 +34,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -374,6 +373,7 @@ public abstract class HazelcastTestSupport {
     protected static String generateKeyOwnedBy(HazelcastInstance instance, boolean generateOwnedKey) {
         Cluster cluster = instance.getCluster();
         checkMemberCount(generateOwnedKey, cluster);
+        checkPartitionCountGreaterOrEqualMemberCount(instance);
 
         Member localMember = cluster.getLocalMember();
         PartitionService partitionService = instance.getPartitionService();
@@ -383,6 +383,18 @@ public abstract class HazelcastTestSupport {
             if (comparePartitionOwnership(generateOwnedKey, localMember, partition)) {
                 return id;
             }
+        }
+    }
+
+    private static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
+        Cluster cluster = instance.getCluster();
+        int memberCount = cluster.getMembers().size();
+
+        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        int partitionCount = internalPartitionService.getPartitionCount();
+
+        if (partitionCount < memberCount) {
+            throw new UnsupportedOperationException("Partition count should be equal or greater than member count!");
         }
     }
 
