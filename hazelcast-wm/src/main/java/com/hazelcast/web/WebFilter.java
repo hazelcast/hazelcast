@@ -196,7 +196,7 @@ public class WebFilter implements Filter {
         }
 
         if (!stickySession) {
-            getClusterMap().addEntryListener(new EntryListener<String, Object>() {
+            hazelcastInstanceDelegate.addEntryListener(clusterMapName, new EntryListener<String, Object>() {
                 public void entryAdded(EntryEvent<String, Object> entryEvent) {
                 }
 
@@ -388,11 +388,7 @@ public class WebFilter implements Filter {
             hazelcastInstanceDelegate.executeOnEntries(clusterMapName , new InvalidateSessionAttributesEntryProcessor(session.getId()));
         }
     }
-
-    private IMap<String, Object> getClusterMap() {
-        return hazelcastInstanceDelegate.getClusterMap(clusterMapName);
-    }
-
+    
     private HazelcastHttpSession getSessionWithId(final String sessionId) {
         HazelcastHttpSession session = sessions.get(sessionId);
         if (session != null && !session.isValid()) {

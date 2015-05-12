@@ -1,6 +1,7 @@
 package com.hazelcast.web;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
@@ -35,6 +36,14 @@ public class HazelcastInstanceDelegate {
 
     public Config getInstanceConfig() {
         return instance.getConfig();
+    }
+
+    public void addEntryListener(String mapName, EntryListener listener, boolean includeValue){
+        try {
+            getClusterMap(mapName).addEntryListener(listener, includeValue);
+        } catch (Exception e) {
+            LOGGER.warning("An exception occured while creating entry listener");
+        }
     }
 
     public IMap<String, Object> getClusterMap(String mapName) {
