@@ -132,7 +132,7 @@ public class QueueConfig {
     }
 
     /**
-     * Get the total number of backups: the backup count and the asynchronous backup count.
+     * Get the total number of backups: the backup count plus the asynchronous backup count.
      *
      * @return The total number of backups.
      */
@@ -141,7 +141,7 @@ public class QueueConfig {
     }
 
     /**
-     * Get the number of synchronous backups.
+     * Get the number of synchronous backups for this queue.
      *
      * @return The synchronous backup count.
      */
@@ -150,7 +150,7 @@ public class QueueConfig {
     }
 
     /**
-     * Sets the number of synchronous backups.
+     * Sets the number of synchronous backups for this queue.
      *
      * @param backupCount the number of synchronous backups to set
      * @return the current QueueConfig
@@ -165,9 +165,9 @@ public class QueueConfig {
     }
 
     /**
-     * Get the asynchronous backup count.
+     * Get the number of asynchronous backups for this queue.
      *
-     * @return The asynchronous backup count.
+     * @return The number of asynchronous backups.
      */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
@@ -210,36 +210,36 @@ public class QueueConfig {
     }
 
     /**
-     * Check if statistics are enabled.
+     * Check if statistics are enabled for this queue.
      *
-     * @return true is statistics are enabled, false otherwise.
+     * @return true if statistics are enabled, false otherwise.
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
     /**
-     * Set the statistics enabled value for this queue configuration.
+     * Enables or disables statistics for this queue.
      *
-     * @param statisticsEnabled Set to true or false to enable or disable statistics.
-     * @return The queue configuration.
+     * @param statisticsEnabled True to enable statistics for this queue, false to disable.
+     * @return the updated QueueConfig
      */
-    public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
+   public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
 
     /**
-     * @return The name of this queue configuration.
+     * @return The name of this queue.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Set the name for this queue configuration.
+     * Set the name for this queue.
      *
-     * @param name The name to set for this queue configuration.
+     * @param name The name to set for this queue.
      * @return This queue configuration.
      */
     public QueueConfig setName(String name) {
@@ -248,10 +248,10 @@ public class QueueConfig {
     }
 
     /**
-     * Add an item listener configuration to this queue configuration.
+     * Add an item listener configuration to this queue.
      *
-     * @param listenerConfig The item listener configuration to add to this queue configuration.
-     * @return This queue configuration.
+     * @param listenerConfig The item listener configuration to add to this queue.
+     * @return The updated queue configuration.
      */
     public QueueConfig addItemListenerConfig(ItemListenerConfig listenerConfig) {
         getItemListenerConfigs().add(listenerConfig);
@@ -259,9 +259,9 @@ public class QueueConfig {
     }
 
     /**
-     * Get the list of item listener configurations for this queue configuration.
+     * Get the list of item listener configurations for this queue.
      *
-     * @return The list of item listener configurations for this queue configuration.
+     * @return The list of item listener configurations for this queue.
      */
     public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
@@ -271,10 +271,10 @@ public class QueueConfig {
     }
 
     /**
-     * Set the list of item listener configurations for this queue configuration to this list.
+     * Set the list of item listener configurations for this queue.
      *
-     * @param listenerConfigs The list of item listener configurations to set for this queue configuration.
-     * @return This queue configuration.
+     * @param listenerConfigs The list of item listener configurations to set for this queue.
+     * @return The updated queue configuration.
      */
     public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;

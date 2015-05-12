@@ -27,21 +27,23 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Simple configuration to hold parsed xml configuration.
+ * CacheConfig depends on the JCache API. If the JCache API is not in the classpath, 
+ * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
 public class CacheSimpleConfig {
 
     /**
-     * The number of minimum backup counter
+     * The minimum number of backups.
      */
     public static final int MIN_BACKUP_COUNT = 0;
 
     /**
-     * The number of maximum backup counter
+     * The maximum number of backups.
      */
     public static final int MAX_BACKUP_COUNT = InternalPartition.MAX_BACKUP_COUNT;
 
     /**
-     * The number of default backup counter
+     * The default number of backups.
      */
     public static final int DEFAULT_BACKUP_COUNT = 1;
 
@@ -108,6 +110,11 @@ public class CacheSimpleConfig {
     public CacheSimpleConfig() {
     }
 
+    /**
+     * Gets the immutable version of this simple cache config.
+     *
+     * @return Immutable version of this simple cache config.
+     */
     public CacheSimpleConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CacheSimpleConfigReadOnly(this);
@@ -115,91 +122,201 @@ public class CacheSimpleConfig {
         return readOnly;
     }
 
+    /**
+     * Gets the name of this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return the name of the {@link com.hazelcast.cache.ICache}.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the name of this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param name The name to set for this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * Get the key type for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return The key type.
+     */
     public String getKeyType() {
         return keyType;
     }
 
+    /**
+     * Sets the key type for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param keyType The key type to set for this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setKeyType(String keyType) {
         this.keyType = keyType;
         return this;
     }
 
+    /**
+     * Get the value type for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return The value type for this {@link com.hazelcast.cache.ICache}.
+     */
     public String getValueType() {
         return valueType;
     }
 
+    /**
+     * Sets the value type for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param valueType The value type to set for this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setValueType(String valueType) {
         this.valueType = valueType;
         return this;
     }
 
+    /**
+     * Checks if statistics are enabled for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return True if statistics are enabled, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     * Sets statistics to enabled or disabled for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param statisticsEnabled True to enable cache statistics, false to disable.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
 
+    /**
+     * Checks if management is enabled for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return True if cache management is enabled, false otherwise.
+     */
     public boolean isManagementEnabled() {
         return managementEnabled;
     }
 
+    /**
+     * Sets management to enabled or disabled for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param managementEnabled True to enable cache management, false to disable.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setManagementEnabled(boolean managementEnabled) {
         this.managementEnabled = managementEnabled;
         return this;
     }
 
+    /**
+     * Checks if this {@link com.hazelcast.cache.ICache} is read-through: a read loads the entry from the data store if it is not already in the cache.
+     *
+     * @return True if the cache is read-through, false otherwise.
+     */
     public boolean isReadThrough() {
         return readThrough;
     }
 
+    /**
+     * Enables or disables read-through: a read loads the entry from the data store if it is not already in the cache.
+     *
+     * @param readThrough True to enable read-through for this {@link com.hazelcast.cache.ICache}, false to disable.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setReadThrough(boolean readThrough) {
         this.readThrough = readThrough;
         return this;
     }
 
+    /**
+     * Checks if the {@link com.hazelcast.cache.ICache} is write-through: a write to the queue also loads the entry into the data store.
+     *
+     * @return True if the cache is write-through, false otherwise.
+     */
     public boolean isWriteThrough() {
         return writeThrough;
     }
 
+    /**
+     * Enables or disables write-through for this {@link com.hazelcast.cache.ICache}: a write to the queue also loads the entry into the data store.
+     *
+     * @param writeThrough True to enable write-through, false to disable.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setWriteThrough(boolean writeThrough) {
         this.writeThrough = writeThrough;
         return this;
     }
 
-    public String getCacheLoaderFactory() {
+    /**
+     * Gets the factory for the {@link javax.cache.integration.CacheLoader}.
+     *
+     * @return The factory for the {@link javax.cache.integration.CacheLoader}.
+     */
+   public String getCacheLoaderFactory() {
         return cacheLoaderFactory;
     }
 
+    /**
+     * Sets the factory for this {@link javax.cache.integration.CacheLoader}.
+     *
+     * @param cacheLoaderFactory The factory to set for this {@link javax.cache.integration.CacheLoader}.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setCacheLoaderFactory(String cacheLoaderFactory) {
         this.cacheLoaderFactory = cacheLoaderFactory;
         return this;
     }
 
+    /**
+     * Gets the factory for the {@link javax.cache.integration.CacheWriter}.
+     *
+     * @return The factory for the {@link javax.cache.integration.CacheWriter}.
+     */
     public String getCacheWriterFactory() {
         return cacheWriterFactory;
     }
 
+    /**
+     * Sets the factory for this {@link javax.cache.integration.CacheWriter}.
+     *
+     * @param cacheWriterFactory The factory to set for this {@link javax.cache.integration.CacheWriter}.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setCacheWriterFactory(String cacheWriterFactory) {
         this.cacheWriterFactory = cacheWriterFactory;
         return this;
     }
 
+    /**
+     * Gets the factory for the {@link javax.cache.expiry.ExpiryPolicy}.
+     *
+     * @return The factory for the {@link javax.cache.expiry.ExpiryPolicy}.
+     */
     public String getExpiryPolicyFactory() {
         return expiryPolicyFactory;
     }
 
+    /**
+     * Sets the factory for this {@link javax.cache.expiry.ExpiryPolicy}.
+     *
+     * @param expiryPolicyFactory The factory to set for this {@link javax.cache.expiry.ExpiryPolicy}.
+     * @return The current cache config instance.
+     */
     public CacheSimpleConfig setExpiryPolicyFactory(String expiryPolicyFactory) {
         this.expiryPolicyFactory = expiryPolicyFactory;
         return this;
@@ -222,14 +339,19 @@ public class CacheSimpleConfig {
         return this;
     }
 
+    /**
+     * Gets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return The number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
+     */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
     }
 
     /**
-     * Sets the number of asynchronous backups.
+     * Sets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set.
      * @return the updated CacheSimpleConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
      *             or larger than the maximum number of backup
@@ -242,12 +364,17 @@ public class CacheSimpleConfig {
         return this;
     }
 
+    /**
+     * Gets the number of synchronous backups for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return The number of synchronous backups.
+     */
     public int getBackupCount() {
         return backupCount;
     }
 
     /**
-     * Sets the number of backups
+     * Sets the number of synchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
      * @param backupCount the new backupCount
      * @return the updated CacheSimpleConfig
@@ -260,19 +387,41 @@ public class CacheSimpleConfig {
         return this;
     }
 
+    /**
+     * Gets the InMemory Format for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return The InMemory Format.
+     */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
     }
 
+    /**
+     * Sets the InMemory Format for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param inMemoryFormat The InMemory Format.
+     * @return the updated CacheSimpleConfig.
+     */
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
         return this;
     }
 
+    /**
+     * Gets the eviction configuration for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return The eviction configuration.
+     */
     public EvictionConfig getEvictionConfig() {
         return evictionConfig;
     }
 
+    /**
+     * Sets the eviction configuration for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param evictionConfig The eviction configuration to set.
+     * @return the updated CacheSimpleConfig
+     */
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
