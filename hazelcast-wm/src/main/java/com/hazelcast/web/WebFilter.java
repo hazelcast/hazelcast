@@ -385,11 +385,12 @@ public class WebFilter implements Filter {
         if (invalidated) {
             // If the session was invalidated, either explicitly or because the final reference to it was
             // destroyed, invalidate all of the attributes that were attached to it
-            hazelcastInstanceDelegate.executeOnEntries(clusterMapName , new InvalidateSessionAttributesEntryProcessor(session.getId()));
+            hazelcastInstanceDelegate.executeOnEntries(clusterMapName,
+                    new InvalidateSessionAttributesEntryProcessor(session.getId()));
         }
     }
-    
     private HazelcastHttpSession getSessionWithId(final String sessionId) {
+
         HazelcastHttpSession session = sessions.get(sessionId);
         if (session != null && !session.isValid()) {
             destroySession(session, true);
