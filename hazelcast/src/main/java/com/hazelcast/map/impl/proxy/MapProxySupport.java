@@ -523,7 +523,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int mapNamePartition = partitionService.getPartitionId(name);
 
         Operation operation = new LoadMapOperation(name, replaceExistingValues);
-        operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, mapNamePartition);
+        Future loadMapFuture = operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, mapNamePartition);
+
+        try {
+            loadMapFuture.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
 
         waitUntilLoaded();
     }
