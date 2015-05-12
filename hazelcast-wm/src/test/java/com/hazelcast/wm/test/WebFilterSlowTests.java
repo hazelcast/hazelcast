@@ -63,7 +63,22 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
     }
 
-    
+    @Test
+    public void whenClusterIsDownAtBeginning_MapSizeAfterClusterIsUp() throws Exception {
+        if (!serverXml1.equals("node1-client-deferred.xml")) return;
+        hz.shutdown();
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+
+        hz = Hazelcast.newHazelcastInstance(
+                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
+        assertEquals(2, map.size());
+    }
+
+
     @Test
     public void test_github_issue_3360() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
