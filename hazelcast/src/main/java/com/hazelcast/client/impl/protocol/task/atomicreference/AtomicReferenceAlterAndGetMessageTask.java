@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.atomicreference;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceAlterAndGetParameters;
+import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.operations.AlterAndGetOperation;
@@ -44,6 +45,11 @@ public class AtomicReferenceAlterAndGetMessageTask
     @Override
     protected AtomicReferenceAlterAndGetParameters decodeClientMessage(ClientMessage clientMessage) {
         return AtomicReferenceAlterAndGetParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return GenericResultParameters.encode(serializationService.toData(response));
     }
 
     @Override

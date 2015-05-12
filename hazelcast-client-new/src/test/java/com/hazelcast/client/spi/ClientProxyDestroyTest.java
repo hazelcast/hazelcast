@@ -13,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
@@ -21,7 +20,6 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientProxyDestroyTest {
 
     static HazelcastInstance client;

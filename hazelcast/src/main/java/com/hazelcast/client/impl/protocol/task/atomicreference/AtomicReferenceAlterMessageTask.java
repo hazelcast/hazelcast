@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.atomicreference;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceAlterParameters;
+import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.operations.AlterOperation;
@@ -43,6 +44,11 @@ public class AtomicReferenceAlterMessageTask extends AbstractPartitionMessageTas
     @Override
     protected AtomicReferenceAlterParameters decodeClientMessage(ClientMessage clientMessage) {
         return AtomicReferenceAlterParameters.decode(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return VoidResultParameters.encode();
     }
 
     @Override
