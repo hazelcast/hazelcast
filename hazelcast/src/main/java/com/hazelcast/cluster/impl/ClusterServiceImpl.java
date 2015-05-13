@@ -604,15 +604,19 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
 
-        if (!node.isMaster()) {
-            sendMasterAnswer(joinRequest.getAddress());
+        Address target = joinRequest.getAddress();
+        boolean isRequestFromCurrentMaster = target.equals(node.getMasterAddress());
+        // If the join request from current master, don't send a master answer
+        // because master can somehow dropped its connection and wants to join back.
+        if (!node.isMaster() && !isRequestFromCurrentMaster) {
+            sendMasterAnswer(target);
             return;
         }
 
         if (joinInProgress) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Join is in-progress. Cannot handle join request from "
-                        + joinRequest.getAddress() + " at the moment.");
+                        + target + " at the moment.");
             }
             return;
         }
@@ -625,12 +629,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
             long now = Clock.currentTimeMillis();
             if (logger.isFinestEnabled()) {
-                String msg = "Handling join from " + joinRequest.getAddress() + ", inProgress: " + joinInProgress
+                String msg = "Handling join from " + target + ", inProgress: " + joinInProgress
                         + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
                 logger.finest(msg);
             }
 
-            MemberInfo memberInfo = new MemberInfo(joinRequest.getAddress(), joinRequest.getUuid(),
+            MemberInfo memberInfo = new MemberInfo(target, joinRequest.getUuid(),
                     joinRequest.getAttributes());
 
             if (!setJoins.contains(memberInfo)) {
@@ -638,7 +642,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     checkSecureLogin(joinRequest, memberInfo);
                 } catch (Exception e) {
                     ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
-                    sendAuthenticationFailure(joinRequest.getAddress());
+                    sendAuthenticationFailure(target);
                     securityLogger.severe(e);
                     return;
                 }
@@ -649,7 +653,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     node.getNodeExtension().beforeJoin();
                 } catch (Exception e) {
                     logger.warning(e.getMessage());
-                    sendBeforeJoinCheckFailure(joinRequest.getAddress(), e.getMessage());
+                    sendBeforeJoinCheckFailure(target, e.getMessage());
                     return;
                 }
             }
@@ -659,7 +663,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
 
             if (setJoins.add(memberInfo)) {
-                sendMasterAnswer(joinRequest.getAddress());
+                sendMasterAnswer(target);
                 if (now - firstJoinRequest < maxWaitMillisBeforeJoin) {
                     timeToStartJoin = now + waitMillisBeforeJoin;
                 }
