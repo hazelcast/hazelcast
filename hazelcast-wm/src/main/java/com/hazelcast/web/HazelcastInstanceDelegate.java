@@ -118,7 +118,7 @@ public class HazelcastInstanceDelegate {
         } catch (Exception e) {
             LOGGER.warning("An exception occured during processing item with key" + key , e);
             cleanUpService.putKeyEntryProcessorPairToFailQueue(mapName, key,
-                    entryProcessor, EntryProcessorType.EXECUTE_ON_KEY);
+                    entryProcessor);
             return null;
         }
     }
@@ -128,8 +128,6 @@ public class HazelcastInstanceDelegate {
             return getClusterMap(mapName).executeOnEntries(entryProcessor);
         } catch (Exception e) {
             LOGGER.warning("An exception occured during processing all entries." , e);
-            cleanUpService.putKeyEntryProcessorPairToFailQueue(mapName, "",
-                    entryProcessor, EntryProcessorType.EXECUTE_ON_KEY);
             return null;
         }
     }

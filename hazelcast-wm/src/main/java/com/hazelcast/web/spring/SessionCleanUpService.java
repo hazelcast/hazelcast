@@ -18,8 +18,9 @@ package com.hazelcast.web.spring;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.web.EntryProcessorType;
+import com.hazelcast.web.DestroySessionEntryProcessor;
 import com.hazelcast.web.HazelcastInstanceDelegate;
+import com.hazelcast.web.InvalidateSessionAttributesEntryProcessor;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -51,9 +52,22 @@ public class SessionCleanUpService {
             public void run() {
                 while (failQueue.isEmpty()) {
                     KeyEntryProcessorPair pair = failQueue.poll();
-                    if (pair.getProcessorType() == EntryProcessorType.EXECUTE_ON_ENTRIES) {
-                        delegate.executeOnEntries(pair.getMapName(), pair.getProcessor());
-                    } else if (pair.getProcessorType() == EntryProcessorType.EXECUTE_ON_KEY) {
+                    if (pair.getProcessor() instanceof DestroySessionEntryProcessor) {
+                        try {
+                            // executeOnKey, executeOnEntries should work together
+                            delegate.executeOnEntries(pair.getMapName(), pair.getProcessor());
+                            Boolean destroyed = (Boolean) delegate.executeOnKey(pair.getMapName(),
+                                    pair.getKey(), pair.getProcessor());
+                            if (destroyed != null && destroyed) {
+                                delegate.executeOnEntries(pair.getMapName(),
+                                        new InvalidateSessionAttributesEntryProcessor(pair.getKey()));
+                            }
+                        } catch (Exception e) {
+                            // Put this pair in fail queue again, because
+                            // executeOnKey,executeOnEntries did not run correctly
+                            failQueue.offer(pair);
+                        }
+                    } else {
                         delegate.executeOnKey(pair.getMapName(), pair.getKey(), pair.getProcessor());
                     }
                 }
@@ -61,16 +75,13 @@ public class SessionCleanUpService {
         }, FIXED_DELAY, FIXED_DELAY1, TimeUnit.SECONDS);
     }
 
-    public void putKeyEntryProcessorPairToFailQueue(String mapName, String key, EntryProcessor entryProcessor,
-                                                    EntryProcessorType processorType) {
-        failQueue.offer(new KeyEntryProcessorPair(mapName, key,
-                entryProcessor, processorType));
+    public void putKeyEntryProcessorPairToFailQueue(String mapName, String key, EntryProcessor entryProcessor) {
+        failQueue.offer(new KeyEntryProcessorPair(mapName, key, entryProcessor));
     }
 
     public void stop() {
         executor.shutdownNow();
     }
-
 
     /**
      * Internal ThreadFactory to create cleanup threads
@@ -107,14 +118,11 @@ public class SessionCleanUpService {
         private final String mapName;
         private final String key;
         private final EntryProcessor processor;
-        private final EntryProcessorType processorType;
 
-        public KeyEntryProcessorPair(String mapName, String key, EntryProcessor processor, EntryProcessorType type) {
+        public KeyEntryProcessorPair(String mapName, String key, EntryProcessor processor) {
             this.key = key;
             this.processor = processor;
             this.mapName = mapName;
-
-            this.processorType = type;
         }
 
         public String getKey() {
@@ -129,8 +137,5 @@ public class SessionCleanUpService {
             return processor;
         }
 
-        public EntryProcessorType getProcessorType() {
-            return processorType;
-        }
     }
 }
