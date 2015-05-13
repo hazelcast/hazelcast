@@ -24,7 +24,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.web.spring.SessionCleanUpService;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;

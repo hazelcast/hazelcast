@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.web.spring;
+package com.hazelcast.web;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.web.DestroySessionEntryProcessor;
-import com.hazelcast.web.HazelcastInstanceDelegate;
-import com.hazelcast.web.InvalidateSessionAttributesEntryProcessor;
-
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -55,7 +51,6 @@ public class SessionCleanUpService {
                     if (pair.getProcessor() instanceof DestroySessionEntryProcessor) {
                         try {
                             // executeOnKey, executeOnEntries should work together
-                            delegate.executeOnEntries(pair.getMapName(), pair.getProcessor());
                             Boolean destroyed = (Boolean) delegate.executeOnKey(pair.getMapName(),
                                     pair.getKey(), pair.getProcessor());
                             if (destroyed != null && destroyed) {
