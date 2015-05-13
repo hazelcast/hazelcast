@@ -21,6 +21,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.mapreduce.ListSetMapReduceTest.ListSetReducerFactory;
 import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -59,6 +60,41 @@ public class MapReduceTest
         extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
+
+    @Test(timeout = 60000)
+    public void test_early_finalization_combiner_github_5283() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+
+        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
+        final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = h1.getJobTracker("default");
+        KeyValueSource<Integer, Integer> kvs = KeyValueSource.fromMap(m1);
+        KeyValueSource<Integer, Integer> wrapper = new MapKeyValueSourceAdapter<Integer, Integer>(kvs);
+        Job<Integer, Integer> job = tracker.newJob(wrapper);
+
+        ICompletableFuture<Map<String, List<Integer>>> future =
+                job.mapper(new TestMapper())
+                   .combiner(new FinalizingCombinerFactory())
+                   .reducer(new ListBasedReducerFactory()).submit();
+
+        Map<String, List<Integer>> result = future.get();
+
+        assertEquals(100, result.size());
+        for (List<Integer> value : result.values()) {
+            assertEquals(1, value.size());
+        }
+    }
 
     @Test(timeout = 60000)
     public void test_collide_user_provided_combiner_list_result_github_3614() throws Exception {
@@ -1447,6 +1483,39 @@ public class MapReduceTest
             @Override
             public List<Integer> finalizeReduce() {
                 return result;
+            }
+        }
+    }
+
+    public static class FinalizingCombinerFactory implements CombinerFactory<String, Integer, List<Integer>> {
+
+        @Override
+        public Combiner<Integer, List<Integer>> newCombiner(String key) {
+            return new FinalizingCombiner();
+        }
+
+        private class FinalizingCombiner extends Combiner<Integer, List<Integer>> {
+
+            private List<Integer> result = new ArrayList<Integer>();
+
+            @Override
+            public void combine(Integer value) {
+                result.add(value);
+            }
+
+            @Override
+            public List<Integer> finalizeChunk() {
+                return new ArrayList<Integer>(result);
+            }
+
+            @Override
+            public void reset() {
+                result.clear();
+            }
+
+            @Override
+            public void finalizeCombine() {
+                result = null;
             }
         }
     }

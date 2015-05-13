@@ -228,6 +228,8 @@ public class JobSupervisor {
     }
 
     public Map<Object, Object> getJobResults() {
+        DefaultContext currentContext = context.get();
+
         Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
             int mapSize = MapReduceUtil.mapSize(reducers.size());
@@ -239,9 +241,13 @@ public class JobSupervisor {
                 }
             }
         } else {
-            DefaultContext currentContext = context.get();
-            result = currentContext.finish();
+            // Request a possible last chunk of data
+            result = currentContext.requestChunk();
         }
+
+        // Finalize local combiners
+        currentContext.finalizeCombiners();
+
         return result;
     }
 
