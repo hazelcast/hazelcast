@@ -170,7 +170,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         if (result.getResultState() == SUCCESSFUL) {
             // If we have a reducer defined just send it over
             if (supervisor.getConfiguration().getReducerFactory() != null) {
-                Map<KeyOut, Chunk> chunkMap = context.finish();
+                // Request a possible last chunk of data
+                Map<KeyOut, Chunk> chunkMap = context.requestChunk();
                 if (chunkMap.size() > 0) {
                     sendLastChunkToAssignedReducers(partitionId, chunkMap);
 
