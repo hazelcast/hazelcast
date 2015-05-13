@@ -27,7 +27,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Simple configuration to hold parsed xml configuration.
- * CacheConfig depends on the JCache API. If the JCache API is not in the classpath, 
+ * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
 public class CacheSimpleConfig {
@@ -223,7 +223,8 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Checks if this {@link com.hazelcast.cache.ICache} is read-through: a read loads the entry from the data store if it is not already in the cache.
+     * Checks if this {@link com.hazelcast.cache.ICache} is read-through: a read loads the entry from the data store
+     * if it is not already in the cache.
      *
      * @return True if the cache is read-through, false otherwise.
      */
@@ -243,7 +244,8 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Checks if the {@link com.hazelcast.cache.ICache} is write-through: a write to the queue also loads the entry into the data store.
+     * Checks if the {@link com.hazelcast.cache.ICache} is write-through: a write to the queue also loads the entry
+     * into the data store.
      *
      * @return True if the cache is write-through, false otherwise.
      */
@@ -252,7 +254,8 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Enables or disables write-through for this {@link com.hazelcast.cache.ICache}: a write to the queue also loads the entry into the data store.
+     * Enables or disables write-through for this {@link com.hazelcast.cache.ICache}: a write to the queue also loads
+     * the entry into the data store.
      *
      * @param writeThrough True to enable write-through, false to disable.
      * @return The current cache config instance.
@@ -267,7 +270,7 @@ public class CacheSimpleConfig {
      *
      * @return The factory for the {@link javax.cache.integration.CacheLoader}.
      */
-   public String getCacheLoaderFactory() {
+    public String getCacheLoaderFactory() {
         return cacheLoaderFactory;
     }
 
@@ -354,8 +357,8 @@ public class CacheSimpleConfig {
      * @param asyncBackupCount the number of asynchronous synchronous backups to set.
      * @return the updated CacheSimpleConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */

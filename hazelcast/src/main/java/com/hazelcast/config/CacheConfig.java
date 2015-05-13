@@ -128,7 +128,8 @@ public class CacheConfig<K, V>
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();
-            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
+            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
+                    new MutableCacheEntryListenerConfiguration<K, V>(
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
         }
@@ -227,13 +228,13 @@ public class CacheConfig<K, V>
      * then all entries of the map will be copied to another JVM for
      * fail-safety. 0 means no synchronous backup.
      *
-     * @param backupCount The number of synchronous backups to set for 
+     * @param backupCount The number of synchronous backups to set for
      *                    this {@link com.hazelcast.cache.ICache}.
      * @return The current cache config instance.
      * @throws IllegalArgumentException if backupCount smaller than 0,
-     *             or larger than the maximum number of backup,
-     *             or the sum of the synchronous and asynchonous backups is larger than 
-     *             the maximum number of backups.
+     *                                  or larger than the maximum number of backup,
+     *                                  or the sum of the synchronous and asynchonous backups is larger than
+     *                                  the maximum number of backups.
      * @see #setAsyncBackupCount(int)
      */
     public CacheConfig<K, V> setBackupCount(int backupCount) {
@@ -259,7 +260,7 @@ public class CacheConfig<K, V>
      * @return the updated CacheConfig
      * @throws new IllegalArgumentException if asyncBackupCount is smaller than 0,
      *             or larger than the maximum number of backups,
-     *             or the sum of the synchronous and asynchronous backups is larger 
+     *             or the sum of the synchronous and asynchronous backups is larger
      *             than the maximum number of backups.
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
@@ -327,7 +328,7 @@ public class CacheConfig<K, V>
     }
 
     /**
-    * Data type that will be used for storing records in this {@link com.hazelcast.cache.ICache}.
+     * Data type that will be used for storing records in this {@link com.hazelcast.cache.ICache}.
      * Possible values:
      * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms

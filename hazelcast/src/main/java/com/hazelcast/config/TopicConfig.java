@@ -94,8 +94,8 @@ public class TopicConfig {
     }
 
     /**
-     * Checks if global ordering is enabled (all nodes listening to the same topic 
-     * get their messages in the same order), or disabled (nodes get 
+     * Checks if global ordering is enabled (all nodes listening to the same topic
+     * get their messages in the same order), or disabled (nodes get
      * the messages in the order that the messages are published).
      *
      * @return true if global ordering is enabled, false if disabled
@@ -105,8 +105,8 @@ public class TopicConfig {
     }
 
     /**
-     * Enable global ordering (all nodes listening to the same topic 
-     * get their messages in the same order), or disable it (nodes get 
+     * Enable global ordering (all nodes listening to the same topic
+     * get their messages in the same order), or disable it (nodes get
      * the messages in the order that the messages are published).
      *
      * @param globalOrderingEnabled set to true to enable global ordering, false to disable

@@ -152,8 +152,9 @@ public class SemaphoreConfig {
      * @param asyncBackupCount the number of asynchronous synchronous backups to set.
      * @return the updated SemaphoreConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum
+     *                                  number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -163,7 +164,7 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Returns the total number of backups (synchronous plus asynchronous); 
+     * Returns the total number of backups (synchronous plus asynchronous);
      * the returned value will always equal or bigger than 0.
      *
      * @return the total number of backups (synchronous plus asynchronous).
