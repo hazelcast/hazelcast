@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.web.spring.SessionCleanUpService;
 
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
@@ -31,15 +32,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+
 public class HazelcastInstanceDelegate {
 
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceDelegate.class);
 
     private final HazelcastInstance instance;
-
-    public HazelcastInstanceDelegate(HazelcastInstance instance) {
-        this.instance = instance;
-    }
+    private final SessionCleanUpService cleanUpService;
 
     public HazelcastInstanceDelegate(FilterConfig filterConfig, Properties properties) {
         HazelcastInstance instance;
@@ -49,6 +48,8 @@ public class HazelcastInstanceDelegate {
             instance = null;
         }
         this.instance = instance;
+        cleanUpService = new SessionCleanUpService(instance.getName());
+        cleanUpService.registerHazelcastInstanceDelegate(this);
     }
 
     public Config getInstanceConfig() {
@@ -71,7 +72,7 @@ public class HazelcastInstanceDelegate {
         try {
             return getClusterMap(mapName).get(key);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured while getting item with key" + key);
+            LOGGER.warning("An exception occured while getting item with key" + key, e);
             return null;
         }
     }
@@ -80,7 +81,7 @@ public class HazelcastInstanceDelegate {
         try {
             getClusterMap(mapName).set(key, value);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured while setting item with key" + key);
+            LOGGER.warning("An exception occured while setting item with key" + key, e);
         }
     }
 
@@ -88,7 +89,7 @@ public class HazelcastInstanceDelegate {
         try {
             getClusterMap(mapName).delete(key);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured during processing item with key" + key);
+            LOGGER.warning("An exception occured during processing item with key" + key , e);
         }
     }
 
@@ -96,7 +97,7 @@ public class HazelcastInstanceDelegate {
         try {
             return getClusterMap(mapName).entrySet(predicate);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured during query with predicate." + predicate);
+            LOGGER.warning("An exception occured during query with predicate." + predicate, e);
             return null;
         }
     }
@@ -105,26 +106,30 @@ public class HazelcastInstanceDelegate {
         try {
             return getClusterMap(mapName).keySet(predicate);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured during fetching key set with predicate." + predicate);
+            LOGGER.warning("An exception occured during fetching key set with predicate." + predicate , e);
             return null;
         }
     }
 
 
-    public Object executeOnKey(String mapName, String key, EntryProcessor webDataEntryProcessor) {
+    public Object executeOnKey(String mapName, String key, EntryProcessor entryProcessor) {
         try {
-            return getClusterMap(mapName).executeOnKey(key, webDataEntryProcessor);
+            return getClusterMap(mapName).executeOnKey(key, entryProcessor);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured during processing item with key" + key);
+            LOGGER.warning("An exception occured during processing item with key" + key , e);
+            cleanUpService.putKeyEntryProcessorPairToFailQueue(mapName, key,
+                    entryProcessor, EntryProcessorType.EXECUTE_ON_KEY);
             return null;
         }
     }
 
-    public Object executeOnEntries(String mapName, EntryProcessor webDataEntryProcessor) {
+    public Object executeOnEntries(String mapName, EntryProcessor entryProcessor) {
         try {
-            return getClusterMap(mapName).executeOnEntries(webDataEntryProcessor);
+            return getClusterMap(mapName).executeOnEntries(entryProcessor);
         } catch (Exception e) {
-            LOGGER.warning("An exception occured during processing all entries.");
+            LOGGER.warning("An exception occured during processing all entries." , e);
+            cleanUpService.putKeyEntryProcessorPairToFailQueue(mapName, "",
+                    entryProcessor, EntryProcessorType.EXECUTE_ON_KEY);
             return null;
         }
     }
@@ -133,9 +138,7 @@ public class HazelcastInstanceDelegate {
         try {
             this.instance.getLifecycleService().shutdown();
         } catch (Exception e) {
-            LOGGER.warning("An exception occured during shutdown of lifecycle service.");
+            LOGGER.warning("An exception occured during shutdown of lifecycle service.", e);
         }
     }
-
-
 }
