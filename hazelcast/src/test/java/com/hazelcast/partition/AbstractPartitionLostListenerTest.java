@@ -36,6 +36,10 @@ public abstract class AbstractPartitionLostListenerTest
         return 0;
     }
 
+    protected int getMaxParallelReplicaSyncCount() {
+        return 20;
+    }
+
     @Before
     public void createHazelcastInstanceFactory()
             throws IOException {
@@ -76,6 +80,7 @@ public abstract class AbstractPartitionLostListenerTest
 
     private Config createConfig(final int nodeCount) {
         final Config config = new Config();
+        config.setProperty("hazelcast.partition.max.parallel.replications", Integer.toString(getMaxParallelReplicaSyncCount()));
         for (int i = 0; i < nodeCount; i++) {
             config.getMapConfig(getIthMapName(i)).setBackupCount(i);
         }
