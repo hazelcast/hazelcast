@@ -28,14 +28,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.RecordStore;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -50,7 +42,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -870,10 +861,10 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
 
-    private static Config newConfigWithExpiration(String mapName, int maxIdleSeconds) {
+    private static Config newConfigWithTTL(String mapName, int ttlSeconds) {
         final Config config = new Config();
         final MapConfig mapConfig = new MapConfig(mapName + "*");
-        mapConfig.setMaxIdleSeconds(maxIdleSeconds);
+        mapConfig.setTimeToLiveSeconds(ttlSeconds);
         config.addMapConfig(mapConfig);
         return config;
     }
@@ -1011,11 +1002,39 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBackupExpirationDelay_preventsSweepOfEntries_onBackupPartitions() throws Exception {
+    @Category(NightlyTest.class)
+    public void testBackupExpirationDelay_onPromotedReplica() throws Exception {
         final int numberOfItemsToBeAdded = 1000;
-        final int expectedEntryCountAfterExpirationOnBackupPartitions = numberOfItemsToBeAdded;
 
-        testExpirationDelay(expectedEntryCountAfterExpirationOnBackupPartitions, numberOfItemsToBeAdded);
+        // node count should be at least 2 since we are testing a scenario on backups.
+        final int nodeCount = 2;
+        final int ttlSeconds = 3;
+        final String mapName = randomMapName();
+
+        final Config config = newConfigWithTTL(mapName, ttlSeconds);
+        // use a long delay for testing purposes.
+        config.setProperty(GroupProperties.PROP_MAP_EXPIRY_DELAY_SECONDS, String.valueOf(TimeUnit.HOURS.toSeconds(1)));
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        final IMap<Integer, Integer> map1 = instances[0].getMap(mapName);
+        final IMap<Integer, Integer> map2 = instances[1].getMap(mapName);
+
+        for (int i = 0; i < numberOfItemsToBeAdded; i++) {
+            map1.put(i, i);
+        }
+
+        instances[0].shutdown();
+
+        sleepSeconds(3);
+
+        // Force entries to expire by touching each one.
+        for (int i = 0; i < numberOfItemsToBeAdded; i++) {
+            map2.get(i);
+        }
+
+        assertSizeEventually(0, map2);
     }
 
     @Test
@@ -1078,73 +1097,5 @@ public class EvictionTest extends HazelcastTestSupport {
         assertNull("value of expired key should be null on a replicated partition", value);
     }
 
-    private void testExpirationDelay(final int expectedEntryCountAfterExpiration,
-                                     final int numberOfItemsToBeAdded) {
-        // node count should be at least 2 since we are testing a scenario on backups.
-        final int nodeCount = 2;
-        final int maxIdleSeconds = 1;
-        final String mapName = randomMapName();
-
-        final Config config = newConfigWithExpiration(mapName, maxIdleSeconds);
-        // use a long delay for testing purposes.
-        config.setProperty(GroupProperties.PROP_MAP_EXPIRY_DELAY_SECONDS, String.valueOf(TimeUnit.HOURS.toSeconds(1)));
-
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-
-        final IMap<Integer, Integer> map1 = instances[0].getMap(mapName);
-        final IMap<Integer, Integer> map2 = instances[1].getMap(mapName);
-
-        for (int i = 0; i < numberOfItemsToBeAdded; i++) {
-            map1.put(i, i);
-        }
-
-        // 1. Wait for idle expiration.
-        sleepSeconds(2);
-
-        // 2. Force entries to expire by touching each one.
-        for (int i = 0; i < numberOfItemsToBeAdded; i++) {
-            map1.get(i);
-        }
-
-        // 3. On backups expiration has 10 seconds delay. So entries on backups should be there.
-        // but on owners they should be expired.
-        final long now = Clock.currentTimeMillis();
-
-        waitClusterForSafeState(instances[0]);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                final int nodeEntryCount1 = getNodeEntryCount(map1, now);
-                final int nodeEntryCount2 = getNodeEntryCount(map2, now);
-
-                assertEquals(expectedEntryCountAfterExpiration, nodeEntryCount1 + nodeEntryCount2);
-            }
-        });
-    }
-
-    private int getNodeEntryCount(IMap map, long now) {
-        int count = 0;
-        final MapProxyImpl mapProxy = (MapProxyImpl) map;
-        final MapService mapService = (MapService) mapProxy.getService();
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            PartitionContainer container = mapServiceContext.getPartitionContainer(i);
-            RecordStore recordStore = container.getRecordStore(map.getName());
-            if (recordStore == null) {
-                continue;
-            }
-            Iterator<Record> iterator = recordStore.iterator(now, true);
-            while (iterator.hasNext()) {
-                iterator.next();
-                count++;
-            }
-        }
-
-        return count;
-    }
-
 }
+
