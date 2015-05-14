@@ -209,6 +209,43 @@ public class WriteBehindMapStoreWithEvictionsTest extends HazelcastTestSupport {
         assertStoreCount(1, storeCount);
     }
 
+
+    @Test
+    public void testTransientlyPutKeysAreNotReachable_afterEviction() throws Exception {
+        int numberOfItems = 1000;
+        IMap<Object, Object> map = createMapBackedByWriteBehindStore();
+        // 1. these puts are used to create write-behind-queues on partitions.
+        for (int i = -1; i > -numberOfItems; i--) {
+            map.put(i, i);
+        }
+        // 2. put transient entries.
+        for (int i = 0; i < numberOfItems; i++) {
+            map.putTransient(i, i, 10, TimeUnit.SECONDS);
+        }
+        // 3. evict all transient entries.
+        for (int i = 0; i < numberOfItems; i++) {
+            map.evict(i);
+        }
+        // 4. expecting all transiently put entries are not reachable.
+        assertEntriesRemoved(map, numberOfItems);
+    }
+
+    private IMap<Object, Object> createMapBackedByWriteBehindStore() {
+        MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        return TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(100)
+                .build();
+    }
+
+    private void assertEntriesRemoved(IMap<Object, Object> map, int numberOfItems) {
+        for (int i = 0; i < numberOfItems; i++) {
+            assertNull(i + " should not be in this map", map.get(i));
+        }
+    }
+
     private void assertStoreCount(final int expected, final AtomicInteger storeCount) {
         assertTrueEventually(new AssertTask() {
             @Override
